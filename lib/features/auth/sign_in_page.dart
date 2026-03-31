@@ -1,26 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/auth/data/auth_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SignInPage extends StatefulWidget {
+class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({super.key});
 
   @override
-  State<SignInPage> createState() => _SignInPageState();
+  ConsumerState<SignInPage> createState() => _SignInPageState();
 }
 
-class _SignInPageState extends State<SignInPage> {
+class _SignInPageState extends ConsumerState<SignInPage> {
   bool _isLoading = false;
   String? _error;
 
-  Future<void> _signInAnonymously() async {
+  Future<void> _signInWithGoogle() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      await FirebaseAuth.instance.signInAnonymously();
+      await ref.read(authRepositoryProvider).signInWithGoogle();
       if (mounted) {
         context.go('/trips');
       }
@@ -61,13 +63,15 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'MVP: connexion anonyme pour demarrer rapidement.',
+                  'Connecte-toi avec Google pour acceder a tes voyages.',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _isLoading ? null : _signInAnonymously,
-                  child: Text(_isLoading ? 'Connexion...' : 'Continuer'),
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  child: Text(
+                    _isLoading ? 'Connexion...' : 'Continuer avec Google',
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

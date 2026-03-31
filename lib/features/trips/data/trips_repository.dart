@@ -31,6 +31,7 @@ class TripsRepository {
 
     return firestore
         .collection('trips')
+        .where('memberIds', arrayContains: user.uid)
         .snapshots()
         .map((snapshot) {
           final trips = snapshot.docs

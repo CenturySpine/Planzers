@@ -26,15 +26,20 @@ Offrir un seul espace collaboratif pour preparer et suivre un voyage de groupe s
 ### 1. Prerequis systeme
 
 - Installer **Flutter SDK** (canal stable) et ajouter `<flutter>/bin` au `PATH`.
-- Sur Windows, activer **Mode developpeur** (necessaire pour les plugins Flutter avec symlinks).
-- Installer la **Firebase CLI**:
-  - Soit via `npm install -g firebase-tools` (**necessite Node.js**, car `npm` est fourni avec Node)
-  - Soit via le binaire standalone `firebase.exe` (voir docs Firebase CLI).
-- S'assurer que ces commandes fonctionnent dans un nouveau terminal:
+- Sur Windows, activer **Mode developpeur** (plugins Flutter avec symlinks).
+- Installer **Node.js LTS** (necessaire pour `npm`), puis la **Firebase CLI**:
+  - `npm install -g firebase-tools`
+- Installer **Java 17+** (recommande: JDK inclus d'Android Studio: `...\Android Studio\jbr`).
+- Configurer les variables d'environnement Windows:
+  - `JAVA_HOME` -> chemin du JDK (ex: `C:\Program Files\Android\Android Studio\jbr`)
+  - ajouter `%JAVA_HOME%\bin` au `Path`
+  - ajouter `C:\Users\<ton-user>\AppData\Local\Pub\Cache\bin` au `Path` (pour `flutterfire`)
+- Ouvrir un nouveau terminal et verifier:
 
 ```bash
 flutter --version
 dart --version
+java -version
 firebase --version
 ```
 
@@ -46,37 +51,76 @@ cd Planzers
 flutter pub get
 ```
 
-### 3. Configurer le projet Firebase
-
-Dans la console Firebase:
-- Creer ou choisir un **projet Firebase** (ex: `planzers`).
-- **Authentication** → *Sign-in method* → activer **Anonymous**.
-- **Firestore Database** → *Create database* → mode **test** pour le dev.
-
-### 4. Lier Flutter au projet Firebase (FlutterFire)
-
-Installer la CLI FlutterFire puis generer la config:
+### 3. Auth Firebase / outils CLI
 
 ```bash
+firebase login
 dart pub global activate flutterfire_cli
+```
+
+Si `flutterfire` n'est pas reconnu, utiliser:
+
+```bash
+dart pub global run flutterfire_cli:flutterfire --version
+```
+
+### 4. Configurer Firebase (console)
+
+Dans la console Firebase:
+- Creer ou choisir le projet (ex: `planzers`)
+- **Authentication** -> *Sign-in method* -> activer **Google**
+- **Firestore Database** -> creer la base (mode dev/test)
+- Creer les apps de plateforme necessaires (Android, iOS, Web)
+
+### 5. Android: SHA-1 + `google-services.json`
+
+Depuis `android/`:
+
+```bash
+./gradlew signingReport
+```
+
+Sous Windows PowerShell:
+
+```powershell
+.\gradlew signingReport
+```
+
+- Copier la valeur **SHA1** (et idealement **SHA-256**) du variant `debug`.
+- Firebase -> *Project settings* -> app Android -> **Add fingerprint**.
+- Telecharger `google-services.json` et le placer dans `android/app/google-services.json`.
+
+### 6. iOS: `GoogleService-Info.plist`
+
+- Telecharger `GoogleService-Info.plist` depuis l'app iOS Firebase.
+- Le placer dans `ios/Runner/GoogleService-Info.plist`.
+- Verifier que `ios/Runner/Info.plist` contient `CFBundleURLTypes` avec le `REVERSED_CLIENT_ID`.
+
+### 7. Lier Flutter au projet Firebase (FlutterFire)
+
+Depuis la racine du projet:
+
+```bash
 dart pub global run flutterfire_cli:flutterfire configure
 ```
 
-- Selectionner le projet Firebase cree plus haut.
-- Cocher au minimum la plateforme que tu utilises (par ex. **Windows**).
-- Verifier que `lib/firebase_options.dart` a ete genere.
-- Note: `lib/firebase_options.dart` et les fichiers natifs Firebase sont ignores par Git (configuration locale uniquement).
+- Repondre `yes` si la CLI propose de reutiliser `firebase.json`.
+- Cocher les plateformes que tu utilises.
+- Verifier que `lib/firebase_options.dart` est regenere.
 
-### 5. Lancer l'application
+### 8. Lancer l'application
 
 ```bash
+flutter clean
+flutter pub get
 flutter run -d windows
 ```
 
 Flux de test minimal:
-- Ecran **Connexion** → bouton *Continuer* (auth anonyme).
-- Ecran **Mes voyages**.
-- Bouton **Nouveau voyage** → saisir titre + destination → verifier la creation dans Firestore (`trips`).
+- Ecran **Connexion** -> bouton *Continuer avec Google*
+- Ecran **Mes voyages**
+- Bouton **Nouveau voyage** -> creation visible dans Firestore (`trips`)
+- Document utilisateur cree/maj dans Firestore (`users/{uid}`)
 
 ## Structure recommandee
 
