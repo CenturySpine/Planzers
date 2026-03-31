@@ -31,14 +31,14 @@ class TripsRepository {
 
     return firestore
         .collection('trips')
-        .where('memberIds', arrayContains: user.uid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final trips = snapshot.docs
               .map((doc) => Trip.fromMap(doc.id, doc.data()))
-              .toList(),
-        );
+              .toList();
+          trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return trips;
+        });
   }
 
   Future<void> createTrip({
