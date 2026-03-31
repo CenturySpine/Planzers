@@ -38,24 +38,18 @@ class AuthRepository {
       );
     }
 
-    try {
-      return await auth.signInWithProvider(provider);
-    } on UnimplementedError {
-      throw UnsupportedError(
-        'Google Sign-In non supporte sur cette plateforme.',
-      );
-    } catch (_) {
-      if (!_googleSignInInitialized) {
-        await googleSignIn.initialize();
-        _googleSignInInitialized = true;
-      }
-
-      final googleUser = await googleSignIn.authenticate();
-      final googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-      return auth.signInWithCredential(credential);
+    // On mobile, use the native Google Sign-In flow to avoid browser
+    // redirection issues and ensure return to the app.
+    if (!_googleSignInInitialized) {
+      await googleSignIn.initialize();
+      _googleSignInInitialized = true;
     }
+
+    final googleUser = await googleSignIn.authenticate();
+    final googleAuth = googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      idToken: googleAuth.idToken,
+    );
+    return auth.signInWithCredential(credential);
   }
 }
