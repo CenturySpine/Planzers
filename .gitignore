@@ -1,0 +1,29 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android / iOS build outputs
+android/.gradle/
+android/app/debug
+android/app/profile
+android/app/release
+ios/Flutter/.last_build_id
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Firebase CLI local artifacts
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# OS
+Thumbs.db
+.DS_Store
