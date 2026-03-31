@@ -23,6 +23,9 @@ ios/Flutter/.last_build_id
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
 
 # OS
 Thumbs.db

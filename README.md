@@ -65,6 +65,7 @@ dart pub global run flutterfire_cli:flutterfire configure
 - Selectionner le projet Firebase cree plus haut.
 - Cocher au minimum la plateforme que tu utilises (par ex. **Windows**).
 - Verifier que `lib/firebase_options.dart` a ete genere.
+- Note: `lib/firebase_options.dart` et les fichiers natifs Firebase sont ignores par Git (configuration locale uniquement).
 
 ### 5. Lancer l'application
 
