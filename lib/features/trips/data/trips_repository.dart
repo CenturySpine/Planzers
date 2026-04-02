@@ -45,6 +45,8 @@ class TripsRepository {
   Future<void> createTrip({
     required String title,
     required String destination,
+    String address = '',
+    String linkUrl = '',
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -55,6 +57,8 @@ class TripsRepository {
     await doc.set({
       'title': title.trim(),
       'destination': destination.trim(),
+      'address': address.trim(),
+      'linkUrl': linkUrl.trim(),
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
       'createdAt': FieldValue.serverTimestamp(),
@@ -82,5 +86,37 @@ class TripsRepository {
     }
 
     await docRef.delete();
+  }
+
+  Future<void> updateTrip({
+    required String tripId,
+    required String title,
+    required String destination,
+    required String address,
+    required String linkUrl,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final docRef = firestore.collection('trips').doc(tripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data();
+    final ownerId = (data?['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut modifier ce voyage');
+    }
+
+    await docRef.update({
+      'title': title.trim(),
+      'destination': destination.trim(),
+      'address': address.trim(),
+      'linkUrl': linkUrl.trim(),
+    });
   }
 }

@@ -122,6 +122,61 @@ Flux de test minimal:
 - Bouton **Nouveau voyage** -> creation visible dans Firestore (`trips`)
 - Document utilisateur cree/maj dans Firestore (`users/{uid}`)
 
+## Cloud Functions (preview de lien)
+
+Cette app utilise une Cloud Function pour generer les metadonnees de preview (`linkPreview`) a partir de `trips/{tripId}.linkUrl`.
+
+### Prerequis Firebase
+
+- Projet Firebase en **plan Blaze** (obligatoire pour Cloud Functions gen2 en production).
+- APIs Google Cloud activees (normalement proposees automatiquement au premier deploy):
+  - Cloud Functions API
+  - Cloud Build API
+  - Artifact Registry API
+  - Cloud Run API
+  - Eventarc API
+
+### Prerequis local
+
+- Etre connecte avec la Firebase CLI:
+
+```bash
+firebase login
+```
+
+- Installer les dependances des fonctions:
+
+```bash
+cd functions
+npm install
+cd ..
+```
+
+### Deploiement
+
+Depuis la racine du repo:
+
+```bash
+firebase deploy --only functions --project planzers
+```
+
+Au premier deploy, Firebase peut demander une politique de retention des images de conteneur (Artifact Registry). Recommandation: `30` jours.
+
+### Verification apres deploy
+
+1. Dans l'app, modifier un voyage et renseigner un `linkUrl`.
+2. Dans Firestore (`trips/{tripId}`), verifier le champ `linkPreview`:
+   - `status: "loading"` puis `status: "ok"` (ou `empty` / `error`)
+   - champs attendus: `title`, `description`, `siteName`, `imageUrl`, `fetchedAt`
+
+### Redeployer apres modif de la function
+
+Si tu modifies `functions/index.js`:
+
+```bash
+firebase deploy --only functions --project planzers
+```
+
 ## Structure recommandee
 
 Voir le dossier `docs/`:
