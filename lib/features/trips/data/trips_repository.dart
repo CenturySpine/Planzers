@@ -60,4 +60,27 @@ class TripsRepository {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> deleteTrip({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final docRef = firestore.collection('trips').doc(tripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      return;
+    }
+
+    final data = snapshot.data();
+    final ownerId = (data?['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut supprimer ce voyage');
+    }
+
+    await docRef.delete();
+  }
 }

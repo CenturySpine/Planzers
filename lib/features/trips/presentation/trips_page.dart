@@ -10,6 +10,7 @@ class TripsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripsAsync = ref.watch(tripsStreamProvider);
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
@@ -48,10 +49,29 @@ class TripsPage extends ConsumerWidget {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final trip = trips[index];
+              final canDelete = (myUid != null && trip.ownerId == myUid);
               return ListTile(
                 title: Text(trip.title),
                 subtitle: Text(trip.destination),
-                trailing: Text('${trip.memberIds.length} membre(s)'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${trip.memberIds.length} membre(s)'),
+                    if (canDelete) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Supprimer',
+                        onPressed: () => _confirmAndDeleteTrip(
+                          context,
+                          ref,
+                          tripId: trip.id,
+                          tripTitle: trip.title,
+                        ),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
+                    ],
+                  ],
+                ),
               );
             },
           );
@@ -142,5 +162,49 @@ class TripsPage extends ConsumerWidget {
 
     titleController.dispose();
     destinationController.dispose();
+  }
+
+  Future<void> _confirmAndDeleteTrip(
+    BuildContext context,
+    WidgetRef ref, {
+    required String tripId,
+    required String tripTitle,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Supprimer ce voyage ?'),
+          content: Text(
+            'Cette action est definitive.\n\nVoyage: $tripTitle',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(tripsRepositoryProvider).deleteTrip(tripId: tripId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voyage supprime')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur suppression: $e')),
+      );
+    }
   }
 }
