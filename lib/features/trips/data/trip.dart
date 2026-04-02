@@ -5,6 +5,7 @@ class Trip {
     required this.id,
     required this.title,
     required this.destination,
+    required this.linkUrl,
     required this.ownerId,
     required this.memberIds,
     required this.createdAt,
@@ -13,6 +14,7 @@ class Trip {
   final String id;
   final String title;
   final String destination;
+  final String linkUrl;
   final String ownerId;
   final List<String> memberIds;
   final DateTime createdAt;
@@ -29,6 +31,7 @@ class Trip {
       id: id,
       title: (data['title'] as String?) ?? '',
       destination: (data['destination'] as String?) ?? '',
+      linkUrl: (data['linkUrl'] as String?) ?? '',
       ownerId: (data['ownerId'] as String?) ?? '',
       memberIds: ((data['memberIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
@@ -41,6 +44,7 @@ class Trip {
     return {
       'title': title,
       'destination': destination,
+      'linkUrl': linkUrl,
       'ownerId': ownerId,
       'memberIds': memberIds,
       'createdAt': createdAt.toIso8601String(),

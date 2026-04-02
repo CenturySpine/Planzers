@@ -45,6 +45,7 @@ class TripsRepository {
   Future<void> createTrip({
     required String title,
     required String destination,
+    String linkUrl = '',
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -55,6 +56,7 @@ class TripsRepository {
     await doc.set({
       'title': title.trim(),
       'destination': destination.trim(),
+      'linkUrl': linkUrl.trim(),
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
       'createdAt': FieldValue.serverTimestamp(),
@@ -88,6 +90,7 @@ class TripsRepository {
     required String tripId,
     required String title,
     required String destination,
+    required String linkUrl,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -109,6 +112,7 @@ class TripsRepository {
     await docRef.update({
       'title': title.trim(),
       'destination': destination.trim(),
+      'linkUrl': linkUrl.trim(),
     });
   }
 }
