@@ -83,4 +83,32 @@ class TripsRepository {
 
     await docRef.delete();
   }
+
+  Future<void> updateTrip({
+    required String tripId,
+    required String title,
+    required String destination,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final docRef = firestore.collection('trips').doc(tripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data();
+    final ownerId = (data?['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut modifier ce voyage');
+    }
+
+    await docRef.update({
+      'title': title.trim(),
+      'destination': destination.trim(),
+    });
+  }
 }
