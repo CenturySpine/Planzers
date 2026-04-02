@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TripDetailsPage extends ConsumerStatefulWidget {
   const TripDetailsPage({
@@ -23,6 +24,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   late Trip _trip;
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
+  late final TextEditingController _addressController;
   late final TextEditingController _linkController;
   bool _isEditing = false;
   bool _isSaving = false;
@@ -33,6 +35,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     _trip = widget.trip;
     _titleController = TextEditingController(text: _trip.title);
     _destinationController = TextEditingController(text: _trip.destination);
+    _addressController = TextEditingController(text: _trip.address);
     _linkController = TextEditingController(text: _trip.linkUrl);
   }
 
@@ -40,6 +43,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
+    _addressController.dispose();
     _linkController.dispose();
     super.dispose();
   }
@@ -49,6 +53,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
       _isEditing = true;
       _titleController.text = _trip.title;
       _destinationController.text = _trip.destination;
+      _addressController.text = _trip.address;
       _linkController.text = _trip.linkUrl;
     });
   }
@@ -58,8 +63,34 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
       _isEditing = false;
       _titleController.text = _trip.title;
       _destinationController.text = _trip.destination;
+      _addressController.text = _trip.address;
       _linkController.text = _trip.linkUrl;
     });
+  }
+
+  Future<void> _openAddressLocation(String address) async {
+    final query = address.trim();
+    if (query.isEmpty) return;
+
+    final mapsUri = Uri.https(
+      'www.google.com',
+      '/maps/search/',
+      <String, String>{
+        'api': '1',
+        'query': query,
+      },
+    );
+
+    final didLaunch = await launchUrl(
+      mapsUri,
+      mode: LaunchMode.platformDefault,
+    );
+
+    if (!didLaunch && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir la localisation')),
+      );
+    }
   }
 
   Future<void> _save() async {
@@ -71,12 +102,14 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     try {
       final title = _titleController.text.trim();
       final destination = _destinationController.text.trim();
+      final address = _addressController.text.trim();
       final linkUrl = _linkController.text.trim();
 
       await ref.read(tripsRepositoryProvider).updateTrip(
             tripId: _trip.id,
             title: title,
             destination: destination,
+            address: address,
             linkUrl: linkUrl,
           );
 
@@ -86,6 +119,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
           id: _trip.id,
           title: title,
           destination: destination,
+          address: address,
           linkUrl: linkUrl,
           ownerId: _trip.ownerId,
           memberIds: _trip.memberIds,
@@ -196,6 +230,16 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
+                        controller: _addressController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Adresse',
+                          hintText: '10 Rue de Rivoli, 75001 Paris',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
                         controller: _linkController,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
@@ -249,9 +293,17 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _InfoRow(label: 'ID', value: _trip.id),
+                      _OwnerInfoRow(ownerId: _trip.ownerId),
                       const SizedBox(height: 12),
-                      _InfoRow(label: 'Proprietaire', value: _trip.ownerId),
+                      _InfoRow(
+                        label: 'Adresse',
+                        value: _trip.address,
+                        actionIcon: Icons.location_on_outlined,
+                        onActionPressed: _trip.address.trim().isEmpty
+                            ? null
+                            : () => _openAddressLocation(_trip.address),
+                        actionTooltip: 'Ouvrir la localisation',
+                      ),
                       const SizedBox(height: 12),
                       _InfoRow(
                         label: 'Membres',
@@ -278,10 +330,16 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
     required this.value,
+    this.actionIcon,
+    this.onActionPressed,
+    this.actionTooltip,
   });
 
   final String label;
   final String value;
+  final IconData? actionIcon;
+  final VoidCallback? onActionPressed;
+  final String? actionTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +359,48 @@ class _InfoRow extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
+        if (actionIcon != null)
+          IconButton(
+            tooltip: actionTooltip,
+            onPressed: onActionPressed,
+            icon: Icon(actionIcon),
+          ),
       ],
+    );
+  }
+}
+
+class _OwnerInfoRow extends StatelessWidget {
+  const _OwnerInfoRow({
+    required this.ownerId,
+  });
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ownerId.trim().isEmpty) {
+      return const _InfoRow(label: 'Proprietaire', value: 'Nom indisponible');
+    }
+
+    final ownerDocStream =
+        FirebaseFirestore.instance.collection('users').doc(ownerId).snapshots();
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: ownerDocStream,
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final displayName = (data?['displayName'] as String?)?.trim() ?? '';
+        final email = (data?['email'] as String?)?.trim() ?? '';
+
+        final ownerLabel = displayName.isNotEmpty
+            ? displayName
+            : email.isNotEmpty
+                ? email
+                : 'Nom indisponible';
+
+        return _InfoRow(label: 'Proprietaire', value: ownerLabel);
+      },
     );
   }
 }
@@ -314,6 +413,28 @@ class _LinkPreviewCardFromFirestore extends StatelessWidget {
 
   final String url;
   final Map<String, dynamic> preview;
+
+  Future<void> _openLink(BuildContext context) async {
+    final parsed = Uri.tryParse(url.trim());
+    if (parsed == null || !parsed.isAbsolute) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien invalide')),
+      );
+      return;
+    }
+
+    final didLaunch = await launchUrl(
+      parsed,
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+
+    if (!didLaunch && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -336,7 +457,29 @@ class _LinkPreviewCardFromFirestore extends StatelessWidget {
           children: [
             Text('Lien', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            SelectableText(url),
+            InkWell(
+              onTap: () => _openLink(context),
+              borderRadius: BorderRadius.circular(6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      url,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
             if (status == 'loading') ...[
               const SizedBox(
