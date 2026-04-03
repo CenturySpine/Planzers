@@ -23,7 +23,7 @@ ios/Flutter/.last_build_id
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
-lib/firebase_options.dart
+# firebase_options.dart is committed on purpose (Vercel/CI + web need it; keys are client-side public config).
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 
