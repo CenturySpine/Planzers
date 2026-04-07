@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 
 class TripsPage extends ConsumerWidget {
@@ -16,16 +17,7 @@ class TripsPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mes voyages'),
         actions: [
-          IconButton(
-            tooltip: 'Se deconnecter',
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                context.go('/sign-in');
-              }
-            },
-            icon: const Icon(Icons.logout),
-          ),
+          const AccountMenuButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

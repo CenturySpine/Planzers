@@ -22,6 +22,10 @@ class UsersRepository {
         'email': user.email,
         'displayName': user.displayName,
         'photoUrl': user.photoURL,
+        'account': {
+          'email': user.email,
+          'photoUrl': user.photoURL,
+        },
         'lastSignInAt': now,
       };
 

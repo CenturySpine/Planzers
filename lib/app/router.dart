@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/account/presentation/account_page.dart';
 import 'package:planzers/features/auth/auth_gate.dart';
 import 'package:planzers/features/auth/sign_in_page.dart';
 import 'package:planzers/features/trips/data/trip.dart';
@@ -31,6 +32,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/trips',
       builder: (context, state) => const TripsPage(),
+    ),
+    GoRoute(
+      path: '/account',
+      builder: (context, state) => const AccountPage(),
     ),
     GoRoute(
       path: '/trips/:tripId',
