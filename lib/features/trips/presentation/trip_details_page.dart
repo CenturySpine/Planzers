@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -28,6 +29,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   late final TextEditingController _linkController;
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isSharingInvite = false;
 
   @override
   void initState() {
@@ -143,6 +145,30 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     }
   }
 
+  Future<void> _shareInviteLink() async {
+    if (_isSharingInvite) return;
+    setState(() => _isSharingInvite = true);
+    try {
+      final link = await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
+            tripId: _trip.id,
+          );
+      await Clipboard.setData(ClipboardData(text: link));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien d invitation copie dans le presse-papiers')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur partage invitation: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSharingInvite = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final titleForAppBar = _trip.title.isEmpty ? 'Voyage' : _trip.title;
@@ -173,6 +199,17 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
                   : const Icon(Icons.check),
             ),
           ] else if (canEdit) ...[
+            IconButton(
+              tooltip: 'Partager invitation',
+              onPressed: _isSharingInvite ? null : _shareInviteLink,
+              icon: _isSharingInvite
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.group_add_outlined),
+            ),
             IconButton(
               tooltip: 'Modifier',
               onPressed: _startEditing,
