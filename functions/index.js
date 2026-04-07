@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const cheerio = require('cheerio');
 
 admin.initializeApp();
@@ -177,6 +178,56 @@ exports.generateTripLinkPreview = onDocumentUpdated(
         { merge: true }
       );
     }
+  }
+);
+
+exports.joinTripWithInvite = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const token = normalizeString(request.data?.token);
+    if (!tripId || !token) {
+      throw new HttpsError('invalid-argument', 'Lien d invitation invalide');
+    }
+
+    const tripRef = admin.firestore().collection('trips').doc(tripId);
+    await admin.firestore().runTransaction(async (tx) => {
+      const snap = await tx.get(tripRef);
+      if (!snap.exists) {
+        throw new HttpsError('not-found', 'Voyage introuvable');
+      }
+
+      const data = snap.data() || {};
+      const expectedToken = normalizeString(data.inviteToken);
+      if (!expectedToken || expectedToken !== token) {
+        throw new HttpsError(
+          'permission-denied',
+          'Lien d invitation invalide ou expire'
+        );
+      }
+
+      const memberIds = Array.isArray(data.memberIds)
+        ? data.memberIds.map((v) => String(v))
+        : [];
+      if (memberIds.includes(uid)) {
+        return;
+      }
+
+      memberIds.push(uid);
+      tx.update(tripRef, {
+        memberIds,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    return { ok: true };
   }
 );
 
