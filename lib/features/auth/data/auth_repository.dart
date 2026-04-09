@@ -21,14 +21,16 @@ class AuthRepository {
   bool _googleSignInInitialized = false;
 
   Future<UserCredential> signInWithGoogle() async {
-    final provider = GoogleAuthProvider();
+    final provider = GoogleAuthProvider()
+      ..setCustomParameters({
+        'prompt': 'select_account',
+      });
 
     if (kIsWeb) {
       return auth.signInWithPopup(provider);
     }
 
-    final isDesktop =
-        defaultTargetPlatform == TargetPlatform.windows ||
+    final isDesktop = defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.linux ||
         defaultTargetPlatform == TargetPlatform.macOS;
     if (isDesktop) {

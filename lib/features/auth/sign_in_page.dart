@@ -5,7 +5,12 @@ import 'package:planzers/features/auth/data/auth_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SignInPage extends ConsumerStatefulWidget {
-  const SignInPage({super.key});
+  const SignInPage({
+    super.key,
+    this.redirectAfterSignIn,
+  });
+
+  final String? redirectAfterSignIn;
 
   @override
   ConsumerState<SignInPage> createState() => _SignInPageState();
@@ -22,7 +27,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     try {
       await ref.read(authRepositoryProvider).signInWithGoogle();
       if (mounted) {
-        context.go('/trips');
+        final redirect = widget.redirectAfterSignIn;
+        if (redirect != null && redirect.trim().isNotEmpty) {
+          context.go(redirect);
+        } else {
+          context.go('/trips');
+        }
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('Google sign-in error: ${e.message ?? e.code}');

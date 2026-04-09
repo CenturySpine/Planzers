@@ -1,6 +1,8 @@
 {
   "projects": {
-    "default": "planzers"
+    "default": "planzers",
+    "prod": "planzers",
+    "preview": "planzers-preview"
   }
 }
 

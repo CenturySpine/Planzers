@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,6 +30,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   late final TextEditingController _linkController;
   bool _isEditing = false;
   bool _isSaving = false;
+  bool _isSharingInvite = false;
 
   @override
   void initState() {
@@ -143,6 +146,30 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     }
   }
 
+  Future<void> _shareInviteLink() async {
+    if (_isSharingInvite) return;
+    setState(() => _isSharingInvite = true);
+    try {
+      final link = await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
+            tripId: _trip.id,
+          );
+      await Clipboard.setData(ClipboardData(text: link));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien d invitation copie dans le presse-papiers')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur partage invitation: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSharingInvite = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final titleForAppBar = _trip.title.isEmpty ? 'Voyage' : _trip.title;
@@ -174,11 +201,23 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
             ),
           ] else if (canEdit) ...[
             IconButton(
+              tooltip: 'Partager invitation',
+              onPressed: _isSharingInvite ? null : _shareInviteLink,
+              icon: _isSharingInvite
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.group_add_outlined),
+            ),
+            IconButton(
               tooltip: 'Modifier',
               onPressed: _startEditing,
               icon: const Icon(Icons.edit_outlined),
             ),
           ],
+          const AccountMenuButton(),
         ],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -305,10 +344,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
                         actionTooltip: 'Ouvrir la localisation',
                       ),
                       const SizedBox(height: 12),
-                      _InfoRow(
-                        label: 'Membres',
-                        value: '${_trip.memberIds.length}',
-                      ),
+                      _MembersInfoRow(memberIds: _trip.memberIds),
                       const SizedBox(height: 12),
                       _InfoRow(
                         label: 'Cree le',
@@ -400,6 +436,67 @@ class _OwnerInfoRow extends StatelessWidget {
                 : 'Nom indisponible';
 
         return _InfoRow(label: 'Proprietaire', value: ownerLabel);
+      },
+    );
+  }
+}
+
+class _MembersInfoRow extends StatelessWidget {
+  const _MembersInfoRow({
+    required this.memberIds,
+  });
+
+  final List<String> memberIds;
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanMemberIds = memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    if (cleanMemberIds.isEmpty) {
+      return const _InfoRow(label: 'Membres', value: '-');
+    }
+
+    final usersQuery = FirebaseFirestore.instance
+        .collection('users')
+        .where(FieldPath.documentId, whereIn: cleanMemberIds)
+        .snapshots();
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: usersQuery,
+      builder: (context, snapshot) {
+        final docsById = <String, Map<String, dynamic>>{};
+        for (final doc in snapshot.data?.docs ?? const []) {
+          docsById[doc.id] = doc.data();
+        }
+
+        final labels = <String>[];
+        for (final memberId in cleanMemberIds) {
+          final data = docsById[memberId];
+          final account = (data?['account'] as Map<String, dynamic>?) ?? const {};
+          final accountName = (account['name'] as String?)?.trim() ?? '';
+          final accountEmail = (account['email'] as String?)?.trim() ?? '';
+          final email = (data?['email'] as String?)?.trim() ?? '';
+          final displayName = (data?['displayName'] as String?)?.trim() ?? '';
+
+          final label = accountName.isNotEmpty
+              ? accountName
+              : accountEmail.isNotEmpty
+                  ? accountEmail
+                  : displayName.isNotEmpty
+                      ? displayName
+                      : email.isNotEmpty
+                          ? email
+                          : 'Utilisateur';
+          labels.add(label);
+        }
+
+        return _InfoRow(
+          label: 'Membres',
+          value: labels.join(', '),
+        );
       },
     );
   }
