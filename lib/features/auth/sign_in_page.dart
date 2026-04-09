@@ -1,8 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/auth_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+const Color _googleSignInBorder = Color(0xFFDADCE0);
+const Color _googleSignInText = Color(0xFF3C4043);
 
 class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({
@@ -83,10 +87,77 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 ),
               ),
               const SizedBox(height: 40),
-              FilledButton(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                child: Text(
-                  _isLoading ? 'Connexion...' : 'Continuer avec Google',
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _signInWithGoogle,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: _googleSignInText,
+                      disabledForegroundColor:
+                          _googleSignInText.withValues(alpha: 0.55),
+                      side: const BorderSide(
+                        color: _googleSignInBorder,
+                        width: 1,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _googleSignInText
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Connexion...',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: _googleSignInText
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/images/google_g.svg',
+                                width: 20,
+                                height: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Continuer avec Google',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: _googleSignInText,
+                                  letterSpacing: 0.15,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ],
