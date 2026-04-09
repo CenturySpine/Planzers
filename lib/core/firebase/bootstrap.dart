@@ -19,9 +19,25 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
   @override
   void initState() {
     super.initState();
-    _initialization = Firebase.initializeApp(
-      options: firebaseOptionsFor(widget.target),
-    );
+    _initialization = _initializeFirebase();
+  }
+
+  Future<FirebaseApp> _initializeFirebase() async {
+    final alreadyInitialized = Firebase.apps.where((app) => app.name == defaultFirebaseAppName);
+    if (alreadyInitialized.isNotEmpty) {
+      return alreadyInitialized.first;
+    }
+
+    try {
+      return await Firebase.initializeApp(
+        options: firebaseOptionsFor(widget.target),
+      );
+    } on FirebaseException catch (error) {
+      if (error.code == 'duplicate-app') {
+        return Firebase.app();
+      }
+      rethrow;
+    }
   }
 
   @override
