@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 
 class TripsPage extends ConsumerWidget {
   const TripsPage({super.key});
@@ -42,10 +43,15 @@ class TripsPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final trip = trips[index];
               final canDelete = (myUid != null && trip.ownerId == myUid);
+              final dateLine = formatTripDateRange(trip.startDate, trip.endDate);
               return ListTile(
                 onTap: () => context.push('/trips/${trip.id}/overview'),
                 title: Text(trip.title),
-                subtitle: Text(trip.destination),
+                subtitle: Text(
+                  dateLine.isEmpty
+                      ? trip.destination
+                      : '$dateLine\n${trip.destination}',
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -89,31 +95,103 @@ class TripsPage extends ConsumerWidget {
     final titleController = TextEditingController();
     final destinationController = TextEditingController();
     String? error;
+    DateTime? startDate;
+    DateTime? endDate;
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
+            Future<void> pickStart() async {
+              final picked = await showDatePicker(
+                context: dialogContext,
+                initialDate: startDate ?? DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                setDialogState(() => startDate = picked);
+              }
+            }
+
+            Future<void> pickEnd() async {
+              final picked = await showDatePicker(
+                context: dialogContext,
+                initialDate: endDate ?? startDate ?? DateTime.now(),
+                firstDate: startDate ?? DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (picked != null) {
+                setDialogState(() => endDate = picked);
+              }
+            }
+
             return AlertDialog(
               title: const Text('Creer un voyage'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Titre'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: destinationController,
-                    decoration: const InputDecoration(labelText: 'Destination'),
-                  ),
-                  if (error != null) ...[
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Titre'),
+                    ),
                     const SizedBox(height: 12),
-                    Text(error!, style: const TextStyle(color: Colors.red)),
+                    TextField(
+                      controller: destinationController,
+                      decoration: const InputDecoration(labelText: 'Destination'),
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Date de début'),
+                      subtitle: Text(formatOptionalTripDate(startDate)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (startDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () =>
+                                  setDialogState(() => startDate = null),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            onPressed: pickStart,
+                          ),
+                        ],
+                      ),
+                      onTap: pickStart,
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Date de fin'),
+                      subtitle: Text(formatOptionalTripDate(endDate)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (endDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () =>
+                                  setDialogState(() => endDate = null),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            onPressed: pickEnd,
+                          ),
+                        ],
+                      ),
+                      onTap: pickEnd,
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(error!, style: const TextStyle(color: Colors.red)),
+                    ],
                   ],
-                ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -132,10 +210,20 @@ class TripsPage extends ConsumerWidget {
                       return;
                     }
 
+                    if (isEndBeforeStart(startDate, endDate)) {
+                      setDialogState(() {
+                        error =
+                            'La date de fin doit être le même jour ou après la date de début';
+                      });
+                      return;
+                    }
+
                     try {
                       await ref.read(tripsRepositoryProvider).createTrip(
                             title: title,
                             destination: destination,
+                            startDate: startDate,
+                            endDate: endDate,
                           );
                       if (dialogContext.mounted) {
                         Navigator.of(dialogContext).pop();

@@ -168,20 +168,6 @@ class _TripNavDestination {
   final IconData selectedIcon;
 }
 
-class TripExpensesPage extends StatelessWidget {
-  const TripExpensesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _TripSectionPlaceholder(
-      title: 'Dépenses',
-      icon: Icons.payments_outlined,
-      message:
-          'Suivi des dépenses partagées pour ce voyage. Contenu à venir.',
-    );
-  }
-}
-
 class TripRoomsPage extends StatelessWidget {
   const TripRoomsPage({super.key});
 

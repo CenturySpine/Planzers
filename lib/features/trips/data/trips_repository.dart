@@ -95,14 +95,15 @@ class TripsRepository {
     required String destination,
     String address = '',
     String linkUrl = '',
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
     }
 
-    final doc = firestore.collection('trips').doc();
-    await doc.set({
+    final data = <String, dynamic>{
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
@@ -110,7 +111,16 @@ class TripsRepository {
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (startDate != null) {
+      data['startDate'] = Timestamp.fromDate(startDate);
+    }
+    if (endDate != null) {
+      data['endDate'] = Timestamp.fromDate(endDate);
+    }
+
+    final doc = firestore.collection('trips').doc();
+    await doc.set(data);
   }
 
   Future<void> deleteTrip({
@@ -142,6 +152,8 @@ class TripsRepository {
     required String destination,
     required String address,
     required String linkUrl,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -160,12 +172,20 @@ class TripsRepository {
       throw StateError('Seul le proprietaire peut modifier ce voyage');
     }
 
-    await docRef.update({
+    final update = <String, dynamic>{
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
-    });
+      'startDate': startDate != null
+          ? Timestamp.fromDate(startDate)
+          : FieldValue.delete(),
+      'endDate': endDate != null
+          ? Timestamp.fromDate(endDate)
+          : FieldValue.delete(),
+    };
+
+    await docRef.update(update);
   }
 
   Future<String> getOrCreateInviteLink({
