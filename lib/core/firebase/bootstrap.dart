@@ -4,7 +4,8 @@ import 'package:planzers/core/firebase/firebase_options_selector.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
 
 class FirebaseBootstrap extends StatefulWidget {
-  const FirebaseBootstrap({required this.target, required this.child, super.key});
+  const FirebaseBootstrap(
+      {required this.target, required this.child, super.key});
 
   final FirebaseTarget target;
   final Widget child;
@@ -23,14 +24,27 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
   }
 
   Future<FirebaseApp> _initializeFirebase() async {
-    final alreadyInitialized = Firebase.apps.where((app) => app.name == defaultFirebaseAppName);
+    final options = firebaseOptionsFor(widget.target);
+    final alreadyInitialized =
+        Firebase.apps.where((app) => app.name == defaultFirebaseAppName);
     if (alreadyInitialized.isNotEmpty) {
-      return alreadyInitialized.first;
+      final existing = alreadyInitialized.first;
+
+      final sameProject = existing.options.projectId == options.projectId;
+      final sameAppId = existing.options.appId == options.appId;
+      if (sameProject && sameAppId) {
+        return existing;
+      }
+
+      // Android can auto-init with google-services.json before Flutter starts.
+      // If that app targets another Firebase project/flavor, force re-init
+      // with the explicit flavor options passed to this bootstrap.
+      await existing.delete();
     }
 
     try {
       return await Firebase.initializeApp(
-        options: firebaseOptionsFor(widget.target),
+        options: options,
       );
     } on FirebaseException catch (error) {
       if (error.code == 'duplicate-app') {
