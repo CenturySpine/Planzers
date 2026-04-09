@@ -31,6 +31,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   bool _isEditing = false;
   bool _isSaving = false;
   bool _isSharingInvite = false;
+  final Set<String> _removingMemberIds = <String>{};
 
   @override
   void initState() {
@@ -150,13 +151,15 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     if (_isSharingInvite) return;
     setState(() => _isSharingInvite = true);
     try {
-      final link = await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
-            tripId: _trip.id,
-          );
+      final link =
+          await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
+                tripId: _trip.id,
+              );
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien d invitation copie dans le presse-papiers')),
+        const SnackBar(
+            content: Text('Lien d invitation copie dans le presse-papiers')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -170,13 +173,66 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
     }
   }
 
+  Future<void> _removeMember(String memberId, String memberLabel) async {
+    final cleanMemberId = memberId.trim();
+    if (cleanMemberId.isEmpty || _removingMemberIds.contains(cleanMemberId)) {
+      return;
+    }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Retirer ce voyageur ?'),
+        content: Text(
+          'Retirer "$memberLabel" du voyage en cours ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Retirer'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) {
+      return;
+    }
+
+    setState(() => _removingMemberIds.add(cleanMemberId));
+    try {
+      await ref.read(tripsRepositoryProvider).removeMemberFromTrip(
+            tripId: _trip.id,
+            memberId: cleanMemberId,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voyageur retire du voyage')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur suppression voyageur: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _removingMemberIds.remove(cleanMemberId));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final titleForAppBar = _trip.title.isEmpty ? 'Voyage' : _trip.title;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
-    final tripDocStream =
-        FirebaseFirestore.instance.collection('trips').doc(_trip.id).snapshots();
+    final tripDocStream = FirebaseFirestore.instance
+        .collection('trips')
+        .doc(_trip.id)
+        .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -224,11 +280,17 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
         stream: tripDocStream,
         builder: (context, snapshot) {
           final liveData = snapshot.data?.data();
-          final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+          final liveLinkUrl =
+              (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
           final livePreview =
               (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
+          final liveMemberIds =
+              ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
+                  .map((id) => id.toString())
+                  .toList();
 
-          final linkUrlForUi = _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+          final linkUrlForUi =
+              _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -344,7 +406,14 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
                         actionTooltip: 'Ouvrir la localisation',
                       ),
                       const SizedBox(height: 12),
-                      _MembersInfoRow(memberIds: _trip.memberIds),
+                      _MembersInfoRow(
+                        memberIds: liveMemberIds,
+                        currentUserId: myUid,
+                        canManageMembers: canEdit,
+                        onRemoveMember: _removeMember,
+                        isRemovingMember: (memberId) =>
+                            _removingMemberIds.contains(memberId),
+                      ),
                       const SizedBox(height: 12),
                       _InfoRow(
                         label: 'Cree le',
@@ -444,16 +513,23 @@ class _OwnerInfoRow extends StatelessWidget {
 class _MembersInfoRow extends StatelessWidget {
   const _MembersInfoRow({
     required this.memberIds,
+    required this.currentUserId,
+    required this.canManageMembers,
+    required this.onRemoveMember,
+    required this.isRemovingMember,
   });
 
   final List<String> memberIds;
+  final String? currentUserId;
+  final bool canManageMembers;
+  final Future<void> Function(String memberId, String memberLabel)
+      onRemoveMember;
+  final bool Function(String memberId) isRemovingMember;
 
   @override
   Widget build(BuildContext context) {
-    final cleanMemberIds = memberIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
+    final cleanMemberIds =
+        memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
 
     if (cleanMemberIds.isEmpty) {
       return const _InfoRow(label: 'Membres', value: '-');
@@ -472,10 +548,11 @@ class _MembersInfoRow extends StatelessWidget {
           docsById[doc.id] = doc.data();
         }
 
-        final labels = <String>[];
+        final chips = <Widget>[];
         for (final memberId in cleanMemberIds) {
           final data = docsById[memberId];
-          final account = (data?['account'] as Map<String, dynamic>?) ?? const {};
+          final account =
+              (data?['account'] as Map<String, dynamic>?) ?? const {};
           final accountName = (account['name'] as String?)?.trim() ?? '';
           final accountEmail = (account['email'] as String?)?.trim() ?? '';
           final email = (data?['email'] as String?)?.trim() ?? '';
@@ -490,12 +567,56 @@ class _MembersInfoRow extends StatelessWidget {
                       : email.isNotEmpty
                           ? email
                           : 'Utilisateur';
-          labels.add(label);
+          final canRemoveThisMember = canManageMembers &&
+              currentUserId != null &&
+              memberId != currentUserId;
+          final isRemoving = isRemovingMember(memberId);
+
+          chips.add(
+            Chip(
+              label: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+              ),
+              deleteIcon: canRemoveThisMember
+                  ? (isRemoving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.close, size: 18))
+                  : null,
+              onDeleted: canRemoveThisMember && !isRemoving
+                  ? () {
+                      onRemoveMember(memberId, label);
+                    }
+                  : null,
+              deleteIconColor: Theme.of(context).colorScheme.error,
+              materialTapTargetSize: MaterialTapTargetSize.padded,
+              visualDensity: VisualDensity.standard,
+            ),
+          );
         }
 
-        return _InfoRow(
-          label: 'Membres',
-          value: labels.join(', '),
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 110,
+              child: Text(
+                'Membres',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: chips,
+              ),
+            ),
+          ],
         );
       },
     );
@@ -654,4 +775,3 @@ class _LinkPreviewCardFromFirestore extends StatelessWidget {
     );
   }
 }
-

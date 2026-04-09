@@ -40,6 +40,8 @@ android {
         }
         create("preview") {
             dimension = "environment"
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-preview"
         }
     }
 

@@ -59,12 +59,11 @@ class TripsRepository {
         .where('memberIds', arrayContains: user.uid)
         .snapshots()
         .map((snapshot) {
-          final trips = snapshot.docs
-              .map((doc) => Trip.fromMap(doc.id, doc.data()))
-              .toList();
-          trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return trips;
-        });
+      final trips =
+          snapshot.docs.map((doc) => Trip.fromMap(doc.id, doc.data())).toList();
+      trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return trips;
+    });
   }
 
   Future<void> createTrip({
@@ -198,11 +197,46 @@ class TripsRepository {
       throw StateError('Lien d invitation invalide');
     }
 
-    final regionFunctions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
     final callable = regionFunctions.httpsCallable('joinTripWithInvite');
     await callable.call(<String, dynamic>{
       'tripId': tripId,
       'token': cleanToken,
+    });
+  }
+
+  Future<void> removeMemberFromTrip({
+    required String tripId,
+    required String memberId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanMemberId = memberId.trim();
+    if (cleanMemberId.isEmpty) {
+      throw StateError('Membre invalide');
+    }
+    if (cleanMemberId == user.uid) {
+      throw StateError('Le proprietaire ne peut pas se supprimer lui-meme');
+    }
+
+    final docRef = firestore.collection('trips').doc(tripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut retirer un membre');
+    }
+
+    await docRef.update({
+      'memberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
     });
   }
 }

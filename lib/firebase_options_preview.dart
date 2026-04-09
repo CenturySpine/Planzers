@@ -48,7 +48,7 @@ class DefaultFirebaseOptionsPreview {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBJX6EcNcuXnr2E8DzFfDXJhBhSgeCURRQ',
-    appId: '1:426381891835:android:7fa8265d5df534c519785e',
+    appId: '1:426381891835:android:45a663058ce12d5e19785e',
     messagingSenderId: '426381891835',
     projectId: 'planzers-preview',
     storageBucket: 'planzers-preview.firebasestorage.app',
