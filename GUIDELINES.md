@@ -1,0 +1,34 @@
+# Planzers — project guidelines
+
+These rules apply to everyone working on the repository, including automated coding agents.
+
+**Cursor:** The same policy is loaded automatically via [`.cursor/rules/planzers-guidelines.mdc`](.cursor/rules/planzers-guidelines.mdc) (`alwaysApply: true`). If you change these guidelines, update that file too so agents stay in sync.
+
+## Language
+
+- **Commit messages:** English only. Use clear, imperative-style subjects (e.g. `feat(trips): add expense list screen`).
+- **Source code:** English for identifiers, file names, and in-code documentation (`//`, `///`).
+- **Comments:** English only.
+- **User-facing copy:** Follow the product language (currently French for UI strings and SnackBars). Do not translate the app to English in code unless explicitly requested.
+
+## Engineering
+
+- Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
+- Match existing patterns in the codebase (structure, naming, state management, routing).
+- After non-trivial edits, run `flutter analyze` and fix new issues.
+
+## Stack (reference)
+
+- **Flutter / Dart** with **Riverpod** for state.
+- **go_router** for navigation (including nested / shell routes where appropriate).
+- **Firebase** (Auth, Firestore, Functions, etc.) — follow existing repository and security patterns.
+
+## Pull requests and reviews
+
+- Describe what changed and why in complete sentences.
+- Link issues or tickets when applicable.
+
+## AI / agent usage
+
+- Read this file at the start of substantive work on the repo.
+- Obey user instructions that override or refine these defaults when they conflict.

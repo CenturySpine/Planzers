@@ -43,7 +43,7 @@ class TripsPage extends ConsumerWidget {
               final trip = trips[index];
               final canDelete = (myUid != null && trip.ownerId == myUid);
               return ListTile(
-                onTap: () => context.push('/trips/${trip.id}', extra: trip),
+                onTap: () => context.push('/trips/${trip.id}/overview'),
                 title: Text(trip.title),
                 subtitle: Text(trip.destination),
                 trailing: Row(
