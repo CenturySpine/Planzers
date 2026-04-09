@@ -1,0 +1,4 @@
+enum FirebaseTarget {
+  prod,
+  preview,
+}

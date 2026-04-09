@@ -18,6 +18,32 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _didInitFromFirestore = false;
   bool _isSaving = false;
 
+  Widget _buildAvatar(String photoUrl, String email) {
+    final fallback = CircleAvatar(
+      radius: 42,
+      child: Text(
+        email.isNotEmpty ? email[0].toUpperCase() : '?',
+        style: const TextStyle(fontSize: 24),
+      ),
+    );
+
+    if (photoUrl.isEmpty) {
+      return fallback;
+    }
+
+    return SizedBox(
+      width: 84,
+      height: 84,
+      child: ClipOval(
+        child: Image.network(
+          photoUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _accountNameController.dispose();
@@ -104,17 +130,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             children: [
               Align(
                 alignment: Alignment.center,
-                child: CircleAvatar(
-                  radius: 42,
-                  backgroundImage:
-                      photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                  child: photoUrl.isEmpty
-                      ? Text(
-                          email.isNotEmpty ? email[0].toUpperCase() : '?',
-                          style: const TextStyle(fontSize: 24),
-                        )
-                      : null,
-                ),
+                child: _buildAvatar(photoUrl, email),
               ),
               const SizedBox(height: 12),
               Text(

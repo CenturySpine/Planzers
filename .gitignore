@@ -25,7 +25,11 @@ firebase-debug.log
 firebase-debug.*.log
 # firebase_options.dart is committed on purpose (Vercel/CI + web need it; keys are client-side public config).
 android/app/google-services.json
+android/app/src/prod/google-services.json
+android/app/src/preview/google-services.json
 ios/Runner/GoogleService-Info.plist
+ios/Runner/Firebase/prod/GoogleService-Info.plist
+ios/Runner/Firebase/preview/GoogleService-Info.plist
 
 # OS
 Thumbs.db

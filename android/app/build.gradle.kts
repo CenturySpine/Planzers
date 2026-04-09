@@ -12,6 +12,7 @@ android {
     namespace = "com.planzers.planzers"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    flavorDimensions += "environment"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -31,6 +32,15 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    productFlavors {
+        create("prod") {
+            dimension = "environment"
+        }
+        create("preview") {
+            dimension = "environment"
+        }
     }
 
     buildTypes {

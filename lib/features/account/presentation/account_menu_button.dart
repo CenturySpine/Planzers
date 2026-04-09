@@ -20,15 +20,28 @@ class AccountMenuButton extends StatelessWidget {
   }
 
   Widget _buildAvatar(String photoUrl, String email) {
-    return CircleAvatar(
+    final fallback = CircleAvatar(
       radius: 14,
-      backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-      child: photoUrl.isEmpty
-          ? Text(
-              email.isNotEmpty ? email[0].toUpperCase() : '?',
-              style: const TextStyle(fontSize: 12),
-            )
-          : null,
+      child: Text(
+        email.isNotEmpty ? email[0].toUpperCase() : '?',
+        style: const TextStyle(fontSize: 12),
+      ),
+    );
+
+    if (photoUrl.isEmpty) {
+      return fallback;
+    }
+
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: ClipOval(
+        child: Image.network(
+          photoUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => fallback,
+        ),
+      ),
     );
   }
 

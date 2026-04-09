@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:planzers/app/router.dart';
 import 'package:planzers/core/firebase/bootstrap.dart';
+import 'package:planzers/core/firebase/firebase_target.dart';
 
 class PlanzersApp extends StatelessWidget {
-  const PlanzersApp({super.key});
+  const PlanzersApp({required this.firebaseTarget, super.key});
+
+  final FirebaseTarget firebaseTarget;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +19,10 @@ class PlanzersApp extends StatelessWidget {
       ),
       routerConfig: appRouter,
       builder: (context, child) {
-        return FirebaseBootstrap(child: child ?? const SizedBox.shrink());
+        return FirebaseBootstrap(
+          target: firebaseTarget,
+          child: child ?? const SizedBox.shrink(),
+        );
       },
     );
   }
