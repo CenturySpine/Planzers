@@ -17,6 +17,12 @@ final tripsStreamProvider = StreamProvider<List<Trip>>((ref) {
   return ref.watch(tripsRepositoryProvider).watchMyTrips();
 });
 
+/// Single trip document stream (for trip hub shell and deep links).
+final tripStreamProvider =
+    StreamProvider.autoDispose.family<Trip?, String>((ref, tripId) {
+  return ref.watch(tripsRepositoryProvider).watchTrip(tripId);
+});
+
 class TripsRepository {
   TripsRepository({
     required this.firestore,
@@ -46,6 +52,24 @@ class TripsRepository {
     final now = DateTime.now().microsecondsSinceEpoch.toString();
     final uid = auth.currentUser?.uid ?? 'anon';
     return sha256.convert('$uid-$now'.codeUnits).toString().substring(0, 32);
+  }
+
+  Stream<Trip?> watchTrip(String tripId) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(null);
+    }
+
+    return firestore.collection('trips').doc(cleanId).snapshots().map((snap) {
+      if (!snap.exists) {
+        return null;
+      }
+      final data = snap.data();
+      if (data == null) {
+        return null;
+      }
+      return Trip.fromMap(snap.id, data);
+    });
   }
 
   Stream<List<Trip>> watchMyTrips() {

@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_page.dart';
 import 'package:planzers/features/auth/auth_gate.dart';
 import 'package:planzers/features/auth/sign_in_page.dart';
-import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/presentation/invite_join_page.dart';
-import 'package:planzers/features/trips/presentation/trip_details_page.dart';
+import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
+import 'package:planzers/features/trips/presentation/trip_shell_page.dart';
 import 'package:planzers/features/trips/presentation/trips_page.dart';
 
 final GoRouter appRouter = GoRouter(
@@ -39,24 +38,74 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/trips/:tripId',
-      builder: (context, state) {
-        final extra = state.extra;
-        final trip = extra is Trip ? extra : null;
-        if (trip == null) {
-          return const Scaffold(
-            body: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Voyage introuvable (donnees manquantes).',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
+      redirect: (context, state) {
+        final segs = state.uri.pathSegments;
+        if (segs.length == 2) {
+          return '/trips/${state.pathParameters['tripId']}/overview';
         }
-        return TripDetailsPage(trip: trip);
+        return null;
       },
+      routes: <RouteBase>[
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
+            final tripId = state.pathParameters['tripId']!;
+            return TripShellPage(
+              tripId: tripId,
+              navigationShell: navigationShell,
+            );
+          },
+          branches: <StatefulShellBranch>[
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'overview',
+                  builder: (context, state) => const TripOverviewPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'expenses',
+                  builder: (context, state) => const TripExpensesPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'rooms',
+                  builder: (context, state) => const TripRoomsPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'cars',
+                  builder: (context, state) => const TripCarsPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'meals',
+                  builder: (context, state) => const TripMealsPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'activities',
+                  builder: (context, state) => const TripActivitiesPage(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
     ),
   ],
 );

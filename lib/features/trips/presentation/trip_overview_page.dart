@@ -1,29 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/trip_scope.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class TripDetailsPage extends ConsumerStatefulWidget {
-  const TripDetailsPage({
-    super.key,
-    required this.trip,
-  });
-
-  final Trip trip;
+class TripOverviewPage extends ConsumerStatefulWidget {
+  const TripOverviewPage({super.key});
 
   @override
-  ConsumerState<TripDetailsPage> createState() => _TripDetailsPageState();
+  ConsumerState<TripOverviewPage> createState() => _TripOverviewPageState();
 }
 
-class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
+class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   final _formKey = GlobalKey<FormState>();
-  late Trip _trip;
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
   late final TextEditingController _addressController;
@@ -33,14 +27,27 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   bool _isSharingInvite = false;
   final Set<String> _removingMemberIds = <String>{};
 
+  Trip get _trip => TripScope.of(context);
+
   @override
   void initState() {
     super.initState();
-    _trip = widget.trip;
-    _titleController = TextEditingController(text: _trip.title);
-    _destinationController = TextEditingController(text: _trip.destination);
-    _addressController = TextEditingController(text: _trip.address);
-    _linkController = TextEditingController(text: _trip.linkUrl);
+    _titleController = TextEditingController();
+    _destinationController = TextEditingController();
+    _addressController = TextEditingController();
+    _linkController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final trip = TripScope.of(context);
+    if (!_isEditing) {
+      _titleController.text = trip.title;
+      _destinationController.text = trip.destination;
+      _addressController.text = trip.address;
+      _linkController.text = trip.linkUrl;
+    }
   }
 
   @override
@@ -53,22 +60,24 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
   }
 
   void _startEditing() {
+    final trip = TripScope.of(context);
     setState(() {
       _isEditing = true;
-      _titleController.text = _trip.title;
-      _destinationController.text = _trip.destination;
-      _addressController.text = _trip.address;
-      _linkController.text = _trip.linkUrl;
+      _titleController.text = trip.title;
+      _destinationController.text = trip.destination;
+      _addressController.text = trip.address;
+      _linkController.text = trip.linkUrl;
     });
   }
 
   void _cancelEditing() {
+    final trip = TripScope.of(context);
     setState(() {
       _isEditing = false;
-      _titleController.text = _trip.title;
-      _destinationController.text = _trip.destination;
-      _addressController.text = _trip.address;
-      _linkController.text = _trip.linkUrl;
+      _titleController.text = trip.title;
+      _destinationController.text = trip.destination;
+      _addressController.text = trip.address;
+      _linkController.text = trip.linkUrl;
     });
   }
 
@@ -118,19 +127,7 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
           );
 
       if (!mounted) return;
-      setState(() {
-        _trip = Trip(
-          id: _trip.id,
-          title: title,
-          destination: destination,
-          address: address,
-          linkUrl: linkUrl,
-          ownerId: _trip.ownerId,
-          memberIds: _trip.memberIds,
-          createdAt: _trip.createdAt,
-        );
-        _isEditing = false;
-      });
+      setState(() => _isEditing = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Voyage mis a jour')),
@@ -226,7 +223,6 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final titleForAppBar = _trip.title.isEmpty ? 'Voyage' : _trip.title;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
     final tripDocStream = FirebaseFirestore.instance
@@ -234,199 +230,203 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
         .doc(_trip.id)
         .snapshots();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(titleForAppBar),
-        actions: [
-          if (_isEditing) ...[
-            IconButton(
-              tooltip: 'Annuler',
-              onPressed: _isSaving ? null : _cancelEditing,
-              icon: const Icon(Icons.close),
-            ),
-            IconButton(
-              tooltip: 'Enregistrer',
-              onPressed: _isSaving ? null : _save,
-              icon: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check),
-            ),
-          ] else if (canEdit) ...[
-            IconButton(
-              tooltip: 'Partager invitation',
-              onPressed: _isSharingInvite ? null : _shareInviteLink,
-              icon: _isSharingInvite
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.group_add_outlined),
-            ),
-            IconButton(
-              tooltip: 'Modifier',
-              onPressed: _startEditing,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-          ],
-          const AccountMenuButton(),
-        ],
-      ),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: tripDocStream,
-        builder: (context, snapshot) {
-          final liveData = snapshot.data?.data();
-          final liveLinkUrl =
-              (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
-          final livePreview =
-              (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
-          final liveMemberIds =
-              ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
-                  .map((id) => id.toString())
-                  .toList();
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: tripDocStream,
+      builder: (context, snapshot) {
+        final liveData = snapshot.data?.data();
+        final liveLinkUrl =
+            (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+        final livePreview =
+            (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
+        final liveMemberIds =
+            ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
+                .map((id) => id.toString())
+                .toList();
 
-          final linkUrlForUi =
-              _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+        final linkUrlForUi =
+            _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (_isEditing) ...[
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _titleController,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Titre',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Titre obligatoire';
-                          }
-                          return null;
-                        },
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (canEdit)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (_isEditing) ...[
+                      IconButton(
+                        tooltip: 'Annuler',
+                        onPressed: _isSaving ? null : _cancelEditing,
+                        icon: const Icon(Icons.close),
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _destinationController,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Destination',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Destination obligatoire';
-                          }
-                          return null;
-                        },
+                      IconButton(
+                        tooltip: 'Enregistrer',
+                        onPressed: _isSaving ? null : _save,
+                        icon: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.check),
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _addressController,
-                        textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Adresse',
-                          hintText: '10 Rue de Rivoli, 75001 Paris',
-                          border: OutlineInputBorder(),
-                        ),
+                    ] else ...[
+                      IconButton(
+                        tooltip: 'Partager invitation',
+                        onPressed:
+                            _isSharingInvite ? null : _shareInviteLink,
+                        icon: _isSharingInvite
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.group_add_outlined),
                       ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _linkController,
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          labelText: 'Lien (Airbnb, Booking, site, ...)',
-                          hintText: 'https://...',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.url,
-                        validator: (value) {
-                          final v = (value ?? '').trim();
-                          if (v.isEmpty) return null;
-                          final uri = Uri.tryParse(v);
-                          if (uri == null || !uri.isAbsolute) {
-                            return 'Lien invalide (ex: https://...)';
-                          }
-                          if (uri.scheme != 'http' && uri.scheme != 'https') {
-                            return 'Le lien doit commencer par http(s)://';
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) => _save(),
+                      IconButton(
+                        tooltip: 'Modifier',
+                        onPressed: _startEditing,
+                        icon: const Icon(Icons.edit_outlined),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                Text(
-                  _trip.title.isEmpty ? 'Sans titre' : _trip.title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _trip.destination.isEmpty
-                      ? 'Destination inconnue'
-                      : _trip.destination,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (linkUrlForUi.isNotEmpty) ...[
-                _LinkPreviewCardFromFirestore(
-                  url: linkUrlForUi,
-                  preview: livePreview,
-                ),
-                const SizedBox(height: 16),
-              ],
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _OwnerInfoRow(ownerId: _trip.ownerId),
-                      const SizedBox(height: 12),
-                      _InfoRow(
-                        label: 'Adresse',
-                        value: _trip.address,
-                        actionIcon: Icons.location_on_outlined,
-                        onActionPressed: _trip.address.trim().isEmpty
-                            ? null
-                            : () => _openAddressLocation(_trip.address),
-                        actionTooltip: 'Ouvrir la localisation',
-                      ),
-                      const SizedBox(height: 12),
-                      _MembersInfoRow(
-                        memberIds: liveMemberIds,
-                        currentUserId: myUid,
-                        canManageMembers: canEdit,
-                        onRemoveMember: _removeMember,
-                        isRemovingMember: (memberId) =>
-                            _removingMemberIds.contains(memberId),
-                      ),
-                      const SizedBox(height: 12),
-                      _InfoRow(
-                        label: 'Cree le',
-                        value: _trip.createdAt.toLocal().toString(),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
+            if (_isEditing) ...[
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _titleController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Titre',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Titre obligatoire';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _destinationController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Destination',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Destination obligatoire';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _addressController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Adresse',
+                        hintText: '10 Rue de Rivoli, 75001 Paris',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _linkController,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Lien (Airbnb, Booking, site, ...)',
+                        hintText: 'https://...',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.url,
+                      validator: (value) {
+                        final v = (value ?? '').trim();
+                        if (v.isEmpty) return null;
+                        final uri = Uri.tryParse(v);
+                        if (uri == null || !uri.isAbsolute) {
+                          return 'Lien invalide (ex: https://...)';
+                        }
+                        if (uri.scheme != 'http' && uri.scheme != 'https') {
+                          return 'Le lien doit commencer par http(s)://';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => _save(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ] else ...[
+              Text(
+                _trip.title.isEmpty ? 'Sans titre' : _trip.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _trip.destination.isEmpty
+                    ? 'Destination inconnue'
+                    : _trip.destination,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
             ],
-          );
-        },
-      ),
+            if (linkUrlForUi.isNotEmpty) ...[
+              _LinkPreviewCardFromFirestore(
+                url: linkUrlForUi,
+                preview: livePreview,
+              ),
+              const SizedBox(height: 16),
+            ],
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _OwnerInfoRow(ownerId: _trip.ownerId),
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      label: 'Adresse',
+                      value: _trip.address,
+                      actionIcon: Icons.location_on_outlined,
+                      onActionPressed: _trip.address.trim().isEmpty
+                          ? null
+                          : () => _openAddressLocation(_trip.address),
+                      actionTooltip: 'Ouvrir la localisation',
+                    ),
+                    const SizedBox(height: 12),
+                    _MembersInfoRow(
+                      memberIds: liveMemberIds,
+                      currentUserId: myUid,
+                      canManageMembers: canEdit,
+                      onRemoveMember: _removeMember,
+                      isRemovingMember: (memberId) =>
+                          _removingMemberIds.contains(memberId),
+                    ),
+                    const SizedBox(height: 12),
+                    _InfoRow(
+                      label: 'Cree le',
+                      value: _trip.createdAt.toLocal().toString(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
