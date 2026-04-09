@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,6 +28,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   bool _isSaving = false;
   bool _isSharingInvite = false;
   final Set<String> _removingMemberIds = <String>{};
+  DateTime? _editStartDate;
+  DateTime? _editEndDate;
 
   Trip get _trip => TripScope.of(context);
 
@@ -67,6 +71,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
+      _editStartDate = trip.startDate;
+      _editEndDate = trip.endDate;
     });
   }
 
@@ -78,6 +84,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
+      _editStartDate = trip.startDate;
+      _editEndDate = trip.endDate;
     });
   }
 
@@ -111,6 +119,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
+    if (isEndBeforeStart(_editStartDate, _editEndDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La date de fin doit être le même jour ou après la date de début',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final title = _titleController.text.trim();
@@ -124,6 +143,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             destination: destination,
             address: address,
             linkUrl: linkUrl,
+            startDate: _editStartDate,
+            endDate: _editEndDate,
           );
 
       if (!mounted) return;
@@ -242,6 +263,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
                 .map((id) => id.toString())
                 .toList();
+        final liveMemberPublicLabels = liveData != null &&
+                liveData.containsKey('memberPublicLabels')
+            ? Trip.memberPublicLabelsFromFirestore(
+                liveData['memberPublicLabels'],
+              )
+            : _trip.memberPublicLabels;
 
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
@@ -330,6 +357,92 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         return null;
                       },
                     ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Date de début'),
+                      subtitle: Text(formatOptionalTripDate(_editStartDate)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_editStartDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () =>
+                                  setState(() => _editStartDate = null),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate:
+                                    _editStartDate ?? DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                              if (picked != null && mounted) {
+                                setState(() => _editStartDate = picked);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _editStartDate ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null && mounted) {
+                          setState(() => _editStartDate = picked);
+                        }
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Date de fin'),
+                      subtitle: Text(formatOptionalTripDate(_editEndDate)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_editEndDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () =>
+                                  setState(() => _editEndDate = null),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.calendar_today_outlined),
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate:
+                                    _editEndDate ?? _editStartDate ?? DateTime.now(),
+                                firstDate: _editStartDate ?? DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                              if (picked != null && mounted) {
+                                setState(() => _editEndDate = picked);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate:
+                              _editEndDate ?? _editStartDate ?? DateTime.now(),
+                          firstDate: _editStartDate ?? DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null && mounted) {
+                          setState(() => _editEndDate = picked);
+                        }
+                      },
+                    ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _addressController,
@@ -380,6 +493,26 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     : _trip.destination,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
+              if (formatTripDateRange(_trip.startDate, _trip.endDate)
+                  .isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.date_range_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        formatTripDateRange(_trip.startDate, _trip.endDate),
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
             ],
             if (linkUrlForUi.isNotEmpty) ...[
@@ -409,6 +542,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     const SizedBox(height: 12),
                     _MembersInfoRow(
                       memberIds: liveMemberIds,
+                      memberPublicLabels: liveMemberPublicLabels,
                       currentUserId: myUid,
                       canManageMembers: canEdit,
                       onRemoveMember: _removeMember,
@@ -498,10 +632,12 @@ class _OwnerInfoRow extends StatelessWidget {
         final displayName = (data?['displayName'] as String?)?.trim() ?? '';
         final email = (data?['email'] as String?)?.trim() ?? '';
 
+        final emailLocal =
+            email.isNotEmpty ? displayLabelFromEmail(email) : '';
         final ownerLabel = displayName.isNotEmpty
             ? displayName
             : email.isNotEmpty
-                ? email
+                ? (emailLocal.isNotEmpty ? emailLocal : email)
                 : 'Nom indisponible';
 
         return _InfoRow(label: 'Proprietaire', value: ownerLabel);
@@ -513,6 +649,7 @@ class _OwnerInfoRow extends StatelessWidget {
 class _MembersInfoRow extends StatelessWidget {
   const _MembersInfoRow({
     required this.memberIds,
+    required this.memberPublicLabels,
     required this.currentUserId,
     required this.canManageMembers,
     required this.onRemoveMember,
@@ -520,6 +657,7 @@ class _MembersInfoRow extends StatelessWidget {
   });
 
   final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
   final String? currentUserId;
   final bool canManageMembers;
   final Future<void> Function(String memberId, String memberLabel)
@@ -550,23 +688,13 @@ class _MembersInfoRow extends StatelessWidget {
 
         final chips = <Widget>[];
         for (final memberId in cleanMemberIds) {
-          final data = docsById[memberId];
-          final account =
-              (data?['account'] as Map<String, dynamic>?) ?? const {};
-          final accountName = (account['name'] as String?)?.trim() ?? '';
-          final accountEmail = (account['email'] as String?)?.trim() ?? '';
-          final email = (data?['email'] as String?)?.trim() ?? '';
-          final displayName = (data?['displayName'] as String?)?.trim() ?? '';
-
-          final label = accountName.isNotEmpty
-              ? accountName
-              : accountEmail.isNotEmpty
-                  ? accountEmail
-                  : displayName.isNotEmpty
-                      ? displayName
-                      : email.isNotEmpty
-                          ? email
-                          : 'Utilisateur';
+          final label = resolveTripMemberDisplayLabel(
+            memberId: memberId,
+            userData: docsById[memberId],
+            tripMemberPublicLabels: memberPublicLabels,
+            currentUserId: currentUserId,
+            emptyFallback: 'Utilisateur',
+          );
           final canRemoveThisMember = canManageMembers &&
               currentUserId != null &&
               memberId != currentUserId;

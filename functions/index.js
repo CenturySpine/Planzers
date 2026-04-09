@@ -29,6 +29,14 @@ function pickFirst(...values) {
   return '';
 }
 
+/** Text before @ for public trip member chips (empty if unusable). */
+function emailLocalPart(email) {
+  const e = normalizeString(email);
+  if (!e) return '';
+  const at = e.indexOf('@');
+  return at > 0 ? e.slice(0, at).trim() : e;
+}
+
 async function fetchHtml(url) {
   const res = await fetch(url.toString(), {
     redirect: 'follow',
@@ -227,6 +235,69 @@ exports.joinTripWithInvite = onCall(
       });
     });
 
+    let emailLocal = '';
+    try {
+      const userRecord = await admin.auth().getUser(uid);
+      emailLocal = emailLocalPart(userRecord.email || '');
+    } catch (e) {
+      console.warn('joinTripWithInvite getUser', e);
+    }
+    if (emailLocal) {
+      await tripRef.update({
+        [`memberPublicLabels.${uid}`]: emailLocal,
+      });
+    }
+
+    return { ok: true };
+  }
+);
+
+exports.registerMyTripMemberLabel = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const tripRef = admin.firestore().collection('trips').doc(tripId);
+    const snap = await tripRef.get();
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const data = snap.data() || {};
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+
+    let emailLocal = '';
+    try {
+      const userRecord = await admin.auth().getUser(uid);
+      emailLocal = emailLocalPart(userRecord.email || '');
+    } catch (e) {
+      console.warn('registerMyTripMemberLabel getUser', e);
+    }
+    if (!emailLocal) {
+      return { ok: false, reason: 'no-email' };
+    }
+
+    await tripRef.update({
+      [`memberPublicLabels.${uid}`]: emailLocal,
+    });
     return { ok: true };
   }
 );

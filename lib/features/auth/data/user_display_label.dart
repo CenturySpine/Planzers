@@ -1,0 +1,82 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
+/// Local part of [email] for compact labels (text before '@').
+///
+/// If [email] has no '@', returns the trimmed string as-is.
+String displayLabelFromEmail(String email) {
+  final e = email.trim();
+  if (e.isEmpty) return '';
+  final at = e.indexOf('@');
+  if (at <= 0) return e;
+  return e.substring(0, at).trim();
+}
+
+/// Label for a trip member (chip, expenses, etc.).
+///
+/// Prefers [account.name], then Firebase [displayName], then the local part of
+/// the best available email ([account.email], then root [email]).
+String tripMemberDisplayLabel(
+  Map<String, dynamic>? data, {
+  required String emptyFallback,
+}) {
+  if (data == null) return emptyFallback;
+
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final accountName = (account['name'] as String?)?.trim() ?? '';
+  final accountEmail = (account['email'] as String?)?.trim() ?? '';
+  final rootEmail = (data['email'] as String?)?.trim() ?? '';
+  final displayName = (data['displayName'] as String?)?.trim() ?? '';
+
+  if (accountName.isNotEmpty) return accountName;
+  if (displayName.isNotEmpty) return displayName;
+
+  final rawEmail =
+      accountEmail.isNotEmpty ? accountEmail : rootEmail;
+  if (rawEmail.isEmpty) return emptyFallback;
+
+  final local = displayLabelFromEmail(rawEmail);
+  return local.isNotEmpty ? local : rawEmail;
+}
+
+/// When the `users/{memberId}` snapshot is missing (e.g. doc absent from the
+/// query) but the member is the signed-in user, use Auth email so [resolveTripMemberDisplayLabel]
+/// can still derive a local-part label before [tripMemberPublicLabels] is filled.
+Map<String, dynamic>? tripMemberUserDataWithAuthFallback(
+  String memberId,
+  String? currentUserId,
+  Map<String, dynamic>? memberUserData,
+) {
+  if (memberUserData != null) return memberUserData;
+  if (currentUserId == null || memberId != currentUserId) return null;
+  final email = FirebaseAuth.instance.currentUser?.email?.trim() ?? '';
+  if (email.isEmpty) return null;
+  return {
+    'email': email,
+    'account': <String, dynamic>{'email': email},
+  };
+}
+
+/// Resolves a member label: profile / auth user doc first, then
+/// [tripMemberPublicLabels] from the trip document (server-written email local
+/// part, or name synced from account settings).
+String resolveTripMemberDisplayLabel({
+  required String memberId,
+  Map<String, dynamic>? userData,
+  required Map<String, String> tripMemberPublicLabels,
+  String? currentUserId,
+  required String emptyFallback,
+}) {
+  final merged = tripMemberUserDataWithAuthFallback(
+    memberId,
+    currentUserId,
+    userData,
+  );
+  final fromUser =
+      tripMemberDisplayLabel(merged, emptyFallback: '');
+  if (fromUser.isNotEmpty) return fromUser;
+
+  final fromTrip = tripMemberPublicLabels[memberId]?.trim() ?? '';
+  if (fromTrip.isNotEmpty) return fromTrip;
+
+  return emptyFallback;
+}
