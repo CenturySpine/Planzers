@@ -1,8 +1,13 @@
+---
+description: Planzers project guidelines — language, stack, and workflow
+alwaysApply: true
+---
+
 # Planzers — project guidelines
 
 These rules apply to everyone working on the repository, including automated coding agents.
 
-**Cursor:** The same policy is loaded automatically via [`.cursor/rules/planzers-guidelines.mdc`](.cursor/rules/planzers-guidelines.mdc) (`alwaysApply: true`). If you change these guidelines, update that file too so agents stay in sync.
+> Keep this file aligned with `GUIDELINES.md` at the repository root (same policy). When you change policy, update both.
 
 ## Language
 
@@ -30,5 +35,5 @@ These rules apply to everyone working on the repository, including automated cod
 
 ## AI / agent usage
 
-- Read this file at the start of substantive work on the repo.
+- Apply this document from the first step of any task in this repo.
 - Obey user instructions that override or refine these defaults when they conflict.
