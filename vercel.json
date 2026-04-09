@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then flutter build web -t lib/main_prod.dart --release; else flutter build web -t lib/main_preview.dart --release; fi",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then ./flutter_sdk/bin/flutter build web -t lib/main_prod.dart --release; else ./flutter_sdk/bin/flutter build web -t lib/main_preview.dart --release; fi",
   "outputDirectory": "build/web",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
