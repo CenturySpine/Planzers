@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
@@ -262,6 +263,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
                 .map((id) => id.toString())
                 .toList();
+        final liveMemberPublicLabels = liveData != null &&
+                liveData.containsKey('memberPublicLabels')
+            ? Trip.memberPublicLabelsFromFirestore(
+                liveData['memberPublicLabels'],
+              )
+            : _trip.memberPublicLabels;
 
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
@@ -535,6 +542,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     const SizedBox(height: 12),
                     _MembersInfoRow(
                       memberIds: liveMemberIds,
+                      memberPublicLabels: liveMemberPublicLabels,
                       currentUserId: myUid,
                       canManageMembers: canEdit,
                       onRemoveMember: _removeMember,
@@ -624,10 +632,12 @@ class _OwnerInfoRow extends StatelessWidget {
         final displayName = (data?['displayName'] as String?)?.trim() ?? '';
         final email = (data?['email'] as String?)?.trim() ?? '';
 
+        final emailLocal =
+            email.isNotEmpty ? displayLabelFromEmail(email) : '';
         final ownerLabel = displayName.isNotEmpty
             ? displayName
             : email.isNotEmpty
-                ? email
+                ? (emailLocal.isNotEmpty ? emailLocal : email)
                 : 'Nom indisponible';
 
         return _InfoRow(label: 'Proprietaire', value: ownerLabel);
@@ -639,6 +649,7 @@ class _OwnerInfoRow extends StatelessWidget {
 class _MembersInfoRow extends StatelessWidget {
   const _MembersInfoRow({
     required this.memberIds,
+    required this.memberPublicLabels,
     required this.currentUserId,
     required this.canManageMembers,
     required this.onRemoveMember,
@@ -646,6 +657,7 @@ class _MembersInfoRow extends StatelessWidget {
   });
 
   final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
   final String? currentUserId;
   final bool canManageMembers;
   final Future<void> Function(String memberId, String memberLabel)
@@ -676,23 +688,13 @@ class _MembersInfoRow extends StatelessWidget {
 
         final chips = <Widget>[];
         for (final memberId in cleanMemberIds) {
-          final data = docsById[memberId];
-          final account =
-              (data?['account'] as Map<String, dynamic>?) ?? const {};
-          final accountName = (account['name'] as String?)?.trim() ?? '';
-          final accountEmail = (account['email'] as String?)?.trim() ?? '';
-          final email = (data?['email'] as String?)?.trim() ?? '';
-          final displayName = (data?['displayName'] as String?)?.trim() ?? '';
-
-          final label = accountName.isNotEmpty
-              ? accountName
-              : accountEmail.isNotEmpty
-                  ? accountEmail
-                  : displayName.isNotEmpty
-                      ? displayName
-                      : email.isNotEmpty
-                          ? email
-                          : 'Utilisateur';
+          final label = resolveTripMemberDisplayLabel(
+            memberId: memberId,
+            userData: docsById[memberId],
+            tripMemberPublicLabels: memberPublicLabels,
+            currentUserId: currentUserId,
+            emptyFallback: 'Utilisateur',
+          );
           final canRemoveThisMember = canManageMembers &&
               currentUserId != null &&
               memberId != currentUserId;

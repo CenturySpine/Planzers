@@ -33,12 +33,44 @@ class AccountRepository {
     }
 
     final userRef = firestore.collection('users').doc(uid);
+    final trimmed = accountName.trim();
     await userRef.set({
       'account': {
-        'name': accountName.trim(),
+        'name': trimmed,
         'updatedAt': FieldValue.serverTimestamp(),
       },
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    final tripsSnap = await firestore
+        .collection('trips')
+        .where('memberIds', arrayContains: uid)
+        .get();
+    if (tripsSnap.docs.isEmpty) {
+      return;
+    }
+
+    var batch = firestore.batch();
+    var opCount = 0;
+    for (final doc in tripsSnap.docs) {
+      if (trimmed.isEmpty) {
+        batch.update(doc.reference, {
+          'memberPublicLabels.$uid': FieldValue.delete(),
+        });
+      } else {
+        batch.update(doc.reference, {
+          'memberPublicLabels.$uid': trimmed,
+        });
+      }
+      opCount++;
+      if (opCount >= 450) {
+        await batch.commit();
+        batch = firestore.batch();
+        opCount = 0;
+      }
+    }
+    if (opCount > 0) {
+      await batch.commit();
+    }
   }
 }

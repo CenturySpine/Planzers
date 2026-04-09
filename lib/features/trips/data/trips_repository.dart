@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
@@ -103,6 +104,9 @@ class TripsRepository {
       throw StateError('Utilisateur non connecte');
     }
 
+    final ownerEmail = user.email?.trim() ?? '';
+    final ownerLabel = displayLabelFromEmail(ownerEmail);
+
     final data = <String, dynamic>{
       'title': title.trim(),
       'destination': destination.trim(),
@@ -112,6 +116,9 @@ class TripsRepository {
       'memberIds': <String>[user.uid],
       'createdAt': FieldValue.serverTimestamp(),
     };
+    if (ownerLabel.isNotEmpty) {
+      data['memberPublicLabels'] = <String, dynamic>{user.uid: ownerLabel};
+    }
     if (startDate != null) {
       data['startDate'] = Timestamp.fromDate(startDate);
     }
@@ -250,6 +257,26 @@ class TripsRepository {
     });
   }
 
+  /// Ensures this user's [memberPublicLabels] entry exists on the trip (email
+  /// local part via Admin SDK). Safe to call after join; no-op if Cloud
+  /// Function is unavailable.
+  Future<void> registerMyTripMemberLabel({required String tripId}) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      return;
+    }
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return;
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable =
+        regionFunctions.httpsCallable('registerMyTripMemberLabel');
+    await callable.call(<String, dynamic>{'tripId': cleanId});
+  }
+
   Future<void> removeMemberFromTrip({
     required String tripId,
     required String memberId,
@@ -281,6 +308,7 @@ class TripsRepository {
 
     await docRef.update({
       'memberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
+      'memberPublicLabels.$cleanMemberId': FieldValue.delete(),
     });
   }
 }

@@ -1,9 +1,34 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_menu_button.dart';
+import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
+
+/// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
+/// avant le déploiement des fonctions). Au plus un appel par voyage et par
+/// lancement d'app, et seulement si l'entrée est encore absente.
+final _tripMemberPublicLabelHealScheduled = <String>{};
+
+void _scheduleTripMemberPublicLabelHealIfNeeded(WidgetRef ref, Trip trip) {
+  final uid = FirebaseAuth.instance.currentUser?.uid.trim();
+  if (uid == null || uid.isEmpty) return;
+
+  final existing = trip.memberPublicLabels[uid]?.trim() ?? '';
+  if (existing.isNotEmpty) return;
+
+  final id = trip.id.trim();
+  if (id.isEmpty) return;
+  if (!_tripMemberPublicLabelHealScheduled.add(id)) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    ref
+        .read(tripsRepositoryProvider)
+        .registerMyTripMemberLabel(tripId: id)
+        .catchError((Object _) {});
+  });
+}
 
 /// Width at which we show a [NavigationRail] instead of a bottom [NavigationBar].
 const double _kTripShellWideBreakpoint = 720;
@@ -73,6 +98,8 @@ class TripShellPage extends ConsumerWidget {
         }
 
         final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
+
+        _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
 
         return TripScope(
           trip: trip,

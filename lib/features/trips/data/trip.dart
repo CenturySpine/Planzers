@@ -12,6 +12,7 @@ class Trip {
     required this.createdAt,
     this.startDate,
     this.endDate,
+    this.memberPublicLabels = const {},
   });
 
   final String id;
@@ -24,6 +25,23 @@ class Trip {
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
+
+  /// Public display strings for members (e.g. email local part), readable by all
+  /// trip participants; populated by Cloud Functions / client on create.
+  final Map<String, String> memberPublicLabels;
+
+  static Map<String, String> memberPublicLabelsFromFirestore(dynamic raw) {
+    if (raw is! Map) return const {};
+    final out = <String, String>{};
+    raw.forEach((k, v) {
+      final key = k.toString();
+      final val = (v is String ? v : v?.toString() ?? '').trim();
+      if (key.isNotEmpty && val.isNotEmpty) {
+        out[key] = val;
+      }
+    });
+    return out;
+  }
 
   static DateTime? _parseOptionalDate(dynamic raw) {
     return switch (raw) {
@@ -54,6 +72,8 @@ class Trip {
       createdAt: createdAt,
       startDate: _parseOptionalDate(data['startDate']),
       endDate: _parseOptionalDate(data['endDate']),
+      memberPublicLabels:
+          memberPublicLabelsFromFirestore(data['memberPublicLabels']),
     );
   }
 
@@ -68,6 +88,7 @@ class Trip {
       'createdAt': createdAt.toIso8601String(),
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
+      if (memberPublicLabels.isNotEmpty) 'memberPublicLabels': memberPublicLabels,
     };
   }
 }

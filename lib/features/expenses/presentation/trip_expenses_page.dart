@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/expenses/data/expense.dart';
 import 'package:planzers/features/expenses/data/expenses_repository.dart';
 import 'package:planzers/features/expenses/domain/expense_settlement.dart';
@@ -23,6 +24,7 @@ class TripExpensesPage extends ConsumerWidget {
           return _TripExpensesBody(
             tripId: trip.id,
             memberIds: trip.memberIds,
+            memberPublicLabels: trip.memberPublicLabels,
             expenses: expenses,
           );
         },
@@ -35,7 +37,13 @@ class TripExpensesPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddExpenseSheet(context, ref, trip.id, trip.memberIds),
+        onPressed: () => _openAddExpenseSheet(
+              context,
+              ref,
+              trip.id,
+              trip.memberIds,
+              trip.memberPublicLabels,
+            ),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter une dépense'),
       ),
@@ -47,6 +55,7 @@ class TripExpensesPage extends ConsumerWidget {
     WidgetRef ref,
     String tripId,
     List<String> memberIds,
+    Map<String, String> memberPublicLabels,
   ) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -59,6 +68,7 @@ class TripExpensesPage extends ConsumerWidget {
         child: _AddExpenseSheet(
           tripId: tripId,
           memberIds: memberIds,
+          memberPublicLabels: memberPublicLabels,
           onSubmit: () => Navigator.of(context).pop(),
         ),
       ),
@@ -70,11 +80,13 @@ class _TripExpensesBody extends StatelessWidget {
   const _TripExpensesBody({
     required this.tripId,
     required this.memberIds,
+    required this.memberPublicLabels,
     required this.expenses,
   });
 
   final String tripId;
   final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
   final List<TripExpense> expenses;
 
   @override
@@ -97,7 +109,12 @@ class _TripExpensesBody extends StatelessWidget {
           .where(FieldPath.documentId, whereIn: cleanMemberIds)
           .snapshots(),
       builder: (context, snapshot) {
-        final labels = _labelsFromUserSnapshot(snapshot.data, cleanMemberIds);
+        final labels = _labelsFromUserSnapshot(
+          snapshot.data,
+          cleanMemberIds,
+          memberPublicLabels: memberPublicLabels,
+          currentUserId: FirebaseAuth.instance.currentUser?.uid,
+        );
 
         return _buildScrollView(context, labels, balances, transfers);
       },
@@ -180,8 +197,10 @@ class _TripExpensesBody extends StatelessWidget {
 
 Map<String, String> _labelsFromUserSnapshot(
   QuerySnapshot<Map<String, dynamic>>? snapshot,
-  List<String> memberIds,
-) {
+  List<String> memberIds, {
+  String? currentUserId,
+  Map<String, String> memberPublicLabels = const {},
+}) {
   final docsById = <String, Map<String, dynamic>>{};
   for (final doc in snapshot?.docs ?? const []) {
     docsById[doc.id] = doc.data();
@@ -189,25 +208,15 @@ Map<String, String> _labelsFromUserSnapshot(
 
   final labels = <String, String>{};
   for (final memberId in memberIds) {
-    final data = docsById[memberId];
-    labels[memberId] = _displayNameFromUserData(data, fallback: 'Voyageur');
+    labels[memberId] = resolveTripMemberDisplayLabel(
+      memberId: memberId,
+      userData: docsById[memberId],
+      tripMemberPublicLabels: memberPublicLabels,
+      currentUserId: currentUserId,
+      emptyFallback: 'Voyageur',
+    );
   }
   return labels;
-}
-
-String _displayNameFromUserData(Map<String, dynamic>? data, {required String fallback}) {
-  if (data == null) return fallback;
-  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-  final accountName = (account['name'] as String?)?.trim() ?? '';
-  final accountEmail = (account['email'] as String?)?.trim() ?? '';
-  final email = (data['email'] as String?)?.trim() ?? '';
-  final displayName = (data['displayName'] as String?)?.trim() ?? '';
-
-  if (accountName.isNotEmpty) return accountName;
-  if (accountEmail.isNotEmpty) return accountEmail;
-  if (displayName.isNotEmpty) return displayName;
-  if (email.isNotEmpty) return email;
-  return fallback;
 }
 
 String _formatMoney(String currency, double amount) {
@@ -520,11 +529,13 @@ class _AddExpenseSheet extends ConsumerStatefulWidget {
   const _AddExpenseSheet({
     required this.tripId,
     required this.memberIds,
+    required this.memberPublicLabels,
     required this.onSubmit,
   });
 
   final String tripId;
   final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
   final VoidCallback onSubmit;
 
   @override
@@ -695,8 +706,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                     .where(FieldPath.documentId, whereIn: members)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  final labels =
-                      _labelsFromUserSnapshot(snapshot.data, members);
+                  final labels = _labelsFromUserSnapshot(
+                    snapshot.data,
+                    members,
+                    memberPublicLabels: widget.memberPublicLabels,
+                    currentUserId: FirebaseAuth.instance.currentUser?.uid,
+                  );
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
