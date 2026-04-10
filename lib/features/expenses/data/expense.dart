@@ -9,20 +9,25 @@ class TripExpense {
     required this.currency,
     required this.paidBy,
     required this.participantIds,
+    required this.visibleToIds,
     required this.category,
     required this.createdAt,
+    required this.expenseDate,
     this.createdBy,
   });
 
   final String id;
   final String title;
   final double amount;
+
   /// ISO-like code, e.g. `EUR`, `USD`.
   final String currency;
   final String paidBy;
   final List<String> participantIds;
+  final List<String> visibleToIds;
   final String category;
   final DateTime createdAt;
+  final DateTime expenseDate;
   final String? createdBy;
 
   factory TripExpense.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -32,6 +37,12 @@ class TripExpense {
       Timestamp ts => ts.toDate(),
       String s => DateTime.tryParse(s) ?? DateTime.now(),
       _ => DateTime.now(),
+    };
+    final expenseDateRaw = data['expenseDate'];
+    final expenseDate = switch (expenseDateRaw) {
+      Timestamp ts => ts.toDate(),
+      String s => DateTime.tryParse(s) ?? createdAt,
+      _ => createdAt,
     };
 
     final amountRaw = data['amount'];
@@ -50,8 +61,17 @@ class TripExpense {
           .map((e) => e.toString())
           .where((id) => id.trim().isNotEmpty)
           .toList(),
+      visibleToIds: ((data['visibleToIds'] as List<dynamic>?) ?? const [])
+          .map((e) => e.toString())
+          .where((id) => id.trim().isNotEmpty)
+          .toList(),
       category: ((data['category'] as String?) ?? 'other').trim(),
       createdAt: createdAt,
+      expenseDate: DateTime(
+        expenseDate.year,
+        expenseDate.month,
+        expenseDate.day,
+      ),
       createdBy: (data['createdBy'] as String?)?.trim(),
     );
   }
@@ -66,9 +86,19 @@ class TripExpense {
       'currency': currency.trim().toUpperCase(),
       'paidBy': paidBy.trim(),
       'participantIds': participantIds,
+      'visibleToIds': visibleToIds,
       'category': category.trim().isEmpty ? 'other' : category.trim(),
+      'expenseDate': Timestamp.fromDate(
+        DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
+      ),
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': createdBy.trim(),
     };
+  }
+
+  bool isVisibleTo(String? userId) {
+    if (userId == null || userId.trim().isEmpty) return true;
+    if (visibleToIds.isEmpty) return true;
+    return visibleToIds.contains(userId.trim());
   }
 }
