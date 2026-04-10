@@ -7,6 +7,7 @@ These rules apply to everyone working on the repository, including automated cod
 ## Language
 
 - **Commit messages:** English only. Use clear, imperative-style subjects (e.g. `feat(trips): add expense list screen`).
+- **Commit detail (body):** Write for a product/domain audience. Explain what changes for users or the business, not how the code is wired. Avoid technical jargon, function or variable names, and similar implementation noise unless a detail is genuinely hard to infer later and needs that precision.
 - **Source code:** English for identifiers, file names, and in-code documentation (`//`, `///`).
 - **Comments:** English only.
 - **User-facing copy:** Follow the product language (currently French for UI strings and SnackBars). Do not translate the app to English in code unless explicitly requested.
@@ -25,7 +26,7 @@ These rules apply to everyone working on the repository, including automated cod
 
 ## Pull requests and reviews
 
-- Describe what changed and why in complete sentences.
+- Describe what changed and why in complete sentences, with the same domain-first tone as commit bodies (business outcome over code-level listing).
 - Link issues or tickets when applicable.
 
 ## AI / agent usage

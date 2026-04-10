@@ -4,12 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TripExpense {
   TripExpense({
     required this.id,
+    required this.groupId,
     required this.title,
     required this.amount,
     required this.currency,
     required this.paidBy,
     required this.participantIds,
-    required this.visibleToIds,
     required this.category,
     required this.createdAt,
     required this.expenseDate,
@@ -17,6 +17,7 @@ class TripExpense {
   });
 
   final String id;
+  final String groupId;
   final String title;
   final double amount;
 
@@ -24,7 +25,6 @@ class TripExpense {
   final String currency;
   final String paidBy;
   final List<String> participantIds;
-  final List<String> visibleToIds;
   final String category;
   final DateTime createdAt;
   final DateTime expenseDate;
@@ -53,15 +53,12 @@ class TripExpense {
 
     return TripExpense(
       id: doc.id,
+      groupId: (data['groupId'] as String?)?.trim() ?? '',
       title: (data['title'] as String?)?.trim() ?? '',
       amount: amount,
       currency: ((data['currency'] as String?) ?? 'EUR').trim().toUpperCase(),
       paidBy: (data['paidBy'] as String?)?.trim() ?? '',
       participantIds: ((data['participantIds'] as List<dynamic>?) ?? const [])
-          .map((e) => e.toString())
-          .where((id) => id.trim().isNotEmpty)
-          .toList(),
-      visibleToIds: ((data['visibleToIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
           .where((id) => id.trim().isNotEmpty)
           .toList(),
@@ -79,14 +76,15 @@ class TripExpense {
   Map<String, dynamic> toCreateMap({
     required String paidBy,
     required String createdBy,
+    required String groupId,
   }) {
     return {
+      'groupId': groupId.trim(),
       'title': title.trim(),
       'amount': amount,
       'currency': currency.trim().toUpperCase(),
       'paidBy': paidBy.trim(),
       'participantIds': participantIds,
-      'visibleToIds': visibleToIds,
       'category': category.trim().isEmpty ? 'other' : category.trim(),
       'expenseDate': Timestamp.fromDate(
         DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
@@ -94,11 +92,5 @@ class TripExpense {
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': createdBy.trim(),
     };
-  }
-
-  bool isVisibleTo(String? userId) {
-    if (userId == null || userId.trim().isEmpty) return true;
-    if (visibleToIds.isEmpty) return true;
-    return visibleToIds.contains(userId.trim());
   }
 }

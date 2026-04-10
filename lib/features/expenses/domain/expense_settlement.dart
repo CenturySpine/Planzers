@@ -18,6 +18,43 @@ class SuggestedTransfer {
   final String currency;
 }
 
+/// Balances and transfer suggestions for one viewer within a single scope
+/// (e.g. one expense post).
+class ViewerSettlement {
+  const ViewerSettlement({
+    required this.balancesByCurrency,
+    required this.suggestedTransfers,
+  });
+
+  /// Net balances from the provided expenses (caller scopes the list).
+  final BalancesByCurrency balancesByCurrency;
+
+  /// Transfers that involve the viewer as payer or payee; when there is no
+  /// viewer id, every suggested transfer for that scope is returned.
+  final List<SuggestedTransfer> suggestedTransfers;
+}
+
+/// Computes [ViewerSettlement] from [expenses] (already scoped, e.g. one post).
+///
+/// When [viewerUserId] is null or blank, every suggested transfer is returned.
+ViewerSettlement computeViewerSettlement(
+  Iterable<TripExpense> expenses,
+  String? viewerUserId,
+) {
+  final balances = computeBalances(expenses);
+  var transfers = suggestTransfers(balances);
+  final v = viewerUserId?.trim();
+  if (v != null && v.isNotEmpty) {
+    transfers = transfers
+        .where((t) => t.fromUserId == v || t.toUserId == v)
+        .toList();
+  }
+  return ViewerSettlement(
+    balancesByCurrency: balances,
+    suggestedTransfers: transfers,
+  );
+}
+
 /// Supported expense currencies for MVP (display + separate balance buckets).
 const Set<String> kSupportedExpenseCurrencies = {'EUR', 'USD'};
 
