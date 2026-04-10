@@ -95,6 +95,97 @@ function parsePreviewFromHtml(pageUrl, html) {
   };
 }
 
+/** @param {FirebaseFirestore.DocumentData} data */
+function memberIdsAsSet(data) {
+  const raw = data.memberIds;
+  if (!Array.isArray(raw)) return new Set();
+  return new Set(raw.map((v) => String(v)));
+}
+
+/**
+ * When someone is added to trip.memberIds, add them to every expense post
+ * (visibleToMemberIds) and every expense (participantIds). arrayUnion is
+ * idempotent. Batched in chunks of 500 writes.
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} uid
+ */
+async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
+  const FieldValue = admin.firestore.FieldValue;
+  const db = admin.firestore();
+
+  const [groupsSnap, expensesSnap] = await Promise.all([
+    tripRef.collection('expenseGroups').get(),
+    tripRef.collection('expenses').get(),
+  ]);
+
+  const updates = [];
+  for (const doc of groupsSnap.docs) {
+    updates.push({
+      ref: doc.ref,
+      data: { visibleToMemberIds: FieldValue.arrayUnion(uid) },
+    });
+  }
+  for (const doc of expensesSnap.docs) {
+    updates.push({
+      ref: doc.ref,
+      data: { participantIds: FieldValue.arrayUnion(uid) },
+    });
+  }
+
+  let batch = db.batch();
+  let n = 0;
+  for (const { ref, data } of updates) {
+    batch.update(ref, data);
+    n++;
+    if (n >= 500) {
+      await batch.commit();
+      batch = db.batch();
+      n = 0;
+    }
+  }
+  if (n > 0) {
+    await batch.commit();
+  }
+}
+
+/** Fires when trip.memberIds gains users (e.g. invite join). */
+exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}',
+    region: 'europe-west1',
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (event) => {
+    const beforeSnap = event.data.before;
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+
+    const beforeIds = beforeSnap.exists
+      ? memberIdsAsSet(beforeSnap.data() || {})
+      : new Set();
+    const afterIds = memberIdsAsSet(afterSnap.data() || {});
+
+    const added = [...afterIds].filter((id) => !beforeIds.has(id));
+    if (added.length === 0) return;
+
+    const tripRef = afterSnap.ref;
+    for (const uid of added) {
+      try {
+        await backfillTripMemberInExpenseSubcollections(tripRef, uid);
+      } catch (e) {
+        console.error(
+          'backfillNewTripMemberInExpenses failed',
+          tripRef.id,
+          uid,
+          e
+        );
+        throw e;
+      }
+    }
+  }
+);
+
 exports.generateTripLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
