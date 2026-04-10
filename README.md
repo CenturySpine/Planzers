@@ -26,12 +26,13 @@ Offrir un seul espace collaboratif pour preparer et suivre un voyage de groupe s
 ### 1. Prerequis systeme
 
 - Installer **Flutter SDK** (canal stable) et ajouter `<flutter>/bin` au `PATH`.
+- Installer **Android Studio** (inclut SDK Android, outils Gradle et JDK `jbr`).
 - Sur Windows, activer **Mode developpeur** (plugins Flutter avec symlinks).
 - Installer **Node.js LTS** (necessaire pour `npm`), puis la **Firebase CLI**:
   - `npm install -g firebase-tools`
 - Installer **Java 17+** (recommande: JDK inclus d'Android Studio: `...\Android Studio\jbr`).
 - Configurer les variables d'environnement Windows:
-  - `JAVA_HOME` -> chemin du JDK (ex: `C:\Program Files\Android\Android Studio\jbr`)
+  - `JAVA_HOME` -> chemin du JDK **sans `\bin`** (ex: `C:\Program Files\Android\Android Studio\jbr`)
   - ajouter `%JAVA_HOME%\bin` au `Path`
   - ajouter `C:\Users\<ton-user>\AppData\Local\Pub\Cache\bin` au `Path` (pour `flutterfire`)
 - Ouvrir un nouveau terminal et verifier:
@@ -42,6 +43,19 @@ dart --version
 java -version
 firebase --version
 ```
+
+Verification complementaire recommandee sous Windows (utile si Gradle ne trouve pas Java):
+
+```powershell
+echo $env:JAVA_HOME
+where.exe java
+java -version
+```
+
+Si `where.exe java` ne retourne rien:
+- verifier que `JAVA_HOME` pointe bien vers le dossier JDK (pas `...\jbr\bin`)
+- verifier que `%JAVA_HOME%\bin` est present dans `Path`
+- fermer completement Cursor/terminal puis reouvrir une nouvelle session
 
 ### 2. Cloner et installer les dependances
 
@@ -72,7 +86,7 @@ Dans la console Firebase:
 - **Firestore Database** -> creer la base (mode dev/test)
 - Creer les apps de plateforme necessaires (Android, iOS, Web)
 
-### 5. Android: SHA-1 + `google-services.json`
+### 5. Android: SHA-1/SHA-256 + `google-services.json`
 
 Depuis `android/`:
 
@@ -88,7 +102,10 @@ Sous Windows PowerShell:
 
 - Copier la valeur **SHA1** (et idealement **SHA-256**) du variant `debug`.
 - Firebase -> *Project settings* -> app Android -> **Add fingerprint**.
-- Telecharger `google-services.json` et le placer dans `android/app/google-services.json`.
+- Sur une **nouvelle machine de dev physique**, refaire cette etape: le keystore debug local peut changer, donc il faut ajouter les nouveaux fingerprints.
+- Telecharger `google-services.json` apres ajout des fingerprints, puis le placer selon le flavor:
+  - `android/app/src/preview/google-services.json` pour `--flavor preview`
+  - `android/app/src/prod/google-services.json` pour `--flavor prod`
 
 ### 6. iOS: `GoogleService-Info.plist`
 
@@ -191,43 +208,3 @@ Voir le dossier `docs/`:
 3. Liste de courses collaborative
 4. Planning des repas
 5. Suivi des depenses et repartition
-
-## Architecture Flutter recommandee
-
-- Pattern: **Feature-first** + **Clean-ish architecture**
-- State management: Riverpod
-- Navigation: go_router
-- Data: repositories (Firestore / Auth / Storage)
-- Modeles: immutable + serialisation JSON
-
-Arborescence suggeree:
-
-```text
-lib/
-  app/
-    app.dart
-    router.dart
-    theme.dart
-  core/
-    error/
-    utils/
-    widgets/
-  features/
-    auth/
-    trips/
-    carpool/
-    groceries/
-    meals/
-    expenses/
-  data/
-    repositories/
-    services/
-```
-
-## Prochaines etapes concretes
-
-1. Installer Flutter et creer le projet de base.
-2. Connecter Firebase avec `flutterfire configure`.
-3. Implementer Auth + ecran de creation de voyage.
-4. Construire les collections Firestore du MVP.
-5. Ajouter les regles de securite Firestore.
