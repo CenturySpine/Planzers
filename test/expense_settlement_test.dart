@@ -7,15 +7,17 @@ TripExpense _e({
   required List<String> participants,
   required double amount,
   String currency = 'EUR',
+  String groupId = 'g1',
+  String id = 'x',
 }) {
   return TripExpense(
-    id: 'x',
+    id: id,
+    groupId: groupId,
     title: 't',
     amount: amount,
     currency: currency,
     paidBy: paidBy,
     participantIds: participants,
-    visibleToIds: participants,
     category: 'other',
     createdAt: DateTime(2026, 1, 1),
     expenseDate: DateTime(2026, 1, 1),
@@ -63,5 +65,42 @@ void main() {
     final bal = computeBalances(expenses);
     expect(bal['EUR']!['a'], closeTo(50, 0.01));
     expect(bal['USD']!['b'], closeTo(10, 0.01));
+  });
+
+  test('computeViewerSettlement keeps only transfers involving the viewer', () {
+    final expenses = [
+      _e(paidBy: 'a', participants: ['a', 'b', 'c'], amount: 90),
+    ];
+    final settlement = computeViewerSettlement(expenses, 'b');
+    expect(settlement.suggestedTransfers, hasLength(1));
+    expect(
+      settlement.suggestedTransfers.single.fromUserId == 'b' ||
+          settlement.suggestedTransfers.single.toUserId == 'b',
+      isTrue,
+    );
+  });
+
+  test('computeViewerSettlement with no viewer id keeps all transfers', () {
+    final expenses = [
+      _e(paidBy: 'a', participants: ['a', 'b'], amount: 100),
+    ];
+    final settlement = computeViewerSettlement(expenses, null);
+    expect(settlement.suggestedTransfers, hasLength(1));
+    expect(settlement.suggestedTransfers.single.fromUserId, 'b');
+  });
+
+  test('per-post scope: two groups do not merge balances', () {
+    final g1 = [
+      _e(id: '1', groupId: 'A', paidBy: 'a', participants: ['a', 'b'], amount: 100),
+    ];
+    final g2 = [
+      _e(id: '2', groupId: 'B', paidBy: 'b', participants: ['a', 'b'], amount: 100),
+    ];
+    final bal1 = computeBalances(g1)['EUR']!;
+    final bal2 = computeBalances(g2)['EUR']!;
+    expect(bal1['a'], closeTo(50, 0.01));
+    expect(bal1['b'], closeTo(-50, 0.01));
+    expect(bal2['a'], closeTo(-50, 0.01));
+    expect(bal2['b'], closeTo(50, 0.01));
   });
 }

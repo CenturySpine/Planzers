@@ -6,11 +6,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/expenses/data/expense.dart';
+import 'package:planzers/features/expenses/data/expense_group.dart';
+import 'package:planzers/features/expenses/data/expense_post_expansion_store.dart';
 import 'package:planzers/features/expenses/data/expenses_repository.dart';
 import 'package:planzers/features/expenses/domain/expense_settlement.dart';
+import 'package:planzers/features/expenses/presentation/expense_group_editor_sheet.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
-const double _visibilityShareColumnWidth = 48;
+/// Trip members who may appear as payers/participants for this expense post.
+List<String> participantScopeMemberIdsForGroup(
+  TripExpenseGroup group,
+  List<String> tripMemberIds,
+) {
+  final clean = tripMemberIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList();
+  if (group.visibleToMemberIds.isEmpty) {
+    return [];
+  }
+  final allowed = group.visibleToMemberIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toSet();
+  return clean.where((id) => allowed.contains(id)).toList()..sort();
+}
 
 class TripExpensesPage extends ConsumerWidget {
   const TripExpensesPage({super.key});
@@ -18,18 +38,37 @@ class TripExpensesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = TripScope.of(context);
+    final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
 
     return Scaffold(
-      body: expensesAsync.when(
-        data: (expenses) {
-          return _TripExpensesBody(
-            tripId: trip.id,
-            memberIds: trip.memberIds,
-            memberPublicLabels: trip.memberPublicLabels,
-            expenses: expenses,
-          );
-        },
+      body: groupsAsync.when(
+        data: (groups) => expensesAsync.when(
+          data: (expenses) {
+            return _TripExpensesBody(
+              tripId: trip.id,
+              memberIds: trip.memberIds,
+              memberPublicLabels: trip.memberPublicLabels,
+              groups: groups,
+              expenses: expenses,
+              onCreateExpensePost: () => _openExpenseGroupEditor(
+                context,
+                ref,
+                trip.id,
+                trip.memberIds,
+                trip.memberPublicLabels,
+                existing: null,
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Erreur: $e', textAlign: TextAlign.center),
+            ),
+          ),
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Padding(
@@ -39,7 +78,7 @@ class TripExpensesPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddExpenseSheet(
+        onPressed: () => _openAddExpenseSheetFromFab(
           context,
           ref,
           trip.id,
@@ -52,13 +91,112 @@ class TripExpensesPage extends ConsumerWidget {
     );
   }
 
-  static Future<void> _openAddExpenseSheet(
+  static Future<void> _openExpenseGroupEditor(
+    BuildContext context,
+    WidgetRef ref,
+    String tripId,
+    List<String> memberIds,
+    Map<String, String> memberPublicLabels, {
+    required TripExpenseGroup? existing,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => ExpenseGroupEditorSheet(
+        tripId: tripId,
+        memberIds: memberIds,
+        memberPublicLabels: memberPublicLabels,
+        existing: existing,
+        onDone: () => Navigator.of(ctx).pop(),
+      ),
+    );
+  }
+
+  static Future<void> _openAddExpenseSheetFromFab(
     BuildContext context,
     WidgetRef ref,
     String tripId,
     List<String> memberIds,
     Map<String, String> memberPublicLabels,
   ) async {
+    final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final groups =
+        await ref.read(expensesRepositoryProvider).watchTripExpenseGroups(tripId).first;
+    final visible = groups.where((g) => g.isVisibleTo(viewerId)).toList();
+    if (!context.mounted) return;
+    if (visible.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Crée d’abord un poste de dépenses (icône dossier dans l’en-tête).',
+          ),
+        ),
+      );
+      return;
+    }
+    if (visible.length == 1) {
+      final g = visible.single;
+      await _openAddExpenseSheet(
+        context,
+        tripId,
+        memberIds,
+        memberPublicLabels,
+        groupId: g.id,
+        participantScopeMemberIds:
+            participantScopeMemberIdsForGroup(g, memberIds),
+      );
+      return;
+    }
+    final chosen = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Text(
+                  'Choisir le poste',
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+              ),
+              for (final g in visible)
+                ListTile(
+                  title: Text(
+                    g.title.isEmpty ? 'Poste sans titre' : g.title,
+                  ),
+                  onTap: () => Navigator.pop(ctx, g.id),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    if (chosen == null || !context.mounted) return;
+    final group = visible.firstWhere((g) => g.id == chosen);
+    await _openAddExpenseSheet(
+      context,
+      tripId,
+      memberIds,
+      memberPublicLabels,
+      groupId: chosen,
+      participantScopeMemberIds:
+          participantScopeMemberIdsForGroup(group, memberIds),
+    );
+  }
+
+  static Future<void> _openAddExpenseSheet(
+    BuildContext context,
+    String tripId,
+    List<String> memberIds,
+    Map<String, String> memberPublicLabels, {
+    required String groupId,
+    required List<String> participantScopeMemberIds,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -69,7 +207,8 @@ class TripExpensesPage extends ConsumerWidget {
         ),
         child: _AddExpenseSheet(
           tripId: tripId,
-          memberIds: memberIds,
+          groupId: groupId,
+          participantScopeMemberIds: participantScopeMemberIds,
           memberPublicLabels: memberPublicLabels,
           onSubmit: () => Navigator.of(context).pop(),
         ),
@@ -83,24 +222,36 @@ class _TripExpensesBody extends StatelessWidget {
     required this.tripId,
     required this.memberIds,
     required this.memberPublicLabels,
+    required this.groups,
     required this.expenses,
+    required this.onCreateExpensePost,
   });
 
   final String tripId;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
+  final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
+  final VoidCallback onCreateExpensePost;
 
   @override
   Widget build(BuildContext context) {
     final cleanMemberIds =
         memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
 
-    final balances = computeBalances(expenses);
-    final transfers = suggestTransfers(balances);
+    final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final visibleGroups =
+        groups.where((g) => g.isVisibleTo(viewerId)).toList();
 
     if (cleanMemberIds.isEmpty) {
-      return _buildScrollView(context, const {}, balances, transfers);
+      return _buildScrollView(
+        context,
+        const {},
+        visibleGroups,
+        viewerId,
+        memberPublicLabels,
+        onCreateExpensePost,
+      );
     }
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -116,7 +267,14 @@ class _TripExpensesBody extends StatelessWidget {
           currentUserId: FirebaseAuth.instance.currentUser?.uid,
         );
 
-        return _buildScrollView(context, labels, balances, transfers);
+        return _buildScrollView(
+          context,
+          labels,
+          visibleGroups,
+          viewerId,
+          memberPublicLabels,
+          onCreateExpensePost,
+        );
       },
     );
   }
@@ -124,53 +282,40 @@ class _TripExpensesBody extends StatelessWidget {
   Widget _buildScrollView(
     BuildContext context,
     Map<String, String> labels,
-    BalancesByCurrency balances,
-    List<SuggestedTransfer> transfers,
+    List<TripExpenseGroup> visibleGroups,
+    String? viewerId,
+    Map<String, String> memberPublicLabels,
+    VoidCallback onCreateExpensePost,
   ) {
-    final viewerId = FirebaseAuth.instance.currentUser?.uid;
-    final visibleExpenses =
-        expenses.where((expense) => expense.isVisibleTo(viewerId)).toList();
-
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           sliver: SliverToBoxAdapter(
-            child: Text(
-              'Dépenses',
-              style: Theme.of(context).textTheme.headlineSmall,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Postes de dépenses',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Nouveau poste',
+                  icon: const Icon(Icons.create_new_folder_outlined),
+                  onPressed: onCreateExpensePost,
+                ),
+              ],
             ),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverToBoxAdapter(
-            child: _SettlementSection(
-              balancesByCurrency: balances,
-              transfers: transfers,
-              memberLabels: labels,
-            ),
-          ),
-        ),
-        const SliverPadding(
-          padding: EdgeInsets.only(top: 8),
-          sliver: SliverToBoxAdapter(child: Divider(height: 1)),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          sliver: SliverToBoxAdapter(
-            child: Text(
-              'Opérations',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-        ),
-        if (visibleExpenses.isEmpty)
+        if (visibleGroups.isEmpty)
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             sliver: SliverToBoxAdapter(
               child: Text(
-                'Aucune dépense visible pour le moment. Utilise le bouton ci-dessous pour en ajouter une.',
+                'Aucun poste de dépenses pour l’instant. Utilise l’icône dossier en haut pour en créer un.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -178,24 +323,263 @@ class _TripExpensesBody extends StatelessWidget {
             ),
           )
         else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList.separated(
-              itemCount: visibleExpenses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final expense = visibleExpenses[index];
-                return _ExpenseCard(
+          for (final group in visibleGroups)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              sliver: SliverToBoxAdapter(
+                child: _ExpensePostCard(
                   tripId: tripId,
-                  expense: expense,
+                  group: group,
+                  groupExpenses: expenses
+                      .where((e) => e.groupId == group.id)
+                      .toList(),
                   memberIds: memberIds,
+                  memberPublicLabels: memberPublicLabels,
                   memberLabels: labels,
-                );
-              },
+                  viewerUserId: viewerId,
+                ),
+              ),
             ),
-          ),
         const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
       ],
+    );
+  }
+}
+
+enum _ExpensePostMenuAction { editPost, addExpense, deletePost }
+
+class _ExpensePostCard extends ConsumerStatefulWidget {
+  const _ExpensePostCard({
+    required this.tripId,
+    required this.group,
+    required this.groupExpenses,
+    required this.memberIds,
+    required this.memberPublicLabels,
+    required this.memberLabels,
+    required this.viewerUserId,
+  });
+
+  final String tripId;
+  final TripExpenseGroup group;
+  final List<TripExpense> groupExpenses;
+  final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
+  final Map<String, String> memberLabels;
+  final String? viewerUserId;
+
+  @override
+  ConsumerState<_ExpensePostCard> createState() => _ExpensePostCardState();
+}
+
+class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
+  late bool _expanded;
+  bool _deletingPost = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.group.isDefault;
+    ExpensePostExpansionStore.read(widget.tripId, widget.group.id).then((v) {
+      if (!mounted || v == null) return;
+      setState(() => _expanded = v);
+    });
+  }
+
+  void _persistExpansion(bool expanded) {
+    setState(() => _expanded = expanded);
+    ExpensePostExpansionStore.write(widget.tripId, widget.group.id, expanded);
+  }
+
+  Future<void> _confirmDeletePost() async {
+    if (_deletingPost) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer ce poste ?'),
+        content: Text(
+          'Le poste « ${widget.group.title.isEmpty ? 'Sans titre' : widget.group.title} » '
+          'et toutes ses opérations seront supprimés.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _deletingPost = true);
+    try {
+      await ref.read(expensesRepositoryProvider).deleteExpenseGroup(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Poste supprimé')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingPost = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settlement =
+        computeViewerSettlement(widget.groupExpenses, widget.viewerUserId);
+    final displayTitle =
+        widget.group.title.isEmpty ? 'Poste sans titre' : widget.group.title;
+    final scope = participantScopeMemberIdsForGroup(
+      widget.group,
+      widget.memberIds,
+    );
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => _persistExpansion(!_expanded),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _expanded
+                                ? Icons.expand_less
+                                : Icons.expand_more,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              displayTitle,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                PopupMenuButton<_ExpensePostMenuAction>(
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: _ExpensePostMenuAction.editPost,
+                      child: Text('Modifier le poste'),
+                    ),
+                    PopupMenuItem(
+                      value: _ExpensePostMenuAction.addExpense,
+                      child: Text('Ajouter une dépense'),
+                    ),
+                    PopupMenuItem(
+                      value: _ExpensePostMenuAction.deletePost,
+                      child: Text('Supprimer le poste'),
+                    ),
+                  ],
+                  onSelected: (action) async {
+                    if (action == _ExpensePostMenuAction.editPost) {
+                      await TripExpensesPage._openExpenseGroupEditor(
+                        context,
+                        ref,
+                        widget.tripId,
+                        widget.memberIds,
+                        widget.memberPublicLabels,
+                        existing: widget.group,
+                      );
+                      return;
+                    }
+                    if (action == _ExpensePostMenuAction.deletePost) {
+                      await _confirmDeletePost();
+                      return;
+                    }
+                    await TripExpensesPage._openAddExpenseSheet(
+                      context,
+                      widget.tripId,
+                      widget.memberIds,
+                      widget.memberPublicLabels,
+                      groupId: widget.group.id,
+                      participantScopeMemberIds: scope,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SettlementSection(
+                          balancesByCurrency: settlement.balancesByCurrency,
+                          transfers: settlement.suggestedTransfers,
+                          memberLabels: widget.memberLabels,
+                          viewerUserId: widget.viewerUserId,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Opérations',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        if (widget.groupExpenses.isEmpty)
+                          Text(
+                            'Aucune opération dans ce poste.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          )
+                        else
+                          ...widget.groupExpenses.map(
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _ExpenseCard(
+                                tripId: widget.tripId,
+                                expense: e,
+                                participantScopeMemberIds: scope,
+                                memberLabels: widget.memberLabels,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -239,18 +623,46 @@ String _formatExpenseDate(DateTime date) {
   return DateFormat('dd/MM/yyyy').format(date);
 }
 
+/// Remboursement suggéré : formulation à la 1ʳᵉ personne si [viewerUserId] est concerné.
+String _formatSuggestedTransferLine({
+  required SuggestedTransfer transfer,
+  required Map<String, String> memberLabels,
+  required String? viewerUserId,
+}) {
+  final v = viewerUserId?.trim();
+  final fromId = transfer.fromUserId.trim();
+  final toId = transfer.toUserId.trim();
+  final fromL = memberLabels[fromId] ?? 'Voyageur';
+  final toL = memberLabels[toId] ?? 'Voyageur';
+  final amt = _formatMoney(transfer.currency, transfer.amount);
+
+  if (v != null && v.isNotEmpty) {
+    if (fromId == v) {
+      return 'Tu dois $amt à $toL';
+    }
+    if (toId == v) {
+      return '$fromL te doit $amt';
+    }
+  }
+  return '$fromL donne $amt à $toL';
+}
+
 enum _ExpenseDetailsMenuAction { edit, delete }
+
+const double _participantColumnWidth = 48;
 
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
     required this.balancesByCurrency,
     required this.transfers,
     required this.memberLabels,
+    required this.viewerUserId,
   });
 
   final BalancesByCurrency balancesByCurrency;
   final List<SuggestedTransfer> transfers;
   final Map<String, String> memberLabels;
+  final String? viewerUserId;
 
   @override
   Widget build(BuildContext context) {
@@ -381,8 +793,6 @@ class _SettlementSection extends StatelessWidget {
                   )
                 else
                   ...transfers.map((t) {
-                    final fromL = memberLabels[t.fromUserId] ?? 'Voyageur';
-                    final toL = memberLabels[t.toUserId] ?? 'Voyageur';
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
@@ -392,7 +802,11 @@ class _SettlementSection extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '$fromL donne ${_formatMoney(t.currency, t.amount)} à $toL',
+                              _formatSuggestedTransferLine(
+                                transfer: t,
+                                memberLabels: memberLabels,
+                                viewerUserId: viewerUserId,
+                              ),
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ),
@@ -413,13 +827,13 @@ class _ExpenseCard extends ConsumerStatefulWidget {
   const _ExpenseCard({
     required this.tripId,
     required this.expense,
-    required this.memberIds,
+    required this.participantScopeMemberIds,
     required this.memberLabels,
   });
 
   final String tripId;
   final TripExpense expense;
-  final List<String> memberIds;
+  final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
 
   @override
@@ -435,7 +849,7 @@ class _ExpenseCardState extends ConsumerState<_ExpenseCard> {
         builder: (context) => _ExpenseDetailsPage(
           tripId: widget.tripId,
           expense: widget.expense,
-          memberIds: widget.memberIds,
+          participantScopeMemberIds: widget.participantScopeMemberIds,
           memberLabels: widget.memberLabels,
         ),
       ),
@@ -566,13 +980,13 @@ class _ExpenseDetailsPage extends ConsumerStatefulWidget {
   const _ExpenseDetailsPage({
     required this.tripId,
     required this.expense,
-    required this.memberIds,
+    required this.participantScopeMemberIds,
     required this.memberLabels,
   });
 
   final String tripId;
   final TripExpense expense;
-  final List<String> memberIds;
+  final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
 
   @override
@@ -586,7 +1000,6 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   late final TextEditingController _amountController;
   late String _currency;
   late String? _paidBy;
-  late Set<String> _visibleToIds;
   late Set<String> _participantIds;
   late DateTime _expenseDate;
   bool _editing = false;
@@ -596,21 +1009,28 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   @override
   void initState() {
     super.initState();
-    final members = widget.memberIds
+    final scope = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toSet();
-    final rawVisibleTo = widget.expense.visibleToIds.toSet();
 
     _titleController = TextEditingController(text: widget.expense.title);
     _amountController = TextEditingController(
       text: widget.expense.amount.toStringAsFixed(2),
     );
     _currency = widget.expense.currency;
-    _paidBy = widget.expense.paidBy;
-    _visibleToIds = rawVisibleTo.isEmpty ? {...members} : rawVisibleTo;
-    _participantIds =
-        widget.expense.participantIds.where(_visibleToIds.contains).toSet();
+    final paid = widget.expense.paidBy.trim();
+    _paidBy = scope.contains(paid) ? paid : null;
+    _participantIds = widget.expense.participantIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty && scope.contains(id))
+        .toSet();
+    if (_participantIds.isEmpty && scope.isNotEmpty) {
+      _participantIds = {...scope};
+    }
+    if (_paidBy == null && scope.isNotEmpty) {
+      _paidBy = scope.first;
+    }
     _expenseDate = DateTime(
       widget.expense.expenseDate.year,
       widget.expense.expenseDate.month,
@@ -693,15 +1113,33 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       );
       return;
     }
+    final scopeSet = widget.participantScopeMemberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    if (scopeSet.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucun voyageur autorisé dans ce poste.'),
+        ),
+      );
+      return;
+    }
+    if (!scopeSet.contains(paidBy.trim())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payeur invalide pour ce poste')),
+      );
+      return;
+    }
     if (_participantIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coche au moins un participant')),
       );
       return;
     }
-    if (_visibleToIds.isEmpty) {
+    if (_participantIds.any((id) => !scopeSet.contains(id))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coche au moins une personne visible')),
+        const SnackBar(content: Text('Participant hors périmètre du poste')),
       );
       return;
     }
@@ -726,7 +1164,6 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
             currency: _currency,
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
-            visibleToIds: _visibleToIds.toList(),
             expenseDate: _expenseDate,
           );
       if (!mounted) return;
@@ -746,7 +1183,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final members = widget.memberIds
+    final members = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toList();
@@ -784,6 +1221,16 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (members.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Aucun voyageur n’est autorisé dans ce poste : modifie le poste ou le voyage pour pouvoir ajuster le partage.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                  ),
+                ),
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
@@ -893,9 +1340,16 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Qui voit ce poste se règle dans le menu du poste (pas ici).',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
               const SizedBox(height: 16),
               Text(
-                'Visibilité et partage',
+                'Partage du montant',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
@@ -914,20 +1368,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                         children: [
                           const Expanded(child: Text('Voyageur')),
                           SizedBox(
-                            width: _visibilityShareColumnWidth,
-                            child: Center(
-                              child: Tooltip(
-                                message: 'Visible',
-                                child: Icon(
-                                  Icons.visibility_outlined,
-                                  size: 18,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: _visibilityShareColumnWidth,
+                            width: _participantColumnWidth,
                             child: Center(
                               child: Tooltip(
                                 message: 'Partage',
@@ -944,7 +1385,6 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                     ),
                     const Divider(height: 1),
                     ...members.map((id) {
-                      final isVisible = _visibleToIds.contains(id);
                       final canEdit = _editing;
                       return Padding(
                         padding: const EdgeInsets.symmetric(
@@ -960,32 +1400,11 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                               ),
                             ),
                             SizedBox(
-                              width: _visibilityShareColumnWidth,
+                              width: _participantColumnWidth,
                               child: Center(
                                 child: Checkbox(
-                                  value: isVisible,
+                                  value: _participantIds.contains(id),
                                   onChanged: !canEdit
-                                      ? null
-                                      : (checked) {
-                                          setState(() {
-                                            if (checked == true) {
-                                              _visibleToIds.add(id);
-                                            } else {
-                                              _visibleToIds.remove(id);
-                                              _participantIds.remove(id);
-                                            }
-                                          });
-                                        },
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: _visibilityShareColumnWidth,
-                              child: Center(
-                                child: Checkbox(
-                                  value:
-                                      isVisible && _participantIds.contains(id),
-                                  onChanged: (!canEdit || !isVisible)
                                       ? null
                                       : (checked) {
                                           setState(() {
@@ -1009,7 +1428,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
               const SizedBox(height: 24),
               if (_editing)
                 FilledButton(
-                  onPressed: _saving ? null : _save,
+                  onPressed:
+                      (_saving || members.isEmpty) ? null : _save,
                   child: _saving
                       ? const SizedBox(
                           height: 22,
@@ -1029,13 +1449,15 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
 class _AddExpenseSheet extends ConsumerStatefulWidget {
   const _AddExpenseSheet({
     required this.tripId,
-    required this.memberIds,
+    required this.groupId,
+    required this.participantScopeMemberIds,
     required this.memberPublicLabels,
     required this.onSubmit,
   });
 
   final String tripId;
-  final List<String> memberIds;
+  final String groupId;
+  final List<String> participantScopeMemberIds;
   final Map<String, String> memberPublicLabels;
   final VoidCallback onSubmit;
 
@@ -1049,12 +1471,11 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   final _amountController = TextEditingController();
   String _currency = 'EUR';
   String? _paidBy;
-  final Set<String> _visibleToIds = {};
   final Set<String> _participantIds = {};
   DateTime _expenseDate = DateTime.now();
   bool _saving = false;
 
-  List<String> get _cleanMemberIds => widget.memberIds
+  List<String> get _scopeMemberIds => widget.participantScopeMemberIds
       .map((id) => id.trim())
       .where((id) => id.isNotEmpty)
       .toList();
@@ -1063,11 +1484,10 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   void initState() {
     super.initState();
     final myUid = FirebaseAuth.instance.currentUser?.uid;
-    final members = _cleanMemberIds;
+    final members = _scopeMemberIds;
     _paidBy = (myUid != null && members.contains(myUid))
         ? myUid
         : (members.isNotEmpty ? members.first : null);
-    _visibleToIds.addAll(members);
     _participantIds.addAll(members);
   }
 
@@ -1111,12 +1531,6 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
       );
       return;
     }
-    if (_visibleToIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coche au moins une personne visible')),
-      );
-      return;
-    }
 
     final amountText = _amountController.text.trim().replaceAll(',', '.');
     final amount = double.tryParse(amountText);
@@ -1131,12 +1545,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     try {
       await ref.read(expensesRepositoryProvider).addExpense(
             tripId: widget.tripId,
+            groupId: widget.groupId,
             title: _titleController.text,
             amount: amount,
             currency: _currency,
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
-            visibleToIds: _visibleToIds.toList(),
             expenseDate: _expenseDate,
           );
       if (!mounted) return;
@@ -1157,7 +1571,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final members = _cleanMemberIds;
+    final members = _scopeMemberIds;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -1171,75 +1585,78 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               'Nouvelle dépense',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _titleController,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Libellé',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Obligatoire';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _amountController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                    ],
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Montant',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (v) {
-                      final t = (v ?? '').trim().replaceAll(',', '.');
-                      final n = double.tryParse(t);
-                      if (n == null || n <= 0) return 'Montant invalide';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    key: ValueKey<String>(_currency),
-                    initialValue: _currency,
-                    decoration: const InputDecoration(
-                      labelText: 'Devise',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
-                      DropdownMenuItem(
-                        value: 'USD',
-                        child: Text('Dollar (USD)'),
-                      ),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) setState(() => _currency = v);
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (members.isEmpty)
+            if (members.isEmpty) ...[
+              const SizedBox(height: 12),
               Text(
-                'Aucun voyageur sur ce voyage.',
+                'Aucun voyageur autorisé dans ce poste pour partager une dépense.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.error,
                     ),
-              )
-            else
+              ),
+            ],
+            if (members.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _titleController,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Libellé',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Obligatoire';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _amountController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Montant',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        final t = (v ?? '').trim().replaceAll(',', '.');
+                        final n = double.tryParse(t);
+                        if (n == null || n <= 0) return 'Montant invalide';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      key: ValueKey<String>(_currency),
+                      initialValue: _currency,
+                      decoration: const InputDecoration(
+                        labelText: 'Devise',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'EUR', child: Text('Euro (EUR)')),
+                        DropdownMenuItem(
+                          value: 'USD',
+                          child: Text('Dollar (USD)'),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) setState(() => _currency = v);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
               StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
@@ -1299,9 +1716,9 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       Text(
-                        'Visibilité et partage',
+                        'Partage du montant',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: 8),
@@ -1320,22 +1737,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                                 children: [
                                   const Expanded(child: Text('Voyageur')),
                                   SizedBox(
-                                    width: _visibilityShareColumnWidth,
-                                    child: Center(
-                                      child: Tooltip(
-                                        message: 'Visible',
-                                        child: Icon(
-                                          Icons.visibility_outlined,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: _visibilityShareColumnWidth,
+                                    width: _participantColumnWidth,
                                     child: Center(
                                       child: Tooltip(
                                         message: 'Partage',
@@ -1354,7 +1756,6 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                             ),
                             const Divider(height: 1),
                             ...members.map((id) {
-                              final isVisible = _visibleToIds.contains(id);
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -1369,41 +1770,19 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                                       ),
                                     ),
                                     SizedBox(
-                                      width: _visibilityShareColumnWidth,
+                                      width: _participantColumnWidth,
                                       child: Center(
                                         child: Checkbox(
-                                          value: isVisible,
+                                          value: _participantIds.contains(id),
                                           onChanged: (checked) {
                                             setState(() {
                                               if (checked == true) {
-                                                _visibleToIds.add(id);
+                                                _participantIds.add(id);
                                               } else {
-                                                _visibleToIds.remove(id);
                                                 _participantIds.remove(id);
                                               }
                                             });
                                           },
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: _visibilityShareColumnWidth,
-                                      child: Center(
-                                        child: Checkbox(
-                                          value: isVisible &&
-                                              _participantIds.contains(id),
-                                          onChanged: !isVisible
-                                              ? null
-                                              : (checked) {
-                                                  setState(() {
-                                                    if (checked == true) {
-                                                      _participantIds.add(id);
-                                                    } else {
-                                                      _participantIds
-                                                          .remove(id);
-                                                    }
-                                                  });
-                                                },
                                         ),
                                       ),
                                     ),
@@ -1418,7 +1797,8 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                   );
                 },
               ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
+            ],
             FilledButton(
               onPressed: _saving || members.isEmpty ? null : _save,
               child: _saving

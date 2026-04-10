@@ -127,7 +127,17 @@ class TripsRepository {
     }
 
     final doc = firestore.collection('trips').doc();
-    await doc.set(data);
+    final defaultGroupRef = doc.collection('expenseGroups').doc();
+    final batch = firestore.batch();
+    batch.set(doc, data);
+    batch.set(defaultGroupRef, {
+      'title': 'Commun',
+      'visibleToMemberIds': <String>[user.uid],
+      'isDefault': true,
+      'createdAt': FieldValue.serverTimestamp(),
+      'createdBy': user.uid,
+    });
+    await batch.commit();
   }
 
   Future<void> deleteTrip({
