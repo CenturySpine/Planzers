@@ -49,6 +49,7 @@ class ExpensesRepository {
     required String currency,
     required String paidBy,
     required List<String> participantIds,
+    required DateTime expenseDate,
     String category = 'other',
   }) async {
     final user = auth.currentUser;
@@ -96,12 +97,80 @@ class ExpensesRepository {
       participantIds: participants,
       category: category,
       createdAt: DateTime.now(),
+      expenseDate: DateTime(
+        expenseDate.year,
+        expenseDate.month,
+        expenseDate.day,
+      ),
       createdBy: user.uid,
     );
 
     await _expensesCol(cleanTripId).add(
       draft.toCreateMap(paidBy: cleanPaidBy, createdBy: user.uid),
     );
+  }
+
+  Future<void> updateExpense({
+    required String tripId,
+    required String expenseId,
+    required String title,
+    required double amount,
+    required String currency,
+    required String paidBy,
+    required List<String> participantIds,
+    required DateTime expenseDate,
+    String category = 'other',
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanExpenseId = expenseId.trim();
+    if (cleanTripId.isEmpty || cleanExpenseId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final cleanTitle = title.trim();
+    if (cleanTitle.isEmpty) {
+      throw StateError('Libelle obligatoire');
+    }
+    if (amount <= 0) {
+      throw StateError('Montant invalide');
+    }
+
+    final cleanCurrency = currency.trim().toUpperCase();
+    if (!kSupportedExpenseCurrencies.contains(cleanCurrency)) {
+      throw StateError('Devise non supportee (EUR ou USD)');
+    }
+
+    final cleanPaidBy = paidBy.trim();
+    if (cleanPaidBy.isEmpty) {
+      throw StateError('Payeur invalide');
+    }
+
+    final participants = participantIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    if (participants.isEmpty) {
+      throw StateError('Au moins un participant');
+    }
+
+    await _expensesCol(cleanTripId).doc(cleanExpenseId).update({
+      'title': cleanTitle,
+      'amount': amount,
+      'currency': cleanCurrency,
+      'paidBy': cleanPaidBy,
+      'participantIds': participants,
+      'category': category.trim().isEmpty ? 'other' : category.trim(),
+      'expenseDate': Timestamp.fromDate(
+        DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
+      ),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
   }
 
   Future<void> deleteExpense({

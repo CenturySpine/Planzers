@@ -184,6 +184,7 @@ class _TripExpensesBody extends StatelessWidget {
                     return _ExpenseCard(
                       tripId: tripId,
                       expense: expense,
+                      memberIds: memberIds,
                       memberLabels: labels,
                     );
                   },
@@ -229,6 +230,12 @@ String _formatMoney(String currency, double amount) {
   }
   return '$amount $c';
 }
+
+String _formatExpenseDate(DateTime date) {
+  return DateFormat('dd/MM/yyyy').format(date);
+}
+
+enum _ExpenseDetailsMenuAction { edit, delete }
 
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
@@ -402,11 +409,13 @@ class _ExpenseCard extends ConsumerStatefulWidget {
   const _ExpenseCard({
     required this.tripId,
     required this.expense,
+    required this.memberIds,
     required this.memberLabels,
   });
 
   final String tripId;
   final TripExpense expense;
+  final List<String> memberIds;
   final Map<String, String> memberLabels;
 
   @override
@@ -415,6 +424,19 @@ class _ExpenseCard extends ConsumerStatefulWidget {
 
 class _ExpenseCardState extends ConsumerState<_ExpenseCard> {
   bool _deleting = false;
+
+  Future<void> _openDetails() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => _ExpenseDetailsPage(
+          tripId: widget.tripId,
+          expense: widget.expense,
+          memberIds: widget.memberIds,
+          memberLabels: widget.memberLabels,
+        ),
+      ),
+    );
+  }
 
   Future<void> _confirmDelete() async {
     final ok = await showDialog<bool>(
@@ -467,58 +489,416 @@ class _ExpenseCardState extends ConsumerState<_ExpenseCard> {
         .join(', ');
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        e.title.isEmpty ? 'Sans titre' : e.title,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatMoney(e.currency, e.amount),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: _openDetails,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.title.isEmpty ? 'Sans titre' : e.title,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatMoney(e.currency, e.amount),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
+                  IconButton(
+                    tooltip: 'Supprimer',
+                    onPressed: _deleting ? null : _confirmDelete,
+                    icon: _deleting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_outline),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Date : ${_formatExpenseDate(e.expenseDate)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                'Payé par $paidByLabel',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                'Partagée entre : $participantLabels',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpenseDetailsPage extends ConsumerStatefulWidget {
+  const _ExpenseDetailsPage({
+    required this.tripId,
+    required this.expense,
+    required this.memberIds,
+    required this.memberLabels,
+  });
+
+  final String tripId;
+  final TripExpense expense;
+  final List<String> memberIds;
+  final Map<String, String> memberLabels;
+
+  @override
+  ConsumerState<_ExpenseDetailsPage> createState() => _ExpenseDetailsPageState();
+}
+
+class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleController;
+  late final TextEditingController _amountController;
+  late String _currency;
+  late String? _paidBy;
+  late Set<String> _participantIds;
+  late DateTime _expenseDate;
+  bool _editing = false;
+  bool _saving = false;
+  bool _deleting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.expense.title);
+    _amountController = TextEditingController(
+      text: widget.expense.amount.toStringAsFixed(2),
+    );
+    _currency = widget.expense.currency;
+    _paidBy = widget.expense.paidBy;
+    _participantIds = widget.expense.participantIds.toSet();
+    _expenseDate = DateTime(
+      widget.expense.expenseDate.year,
+      widget.expense.expenseDate.month,
+      widget.expense.expenseDate.day,
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickExpenseDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      locale: const Locale('fr', 'FR'),
+      initialDate: _expenseDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _expenseDate = DateTime(picked.year, picked.month, picked.day);
+    });
+  }
+
+  Future<void> _confirmDelete() async {
+    if (_deleting) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer cette dépense ?'),
+        content: Text('« ${widget.expense.title} » sera supprimée.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _deleting = true);
+    try {
+      await ref.read(expensesRepositoryProvider).deleteExpense(
+            tripId: widget.tripId,
+            expenseId: widget.expense.id,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dépense supprimée')),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    final paidBy = _paidBy;
+    if (paidBy == null || paidBy.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choisis qui a payé')),
+      );
+      return;
+    }
+    if (_participantIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coche au moins un participant')),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(
+      _amountController.text.trim().replaceAll(',', '.'),
+    );
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Montant invalide')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(expensesRepositoryProvider).updateExpense(
+            tripId: widget.tripId,
+            expenseId: widget.expense.id,
+            title: _titleController.text,
+            amount: amount,
+            currency: _currency,
+            paidBy: paidBy,
+            participantIds: _participantIds.toList(),
+            expenseDate: _expenseDate,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dépense mise à jour')),
+      );
+      setState(() => _editing = false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final members = widget.memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Détail de la dépense'),
+        actions: [
+          PopupMenuButton<_ExpenseDetailsMenuAction>(
+            enabled: !_saving && !_deleting,
+            onSelected: (action) async {
+              if (action == _ExpenseDetailsMenuAction.edit) {
+                setState(() => _editing = true);
+                return;
+              }
+              await _confirmDelete();
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem<_ExpenseDetailsMenuAction>(
+                value: _ExpenseDetailsMenuAction.edit,
+                child: Text('Modifier'),
+              ),
+              PopupMenuItem<_ExpenseDetailsMenuAction>(
+                value: _ExpenseDetailsMenuAction.delete,
+                child: Text('Supprimer'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!_editing)
+                Text(
+                  'Lecture seule. Ouvre le menu en haut à droite pour modifier ou supprimer.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
-                IconButton(
-                  tooltip: 'Supprimer',
-                  onPressed: _deleting ? null : _confirmDelete,
-                  icon: _deleting
+              if (!_editing) const SizedBox(height: 12),
+              TextFormField(
+                controller: _titleController,
+                textInputAction: TextInputAction.next,
+                readOnly: !_editing,
+                decoration: const InputDecoration(
+                  labelText: 'Libellé',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Obligatoire' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                readOnly: !_editing,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                ],
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Montant',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  final t = (v ?? '').trim().replaceAll(',', '.');
+                  final n = double.tryParse(t);
+                  if (n == null || n <= 0) return 'Montant invalide';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                key: ValueKey<String>(_currency),
+                initialValue: _currency,
+                decoration: const InputDecoration(
+                  labelText: 'Devise',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
+                  DropdownMenuItem(value: 'USD', child: Text('Dollar (USD)')),
+                ],
+                onChanged: !_editing
+                    ? null
+                    : (v) {
+                  if (v != null) setState(() => _currency = v);
+                },
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _editing ? _pickExpenseDate : null,
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date de la dépense',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
+                  child: Text(_formatExpenseDate(_expenseDate)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                key: ValueKey<String>(_paidBy ?? ''),
+                initialValue:
+                    _paidBy != null && members.contains(_paidBy) ? _paidBy : null,
+                decoration: const InputDecoration(
+                  labelText: 'Payé par',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  for (final id in members)
+                    DropdownMenuItem(
+                      value: id,
+                      child: Text(
+                        widget.memberLabels[id] ?? id,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+                onChanged: _editing ? (v) => setState(() => _paidBy = v) : null,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Partagée entre',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              ...members.map((id) {
+                return CheckboxListTile(
+                  value: _participantIds.contains(id),
+                  onChanged: _editing
+                      ? (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              _participantIds.add(id);
+                            } else {
+                              _participantIds.remove(id);
+                            }
+                          });
+                        }
+                      : null,
+                  title: Text(
+                    widget.memberLabels[id] ?? id,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                );
+              }),
+              const SizedBox(height: 24),
+              if (_editing)
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
+                          height: 22,
+                          width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.delete_outline),
+                      : const Text('Enregistrer les modifications'),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Payé par $paidByLabel',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            Text(
-              'Partagée entre : $participantLabels',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -549,6 +929,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   String _currency = 'EUR';
   String? _paidBy;
   final Set<String> _participantIds = {};
+  DateTime _expenseDate = DateTime.now();
   bool _saving = false;
 
   List<String> get _cleanMemberIds => widget.memberIds
@@ -570,6 +951,20 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickExpenseDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      locale: const Locale('fr', 'FR'),
+      initialDate: _expenseDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _expenseDate = DateTime(picked.year, picked.month, picked.day);
+    });
   }
 
   Future<void> _save() async {
@@ -610,6 +1005,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             currency: _currency,
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
+            expenseDate: _expenseDate,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -690,6 +1086,19 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               onChanged: (v) {
                 if (v != null) setState(() => _currency = v);
               },
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _pickExpenseDate,
+              borderRadius: BorderRadius.circular(12),
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date de la dépense',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today_outlined),
+                ),
+                child: Text(_formatExpenseDate(_expenseDate)),
+              ),
             ),
             const SizedBox(height: 12),
             if (members.isEmpty)

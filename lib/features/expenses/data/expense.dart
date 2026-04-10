@@ -11,6 +11,7 @@ class TripExpense {
     required this.participantIds,
     required this.category,
     required this.createdAt,
+    required this.expenseDate,
     this.createdBy,
   });
 
@@ -23,6 +24,7 @@ class TripExpense {
   final List<String> participantIds;
   final String category;
   final DateTime createdAt;
+  final DateTime expenseDate;
   final String? createdBy;
 
   factory TripExpense.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -32,6 +34,12 @@ class TripExpense {
       Timestamp ts => ts.toDate(),
       String s => DateTime.tryParse(s) ?? DateTime.now(),
       _ => DateTime.now(),
+    };
+    final expenseDateRaw = data['expenseDate'];
+    final expenseDate = switch (expenseDateRaw) {
+      Timestamp ts => ts.toDate(),
+      String s => DateTime.tryParse(s) ?? createdAt,
+      _ => createdAt,
     };
 
     final amountRaw = data['amount'];
@@ -52,6 +60,11 @@ class TripExpense {
           .toList(),
       category: ((data['category'] as String?) ?? 'other').trim(),
       createdAt: createdAt,
+      expenseDate: DateTime(
+        expenseDate.year,
+        expenseDate.month,
+        expenseDate.day,
+      ),
       createdBy: (data['createdBy'] as String?)?.trim(),
     );
   }
@@ -67,6 +80,9 @@ class TripExpense {
       'paidBy': paidBy.trim(),
       'participantIds': participantIds,
       'category': category.trim().isEmpty ? 'other' : category.trim(),
+      'expenseDate': Timestamp.fromDate(
+        DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
+      ),
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': createdBy.trim(),
     };
