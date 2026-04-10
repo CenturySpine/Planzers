@@ -12,8 +12,8 @@ final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
 });
 
 /// Live list of expenses for a trip, newest first.
-final tripExpensesStreamProvider = StreamProvider.autoDispose
-    .family<List<TripExpense>, String>((ref, tripId) {
+final tripExpensesStreamProvider =
+    StreamProvider.autoDispose.family<List<TripExpense>, String>((ref, tripId) {
   return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
 });
 
@@ -49,6 +49,7 @@ class ExpensesRepository {
     required String currency,
     required String paidBy,
     required List<String> participantIds,
+    required List<String> visibleToIds,
     required DateTime expenseDate,
     String category = 'other',
   }) async {
@@ -88,6 +89,17 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
+    final visibleTo = visibleToIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    if (visibleTo.isEmpty) {
+      throw StateError('Au moins une personne doit voir la depense');
+    }
+    if (participants.any((id) => !visibleTo.contains(id))) {
+      throw StateError('Les participants doivent voir la depense');
+    }
+
     final draft = TripExpense(
       id: '',
       title: cleanTitle,
@@ -95,6 +107,7 @@ class ExpensesRepository {
       currency: cleanCurrency,
       paidBy: cleanPaidBy,
       participantIds: participants,
+      visibleToIds: visibleTo,
       category: category,
       createdAt: DateTime.now(),
       expenseDate: DateTime(
@@ -118,6 +131,7 @@ class ExpensesRepository {
     required String currency,
     required String paidBy,
     required List<String> participantIds,
+    required List<String> visibleToIds,
     required DateTime expenseDate,
     String category = 'other',
   }) async {
@@ -158,12 +172,24 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
+    final visibleTo = visibleToIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    if (visibleTo.isEmpty) {
+      throw StateError('Au moins une personne doit voir la depense');
+    }
+    if (participants.any((id) => !visibleTo.contains(id))) {
+      throw StateError('Les participants doivent voir la depense');
+    }
+
     await _expensesCol(cleanTripId).doc(cleanExpenseId).update({
       'title': cleanTitle,
       'amount': amount,
       'currency': cleanCurrency,
       'paidBy': cleanPaidBy,
       'participantIds': participants,
+      'visibleToIds': visibleTo,
       'category': category.trim().isEmpty ? 'other' : category.trim(),
       'expenseDate': Timestamp.fromDate(
         DateTime(expenseDate.year, expenseDate.month, expenseDate.day),

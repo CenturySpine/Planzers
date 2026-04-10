@@ -15,6 +15,7 @@ TripExpense _e({
     currency: currency,
     paidBy: paidBy,
     participantIds: participants,
+    visibleToIds: participants,
     category: 'other',
     createdAt: DateTime(2026, 1, 1),
     expenseDate: DateTime(2026, 1, 1),

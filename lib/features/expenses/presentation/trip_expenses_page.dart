@@ -10,6 +10,8 @@ import 'package:planzers/features/expenses/data/expenses_repository.dart';
 import 'package:planzers/features/expenses/domain/expense_settlement.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
+const double _visibilityShareColumnWidth = 48;
+
 class TripExpensesPage extends ConsumerWidget {
   const TripExpensesPage({super.key});
 
@@ -38,12 +40,12 @@ class TripExpensesPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddExpenseSheet(
-              context,
-              ref,
-              trip.id,
-              trip.memberIds,
-              trip.memberPublicLabels,
-            ),
+          context,
+          ref,
+          trip.id,
+          trip.memberIds,
+          trip.memberPublicLabels,
+        ),
         icon: const Icon(Icons.add),
         label: const Text('Ajouter une dépense'),
       ),
@@ -91,10 +93,8 @@ class _TripExpensesBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cleanMemberIds = memberIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
+    final cleanMemberIds =
+        memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
 
     final balances = computeBalances(expenses);
     final transfers = suggestTransfers(balances);
@@ -127,72 +127,76 @@ class _TripExpensesBody extends StatelessWidget {
     BalancesByCurrency balances,
     List<SuggestedTransfer> transfers,
   ) {
+    final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final visibleExpenses =
+        expenses.where((expense) => expense.isVisibleTo(viewerId)).toList();
+
     return CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Dépenses',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Dépenses',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverToBoxAdapter(
+            child: _SettlementSection(
+              balancesByCurrency: balances,
+              transfers: transfers,
+              memberLabels: labels,
+            ),
+          ),
+        ),
+        const SliverPadding(
+          padding: EdgeInsets.only(top: 8),
+          sliver: SliverToBoxAdapter(child: Divider(height: 1)),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Opérations',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+        ),
+        if (visibleExpenses.isEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Aucune dépense visible pour le moment. Utilise le bouton ci-dessous pour en ajouter une.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverToBoxAdapter(
-                child: _SettlementSection(
-                  balancesByCurrency: balances,
-                  transfers: transfers,
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList.separated(
+              itemCount: visibleExpenses.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final expense = visibleExpenses[index];
+                return _ExpenseCard(
+                  tripId: tripId,
+                  expense: expense,
+                  memberIds: memberIds,
                   memberLabels: labels,
-                ),
-              ),
+                );
+              },
             ),
-            const SliverPadding(
-              padding: EdgeInsets.only(top: 8),
-              sliver: SliverToBoxAdapter(child: Divider(height: 1)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Opérations',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-            ),
-            if (expenses.isEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                sliver: SliverToBoxAdapter(
-                  child: Text(
-                    'Aucune dépense pour le moment. Utilise le bouton ci-dessous pour en ajouter une.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList.separated(
-                  itemCount: expenses.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final expense = expenses[index];
-                    return _ExpenseCard(
-                      tripId: tripId,
-                      expense: expense,
-                      memberIds: memberIds,
-                      memberLabels: labels,
-                    );
-                  },
-                ),
-              ),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
-          ],
-        );
+          ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+      ],
+    );
   }
 }
 
@@ -572,7 +576,8 @@ class _ExpenseDetailsPage extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
 
   @override
-  ConsumerState<_ExpenseDetailsPage> createState() => _ExpenseDetailsPageState();
+  ConsumerState<_ExpenseDetailsPage> createState() =>
+      _ExpenseDetailsPageState();
 }
 
 class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
@@ -581,6 +586,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   late final TextEditingController _amountController;
   late String _currency;
   late String? _paidBy;
+  late Set<String> _visibleToIds;
   late Set<String> _participantIds;
   late DateTime _expenseDate;
   bool _editing = false;
@@ -590,13 +596,21 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   @override
   void initState() {
     super.initState();
+    final members = widget.memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final rawVisibleTo = widget.expense.visibleToIds.toSet();
+
     _titleController = TextEditingController(text: widget.expense.title);
     _amountController = TextEditingController(
       text: widget.expense.amount.toStringAsFixed(2),
     );
     _currency = widget.expense.currency;
     _paidBy = widget.expense.paidBy;
-    _participantIds = widget.expense.participantIds.toSet();
+    _visibleToIds = rawVisibleTo.isEmpty ? {...members} : rawVisibleTo;
+    _participantIds =
+        widget.expense.participantIds.where(_visibleToIds.contains).toSet();
     _expenseDate = DateTime(
       widget.expense.expenseDate.year,
       widget.expense.expenseDate.month,
@@ -685,6 +699,12 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       );
       return;
     }
+    if (_visibleToIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coche au moins une personne visible')),
+      );
+      return;
+    }
 
     final amount = double.tryParse(
       _amountController.text.trim().replaceAll(',', '.'),
@@ -706,6 +726,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
             currency: _currency,
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
+            visibleToIds: _visibleToIds.toList(),
             expenseDate: _expenseDate,
           );
       if (!mounted) return;
@@ -763,14 +784,6 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (!_editing)
-                Text(
-                  'Lecture seule. Ouvre le menu en haut à droite pour modifier ou supprimer.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              if (!_editing) const SizedBox(height: 12),
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
@@ -783,108 +796,216 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                     (v == null || v.trim().isEmpty) ? 'Obligatoire' : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                readOnly: !_editing,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                ],
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Montant',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) {
-                  final t = (v ?? '').trim().replaceAll(',', '.');
-                  final n = double.tryParse(t);
-                  if (n == null || n <= 0) return 'Montant invalide';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: ValueKey<String>(_currency),
-                initialValue: _currency,
-                decoration: const InputDecoration(
-                  labelText: 'Devise',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
-                  DropdownMenuItem(value: 'USD', child: Text('Dollar (USD)')),
-                ],
-                onChanged: !_editing
-                    ? null
-                    : (v) {
-                  if (v != null) setState(() => _currency = v);
-                },
-              ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: _editing ? _pickExpenseDate : null,
-                borderRadius: BorderRadius.circular(12),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Date de la dépense',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today_outlined),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      readOnly: !_editing,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Montant',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        final t = (v ?? '').trim().replaceAll(',', '.');
+                        final n = double.tryParse(t);
+                        if (n == null || n <= 0) return 'Montant invalide';
+                        return null;
+                      },
+                    ),
                   ),
-                  child: Text(_formatExpenseDate(_expenseDate)),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      key: ValueKey<String>(_currency),
+                      initialValue: _currency,
+                      decoration: const InputDecoration(
+                        labelText: 'Devise',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'EUR',
+                          child: Text('Euro (EUR)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'USD',
+                          child: Text('Dollar (USD)'),
+                        ),
+                      ],
+                      onChanged: !_editing
+                          ? null
+                          : (v) {
+                              if (v != null) setState(() => _currency = v);
+                            },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                key: ValueKey<String>(_paidBy ?? ''),
-                initialValue:
-                    _paidBy != null && members.contains(_paidBy) ? _paidBy : null,
-                decoration: const InputDecoration(
-                  labelText: 'Payé par',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  for (final id in members)
-                    DropdownMenuItem(
-                      value: id,
-                      child: Text(
-                        widget.memberLabels[id] ?? id,
-                        overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      key: ValueKey<String>(_paidBy ?? ''),
+                      initialValue: _paidBy != null && members.contains(_paidBy)
+                          ? _paidBy
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Payé par',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final id in members)
+                          DropdownMenuItem(
+                            value: id,
+                            child: Text(
+                              widget.memberLabels[id] ?? id,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged:
+                          _editing ? (v) => setState(() => _paidBy = v) : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _editing ? _pickExpenseDate : null,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Date de la dépense',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today_outlined),
+                        ),
+                        child: Text(_formatExpenseDate(_expenseDate)),
                       ),
                     ),
+                  ),
                 ],
-                onChanged: _editing ? (v) => setState(() => _paidBy = v) : null,
               ),
               const SizedBox(height: 16),
               Text(
-                'Partagée entre',
+                'Visibilité et partage',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
-              ...members.map((id) {
-                return CheckboxListTile(
-                  value: _participantIds.contains(id),
-                  onChanged: _editing
-                      ? (checked) {
-                          setState(() {
-                            if (checked == true) {
-                              _participantIds.add(id);
-                            } else {
-                              _participantIds.remove(id);
-                            }
-                          });
-                        }
-                      : null,
-                  title: Text(
-                    widget.memberLabels[id] ?? id,
-                    overflow: TextOverflow.ellipsis,
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                );
-              }),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                      child: Row(
+                        children: [
+                          const Expanded(child: Text('Voyageur')),
+                          SizedBox(
+                            width: _visibilityShareColumnWidth,
+                            child: Center(
+                              child: Tooltip(
+                                message: 'Visible',
+                                child: Icon(
+                                  Icons.visibility_outlined,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: _visibilityShareColumnWidth,
+                            child: Center(
+                              child: Tooltip(
+                                message: 'Partage',
+                                child: Icon(
+                                  Icons.payments_outlined,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ...members.map((id) {
+                      final isVisible = _visibleToIds.contains(id);
+                      final canEdit = _editing;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.memberLabels[id] ?? id,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            SizedBox(
+                              width: _visibilityShareColumnWidth,
+                              child: Center(
+                                child: Checkbox(
+                                  value: isVisible,
+                                  onChanged: !canEdit
+                                      ? null
+                                      : (checked) {
+                                          setState(() {
+                                            if (checked == true) {
+                                              _visibleToIds.add(id);
+                                            } else {
+                                              _visibleToIds.remove(id);
+                                              _participantIds.remove(id);
+                                            }
+                                          });
+                                        },
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              width: _visibilityShareColumnWidth,
+                              child: Center(
+                                child: Checkbox(
+                                  value:
+                                      isVisible && _participantIds.contains(id),
+                                  onChanged: (!canEdit || !isVisible)
+                                      ? null
+                                      : (checked) {
+                                          setState(() {
+                                            if (checked == true) {
+                                              _participantIds.add(id);
+                                            } else {
+                                              _participantIds.remove(id);
+                                            }
+                                          });
+                                        },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
               if (_editing)
                 FilledButton(
@@ -928,6 +1049,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   final _amountController = TextEditingController();
   String _currency = 'EUR';
   String? _paidBy;
+  final Set<String> _visibleToIds = {};
   final Set<String> _participantIds = {};
   DateTime _expenseDate = DateTime.now();
   bool _saving = false;
@@ -942,7 +1064,10 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     super.initState();
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final members = _cleanMemberIds;
-    _paidBy = (myUid != null && members.contains(myUid)) ? myUid : (members.isNotEmpty ? members.first : null);
+    _paidBy = (myUid != null && members.contains(myUid))
+        ? myUid
+        : (members.isNotEmpty ? members.first : null);
+    _visibleToIds.addAll(members);
     _participantIds.addAll(members);
   }
 
@@ -986,6 +1111,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
       );
       return;
     }
+    if (_visibleToIds.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coche au moins une personne visible')),
+      );
+      return;
+    }
 
     final amountText = _amountController.text.trim().replaceAll(',', '.');
     final amount = double.tryParse(amountText);
@@ -1005,6 +1136,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             currency: _currency,
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
+            visibleToIds: _visibleToIds.toList(),
             expenseDate: _expenseDate,
           );
       if (!mounted) return;
@@ -1053,52 +1185,51 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               },
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Montant',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) {
-                final t = (v ?? '').trim().replaceAll(',', '.');
-                final n = double.tryParse(t);
-                if (n == null || n <= 0) return 'Montant invalide';
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: ValueKey<String>(_currency),
-              initialValue: _currency,
-              decoration: const InputDecoration(
-                labelText: 'Devise',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
-                DropdownMenuItem(value: 'USD', child: Text('Dollar (USD)')),
-              ],
-              onChanged: (v) {
-                if (v != null) setState(() => _currency = v);
-              },
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: _pickExpenseDate,
-              borderRadius: BorderRadius.circular(12),
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date de la dépense',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today_outlined),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                    ],
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Montant',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) {
+                      final t = (v ?? '').trim().replaceAll(',', '.');
+                      final n = double.tryParse(t);
+                      if (n == null || n <= 0) return 'Montant invalide';
+                      return null;
+                    },
+                  ),
                 ),
-                child: Text(_formatExpenseDate(_expenseDate)),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey<String>(_currency),
+                    initialValue: _currency,
+                    decoration: const InputDecoration(
+                      labelText: 'Devise',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'EUR', child: Text('Euro (EUR)')),
+                      DropdownMenuItem(
+                        value: 'USD',
+                        child: Text('Dollar (USD)'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _currency = v);
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (members.isEmpty)
@@ -1124,55 +1255,165 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      DropdownButtonFormField<String>(
-                        key: ValueKey<String>(_paidBy ?? ''),
-                        initialValue: _paidBy != null &&
-                                members.contains(_paidBy)
-                            ? _paidBy
-                            : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Payé par',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          for (final id in members)
-                            DropdownMenuItem(
-                              value: id,
-                              child: Text(
-                                labels[id] ?? id,
-                                overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              key: ValueKey<String>(_paidBy ?? ''),
+                              initialValue:
+                                  _paidBy != null && members.contains(_paidBy)
+                                      ? _paidBy
+                                      : null,
+                              decoration: const InputDecoration(
+                                labelText: 'Payé par',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: [
+                                for (final id in members)
+                                  DropdownMenuItem(
+                                    value: id,
+                                    child: Text(
+                                      labels[id] ?? id,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                              ],
+                              onChanged: (v) => setState(() => _paidBy = v),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: InkWell(
+                              onTap: _pickExpenseDate,
+                              borderRadius: BorderRadius.circular(12),
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Date de la dépense',
+                                  border: OutlineInputBorder(),
+                                  suffixIcon:
+                                      Icon(Icons.calendar_today_outlined),
+                                ),
+                                child: Text(_formatExpenseDate(_expenseDate)),
                               ),
                             ),
+                          ),
                         ],
-                        onChanged: (v) => setState(() => _paidBy = v),
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Partagée entre',
+                        'Visibilité et partage',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: 8),
-                      ...members.map((id) {
-                        return CheckboxListTile(
-                          value: _participantIds.contains(id),
-                          onChanged: (checked) {
-                            setState(() {
-                              if (checked == true) {
-                                _participantIds.add(id);
-                              } else {
-                                _participantIds.remove(id);
-                              }
-                            });
-                          },
-                          title: Text(
-                            labels[id] ?? id,
-                            overflow: TextOverflow.ellipsis,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
                           ),
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                        );
-                      }),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                              child: Row(
+                                children: [
+                                  const Expanded(child: Text('Voyageur')),
+                                  SizedBox(
+                                    width: _visibilityShareColumnWidth,
+                                    child: Center(
+                                      child: Tooltip(
+                                        message: 'Visible',
+                                        child: Icon(
+                                          Icons.visibility_outlined,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: _visibilityShareColumnWidth,
+                                    child: Center(
+                                      child: Tooltip(
+                                        message: 'Partage',
+                                        child: Icon(
+                                          Icons.payments_outlined,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            ...members.map((id) {
+                              final isVisible = _visibleToIds.contains(id);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 2,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        labels[id] ?? id,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: _visibilityShareColumnWidth,
+                                      child: Center(
+                                        child: Checkbox(
+                                          value: isVisible,
+                                          onChanged: (checked) {
+                                            setState(() {
+                                              if (checked == true) {
+                                                _visibleToIds.add(id);
+                                              } else {
+                                                _visibleToIds.remove(id);
+                                                _participantIds.remove(id);
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: _visibilityShareColumnWidth,
+                                      child: Center(
+                                        child: Checkbox(
+                                          value: isVisible &&
+                                              _participantIds.contains(id),
+                                          onChanged: !isVisible
+                                              ? null
+                                              : (checked) {
+                                                  setState(() {
+                                                    if (checked == true) {
+                                                      _participantIds.add(id);
+                                                    } else {
+                                                      _participantIds
+                                                          .remove(id);
+                                                    }
+                                                  });
+                                                },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
                     ],
                   );
                 },
