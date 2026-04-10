@@ -205,7 +205,9 @@ class TripsRepository {
     await docRef.update(update);
   }
 
-  Future<String> getOrCreateInviteLink({
+  /// Invite secret shared with guests (same value as the `token` query param
+  /// in the invite link). Owner-only.
+  Future<String> getOrCreateInviteToken({
     required String tripId,
   }) async {
     final user = auth.currentUser;
@@ -230,6 +232,14 @@ class TripsRepository {
       inviteToken = _generateInviteToken();
       await docRef.update({'inviteToken': inviteToken});
     }
+
+    return inviteToken;
+  }
+
+  Future<String> getOrCreateInviteLink({
+    required String tripId,
+  }) async {
+    final inviteToken = await getOrCreateInviteToken(tripId: tripId);
 
     final params = <String, String>{
       'tripId': tripId,
@@ -265,6 +275,36 @@ class TripsRepository {
       'tripId': tripId,
       'token': cleanToken,
     });
+  }
+
+  /// Joins using only the invite token (same as opening the invite link).
+  /// Returns the trip id for navigation.
+  Future<String> joinTripWithInviteToken(String token) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanToken = token.trim();
+    if (cleanToken.isEmpty) {
+      throw StateError('Code d invitation invalide');
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable = regionFunctions.httpsCallable('joinTripWithInviteToken');
+    final result = await callable.call(<String, dynamic>{
+      'token': cleanToken,
+    });
+    final data = result.data;
+    if (data is! Map) {
+      throw StateError('Reponse serveur invalide');
+    }
+    final tripId = data['tripId'];
+    if (tripId is! String || tripId.trim().isEmpty) {
+      throw StateError('Reponse serveur invalide');
+    }
+    return tripId.trim();
   }
 
   /// Ensures this user's [memberPublicLabels] entry exists on the trip (email

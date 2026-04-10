@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,18 +22,35 @@ class TripsPage extends ConsumerWidget {
           const AccountMenuButton(),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openCreateTripDialog(context, ref),
-        icon: const Icon(Icons.add),
-        label: const Text('Nouveau voyage'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'trips_join_invite',
+            tooltip: 'Rejoindre avec un code d\'invitation',
+            onPressed: () => _openJoinByInviteCodeDialog(context),
+            child: const Icon(Icons.vpn_key_outlined),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton(
+            heroTag: 'trips_create',
+            tooltip: 'Nouveau voyage',
+            onPressed: () => _openCreateTripDialog(context, ref),
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
       body: tripsAsync.when(
         data: (trips) {
           if (trips.isEmpty) {
             return const Center(
-              child: Text(
-                'Aucun voyage pour le moment.\nCree ton premier voyage.',
-                textAlign: TextAlign.center,
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Aucun voyage pour le moment.\nCree ton premier voyage.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -243,8 +261,46 @@ class TripsPage extends ConsumerWidget {
       },
     );
 
-    titleController.dispose();
-    destinationController.dispose();
+    // Same lifecycle issue as the invite dialog: do not dispose until the
+    // route overlay has finished tearing down (async close + animation).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        titleController.dispose();
+        destinationController.dispose();
+      });
+    });
+  }
+
+  Future<void> _openJoinByInviteCodeDialog(BuildContext parentContext) async {
+    await showDialog<void>(
+      context: parentContext,
+      builder: (dialogRouteContext) => _JoinTripByCodeDialog(
+        parentContext: parentContext,
+        navigatorContext: dialogRouteContext,
+      ),
+    );
+  }
+
+  static String _messageForJoinByCodeError(Object e) {
+    if (e is FirebaseFunctionsException) {
+      switch (e.code) {
+        case 'not-found':
+          return 'Ce code d\'invitation est introuvable.';
+        case 'permission-denied':
+          return 'Ce code d\'invitation n\'est plus valide.';
+        case 'invalid-argument':
+          return 'Code d\'invitation invalide.';
+        case 'unauthenticated':
+          return 'Connecte-toi pour rejoindre un voyage.';
+        default:
+          break;
+      }
+      final m = e.message;
+      if (m != null && m.trim().isNotEmpty) {
+        return m.trim();
+      }
+    }
+    return e.toString();
   }
 
   Future<void> _confirmAndDeleteTrip(
@@ -289,5 +345,127 @@ class TripsPage extends ConsumerWidget {
         SnackBar(content: Text('Erreur suppression: $e')),
       );
     }
+  }
+}
+
+class _JoinTripByCodeDialog extends ConsumerStatefulWidget {
+  const _JoinTripByCodeDialog({
+    required this.parentContext,
+    required this.navigatorContext,
+  });
+
+  /// Context of [TripsPage] (valid for [GoRouter] / [ScaffoldMessenger] after close).
+  final BuildContext parentContext;
+
+  /// Context passed to [showDialog] (valid for [Navigator.pop] only).
+  final BuildContext navigatorContext;
+
+  @override
+  ConsumerState<_JoinTripByCodeDialog> createState() =>
+      _JoinTripByCodeDialogState();
+}
+
+class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
+  late final TextEditingController _codeController;
+  String? _error;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final code = _codeController.text.trim();
+    if (code.isEmpty) {
+      setState(() => _error = 'Saisis le code d\'invitation.');
+      return;
+    }
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
+    try {
+      final tripId =
+          await ref.read(tripsRepositoryProvider).joinTripWithInviteToken(code);
+      if (!widget.navigatorContext.mounted) return;
+      Navigator.of(widget.navigatorContext).pop();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!widget.parentContext.mounted) return;
+        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+          const SnackBar(content: Text('Vous avez rejoint le voyage')),
+        );
+        widget.parentContext.go('/trips/$tripId/overview');
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _error = TripsPage._messageForJoinByCodeError(e);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Code d\'invitation'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Colle le code envoye par l\'organisateur du voyage '
+              '(pas le lien, uniquement le code).',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _codeController,
+              decoration: const InputDecoration(
+                labelText: 'Code',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
+              onSubmitted: _isSubmitting ? null : (_) => _submit(),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting
+              ? null
+              : () => Navigator.of(widget.navigatorContext).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: _isSubmitting ? null : _submit,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Rejoindre'),
+        ),
+      ],
+    );
   }
 }

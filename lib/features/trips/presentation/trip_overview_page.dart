@@ -26,7 +26,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   late final TextEditingController _linkController;
   bool _isEditing = false;
   bool _isSaving = false;
-  bool _isSharingInvite = false;
+  bool _inviteClipboardBusy = false;
   final Set<String> _removingMemberIds = <String>{};
   DateTime? _editStartDate;
   DateTime? _editEndDate;
@@ -166,8 +166,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _shareInviteLink() async {
-    if (_isSharingInvite) return;
-    setState(() => _isSharingInvite = true);
+    if (_inviteClipboardBusy) return;
+    setState(() => _inviteClipboardBusy = true);
     try {
       final link =
           await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
@@ -186,7 +186,34 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isSharingInvite = false);
+        setState(() => _inviteClipboardBusy = false);
+      }
+    }
+  }
+
+  Future<void> _copyInviteCode() async {
+    if (_inviteClipboardBusy) return;
+    setState(() => _inviteClipboardBusy = true);
+    try {
+      final token =
+          await ref.read(tripsRepositoryProvider).getOrCreateInviteToken(
+                tripId: _trip.id,
+              );
+      await Clipboard.setData(ClipboardData(text: token));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Code d invitation copie dans le presse-papiers'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur copie du code: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _inviteClipboardBusy = false);
       }
     }
   }
@@ -304,8 +331,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       IconButton(
                         tooltip: 'Partager invitation',
                         onPressed:
-                            _isSharingInvite ? null : _shareInviteLink,
-                        icon: _isSharingInvite
+                            _inviteClipboardBusy ? null : _shareInviteLink,
+                        icon: _inviteClipboardBusy
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -313,6 +340,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.group_add_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Copier le code d invitation',
+                        onPressed:
+                            _inviteClipboardBusy ? null : _copyInviteCode,
+                        icon: const Icon(Icons.vpn_key_outlined),
                       ),
                       IconButton(
                         tooltip: 'Modifier',
