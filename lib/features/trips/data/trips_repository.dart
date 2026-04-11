@@ -361,4 +361,23 @@ class TripsRepository {
       'memberPublicLabels.$cleanMemberId': FieldValue.delete(),
     });
   }
+
+  /// Leaves a trip as the current user (non-owner only). Server enforces
+  /// membership, not owner, and no outstanding shared-expense balance.
+  Future<void> leaveTripAsMember({required String tripId}) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable = regionFunctions.httpsCallable('leaveTrip');
+    await callable.call(<String, dynamic>{'tripId': cleanTripId});
+  }
 }

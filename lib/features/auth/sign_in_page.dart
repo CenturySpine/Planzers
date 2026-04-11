@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:planzers/features/auth/data/auth_repository.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
@@ -40,8 +41,25 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('Google sign-in error: ${e.message ?? e.code}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? e.code)),
+        );
+      }
     } catch (e) {
       debugPrint('Google sign-in error: $e');
+      if (mounted) {
+        final message = e is GoogleSignInException &&
+                e.code == GoogleSignInExceptionCode.canceled
+            ? 'Connexion Google interrompue. Si tu n\'as pas annulé, vérifie '
+                'l\'empreinte SHA-1 (debug) dans la console Firebase pour '
+                'l\'app Android de ce flavor, ou réessaie sans faire pivoter '
+                'l\'écran pendant la connexion.'
+            : '$e';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {

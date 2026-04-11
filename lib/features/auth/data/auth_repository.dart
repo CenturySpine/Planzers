@@ -2,11 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:planzers/core/firebase/firebase_target_provider.dart';
+import 'package:planzers/core/firebase/google_sign_in_server_client_id.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final target = ref.watch(firebaseTargetProvider);
   return AuthRepository(
     auth: FirebaseAuth.instance,
     googleSignIn: GoogleSignIn.instance,
+    googleSignInServerClientId: googleSignInServerClientIdFor(target),
   );
 });
 
@@ -14,10 +18,12 @@ class AuthRepository {
   AuthRepository({
     required this.auth,
     required this.googleSignIn,
+    required this.googleSignInServerClientId,
   });
 
   final FirebaseAuth auth;
   final GoogleSignIn googleSignIn;
+  final String googleSignInServerClientId;
   bool _googleSignInInitialized = false;
 
   Future<UserCredential> signInWithGoogle() async {
@@ -43,7 +49,9 @@ class AuthRepository {
     // On mobile, use the native Google Sign-In flow to avoid browser
     // redirection issues and ensure return to the app.
     if (!_googleSignInInitialized) {
-      await googleSignIn.initialize();
+      await googleSignIn.initialize(
+        serverClientId: googleSignInServerClientId,
+      );
       _googleSignInInitialized = true;
     }
 

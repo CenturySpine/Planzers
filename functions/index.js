@@ -391,6 +391,124 @@ exports.joinTripWithInviteToken = onCall(
   }
 );
 
+const BALANCE_EPSILON = 0.009;
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
+ * @returns {Map<string, Map<string, number>>} currency -> uid -> net balance
+ */
+function computeBalancesFromExpenseDocs(expenseDocs) {
+  const result = new Map();
+  for (const doc of expenseDocs) {
+    const exp = doc.data() || {};
+    const currency = normalizeString(exp.currency || 'EUR').toUpperCase();
+    if (!currency) continue;
+
+    const participants = (Array.isArray(exp.participantIds)
+      ? exp.participantIds
+      : []
+    )
+      .map((v) => String(v).trim())
+      .filter((id) => id.length > 0);
+    if (participants.length === 0) continue;
+
+    const paidBy = normalizeString(exp.paidBy);
+    if (!paidBy) continue;
+
+    const amount = Number(exp.amount);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+
+    const perPerson = amount / participants.length;
+    if (!result.has(currency)) {
+      result.set(currency, new Map());
+    }
+    const bucket = result.get(currency);
+
+    for (const uid of participants) {
+      bucket.set(uid, (bucket.get(uid) || 0) - perPerson);
+    }
+    bucket.set(paidBy, (bucket.get(paidBy) || 0) + amount);
+  }
+  return result;
+}
+
+/**
+ * @param {string} uid
+ * @param {Map<string, Map<string, number>>} balancesByCurrency
+ */
+function userHasOutstandingExpenseBalance(uid, balancesByCurrency) {
+  for (const bucket of balancesByCurrency.values()) {
+    const raw = bucket.get(uid);
+    if (raw === undefined) continue;
+    if (Math.abs(raw) > BALANCE_EPSILON) return true;
+  }
+  return false;
+}
+
+exports.leaveTrip = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+
+    await db.runTransaction(async (tx) => {
+      const tripSnap = await tx.get(tripRef);
+      if (!tripSnap.exists) {
+        throw new HttpsError('not-found', 'Voyage introuvable');
+      }
+
+      const data = tripSnap.data() || {};
+      const ownerId = normalizeString(data.ownerId);
+      if (ownerId === uid) {
+        throw new HttpsError(
+          'permission-denied',
+          'Le créateur du voyage ne peut pas quitter ainsi'
+        );
+      }
+
+      const memberIds = Array.isArray(data.memberIds)
+        ? data.memberIds.map((v) => String(v))
+        : [];
+      if (!memberIds.includes(uid)) {
+        throw new HttpsError(
+          'permission-denied',
+          'Tu ne fais pas partie de ce voyage'
+        );
+      }
+
+      const expensesQuery = tripRef.collection('expenses');
+      const expensesSnap = await tx.get(expensesQuery);
+      const balances = computeBalancesFromExpenseDocs(expensesSnap.docs);
+
+      if (userHasOutstandingExpenseBalance(uid, balances)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Tu as encore des sommes à régler sur ce voyage'
+        );
+      }
+
+      tx.update(tripRef, {
+        memberIds: admin.firestore.FieldValue.arrayRemove(uid),
+        [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
+      });
+    });
+
+    return { ok: true };
+  }
+);
+
 exports.registerMyTripMemberLabel = onCall(
   {
     region: 'europe-west1',
