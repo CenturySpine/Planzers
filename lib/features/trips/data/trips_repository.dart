@@ -356,8 +356,9 @@ class TripsRepository {
     });
   }
 
-  /// Leaves a trip as the current user (non-owner only). Server enforces
-  /// membership, not owner, and no outstanding shared-expense balance.
+  /// Leaves a trip as the current user (non-owner only). Server removes the
+  /// user from trip [memberIds] and strips them from all shared expenses
+  /// (participantIds / paidBy) in one transaction.
   Future<void> leaveTripAsMember({required String tripId}) async {
     final user = auth.currentUser;
     if (user == null) {

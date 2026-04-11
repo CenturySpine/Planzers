@@ -61,31 +61,6 @@ const Set<String> kSupportedExpenseCurrencies = {'EUR', 'USD'};
 /// Epsilon for floating-point comparisons (cent-level).
 const double _kBalanceEpsilon = 0.009;
 
-/// True when [userId] has a non-zero net balance in any currency bucket from
-/// [expenses] (same model as [computeBalances] / suggested transfers).
-///
-/// Used to decide if a member may leave a trip without unsettled amounts.
-bool userHasOutstandingExpenseBalance(
-  String? userId,
-  Iterable<TripExpense> expenses,
-) {
-  final u = userId?.trim();
-  if (u == null || u.isEmpty) {
-    return false;
-  }
-  final balances = computeBalances(expenses);
-  for (final bucket in balances.values) {
-    final raw = bucket[u];
-    if (raw == null) {
-      continue;
-    }
-    if (raw.abs() > _kBalanceEpsilon) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /// Computes per-user net balance by currency from shared expenses.
 ///
 /// For each expense, the amount is split equally across [participantIds];

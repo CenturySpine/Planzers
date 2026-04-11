@@ -391,58 +391,46 @@ exports.joinTripWithInviteToken = onCall(
   }
 );
 
-const BALANCE_EPSILON = 0.009;
-
 /**
+ * Removes [uid] from shared expenses for a trip: drops them from participantIds,
+ * reassigns paidBy when needed, deletes docs with no participants left.
+ *
+ * @param {FirebaseFirestore.Transaction} tx
  * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
- * @returns {Map<string, Map<string, number>>} currency -> uid -> net balance
+ * @param {string} uid
  */
-function computeBalancesFromExpenseDocs(expenseDocs) {
-  const result = new Map();
+function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
   for (const doc of expenseDocs) {
     const exp = doc.data() || {};
-    const currency = normalizeString(exp.currency || 'EUR').toUpperCase();
-    if (!currency) continue;
-
     const participants = (Array.isArray(exp.participantIds)
       ? exp.participantIds
       : []
     )
       .map((v) => String(v).trim())
       .filter((id) => id.length > 0);
-    if (participants.length === 0) continue;
-
     const paidBy = normalizeString(exp.paidBy);
-    if (!paidBy) continue;
-
-    const amount = Number(exp.amount);
-    if (!Number.isFinite(amount) || amount <= 0) continue;
-
-    const perPerson = amount / participants.length;
-    if (!result.has(currency)) {
-      result.set(currency, new Map());
+    const inParticipants = participants.includes(uid);
+    const isPayer = paidBy === uid;
+    if (!inParticipants && !isPayer) {
+      continue;
     }
-    const bucket = result.get(currency);
 
-    for (const uid of participants) {
-      bucket.set(uid, (bucket.get(uid) || 0) - perPerson);
+    const newParticipants = participants.filter((id) => id !== uid);
+    if (newParticipants.length === 0) {
+      tx.delete(doc.ref);
+      continue;
     }
-    bucket.set(paidBy, (bucket.get(paidBy) || 0) + amount);
-  }
-  return result;
-}
 
-/**
- * @param {string} uid
- * @param {Map<string, Map<string, number>>} balancesByCurrency
- */
-function userHasOutstandingExpenseBalance(uid, balancesByCurrency) {
-  for (const bucket of balancesByCurrency.values()) {
-    const raw = bucket.get(uid);
-    if (raw === undefined) continue;
-    if (Math.abs(raw) > BALANCE_EPSILON) return true;
+    let newPaidBy = paidBy;
+    if (isPayer || !newParticipants.includes(paidBy)) {
+      newPaidBy = newParticipants[0];
+    }
+
+    tx.update(doc.ref, {
+      participantIds: newParticipants,
+      paidBy: newPaidBy,
+    });
   }
-  return false;
 }
 
 exports.leaveTrip = onCall(
@@ -490,14 +478,7 @@ exports.leaveTrip = onCall(
 
       const expensesQuery = tripRef.collection('expenses');
       const expensesSnap = await tx.get(expensesQuery);
-      const balances = computeBalancesFromExpenseDocs(expensesSnap.docs);
-
-      if (userHasOutstandingExpenseBalance(uid, balances)) {
-        throw new HttpsError(
-          'failed-precondition',
-          'Tu as encore des sommes à régler sur ce voyage'
-        );
-      }
+      applyLeaveTripExpenseStripping(tx, expensesSnap.docs, uid);
 
       tx.update(tripRef, {
         memberIds: admin.firestore.FieldValue.arrayRemove(uid),

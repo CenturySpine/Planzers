@@ -7,8 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/expenses/data/expenses_repository.dart';
-import 'package:planzers/features/expenses/domain/expense_settlement.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
@@ -641,7 +639,10 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
       builder: (ctx) => AlertDialog(
         title: const Text('Quitter ce voyage ?'),
         content: const Text(
-          'Tu ne feras plus partie de ce voyage. Les dépenses déjà enregistrées ne sont pas modifiées.',
+          'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée '
+          'où tu participes, tu seras enlevé des participants : le partage sera '
+          'recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci '
+          'sera supprimée.',
         ),
         actions: [
           TextButton(
@@ -681,53 +682,43 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
   @override
   Widget build(BuildContext context) {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
-    final expensesAsync = ref.watch(tripExpensesStreamProvider(widget.tripId));
 
-    return expensesAsync.when(
-      data: (expenses) {
-        final outstanding = userHasOutstandingExpenseBalance(myUid, expenses);
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Quitter le voyage',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  outstanding
-                      ? 'Tant que tu dois encore de l\'argent ou qu\'on te doit sur les dépenses partagées, tu ne peux pas quitter ce voyage.'
-                      : 'Tu peux quitter si tu n\'as plus de solde à régler avec les autres voyageurs.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: outstanding || _busy || myUid == null
-                      ? null
-                      : _confirmAndLeave,
-                  child: _busy
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Quitter le voyage'),
-                ),
-              ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Quitter le voyage',
+              style: Theme.of(context).textTheme.titleSmall,
             ),
-          ),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+            const SizedBox(height: 8),
+            Text(
+              'Tu pourras quitter même si les comptes ne sont pas à zéro. '
+              'Tu seras alors retiré automatiquement de toutes les dépenses '
+              'où tu es inclus (les autres voyageurs verront les parts mises à jour).',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: _busy || myUid == null ? null : _confirmAndLeave,
+              child: _busy
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Quitter le voyage'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
