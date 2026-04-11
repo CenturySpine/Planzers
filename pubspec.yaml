@@ -7,6 +7,8 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
+  flutter_web_plugins:
+    sdk: flutter
   cloud_firestore: ^6.2.0
   cloud_functions: ^6.1.0
   crypto: ^3.0.7
