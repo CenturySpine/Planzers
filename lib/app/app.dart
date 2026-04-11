@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/app/preview_environment_chrome.dart';
 import 'package:planzers/app/router.dart';
@@ -24,6 +25,13 @@ class PlanzersApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
           useMaterial3: true,
         ),
+        // Required for [showDatePicker] with fr_FR: default delegates only
+        // support English ([DefaultMaterialLocalizations]).
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const [
+          Locale('fr', 'FR'),
+          Locale('en', 'US'),
+        ],
         routerConfig: appRouter,
         builder: (context, child) {
           return FirebaseBootstrap(
