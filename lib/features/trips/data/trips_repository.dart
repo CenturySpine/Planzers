@@ -4,13 +4,17 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/core/firebase/app_public_hosts.dart';
+import 'package:planzers/core/firebase/firebase_target_provider.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
+  final target = ref.watch(firebaseTargetProvider);
   return TripsRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
+    mobileInviteBaseUri: mobileInviteBaseUriForTarget(target),
   );
 });
 
@@ -28,26 +32,15 @@ class TripsRepository {
   TripsRepository({
     required this.firestore,
     required this.auth,
+    required this.mobileInviteBaseUri,
   });
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
-  static final Uri _inviteBaseUri = _resolveInviteBaseUri();
 
-  static Uri _resolveInviteBaseUri() {
-    const configured = String.fromEnvironment('INVITE_BASE_URL');
-    if (configured.trim().isNotEmpty) {
-      return Uri.parse(configured.trim());
-    }
-
-    // In web dev (`flutter run -d chrome`), keep same-origin links to avoid
-    // history/navigation security errors on localhost.
-    if (kIsWeb) {
-      return Uri.parse(Uri.base.origin).replace(path: '/invite');
-    }
-
-    return Uri.parse('https://planzers.web.app/invite');
-  }
+  /// Used for invite links from iOS/Android/desktop native. Web uses
+  /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
+  final Uri mobileInviteBaseUri;
 
   String _generateInviteToken() {
     final now = DateTime.now().microsecondsSinceEpoch.toString();
@@ -247,11 +240,12 @@ class TripsRepository {
     };
 
     if (kIsWeb) {
-      final query = Uri(queryParameters: params).query;
-      return '${Uri.base.origin}/#/invite?$query';
+      return Uri.parse(Uri.base.origin)
+          .replace(path: '/invite', queryParameters: params)
+          .toString();
     }
 
-    return _inviteBaseUri.replace(queryParameters: params).toString();
+    return mobileInviteBaseUri.replace(queryParameters: params).toString();
   }
 
   Future<void> joinTripWithInvite({
