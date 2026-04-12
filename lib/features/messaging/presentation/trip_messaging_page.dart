@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,6 +152,18 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     return m.wasEdited ? '$t · modifié' : t;
   }
 
+  /// Mouse / trackpad: tap should open the action bar (long-press is unreliable).
+  static bool _pointerSelectsMessage(BuildContext context) {
+    if (kIsWeb) return true;
+    return switch (Theme.of(context).platform) {
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.fuchsia =>
+        false,
+      _ => true,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
@@ -203,6 +216,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                   currentUserId: myUid,
                   emptyFallback: 'Participant',
                 );
+                final pointerSelect = _pointerSelectsMessage(context);
 
                 return Column(
                   children: [
@@ -279,52 +293,69 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                         setState(
                                             () => _selectedMessageId = m.id);
                                       },
-                                      onTap: _selectedMessageId != null
+                                      onSecondaryTap: pointerSelect
+                                          ? () => setState(
+                                              () => _selectedMessageId = m.id,
+                                            )
+                                          : null,
+                                      onTap: (_selectedMessageId != null ||
+                                              pointerSelect)
                                           ? () {
-                                              setState(() {
-                                                if (_selectedMessageId ==
-                                                    m.id) {
-                                                  _selectedMessageId = null;
-                                                } else {
-                                                  _selectedMessageId = m.id;
-                                                }
-                                              });
+                                              if (_selectedMessageId !=
+                                                  null) {
+                                                setState(() {
+                                                  if (_selectedMessageId ==
+                                                      m.id) {
+                                                    _selectedMessageId = null;
+                                                  } else {
+                                                    _selectedMessageId = m.id;
+                                                  }
+                                                });
+                                              } else {
+                                                setState(() =>
+                                                    _selectedMessageId = m.id);
+                                              }
                                             }
                                           : null,
                                       behavior: HitTestBehavior.opaque,
-                                      child: Card(
-                                        margin: const EdgeInsets.symmetric(
-                                          vertical: 4,
-                                          horizontal: 4,
-                                        ),
-                                        elevation: isSelected ? 0 : null,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          side: isSelected
-                                              ? BorderSide(
-                                                  color: Theme.of(context)
+                                      child: MouseRegion(
+                                        cursor: pointerSelect &&
+                                                _selectedMessageId == null
+                                            ? SystemMouseCursors.click
+                                            : MouseCursor.defer,
+                                        child: Card(
+                                          margin: const EdgeInsets.symmetric(
+                                            vertical: 4,
+                                            horizontal: 4,
+                                          ),
+                                          elevation: isSelected ? 0 : null,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            side: isSelected
+                                                ? BorderSide(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                    width: 2,
+                                                  )
+                                                : BorderSide.none,
+                                          ),
+                                          color: isSelected
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primaryContainer
+                                                  .withValues(alpha: 0.55)
+                                              : (isMine
+                                                  ? Theme.of(context)
                                                       .colorScheme
-                                                      .primary,
-                                                  width: 2,
-                                                )
-                                              : BorderSide.none,
-                                        ),
-                                        color: isSelected
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .primaryContainer
-                                                .withValues(alpha: 0.55)
-                                            : (isMine
-                                                ? Theme.of(context)
-                                                    .colorScheme
-                                                    .primaryContainer
-                                                : Theme.of(context)
-                                                    .colorScheme
-                                                    .surfaceContainerHighest),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
+                                                      .primaryContainer
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.stretch,
                                             children: [
@@ -374,16 +405,26 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                           .textTheme
                                                           .bodyMedium,
                                                     )
-                                                  : SelectableText(
-                                                      m.text,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium,
-                                                    ),
+                                                  : pointerSelect
+                                                      ? Text(
+                                                          m.text,
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .bodyMedium,
+                                                        )
+                                                      : SelectableText(
+                                                          m.text,
+                                                          style:
+                                                              Theme.of(context)
+                                                                  .textTheme
+                                                                  .bodyMedium,
+                                                        ),
                                             ],
                                           ),
                                         ),
                                       ),
+                                    ),
                                     ),
                                   ),
                                 );
