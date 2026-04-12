@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/trip_edit_request_provider.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
 /// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
@@ -98,6 +99,8 @@ class TripShellPage extends ConsumerWidget {
         }
 
         final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
+        final myUid = FirebaseAuth.instance.currentUser?.uid;
+        final canEditTrip = myUid != null && myUid == trip.ownerId;
 
         _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
 
@@ -117,8 +120,30 @@ class TripShellPage extends ConsumerWidget {
                     onPressed: () => context.go('/trips'),
                     tooltip: 'Mes voyages',
                   ),
-                  actions: const [
-                    AccountMenuButton(),
+                  actions: [
+                    if (canEditTrip)
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Modifier le voyage',
+                        onPressed: () {
+                          void requestEdit() {
+                            ref
+                                .read(
+                                  tripEditRequestedProvider(trip.id).notifier,
+                                )
+                                .request();
+                          }
+
+                          if (navigationShell.currentIndex != 0) {
+                            navigationShell.goBranch(0);
+                            WidgetsBinding.instance
+                                .addPostFrameCallback((_) => requestEdit());
+                          } else {
+                            requestEdit();
+                          }
+                        },
+                      ),
+                    const AccountMenuButton(),
                   ],
                 ),
                 body: Row(
