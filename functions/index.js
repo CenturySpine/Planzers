@@ -280,6 +280,56 @@ exports.generateTripLinkPreview = onDocumentUpdated(
   }
 );
 
+/**
+ * Adds [uid] to trip members if [token] matches the trip inviteToken.
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} uid
+ * @param {string} token
+ */
+async function completeJoinTripWithInvite(tripRef, uid, token) {
+  await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(tripRef);
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const data = snap.data() || {};
+    const expectedToken = normalizeString(data.inviteToken);
+    if (!expectedToken || expectedToken !== token) {
+      throw new HttpsError(
+        'permission-denied',
+        'Lien d invitation invalide ou expire'
+      );
+    }
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (memberIds.includes(uid)) {
+      return;
+    }
+
+    memberIds.push(uid);
+    tx.update(tripRef, {
+      memberIds,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  let emailLocal = '';
+  try {
+    const userRecord = await admin.auth().getUser(uid);
+    emailLocal = emailLocalPart(userRecord.email || '');
+  } catch (e) {
+    console.warn('joinTripWithInvite getUser', e);
+  }
+  if (emailLocal) {
+    await tripRef.update({
+      [`memberPublicLabels.${uid}`]: emailLocal,
+    });
+  }
+}
+
 exports.joinTripWithInvite = onCall(
   {
     region: 'europe-west1',
@@ -297,47 +347,144 @@ exports.joinTripWithInvite = onCall(
     }
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
-    await admin.firestore().runTransaction(async (tx) => {
-      const snap = await tx.get(tripRef);
-      if (!snap.exists) {
+    await completeJoinTripWithInvite(tripRef, uid, token);
+
+    return { ok: true };
+  }
+);
+
+/** Same as joinTripWithInvite, but resolves the trip from invite token only. */
+exports.joinTripWithInviteToken = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const token = normalizeString(request.data?.token);
+    if (!token) {
+      throw new HttpsError('invalid-argument', 'Code d invitation invalide');
+    }
+
+    const db = admin.firestore();
+    const snap = await db
+      .collection('trips')
+      .where('inviteToken', '==', token)
+      .limit(2)
+      .get();
+
+    if (snap.empty) {
+      throw new HttpsError('not-found', 'Code d invitation inconnu');
+    }
+    if (snap.size > 1) {
+      console.error('joinTripWithInviteToken duplicate token', token);
+      throw new HttpsError('internal', 'Erreur serveur');
+    }
+
+    const tripRef = snap.docs[0].ref;
+    await completeJoinTripWithInvite(tripRef, uid, token);
+
+    return { ok: true, tripId: tripRef.id };
+  }
+);
+
+/**
+ * Removes [uid] from shared expenses for a trip: drops them from participantIds,
+ * reassigns paidBy when needed, deletes docs with no participants left.
+ *
+ * @param {FirebaseFirestore.Transaction} tx
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
+ * @param {string} uid
+ */
+function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
+  for (const doc of expenseDocs) {
+    const exp = doc.data() || {};
+    const participants = (Array.isArray(exp.participantIds)
+      ? exp.participantIds
+      : []
+    )
+      .map((v) => String(v).trim())
+      .filter((id) => id.length > 0);
+    const paidBy = normalizeString(exp.paidBy);
+    const inParticipants = participants.includes(uid);
+    const isPayer = paidBy === uid;
+    if (!inParticipants && !isPayer) {
+      continue;
+    }
+
+    const newParticipants = participants.filter((id) => id !== uid);
+    if (newParticipants.length === 0) {
+      tx.delete(doc.ref);
+      continue;
+    }
+
+    let newPaidBy = paidBy;
+    if (isPayer || !newParticipants.includes(paidBy)) {
+      newPaidBy = newParticipants[0];
+    }
+
+    tx.update(doc.ref, {
+      participantIds: newParticipants,
+      paidBy: newPaidBy,
+    });
+  }
+}
+
+exports.leaveTrip = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+
+    await db.runTransaction(async (tx) => {
+      const tripSnap = await tx.get(tripRef);
+      if (!tripSnap.exists) {
         throw new HttpsError('not-found', 'Voyage introuvable');
       }
 
-      const data = snap.data() || {};
-      const expectedToken = normalizeString(data.inviteToken);
-      if (!expectedToken || expectedToken !== token) {
+      const data = tripSnap.data() || {};
+      const ownerId = normalizeString(data.ownerId);
+      if (ownerId === uid) {
         throw new HttpsError(
           'permission-denied',
-          'Lien d invitation invalide ou expire'
+          'Le créateur du voyage ne peut pas quitter ainsi'
         );
       }
 
       const memberIds = Array.isArray(data.memberIds)
         ? data.memberIds.map((v) => String(v))
         : [];
-      if (memberIds.includes(uid)) {
-        return;
+      if (!memberIds.includes(uid)) {
+        throw new HttpsError(
+          'permission-denied',
+          'Tu ne fais pas partie de ce voyage'
+        );
       }
 
-      memberIds.push(uid);
+      const expensesQuery = tripRef.collection('expenses');
+      const expensesSnap = await tx.get(expensesQuery);
+      applyLeaveTripExpenseStripping(tx, expensesSnap.docs, uid);
+
       tx.update(tripRef, {
-        memberIds,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        memberIds: admin.firestore.FieldValue.arrayRemove(uid),
+        [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
       });
     });
-
-    let emailLocal = '';
-    try {
-      const userRecord = await admin.auth().getUser(uid);
-      emailLocal = emailLocalPart(userRecord.email || '');
-    } catch (e) {
-      console.warn('joinTripWithInvite getUser', e);
-    }
-    if (emailLocal) {
-      await tripRef.update({
-        [`memberPublicLabels.${uid}`]: emailLocal,
-      });
-    }
 
     return { ok: true };
   }

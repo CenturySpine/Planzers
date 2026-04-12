@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -26,7 +28,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   late final TextEditingController _linkController;
   bool _isEditing = false;
   bool _isSaving = false;
-  bool _isSharingInvite = false;
+  bool _inviteClipboardBusy = false;
   final Set<String> _removingMemberIds = <String>{};
   DateTime? _editStartDate;
   DateTime? _editEndDate;
@@ -166,8 +168,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _shareInviteLink() async {
-    if (_isSharingInvite) return;
-    setState(() => _isSharingInvite = true);
+    if (_inviteClipboardBusy) return;
+    setState(() => _inviteClipboardBusy = true);
     try {
       final link =
           await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
@@ -186,7 +188,34 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isSharingInvite = false);
+        setState(() => _inviteClipboardBusy = false);
+      }
+    }
+  }
+
+  Future<void> _copyInviteCode() async {
+    if (_inviteClipboardBusy) return;
+    setState(() => _inviteClipboardBusy = true);
+    try {
+      final token =
+          await ref.read(tripsRepositoryProvider).getOrCreateInviteToken(
+                tripId: _trip.id,
+              );
+      await Clipboard.setData(ClipboardData(text: token));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Code d invitation copie dans le presse-papiers'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur copie du code: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _inviteClipboardBusy = false);
       }
     }
   }
@@ -304,8 +333,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       IconButton(
                         tooltip: 'Partager invitation',
                         onPressed:
-                            _isSharingInvite ? null : _shareInviteLink,
-                        icon: _isSharingInvite
+                            _inviteClipboardBusy ? null : _shareInviteLink,
+                        icon: _inviteClipboardBusy
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
@@ -313,6 +342,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.group_add_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Copier le code d invitation',
+                        onPressed:
+                            _inviteClipboardBusy ? null : _copyInviteCode,
+                        icon: const Icon(Icons.vpn_key_outlined),
                       ),
                       IconButton(
                         tooltip: 'Modifier',
@@ -558,9 +593,132 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 ),
               ),
             ),
+            if (myUid != null &&
+                !canEdit &&
+                liveMemberIds
+                    .map((id) => id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .contains(myUid)) ...[
+              const SizedBox(height: 16),
+              _LeaveTripSection(tripId: _trip.id),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+class _LeaveTripSection extends ConsumerStatefulWidget {
+  const _LeaveTripSection({required this.tripId});
+
+  final String tripId;
+
+  @override
+  ConsumerState<_LeaveTripSection> createState() => _LeaveTripSectionState();
+}
+
+class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
+  bool _busy = false;
+
+  static String _messageForError(Object e) {
+    if (e is FirebaseFunctionsException) {
+      final m = e.message;
+      if (m != null && m.trim().isNotEmpty) {
+        return m.trim();
+      }
+    }
+    return e.toString();
+  }
+
+  Future<void> _confirmAndLeave() async {
+    if (_busy) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Quitter ce voyage ?'),
+        content: const Text(
+          'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée '
+          'où tu participes, tu seras enlevé des participants : le partage sera '
+          'recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci '
+          'sera supprimée.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Quitter'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) {
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(tripsRepositoryProvider).leaveTripAsMember(
+            tripId: widget.tripId,
+          );
+      if (!mounted) return;
+      context.go('/trips');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageForError(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Quitter le voyage',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tu pourras quitter même si les comptes ne sont pas à zéro. '
+              'Tu seras alors retiré automatiquement de toutes les dépenses '
+              'où tu es inclus (les autres voyageurs verront les parts mises à jour).',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: _busy || myUid == null ? null : _confirmAndLeave,
+              child: _busy
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Quitter le voyage'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
