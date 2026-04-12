@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_menu_button.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
-import 'package:planzers/features/trips/presentation/trip_edit_request_provider.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
 /// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
@@ -31,7 +30,7 @@ void _scheduleTripMemberPublicLabelHealIfNeeded(WidgetRef ref, Trip trip) {
   });
 }
 
-/// Width at which we show a [NavigationRail] instead of a bottom [NavigationBar].
+/// Width at which we show a [NavigationRail] instead of a bottom nav bar.
 const double _kTripShellWideBreakpoint = 720;
 
 class TripShellPage extends ConsumerWidget {
@@ -49,6 +48,11 @@ class TripShellPage extends ConsumerWidget {
       label: 'Aperçu',
       icon: Icons.dashboard_outlined,
       selectedIcon: Icons.dashboard,
+    ),
+    _TripNavDestination(
+      label: 'Messagerie',
+      icon: Icons.chat_bubble_outline,
+      selectedIcon: Icons.chat_bubble,
     ),
     _TripNavDestination(
       label: 'Dépenses',
@@ -99,8 +103,6 @@ class TripShellPage extends ConsumerWidget {
         }
 
         final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
-        final myUid = FirebaseAuth.instance.currentUser?.uid;
-        final canEditTrip = myUid != null && myUid == trip.ownerId;
 
         _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
 
@@ -120,30 +122,8 @@ class TripShellPage extends ConsumerWidget {
                     onPressed: () => context.go('/trips'),
                     tooltip: 'Mes voyages',
                   ),
-                  actions: [
-                    if (canEditTrip)
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Modifier le voyage',
-                        onPressed: () {
-                          void requestEdit() {
-                            ref
-                                .read(
-                                  tripEditRequestedProvider(trip.id).notifier,
-                                )
-                                .request();
-                          }
-
-                          if (navigationShell.currentIndex != 0) {
-                            navigationShell.goBranch(0);
-                            WidgetsBinding.instance
-                                .addPostFrameCallback((_) => requestEdit());
-                          } else {
-                            requestEdit();
-                          }
-                        },
-                      ),
-                    const AccountMenuButton(),
+                  actions: const [
+                    AccountMenuButton(),
                   ],
                 ),
                 body: Row(
@@ -172,17 +152,10 @@ class TripShellPage extends ConsumerWidget {
                 ),
                 bottomNavigationBar: useRail
                     ? null
-                    : NavigationBar(
+                    : _TripMobileScrollableNavBar(
                         selectedIndex: navigationShell.currentIndex,
                         onDestinationSelected: navigationShell.goBranch,
-                        destinations: [
-                          for (final d in _destinations)
-                            NavigationDestination(
-                              icon: Icon(d.icon),
-                              selectedIcon: Icon(d.selectedIcon),
-                              label: d.label,
-                            ),
-                        ],
+                        destinations: _destinations,
                       ),
               );
             },
@@ -218,6 +191,96 @@ class _TripNavDestination {
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+}
+
+/// Material 3–style bottom destinations in a horizontal scroll view so many
+/// tabs stay usable on narrow phones.
+class _TripMobileScrollableNavBar extends StatelessWidget {
+  const _TripMobileScrollableNavBar({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.destinations,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+  final List<_TripNavDestination> destinations;
+
+  static const double _barHeight = 80;
+  static const double _minItemWidth = 80;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bg = NavigationBarTheme.of(context).backgroundColor ??
+        colorScheme.surfaceContainer;
+
+    return Material(
+      color: bg,
+      elevation: 3,
+      shadowColor: Colors.transparent,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: _barHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: destinations.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 4),
+            itemBuilder: (context, index) {
+              final d = destinations[index];
+              final selected = selectedIndex == index;
+              return SizedBox(
+                width: _minItemWidth,
+                child: InkWell(
+                  onTap: () => onDestinationSelected(index),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? colorScheme.secondaryContainer
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          selected ? d.selectedIcon : d.icon,
+                          color: selected
+                              ? colorScheme.onSecondaryContainer
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        d.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: selected
+                                  ? colorScheme.onSurface
+                                  : colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class TripRoomsPage extends StatelessWidget {

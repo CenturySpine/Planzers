@@ -11,7 +11,6 @@ import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
-import 'package:planzers/features/trips/presentation/trip_edit_request_provider.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -250,16 +249,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   Widget build(BuildContext context) {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
-    ref.listen<bool>(tripEditRequestedProvider(_trip.id), (previous, next) {
-      if (next != true || !canEdit) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ref.read(tripEditRequestedProvider(_trip.id).notifier).clear();
-        if (!_isEditing) {
-          _startEditing();
-        }
-      });
-    });
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
         .doc(_trip.id)
@@ -333,6 +322,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         onPressed:
                             _inviteClipboardBusy ? null : _copyInviteCode,
                         icon: const Icon(Icons.vpn_key_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Modifier le voyage',
+                        onPressed: _startEditing,
+                        icon: const Icon(Icons.edit_outlined),
                       ),
                     ],
                   ],

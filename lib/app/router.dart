@@ -5,6 +5,7 @@ import 'package:planzers/features/auth/sign_in_page.dart';
 import 'package:planzers/features/trips/presentation/invite_join_page.dart';
 import 'package:planzers/features/activities/presentation/trip_activities_page.dart';
 import 'package:planzers/features/expenses/presentation/trip_expenses_page.dart';
+import 'package:planzers/features/messaging/presentation/trip_messaging_page.dart';
 import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
 import 'package:planzers/features/trips/presentation/trip_shell_page.dart';
 import 'package:planzers/features/trips/presentation/trips_page.dart';
@@ -62,6 +63,14 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'overview',
                   builder: (context, state) => const TripOverviewPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'messages',
+                  builder: (context, state) => const TripMessagingPage(),
                 ),
               ],
             ),

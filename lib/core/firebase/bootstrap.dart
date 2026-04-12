@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:planzers/core/firebase/firebase_options_selector.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planzers/core/push/fcm_notification_link_binder.dart';
 
 class FirebaseBootstrap extends StatefulWidget {
   const FirebaseBootstrap(
@@ -82,7 +83,7 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
           );
         }
 
-        return widget.child;
+        return FcmNotificationLinkBinder(child: widget.child);
       },
     );
   }

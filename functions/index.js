@@ -1,51 +1,15 @@
 const admin = require('firebase-admin');
-const { onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+} = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { defineSecret } = require('firebase-functions/params');
 const cheerio = require('cheerio');
 
 admin.initializeApp();
 
-const googleMapsApiKey = defineSecret('GOOGLE_MAPS_API_KEY');
-
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
-}
-
-/**
- * @param {string} originAddress
- * @param {string} destAddress
- * @param {string} apiKey
- * @returns {Promise<{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }>}
- */
-async function fetchDrivingMatrix(originAddress, destAddress, apiKey) {
-  const params = new URLSearchParams({
-    origins: originAddress,
-    destinations: destAddress,
-    mode: 'driving',
-    units: 'metric',
-    key: apiKey,
-  });
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${params.toString()}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status !== 'OK') {
-    const msg = [data.status, data.error_message].filter(Boolean).join(' ');
-    throw new Error(msg || 'Distance Matrix request failed');
-  }
-  const el = data.rows?.[0]?.elements?.[0];
-  if (!el) {
-    throw new Error('Distance Matrix empty rows');
-  }
-  if (el.status !== 'OK') {
-    return { elementStatus: el.status };
-  }
-  return {
-    distanceMeters: el.distance.value,
-    durationSeconds: el.duration.value,
-    distanceText: el.distance.text,
-    durationText: el.duration.text,
-  };
 }
 
 function safeUrl(v) {
@@ -134,91 +98,6 @@ function parsePreviewFromHtml(pageUrl, html) {
   };
 }
 
-/**
- * Writes `linkPreview` on [docRef] from [afterUrlRaw], or clears it when empty.
- * Used for trip documents and activity subdocuments (same field names).
- * @param {FirebaseFirestore.DocumentReference} docRef
- * @param {string} afterUrlRaw
- */
-async function applyLinkPreview(docRef, afterUrlRaw) {
-  const FieldValue = admin.firestore.FieldValue;
-  const afterUrl = normalizeString(afterUrlRaw);
-  if (!afterUrl) {
-    await docRef.set(
-      {
-        linkPreview: FieldValue.delete(),
-      },
-      { merge: true }
-    );
-    return;
-  }
-
-  const parsed = safeUrl(afterUrl);
-  if (!parsed) {
-    await docRef.set(
-      {
-        linkPreview: {
-          status: 'error',
-          url: afterUrl,
-          error: 'invalid_url',
-          fetchedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-    return;
-  }
-
-  await docRef.set(
-    {
-      linkPreview: {
-        status: 'loading',
-        url: parsed.toString(),
-        fetchedAt: FieldValue.serverTimestamp(),
-      },
-    },
-    { merge: true }
-  );
-
-  try {
-    const html = await fetchHtml(parsed);
-    const preview = parsePreviewFromHtml(parsed, html);
-
-    const hasSomething =
-      preview.title ||
-      preview.description ||
-      preview.imageUrl ||
-      preview.siteName;
-
-    await docRef.set(
-      {
-        linkPreview: {
-          status: hasSomething ? 'ok' : 'empty',
-          url: parsed.toString(),
-          title: preview.title,
-          description: preview.description,
-          siteName: preview.siteName,
-          imageUrl: preview.imageUrl,
-          fetchedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-  } catch (e) {
-    await docRef.set(
-      {
-        linkPreview: {
-          status: 'error',
-          url: parsed.toString(),
-          error: String(e),
-          fetchedAt: FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-  }
-}
-
 /** @param {FirebaseFirestore.DocumentData} data */
 function memberIdsAsSet(data) {
   const raw = data.memberIds;
@@ -272,7 +151,128 @@ async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   }
 }
 
-/** Fires when trip.memberIds gains users (e.g. invite join). */
+const FCM_INVALID_TOKEN_CODES = new Set([
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered',
+]);
+
+/**
+ * Sends a push notification to other trip members when a message is created.
+ * Tokens live under users/{uid}/fcmTokens (written by the Flutter app).
+ */
+exports.notifyTripMessageRecipients = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/messages/{messageId}',
+    region: 'europe-west1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const tripId = event.params.tripId;
+    const msg = snap.data() || {};
+    const authorId = normalizeString(msg.authorId);
+    const text = normalizeString(msg.text).slice(0, 180);
+
+    if (!authorId || !text) {
+      return;
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) return;
+
+    const trip = tripSnap.data() || {};
+    const memberIds = Array.isArray(trip.memberIds)
+      ? trip.memberIds.map((v) => String(v))
+      : [];
+    const recipients = memberIds.filter((id) => id && id !== authorId);
+    if (recipients.length === 0) return;
+
+    const tripTitle = normalizeString(trip.title) || 'Voyage';
+    const labels =
+      trip.memberPublicLabels && typeof trip.memberPublicLabels === 'object'
+        ? trip.memberPublicLabels
+        : {};
+    let resolvedAuthorLabel = normalizeString(labels[authorId]);
+    if (!resolvedAuthorLabel) {
+      try {
+        const u = await admin.auth().getUser(authorId);
+        resolvedAuthorLabel = emailLocalPart(u.email || '');
+      } catch (e) {
+        console.warn('notifyTripMessageRecipients getUser', authorId, e);
+      }
+    }
+    if (!resolvedAuthorLabel) {
+      resolvedAuthorLabel = 'Quelqu’un';
+    }
+
+    /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference }[]} */
+    const tokenEntries = [];
+
+    await Promise.all(
+      recipients.map(async (uid) => {
+        try {
+          const tokensSnap = await db
+            .collection('users')
+            .doc(uid)
+            .collection('fcmTokens')
+            .get();
+          for (const doc of tokensSnap.docs) {
+            const t = normalizeString((doc.data() || {}).token);
+            if (t) {
+              tokenEntries.push({ token: t, ref: doc.ref });
+            }
+          }
+        } catch (e) {
+          console.warn('notifyTripMessageRecipients tokens', uid, e);
+        }
+      })
+    );
+
+    if (tokenEntries.length === 0) return;
+
+    const messages = tokenEntries.map(({ token }) => ({
+      token,
+      notification: {
+        title: `Messagerie · ${tripTitle}`,
+        body: `${resolvedAuthorLabel} : ${text}`,
+      },
+      data: {
+        tripId,
+        type: 'trip_message',
+      },
+    }));
+
+    const result = await admin.messaging().sendEach(messages);
+
+    let batch = db.batch();
+    let batchOps = 0;
+    for (let i = 0; i < result.responses.length; i++) {
+      const r = result.responses[i];
+      if (r.success) continue;
+      const code = r.error?.code || '';
+      if (!FCM_INVALID_TOKEN_CODES.has(code)) continue;
+      const ref = tokenEntries[i]?.ref;
+      if (ref) {
+        batch.delete(ref);
+        batchOps++;
+        if (batchOps >= 400) {
+          await batch.commit();
+          batch = db.batch();
+          batchOps = 0;
+        }
+      }
+    }
+    if (batchOps > 0) {
+      await batch.commit();
+    }
+  }
+);
+
 exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
@@ -310,7 +310,7 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   }
 );
 
-exports.generateTripLinkPreview = onDocumentWritten(
+exports.generateTripLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
     region: 'europe-west1',
@@ -318,94 +318,36 @@ exports.generateTripLinkPreview = onDocumentWritten(
     memory: '256MiB',
   },
   async (event) => {
-    if (!event.data.after.exists) return;
-    const before = event.data.before.exists
-      ? event.data.before.data() || {}
-      : {};
+    const before = event.data.before.data() || {};
     const after = event.data.after.data() || {};
 
     const beforeUrl = normalizeString(before.linkUrl);
     const afterUrl = normalizeString(after.linkUrl);
+
+    // Avoid loops: only run when linkUrl actually changes.
     if (beforeUrl === afterUrl) return;
 
-    await applyLinkPreview(event.data.after.ref, afterUrl);
-  }
-);
+    const tripRef = event.data.after.ref;
 
-exports.generateActivityLinkPreview = onDocumentWritten(
-  {
-    document: 'trips/{tripId}/activities/{activityId}',
-    region: 'europe-west1',
-    timeoutSeconds: 30,
-    memory: '256MiB',
-  },
-  async (event) => {
-    if (!event.data.after.exists) return;
-    const before = event.data.before.exists
-      ? event.data.before.data() || {}
-      : {};
-    const after = event.data.after.data() || {};
-
-    const beforeUrl = normalizeString(before.linkUrl);
-    const afterUrl = normalizeString(after.linkUrl);
-    if (beforeUrl === afterUrl) return;
-
-    await applyLinkPreview(event.data.after.ref, afterUrl);
-  }
-);
-
-exports.computeActivityDrivingRouteFromTrip = onDocumentWritten(
-  {
-    document: 'trips/{tripId}/activities/{activityId}',
-    region: 'europe-west1',
-    secrets: [googleMapsApiKey],
-    timeoutSeconds: 60,
-    memory: '256MiB',
-  },
-  async (event) => {
-    const FieldValue = admin.firestore.FieldValue;
-    if (!event.data.after.exists) {
-      return;
-    }
-
-    const before = event.data.before.exists
-      ? event.data.before.data() || {}
-      : {};
-    const after = event.data.after.data() || {};
-    const beforeAddr = normalizeString(before.address);
-    const afterAddr = normalizeString(after.address);
-
-    if (event.data.before.exists && beforeAddr === afterAddr) {
-      return;
-    }
-
-    const docRef = event.data.after.ref;
-    const tripId = event.params.tripId;
-
-    if (!afterAddr) {
-      await docRef.set(
+    if (!afterUrl) {
+      await tripRef.set(
         {
-          tripDrivingRoute: FieldValue.delete(),
+          linkPreview: admin.firestore.FieldValue.delete(),
         },
         { merge: true }
       );
       return;
     }
 
-    const tripSnap = await admin
-      .firestore()
-      .collection('trips')
-      .doc(tripId)
-      .get();
-    const tripData = tripSnap.data() || {};
-    const tripAddress = normalizeString(tripData.address);
-
-    if (!tripAddress) {
-      await docRef.set(
+    const parsed = safeUrl(afterUrl);
+    if (!parsed) {
+      await tripRef.set(
         {
-          tripDrivingRoute: {
-            status: 'missing_trip_address',
-            calculatedAt: FieldValue.serverTimestamp(),
+          linkPreview: {
+            status: 'error',
+            url: afterUrl,
+            error: 'invalid_url',
+            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
@@ -413,43 +355,47 @@ exports.computeActivityDrivingRouteFromTrip = onDocumentWritten(
       return;
     }
 
-    const apiKey = googleMapsApiKey.value();
+    // Mark as loading (UI can show spinner).
+    await tripRef.set(
+      {
+        linkPreview: {
+          status: 'loading',
+          url: parsed.toString(),
+          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+
     try {
-      const result = await fetchDrivingMatrix(tripAddress, afterAddr, apiKey);
-      if (result.elementStatus) {
-        await docRef.set(
-          {
-            tripDrivingRoute: {
-              status: 'no_result',
-              detail: result.elementStatus,
-              calculatedAt: FieldValue.serverTimestamp(),
-            },
-          },
-          { merge: true }
-        );
-        return;
-      }
+      const html = await fetchHtml(parsed);
+      const preview = parsePreviewFromHtml(parsed, html);
 
-      await docRef.set(
+      const hasSomething =
+        preview.title || preview.description || preview.imageUrl || preview.siteName;
+
+      await tripRef.set(
         {
-          tripDrivingRoute: {
-            status: 'ok',
-            distanceMeters: result.distanceMeters,
-            durationSeconds: result.durationSeconds,
-            distanceText: result.distanceText,
-            durationText: result.durationText,
-            calculatedAt: FieldValue.serverTimestamp(),
+          linkPreview: {
+            status: hasSomething ? 'ok' : 'empty',
+            url: parsed.toString(),
+            title: preview.title,
+            description: preview.description,
+            siteName: preview.siteName,
+            imageUrl: preview.imageUrl,
+            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
       );
     } catch (e) {
-      await docRef.set(
+      await tripRef.set(
         {
-          tripDrivingRoute: {
+          linkPreview: {
             status: 'error',
-            errorMessage: String(e),
-            calculatedAt: FieldValue.serverTimestamp(),
+            url: parsed.toString(),
+            error: String(e),
+            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
