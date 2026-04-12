@@ -16,6 +16,7 @@ These rules apply to everyone working on the repository, including automated cod
 - **Source code:** English for identifiers, file names, and in-code documentation (`//`, `///`).
 - **Comments:** English only.
 - **User-facing copy:** Follow the product language (currently French for UI strings and SnackBars). Do not translate the app to English in code unless explicitly requested.
+- **UI copy scope (agents):** Do not add extra explanatory sentences, hints, helper text, or “did you know” copy to feature UIs unless the task explicitly asks for that wording. Stick to labels and messages that implement what was requested; the product owner will supply hints and tutorials separately when they want them.
 
 ## Engineering
 

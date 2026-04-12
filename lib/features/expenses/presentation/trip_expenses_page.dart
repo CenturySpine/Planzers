@@ -988,6 +988,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   late String? _paidBy;
   late Set<String> _participantIds;
   late DateTime _expenseDate;
+  late ExpenseSplitMode _splitMode;
+  final Map<String, TextEditingController> _shareControllers = {};
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
@@ -1022,13 +1024,141 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       widget.expense.expenseDate.month,
       widget.expense.expenseDate.day,
     );
+    _splitMode = widget.expense.splitMode;
+    if (_splitMode == ExpenseSplitMode.customAmounts) {
+      final n = _participantIds.length;
+      final each = n > 0 ? widget.expense.amount / n : 0.0;
+      for (final id in _participantIds) {
+        final v = widget.expense.participantShares[id] ?? each;
+        _shareControllers[id] = TextEditingController(
+          text: v.toStringAsFixed(2),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    for (final c in _shareControllers.values) {
+      c.dispose();
+    }
+    _shareControllers.clear();
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  double _parsedTotalAmount() {
+    return double.tryParse(
+          _amountController.text.trim().replaceAll(',', '.'),
+        ) ??
+        widget.expense.amount;
+  }
+
+  String _formatShareMoney(double value) {
+    final symbol = _currency == 'USD' ? r'$' : '€';
+    return NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: symbol,
+      decimalDigits: 2,
+    ).format(value);
+  }
+
+  void _onSplitModeChanged(ExpenseSplitMode mode) {
+    setState(() {
+      _splitMode = mode;
+      if (mode == ExpenseSplitMode.equal) {
+        for (final c in _shareControllers.values) {
+          c.dispose();
+        }
+        _shareControllers.clear();
+      } else {
+        final total = _parsedTotalAmount();
+        final ids = _participantIds.toList();
+        final n = ids.length;
+        final each = n > 0 ? total / n : 0.0;
+        final idSet = ids.toSet();
+        for (final id in ids) {
+          if (!_shareControllers.containsKey(id)) {
+            _shareControllers[id] = TextEditingController(
+              text: each.toStringAsFixed(2),
+            );
+          }
+        }
+        final toRemove =
+            _shareControllers.keys.where((k) => !idSet.contains(k)).toList();
+        for (final k in toRemove) {
+          _shareControllers.remove(k)?.dispose();
+        }
+      }
+    });
+  }
+
+  Map<String, double>? _parseCustomSharesForSave() {
+    final ids = _participantIds.toList();
+    if (ids.isEmpty) return null;
+    final out = <String, double>{};
+    for (final id in ids) {
+      final c = _shareControllers[id];
+      final t = (c?.text ?? '').trim().replaceAll(',', '.');
+      final n = double.tryParse(t);
+      if (n == null || n < 0) return null;
+      out[id] = n;
+    }
+    final sum = out.values.fold<double>(0, (a, b) => a + b);
+    final total = _parsedTotalAmount();
+    if ((sum - total).abs() > 0.02) return null;
+    return out;
+  }
+
+  Widget? _shareAmountTrailing(String memberId) {
+    if (!_participantIds.contains(memberId)) {
+      return Text(
+        '—',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      );
+    }
+    if (_splitMode == ExpenseSplitMode.equal) {
+      final n = _participantIds.length;
+      final per = n > 0 ? _parsedTotalAmount() / n : 0.0;
+      return Text(
+        _formatShareMoney(per),
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+    if (_editing) {
+      final c = _shareControllers[memberId];
+      if (c == null) {
+        return const SizedBox(width: 88);
+      }
+      return SizedBox(
+        width: 100,
+        child: TextField(
+          controller: c,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
+          textAlign: TextAlign.end,
+          decoration: const InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      );
+    }
+    final c = _shareControllers[memberId];
+    final parsed = c != null
+        ? double.tryParse(c.text.trim().replaceAll(',', '.'))
+        : null;
+    final v = parsed ?? widget.expense.participantShares[memberId] ?? 0.0;
+    return Text(
+      _formatShareMoney(v),
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
   }
 
   Future<void> _pickExpenseDate() async {
@@ -1140,6 +1270,21 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       return;
     }
 
+    Map<String, double>? customShares;
+    if (_splitMode == ExpenseSplitMode.customAmounts) {
+      customShares = _parseCustomSharesForSave();
+      if (customShares == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pour « Montants », chaque part doit être valide et la somme doit égaler le total.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     try {
       await ref.read(expensesRepositoryProvider).updateExpense(
@@ -1151,6 +1296,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
             expenseDate: _expenseDate,
+            splitMode: _splitMode,
+            participantShares: customShares,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1238,6 +1385,9 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                         decimal: true,
                       ),
                       readOnly: !_editing,
+                      onChanged: !_editing
+                          ? null
+                          : (_) => setState(() {}),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
@@ -1327,9 +1477,46 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                'Partage du montant',
-                style: Theme.of(context).textTheme.titleSmall,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Partage du montant',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  if (_editing)
+                    DropdownButton<ExpenseSplitMode>(
+                      value: _splitMode,
+                      underline: const SizedBox.shrink(),
+                      alignment: AlignmentDirectional.centerEnd,
+                      items: const [
+                        DropdownMenuItem(
+                          value: ExpenseSplitMode.equal,
+                          child: Text('Équitablement'),
+                        ),
+                        DropdownMenuItem(
+                          value: ExpenseSplitMode.customAmounts,
+                          child: Text('Montants'),
+                        ),
+                      ],
+                      onChanged: (mode) {
+                        if (mode != null) _onSplitModeChanged(mode);
+                      },
+                    )
+                  else
+                    Text(
+                      _splitMode == ExpenseSplitMode.equal
+                          ? 'Équitablement'
+                          : 'Montants',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                ],
               ),
               const SizedBox(height: 8),
               Container(
@@ -1351,6 +1538,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                           widget.memberLabels[id] ?? id,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        secondary: _shareAmountTrailing(id),
                         value: _participantIds.contains(id),
                         onChanged: !_editing
                             ? null
@@ -1358,8 +1546,25 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                                 setState(() {
                                   if (checked == true) {
                                     _participantIds.add(id);
+                                    if (_splitMode ==
+                                        ExpenseSplitMode.customAmounts) {
+                                      final total = _parsedTotalAmount();
+                                      final n = _participantIds.length;
+                                      final each =
+                                          n > 0 ? total / n : 0.0;
+                                      _shareControllers[id] =
+                                          TextEditingController(
+                                        text: each.toStringAsFixed(2),
+                                      );
+                                    }
                                   } else {
                                     _participantIds.remove(id);
+                                    if (_splitMode ==
+                                        ExpenseSplitMode.customAmounts) {
+                                      _shareControllers
+                                          .remove(id)
+                                          ?.dispose();
+                                    }
                                   }
                                 });
                               },

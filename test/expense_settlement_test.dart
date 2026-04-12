@@ -9,6 +9,8 @@ TripExpense _e({
   String currency = 'EUR',
   String groupId = 'g1',
   String id = 'x',
+  ExpenseSplitMode splitMode = ExpenseSplitMode.equal,
+  Map<String, double>? participantShares,
 }) {
   return TripExpense(
     id: id,
@@ -21,6 +23,8 @@ TripExpense _e({
     category: 'other',
     createdAt: DateTime(2026, 1, 1),
     expenseDate: DateTime(2026, 1, 1),
+    splitMode: splitMode,
+    participantShares: participantShares,
   );
 }
 
@@ -87,6 +91,21 @@ void main() {
     final settlement = computeViewerSettlement(expenses, null);
     expect(settlement.suggestedTransfers, hasLength(1));
     expect(settlement.suggestedTransfers.single.fromUserId, 'b');
+  });
+
+  test('custom split: balances follow participantShares', () {
+    final expenses = [
+      _e(
+        paidBy: 'a',
+        participants: ['a', 'b'],
+        amount: 100,
+        splitMode: ExpenseSplitMode.customAmounts,
+        participantShares: {'a': 30, 'b': 70},
+      ),
+    ];
+    final bal = computeBalances(expenses)['EUR']!;
+    expect(bal['a'], closeTo(70, 0.01));
+    expect(bal['b'], closeTo(-70, 0.01));
   });
 
   test('per-post scope: two groups do not merge balances', () {

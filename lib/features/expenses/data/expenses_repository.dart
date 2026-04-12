@@ -236,6 +236,8 @@ class ExpensesRepository {
         expenseDate.day,
       ),
       createdBy: user.uid,
+      splitMode: ExpenseSplitMode.equal,
+      participantShares: const {},
     );
 
     await _expensesCol(cleanTripId).add(
@@ -257,6 +259,8 @@ class ExpensesRepository {
     required List<String> participantIds,
     required DateTime expenseDate,
     String category = 'other',
+    ExpenseSplitMode splitMode = ExpenseSplitMode.equal,
+    Map<String, double>? participantShares,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -295,7 +299,7 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
-    await _expensesCol(cleanTripId).doc(cleanExpenseId).update({
+    final update = <String, dynamic>{
       'title': cleanTitle,
       'amount': amount,
       'currency': cleanCurrency,
@@ -307,7 +311,20 @@ class ExpensesRepository {
       ),
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': user.uid,
-    });
+    };
+
+    if (splitMode == ExpenseSplitMode.customAmounts) {
+      update['splitMode'] = 'custom';
+      update['participantShares'] = {
+        for (final id in participants)
+          id: (participantShares ?? const {})[id] ?? 0.0,
+      };
+    } else {
+      update['splitMode'] = 'equal';
+      update['participantShares'] = FieldValue.delete();
+    }
+
+    await _expensesCol(cleanTripId).doc(cleanExpenseId).update(update);
   }
 
   Future<void> deleteExpense({
