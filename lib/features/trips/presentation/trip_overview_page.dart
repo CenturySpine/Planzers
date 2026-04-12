@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_edit_request_provider.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
 
@@ -90,31 +89,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       _editStartDate = trip.startDate;
       _editEndDate = trip.endDate;
     });
-  }
-
-  Future<void> _openAddressLocation(String address) async {
-    final query = address.trim();
-    if (query.isEmpty) return;
-
-    final mapsUri = Uri.https(
-      'www.google.com',
-      '/maps/search/',
-      <String, String>{
-        'api': '1',
-        'query': query,
-      },
-    );
-
-    final didLaunch = await launchUrl(
-      mapsUri,
-      mode: LaunchMode.platformDefault,
-    );
-
-    if (!didLaunch && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir la localisation')),
-      );
-    }
   }
 
   Future<void> _save() async {
@@ -557,7 +531,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               const SizedBox(height: 16),
             ],
             if (linkUrlForUi.isNotEmpty) ...[
-              _LinkPreviewCardFromFirestore(
+              LinkPreviewCardFromFirestore(
                 url: linkUrlForUi,
                 preview: livePreview,
               ),
@@ -577,7 +551,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       actionIcon: Icons.location_on_outlined,
                       onActionPressed: _trip.address.trim().isEmpty
                           ? null
-                          : () => _openAddressLocation(_trip.address),
+                          : () => openAddressInGoogleMaps(
+                                context,
+                                _trip.address,
+                              ),
                       actionTooltip: 'Ouvrir la localisation',
                     ),
                     const SizedBox(height: 12),
@@ -911,159 +888,6 @@ class _MembersInfoRow extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _LinkPreviewCardFromFirestore extends StatelessWidget {
-  const _LinkPreviewCardFromFirestore({
-    required this.url,
-    required this.preview,
-  });
-
-  final String url;
-  final Map<String, dynamic> preview;
-
-  Future<void> _openLink(BuildContext context) async {
-    final parsed = Uri.tryParse(url.trim());
-    if (parsed == null || !parsed.isAbsolute) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien invalide')),
-      );
-      return;
-    }
-
-    final didLaunch = await launchUrl(
-      parsed,
-      mode: LaunchMode.platformDefault,
-      webOnlyWindowName: '_blank',
-    );
-
-    if (!didLaunch && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final status = (preview['status'] as String?) ?? '';
-    final title = (preview['title'] as String?) ?? '';
-    final description = (preview['description'] as String?) ?? '';
-    final siteName = (preview['siteName'] as String?) ?? '';
-    final imageUrl = (preview['imageUrl'] as String?) ?? '';
-
-    final hasPreview = title.trim().isNotEmpty ||
-        description.trim().isNotEmpty ||
-        imageUrl.trim().isNotEmpty ||
-        siteName.trim().isNotEmpty;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Lien', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () => _openLink(context),
-              borderRadius: BorderRadius.circular(6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      url,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            decoration: TextDecoration.underline,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.open_in_new,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (status == 'loading') ...[
-              const SizedBox(
-                height: 120,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ] else if (!hasPreview) ...[
-              Text(
-                'Apercu indisponible pour ce lien.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ] else ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (imageUrl.trim().isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        imageUrl,
-                        width: 96,
-                        height: 96,
-                        fit: BoxFit.cover,
-                        webHtmlElementStrategy: kIsWeb
-                            ? WebHtmlElementStrategy.prefer
-                            : WebHtmlElementStrategy.never,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 96,
-                          height: 96,
-                          color: Colors.black12,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image_outlined),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (siteName.trim().isNotEmpty) ...[
-                          Text(
-                            siteName,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        if (title.trim().isNotEmpty) ...[
-                          Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ],
-                        if (description.trim().isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            description,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

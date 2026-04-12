@@ -3,6 +3,7 @@ import 'package:planzers/features/account/presentation/account_page.dart';
 import 'package:planzers/features/auth/auth_gate.dart';
 import 'package:planzers/features/auth/sign_in_page.dart';
 import 'package:planzers/features/trips/presentation/invite_join_page.dart';
+import 'package:planzers/features/activities/presentation/trip_activities_page.dart';
 import 'package:planzers/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
 import 'package:planzers/features/trips/presentation/trip_shell_page.dart';

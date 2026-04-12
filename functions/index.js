@@ -1,12 +1,51 @@
 const admin = require('firebase-admin');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
 const cheerio = require('cheerio');
 
 admin.initializeApp();
 
+const googleMapsApiKey = defineSecret('GOOGLE_MAPS_API_KEY');
+
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
+}
+
+/**
+ * @param {string} originAddress
+ * @param {string} destAddress
+ * @param {string} apiKey
+ * @returns {Promise<{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }>}
+ */
+async function fetchDrivingMatrix(originAddress, destAddress, apiKey) {
+  const params = new URLSearchParams({
+    origins: originAddress,
+    destinations: destAddress,
+    mode: 'driving',
+    units: 'metric',
+    key: apiKey,
+  });
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${params.toString()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== 'OK') {
+    const msg = [data.status, data.error_message].filter(Boolean).join(' ');
+    throw new Error(msg || 'Distance Matrix request failed');
+  }
+  const el = data.rows?.[0]?.elements?.[0];
+  if (!el) {
+    throw new Error('Distance Matrix empty rows');
+  }
+  if (el.status !== 'OK') {
+    return { elementStatus: el.status };
+  }
+  return {
+    distanceMeters: el.distance.value,
+    durationSeconds: el.duration.value,
+    distanceText: el.distance.text,
+    durationText: el.duration.text,
+  };
 }
 
 function safeUrl(v) {
@@ -93,6 +132,91 @@ function parsePreviewFromHtml(pageUrl, html) {
     siteName,
     imageUrl,
   };
+}
+
+/**
+ * Writes `linkPreview` on [docRef] from [afterUrlRaw], or clears it when empty.
+ * Used for trip documents and activity subdocuments (same field names).
+ * @param {FirebaseFirestore.DocumentReference} docRef
+ * @param {string} afterUrlRaw
+ */
+async function applyLinkPreview(docRef, afterUrlRaw) {
+  const FieldValue = admin.firestore.FieldValue;
+  const afterUrl = normalizeString(afterUrlRaw);
+  if (!afterUrl) {
+    await docRef.set(
+      {
+        linkPreview: FieldValue.delete(),
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  const parsed = safeUrl(afterUrl);
+  if (!parsed) {
+    await docRef.set(
+      {
+        linkPreview: {
+          status: 'error',
+          url: afterUrl,
+          error: 'invalid_url',
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  await docRef.set(
+    {
+      linkPreview: {
+        status: 'loading',
+        url: parsed.toString(),
+        fetchedAt: FieldValue.serverTimestamp(),
+      },
+    },
+    { merge: true }
+  );
+
+  try {
+    const html = await fetchHtml(parsed);
+    const preview = parsePreviewFromHtml(parsed, html);
+
+    const hasSomething =
+      preview.title ||
+      preview.description ||
+      preview.imageUrl ||
+      preview.siteName;
+
+    await docRef.set(
+      {
+        linkPreview: {
+          status: hasSomething ? 'ok' : 'empty',
+          url: parsed.toString(),
+          title: preview.title,
+          description: preview.description,
+          siteName: preview.siteName,
+          imageUrl: preview.imageUrl,
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  } catch (e) {
+    await docRef.set(
+      {
+        linkPreview: {
+          status: 'error',
+          url: parsed.toString(),
+          error: String(e),
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  }
 }
 
 /** @param {FirebaseFirestore.DocumentData} data */
@@ -186,7 +310,7 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   }
 );
 
-exports.generateTripLinkPreview = onDocumentUpdated(
+exports.generateTripLinkPreview = onDocumentWritten(
   {
     document: 'trips/{tripId}',
     region: 'europe-west1',
@@ -194,36 +318,94 @@ exports.generateTripLinkPreview = onDocumentUpdated(
     memory: '256MiB',
   },
   async (event) => {
-    const before = event.data.before.data() || {};
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
     const after = event.data.after.data() || {};
 
     const beforeUrl = normalizeString(before.linkUrl);
     const afterUrl = normalizeString(after.linkUrl);
-
-    // Avoid loops: only run when linkUrl actually changes.
     if (beforeUrl === afterUrl) return;
 
-    const tripRef = event.data.after.ref;
+    await applyLinkPreview(event.data.after.ref, afterUrl);
+  }
+);
 
-    if (!afterUrl) {
-      await tripRef.set(
+exports.generateActivityLinkPreview = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    region: 'europe-west1',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+  },
+  async (event) => {
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
+    const after = event.data.after.data() || {};
+
+    const beforeUrl = normalizeString(before.linkUrl);
+    const afterUrl = normalizeString(after.linkUrl);
+    if (beforeUrl === afterUrl) return;
+
+    await applyLinkPreview(event.data.after.ref, afterUrl);
+  }
+);
+
+exports.computeActivityDrivingRouteFromTrip = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    region: 'europe-west1',
+    secrets: [googleMapsApiKey],
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (event) => {
+    const FieldValue = admin.firestore.FieldValue;
+    if (!event.data.after.exists) {
+      return;
+    }
+
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
+    const after = event.data.after.data() || {};
+    const beforeAddr = normalizeString(before.address);
+    const afterAddr = normalizeString(after.address);
+
+    if (event.data.before.exists && beforeAddr === afterAddr) {
+      return;
+    }
+
+    const docRef = event.data.after.ref;
+    const tripId = event.params.tripId;
+
+    if (!afterAddr) {
+      await docRef.set(
         {
-          linkPreview: admin.firestore.FieldValue.delete(),
+          tripDrivingRoute: FieldValue.delete(),
         },
         { merge: true }
       );
       return;
     }
 
-    const parsed = safeUrl(afterUrl);
-    if (!parsed) {
-      await tripRef.set(
+    const tripSnap = await admin
+      .firestore()
+      .collection('trips')
+      .doc(tripId)
+      .get();
+    const tripData = tripSnap.data() || {};
+    const tripAddress = normalizeString(tripData.address);
+
+    if (!tripAddress) {
+      await docRef.set(
         {
-          linkPreview: {
-            status: 'error',
-            url: afterUrl,
-            error: 'invalid_url',
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+          tripDrivingRoute: {
+            status: 'missing_trip_address',
+            calculatedAt: FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
@@ -231,47 +413,43 @@ exports.generateTripLinkPreview = onDocumentUpdated(
       return;
     }
 
-    // Mark as loading (UI can show spinner).
-    await tripRef.set(
-      {
-        linkPreview: {
-          status: 'loading',
-          url: parsed.toString(),
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-
+    const apiKey = googleMapsApiKey.value();
     try {
-      const html = await fetchHtml(parsed);
-      const preview = parsePreviewFromHtml(parsed, html);
+      const result = await fetchDrivingMatrix(tripAddress, afterAddr, apiKey);
+      if (result.elementStatus) {
+        await docRef.set(
+          {
+            tripDrivingRoute: {
+              status: 'no_result',
+              detail: result.elementStatus,
+              calculatedAt: FieldValue.serverTimestamp(),
+            },
+          },
+          { merge: true }
+        );
+        return;
+      }
 
-      const hasSomething =
-        preview.title || preview.description || preview.imageUrl || preview.siteName;
-
-      await tripRef.set(
+      await docRef.set(
         {
-          linkPreview: {
-            status: hasSomething ? 'ok' : 'empty',
-            url: parsed.toString(),
-            title: preview.title,
-            description: preview.description,
-            siteName: preview.siteName,
-            imageUrl: preview.imageUrl,
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+          tripDrivingRoute: {
+            status: 'ok',
+            distanceMeters: result.distanceMeters,
+            durationSeconds: result.durationSeconds,
+            distanceText: result.distanceText,
+            durationText: result.durationText,
+            calculatedAt: FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
       );
     } catch (e) {
-      await tripRef.set(
+      await docRef.set(
         {
-          linkPreview: {
+          tripDrivingRoute: {
             status: 'error',
-            url: parsed.toString(),
-            error: String(e),
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+            errorMessage: String(e),
+            calculatedAt: FieldValue.serverTimestamp(),
           },
         },
         { merge: true }
