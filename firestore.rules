@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function tripDoc(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId));
+    }
+
+    function isTripMember(tripId) {
+      return signedIn()
+        && tripDoc(tripId).data.keys().hasAll(['memberIds'])
+        && tripDoc(tripId).data.memberIds is list
+        && request.auth.uid in tripDoc(tripId).data.memberIds;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if signedIn() && request.auth.uid == userId;
+
+      match /fcmTokens/{tokenDocId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /trips/{tripId} {
+      allow read: if isTripMember(tripId);
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds is list
+        && request.auth.uid in request.resource.data.memberIds;
+
+      allow update: if signedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        (
+          request.auth.uid in resource.data.memberIds &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['memberPublicLabels.' + request.auth.uid])
+        )
+      );
+
+      allow delete: if signedIn()
+        && resource.data.ownerId == request.auth.uid;
+
+      match /expenseGroups/{groupId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
+      match /expenses/{expenseId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
+      match /messages/{messageId} {
+        allow read: if isTripMember(tripId);
+        allow create: if isTripMember(tripId)
+          && request.resource.data.keys().hasOnly(['text', 'authorId', 'createdAt'])
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 4000;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

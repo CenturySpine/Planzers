@@ -1,5 +1,8 @@
 const admin = require('firebase-admin');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+} = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const cheerio = require('cheerio');
 
@@ -148,7 +151,128 @@ async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   }
 }
 
-/** Fires when trip.memberIds gains users (e.g. invite join). */
+const FCM_INVALID_TOKEN_CODES = new Set([
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered',
+]);
+
+/**
+ * Sends a push notification to other trip members when a message is created.
+ * Tokens live under users/{uid}/fcmTokens (written by the Flutter app).
+ */
+exports.notifyTripMessageRecipients = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/messages/{messageId}',
+    region: 'europe-west1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const tripId = event.params.tripId;
+    const msg = snap.data() || {};
+    const authorId = normalizeString(msg.authorId);
+    const text = normalizeString(msg.text).slice(0, 180);
+
+    if (!authorId || !text) {
+      return;
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) return;
+
+    const trip = tripSnap.data() || {};
+    const memberIds = Array.isArray(trip.memberIds)
+      ? trip.memberIds.map((v) => String(v))
+      : [];
+    const recipients = memberIds.filter((id) => id && id !== authorId);
+    if (recipients.length === 0) return;
+
+    const tripTitle = normalizeString(trip.title) || 'Voyage';
+    const labels =
+      trip.memberPublicLabels && typeof trip.memberPublicLabels === 'object'
+        ? trip.memberPublicLabels
+        : {};
+    let resolvedAuthorLabel = normalizeString(labels[authorId]);
+    if (!resolvedAuthorLabel) {
+      try {
+        const u = await admin.auth().getUser(authorId);
+        resolvedAuthorLabel = emailLocalPart(u.email || '');
+      } catch (e) {
+        console.warn('notifyTripMessageRecipients getUser', authorId, e);
+      }
+    }
+    if (!resolvedAuthorLabel) {
+      resolvedAuthorLabel = 'Quelqu’un';
+    }
+
+    /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference }[]} */
+    const tokenEntries = [];
+
+    await Promise.all(
+      recipients.map(async (uid) => {
+        try {
+          const tokensSnap = await db
+            .collection('users')
+            .doc(uid)
+            .collection('fcmTokens')
+            .get();
+          for (const doc of tokensSnap.docs) {
+            const t = normalizeString((doc.data() || {}).token);
+            if (t) {
+              tokenEntries.push({ token: t, ref: doc.ref });
+            }
+          }
+        } catch (e) {
+          console.warn('notifyTripMessageRecipients tokens', uid, e);
+        }
+      })
+    );
+
+    if (tokenEntries.length === 0) return;
+
+    const messages = tokenEntries.map(({ token }) => ({
+      token,
+      notification: {
+        title: `Messagerie · ${tripTitle}`,
+        body: `${resolvedAuthorLabel} : ${text}`,
+      },
+      data: {
+        tripId,
+        type: 'trip_message',
+      },
+    }));
+
+    const result = await admin.messaging().sendEach(messages);
+
+    let batch = db.batch();
+    let batchOps = 0;
+    for (let i = 0; i < result.responses.length; i++) {
+      const r = result.responses[i];
+      if (r.success) continue;
+      const code = r.error?.code || '';
+      if (!FCM_INVALID_TOKEN_CODES.has(code)) continue;
+      const ref = tokenEntries[i]?.ref;
+      if (ref) {
+        batch.delete(ref);
+        batchOps++;
+        if (batchOps >= 400) {
+          await batch.commit();
+          batch = db.batch();
+          batchOps = 0;
+        }
+      }
+    }
+    if (batchOps > 0) {
+      await batch.commit();
+    }
+  }
+);
+
 exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   {
     document: 'trips/{tripId}',

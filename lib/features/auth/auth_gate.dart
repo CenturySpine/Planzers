@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/core/push/fcm_token_sync.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -9,6 +12,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges().asyncMap((user) async {
     if (user != null) {
       await usersRepository.ensureUserDocument(user);
+      unawaited(syncFcmTokenAfterSignIn(user));
     }
     return user;
   });
