@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 /// Local part of [email] for compact labels (text before '@').
@@ -79,4 +80,52 @@ String resolveTripMemberDisplayLabel({
   if (fromTrip.isNotEmpty) return fromTrip;
 
   return emptyFallback;
+}
+
+/// Display labels for [userIds] using `users/{id}` data when present,
+/// then [tripMemberPublicLabels], same rules as [resolveTripMemberDisplayLabel].
+Map<String, String> tripMemberLabelsFromUserDocsById(
+  Map<String, Map<String, dynamic>> docsById,
+  Iterable<String> userIds, {
+  required Map<String, String> tripMemberPublicLabels,
+  String? currentUserId,
+  required String emptyFallback,
+}) {
+  final cleanIds = userIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toSet();
+  final labels = <String, String>{};
+  for (final id in cleanIds) {
+    labels[id] = resolveTripMemberDisplayLabel(
+      memberId: id,
+      userData: docsById[id],
+      tripMemberPublicLabels: tripMemberPublicLabels,
+      currentUserId: currentUserId,
+      emptyFallback: emptyFallback,
+    );
+  }
+  return labels;
+}
+
+/// Same as [tripMemberLabelsFromUserDocsById] but reads from a Firestore query
+/// snapshot of `users` documents.
+Map<String, String> tripMemberLabelsFromUserQuerySnapshot(
+  QuerySnapshot<Map<String, dynamic>>? snapshot,
+  Iterable<String> userIds, {
+  required Map<String, String> tripMemberPublicLabels,
+  String? currentUserId,
+  required String emptyFallback,
+}) {
+  final docsById = <String, Map<String, dynamic>>{};
+  for (final doc in snapshot?.docs ?? const []) {
+    docsById[doc.id] = doc.data();
+  }
+  return tripMemberLabelsFromUserDocsById(
+    docsById,
+    userIds,
+    tripMemberPublicLabels: tripMemberPublicLabels,
+    currentUserId: currentUserId,
+    emptyFallback: emptyFallback,
+  );
 }

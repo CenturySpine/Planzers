@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
 import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -181,235 +182,268 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
             final selectedIsMine =
                 selected != null && myUid != null && selected.authorId == myUid;
 
-            return Column(
-              children: [
-                if (selected != null)
-                  _MessageSelectionAppBar(
-                    selectedIsMine: selectedIsMine,
-                    onClose: _clearSelection,
-                    onCopy: () => _copyMessage(selected),
-                    onEdit: selectedIsMine
-                        ? () async {
-                            final ok =
-                                await _editMessage(trip.id, selected);
-                            if (ok && mounted) _clearSelection();
-                          }
-                        : null,
-                    onDelete: selectedIsMine
-                        ? () async {
-                            final ok =
-                                await _deleteMessage(trip.id, selected);
-                            if (ok && mounted) _clearSelection();
-                          }
-                        : null,
-                  ),
-                Expanded(
-                  child: messages.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'Aucun message pour l’instant. '
-                              'Écris le premier pour lancer la discussion.',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          itemCount: messages.length,
-                          itemBuilder: (context, index) {
-                            final m = messages[index];
-                            final isMine =
-                                myUid != null && m.authorId == myUid;
-                            final isSelected = m.id == _selectedMessageId;
-                            final label = resolveTripMemberDisplayLabel(
-                              memberId: m.authorId,
-                              userData: null,
-                              tripMemberPublicLabels:
-                                  trip.memberPublicLabels,
-                              currentUserId: myUid,
-                              emptyFallback: 'Participant',
-                            );
-                            final timeLine = _timeLine(m, timeFmt);
+            final labelUserIds = <String>{
+              for (final id in trip.memberIds)
+                if (id.trim().isNotEmpty) id.trim(),
+              for (final m in messages)
+                if (m.authorId.trim().isNotEmpty) m.authorId.trim(),
+            }.toList();
 
-                            return Align(
-                              alignment: isMine
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.sizeOf(context).width *
-                                      0.85,
+            return StreamBuilder<Map<String, Map<String, dynamic>>>(
+              stream: ref
+                  .read(usersRepositoryProvider)
+                  .watchUsersDataByIds(labelUserIds),
+              builder: (context, userSnap) {
+                final userDocs =
+                    userSnap.data ?? const <String, Map<String, dynamic>>{};
+                final authorLabels = tripMemberLabelsFromUserDocsById(
+                  userDocs,
+                  labelUserIds,
+                  tripMemberPublicLabels: trip.memberPublicLabels,
+                  currentUserId: myUid,
+                  emptyFallback: 'Participant',
+                );
+
+                return Column(
+                  children: [
+                    if (selected != null)
+                      _MessageSelectionAppBar(
+                        selectedIsMine: selectedIsMine,
+                        onClose: _clearSelection,
+                        onCopy: () => _copyMessage(selected),
+                        onEdit: selectedIsMine
+                            ? () async {
+                                final ok =
+                                    await _editMessage(trip.id, selected);
+                                if (ok && mounted) _clearSelection();
+                              }
+                            : null,
+                        onDelete: selectedIsMine
+                            ? () async {
+                                final ok =
+                                    await _deleteMessage(trip.id, selected);
+                                if (ok && mounted) _clearSelection();
+                              }
+                            : null,
+                      ),
+                    Expanded(
+                      child: messages.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Text(
+                                  'Aucun message pour l’instant. '
+                                  'Écris le premier pour lancer la discussion.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      Theme.of(context).textTheme.bodyLarge,
                                 ),
-                                child: GestureDetector(
-                                  onLongPress: () {
-                                    setState(() => _selectedMessageId = m.id);
-                                  },
-                                  onTap: _selectedMessageId != null
-                                      ? () {
-                                          setState(() {
-                                            if (_selectedMessageId ==
-                                                m.id) {
-                                              _selectedMessageId = null;
-                                            } else {
-                                              _selectedMessageId = m.id;
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              itemCount: messages.length,
+                              itemBuilder: (context, index) {
+                                final m = messages[index];
+                                final isMine =
+                                    myUid != null && m.authorId == myUid;
+                                final isSelected =
+                                    m.id == _selectedMessageId;
+                                final label = authorLabels[m.authorId] ??
+                                    resolveTripMemberDisplayLabel(
+                                      memberId: m.authorId,
+                                      userData: null,
+                                      tripMemberPublicLabels:
+                                          trip.memberPublicLabels,
+                                      currentUserId: myUid,
+                                      emptyFallback: 'Participant',
+                                    );
+                                final timeLine = _timeLine(m, timeFmt);
+
+                                return Align(
+                                  alignment: isMine
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          MediaQuery.sizeOf(context).width *
+                                              0.85,
+                                    ),
+                                    child: GestureDetector(
+                                      onLongPress: () {
+                                        setState(
+                                            () => _selectedMessageId = m.id);
+                                      },
+                                      onTap: _selectedMessageId != null
+                                          ? () {
+                                              setState(() {
+                                                if (_selectedMessageId ==
+                                                    m.id) {
+                                                  _selectedMessageId = null;
+                                                } else {
+                                                  _selectedMessageId = m.id;
+                                                }
+                                              });
                                             }
-                                          });
-                                        }
-                                      : null,
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Card(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                      horizontal: 4,
-                                    ),
-                                    elevation: isSelected ? 0 : null,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: isSelected
-                                          ? BorderSide(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                              width: 2,
-                                            )
-                                          : BorderSide.none,
-                                    ),
-                                    color: isSelected
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                            .withValues(alpha: 0.55)
-                                        : (isMine
+                                          : null,
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Card(
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                          horizontal: 4,
+                                        ),
+                                        elevation: isSelected ? 0 : null,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          side: isSelected
+                                              ? BorderSide(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                  width: 2,
+                                                )
+                                              : BorderSide.none,
+                                        ),
+                                        color: isSelected
                                             ? Theme.of(context)
                                                 .colorScheme
                                                 .primaryContainer
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .surfaceContainerHighest),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        children: [
-                                          Row(
+                                                .withValues(alpha: 0.55)
+                                            : (isMine
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .primaryContainer
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
                                             crossAxisAlignment:
-                                                CrossAxisAlignment
-                                                    .baseline,
-                                            textBaseline:
-                                                TextBaseline.alphabetic,
+                                                CrossAxisAlignment.stretch,
                                             children: [
-                                              Expanded(
-                                                child: Text(
-                                                  label,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .labelMedium
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                timeLine,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .labelSmall
-                                                    ?.copyWith(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment
+                                                        .baseline,
+                                                textBaseline:
+                                                    TextBaseline.alphabetic,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      label,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .labelMedium
+                                                          ?.copyWith(
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600,
+                                                          ),
                                                     ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    timeLine,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .labelSmall
+                                                        ?.copyWith(
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                ],
                                               ),
+                                              const SizedBox(height: 6),
+                                              _selectedMessageId != null
+                                                  ? Text(
+                                                      m.text,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium,
+                                                    )
+                                                  : SelectableText(
+                                                      m.text,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium,
+                                                    ),
                                             ],
                                           ),
-                                          const SizedBox(height: 6),
-                                          _selectedMessageId != null
-                                              ? Text(
-                                                  m.text,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                )
-                                              : SelectableText(
-                                                  m.text,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-                Material(
-                  elevation: 2,
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _textController,
-                              minLines: 1,
-                              maxLines: 5,
-                              textCapitalization:
-                                  TextCapitalization.sentences,
-                              decoration: const InputDecoration(
-                                hintText: 'Message…',
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                              ),
-                              onSubmitted: _sending
-                                  ? null
-                                  : (_) => _send(trip.id),
+                                );
+                              },
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton.filled(
-                            onPressed:
-                                _sending ? null : () => _send(trip.id),
-                            icon: _sending
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                    ),
+                    Material(
+                      elevation: 2,
+                      child: SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _textController,
+                                  minLines: 1,
+                                  maxLines: 5,
+                                  textCapitalization:
+                                      TextCapitalization.sentences,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Message…',
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
                                     ),
-                                  )
-                                : const Icon(Icons.send),
-                            tooltip: 'Envoyer',
+                                  ),
+                                  onSubmitted: _sending
+                                      ? null
+                                      : (_) => _send(trip.id),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton.filled(
+                                onPressed: _sending
+                                    ? null
+                                    : () => _send(trip.id),
+                                icon: _sending
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.send),
+                                tooltip: 'Envoyer',
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
