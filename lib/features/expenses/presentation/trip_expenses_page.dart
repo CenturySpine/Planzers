@@ -260,11 +260,12 @@ class _TripExpensesBody extends StatelessWidget {
           .where(FieldPath.documentId, whereIn: cleanMemberIds)
           .snapshots(),
       builder: (context, snapshot) {
-        final labels = _labelsFromUserSnapshot(
+        final labels = tripMemberLabelsFromUserQuerySnapshot(
           snapshot.data,
           cleanMemberIds,
-          memberPublicLabels: memberPublicLabels,
+          tripMemberPublicLabels: memberPublicLabels,
           currentUserId: FirebaseAuth.instance.currentUser?.uid,
+          emptyFallback: 'Voyageur',
         );
 
         return _buildScrollView(
@@ -583,30 +584,6 @@ class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
       ),
     );
   }
-}
-
-Map<String, String> _labelsFromUserSnapshot(
-  QuerySnapshot<Map<String, dynamic>>? snapshot,
-  List<String> memberIds, {
-  String? currentUserId,
-  Map<String, String> memberPublicLabels = const {},
-}) {
-  final docsById = <String, Map<String, dynamic>>{};
-  for (final doc in snapshot?.docs ?? const []) {
-    docsById[doc.id] = doc.data();
-  }
-
-  final labels = <String, String>{};
-  for (final memberId in memberIds) {
-    labels[memberId] = resolveTripMemberDisplayLabel(
-      memberId: memberId,
-      userData: docsById[memberId],
-      tripMemberPublicLabels: memberPublicLabels,
-      currentUserId: currentUserId,
-      emptyFallback: 'Voyageur',
-    );
-  }
-  return labels;
 }
 
 String _formatMoney(String currency, double amount) {
@@ -1810,11 +1787,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                     .where(FieldPath.documentId, whereIn: members)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  final labels = _labelsFromUserSnapshot(
+                  final labels = tripMemberLabelsFromUserQuerySnapshot(
                     snapshot.data,
                     members,
-                    memberPublicLabels: widget.memberPublicLabels,
+                    tripMemberPublicLabels: widget.memberPublicLabels,
                     currentUserId: FirebaseAuth.instance.currentUser?.uid,
+                    emptyFallback: 'Voyageur',
                   );
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
