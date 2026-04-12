@@ -330,6 +330,7 @@ class _TripExpensesBody extends StatelessWidget {
                 child: _ExpensePostCard(
                   tripId: tripId,
                   group: group,
+                  visibleGroupCount: visibleGroups.length,
                   groupExpenses: expenses
                       .where((e) => e.groupId == group.id)
                       .toList(),
@@ -352,6 +353,7 @@ class _ExpensePostCard extends ConsumerStatefulWidget {
   const _ExpensePostCard({
     required this.tripId,
     required this.group,
+    required this.visibleGroupCount,
     required this.groupExpenses,
     required this.memberIds,
     required this.memberPublicLabels,
@@ -361,6 +363,8 @@ class _ExpensePostCard extends ConsumerStatefulWidget {
 
   final String tripId;
   final TripExpenseGroup group;
+  /// When only one post is visible, it starts expanded (unless persisted state says otherwise).
+  final int visibleGroupCount;
   final List<TripExpense> groupExpenses;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
@@ -378,7 +382,8 @@ class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
   @override
   void initState() {
     super.initState();
-    _expanded = widget.group.isDefault;
+    _expanded =
+        widget.group.isDefault || widget.visibleGroupCount == 1;
     ExpensePostExpansionStore.read(widget.tripId, widget.group.id).then((v) {
       if (!mounted || v == null) return;
       setState(() => _expanded = v);
@@ -533,7 +538,7 @@ class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
             alignment: Alignment.topCenter,
             child: _expanded
                 ? Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -562,16 +567,12 @@ class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
                                 ),
                           )
                         else
-                          ...widget.groupExpenses.map(
-                            (e) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _ExpenseCard(
-                                tripId: widget.tripId,
-                                expense: e,
-                                participantScopeMemberIds: scope,
-                                memberLabels: widget.memberLabels,
-                              ),
-                            ),
+                          ..._buildExpensesGroupedByDate(
+                            context,
+                            widget.groupExpenses,
+                            widget.tripId,
+                            scope,
+                            widget.memberLabels,
                           ),
                       ],
                     ),
@@ -648,8 +649,6 @@ String _formatSuggestedTransferLine({
 }
 
 enum _ExpenseDetailsMenuAction { edit, delete }
-
-const double _participantColumnWidth = 48;
 
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
@@ -823,7 +822,68 @@ class _SettlementSection extends StatelessWidget {
   }
 }
 
-class _ExpenseCard extends ConsumerStatefulWidget {
+/// Operations under each post: newest days first, with a date header per calendar day.
+List<Widget> _buildExpensesGroupedByDate(
+  BuildContext context,
+  List<TripExpense> expenses,
+  String tripId,
+  List<String> participantScopeMemberIds,
+  Map<String, String> memberLabels,
+) {
+  if (expenses.isEmpty) return const [];
+
+  final sorted = [...expenses]
+    ..sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
+
+  final byDay = <DateTime, List<TripExpense>>{};
+  for (final e in sorted) {
+    final day = DateTime(
+      e.expenseDate.year,
+      e.expenseDate.month,
+      e.expenseDate.day,
+    );
+    byDay.putIfAbsent(day, () => []).add(e);
+  }
+
+  final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+
+  final widgets = <Widget>[];
+  for (var i = 0; i < days.length; i++) {
+    final day = days[i];
+    final dayExpenses = byDay[day]!;
+
+    widgets.add(
+      Padding(
+        padding: EdgeInsets.only(top: i == 0 ? 0 : 12, bottom: 4),
+        child: Text(
+          DateFormat.yMMMEd('fr_FR').format(day),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+    );
+
+    for (final e in dayExpenses) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: _ExpenseCard(
+            tripId: tripId,
+            expense: e,
+            participantScopeMemberIds: participantScopeMemberIds,
+            memberLabels: memberLabels,
+          ),
+        ),
+      );
+    }
+  }
+
+  return widgets;
+}
+
+class _ExpenseCard extends StatelessWidget {
   const _ExpenseCard({
     required this.tripId,
     required this.expense,
@@ -836,136 +896,62 @@ class _ExpenseCard extends ConsumerStatefulWidget {
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
 
-  @override
-  ConsumerState<_ExpenseCard> createState() => _ExpenseCardState();
-}
-
-class _ExpenseCardState extends ConsumerState<_ExpenseCard> {
-  bool _deleting = false;
-
-  Future<void> _openDetails() async {
+  Future<void> _openDetails(BuildContext context) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => _ExpenseDetailsPage(
-          tripId: widget.tripId,
-          expense: widget.expense,
-          participantScopeMemberIds: widget.participantScopeMemberIds,
-          memberLabels: widget.memberLabels,
+          tripId: tripId,
+          expense: expense,
+          participantScopeMemberIds: participantScopeMemberIds,
+          memberLabels: memberLabels,
         ),
       ),
     );
   }
 
-  Future<void> _confirmDelete() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer cette dépense ?'),
-        content: Text('« ${widget.expense.title} » sera supprimée.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-
-    setState(() => _deleting = true);
-    try {
-      await ref.read(expensesRepositoryProvider).deleteExpense(
-            tripId: widget.tripId,
-            expenseId: widget.expense.id,
-          );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dépense supprimée')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _deleting = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final e = widget.expense;
-    final paidByLabel = widget.memberLabels[e.paidBy] ?? 'Voyageur';
-    final participantLabels = e.participantIds
-        .map((id) => widget.memberLabels[id] ?? 'Voyageur')
-        .join(', ');
+    final e = expense;
+    final paidByLabel = memberLabels[e.paidBy] ?? 'Voyageur';
 
     return Card(
+      margin: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: _openDetails,
+        onTap: () => _openDetails(context),
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          e.title.isEmpty ? 'Sans titre' : e.title,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatMoney(e.currency, e.amount),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      e.title.isEmpty ? 'Sans titre' : e.title,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Supprimer',
-                    onPressed: _deleting ? null : _confirmDelete,
-                    icon: _deleting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.delete_outline),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'Payé par $paidByLabel',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(width: 8),
               Text(
-                'Date : ${_formatExpenseDate(e.expenseDate)}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              Text(
-                'Payé par $paidByLabel',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              Text(
-                'Partagée entre : $participantLabels',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                _formatMoney(e.currency, e.amount),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ],
@@ -1002,6 +988,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   late String? _paidBy;
   late Set<String> _participantIds;
   late DateTime _expenseDate;
+  late ExpenseSplitMode _splitMode;
+  final Map<String, TextEditingController> _shareControllers = {};
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
@@ -1036,13 +1024,141 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       widget.expense.expenseDate.month,
       widget.expense.expenseDate.day,
     );
+    _splitMode = widget.expense.splitMode;
+    if (_splitMode == ExpenseSplitMode.customAmounts) {
+      final n = _participantIds.length;
+      final each = n > 0 ? widget.expense.amount / n : 0.0;
+      for (final id in _participantIds) {
+        final v = widget.expense.participantShares[id] ?? each;
+        _shareControllers[id] = TextEditingController(
+          text: v.toStringAsFixed(2),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    for (final c in _shareControllers.values) {
+      c.dispose();
+    }
+    _shareControllers.clear();
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  double _parsedTotalAmount() {
+    return double.tryParse(
+          _amountController.text.trim().replaceAll(',', '.'),
+        ) ??
+        widget.expense.amount;
+  }
+
+  String _formatShareMoney(double value) {
+    final symbol = _currency == 'USD' ? r'$' : '€';
+    return NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: symbol,
+      decimalDigits: 2,
+    ).format(value);
+  }
+
+  void _onSplitModeChanged(ExpenseSplitMode mode) {
+    setState(() {
+      _splitMode = mode;
+      if (mode == ExpenseSplitMode.equal) {
+        for (final c in _shareControllers.values) {
+          c.dispose();
+        }
+        _shareControllers.clear();
+      } else {
+        final total = _parsedTotalAmount();
+        final ids = _participantIds.toList();
+        final n = ids.length;
+        final each = n > 0 ? total / n : 0.0;
+        final idSet = ids.toSet();
+        for (final id in ids) {
+          if (!_shareControllers.containsKey(id)) {
+            _shareControllers[id] = TextEditingController(
+              text: each.toStringAsFixed(2),
+            );
+          }
+        }
+        final toRemove =
+            _shareControllers.keys.where((k) => !idSet.contains(k)).toList();
+        for (final k in toRemove) {
+          _shareControllers.remove(k)?.dispose();
+        }
+      }
+    });
+  }
+
+  Map<String, double>? _parseCustomSharesForSave() {
+    final ids = _participantIds.toList();
+    if (ids.isEmpty) return null;
+    final out = <String, double>{};
+    for (final id in ids) {
+      final c = _shareControllers[id];
+      final t = (c?.text ?? '').trim().replaceAll(',', '.');
+      final n = double.tryParse(t);
+      if (n == null || n < 0) return null;
+      out[id] = n;
+    }
+    final sum = out.values.fold<double>(0, (a, b) => a + b);
+    final total = _parsedTotalAmount();
+    if ((sum - total).abs() > 0.02) return null;
+    return out;
+  }
+
+  Widget? _shareAmountTrailing(String memberId) {
+    if (!_participantIds.contains(memberId)) {
+      return Text(
+        '—',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      );
+    }
+    if (_splitMode == ExpenseSplitMode.equal) {
+      final n = _participantIds.length;
+      final per = n > 0 ? _parsedTotalAmount() / n : 0.0;
+      return Text(
+        _formatShareMoney(per),
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+    if (_editing) {
+      final c = _shareControllers[memberId];
+      if (c == null) {
+        return const SizedBox(width: 88);
+      }
+      return SizedBox(
+        width: 100,
+        child: TextField(
+          controller: c,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
+          textAlign: TextAlign.end,
+          decoration: const InputDecoration(
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      );
+    }
+    final c = _shareControllers[memberId];
+    final parsed = c != null
+        ? double.tryParse(c.text.trim().replaceAll(',', '.'))
+        : null;
+    final v = parsed ?? widget.expense.participantShares[memberId] ?? 0.0;
+    return Text(
+      _formatShareMoney(v),
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
   }
 
   Future<void> _pickExpenseDate() async {
@@ -1154,6 +1270,21 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       return;
     }
 
+    Map<String, double>? customShares;
+    if (_splitMode == ExpenseSplitMode.customAmounts) {
+      customShares = _parseCustomSharesForSave();
+      if (customShares == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Pour « Montants », chaque part doit être valide et la somme doit égaler le total.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     try {
       await ref.read(expensesRepositoryProvider).updateExpense(
@@ -1165,6 +1296,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
             paidBy: paidBy,
             participantIds: _participantIds.toList(),
             expenseDate: _expenseDate,
+            splitMode: _splitMode,
+            participantShares: customShares,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1252,6 +1385,9 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                         decimal: true,
                       ),
                       readOnly: !_editing,
+                      onChanged: !_editing
+                          ? null
+                          : (_) => setState(() {}),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
@@ -1340,17 +1476,47 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Qui voit ce poste se règle dans le menu du poste (pas ici).',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
               const SizedBox(height: 16),
-              Text(
-                'Partage du montant',
-                style: Theme.of(context).textTheme.titleSmall,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Partage du montant',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  if (_editing)
+                    DropdownButton<ExpenseSplitMode>(
+                      value: _splitMode,
+                      underline: const SizedBox.shrink(),
+                      alignment: AlignmentDirectional.centerEnd,
+                      items: const [
+                        DropdownMenuItem(
+                          value: ExpenseSplitMode.equal,
+                          child: Text('Équitablement'),
+                        ),
+                        DropdownMenuItem(
+                          value: ExpenseSplitMode.customAmounts,
+                          child: Text('Montants'),
+                        ),
+                      ],
+                      onChanged: (mode) {
+                        if (mode != null) _onSplitModeChanged(mode);
+                      },
+                    )
+                  else
+                    Text(
+                      _splitMode == ExpenseSplitMode.equal
+                          ? 'Équitablement'
+                          : 'Montants',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                ],
               ),
               const SizedBox(height: 8),
               Container(
@@ -1362,66 +1528,47 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                 ),
                 child: Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                      child: Row(
-                        children: [
-                          const Expanded(child: Text('Voyageur')),
-                          SizedBox(
-                            width: _participantColumnWidth,
-                            child: Center(
-                              child: Tooltip(
-                                message: 'Partage',
-                                child: Icon(
-                                  Icons.payments_outlined,
-                                  size: 18,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    ...members.map((id) {
-                      final canEdit = _editing;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
+                    for (final id in members)
+                      CheckboxListTile(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 2,
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                widget.memberLabels[id] ?? id,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            SizedBox(
-                              width: _participantColumnWidth,
-                              child: Center(
-                                child: Checkbox(
-                                  value: _participantIds.contains(id),
-                                  onChanged: !canEdit
-                                      ? null
-                                      : (checked) {
-                                          setState(() {
-                                            if (checked == true) {
-                                              _participantIds.add(id);
-                                            } else {
-                                              _participantIds.remove(id);
-                                            }
-                                          });
-                                        },
-                                ),
-                              ),
-                            ),
-                          ],
+                        controlAffinity: ListTileControlAffinity.leading,
+                        title: Text(
+                          widget.memberLabels[id] ?? id,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    }),
+                        secondary: _shareAmountTrailing(id),
+                        value: _participantIds.contains(id),
+                        onChanged: !_editing
+                            ? null
+                            : (checked) {
+                                setState(() {
+                                  if (checked == true) {
+                                    _participantIds.add(id);
+                                    if (_splitMode ==
+                                        ExpenseSplitMode.customAmounts) {
+                                      final total = _parsedTotalAmount();
+                                      final n = _participantIds.length;
+                                      final each =
+                                          n > 0 ? total / n : 0.0;
+                                      _shareControllers[id] =
+                                          TextEditingController(
+                                        text: each.toStringAsFixed(2),
+                                      );
+                                    }
+                                  } else {
+                                    _participantIds.remove(id);
+                                    if (_splitMode ==
+                                        ExpenseSplitMode.customAmounts) {
+                                      _shareControllers
+                                          .remove(id)
+                                          ?.dispose();
+                                    }
+                                  }
+                                });
+                              },
+                      ),
                   ],
                 ),
               ),
@@ -1731,65 +1878,28 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                         ),
                         child: Column(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                              child: Row(
-                                children: [
-                                  const Expanded(child: Text('Voyageur')),
-                                  SizedBox(
-                                    width: _participantColumnWidth,
-                                    child: Center(
-                                      child: Tooltip(
-                                        message: 'Partage',
-                                        child: Icon(
-                                          Icons.payments_outlined,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(height: 1),
-                            ...members.map((id) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
+                            for (final id in members)
+                              CheckboxListTile(
+                                contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12,
-                                  vertical: 2,
                                 ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        labels[id] ?? id,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      width: _participantColumnWidth,
-                                      child: Center(
-                                        child: Checkbox(
-                                          value: _participantIds.contains(id),
-                                          onChanged: (checked) {
-                                            setState(() {
-                                              if (checked == true) {
-                                                _participantIds.add(id);
-                                              } else {
-                                                _participantIds.remove(id);
-                                              }
-                                            });
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                title: Text(
+                                  labels[id] ?? id,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              );
-                            }),
+                                value: _participantIds.contains(id),
+                                onChanged: (checked) {
+                                  setState(() {
+                                    if (checked == true) {
+                                      _participantIds.add(id);
+                                    } else {
+                                      _participantIds.remove(id);
+                                    }
+                                  });
+                                },
+                              ),
                           ],
                         ),
                       ),

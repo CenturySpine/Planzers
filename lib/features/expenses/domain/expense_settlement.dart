@@ -63,8 +63,8 @@ const double _kBalanceEpsilon = 0.009;
 
 /// Computes per-user net balance by currency from shared expenses.
 ///
-/// For each expense, the amount is split equally across [participantIds];
-/// each participant is debited their share; [paidBy] is credited the full
+/// For each expense, each participant is debited their share (equal split or
+/// explicit [TripExpense.participantShares]); [paidBy] is credited the full
 /// amount paid (standard Splitwise / TriCount-style model).
 BalancesByCurrency computeBalances(Iterable<TripExpense> expenses) {
   final result = <String, Map<String, double>>{};
@@ -85,16 +85,50 @@ BalancesByCurrency computeBalances(Iterable<TripExpense> expenses) {
     final amount = expense.amount;
     if (amount <= 0) continue;
 
-    final perPerson = amount / participants.length;
     final bucket = result.putIfAbsent(currency, () => <String, double>{});
 
+    final shares = _participantSharesForExpense(expense, participants);
     for (final uid in participants) {
-      bucket[uid] = (bucket[uid] ?? 0) - perPerson;
+      final share = shares[uid] ?? 0;
+      bucket[uid] = (bucket[uid] ?? 0) - share;
     }
     bucket[paidBy] = (bucket[paidBy] ?? 0) + amount;
   }
 
   return result;
+}
+
+/// Resolves owed amount per participant; falls back to equal split when needed.
+Map<String, double> _participantSharesForExpense(
+  TripExpense expense,
+  List<String> participants,
+) {
+  if (expense.splitMode != ExpenseSplitMode.customAmounts) {
+    final n = participants.length;
+    final per = n > 0 ? expense.amount / n : 0.0;
+    return {for (final id in participants) id: per};
+  }
+
+  final raw = expense.participantShares;
+  var sum = 0.0;
+  final out = <String, double>{};
+  for (final id in participants) {
+    final v = raw[id];
+    if (v == null || v < 0) {
+      return {
+        for (final uid in participants)
+          uid: participants.isEmpty ? 0.0 : expense.amount / participants.length,
+      };
+    }
+    out[id] = v;
+    sum += v;
+  }
+  if ((sum - expense.amount).abs() > 0.02) {
+    final n = participants.length;
+    final per = n > 0 ? expense.amount / n : 0.0;
+    return {for (final id in participants) id: per};
+  }
+  return out;
 }
 
 /// Greedy simplification: minimal number of transfers per currency to zero balances.
