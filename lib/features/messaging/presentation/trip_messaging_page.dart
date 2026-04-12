@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
@@ -398,28 +402,16 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                 ],
                                               ),
                                               const SizedBox(height: 6),
-                                              _selectedMessageId != null
-                                                  ? Text(
-                                                      m.text,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium,
-                                                    )
-                                                  : pointerSelect
-                                                      ? Text(
-                                                          m.text,
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyMedium,
-                                                        )
-                                                      : SelectableText(
-                                                          m.text,
-                                                          style:
-                                                              Theme.of(context)
-                                                                  .textTheme
-                                                                  .bodyMedium,
-                                                        ),
+                                              _TripMessageLinkedText(
+                                                text: m.text,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium,
+                                                selectable:
+                                                    _selectedMessageId ==
+                                                            null &&
+                                                        !pointerSelect,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -499,6 +491,145 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Renders [text] with `http(s)://` and `www.` segments as tappable links.
+class _TripMessageLinkedText extends StatefulWidget {
+  const _TripMessageLinkedText({
+    required this.text,
+    required this.style,
+    required this.selectable,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final bool selectable;
+
+  @override
+  State<_TripMessageLinkedText> createState() =>
+      _TripMessageLinkedTextState();
+}
+
+class _TripMessageLinkedTextState extends State<_TripMessageLinkedText> {
+  static final RegExp _urlRegex = RegExp(
+    r'(https?://[^\s]+)|(www\.[^\s]+)',
+    caseSensitive: false,
+  );
+
+  final List<TapGestureRecognizer> _recognizers = [];
+  List<InlineSpan> _spans = const [];
+  String? _spansForText;
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  void _disposeRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  void _ensureSpans(BuildContext context) {
+    if (_spansForText == widget.text) return;
+    _disposeRecognizers();
+    _spansForText = widget.text;
+    _spans = _buildSpans(context);
+  }
+
+  List<InlineSpan> _buildSpans(BuildContext context) {
+    final text = widget.text;
+    final baseStyle = widget.style;
+    final scheme = Theme.of(context).colorScheme;
+    final linkStyle = baseStyle?.copyWith(
+      color: scheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: scheme.primary,
+    );
+
+    final children = <InlineSpan>[];
+    var start = 0;
+    for (final match in _urlRegex.allMatches(text)) {
+      if (match.start > start) {
+        children.add(
+          TextSpan(text: text.substring(start, match.start), style: baseStyle),
+        );
+      }
+      final raw = match.group(0)!;
+      final trimmed = _trimUrlWrappingPunctuation(raw);
+      final href = trimmed.toLowerCase().startsWith('www.')
+          ? 'https://$trimmed'
+          : trimmed;
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () => unawaited(_openTripMessageUrl(context, href));
+      _recognizers.add(recognizer);
+      children.add(
+        TextSpan(
+          text: raw,
+          style: linkStyle,
+          recognizer: recognizer,
+        ),
+      );
+      start = match.end;
+    }
+    if (start < text.length) {
+      children.add(TextSpan(text: text.substring(start), style: baseStyle));
+    }
+    if (children.isEmpty) {
+      return [TextSpan(text: text, style: baseStyle)];
+    }
+    return children;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _ensureSpans(context);
+    final span = TextSpan(style: widget.style, children: _spans);
+    if (widget.selectable) {
+      return SelectableText.rich(span);
+    }
+    return Text.rich(span);
+  }
+}
+
+String _trimUrlWrappingPunctuation(String raw) {
+  var s = raw;
+  while (s.isNotEmpty) {
+    final last = s[s.length - 1];
+    if ('.,;:!?)]}\'"'.contains(last)) {
+      s = s.substring(0, s.length - 1);
+      continue;
+    }
+    break;
+  }
+  return s;
+}
+
+Future<void> _openTripMessageUrl(BuildContext context, String url) async {
+  final parsed = Uri.tryParse(url.trim());
+  if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lien invalide')),
+      );
+    }
+    return;
+  }
+
+  final didLaunch = await launchUrl(
+    parsed,
+    mode: LaunchMode.platformDefault,
+    webOnlyWindowName: '_blank',
+  );
+
+  if (!didLaunch && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
     );
   }
 }
