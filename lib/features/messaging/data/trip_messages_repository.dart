@@ -73,4 +73,53 @@ class TripMessagesRepository {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> updateMessage({
+    required String tripId,
+    required String messageId,
+    required String text,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      throw StateError('Message vide');
+    }
+    if (trimmed.length > maxTextLength) {
+      throw StateError('Message trop long');
+    }
+
+    final ref = _messagesCol(cleanTripId).doc(cleanMessageId);
+    await ref.update({
+      'text': trimmed,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteMessage({
+    required String tripId,
+    required String messageId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    await _messagesCol(cleanTripId).doc(cleanMessageId).delete();
+  }
 }
