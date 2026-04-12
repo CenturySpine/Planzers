@@ -47,7 +47,7 @@ class ActivitiesRepository {
     required String label,
     required TripActivityCategory category,
     required String linkUrl,
-    required String itinerary,
+    required String address,
     required String freeComments,
   }) async {
     final user = auth.currentUser;
@@ -69,10 +69,40 @@ class ActivitiesRepository {
       'label': cleanLabel,
       'category': category.firestoreValue,
       'linkUrl': linkUrl.trim(),
-      'itinerary': itinerary.trim(),
+      'address': address.trim(),
       'freeComments': freeComments.trim(),
+      'done': false,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Any signed-in user may toggle (trip membership enforced by Firestore rules).
+  Future<void> setActivityDone({
+    required String tripId,
+    required String activityId,
+    required bool done,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final docRef = _activitiesCol(cleanTripId).doc(cleanActivityId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Activite introuvable');
+    }
+
+    await docRef.update({
+      'done': done,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -82,7 +112,7 @@ class ActivitiesRepository {
     required String label,
     required TripActivityCategory category,
     required String linkUrl,
-    required String itinerary,
+    required String address,
     required String freeComments,
   }) async {
     final user = auth.currentUser;
@@ -115,8 +145,9 @@ class ActivitiesRepository {
       'label': cleanLabel,
       'category': category.firestoreValue,
       'linkUrl': linkUrl.trim(),
-      'itinerary': itinerary.trim(),
+      'address': address.trim(),
       'freeComments': freeComments.trim(),
+      'itinerary': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

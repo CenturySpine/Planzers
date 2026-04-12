@@ -1,12 +1,51 @@
 const admin = require('firebase-admin');
 const { onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
 const cheerio = require('cheerio');
 
 admin.initializeApp();
 
+const googleMapsApiKey = defineSecret('GOOGLE_MAPS_API_KEY');
+
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
+}
+
+/**
+ * @param {string} originAddress
+ * @param {string} destAddress
+ * @param {string} apiKey
+ * @returns {Promise<{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }>}
+ */
+async function fetchDrivingMatrix(originAddress, destAddress, apiKey) {
+  const params = new URLSearchParams({
+    origins: originAddress,
+    destinations: destAddress,
+    mode: 'driving',
+    units: 'metric',
+    key: apiKey,
+  });
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?${params.toString()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== 'OK') {
+    const msg = [data.status, data.error_message].filter(Boolean).join(' ');
+    throw new Error(msg || 'Distance Matrix request failed');
+  }
+  const el = data.rows?.[0]?.elements?.[0];
+  if (!el) {
+    throw new Error('Distance Matrix empty rows');
+  }
+  if (el.status !== 'OK') {
+    return { elementStatus: el.status };
+  }
+  return {
+    distanceMeters: el.distance.value,
+    durationSeconds: el.duration.value,
+    distanceText: el.distance.text,
+    durationText: el.duration.text,
+  };
 }
 
 function safeUrl(v) {
@@ -312,6 +351,110 @@ exports.generateActivityLinkPreview = onDocumentWritten(
     if (beforeUrl === afterUrl) return;
 
     await applyLinkPreview(event.data.after.ref, afterUrl);
+  }
+);
+
+exports.computeActivityDrivingRouteFromTrip = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    region: 'europe-west1',
+    secrets: [googleMapsApiKey],
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (event) => {
+    const FieldValue = admin.firestore.FieldValue;
+    if (!event.data.after.exists) {
+      return;
+    }
+
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
+    const after = event.data.after.data() || {};
+    const beforeAddr = normalizeString(before.address);
+    const afterAddr = normalizeString(after.address);
+
+    if (event.data.before.exists && beforeAddr === afterAddr) {
+      return;
+    }
+
+    const docRef = event.data.after.ref;
+    const tripId = event.params.tripId;
+
+    if (!afterAddr) {
+      await docRef.set(
+        {
+          tripDrivingRoute: FieldValue.delete(),
+        },
+        { merge: true }
+      );
+      return;
+    }
+
+    const tripSnap = await admin
+      .firestore()
+      .collection('trips')
+      .doc(tripId)
+      .get();
+    const tripData = tripSnap.data() || {};
+    const tripAddress = normalizeString(tripData.address);
+
+    if (!tripAddress) {
+      await docRef.set(
+        {
+          tripDrivingRoute: {
+            status: 'missing_trip_address',
+            calculatedAt: FieldValue.serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+      return;
+    }
+
+    const apiKey = googleMapsApiKey.value();
+    try {
+      const result = await fetchDrivingMatrix(tripAddress, afterAddr, apiKey);
+      if (result.elementStatus) {
+        await docRef.set(
+          {
+            tripDrivingRoute: {
+              status: 'no_result',
+              detail: result.elementStatus,
+              calculatedAt: FieldValue.serverTimestamp(),
+            },
+          },
+          { merge: true }
+        );
+        return;
+      }
+
+      await docRef.set(
+        {
+          tripDrivingRoute: {
+            status: 'ok',
+            distanceMeters: result.distanceMeters,
+            durationSeconds: result.durationSeconds,
+            distanceText: result.distanceText,
+            durationText: result.durationText,
+            calculatedAt: FieldValue.serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      await docRef.set(
+        {
+          tripDrivingRoute: {
+            status: 'error',
+            errorMessage: String(e),
+            calculatedAt: FieldValue.serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+    }
   }
 );
 

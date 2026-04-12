@@ -41,7 +41,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _labelController;
   late final TextEditingController _linkController;
-  late final TextEditingController _itineraryController;
+  late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
   bool _editing = false;
@@ -54,7 +54,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     super.initState();
     _labelController = TextEditingController();
     _linkController = TextEditingController();
-    _itineraryController = TextEditingController();
+    _addressController = TextEditingController();
     _commentsController = TextEditingController();
   }
 
@@ -62,7 +62,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   void dispose() {
     _labelController.dispose();
     _linkController.dispose();
-    _itineraryController.dispose();
+    _addressController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -71,9 +71,10 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     if (prev == null) return false;
     return prev.label == next.label &&
         prev.linkUrl == next.linkUrl &&
-        prev.itinerary == next.itinerary &&
+        prev.address == next.address &&
         prev.freeComments == next.freeComments &&
-        prev.category == next.category;
+        prev.category == next.category &&
+        prev.done == next.done;
   }
 
   void _syncControllersWhenIdle(TripActivity activity) {
@@ -82,7 +83,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _lastSyncedActivity = activity;
     _labelController.text = activity.label;
     _linkController.text = activity.linkUrl;
-    _itineraryController.text = activity.itinerary;
+    _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
   }
@@ -90,7 +91,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   void _applyActivity(TripActivity activity) {
     _labelController.text = activity.label;
     _linkController.text = activity.linkUrl;
-    _itineraryController.text = activity.itinerary;
+    _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
     _lastSyncedActivity = activity;
@@ -122,7 +123,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             label: _labelController.text,
             category: _category,
             linkUrl: _linkController.text,
-            itinerary: _itineraryController.text,
+            address: _addressController.text,
             freeComments: _commentsController.text,
           );
       if (!mounted) return;
@@ -283,7 +284,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   formKey: _formKey,
                   labelController: _labelController,
                   linkController: _linkController,
-                  itineraryController: _itineraryController,
+                  addressController: _addressController,
                   commentsController: _commentsController,
                   category: _category,
                   onCategoryChanged: _saving
@@ -292,20 +293,43 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   activity: activity,
                   validateOptionalUrl: _validateOptionalUrl,
                 )
-              : _ReadBody(activity: activity),
+              : _ReadBody(
+                  tripId: widget.tripId,
+                  activity: activity,
+                ),
         );
       },
     );
   }
 }
 
-class _ReadBody extends StatelessWidget {
-  const _ReadBody({required this.activity});
+class _ReadBody extends ConsumerWidget {
+  const _ReadBody({
+    required this.tripId,
+    required this.activity,
+  });
 
+  final String tripId;
   final TripActivity activity;
 
+  Future<void> _toggleDone(WidgetRef ref, BuildContext context, bool value) async {
+    try {
+      await ref.read(activitiesRepositoryProvider).setActivityDone(
+            tripId: tripId,
+            activityId: activity.id,
+            done: value,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -332,20 +356,87 @@ class _ReadBody extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     activity.label.isEmpty ? 'Sans titre' : activity.label,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          decoration: activity.done
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: activity.done
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : null,
+                        ),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
+        CheckboxListTile(
+          value: activity.done,
+          onChanged: (v) {
+            if (v != null) _toggleDone(ref, context, v);
+          },
+          title: const Text('Faite'),
+          controlAffinity: ListTileControlAffinity.leading,
+          contentPadding: EdgeInsets.zero,
+        ),
+        const SizedBox(height: 12),
         if (activity.linkUrl.trim().isNotEmpty) ...[
           LinkPreviewCardFromFirestore(
             url: activity.linkUrl.trim(),
             preview: activity.linkPreview,
           ),
           const SizedBox(height: 16),
+        ],
+        if (activity.address.trim().isNotEmpty) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Adresse du lieu',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    activity.address.trim(),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.directions_car_outlined,
+                        size: 22,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Depuis le logement (voiture)',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _activityDrivingRouteBodyText(activity),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
         Card(
           child: Padding(
@@ -354,29 +445,7 @@ class _ReadBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Itineraire',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  activity.itinerary.trim().isEmpty
-                      ? '—'
-                      : activity.itinerary.trim(),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Commentaires libres',
+                  'Commentaires',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
@@ -400,7 +469,7 @@ class _EditBody extends StatefulWidget {
     required this.formKey,
     required this.labelController,
     required this.linkController,
-    required this.itineraryController,
+    required this.addressController,
     required this.commentsController,
     required this.category,
     required this.onCategoryChanged,
@@ -411,7 +480,7 @@ class _EditBody extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController labelController;
   final TextEditingController linkController;
-  final TextEditingController itineraryController;
+  final TextEditingController addressController;
   final TextEditingController commentsController;
   final TripActivityCategory category;
   final void Function(TripActivityCategory)? onCategoryChanged;
@@ -514,23 +583,22 @@ class _EditBodyState extends State<_EditBody> {
           ],
           const SizedBox(height: 12),
           TextFormField(
-            controller: widget.itineraryController,
+            controller: widget.addressController,
             textInputAction: TextInputAction.next,
             decoration: const InputDecoration(
-              labelText: 'Itineraire',
-              hintText: 'Trajet, horaires, etapes...',
+              labelText: 'Adresse du lieu (trajet depuis le voyage)',
+              hintText: 'Pour calculer distance et duree en voiture',
               border: OutlineInputBorder(),
-              alignLabelWithHint: true,
             ),
-            minLines: 2,
-            maxLines: 5,
+            minLines: 1,
+            maxLines: 3,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: widget.commentsController,
             textInputAction: TextInputAction.done,
             decoration: const InputDecoration(
-              labelText: 'Commentaires libres',
+              labelText: 'Commentaires',
               border: OutlineInputBorder(),
               alignLabelWithHint: true,
             ),
@@ -540,5 +608,34 @@ class _EditBodyState extends State<_EditBody> {
         ],
       ),
     );
+  }
+}
+
+String _activityDrivingRouteBodyText(TripActivity activity) {
+  final route = activity.tripDrivingRoute;
+
+  if (route == null) {
+    return 'Calcul en cours depuis l\'adresse du voyage.';
+  }
+  switch (route.status) {
+    case 'ok':
+      final dist = route.distanceText?.trim();
+      final dur = route.durationText?.trim();
+      if ((dist != null && dist.isNotEmpty) ||
+          (dur != null && dur.isNotEmpty)) {
+        return [
+          if (dist != null && dist.isNotEmpty) 'Distance : $dist',
+          if (dur != null && dur.isNotEmpty) 'Duree : $dur',
+        ].join('\n');
+      }
+      return 'Trajet calcule.';
+    case 'missing_trip_address':
+      return 'Adresse du voyage manquante : renseignez-la dans l\'apercu du voyage.';
+    case 'no_result':
+      return 'Aucun trajet trouve${route.detail != null && route.detail!.isNotEmpty ? ' (${route.detail})' : ''}.';
+    case 'error':
+      return 'Impossible de calculer le trajet${route.errorMessage != null && route.errorMessage!.isNotEmpty ? ' : ${route.errorMessage}' : ''}.';
+    default:
+      return 'Statut : ${route.status}';
   }
 }

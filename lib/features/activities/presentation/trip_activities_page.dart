@@ -29,7 +29,7 @@ class TripActivitiesPage extends ConsumerWidget {
                 Text(
                   'Proposez des sorties : sport, shopping, visites, restaurants. '
                   'Chaque activite peut inclure un lien (apercu comme sur l\'apercu du voyage), '
-                  'un itineraire et des commentaires.',
+                  'une adresse pour le trajet depuis le logement, et des commentaires.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -71,7 +71,7 @@ class TripActivitiesPage extends ConsumerWidget {
   }
 }
 
-class _ActivityListTile extends StatelessWidget {
+class _ActivityListTile extends ConsumerWidget {
   const _ActivityListTile({
     required this.tripId,
     required this.activity,
@@ -91,38 +91,87 @@ class _ActivityListTile extends StatelessWidget {
     );
   }
 
+  Future<void> _setDone(
+    BuildContext context,
+    WidgetRef ref,
+    bool value,
+  ) async {
+    try {
+      await ref.read(activitiesRepositoryProvider).setActivityDone(
+            tripId: tripId,
+            activityId: activity.id,
+            done: value,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final label =
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDetail(context),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                activity.category.categoryIcon,
-                size: 28,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 4, right: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Checkbox(
+              value: activity.done,
+              onChanged: (v) {
+                if (v != null) _setDone(context, ref, v);
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _openDetail(context),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        activity.category.categoryIcon,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    decoration: activity.done
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                    color: activity.done
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                        : null,
+                                  ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      LinkPreviewThumbnail(preview: activity.linkPreview),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              LinkPreviewThumbnail(preview: activity.linkPreview),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -176,7 +225,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _labelController;
   late final TextEditingController _linkController;
-  late final TextEditingController _itineraryController;
+  late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
   bool _saving = false;
@@ -186,7 +235,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
     super.initState();
     _labelController = TextEditingController();
     _linkController = TextEditingController();
-    _itineraryController = TextEditingController();
+    _addressController = TextEditingController();
     _commentsController = TextEditingController();
   }
 
@@ -194,7 +243,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
   void dispose() {
     _labelController.dispose();
     _linkController.dispose();
-    _itineraryController.dispose();
+    _addressController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -224,7 +273,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             label: _labelController.text,
             category: _category,
             linkUrl: _linkController.text,
-            itinerary: _itineraryController.text,
+            address: _addressController.text,
             freeComments: _commentsController.text,
           );
       if (!mounted) return;
@@ -303,23 +352,22 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _itineraryController,
+              controller: _addressController,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
-                labelText: 'Itineraire',
-                hintText: 'Trajet, horaires, etapes...',
+                labelText: 'Adresse du lieu (trajet depuis le voyage)',
+                hintText: 'Pour calculer distance et duree en voiture',
                 border: OutlineInputBorder(),
-                alignLabelWithHint: true,
               ),
-              minLines: 2,
-              maxLines: 5,
+              minLines: 1,
+              maxLines: 3,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _commentsController,
               textInputAction: TextInputAction.done,
               decoration: const InputDecoration(
-                labelText: 'Commentaires libres',
+                labelText: 'Commentaires',
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),

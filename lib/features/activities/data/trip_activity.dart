@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planzers/features/activities/data/activity_trip_driving_route.dart';
 
 /// Proposed outing / activity for a trip
 /// (`trips/{tripId}/activities/{activityId}`).
@@ -8,24 +9,34 @@ class TripActivity {
     required this.label,
     required this.category,
     required this.linkUrl,
-    required this.itinerary,
+    required this.address,
     required this.freeComments,
     required this.createdBy,
     required this.createdAt,
+    this.done = false,
     this.linkPreview = const {},
+    this.tripDrivingRoute,
   });
 
   final String id;
   final String label;
   final TripActivityCategory category;
   final String linkUrl;
-  final String itinerary;
+
+  /// Place address for driving directions from the trip base address (optional).
+  final String address;
   final String freeComments;
   final String createdBy;
   final DateTime createdAt;
 
+  /// Whether participants consider this outing done.
+  final bool done;
+
   /// Same shape as trip `linkPreview` (filled by Cloud Function).
   final Map<String, dynamic> linkPreview;
+
+  /// Driving distance/duration from trip `address` (Cloud Function).
+  final ActivityTripDrivingRoute? tripDrivingRoute;
 
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
@@ -41,16 +52,26 @@ class TripActivity {
       _ => DateTime.now(),
     };
 
+    final doneRaw = data['done'];
+    final done = doneRaw is bool
+        ? doneRaw
+        : doneRaw is String
+            ? doneRaw.toLowerCase() == 'true'
+            : false;
+
     return TripActivity(
       id: doc.id,
       label: (data['label'] as String?) ?? '',
       category: TripActivityCategory.fromFirestore(data['category']),
       linkUrl: (data['linkUrl'] as String?) ?? '',
-      itinerary: (data['itinerary'] as String?) ?? '',
+      address: (data['address'] as String?) ?? '',
       freeComments: (data['freeComments'] as String?) ?? '',
       createdBy: (data['createdBy'] as String?) ?? '',
       createdAt: createdAt,
+      done: done,
       linkPreview: _previewFromFirestore(data['linkPreview']),
+      tripDrivingRoute:
+          ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),
     );
   }
 }
