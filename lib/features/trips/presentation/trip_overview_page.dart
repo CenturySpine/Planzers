@@ -9,10 +9,9 @@ import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
 
@@ -89,31 +88,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       _editStartDate = trip.startDate;
       _editEndDate = trip.endDate;
     });
-  }
-
-  Future<void> _openAddressLocation(String address) async {
-    final query = address.trim();
-    if (query.isEmpty) return;
-
-    final mapsUri = Uri.https(
-      'www.google.com',
-      '/maps/search/',
-      <String, String>{
-        'api': '1',
-        'query': query,
-      },
-    );
-
-    final didLaunch = await launchUrl(
-      mapsUri,
-      mode: LaunchMode.platformDefault,
-    );
-
-    if (!didLaunch && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir la localisation')),
-      );
-    }
   }
 
   Future<void> _save() async {
@@ -571,7 +545,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       actionIcon: Icons.location_on_outlined,
                       onActionPressed: _trip.address.trim().isEmpty
                           ? null
-                          : () => _openAddressLocation(_trip.address),
+                          : () => openAddressInGoogleMaps(
+                                context,
+                                _trip.address,
+                              ),
                       actionTooltip: 'Ouvrir la localisation',
                     ),
                     const SizedBox(height: 12),

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 
 extension TripActivityCategoryPresentation on TripActivityCategory {
   IconData get categoryIcon => switch (this) {
@@ -400,9 +401,24 @@ class _ReadBody extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    activity.address.trim(),
-                    style: Theme.of(context).textTheme.bodyLarge,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activity.address.trim(),
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Ouvrir la localisation',
+                        onPressed: () => openAddressInGoogleMaps(
+                              context,
+                              activity.address,
+                            ),
+                        icon: const Icon(Icons.location_on_outlined),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Row(
