@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const cheerio = require('cheerio');
 
@@ -95,6 +95,91 @@ function parsePreviewFromHtml(pageUrl, html) {
   };
 }
 
+/**
+ * Writes `linkPreview` on [docRef] from [afterUrlRaw], or clears it when empty.
+ * Used for trip documents and activity subdocuments (same field names).
+ * @param {FirebaseFirestore.DocumentReference} docRef
+ * @param {string} afterUrlRaw
+ */
+async function applyLinkPreview(docRef, afterUrlRaw) {
+  const FieldValue = admin.firestore.FieldValue;
+  const afterUrl = normalizeString(afterUrlRaw);
+  if (!afterUrl) {
+    await docRef.set(
+      {
+        linkPreview: FieldValue.delete(),
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  const parsed = safeUrl(afterUrl);
+  if (!parsed) {
+    await docRef.set(
+      {
+        linkPreview: {
+          status: 'error',
+          url: afterUrl,
+          error: 'invalid_url',
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+    return;
+  }
+
+  await docRef.set(
+    {
+      linkPreview: {
+        status: 'loading',
+        url: parsed.toString(),
+        fetchedAt: FieldValue.serverTimestamp(),
+      },
+    },
+    { merge: true }
+  );
+
+  try {
+    const html = await fetchHtml(parsed);
+    const preview = parsePreviewFromHtml(parsed, html);
+
+    const hasSomething =
+      preview.title ||
+      preview.description ||
+      preview.imageUrl ||
+      preview.siteName;
+
+    await docRef.set(
+      {
+        linkPreview: {
+          status: hasSomething ? 'ok' : 'empty',
+          url: parsed.toString(),
+          title: preview.title,
+          description: preview.description,
+          siteName: preview.siteName,
+          imageUrl: preview.imageUrl,
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  } catch (e) {
+    await docRef.set(
+      {
+        linkPreview: {
+          status: 'error',
+          url: parsed.toString(),
+          error: String(e),
+          fetchedAt: FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  }
+}
+
 /** @param {FirebaseFirestore.DocumentData} data */
 function memberIdsAsSet(data) {
   const raw = data.memberIds;
@@ -186,7 +271,7 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   }
 );
 
-exports.generateTripLinkPreview = onDocumentUpdated(
+exports.generateTripLinkPreview = onDocumentWritten(
   {
     document: 'trips/{tripId}',
     region: 'europe-west1',
@@ -194,89 +279,39 @@ exports.generateTripLinkPreview = onDocumentUpdated(
     memory: '256MiB',
   },
   async (event) => {
-    const before = event.data.before.data() || {};
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
     const after = event.data.after.data() || {};
 
     const beforeUrl = normalizeString(before.linkUrl);
     const afterUrl = normalizeString(after.linkUrl);
-
-    // Avoid loops: only run when linkUrl actually changes.
     if (beforeUrl === afterUrl) return;
 
-    const tripRef = event.data.after.ref;
+    await applyLinkPreview(event.data.after.ref, afterUrl);
+  }
+);
 
-    if (!afterUrl) {
-      await tripRef.set(
-        {
-          linkPreview: admin.firestore.FieldValue.delete(),
-        },
-        { merge: true }
-      );
-      return;
-    }
+exports.generateActivityLinkPreview = onDocumentWritten(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    region: 'europe-west1',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+  },
+  async (event) => {
+    if (!event.data.after.exists) return;
+    const before = event.data.before.exists
+      ? event.data.before.data() || {}
+      : {};
+    const after = event.data.after.data() || {};
 
-    const parsed = safeUrl(afterUrl);
-    if (!parsed) {
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: 'error',
-            url: afterUrl,
-            error: 'invalid_url',
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-      return;
-    }
+    const beforeUrl = normalizeString(before.linkUrl);
+    const afterUrl = normalizeString(after.linkUrl);
+    if (beforeUrl === afterUrl) return;
 
-    // Mark as loading (UI can show spinner).
-    await tripRef.set(
-      {
-        linkPreview: {
-          status: 'loading',
-          url: parsed.toString(),
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-      },
-      { merge: true }
-    );
-
-    try {
-      const html = await fetchHtml(parsed);
-      const preview = parsePreviewFromHtml(parsed, html);
-
-      const hasSomething =
-        preview.title || preview.description || preview.imageUrl || preview.siteName;
-
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: hasSomething ? 'ok' : 'empty',
-            url: parsed.toString(),
-            title: preview.title,
-            description: preview.description,
-            siteName: preview.siteName,
-            imageUrl: preview.imageUrl,
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-    } catch (e) {
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: 'error',
-            url: parsed.toString(),
-            error: String(e),
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-    }
+    await applyLinkPreview(event.data.after.ref, afterUrl);
   }
 );
 

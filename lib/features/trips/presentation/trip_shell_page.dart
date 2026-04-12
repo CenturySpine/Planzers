@@ -234,19 +234,6 @@ class TripMealsPage extends StatelessWidget {
   }
 }
 
-class TripActivitiesPage extends StatelessWidget {
-  const TripActivitiesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _TripSectionPlaceholder(
-      title: 'Activités',
-      icon: Icons.event_available_outlined,
-      message: 'Activités et sorties du voyage. Contenu à venir.',
-    );
-  }
-}
-
 class _TripSectionPlaceholder extends StatelessWidget {
   const _TripSectionPlaceholder({
     required this.title,
