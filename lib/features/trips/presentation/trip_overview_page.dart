@@ -718,7 +718,7 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 110,
@@ -738,6 +738,13 @@ class _InfoRow extends StatelessWidget {
             tooltip: actionTooltip,
             onPressed: onActionPressed,
             icon: Icon(actionIcon),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
+            ),
+            visualDensity: VisualDensity.compact,
+            splashRadius: 18,
           ),
       ],
     );

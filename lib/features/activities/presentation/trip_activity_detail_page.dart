@@ -387,7 +387,7 @@ class _ReadBody extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
@@ -402,6 +402,13 @@ class _ReadBody extends ConsumerWidget {
                               activity.address,
                             ),
                         icon: const Icon(Icons.location_on_outlined),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        splashRadius: 18,
                       ),
                     ],
                   ),
