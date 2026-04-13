@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/app/preview_environment_chrome.dart';
 import 'package:planzers/app/router.dart';
+import 'package:planzers/app/theme/app_theme.dart';
 import 'package:planzers/core/firebase/bootstrap.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
 import 'package:planzers/core/firebase/firebase_target_provider.dart';
@@ -21,10 +22,8 @@ class PlanzersApp extends StatelessWidget {
       child: MaterialApp.router(
         title: firebaseTarget.isPreview ? 'Planzers · Preview' : 'Planzers',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
+        themeMode: ThemeMode.light,
         // Required for [showDatePicker] with fr_FR: default delegates only
         // support English ([DefaultMaterialLocalizations]).
         localizationsDelegates: GlobalMaterialLocalizations.delegates,

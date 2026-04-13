@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/app/theme/app_palette.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
@@ -80,7 +81,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   @override
   Widget build(BuildContext context) {
-    final hasInvalidParams = widget.tripId.trim().isEmpty || widget.token.trim().isEmpty;
+    final hasInvalidParams =
+        widget.tripId.trim().isEmpty || widget.token.trim().isEmpty;
     if (hasInvalidParams) {
       return const Scaffold(
         body: Center(
@@ -110,7 +112,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 16),
                   const Text('Connexion au voyage en cours...'),
                 ] else if (_joined) ...[
-                  const Icon(Icons.check_circle, color: Colors.green, size: 52),
+                  const Icon(
+                    Icons.check_circle,
+                    color: AppPalette.success,
+                    size: 52,
+                  ),
                   const SizedBox(height: 12),
                   const Text(
                     'Invitation acceptee.',
@@ -138,7 +144,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 16),

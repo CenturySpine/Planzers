@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/app/theme/app_palette.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/activities/presentation/trip_activity_detail_page.dart';
@@ -38,8 +39,7 @@ class TripActivitiesPage extends ConsumerWidget {
             );
           }
 
-          final sortedItems = [...items]
-            ..sort((a, b) {
+          final sortedItems = [...items]..sort((a, b) {
               if (a.done != b.done) {
                 return a.done ? 1 : -1;
               }
@@ -126,7 +126,7 @@ class _ActivityListTile extends ConsumerWidget {
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
-      color: activity.done ? const Color(0xFFDFF5E1) : null,
+      color: activity.done ? AppPalette.successContainer : null,
       child: Padding(
         padding: const EdgeInsets.only(left: 4, right: 4),
         child: Row(
@@ -317,9 +317,8 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
                     avatar: Icon(c.categoryIcon, size: 18),
                     label: Text(c.categoryLabelFr),
                     selected: _category == c,
-                    onSelected: _saving
-                        ? null
-                        : (_) => setState(() => _category = c),
+                    onSelected:
+                        _saving ? null : (_) => setState(() => _category = c),
                   ),
               ],
             ),

@@ -61,7 +61,8 @@ class TripsPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final trip = trips[index];
               final canDelete = (myUid != null && trip.ownerId == myUid);
-              final dateLine = formatTripDateRange(trip.startDate, trip.endDate);
+              final dateLine =
+                  formatTripDateRange(trip.startDate, trip.endDate);
               return ListTile(
                 onTap: () => context.push('/trips/${trip.id}/overview'),
                 title: Text(trip.title),
@@ -159,7 +160,8 @@ class TripsPage extends ConsumerWidget {
                     const SizedBox(height: 12),
                     TextField(
                       controller: destinationController,
-                      decoration: const InputDecoration(labelText: 'Destination'),
+                      decoration:
+                          const InputDecoration(labelText: 'Destination'),
                     ),
                     const SizedBox(height: 12),
                     ListTile(
@@ -206,7 +208,12 @@ class TripsPage extends ConsumerWidget {
                     ),
                     if (error != null) ...[
                       const SizedBox(height: 12),
-                      Text(error!, style: const TextStyle(color: Colors.red)),
+                      Text(
+                        error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -442,7 +449,9 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
               const SizedBox(height: 12),
               Text(
                 _error!,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
           ],

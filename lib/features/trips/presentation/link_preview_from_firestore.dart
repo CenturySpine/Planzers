@@ -111,7 +111,9 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
                         errorBuilder: (_, __, ___) => Container(
                           width: 96,
                           height: 96,
-                          color: Colors.black12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                           alignment: Alignment.center,
                           child: const Icon(Icons.broken_image_outlined),
                         ),

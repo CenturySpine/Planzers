@@ -77,12 +77,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 '/ˈplænərz/',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
-                  color: Colors.black54,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   height: 1.0,
                 ),
               ),
@@ -120,8 +120,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: _googleSignInText
-                                      .withValues(alpha: 0.7),
+                                  color:
+                                      _googleSignInText.withValues(alpha: 0.7),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -130,8 +130,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: _googleSignInText
-                                      .withValues(alpha: 0.7),
+                                  color:
+                                      _googleSignInText.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],

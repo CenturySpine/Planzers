@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planzers/app/theme/app_palette.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
 
 /// Top strip when running the preview Firebase / build target.
@@ -22,7 +23,7 @@ class PreviewEnvironmentChrome extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Material(
-          color: const Color(0xFFE65100),
+          color: AppPalette.warning,
           elevation: 1,
           child: SafeArea(
             bottom: false,
