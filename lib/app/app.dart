@@ -3,7 +3,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/app/preview_environment_chrome.dart';
 import 'package:planzers/app/router.dart';
+import 'package:planzers/app/theme/app_palette_provider.dart';
 import 'package:planzers/app/theme/app_theme.dart';
+import 'package:planzers/app/theme/brand_palette.dart';
 import 'package:planzers/core/firebase/bootstrap.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
 import 'package:planzers/core/firebase/firebase_target_provider.dart';
@@ -19,29 +21,46 @@ class PlanzersApp extends StatelessWidget {
       overrides: [
         firebaseTargetProvider.overrideWithValue(firebaseTarget),
       ],
-      child: MaterialApp.router(
-        title: firebaseTarget.isPreview ? 'Planzers · Preview' : 'Planzers',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        themeMode: ThemeMode.light,
-        // Required for [showDatePicker] with fr_FR: default delegates only
-        // support English ([DefaultMaterialLocalizations]).
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        supportedLocales: const [
-          Locale('fr', 'FR'),
-          Locale('en', 'US'),
-        ],
-        routerConfig: appRouter,
-        builder: (context, child) {
-          return FirebaseBootstrap(
+      child: _PlanzersThemedApp(firebaseTarget: firebaseTarget),
+    );
+  }
+}
+
+class _PlanzersThemedApp extends ConsumerWidget {
+  const _PlanzersThemedApp({required this.firebaseTarget});
+
+  final FirebaseTarget firebaseTarget;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paletteAsync = ref.watch(appPaletteProvider);
+    final AppPaletteId paletteId = switch (paletteAsync) {
+      AsyncData(:final value) => value,
+      _ => AppPaletteId.cupidon,
+    };
+
+    return MaterialApp.router(
+      title: firebaseTarget.isPreview ? 'Planzers · Preview' : 'Planzers',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(paletteId.data),
+      themeMode: ThemeMode.light,
+      // Required for [showDatePicker] with fr_FR: default delegates only
+      // support English ([DefaultMaterialLocalizations]).
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
+      ],
+      routerConfig: appRouter,
+      builder: (context, child) {
+        return FirebaseBootstrap(
+          target: firebaseTarget,
+          child: PreviewEnvironmentChrome(
             target: firebaseTarget,
-            child: PreviewEnvironmentChrome(
-              target: firebaseTarget,
-              child: child ?? const SizedBox.shrink(),
-            ),
-          );
-        },
-      ),
+            child: child ?? const SizedBox.shrink(),
+          ),
+        );
+      },
     );
   }
 }

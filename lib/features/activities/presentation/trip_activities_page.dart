@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/app/theme/app_palette.dart';
+import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/activities/presentation/trip_activity_detail_page.dart';
@@ -126,7 +126,7 @@ class _ActivityListTile extends ConsumerWidget {
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
-      color: activity.done ? AppPalette.successContainer : null,
+      color: activity.done ? context.planzersColors.successContainer : null,
       child: Padding(
         padding: const EdgeInsets.only(left: 4, right: 4),
         child: Row(
