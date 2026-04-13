@@ -283,19 +283,6 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
   }
 }
 
-class TripRoomsPage extends StatelessWidget {
-  const TripRoomsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _TripSectionPlaceholder(
-      title: 'Chambres',
-      icon: Icons.bed_outlined,
-      message: 'Répartition des chambres et hébergements. Contenu à venir.',
-    );
-  }
-}
-
 class TripCarsPage extends StatelessWidget {
   const TripCarsPage({super.key});
 
