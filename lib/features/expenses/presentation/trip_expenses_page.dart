@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/expenses/data/expense.dart';
 import 'package:planzers/features/expenses/data/expense_group.dart';
-import 'package:planzers/features/expenses/data/expense_post_expansion_store.dart';
 import 'package:planzers/features/expenses/data/expenses_repository.dart';
 import 'package:planzers/features/expenses/domain/expense_settlement.dart';
 import 'package:planzers/features/expenses/presentation/expense_group_editor_sheet.dart';
@@ -32,11 +31,18 @@ List<String> participantScopeMemberIdsForGroup(
   return clean.where((id) => allowed.contains(id)).toList()..sort();
 }
 
-class TripExpensesPage extends ConsumerWidget {
+class TripExpensesPage extends ConsumerStatefulWidget {
   const TripExpensesPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripExpensesPage> createState() => _TripExpensesPageState();
+}
+
+class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
+  String? _activeGroupId;
+
+  @override
+  Widget build(BuildContext context) {
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
@@ -51,6 +57,11 @@ class TripExpensesPage extends ConsumerWidget {
               memberPublicLabels: trip.memberPublicLabels,
               groups: groups,
               expenses: expenses,
+              activeGroupId: _activeGroupId,
+              onActiveGroupChanged: (groupId) {
+                if (_activeGroupId == groupId) return;
+                setState(() => _activeGroupId = groupId);
+              },
               onCreateExpensePost: () => _openExpenseGroupEditor(
                 context,
                 ref,
@@ -86,6 +97,7 @@ class TripExpensesPage extends ConsumerWidget {
           trip.id,
           trip.memberIds,
           trip.memberPublicLabels,
+          _activeGroupId,
         ),
         child: const Icon(Icons.add),
       ),
@@ -120,6 +132,7 @@ class TripExpensesPage extends ConsumerWidget {
     String tripId,
     List<String> memberIds,
     Map<String, String> memberPublicLabels,
+    String? preferredGroupId,
   ) async {
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
     final groups =
@@ -136,55 +149,23 @@ class TripExpensesPage extends ConsumerWidget {
       );
       return;
     }
-    if (visible.length == 1) {
-      final g = visible.single;
-      await _openAddExpenseSheet(
-        context,
-        tripId,
-        memberIds,
-        memberPublicLabels,
-        groupId: g.id,
-        participantScopeMemberIds:
-            participantScopeMemberIdsForGroup(g, memberIds),
-      );
-      return;
+    TripExpenseGroup? chosenGroup;
+    if (preferredGroupId != null && preferredGroupId.trim().isNotEmpty) {
+      for (final g in visible) {
+        if (g.id == preferredGroupId) {
+          chosenGroup = g;
+          break;
+        }
+      }
     }
-    final chosen = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                child: Text(
-                  'Choisir le poste',
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-              ),
-              for (final g in visible)
-                ListTile(
-                  title: Text(
-                    g.title.isEmpty ? 'Poste sans titre' : g.title,
-                  ),
-                  onTap: () => Navigator.pop(ctx, g.id),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-    if (chosen == null || !context.mounted) return;
-    final group = visible.firstWhere((g) => g.id == chosen);
+    final group = chosenGroup ?? visible.first;
+    if (!context.mounted) return;
     await _openAddExpenseSheet(
       context,
       tripId,
       memberIds,
       memberPublicLabels,
-      groupId: chosen,
+      groupId: group.id,
       participantScopeMemberIds:
           participantScopeMemberIdsForGroup(group, memberIds),
     );
@@ -225,6 +206,8 @@ class _TripExpensesBody extends StatelessWidget {
     required this.memberPublicLabels,
     required this.groups,
     required this.expenses,
+    required this.activeGroupId,
+    required this.onActiveGroupChanged,
     required this.onCreateExpensePost,
   });
 
@@ -233,6 +216,8 @@ class _TripExpensesBody extends StatelessWidget {
   final Map<String, String> memberPublicLabels;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
+  final String? activeGroupId;
+  final ValueChanged<String> onActiveGroupChanged;
   final VoidCallback onCreateExpensePost;
 
   @override
@@ -241,8 +226,16 @@ class _TripExpensesBody extends StatelessWidget {
         memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
 
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
-    final visibleGroups =
-        groups.where((g) => g.isVisibleTo(viewerId)).toList();
+    final visibleGroups = groups.where((g) => g.isVisibleTo(viewerId)).toList()
+      ..sort((a, b) {
+        // Keep the main/default post first, then place newly created posts to the right.
+        if (a.isDefault != b.isDefault) {
+          return a.isDefault ? -1 : 1;
+        }
+        final createdAtOrder = a.createdAt.compareTo(b.createdAt);
+        if (createdAtOrder != 0) return createdAtOrder;
+        return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      });
 
     if (cleanMemberIds.isEmpty) {
       return _buildScrollView(
@@ -289,33 +282,31 @@ class _TripExpensesBody extends StatelessWidget {
     Map<String, String> memberPublicLabels,
     VoidCallback onCreateExpensePost,
   ) {
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
+    return Column(
+      children: [
+        Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-          sliver: SliverToBoxAdapter(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Postes de dépenses',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  'Postes de dépenses',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                IconButton(
-                  tooltip: 'Nouveau poste',
-                  icon: const Icon(Icons.create_new_folder_outlined),
-                  onPressed: onCreateExpensePost,
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                tooltip: 'Nouveau poste',
+                icon: const Icon(Icons.create_new_folder_outlined),
+                onPressed: onCreateExpensePost,
+              ),
+            ],
           ),
         ),
         if (visibleGroups.isEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            sliver: SliverToBoxAdapter(
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
               child: Text(
                 'Aucun poste de dépenses pour l’instant. Utilise l’icône dossier en haut pour en créer un.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -324,38 +315,176 @@ class _TripExpensesBody extends StatelessWidget {
               ),
             ),
           )
-        else
-          for (final group in visibleGroups)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              sliver: SliverToBoxAdapter(
-                child: _ExpensePostCard(
-                  tripId: tripId,
-                  group: group,
-                  visibleGroupCount: visibleGroups.length,
-                  groupExpenses: expenses
-                      .where((e) => e.groupId == group.id)
-                      .toList(),
-                  memberIds: memberIds,
-                  memberPublicLabels: memberPublicLabels,
-                  memberLabels: labels,
-                  viewerUserId: viewerId,
-                ),
+        else if (visibleGroups.length == 1)
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+              child: _ExpensePostPanel(
+                tripId: tripId,
+                group: visibleGroups.single,
+                groupExpenses: expenses
+                    .where((e) => e.groupId == visibleGroups.single.id)
+                    .toList(),
+                memberIds: memberIds,
+                memberPublicLabels: memberPublicLabels,
+                memberLabels: labels,
+                viewerUserId: viewerId,
               ),
             ),
-        const SliverPadding(padding: EdgeInsets.only(bottom: 88)),
+          )
+        else
+          Expanded(
+            child: _ExpensePostsTabbedView(
+              tripId: tripId,
+              groups: visibleGroups,
+              expenses: expenses,
+              memberIds: memberIds,
+              memberPublicLabels: memberPublicLabels,
+              memberLabels: labels,
+              viewerUserId: viewerId,
+              initialGroupId: activeGroupId,
+              onActiveGroupChanged: onActiveGroupChanged,
+            ),
+          ),
       ],
     );
   }
 }
 
-enum _ExpensePostMenuAction { editPost, addExpense, deletePost }
+class _ExpensePostsTabbedView extends StatefulWidget {
+  const _ExpensePostsTabbedView({
+    required this.tripId,
+    required this.groups,
+    required this.expenses,
+    required this.memberIds,
+    required this.memberPublicLabels,
+    required this.memberLabels,
+    required this.viewerUserId,
+    required this.initialGroupId,
+    required this.onActiveGroupChanged,
+  });
 
-class _ExpensePostCard extends ConsumerStatefulWidget {
-  const _ExpensePostCard({
+  final String tripId;
+  final List<TripExpenseGroup> groups;
+  final List<TripExpense> expenses;
+  final List<String> memberIds;
+  final Map<String, String> memberPublicLabels;
+  final Map<String, String> memberLabels;
+  final String? viewerUserId;
+  final String? initialGroupId;
+  final ValueChanged<String> onActiveGroupChanged;
+
+  @override
+  State<_ExpensePostsTabbedView> createState() => _ExpensePostsTabbedViewState();
+}
+
+class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: widget.groups.length, vsync: this);
+    final initialIndex = _indexForGroupId(widget.initialGroupId);
+    if (initialIndex != null) {
+      _tabController.index = initialIndex;
+    }
+    _tabController.addListener(_onTabChanged);
+    _notifyActiveGroup(deferToPostFrame: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExpensePostsTabbedView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groups.length == widget.groups.length) return;
+    final oldIndex = _tabController.index;
+    _tabController
+      ..removeListener(_onTabChanged)
+      ..dispose();
+    _tabController = TabController(length: widget.groups.length, vsync: this);
+    final newIndex = oldIndex.clamp(0, widget.groups.length - 1);
+    _tabController.index = newIndex;
+    _tabController.addListener(_onTabChanged);
+    _notifyActiveGroup(deferToPostFrame: true);
+  }
+
+  void _onTabChanged() {
+    if (!mounted) return;
+    _notifyActiveGroup();
+    setState(() {});
+  }
+
+  int? _indexForGroupId(String? groupId) {
+    if (groupId == null || groupId.trim().isEmpty) return null;
+    final index = widget.groups.indexWhere((g) => g.id == groupId);
+    return index >= 0 ? index : null;
+  }
+
+  void _notifyActiveGroup({bool deferToPostFrame = false}) {
+    final index = _tabController.index;
+    if (index < 0 || index >= widget.groups.length) return;
+    final groupId = widget.groups[index].id;
+    if (deferToPostFrame) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onActiveGroupChanged(groupId);
+      });
+      return;
+    }
+    widget.onActiveGroupChanged(groupId);
+  }
+
+  @override
+  void dispose() {
+    _tabController
+      ..removeListener(_onTabChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          tabs: [
+            for (final group in widget.groups)
+              Tab(text: group.title.isEmpty ? 'Sans titre' : group.title),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              for (final group in widget.groups)
+                SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                  child: _ExpensePostPanel(
+                    tripId: widget.tripId,
+                    group: group,
+                    groupExpenses:
+                        widget.expenses.where((e) => e.groupId == group.id).toList(),
+                    memberIds: widget.memberIds,
+                    memberPublicLabels: widget.memberPublicLabels,
+                    memberLabels: widget.memberLabels,
+                    viewerUserId: widget.viewerUserId,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpensePostPanel extends ConsumerStatefulWidget {
+  const _ExpensePostPanel({
     required this.tripId,
     required this.group,
-    required this.visibleGroupCount,
     required this.groupExpenses,
     required this.memberIds,
     required this.memberPublicLabels,
@@ -365,8 +494,6 @@ class _ExpensePostCard extends ConsumerStatefulWidget {
 
   final String tripId;
   final TripExpenseGroup group;
-  /// When only one post is visible, it starts expanded (unless persisted state says otherwise).
-  final int visibleGroupCount;
   final List<TripExpense> groupExpenses;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
@@ -374,28 +501,11 @@ class _ExpensePostCard extends ConsumerStatefulWidget {
   final String? viewerUserId;
 
   @override
-  ConsumerState<_ExpensePostCard> createState() => _ExpensePostCardState();
+  ConsumerState<_ExpensePostPanel> createState() => _ExpensePostPanelState();
 }
 
-class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
-  late bool _expanded;
+class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _expanded =
-        widget.group.isDefault || widget.visibleGroupCount == 1;
-    ExpensePostExpansionStore.read(widget.tripId, widget.group.id).then((v) {
-      if (!mounted || v == null) return;
-      setState(() => _expanded = v);
-    });
-  }
-
-  void _persistExpansion(bool expanded) {
-    setState(() => _expanded = expanded);
-    ExpensePostExpansionStore.write(widget.tripId, widget.group.id, expanded);
-  }
 
   Future<void> _confirmDeletePost() async {
     if (_deletingPost) return;
@@ -445,144 +555,79 @@ class _ExpensePostCardState extends ConsumerState<_ExpensePostCard> {
   Widget build(BuildContext context) {
     final settlement =
         computeViewerSettlement(widget.groupExpenses, widget.viewerUserId);
-    final displayTitle =
-        widget.group.title.isEmpty ? 'Poste sans titre' : widget.group.title;
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
       widget.memberIds,
     );
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () => _persistExpansion(!_expanded),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _expanded
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              displayTitle,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: 'Modifier le poste',
+                visualDensity: VisualDensity.compact,
+                splashRadius: 16,
+                iconSize: 20,
+                onPressed: () async {
+                  await _TripExpensesPageState._openExpenseGroupEditor(
+                    context,
+                    ref,
+                    widget.tripId,
+                    widget.memberIds,
+                    widget.memberPublicLabels,
+                    existing: widget.group,
+                  );
+                },
+                icon: const Icon(Icons.edit_outlined),
+              ),
+              IconButton(
+                tooltip: 'Supprimer le poste',
+                visualDensity: VisualDensity.compact,
+                splashRadius: 16,
+                iconSize: 20,
+                onPressed: _confirmDeletePost,
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error,
                 ),
-                PopupMenuButton<_ExpensePostMenuAction>(
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: _ExpensePostMenuAction.editPost,
-                      child: Text('Modifier le poste'),
-                    ),
-                    PopupMenuItem(
-                      value: _ExpensePostMenuAction.addExpense,
-                      child: Text('Ajouter une dépense'),
-                    ),
-                    PopupMenuItem(
-                      value: _ExpensePostMenuAction.deletePost,
-                      child: Text('Supprimer le poste'),
-                    ),
-                  ],
-                  onSelected: (action) async {
-                    if (action == _ExpensePostMenuAction.editPost) {
-                      await TripExpensesPage._openExpenseGroupEditor(
-                        context,
-                        ref,
-                        widget.tripId,
-                        widget.memberIds,
-                        widget.memberPublicLabels,
-                        existing: widget.group,
-                      );
-                      return;
-                    }
-                    if (action == _ExpensePostMenuAction.deletePost) {
-                      await _confirmDeletePost();
-                      return;
-                    }
-                    await TripExpensesPage._openAddExpenseSheet(
-                      context,
-                      widget.tripId,
-                      widget.memberIds,
-                      widget.memberPublicLabels,
-                      groupId: widget.group.id,
-                      participantScopeMemberIds: scope,
-                    );
-                  },
+              ),
+            ],
+          ),
+        ),
+        _SettlementSection(
+          balancesByCurrency: settlement.balancesByCurrency,
+          transfers: settlement.suggestedTransfers,
+          memberLabels: widget.memberLabels,
+          viewerUserId: widget.viewerUserId,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Opérations',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        if (widget.groupExpenses.isEmpty)
+          Text(
+            'Aucune opération dans ce poste.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-              ],
-            ),
+          )
+        else
+          ..._buildExpensesGroupedByDate(
+            context,
+            widget.groupExpenses,
+            widget.tripId,
+            scope,
+            widget.memberLabels,
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _SettlementSection(
-                          balancesByCurrency: settlement.balancesByCurrency,
-                          transfers: settlement.suggestedTransfers,
-                          memberLabels: widget.memberLabels,
-                          viewerUserId: widget.viewerUserId,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Opérations',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        if (widget.groupExpenses.isEmpty)
-                          Text(
-                            'Aucune opération dans ce poste.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          )
-                        else
-                          ..._buildExpensesGroupedByDate(
-                            context,
-                            widget.groupExpenses,
-                            widget.tripId,
-                            scope,
-                            widget.memberLabels,
-                          ),
-                      ],
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
-          ),
-        ],
-      ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }
