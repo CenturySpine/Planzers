@@ -156,6 +156,37 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     return m.wasEdited ? '$t · modifié' : t;
   }
 
+  List<_ChatListEntry> _buildChatEntries(
+    List<TripMessage> messages,
+    DateFormat dateFmt,
+  ) {
+    final entries = <_ChatListEntry>[];
+    DateTime? previousDate;
+    for (final message in messages) {
+      final localDate = message.createdAt.toLocal();
+      final day = DateTime(localDate.year, localDate.month, localDate.day);
+      if (previousDate == null || day != previousDate) {
+        entries.add(
+          _ChatListEntry.separator(
+            _dayLabelFor(day, dateFmt),
+          ),
+        );
+        previousDate = day;
+      }
+      entries.add(_ChatListEntry.message(message));
+    }
+    return entries;
+  }
+
+  String _dayLabelFor(DateTime day, DateFormat dateFmt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (day == today) return "Aujourd'hui";
+    if (day == yesterday) return 'Hier';
+    return dateFmt.format(day);
+  }
+
   /// Mouse / trackpad: tap should open the action bar (long-press is unreliable).
   static bool _pointerSelectsMessage(BuildContext context) {
     if (kIsWeb) return true;
@@ -190,6 +221,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
         body: messagesAsync.when(
           data: (messages) {
             final timeFmt = DateFormat.Hm('fr_FR');
+            final dateFmt = DateFormat('d MMMM yyyy', 'fr_FR');
             final selected = _messageById(messages, _selectedMessageId);
             if (_selectedMessageId != null && selected == null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,6 +253,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                   emptyFallback: 'Participant',
                 );
                 final pointerSelect = _pointerSelectsMessage(context);
+                final chatEntries = _buildChatEntries(messages, dateFmt);
 
                 return Column(
                   children: [
@@ -264,9 +297,13 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                 horizontal: 12,
                                 vertical: 8,
                               ),
-                              itemCount: messages.length,
+                              itemCount: chatEntries.length,
                               itemBuilder: (context, index) {
-                                final m = messages[index];
+                                final entry = chatEntries[index];
+                                if (entry.dayLabel != null) {
+                                  return _MessageDayPill(label: entry.dayLabel!);
+                                }
+                                final m = entry.message!;
                                 final isMine =
                                     myUid != null && m.authorId == myUid;
                                 final isSelected =
@@ -692,6 +729,46 @@ class _MessageSelectionAppBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MessageDayPill extends StatelessWidget {
+  const _MessageDayPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatListEntry {
+  const _ChatListEntry.message(this.message) : dayLabel = null;
+  const _ChatListEntry.separator(this.dayLabel) : message = null;
+
+  final TripMessage? message;
+  final String? dayLabel;
 }
 
 /// Owns its [TextEditingController] for a correct dispose after the dialog
