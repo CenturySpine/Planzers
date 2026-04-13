@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:planzers/features/auth/auth_gate.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
@@ -202,7 +204,9 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myUid =
+        ref.watch(authStateProvider).asData?.value?.uid ??
+        FirebaseAuth.instance.currentUser?.uid;
     final messagesAsync = ref.watch(tripMessagesStreamProvider(trip.id));
 
     ref.listen(tripMessagesStreamProvider(trip.id), (_, next) {
@@ -325,9 +329,10 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                       : Alignment.centerLeft,
                                   child: ConstrainedBox(
                                     constraints: BoxConstraints(
-                                      maxWidth:
-                                          MediaQuery.sizeOf(context).width *
-                                              0.85,
+                                      maxWidth: math.min(
+                                        MediaQuery.sizeOf(context).width * 0.85,
+                                        560,
+                                      ),
                                     ),
                                     child: GestureDetector(
                                       onLongPress: () {
