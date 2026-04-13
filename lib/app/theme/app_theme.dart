@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:planzers/app/theme/app_palette.dart';
 
 class AppTheme {
@@ -39,6 +40,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      textTheme: GoogleFonts.geistTextTheme(),
       scaffoldBackgroundColor: const Color(0xFFF6EDF3),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFFE3D0DD),
