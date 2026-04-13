@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/trips/data/invite_join_context.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/name_list_search.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
   const InviteJoinPage({
@@ -60,9 +61,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   ) {
     final list = List<InviteJoinPlaceholderOption>.from(ctx.placeholders);
     list.sort(
-      (a, b) => a.displayName.toLowerCase().compareTo(
-            b.displayName.toLowerCase(),
-          ),
+      (a, b) => compareDisplayNamesForSort(a.displayName, b.displayName),
     );
     return list;
   }
@@ -70,10 +69,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   List<InviteJoinPlaceholderOption> _filteredPlaceholders(
     List<InviteJoinPlaceholderOption> sorted,
   ) {
-    final q = _placeholderSearchController.text.trim().toLowerCase();
-    if (q.isEmpty) return sorted;
+    final q = _placeholderSearchController.text;
     return sorted
-        .where((p) => p.displayName.toLowerCase().contains(q))
+        .where((p) => displayNameMatchesNameSearch(p.displayName, q))
         .toList();
   }
 
@@ -84,8 +82,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     setState(() {
       final id = _selectedPlaceholderId;
       if (id != null && !filtered.any((p) => p.id == id)) {
-        _selectedPlaceholderId =
-            filtered.isNotEmpty ? filtered.first.id : null;
+        _selectedPlaceholderId = filtered.isNotEmpty ? filtered.first.id : null;
       }
     });
   }
@@ -307,8 +304,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   Text(
                     'Tu ne pourras faire ce choix qu’une seule fois pour ce voyage.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
                         ),
                     textAlign: TextAlign.center,
@@ -320,25 +316,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  NameListSearchTextField(
                     controller: _placeholderSearchController,
-                    decoration: InputDecoration(
-                      labelText: 'Rechercher',
-                      hintText: 'Filtrer par nom',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _placeholderSearchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              tooltip: 'Effacer',
-                              onPressed: () {
-                                _placeholderSearchController.clear();
-                                _onPlaceholderSearchChanged(sorted);
-                              },
-                            )
-                          : null,
-                    ),
-                    textInputAction: TextInputAction.search,
                     onChanged: (_) => _onPlaceholderSearchChanged(sorted),
                   ),
                   const SizedBox(height: 8),
@@ -346,7 +325,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     child: filtered.isEmpty
                         ? Center(
                             child: Text(
-                              'Aucun nom ne correspond.',
+                              kNameListSearchEmptyMessage,
                               textAlign: TextAlign.center,
                               style: Theme.of(context)
                                   .textTheme
@@ -367,7 +346,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                   sorted.indexWhere((e) => e.id == option.id);
                               return _placeholderChoiceTile(
                                 option: option,
-                                accentIndex: accentIndex >= 0 ? accentIndex : index,
+                                accentIndex:
+                                    accentIndex >= 0 ? accentIndex : index,
                               );
                             },
                           ),
@@ -496,8 +476,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 12),
                   const Text(
                     'Invitation acceptée',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -517,119 +496,116 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     child: const Text('Voir mes voyages'),
                   ),
                 ] else if (_context != null &&
-                      !_context!.requiresPlaceholderChoice &&
-                      !_joined) ...[
-                    Text(
-                      tripHeadline,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Nous n’avons pas pu finaliser ton entrée dans le voyage. '
-                      'Vérifie ta connexion et réessaie, ou demande un nouveau lien à l’organisateur.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                    !_context!.requiresPlaceholderChoice &&
+                    !_joined) ...[
+                  Text(
+                    tripHeadline,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _joining ? null : _goToTripsList,
-                            child: const Text('Annuler'),
-                          ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Nous n’avons pas pu finaliser ton entrée dans le voyage. '
+                    'Vérifie ta connexion et réessaie, ou demande un nouveau lien à l’organisateur.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.35,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: FilledButton(
-                            onPressed: _joining
-                                ? null
-                                : () => _join(placeholderMemberId: null),
-                            child: const Text('Réessayer'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    Icon(
-                      Icons.group_add_outlined,
-                      size: 52,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_error != null) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Rejoindre un voyage',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      _error!,
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Impossible d’ouvrir l’invitation pour le moment. '
-                      'Vérifie ta connexion ou demande un nouveau lien à l’organisateur.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            height: 1.35,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
                       ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed:
-                                _loadingContext ? null : _goToTripsList,
-                            child: const Text('Annuler'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: FilledButton(
-                            onPressed:
-                                _loadingContext ? null : _loadContextAndMaybeJoin,
-                            child: const Text('Réessayer'),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _joining ? null : _goToTripsList,
+                          child: const Text('Annuler'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          onPressed: _joining
+                              ? null
+                              : () => _join(placeholderMemberId: null),
+                          child: const Text('Réessayer'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Icon(
+                    Icons.group_add_outlined,
+                    size: 52,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Rejoindre un voyage',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Impossible d’ouvrir l’invitation pour le moment. '
+                    'Vérifie ta connexion ou demande un nouveau lien à l’organisateur.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _loadingContext ? null : _goToTripsList,
+                          child: const Text('Annuler'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          onPressed:
+                              _loadingContext ? null : _loadContextAndMaybeJoin,
+                          child: const Text('Réessayer'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
-        );
+        ),
+      );
     }
 
     return Scaffold(

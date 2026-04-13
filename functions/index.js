@@ -125,6 +125,37 @@ function isTripAdminUser(data, uid) {
   return tripAdminMemberIdSet(data).has(u);
 }
 
+/**
+ * When a placeholder row becomes a real uid in memberIds, carry co-admin from
+ * ph_* to uid in adminMemberIds. Returns null if the field needs no update.
+ * @param {unknown} adminIdsRaw
+ * @param {string} phId
+ * @param {string} uid
+ * @returns {string[] | null}
+ */
+function adminMemberIdsAfterPlaceholderClaim(adminIdsRaw, phId, uid) {
+  const raw = Array.isArray(adminIdsRaw)
+    ? adminIdsRaw.map((v) => String(v))
+    : [];
+  if (!raw.includes(phId)) return null;
+  return [...new Set(raw.map((id) => (id === phId ? uid : id)))];
+}
+
+/**
+ * Undo {@link adminMemberIdsAfterPlaceholderClaim} when claim migration fails.
+ * @param {unknown} adminIdsRaw
+ * @param {string} uid
+ * @param {string} phId
+ * @returns {string[] | null}
+ */
+function adminMemberIdsAfterRevertClaim(adminIdsRaw, uid, phId) {
+  const raw = Array.isArray(adminIdsRaw)
+    ? adminIdsRaw.map((v) => String(v))
+    : [];
+  if (!raw.includes(uid)) return null;
+  return [...new Set(raw.map((id) => (id === uid ? phId : id)))];
+}
+
 function assertTripInviteToken(data, token) {
   const expectedToken = normalizeString(data.inviteToken);
   if (!expectedToken || expectedToken !== token) {
@@ -272,10 +303,21 @@ async function revertTripMemberClaim(tripRef, uid, phId) {
       : [];
     if (!memberIds.includes(uid)) return;
     const newMemberIds = memberIds.map((id) => (id === uid ? phId : id));
-    tx.update(tripRef, {
+    const FieldValue = admin.firestore.FieldValue;
+    /** @type {Record<string, unknown>} */
+    const upd = {
       memberIds: newMemberIds,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    const nextAdmins = adminMemberIdsAfterRevertClaim(
+      data.adminMemberIds,
+      uid,
+      phId
+    );
+    if (nextAdmins) {
+      upd.adminMemberIds = nextAdmins;
+    }
+    tx.update(tripRef, upd);
   });
 }
 
@@ -692,10 +734,20 @@ async function completeJoinTripWithInvite(
         id === placeholderArg ? uid : id
       );
       claimedPh = placeholderArg;
-      tx.update(tripRef, {
+      /** @type {Record<string, unknown>} */
+      const tripUpdate = {
         memberIds: newMemberIds,
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+      const nextAdmins = adminMemberIdsAfterPlaceholderClaim(
+        data.adminMemberIds,
+        placeholderArg,
+        uid
+      );
+      if (nextAdmins) {
+        tripUpdate.adminMemberIds = nextAdmins;
+      }
+      tx.update(tripRef, tripUpdate);
     } else {
       memberIds.push(uid);
       tx.update(tripRef, {
@@ -884,6 +936,7 @@ exports.removeTripPlaceholderMember = onCall(
     batch.update(tripRef, {
       memberIds: FieldValue.arrayRemove(placeholderId),
       [`memberPublicLabels.${placeholderId}`]: FieldValue.delete(),
+      adminMemberIds: FieldValue.arrayRemove(placeholderId),
     });
     n++;
     if (n > 0) {
@@ -1087,13 +1140,6 @@ exports.cycleTripMemberAdminRole = onCall(
     const memberId = normalizeString(request.data?.memberId);
     if (!tripId || !memberId) {
       throw new HttpsError('invalid-argument', 'Parametres invalides');
-    }
-
-    if (isPlaceholderMemberId(memberId)) {
-      throw new HttpsError(
-        'invalid-argument',
-        'Les voyageurs prévus ne peuvent pas être administrateurs'
-      );
     }
 
     const db = admin.firestore();
