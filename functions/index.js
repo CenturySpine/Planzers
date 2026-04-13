@@ -111,6 +111,20 @@ function isPlaceholderMemberId(id) {
   return s.startsWith('ph_') && s.length > 8;
 }
 
+/** Co-admin uids on the trip document (creator is always admin via ownerId). */
+function tripAdminMemberIdSet(data) {
+  const raw = data.adminMemberIds;
+  if (!Array.isArray(raw)) return new Set();
+  return new Set(raw.map((v) => String(v)));
+}
+
+function isTripAdminUser(data, uid) {
+  const u = normalizeString(uid);
+  if (!u) return false;
+  if (normalizeString(data.ownerId) === u) return true;
+  return tripAdminMemberIdSet(data).has(u);
+}
+
 function assertTripInviteToken(data, token) {
   const expectedToken = normalizeString(data.inviteToken);
   if (!expectedToken || expectedToken !== token) {
@@ -1051,8 +1065,78 @@ exports.leaveTrip = onCall(
       tx.update(tripRef, {
         memberIds: admin.firestore.FieldValue.arrayRemove(uid),
         [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
+        adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
       });
     });
+
+    return { ok: true };
+  }
+);
+
+exports.cycleTripMemberAdminRole = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const memberId = normalizeString(request.data?.memberId);
+    if (!tripId || !memberId) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+
+    if (isPlaceholderMemberId(memberId)) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Les voyageurs prévus ne peuvent pas être administrateurs'
+      );
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const data = tripSnap.data() || {};
+    if (!isTripAdminUser(data, uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Seuls les administrateurs peuvent modifier ce rôle'
+      );
+    }
+
+    const ownerId = normalizeString(data.ownerId);
+    if (memberId === ownerId) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Le créateur du voyage reste administrateur'
+      );
+    }
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(memberId)) {
+      throw new HttpsError('not-found', 'Participant introuvable');
+    }
+
+    const admins = tripAdminMemberIdSet(data);
+    const FieldValue = admin.firestore.FieldValue;
+    if (admins.has(memberId)) {
+      await tripRef.update({
+        adminMemberIds: FieldValue.arrayRemove(memberId),
+      });
+    } else {
+      await tripRef.update({
+        adminMemberIds: FieldValue.arrayUnion(memberId),
+      });
+    }
 
     return { ok: true };
   }

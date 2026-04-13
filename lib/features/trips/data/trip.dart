@@ -13,6 +13,7 @@ class Trip {
     this.startDate,
     this.endDate,
     this.memberPublicLabels = const {},
+    this.adminMemberIds = const [],
   });
 
   final String id;
@@ -22,6 +23,9 @@ class Trip {
   final String linkUrl;
   final String ownerId;
   final List<String> memberIds;
+
+  /// Co-admins (trip creator is always admin via [ownerId]).
+  final List<String> adminMemberIds;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -41,6 +45,27 @@ class Trip {
       }
     });
     return out;
+  }
+
+  static List<String> adminMemberIdsFromFirestore(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.map((e) => e.toString().trim()).where((id) => id.isNotEmpty).toList();
+  }
+
+  /// Trip admins: creator plus [adminMemberIds] entries.
+  bool isTripAdmin(String? userId) {
+    final u = userId?.trim() ?? '';
+    if (u.isEmpty) return false;
+    if (u == ownerId.trim()) return true;
+    return adminMemberIds.contains(u);
+  }
+
+  /// True when [memberId] has admin privileges (creator or listed co-admin).
+  bool memberHasAdminRole(String memberId) {
+    final id = memberId.trim();
+    if (id.isEmpty) return false;
+    if (id == ownerId.trim()) return true;
+    return adminMemberIds.contains(id);
   }
 
   static DateTime? _parseOptionalDate(dynamic raw) {
@@ -74,6 +99,7 @@ class Trip {
       endDate: _parseOptionalDate(data['endDate']),
       memberPublicLabels:
           memberPublicLabelsFromFirestore(data['memberPublicLabels']),
+      adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),
     );
   }
 
@@ -89,6 +115,7 @@ class Trip {
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
       if (memberPublicLabels.isNotEmpty) 'memberPublicLabels': memberPublicLabels,
+      if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
     };
   }
 }

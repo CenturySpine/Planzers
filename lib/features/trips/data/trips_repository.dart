@@ -566,6 +566,34 @@ class TripsRepository {
     await docRef.update({
       'memberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
       'memberPublicLabels.$cleanMemberId': FieldValue.delete(),
+      'adminMemberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
+    });
+  }
+
+  /// Toggles co-admin for a real member (creator stays admin). Enforced by the
+  /// `cycleTripMemberAdminRole` callable.
+  Future<void> cycleTripMemberAdminRole({
+    required String tripId,
+    required String memberId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMemberId = memberId.trim();
+    if (cleanTripId.isEmpty || cleanMemberId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable =
+        regionFunctions.httpsCallable('cycleTripMemberAdminRole');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'memberId': cleanMemberId,
     });
   }
 

@@ -53,6 +53,41 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
   }
 
   final Set<String> _removingMemberIds = <String>{};
+  final Set<String> _cyclingMemberIds = <String>{};
+
+  Future<void> _cycleMemberAdminRole({
+    required String memberId,
+    required String displayLabel,
+    required bool wasAdmin,
+  }) async {
+    final cleanId = memberId.trim();
+    if (cleanId.isEmpty || _cyclingMemberIds.contains(cleanId)) return;
+
+    setState(() => _cyclingMemberIds.add(cleanId));
+    try {
+      await ref.read(tripsRepositoryProvider).cycleTripMemberAdminRole(
+            tripId: widget.tripId,
+            memberId: cleanId,
+          );
+      if (!mounted) return;
+      final label = displayLabel.trim().isEmpty ? 'Ce participant' : displayLabel;
+      final message = wasAdmin
+          ? 'Rôle administrateur retiré ($label).'
+          : '$label est administrateur.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageForError(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _cyclingMemberIds.remove(cleanId));
+      }
+    }
+  }
 
   Future<void> _openAddDialog() async {
     final controller = TextEditingController();
@@ -266,6 +301,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           builder: (context, userSnap) {
             final userDataById = userSnap.data ?? const {};
             final rows = _participantRowsForTrip(trip, userDataById, myUid);
+            final iamAdmin = trip.isTripAdmin(myUid);
 
             return Scaffold(
               appBar: AppBar(title: const Text('Participants')),
@@ -279,73 +315,126 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                         ),
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: rows.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final row = rows[index];
-                        final isOwnerRow =
-                            row.memberId.trim() == trip.ownerId.trim();
-                        final canRemoveMember = !row.isPlaceholder &&
-                            !isOwnerRow &&
-                            row.memberId.trim() != (myUid ?? '').trim();
-
-                        final isRemoving =
-                            _removingMemberIds.contains(row.memberId.trim());
-
-                        return Card(
-                          child: ListTile(
-                            title: Text(row.displayLabel),
-                            trailing: row.isPlaceholder
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        tooltip: 'Modifier',
-                                        icon: const Icon(Icons.edit_outlined),
-                                        onPressed: () =>
-                                            _openEditPlaceholderDialog(
-                                          placeholderId: row.memberId,
-                                          currentName: row.displayLabel,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Retirer',
-                                        icon:
-                                            const Icon(Icons.delete_outline),
-                                        onPressed: () =>
-                                            _confirmRemovePlaceholder(
-                                          placeholderId: row.memberId,
-                                          label: row.displayLabel,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : canRemoveMember
-                                    ? IconButton(
-                                        tooltip: 'Retirer',
-                                        icon: isRemoving
-                                            ? const SizedBox(
-                                                width: 22,
-                                                height: 22,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : const Icon(Icons.delete_outline),
-                                        onPressed: isRemoving
-                                            ? null
-                                            : () => _confirmRemoveMember(
-                                                  memberId: row.memberId,
-                                                  label: row.displayLabel,
-                                                ),
-                                      )
-                                    : null,
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (iamAdmin)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Text(
+                              'Clique sur l’icône à gauche d’un participant '
+                              'pour lui donner ou retirer le rôle administrateur '
+                              '(sauf le créateur).',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
                           ),
-                        );
-                      },
+                        Expanded(
+                          child: ListView.separated(
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              iamAdmin ? 8 : 16,
+                              16,
+                              16,
+                            ),
+                            itemCount: rows.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final row = rows[index];
+                              final isOwnerRow =
+                                  row.memberId.trim() == trip.ownerId.trim();
+                              final canRemoveMember = !row.isPlaceholder &&
+                                  !isOwnerRow &&
+                                  row.memberId.trim() != (myUid ?? '').trim();
+
+                              final isRemoving = _removingMemberIds
+                                  .contains(row.memberId.trim());
+                              final isCycling = _cyclingMemberIds
+                                  .contains(row.memberId.trim());
+                              final scheme = Theme.of(context).colorScheme;
+                              final canCycleRole =
+                                  iamAdmin && !row.isPlaceholder && !isOwnerRow;
+
+                              return Card(
+                                child: ListTile(
+                                  leading: _participantRoleLeading(
+                                    scheme: scheme,
+                                    row: row,
+                                    isOwnerRow: isOwnerRow,
+                                    showAdminIcon: row.isAdmin,
+                                    canCycleRole: canCycleRole,
+                                    isCycling: isCycling,
+                                    onCycle: canCycleRole && !isCycling
+                                        ? () => _cycleMemberAdminRole(
+                                              memberId: row.memberId,
+                                              displayLabel: row.displayLabel,
+                                              wasAdmin: row.isAdmin,
+                                            )
+                                        : null,
+                                  ),
+                                  title: Text(row.displayLabel),
+                                  trailing: row.isPlaceholder
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              tooltip: 'Modifier',
+                                              icon: const Icon(
+                                                  Icons.edit_outlined),
+                                              onPressed: () =>
+                                                  _openEditPlaceholderDialog(
+                                                placeholderId: row.memberId,
+                                                currentName: row.displayLabel,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              tooltip: 'Retirer',
+                                              icon: const Icon(
+                                                  Icons.delete_outline),
+                                              onPressed: () =>
+                                                  _confirmRemovePlaceholder(
+                                                placeholderId: row.memberId,
+                                                label: row.displayLabel,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : canRemoveMember
+                                          ? IconButton(
+                                              tooltip: 'Retirer',
+                                              icon: isRemoving
+                                                  ? const SizedBox(
+                                                      width: 22,
+                                                      height: 22,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : const Icon(
+                                                      Icons.delete_outline),
+                                              onPressed: isRemoving
+                                                  ? null
+                                                  : () => _confirmRemoveMember(
+                                                        memberId: row.memberId,
+                                                        label:
+                                                            row.displayLabel,
+                                                      ),
+                                            )
+                                          : null,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
               floatingActionButton: FloatingActionButton(
                 onPressed: _openAddDialog,
@@ -386,6 +475,7 @@ List<_ParticipantRow> _participantRowsForTrip(
             memberId: id,
             isPlaceholder: true,
             displayLabel: label,
+            isAdmin: false,
           );
         }
         final label = resolveTripMemberDisplayLabel(
@@ -399,9 +489,81 @@ List<_ParticipantRow> _participantRowsForTrip(
           memberId: id,
           isPlaceholder: false,
           displayLabel: label,
+          isAdmin: trip.memberHasAdminRole(id),
         );
       })
       .toList();
+}
+
+/// Same box for every row so [ListTile.leading] lines up (plain [Icon] vs
+/// default [IconButton] padding was shifting “joined” members vs placeholders).
+const double _kParticipantRoleLeadingExtent = 48;
+
+Widget _participantRoleLeading({
+  required ColorScheme scheme,
+  required _ParticipantRow row,
+  required bool isOwnerRow,
+  required bool showAdminIcon,
+  required bool canCycleRole,
+  required bool isCycling,
+  required VoidCallback? onCycle,
+}) {
+  Widget inFixedBox(Widget child) {
+    return SizedBox(
+      width: _kParticipantRoleLeadingExtent,
+      height: _kParticipantRoleLeadingExtent,
+      child: Center(child: child),
+    );
+  }
+
+  if (row.isPlaceholder) {
+    return inFixedBox(
+      Icon(
+        Icons.person_outline,
+        color: scheme.outline,
+      ),
+    );
+  }
+
+  if (isCycling) {
+    return inFixedBox(
+      const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+
+  final tooltip = canCycleRole
+      ? 'Changer le rôle'
+      : (isOwnerRow
+          ? 'Créateur'
+          : (showAdminIcon ? 'Administrateur' : null));
+
+  return SizedBox(
+    width: _kParticipantRoleLeadingExtent,
+    height: _kParticipantRoleLeadingExtent,
+    child: IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(
+        width: _kParticipantRoleLeadingExtent,
+        height: _kParticipantRoleLeadingExtent,
+      ),
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: Icon(
+        showAdminIcon
+            ? Icons.admin_panel_settings_outlined
+            : Icons.person_outline,
+        color: showAdminIcon ? scheme.primary : scheme.onSurfaceVariant,
+      ),
+      tooltip: tooltip,
+      onPressed: onCycle,
+    ),
+  );
 }
 
 class _ParticipantRow {
@@ -409,9 +571,11 @@ class _ParticipantRow {
     required this.memberId,
     required this.isPlaceholder,
     required this.displayLabel,
+    required this.isAdmin,
   });
 
   final String memberId;
   final bool isPlaceholder;
   final String displayLabel;
+  final bool isAdmin;
 }
