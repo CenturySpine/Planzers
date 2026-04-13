@@ -40,6 +40,14 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF6EDF3),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFFE3D0DD),
+        foregroundColor: AppPalette.deep,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 52,
+      ),
       cardTheme: const CardThemeData(
         color: Colors.white,
         elevation: 1,

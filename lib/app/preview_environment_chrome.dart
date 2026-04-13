@@ -29,13 +29,13 @@ class PreviewEnvironmentChrome extends StatelessWidget {
             bottom: false,
             minimum: EdgeInsets.zero,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.science_outlined,
-                    size: 18,
+                    size: 16,
                     color: Colors.white.withValues(alpha: 0.95),
                   ),
                   const SizedBox(width: 8),
@@ -52,7 +52,13 @@ class PreviewEnvironmentChrome extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: child),
+        Expanded(
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: child,
+          ),
+        ),
       ],
     );
   }
