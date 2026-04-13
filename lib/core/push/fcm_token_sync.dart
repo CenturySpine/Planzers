@@ -60,6 +60,59 @@ Future<void> _persistToken(String uid, String token) async {
       );
 }
 
+Future<String?> _getFcmToken({
+  required FirebaseMessaging messaging,
+  required bool fromUserAction,
+}) async {
+  if (kIsWeb) {
+    if (_kFcmWebVapidKey.isEmpty) {
+      return null;
+    }
+    if (fromUserAction) {
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        return null;
+      }
+    }
+    return messaging.getToken(vapidKey: _kFcmWebVapidKey);
+  }
+
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+  return messaging.getToken();
+}
+
+Future<void> _registerFcmToken(User user, {required bool fromUserAction}) async {
+  final messaging = FirebaseMessaging.instance;
+  final token = await _getFcmToken(
+    messaging: messaging,
+    fromUserAction: fromUserAction,
+  );
+
+  if (token == null || token.isEmpty) {
+    return;
+  }
+
+  await _persistToken(user.uid, token);
+
+  _tokenRefreshSub ??= FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u != null) {
+      unawaited(_persistToken(u.uid, newToken));
+    }
+  });
+
+  _attachForegroundLogOnce();
+}
+
 /// Registers the device for FCM and stores the token under
 /// `users/{uid}/fcmTokens/{hash}` for Cloud Functions to target pushes.
 ///
@@ -71,37 +124,23 @@ Future<void> syncFcmTokenAfterSignIn(User user) async {
   }
 
   try {
-    final messaging = FirebaseMessaging.instance;
-
-    if (!kIsWeb) {
-      await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    }
-
-    final token = kIsWeb
-        ? await messaging.getToken(vapidKey: _kFcmWebVapidKey)
-        : await messaging.getToken();
-
-    if (token == null || token.isEmpty) {
-      return;
-    }
-
-    await _persistToken(user.uid, token);
-
-    _tokenRefreshSub ??=
-        FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-      final u = FirebaseAuth.instance.currentUser;
-      if (u != null) {
-        unawaited(_persistToken(u.uid, newToken));
-      }
-    });
-
-    _attachForegroundLogOnce();
+    await _registerFcmToken(user, fromUserAction: false);
   } catch (e, st) {
     debugPrint('FCM registration skipped: $e\n$st');
+  }
+}
+
+/// Explicit user-triggered push activation flow (required for iOS PWA).
+Future<bool> enablePushNotificationsFromUserAction(User user) async {
+  if (kIsWeb && _kFcmWebVapidKey.isEmpty) {
+    return false;
+  }
+  try {
+    await _registerFcmToken(user, fromUserAction: true);
+    return true;
+  } catch (e, st) {
+    debugPrint('FCM user activation failed: $e\n$st');
+    return false;
   }
 }
 

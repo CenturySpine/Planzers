@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/core/push/fcm_token_sync.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
@@ -17,6 +19,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   final _accountNameController = TextEditingController();
   bool _didInitFromFirestore = false;
   bool _isSaving = false;
+  bool _isEnablingPush = false;
 
   Widget _buildAvatar(String photoUrl, String email) {
     final fallback = CircleAvatar(
@@ -72,6 +75,31 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  Future<void> _enablePushNotifications() async {
+    if (_isEnablingPush) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() => _isEnablingPush = true);
+    try {
+      final success = await enablePushNotificationsFromUserAction(user);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Notifications activees.'
+                : 'Impossible d activer les notifications.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isEnablingPush = false);
       }
     }
   }
@@ -145,6 +173,32 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 24),
+              if (kIsWeb) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isEnablingPush ? null : _enablePushNotifications,
+                    icon: _isEnablingPush
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.notifications_active_outlined),
+                    label: Text(
+                      _isEnablingPush
+                          ? 'Activation en cours...'
+                          : 'Activer les notifications',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sur iPhone: installer l app sur l ecran d accueil, puis activer ici.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 24),
+              ],
               Form(
                 key: _formKey,
                 child: Column(
