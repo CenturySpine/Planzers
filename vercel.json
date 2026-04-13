@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "export FLUTTER_ALLOW_ROOT=true && git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter_sdk && ./flutter_sdk/bin/flutter precache --web",
-  "buildCommand": "./flutter_sdk/bin/flutter pub get && if [ \"$VERCEL_ENV\" = \"production\" ]; then ./flutter_sdk/bin/flutter build web -t lib/main_prod.dart --release --dart-define=FIREBASE_VAPID_KEY=$FIREBASE_VAPID_KEY_PROD; else ./flutter_sdk/bin/flutter build web -t lib/main_preview.dart --release --dart-define=FIREBASE_VAPID_KEY=$FIREBASE_VAPID_KEY_PREVIEW; fi",
+  "buildCommand": "bash ./scripts/vercel-build.sh",
   "outputDirectory": "build/web",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
