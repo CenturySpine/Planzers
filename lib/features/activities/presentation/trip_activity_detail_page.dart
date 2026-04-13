@@ -207,14 +207,14 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         if (snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Activite')),
+            appBar: AppBar(),
             body: const Center(child: CircularProgressIndicator()),
           );
         }
         final doc = snapshot.data;
         if (doc == null || !doc.exists) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Activite')),
+            appBar: AppBar(),
             body: const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -236,7 +236,30 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Activite'),
+            title: Text.rich(
+              TextSpan(
+                children: [
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        activity.category.categoryIcon,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  TextSpan(
+                    text: activity.label.trim().isEmpty
+                        ? 'Sans titre'
+                        : activity.label.trim(),
+                  ),
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             actions: [
               if (canEdit && !_editing) ...[
                 IconButton(
@@ -334,44 +357,6 @@ class _ReadBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              activity.category.categoryIcon,
-              size: 40,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    activity.category.categoryLabelFr,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    activity.label.isEmpty ? 'Sans titre' : activity.label,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          decoration: activity.done
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: activity.done
-                              ? Theme.of(context).colorScheme.onSurfaceVariant
-                              : null,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
         CheckboxListTile(
           value: activity.done,
           onChanged: (v) {

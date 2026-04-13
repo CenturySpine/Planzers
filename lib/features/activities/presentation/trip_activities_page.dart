@@ -38,12 +38,20 @@ class TripActivitiesPage extends ConsumerWidget {
             );
           }
 
+          final sortedItems = [...items]
+            ..sort((a, b) {
+              if (a.done != b.done) {
+                return a.done ? 1 : -1;
+              }
+              return b.createdAt.compareTo(a.createdAt);
+            });
+
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-            itemCount: items.length,
+            itemCount: sortedItems.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
-              final a = items[index];
+              final a = sortedItems[index];
               return _ActivityListTile(
                 tripId: trip.id,
                 activity: a,
@@ -117,6 +125,7 @@ class _ActivityListTile extends ConsumerWidget {
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
+      color: activity.done ? const Color(0xFFDFF5E1) : null,
       child: Padding(
         padding: const EdgeInsets.only(left: 4, right: 4),
         child: Row(
@@ -151,17 +160,7 @@ class _ActivityListTile extends ConsumerWidget {
                           label,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    decoration: activity.done
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                    color: activity.done
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                        : null,
-                                  ),
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                       ),
                       const SizedBox(width: 12),
