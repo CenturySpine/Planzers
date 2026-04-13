@@ -78,6 +78,7 @@ class TripActivity {
 
 enum TripActivityCategory {
   sport,
+  hiking,
   shopping,
   visit,
   restaurant;
@@ -93,6 +94,7 @@ enum TripActivityCategory {
   /// Stored in Firestore.
   String get firestoreValue => switch (this) {
         TripActivityCategory.sport => 'sport',
+        TripActivityCategory.hiking => 'hiking',
         TripActivityCategory.shopping => 'shopping',
         TripActivityCategory.visit => 'visit',
         TripActivityCategory.restaurant => 'restaurant',

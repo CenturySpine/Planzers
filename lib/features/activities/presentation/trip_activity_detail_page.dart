@@ -10,6 +10,7 @@ import 'package:planzers/features/trips/presentation/open_address_in_google_maps
 extension TripActivityCategoryPresentation on TripActivityCategory {
   IconData get categoryIcon => switch (this) {
         TripActivityCategory.sport => Icons.sports_soccer_outlined,
+        TripActivityCategory.hiking => Icons.hiking_outlined,
         TripActivityCategory.shopping => Icons.shopping_bag_outlined,
         TripActivityCategory.visit => Icons.museum_outlined,
         TripActivityCategory.restaurant => Icons.restaurant_outlined,
@@ -17,6 +18,7 @@ extension TripActivityCategoryPresentation on TripActivityCategory {
 
   String get categoryLabelFr => switch (this) {
         TripActivityCategory.sport => 'Sport',
+        TripActivityCategory.hiking => 'Randonnee',
         TripActivityCategory.shopping => 'Shopping',
         TripActivityCategory.visit => 'Visite',
         TripActivityCategory.restaurant => 'Restaurant',

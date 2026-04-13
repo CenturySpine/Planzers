@@ -27,7 +27,7 @@ class TripActivitiesPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Proposez des sorties : sport, shopping, visites, restaurants. '
+                  'Proposez des sorties : sport, randonnees, shopping, visites, restaurants. '
                   'Chaque activite peut inclure un lien (apercu comme sur l\'apercu du voyage), '
                   'une adresse pour le trajet depuis le logement, et des commentaires.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
