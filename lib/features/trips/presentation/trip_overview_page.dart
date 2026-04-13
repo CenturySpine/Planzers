@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
+import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planzers/features/trips/presentation/trip_placeholders_page.dart';
 import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -316,6 +318,19 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.group_add_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'Voyageurs prévus',
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => TripPlaceholdersPage(
+                                tripId: _trip.id,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.assignment_ind_outlined),
                       ),
                       IconButton(
                         tooltip: 'Copier le code d invitation',
@@ -839,7 +854,8 @@ class _MembersInfoRow extends StatelessWidget {
           );
           final canRemoveThisMember = canManageMembers &&
               currentUserId != null &&
-              memberId != currentUserId;
+              memberId != currentUserId &&
+              !isTripPlaceholderMemberId(memberId);
           final isRemoving = isRemovingMember(memberId);
 
           chips.add(

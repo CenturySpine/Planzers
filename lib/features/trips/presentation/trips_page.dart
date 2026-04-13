@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planzers/features/trips/data/invite_join_context.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 
@@ -372,10 +373,15 @@ class _JoinTripByCodeDialog extends ConsumerStatefulWidget {
       _JoinTripByCodeDialogState();
 }
 
+enum _JoinTripByCodeStep { enterCode, pickPlaceholder }
+
 class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
   late final TextEditingController _codeController;
   String? _error;
   bool _isSubmitting = false;
+  _JoinTripByCodeStep _step = _JoinTripByCodeStep.enterCode;
+  InviteJoinContext? _inviteContext;
+  String? _selectedPlaceholderId;
 
   @override
   void initState() {
@@ -389,7 +395,19 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _finishJoin(String tripId) async {
+    if (!widget.navigatorContext.mounted) return;
+    Navigator.of(widget.navigatorContext).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!widget.parentContext.mounted) return;
+      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
+        const SnackBar(content: Text('Vous avez rejoint le voyage')),
+      );
+      widget.parentContext.go('/trips/$tripId/overview');
+    });
+  }
+
+  Future<void> _submitEnterCode() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
       setState(() => _error = 'Saisis le code d\'invitation.');
@@ -400,16 +418,23 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
       _error = null;
     });
     try {
-      final tripId =
-          await ref.read(tripsRepositoryProvider).joinTripWithInviteToken(code);
-      if (!widget.navigatorContext.mounted) return;
-      Navigator.of(widget.navigatorContext).pop();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!widget.parentContext.mounted) return;
-        ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-          const SnackBar(content: Text('Vous avez rejoint le voyage')),
-        );
-        widget.parentContext.go('/trips/$tripId/overview');
+      final ctx = await ref.read(tripsRepositoryProvider).getInviteJoinContext(
+            token: code,
+          );
+      if (!mounted) return;
+      if (!ctx.requiresPlaceholderChoice) {
+        final tripId =
+            await ref.read(tripsRepositoryProvider).joinTripWithInviteToken(code);
+        if (!mounted) return;
+        await _finishJoin(tripId);
+        return;
+      }
+      setState(() {
+        _inviteContext = ctx;
+        _step = _JoinTripByCodeStep.pickPlaceholder;
+        _selectedPlaceholderId =
+            ctx.placeholders.isNotEmpty ? ctx.placeholders.first.id : null;
+        _isSubmitting = false;
       });
     } catch (e) {
       if (!mounted) return;
@@ -420,31 +445,92 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
     }
   }
 
+  Future<void> _submitPickPlaceholder() async {
+    final code = _codeController.text.trim();
+    final id = _selectedPlaceholderId?.trim();
+    if (id == null || id.isEmpty) {
+      setState(() => _error = 'Choisis un voyageur sur la liste.');
+      return;
+    }
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
+    try {
+      final tripId = await ref.read(tripsRepositoryProvider).joinTripWithInviteToken(
+            code,
+            placeholderMemberId: id,
+          );
+      if (!mounted) return;
+      await _finishJoin(tripId);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _error = TripsPage._messageForJoinByCodeError(e);
+      });
+    }
+  }
+
+  void _backToCode() {
+    setState(() {
+      _step = _JoinTripByCodeStep.enterCode;
+      _inviteContext = null;
+      _selectedPlaceholderId = null;
+      _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pick = _step == _JoinTripByCodeStep.pickPlaceholder;
+    final title = pick && (_inviteContext?.tripTitle.isNotEmpty ?? false)
+        ? _inviteContext!.tripTitle
+        : 'Code d\'invitation';
+
     return AlertDialog(
-      title: const Text('Code d\'invitation'),
+      title: Text(title),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Colle le code envoye par l\'organisateur du voyage '
-              '(pas le lien, uniquement le code).',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _codeController,
-              decoration: const InputDecoration(
-                labelText: 'Code',
-                border: OutlineInputBorder(),
+            if (!pick) ...[
+              const Text(
+                'Colle le code envoye par l\'organisateur du voyage '
+                '(pas le lien, uniquement le code).',
               ),
-              textInputAction: TextInputAction.done,
-              autocorrect: false,
-              enableSuggestions: false,
-              onSubmitted: _isSubmitting ? null : (_) => _submit(),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _codeController,
+                decoration: const InputDecoration(
+                  labelText: 'Code',
+                  border: OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                onSubmitted: _isSubmitting ? null : (_) => _submitEnterCode(),
+              ),
+            ] else if (_inviteContext != null) ...[
+              ..._inviteContext!.placeholders.map(
+                (p) => ListTile(
+                  title: Text(p.displayName),
+                  selected: _selectedPlaceholderId == p.id,
+                  onTap: _isSubmitting
+                      ? null
+                      : () => setState(() {
+                            _selectedPlaceholderId = p.id;
+                          }),
+                  trailing: _selectedPlaceholderId == p.id
+                      ? Icon(
+                          Icons.check,
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : null,
+                ),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 12),
               Text(
@@ -458,6 +544,11 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
         ),
       ),
       actions: [
+        if (pick)
+          TextButton(
+            onPressed: _isSubmitting ? null : _backToCode,
+            child: const Text('Retour'),
+          ),
         TextButton(
           onPressed: _isSubmitting
               ? null
@@ -465,7 +556,9 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
           child: const Text('Annuler'),
         ),
         FilledButton(
-          onPressed: _isSubmitting ? null : _submit,
+          onPressed: _isSubmitting
+              ? null
+              : (pick ? _submitPickPlaceholder : _submitEnterCode),
           child: _isSubmitting
               ? const SizedBox(
                   width: 22,

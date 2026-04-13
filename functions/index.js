@@ -105,6 +105,214 @@ function memberIdsAsSet(data) {
   return new Set(raw.map((v) => String(v)));
 }
 
+/** Trip planner placeholders: ids in trip.memberIds until a guest claims one. */
+function isPlaceholderMemberId(id) {
+  const s = normalizeString(id);
+  return s.startsWith('ph_') && s.length > 8;
+}
+
+function assertTripInviteToken(data, token) {
+  const expectedToken = normalizeString(data.inviteToken);
+  if (!expectedToken || expectedToken !== token) {
+    throw new HttpsError(
+      'permission-denied',
+      'Lien d invitation invalide ou expire'
+    );
+  }
+}
+
+/**
+ * Rewires [fromId] to [toId] in expense groups, expenses, and room bed data.
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} fromId
+ * @param {string} toId
+ */
+async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
+  const db = admin.firestore();
+  const [groupsSnap, expensesSnap, roomsSnap] = await Promise.all([
+    tripRef.collection('expenseGroups').get(),
+    tripRef.collection('expenses').get(),
+    tripRef.collection('rooms').get(),
+  ]);
+
+  /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
+  const updates = [];
+
+  for (const doc of groupsSnap.docs) {
+    const vis = doc.data().visibleToMemberIds;
+    if (!Array.isArray(vis) || !vis.map(String).includes(fromId)) continue;
+    const next = [
+      ...new Set(vis.map((id) => (String(id) === fromId ? toId : String(id)))),
+    ];
+    updates.push({ ref: doc.ref, data: { visibleToMemberIds: next } });
+  }
+
+  for (const doc of expensesSnap.docs) {
+    const exp = doc.data() || {};
+    const participants = (
+      Array.isArray(exp.participantIds) ? exp.participantIds : []
+    ).map(String);
+    const paidBy = normalizeString(exp.paidBy);
+    let dirty = false;
+    let newParticipants = participants;
+    if (participants.includes(fromId)) {
+      newParticipants = [
+        ...new Set(participants.map((id) => (id === fromId ? toId : id))),
+      ];
+      dirty = true;
+    }
+    let newPaidBy = paidBy;
+    if (paidBy === fromId) {
+      newPaidBy = toId;
+      dirty = true;
+    }
+
+    /** @type {Record<string, unknown>} */
+    const expUpdate = {};
+    if (dirty) {
+      expUpdate.participantIds = newParticipants;
+      expUpdate.paidBy = newPaidBy;
+    }
+
+    const sharesRaw = exp.participantShares;
+    if (
+      sharesRaw &&
+      typeof sharesRaw === 'object' &&
+      !Array.isArray(sharesRaw) &&
+      Object.prototype.hasOwnProperty.call(sharesRaw, fromId)
+    ) {
+      const nextShares = { ...sharesRaw };
+      const v = nextShares[fromId];
+      delete nextShares[fromId];
+      nextShares[toId] = v;
+      expUpdate.participantShares = nextShares;
+      dirty = true;
+    }
+
+    if (dirty) {
+      updates.push({ ref: doc.ref, data: expUpdate });
+    }
+  }
+
+  for (const doc of roomsSnap.docs) {
+    const data = doc.data() || {};
+    const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
+    let roomDirty = false;
+    const newBeds = bedsRaw.map((bed) => {
+      if (!bed || typeof bed !== 'object') return bed;
+      const ids = Array.isArray(bed.assignedMemberIds)
+        ? bed.assignedMemberIds.map(String)
+        : [];
+      if (!ids.includes(fromId)) return bed;
+      roomDirty = true;
+      const rep = [...new Set(ids.map((id) => (id === fromId ? toId : id)))];
+      return { ...bed, assignedMemberIds: rep };
+    });
+    /** @type {Record<string, unknown>} */
+    const newData = {};
+    if (roomDirty) {
+      newData.beds = newBeds;
+    }
+    const legacy = Array.isArray(data.assignedMemberIds)
+      ? data.assignedMemberIds.map(String)
+      : [];
+    if (legacy.includes(fromId)) {
+      roomDirty = true;
+      newData.assignedMemberIds = [
+        ...new Set(legacy.map((id) => (id === fromId ? toId : id))),
+      ];
+    }
+    if (roomDirty && Object.keys(newData).length > 0) {
+      updates.push({ ref: doc.ref, data: newData });
+    }
+  }
+
+  let batch = db.batch();
+  let n = 0;
+  for (const { ref, data } of updates) {
+    batch.update(ref, data);
+    n++;
+    if (n >= 450) {
+      await batch.commit();
+      batch = db.batch();
+      n = 0;
+    }
+  }
+  if (n > 0) {
+    await batch.commit();
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} uid
+ * @param {string} phId
+ */
+async function revertTripMemberClaim(tripRef, uid, phId) {
+  await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(tripRef);
+    if (!snap.exists) return;
+    const data = snap.data() || {};
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) return;
+    const newMemberIds = memberIds.map((id) => (id === uid ? phId : id));
+    tx.update(tripRef, {
+      memberIds: newMemberIds,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} phId
+ */
+async function assertPlaceholderUnusedInExpensesAndRooms(tripRef, phId) {
+  const [expensesSnap, roomsSnap] = await Promise.all([
+    tripRef.collection('expenses').get(),
+    tripRef.collection('rooms').get(),
+  ]);
+
+  for (const doc of expensesSnap.docs) {
+    const exp = doc.data() || {};
+    const participants = (
+      Array.isArray(exp.participantIds) ? exp.participantIds : []
+    ).map(String);
+    const paidBy = normalizeString(exp.paidBy);
+    const shares = exp.participantShares;
+    const inShares =
+      shares &&
+      typeof shares === 'object' &&
+      !Array.isArray(shares) &&
+      Object.prototype.hasOwnProperty.call(shares, phId);
+    if (participants.includes(phId) || paidBy === phId || inShares) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce voyageur prévu est encore utilisé dans des dépenses. Retire-le des participants avant de le supprimer.'
+      );
+    }
+  }
+
+  for (const doc of roomsSnap.docs) {
+    const data = doc.data() || {};
+    const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
+    for (const bed of bedsRaw) {
+      if (!bed || typeof bed !== 'object') continue;
+      const ids = Array.isArray(bed.assignedMemberIds)
+        ? bed.assignedMemberIds.map(String)
+        : [];
+      if (ids.includes(phId)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce voyageur prévu est encore assigné à une chambre. Retire l\'assignation avant de le supprimer.'
+        );
+      }
+    }
+  }
+}
+
 /**
  * When someone is added to trip.memberIds, add them to every expense post
  * (visibleToMemberIds) and every expense (participantIds). arrayUnion is
@@ -293,8 +501,20 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     const added = [...afterIds].filter((id) => !beforeIds.has(id));
     if (added.length === 0) return;
 
+    const removed = [...beforeIds].filter((id) => !afterIds.has(id));
+
     const tripRef = afterSnap.ref;
     for (const uid of added) {
+      // Placeholder claimed by a real account: join callable migrates data;
+      // do not union the new uid into every expense like a brand-new member.
+      if (
+        added.length === 1 &&
+        removed.length === 1 &&
+        isPlaceholderMemberId(removed[0]) &&
+        !isPlaceholderMemberId(uid)
+      ) {
+        continue;
+      }
       try {
         await backfillTripMemberInExpenseSubcollections(tripRef, uid);
       } catch (e) {
@@ -406,11 +626,23 @@ exports.generateTripLinkPreview = onDocumentUpdated(
 
 /**
  * Adds [uid] to trip members if [token] matches the trip inviteToken.
+ * When the trip still has placeholder members, [placeholderMemberId] must name
+ * the placeholder row to claim (replaced by [uid]).
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} uid
  * @param {string} token
+ * @param {string} placeholderMemberId
  */
-async function completeJoinTripWithInvite(tripRef, uid, token) {
+async function completeJoinTripWithInvite(
+  tripRef,
+  uid,
+  token,
+  placeholderMemberId
+) {
+  const FieldValue = admin.firestore.FieldValue;
+  const placeholderArg = normalizeString(placeholderMemberId);
+  let claimedPh = null;
+
   await admin.firestore().runTransaction(async (tx) => {
     const snap = await tx.get(tripRef);
     if (!snap.exists) {
@@ -418,13 +650,7 @@ async function completeJoinTripWithInvite(tripRef, uid, token) {
     }
 
     const data = snap.data() || {};
-    const expectedToken = normalizeString(data.inviteToken);
-    if (!expectedToken || expectedToken !== token) {
-      throw new HttpsError(
-        'permission-denied',
-        'Lien d invitation invalide ou expire'
-      );
-    }
+    assertTripInviteToken(data, token);
 
     const memberIds = Array.isArray(data.memberIds)
       ? data.memberIds.map((v) => String(v))
@@ -433,12 +659,63 @@ async function completeJoinTripWithInvite(tripRef, uid, token) {
       return;
     }
 
-    memberIds.push(uid);
-    tx.update(tripRef, {
-      memberIds,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    const phMembers = memberIds.filter(isPlaceholderMemberId);
+
+    if (phMembers.length > 0) {
+      if (!placeholderArg || !isPlaceholderMemberId(placeholderArg)) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
+        );
+      }
+      if (!memberIds.includes(placeholderArg)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce voyageur a déjà été choisi ou est introuvable.'
+        );
+      }
+      const newMemberIds = memberIds.map((id) =>
+        id === placeholderArg ? uid : id
+      );
+      claimedPh = placeholderArg;
+      tx.update(tripRef, {
+        memberIds: newMemberIds,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } else {
+      memberIds.push(uid);
+      tx.update(tripRef, {
+        memberIds,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
   });
+
+  const tripSnap = await tripRef.get();
+  const tripData = tripSnap.data() || {};
+  const finalMemberIds = Array.isArray(tripData.memberIds)
+    ? tripData.memberIds.map((v) => String(v))
+    : [];
+  if (!finalMemberIds.includes(uid)) {
+    return;
+  }
+
+  if (claimedPh) {
+    try {
+      await migrateTripMemberIdReferences(tripRef, claimedPh, uid);
+    } catch (e) {
+      console.error('migrateTripMemberIdReferences failed', tripRef.id, e);
+      try {
+        await revertTripMemberClaim(tripRef, uid, claimedPh);
+      } catch (revertErr) {
+        console.error('revertTripMemberClaim failed', tripRef.id, revertErr);
+      }
+      throw new HttpsError(
+        'internal',
+        'Impossible de finaliser ton arrivée dans le voyage. Réessaie dans un instant.'
+      );
+    }
+  }
 
   let emailLocal = '';
   try {
@@ -447,12 +724,161 @@ async function completeJoinTripWithInvite(tripRef, uid, token) {
   } catch (e) {
     console.warn('joinTripWithInvite getUser', e);
   }
+
+  const labelUpdate = {};
+  if (claimedPh) {
+    labelUpdate[`memberPublicLabels.${claimedPh}`] = FieldValue.delete();
+  }
   if (emailLocal) {
-    await tripRef.update({
-      [`memberPublicLabels.${uid}`]: emailLocal,
-    });
+    labelUpdate[`memberPublicLabels.${uid}`] = emailLocal;
+  }
+  if (Object.keys(labelUpdate).length > 0) {
+    await tripRef.update(labelUpdate);
   }
 }
+
+exports.getInviteJoinContext = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripIdIn = normalizeString(request.data?.tripId);
+    const token = normalizeString(request.data?.token);
+    if (!token) {
+      throw new HttpsError('invalid-argument', 'Invitation invalide');
+    }
+
+    const db = admin.firestore();
+
+    let tripRef;
+    if (tripIdIn) {
+      tripRef = db.collection('trips').doc(tripIdIn);
+    } else {
+      const q = await db
+        .collection('trips')
+        .where('inviteToken', '==', token)
+        .limit(2)
+        .get();
+
+      if (q.empty) {
+        throw new HttpsError('not-found', 'Code d invitation inconnu');
+      }
+      if (q.size > 1) {
+        console.error('getInviteJoinContext duplicate token', token);
+        throw new HttpsError('internal', 'Erreur serveur');
+      }
+      tripRef = q.docs[0].ref;
+    }
+
+    const snap = await tripRef.get();
+    if (!snap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const data = snap.data() || {};
+    assertTripInviteToken(data, token);
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    const labels =
+      data.memberPublicLabels && typeof data.memberPublicLabels === 'object'
+        ? data.memberPublicLabels
+        : {};
+
+    const placeholders = memberIds
+      .filter(isPlaceholderMemberId)
+      .map((id) => ({
+        id,
+        displayName: normalizeString(labels[id]) || 'Voyageur',
+      }));
+
+    return {
+      tripId: tripRef.id,
+      tripTitle: normalizeString(data.title) || 'Voyage',
+      placeholders,
+      requiresPlaceholderChoice: placeholders.length > 0,
+    };
+  }
+);
+
+exports.removeTripPlaceholderMember = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const placeholderId = normalizeString(request.data?.placeholderId);
+    if (!tripId || !placeholderId || !isPlaceholderMemberId(placeholderId)) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const data = tripSnap.data() || {};
+    if (normalizeString(data.ownerId) !== uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Seul le créateur du voyage peut retirer un voyageur prévu.'
+      );
+    }
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(placeholderId)) {
+      throw new HttpsError('not-found', 'Voyageur prévu introuvable');
+    }
+
+    await assertPlaceholderUnusedInExpensesAndRooms(tripRef, placeholderId);
+
+    const FieldValue = admin.firestore.FieldValue;
+    const groupsSnap = await tripRef.collection('expenseGroups').get();
+
+    let batch = db.batch();
+    let n = 0;
+    for (const doc of groupsSnap.docs) {
+      const vis = doc.data().visibleToMemberIds;
+      if (!Array.isArray(vis) || !vis.map(String).includes(placeholderId)) {
+        continue;
+      }
+      batch.update(doc.ref, {
+        visibleToMemberIds: FieldValue.arrayRemove(placeholderId),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        n = 0;
+      }
+    }
+
+    batch.update(tripRef, {
+      memberIds: FieldValue.arrayRemove(placeholderId),
+      [`memberPublicLabels.${placeholderId}`]: FieldValue.delete(),
+    });
+    n++;
+    if (n > 0) {
+      await batch.commit();
+    }
+
+    return { ok: true };
+  }
+);
 
 exports.joinTripWithInvite = onCall(
   {
@@ -470,8 +896,17 @@ exports.joinTripWithInvite = onCall(
       throw new HttpsError('invalid-argument', 'Lien d invitation invalide');
     }
 
+    const placeholderMemberId = normalizeString(
+      request.data?.placeholderMemberId
+    );
+
     const tripRef = admin.firestore().collection('trips').doc(tripId);
-    await completeJoinTripWithInvite(tripRef, uid, token);
+    await completeJoinTripWithInvite(
+      tripRef,
+      uid,
+      token,
+      placeholderMemberId
+    );
 
     return { ok: true };
   }
@@ -493,6 +928,10 @@ exports.joinTripWithInviteToken = onCall(
       throw new HttpsError('invalid-argument', 'Code d invitation invalide');
     }
 
+    const placeholderMemberId = normalizeString(
+      request.data?.placeholderMemberId
+    );
+
     const db = admin.firestore();
     const snap = await db
       .collection('trips')
@@ -509,7 +948,12 @@ exports.joinTripWithInviteToken = onCall(
     }
 
     const tripRef = snap.docs[0].ref;
-    await completeJoinTripWithInvite(tripRef, uid, token);
+    await completeJoinTripWithInvite(
+      tripRef,
+      uid,
+      token,
+      placeholderMemberId
+    );
 
     return { ok: true, tripId: tripRef.id };
   }

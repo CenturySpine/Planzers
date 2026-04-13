@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/core/firebase/app_public_hosts.dart';
 import 'package:planzers/core/firebase/firebase_target_provider.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/trips/data/invite_join_context.dart';
 import 'package:planzers/features/trips/data/trip.dart';
+import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -248,9 +250,71 @@ class TripsRepository {
     return mobileInviteBaseUri.replace(queryParameters: params).toString();
   }
 
+  Future<InviteJoinContext> getInviteJoinContext({
+    String? tripId,
+    required String token,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanToken = token.trim();
+    if (cleanToken.isEmpty) {
+      throw StateError('Invitation invalide');
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable = regionFunctions.httpsCallable('getInviteJoinContext');
+    final payload = <String, dynamic>{'token': cleanToken};
+    final cleanTripId = tripId?.trim() ?? '';
+    if (cleanTripId.isNotEmpty) {
+      payload['tripId'] = cleanTripId;
+    }
+
+    final result = await callable.call(payload);
+    return _parseInviteJoinContext(result.data);
+  }
+
+  InviteJoinContext _parseInviteJoinContext(Object? raw) {
+    if (raw is! Map) {
+      throw StateError('Reponse serveur invalide');
+    }
+    final tripId = (raw['tripId'] as String?)?.trim() ?? '';
+    if (tripId.isEmpty) {
+      throw StateError('Reponse serveur invalide');
+    }
+    final tripTitle = (raw['tripTitle'] as String?)?.trim() ?? 'Voyage';
+    final requires = raw['requiresPlaceholderChoice'] == true;
+    final list = <InviteJoinPlaceholderOption>[];
+    final phRaw = raw['placeholders'];
+    if (phRaw is List) {
+      for (final item in phRaw) {
+        if (item is! Map) continue;
+        final id = (item['id'] as String?)?.trim() ?? '';
+        if (id.isEmpty) continue;
+        final name = (item['displayName'] as String?)?.trim() ?? '';
+        list.add(
+          InviteJoinPlaceholderOption(
+            id: id,
+            displayName: name.isEmpty ? 'Voyageur' : name,
+          ),
+        );
+      }
+    }
+    return InviteJoinContext(
+      tripId: tripId,
+      tripTitle: tripTitle,
+      placeholders: list,
+      requiresPlaceholderChoice: requires,
+    );
+  }
+
   Future<void> joinTripWithInvite({
     required String tripId,
     required String token,
+    String? placeholderMemberId,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -265,15 +329,23 @@ class TripsRepository {
     final regionFunctions =
         FirebaseFunctions.instanceFor(region: 'europe-west1');
     final callable = regionFunctions.httpsCallable('joinTripWithInvite');
-    await callable.call(<String, dynamic>{
-      'tripId': tripId,
+    final payload = <String, dynamic>{
+      'tripId': tripId.trim(),
       'token': cleanToken,
-    });
+    };
+    final ph = placeholderMemberId?.trim();
+    if (ph != null && ph.isNotEmpty) {
+      payload['placeholderMemberId'] = ph;
+    }
+    await callable.call(payload);
   }
 
   /// Joins using only the invite token (same as opening the invite link).
   /// Returns the trip id for navigation.
-  Future<String> joinTripWithInviteToken(String token) async {
+  Future<String> joinTripWithInviteToken(
+    String token, {
+    String? placeholderMemberId,
+  }) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
@@ -287,9 +359,12 @@ class TripsRepository {
     final regionFunctions =
         FirebaseFunctions.instanceFor(region: 'europe-west1');
     final callable = regionFunctions.httpsCallable('joinTripWithInviteToken');
-    final result = await callable.call(<String, dynamic>{
-      'token': cleanToken,
-    });
+    final payload = <String, dynamic>{'token': cleanToken};
+    final ph = placeholderMemberId?.trim();
+    if (ph != null && ph.isNotEmpty) {
+      payload['placeholderMemberId'] = ph;
+    }
+    final result = await callable.call(payload);
     final data = result.data;
     if (data is! Map) {
       throw StateError('Reponse serveur invalide');
@@ -299,6 +374,138 @@ class TripsRepository {
       throw StateError('Reponse serveur invalide');
     }
     return tripId.trim();
+  }
+
+  /// Adds a placeholder traveler (owner only). Visible in [memberIds] and
+  /// expense groups until someone joins and claims this row.
+  Future<void> addTripPlaceholderMember({
+    required String tripId,
+    required String displayName,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final name = displayName.trim();
+    if (name.isEmpty) {
+      throw StateError('Nom obligatoire');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut ajouter un voyageur prevu');
+    }
+
+    final phId = generateTripPlaceholderMemberId();
+    final groupsSnap =
+        await tripRef.collection('expenseGroups').get();
+
+    var batch = firestore.batch();
+    var n = 0;
+    batch.update(tripRef, {
+      'memberIds': FieldValue.arrayUnion(<String>[phId]),
+      'memberPublicLabels.$phId': name,
+    });
+    n++;
+
+    for (final doc in groupsSnap.docs) {
+      batch.update(doc.reference, {
+        'visibleToMemberIds': FieldValue.arrayUnion(<String>[phId]),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = firestore.batch();
+        n = 0;
+      }
+    }
+    if (n > 0) {
+      await batch.commit();
+    }
+  }
+
+  Future<void> updateTripPlaceholderMemberName({
+    required String tripId,
+    required String placeholderId,
+    required String displayName,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanPh = placeholderId.trim();
+    if (cleanTripId.isEmpty || cleanPh.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (!isTripPlaceholderMemberId(cleanPh)) {
+      throw StateError('Membre invalide');
+    }
+
+    final name = displayName.trim();
+    if (name.isEmpty) {
+      throw StateError('Nom obligatoire');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut modifier un voyageur prevu');
+    }
+
+    final memberIds = ((data['memberIds'] as List<dynamic>?) ?? const [])
+        .map((e) => e.toString())
+        .toList();
+    if (!memberIds.contains(cleanPh)) {
+      throw StateError('Voyageur prevu introuvable');
+    }
+
+    await tripRef.update(<String, dynamic>{'memberPublicLabels.$cleanPh': name});
+  }
+
+  Future<void> removeTripPlaceholderMember({
+    required String tripId,
+    required String placeholderId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanPh = placeholderId.trim();
+    if (cleanTripId.isEmpty || cleanPh.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final regionFunctions =
+        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable =
+        regionFunctions.httpsCallable('removeTripPlaceholderMember');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'placeholderId': cleanPh,
+    });
   }
 
   /// Ensures this user's [memberPublicLabels] entry exists on the trip (email
@@ -336,6 +543,11 @@ class TripsRepository {
     }
     if (cleanMemberId == user.uid) {
       throw StateError('Le proprietaire ne peut pas se supprimer lui-meme');
+    }
+    if (isTripPlaceholderMemberId(cleanMemberId)) {
+      throw StateError(
+        'Retire les voyageurs prévus depuis l’aperçu du voyage (icône dédiée).',
+      );
     }
 
     final docRef = firestore.collection('trips').doc(tripId);
