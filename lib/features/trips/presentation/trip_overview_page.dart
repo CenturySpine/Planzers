@@ -7,10 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
-import 'package:planzers/features/trips/presentation/trip_placeholders_page.dart';
+import 'package:planzers/features/trips/presentation/trip_participants_page.dart';
 import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -30,7 +29,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   bool _isEditing = false;
   bool _isSaving = false;
   bool _inviteClipboardBusy = false;
-  final Set<String> _removingMemberIds = <String>{};
   DateTime? _editStartDate;
   DateTime? _editEndDate;
 
@@ -196,57 +194,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  Future<void> _removeMember(String memberId, String memberLabel) async {
-    final cleanMemberId = memberId.trim();
-    if (cleanMemberId.isEmpty || _removingMemberIds.contains(cleanMemberId)) {
-      return;
-    }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Retirer ce voyageur ?'),
-        content: Text(
-          'Retirer "$memberLabel" du voyage en cours ?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Retirer'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) {
-      return;
-    }
-
-    setState(() => _removingMemberIds.add(cleanMemberId));
-    try {
-      await ref.read(tripsRepositoryProvider).removeMemberFromTrip(
-            tripId: _trip.id,
-            memberId: cleanMemberId,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyageur retire du voyage')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression voyageur: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _removingMemberIds.remove(cleanMemberId));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
@@ -268,13 +215,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
                 .map((id) => id.toString())
                 .toList();
-        final liveMemberPublicLabels = liveData != null &&
-                liveData.containsKey('memberPublicLabels')
-            ? Trip.memberPublicLabelsFromFirestore(
-                liveData['memberPublicLabels'],
-              )
-            : _trip.memberPublicLabels;
-
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
 
@@ -320,11 +260,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             : const Icon(Icons.group_add_outlined),
                       ),
                       IconButton(
-                        tooltip: 'Voyageurs prévus',
+                        tooltip: 'Participants',
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => TripPlaceholdersPage(
+                              builder: (_) => TripParticipantsPage(
                                 tripId: _trip.id,
                               ),
                             ),
@@ -567,14 +507,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       actionTooltip: 'Ouvrir la localisation',
                     ),
                     const SizedBox(height: 12),
-                    _MembersInfoRow(
-                      memberIds: liveMemberIds,
-                      memberPublicLabels: liveMemberPublicLabels,
-                      currentUserId: myUid,
-                      canManageMembers: canEdit,
-                      onRemoveMember: _removeMember,
-                      isRemovingMember: (memberId) =>
-                          _removingMemberIds.contains(memberId),
+                    _InfoRow(
+                      label: 'Participants',
+                      value: () {
+                        final n = liveMemberIds
+                            .map((id) => id.trim())
+                            .where((id) => id.isNotEmpty)
+                            .length;
+                        if (n == 0) return '-';
+                        return '$n';
+                      }(),
                     ),
                     const SizedBox(height: 12),
                     _InfoRow(
@@ -798,112 +740,6 @@ class _OwnerInfoRow extends StatelessWidget {
                 : 'Nom indisponible';
 
         return _InfoRow(label: 'Proprietaire', value: ownerLabel);
-      },
-    );
-  }
-}
-
-class _MembersInfoRow extends StatelessWidget {
-  const _MembersInfoRow({
-    required this.memberIds,
-    required this.memberPublicLabels,
-    required this.currentUserId,
-    required this.canManageMembers,
-    required this.onRemoveMember,
-    required this.isRemovingMember,
-  });
-
-  final List<String> memberIds;
-  final Map<String, String> memberPublicLabels;
-  final String? currentUserId;
-  final bool canManageMembers;
-  final Future<void> Function(String memberId, String memberLabel)
-      onRemoveMember;
-  final bool Function(String memberId) isRemovingMember;
-
-  @override
-  Widget build(BuildContext context) {
-    final cleanMemberIds =
-        memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
-
-    if (cleanMemberIds.isEmpty) {
-      return const _InfoRow(label: 'Membres', value: '-');
-    }
-
-    final usersQuery = FirebaseFirestore.instance
-        .collection('users')
-        .where(FieldPath.documentId, whereIn: cleanMemberIds)
-        .snapshots();
-
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: usersQuery,
-      builder: (context, snapshot) {
-        final docsById = <String, Map<String, dynamic>>{};
-        for (final doc in snapshot.data?.docs ?? const []) {
-          docsById[doc.id] = doc.data();
-        }
-
-        final chips = <Widget>[];
-        for (final memberId in cleanMemberIds) {
-          final label = resolveTripMemberDisplayLabel(
-            memberId: memberId,
-            userData: docsById[memberId],
-            tripMemberPublicLabels: memberPublicLabels,
-            currentUserId: currentUserId,
-            emptyFallback: 'Utilisateur',
-          );
-          final canRemoveThisMember = canManageMembers &&
-              currentUserId != null &&
-              memberId != currentUserId &&
-              !isTripPlaceholderMemberId(memberId);
-          final isRemoving = isRemovingMember(memberId);
-
-          chips.add(
-            Chip(
-              label: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-              ),
-              deleteIcon: canRemoveThisMember
-                  ? (isRemoving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.close, size: 18))
-                  : null,
-              onDeleted: canRemoveThisMember && !isRemoving
-                  ? () {
-                      onRemoveMember(memberId, label);
-                    }
-                  : null,
-              deleteIconColor: Theme.of(context).colorScheme.error,
-              materialTapTargetSize: MaterialTapTargetSize.padded,
-              visualDensity: VisualDensity.standard,
-            ),
-          );
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 110,
-              child: Text(
-                'Membres',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-            Expanded(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: chips,
-              ),
-            ),
-          ],
-        );
       },
     );
   }

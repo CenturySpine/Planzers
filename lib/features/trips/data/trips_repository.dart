@@ -546,7 +546,8 @@ class TripsRepository {
     }
     if (isTripPlaceholderMemberId(cleanMemberId)) {
       throw StateError(
-        'Retire les voyageurs prévus depuis l’aperçu du voyage (icône dédiée).',
+        'Retire un voyageur prévu depuis la liste des participants '
+        '(icône sur l’aperçu du voyage).',
       );
     }
 
