@@ -77,7 +77,9 @@ class TripExpensesPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'trip_expenses_add',
+        tooltip: 'Ajouter une dépense',
         onPressed: () => _openAddExpenseSheetFromFab(
           context,
           ref,
@@ -85,8 +87,7 @@ class TripExpensesPage extends ConsumerWidget {
           trip.memberIds,
           trip.memberPublicLabels,
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Ajouter une dépense'),
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -70,10 +70,11 @@ class TripActivitiesPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'trip_activities_add',
+        tooltip: 'Proposer',
         onPressed: () => _openAddActivitySheet(context, ref, trip.id),
-        icon: const Icon(Icons.add),
-        label: const Text('Proposer'),
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -31,7 +31,9 @@ class TripRoomsPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'trip_rooms_add',
+        tooltip: 'Créer',
         onPressed: () => _openCreateRoomSheet(
           context,
           ref,
@@ -39,8 +41,7 @@ class TripRoomsPage extends ConsumerWidget {
           memberIds: trip.memberIds,
           memberPublicLabels: trip.memberPublicLabels,
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Créer'),
+        child: const Icon(Icons.add),
       ),
     );
   }
