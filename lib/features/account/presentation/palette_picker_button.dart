@@ -86,8 +86,8 @@ class PalettePickerButton extends ConsumerWidget {
     );
   }
 
-  /// Fixed-size swatches (no [Expanded] / empty [DecoratedBox]) so the strip
-  /// still paints inside popup [IntrinsicWidth] layouts.
+  /// Two fixed swatches: main brand hue + accent (secondary is often too close
+  /// between palettes for a third dot to read at a glance).
   Widget _paletteSwatchStrip(
     BuildContext context, {
     required BrandPaletteData colors,
@@ -97,8 +97,6 @@ class PalettePickerButton extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _swatch(colors.primary, outline),
-        const SizedBox(width: 3),
-        _swatch(colors.secondary, outline),
         const SizedBox(width: 3),
         _swatch(colors.accent, outline),
       ],
