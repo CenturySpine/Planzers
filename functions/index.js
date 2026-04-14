@@ -879,6 +879,87 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
   }
 );
 
+exports.resyncMyTripUnreadCounters = onCall(
+  {
+    region: 'europe-west1',
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const db = admin.firestore();
+    const countersSnap = await db
+      .collection('users')
+      .doc(uid)
+      .collection('tripNotificationCounters')
+      .get();
+    const memberTripsSnap = await db
+      .collection('trips')
+      .where('memberIds', 'array-contains', uid)
+      .get();
+
+    const watchedChannels = [
+      TRIP_NOTIFICATION_CHANNELS.MESSAGES,
+      TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
+    ];
+    const memberTripIds = new Set(memberTripsSnap.docs.map((doc) => doc.id));
+
+    // Remove stale counters from trips the user no longer belongs to.
+    let deleteBatch = db.batch();
+    let deleteOps = 0;
+    for (const counterDoc of countersSnap.docs) {
+      if (memberTripIds.has(counterDoc.id)) {
+        continue;
+      }
+      deleteBatch.delete(counterDoc.ref);
+      deleteOps++;
+      if (deleteOps >= 400) {
+        await deleteBatch.commit();
+        deleteBatch = db.batch();
+        deleteOps = 0;
+      }
+    }
+    if (deleteOps > 0) {
+      await deleteBatch.commit();
+    }
+
+    for (const tripDoc of memberTripsSnap.docs) {
+      const tripId = tripDoc.id;
+      const readSnap = await db
+        .collection('trips')
+        .doc(tripId)
+        .collection('notificationReads')
+        .doc(uid)
+        .get();
+      const readData = readSnap.exists ? readSnap.data() || {} : {};
+
+      for (const channel of watchedChannels) {
+        const readAfter =
+          channelReadTimestamp(readData, channel) ||
+          admin.firestore.Timestamp.fromMillis(0);
+        const unread = await countUnreadForChannel({
+          tripId,
+          uid,
+          channel,
+          readAfter,
+        });
+        await setTripChannelCounter({
+          tripId,
+          uid,
+          channel,
+          value: unread,
+        });
+      }
+    }
+
+    return { ok: true, tripCount: memberTripsSnap.size };
+  }
+);
+
 exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
