@@ -14,6 +14,7 @@ import 'package:planzers/features/trips/presentation/open_address_in_google_maps
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_participants_page.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
+
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
 
@@ -213,52 +214,29 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       }
       if (!mounted) return;
 
-      var imagePath = picked.path;
-      final cropWanted = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Ajuster l image ?'),
-          content: const Text(
-            'Tu peux recadrer et zoomer pour adapter la photo à la bannière.',
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Recadrer la bannière',
+            toolbarColor: colorScheme.primary,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: colorScheme.primary,
+            dimmedLayerColor: Colors.black54,
+            lockAspectRatio: false,
+            initAspectRatio: CropAspectRatioPreset.ratio16x9,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Utiliser telle quelle'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Recadrer'),
-            ),
-          ],
-        ),
+          IOSUiSettings(
+            title: 'Recadrer la bannière',
+            aspectRatioLockEnabled: false,
+            resetAspectRatioEnabled: true,
+          ),
+        ],
       );
-
-      if (cropWanted == true) {
-        final cropped = await ImageCropper().cropImage(
-          sourcePath: picked.path,
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'Recadrer la bannière',
-              toolbarColor: colorScheme.primary,
-              toolbarWidgetColor: Colors.white,
-              activeControlsWidgetColor: colorScheme.primary,
-              dimmedLayerColor: Colors.black54,
-              lockAspectRatio: false,
-              initAspectRatio: CropAspectRatioPreset.ratio16x9,
-            ),
-            IOSUiSettings(
-              title: 'Recadrer la bannière',
-              aspectRatioLockEnabled: false,
-              resetAspectRatioEnabled: true,
-            ),
-          ],
-        );
-        if (cropped == null) {
-          return;
-        }
-        imagePath = cropped.path;
+      if (cropped == null) {
+        return;
       }
+      final imagePath = cropped.path;
 
       final bytes = await XFile(imagePath).readAsBytes();
       final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(imagePath);
@@ -307,7 +285,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
     setState(() => _isBannerBusy = true);
     try {
-      await ref.read(tripsRepositoryProvider).removeTripBannerImage(tripId: _trip.id);
+      await ref
+          .read(tripsRepositoryProvider)
+          .removeTripBannerImage(tripId: _trip.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Photo supprimée')),
@@ -337,8 +317,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       stream: tripDocStream,
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
-        final liveLinkUrl =
-            (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+        final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =
@@ -352,7 +331,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
 
         return ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.zero,
           children: [
             Stack(
               children: [
@@ -361,10 +340,54 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   busy: _isBannerBusy,
                   onPick: canEdit ? _pickAndUploadBannerImage : null,
                 ),
+                if (!_isEditing)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black87,
+                            Colors.black45,
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _trip.title.isEmpty ? 'Sans titre' : _trip.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(color: Colors.white),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _trip.destination.isEmpty
+                                  ? 'Destination inconnue'
+                                  : _trip.destination,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 if (canEdit)
                   Positioned(
                     right: 12,
-                    bottom: 12,
+                    top: 12,
                     child: Material(
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(999),
@@ -400,131 +423,88 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   color: Colors.white,
                                 ),
                               )
-                            : const Icon(Icons.photo_camera_outlined, color: Colors.white),
+                            : const Icon(Icons.photo_camera_outlined,
+                                color: Colors.white),
                       ),
                     ),
                   ),
               ],
             ),
-            if (canEdit)
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 8),
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (_isEditing) ...[
-                      IconButton(
-                        tooltip: 'Annuler',
-                        onPressed: _isSaving ? null : _cancelEditing,
-                        icon: const Icon(Icons.close),
-                      ),
-                      IconButton(
-                        tooltip: 'Enregistrer',
-                        onPressed: _isSaving ? null : _save,
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.check),
-                      ),
-                    ] else ...[
-                      IconButton(
-                        tooltip: 'Partager invitation',
-                        onPressed: _inviteClipboardBusy ? null : _shareInviteLink,
-                        icon: _inviteClipboardBusy
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.group_add_outlined),
-                      ),
-                      IconButton(
-                        tooltip: 'Participants',
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => TripParticipantsPage(
-                                tripId: _trip.id,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.assignment_ind_outlined),
-                      ),
-                      IconButton(
-                        tooltip: 'Copier le code d invitation',
-                        onPressed: _inviteClipboardBusy ? null : _copyInviteCode,
-                        icon: const Icon(Icons.vpn_key_outlined),
-                      ),
-                      IconButton(
-                        tooltip: 'Modifier le voyage',
-                        onPressed: _startEditing,
-                        icon: const Icon(Icons.edit_outlined),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            if (_isEditing) ...[
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _titleController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Titre',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Titre obligatoire';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _destinationController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Destination',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Destination obligatoire';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de début'),
-                      subtitle: Text(formatOptionalTripDate(_editStartDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                children: [
+                  if (_isEditing) ...[
+                    Form(
+                      key: _formKey,
+                      child: Column(
                         children: [
-                          if (_editStartDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setState(() => _editStartDate = null),
+                          TextFormField(
+                            controller: _titleController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Titre',
+                              border: OutlineInputBorder(),
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: () async {
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Titre obligatoire';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _destinationController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Destination',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Destination obligatoire';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Date de début'),
+                            subtitle:
+                                Text(formatOptionalTripDate(_editStartDate)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_editStartDate != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () =>
+                                        setState(() => _editStartDate = null),
+                                  ),
+                                IconButton(
+                                  icon:
+                                      const Icon(Icons.calendar_today_outlined),
+                                  onPressed: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate:
+                                          _editStartDate ?? DateTime.now(),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (picked != null && mounted) {
+                                      setState(() => _editStartDate = picked);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            onTap: () async {
                               final picked = await showDatePicker(
                                 context: context,
-                                initialDate:
-                                    _editStartDate ?? DateTime.now(),
+                                initialDate: _editStartDate ?? DateTime.now(),
                                 firstDate: DateTime(2000),
                                 lastDate: DateTime(2100),
                               );
@@ -533,40 +513,46 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               }
                             },
                           ),
-                        ],
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _editStartDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null && mounted) {
-                          setState(() => _editStartDate = picked);
-                        }
-                      },
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de fin'),
-                      subtitle: Text(formatOptionalTripDate(_editEndDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_editEndDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setState(() => _editEndDate = null),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Date de fin'),
+                            subtitle:
+                                Text(formatOptionalTripDate(_editEndDate)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (_editEndDate != null)
+                                  IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () =>
+                                        setState(() => _editEndDate = null),
+                                  ),
+                                IconButton(
+                                  icon:
+                                      const Icon(Icons.calendar_today_outlined),
+                                  onPressed: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: _editEndDate ??
+                                          _editStartDate ??
+                                          DateTime.now(),
+                                      firstDate:
+                                          _editStartDate ?? DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (picked != null && mounted) {
+                                      setState(() => _editEndDate = picked);
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: () async {
+                            onTap: () async {
                               final picked = await showDatePicker(
                                 context: context,
-                                initialDate:
-                                    _editEndDate ?? _editStartDate ?? DateTime.now(),
+                                initialDate: _editEndDate ??
+                                    _editStartDate ??
+                                    DateTime.now(),
                                 firstDate: _editStartDate ?? DateTime(2000),
                                 lastDate: DateTime(2100),
                               );
@@ -575,143 +561,192 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               }
                             },
                           ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _addressController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Adresse',
+                              hintText: '10 Rue de Rivoli, 75001 Paris',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _linkController,
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              labelText: 'Lien (Airbnb, Booking, site, ...)',
+                              hintText: 'https://...',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.url,
+                            validator: (value) {
+                              final v = (value ?? '').trim();
+                              if (v.isEmpty) return null;
+                              final uri = Uri.tryParse(v);
+                              if (uri == null || !uri.isAbsolute) {
+                                return 'Lien invalide (ex: https://...)';
+                              }
+                              if (uri.scheme != 'http' &&
+                                  uri.scheme != 'https') {
+                                return 'Le lien doit commencer par http(s)://';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) => _save(),
+                          ),
                         ],
                       ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate:
-                              _editEndDate ?? _editStartDate ?? DateTime.now(),
-                          firstDate: _editStartDate ?? DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null && mounted) {
-                          setState(() => _editEndDate = picked);
-                        }
-                      },
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _addressController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Adresse',
-                        hintText: '10 Rue de Rivoli, 75001 Paris',
-                        border: OutlineInputBorder(),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    if (formatTripDateRange(_trip.startDate, _trip.endDate)
+                        .isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.date_range_outlined,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              formatTripDateRange(
+                                  _trip.startDate, _trip.endDate),
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                  ],
+                  if (linkUrlForUi.isNotEmpty) ...[
+                    LinkPreviewCardFromFirestore(
+                      url: linkUrlForUi,
+                      preview: livePreview,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (canEdit)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (_isEditing) ...[
+                            IconButton(
+                              tooltip: 'Annuler',
+                              onPressed: _isSaving ? null : _cancelEditing,
+                              icon: const Icon(Icons.close),
+                            ),
+                            IconButton(
+                              tooltip: 'Enregistrer',
+                              onPressed: _isSaving ? null : _save,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.check),
+                            ),
+                          ] else ...[
+                            IconButton(
+                              tooltip: 'Partager invitation',
+                              onPressed: _inviteClipboardBusy
+                                  ? null
+                                  : _shareInviteLink,
+                              icon: _inviteClipboardBusy
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.group_add_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Participants',
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => TripParticipantsPage(
+                                      tripId: _trip.id,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.assignment_ind_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Copier le code d invitation',
+                              onPressed:
+                                  _inviteClipboardBusy ? null : _copyInviteCode,
+                              icon: const Icon(Icons.vpn_key_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Modifier le voyage',
+                              onPressed: _startEditing,
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _linkController,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'Lien (Airbnb, Booking, site, ...)',
-                        hintText: 'https://...',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.url,
-                      validator: (value) {
-                        final v = (value ?? '').trim();
-                        if (v.isEmpty) return null;
-                        final uri = Uri.tryParse(v);
-                        if (uri == null || !uri.isAbsolute) {
-                          return 'Lien invalide (ex: https://...)';
-                        }
-                        if (uri.scheme != 'http' && uri.scheme != 'https') {
-                          return 'Le lien doit commencer par http(s)://';
-                        }
-                        return null;
-                      },
-                      onFieldSubmitted: (_) => _save(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ] else ...[
-              Text(
-                _trip.title.isEmpty ? 'Sans titre' : _trip.title,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _trip.destination.isEmpty
-                    ? 'Destination inconnue'
-                    : _trip.destination,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (formatTripDateRange(_trip.startDate, _trip.endDate)
-                  .isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.date_range_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        formatTripDateRange(_trip.startDate, _trip.endDate),
-                        style: Theme.of(context).textTheme.bodyLarge,
+                  if (linkUrlForUi.isNotEmpty) const SizedBox(height: 8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _InfoRow(
+                            label: 'Adresse',
+                            value: _trip.address,
+                            actionIcon: Icons.location_on_outlined,
+                            onActionPressed: _trip.address.trim().isEmpty
+                                ? null
+                                : () => openAddressInGoogleMaps(
+                                      context,
+                                      _trip.address,
+                                    ),
+                            actionTooltip: 'Ouvrir la localisation',
+                          ),
+                          const SizedBox(height: 12),
+                          _InfoRow(
+                            label: 'Participants',
+                            value: () {
+                              final n = liveMemberIds
+                                  .map((id) => id.trim())
+                                  .where((id) => id.isNotEmpty)
+                                  .length;
+                              if (n == 0) return '-';
+                              return '$n';
+                            }(),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
+                  if (myUid != null &&
+                      !canEdit &&
+                      liveMemberIds
+                          .map((id) => id.trim())
+                          .where((id) => id.isNotEmpty)
+                          .contains(myUid)) ...[
+                    const SizedBox(height: 16),
+                    _LeaveTripSection(tripId: _trip.id),
                   ],
-                ),
-              ],
-              const SizedBox(height: 16),
-            ],
-            if (linkUrlForUi.isNotEmpty) ...[
-              LinkPreviewCardFromFirestore(
-                url: linkUrlForUi,
-                preview: livePreview,
-              ),
-              const SizedBox(height: 16),
-            ],
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _InfoRow(
-                      label: 'Adresse',
-                      value: _trip.address,
-                      actionIcon: Icons.location_on_outlined,
-                      onActionPressed: _trip.address.trim().isEmpty
-                          ? null
-                          : () => openAddressInGoogleMaps(
-                                context,
-                                _trip.address,
-                              ),
-                      actionTooltip: 'Ouvrir la localisation',
-                    ),
-                    const SizedBox(height: 12),
-                    _InfoRow(
-                      label: 'Participants',
-                      value: () {
-                        final n = liveMemberIds
-                            .map((id) => id.trim())
-                            .where((id) => id.isNotEmpty)
-                            .length;
-                        if (n == 0) return '-';
-                        return '$n';
-                      }(),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
-            if (myUid != null &&
-                !canEdit &&
-                liveMemberIds
-                    .map((id) => id.trim())
-                    .where((id) => id.isNotEmpty)
-                    .contains(myUid)) ...[
-              const SizedBox(height: 16),
-              _LeaveTripSection(tripId: _trip.id),
-            ],
           ],
         );
       },
@@ -732,53 +767,50 @@ class _TripBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(20));
-    return Material(
-      shape: shape,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPick,
-        child: Container(
-          height: 200,
-          width: double.infinity,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: imageUrl.isNotEmpty
-              ? Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(child: Icon(Icons.broken_image_outlined, size: 42));
-                      },
-                    ),
-                    if (busy)
-                      const ColoredBox(
-                        color: Colors.black26,
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        ),
+    return InkWell(
+      onTap: onPick,
+      child: Container(
+        height: 280,
+        width: double.infinity,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: imageUrl.isNotEmpty
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                          child: Icon(Icons.broken_image_outlined, size: 42));
+                    },
+                  ),
+                  if (busy)
+                    const ColoredBox(
+                      color: Colors.black26,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
                       ),
-                  ],
-                )
-              : Center(
-                  child: busy
-                      ? const CircularProgressIndicator(strokeWidth: 2.5)
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.add_photo_alternate_outlined, size: 36),
-                            const SizedBox(height: 8),
-                            Text(
-                              onPick == null
-                                  ? 'Aucune photo'
-                                  : 'Ajouter une photo de bannière',
-                            ),
-                          ],
-                        ),
-                ),
-        ),
+                    ),
+                ],
+              )
+            : Center(
+                child: busy
+                    ? const CircularProgressIndicator(strokeWidth: 2.5)
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add_photo_alternate_outlined,
+                              size: 36),
+                          const SizedBox(height: 8),
+                          Text(
+                            onPick == null
+                                ? 'Aucune photo'
+                                : 'Ajouter une photo de bannière',
+                          ),
+                        ],
+                      ),
+              ),
       ),
     );
   }
