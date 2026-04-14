@@ -2,7 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/core/notifications/notification_center_repository.dart';
+import 'package:planzers/core/notifications/notification_channel.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -36,15 +39,15 @@ const double _kTripShellWideBreakpoint = 720;
 
 Widget _buildNavIcon({
   required IconData icon,
-  required int unreadMessages,
-  required bool isMessagingTab,
+  required int unreadCount,
+  required bool showBadge,
   Color? color,
 }) {
-  if (!isMessagingTab || unreadMessages <= 0) {
+  if (!showBadge || unreadCount <= 0) {
     return Icon(icon, color: color);
   }
   return Badge.count(
-    count: unreadMessages,
+    count: unreadCount,
     child: Icon(icon, color: color),
   );
 }
@@ -100,20 +103,54 @@ class TripShellPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripStreamProvider(tripId));
+    final countersAsync = ref.watch(tripNotificationCountersProvider(tripId));
     final messagesAsync = ref.watch(tripMessagesStreamProvider(tripId));
-    final lastReadAtAsync = ref.watch(tripMessagesLastReadAtProvider(tripId));
+    final activitiesAsync = ref.watch(tripActivitiesStreamProvider(tripId));
+    final lastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: tripId, channel: TripNotificationChannel.messages),
+      ),
+    );
+    final activitiesLastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: tripId, channel: TripNotificationChannel.activities),
+      ),
+    );
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
 
     var unreadMessages = 0;
+    var unreadActivities = 0;
     final messages = messagesAsync.asData?.value;
+    final activities = activitiesAsync.asData?.value;
     final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
-    if (myUid != null && myUid.isNotEmpty && messages != null) {
+    final activitiesLastReadAt = activitiesLastReadAtAsync.asData?.value?.toUtc();
+    final counters = countersAsync.asData?.value;
+    if (counters != null &&
+        counters.hasChannel(TripNotificationChannel.messages)) {
+      unreadMessages = counters.unreadFor(TripNotificationChannel.messages);
+    } else if (myUid != null && myUid.isNotEmpty && messages != null) {
       unreadMessages = messages.where((message) {
         if (message.authorId == myUid) return false;
         if (lastReadAt == null) return true;
         return message.createdAt.toUtc().isAfter(lastReadAt);
       }).length;
     }
+    if (counters != null &&
+        counters.hasChannel(TripNotificationChannel.activities)) {
+      unreadActivities = counters.unreadFor(TripNotificationChannel.activities);
+    } else if (myUid != null && myUid.isNotEmpty && activities != null) {
+      unreadActivities = activities.where((activity) {
+        if (activity.createdBy == myUid) return false;
+        if (activitiesLastReadAt == null) return true;
+        return activity.createdAt.toUtc().isAfter(activitiesLastReadAt);
+      }).length;
+    }
+
+    int unreadForLabel(String label) => switch (label) {
+          'Messagerie' => unreadMessages,
+          'Activités' => unreadActivities,
+          _ => 0,
+        };
 
     return tripAsync.when(
       data: (trip) {
@@ -172,13 +209,15 @@ class TripShellPage extends ConsumerWidget {
                             NavigationRailDestination(
                               icon: _buildNavIcon(
                                 icon: d.icon,
-                                unreadMessages: unreadMessages,
-                                isMessagingTab: d.label == 'Messagerie',
+                                unreadCount: unreadForLabel(d.label),
+                                showBadge: d.label == 'Messagerie' ||
+                                    d.label == 'Activités',
                               ),
                               selectedIcon: _buildNavIcon(
                                 icon: d.selectedIcon,
-                                unreadMessages: unreadMessages,
-                                isMessagingTab: d.label == 'Messagerie',
+                                unreadCount: unreadForLabel(d.label),
+                                showBadge: d.label == 'Messagerie' ||
+                                    d.label == 'Activités',
                               ),
                               label: Text(d.label),
                             ),
@@ -193,7 +232,10 @@ class TripShellPage extends ConsumerWidget {
                         selectedIndex: navigationShell.currentIndex,
                         onDestinationSelected: navigationShell.goBranch,
                         destinations: _destinations,
-                        unreadMessages: unreadMessages,
+                        unreadByTabLabel: {
+                          'Messagerie': unreadMessages,
+                          'Activités': unreadActivities,
+                        },
                       ),
               );
             },
@@ -238,13 +280,13 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
-    required this.unreadMessages,
+    required this.unreadByTabLabel,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<_TripNavDestination> destinations;
-  final int unreadMessages;
+  final Map<String, int> unreadByTabLabel;
 
   static const double _barHeight = 80;
   static const double _minItemWidth = 80;
@@ -294,8 +336,9 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                         ),
                         child: _buildNavIcon(
                           icon: selected ? d.selectedIcon : d.icon,
-                          unreadMessages: unreadMessages,
-                          isMessagingTab: d.label == 'Messagerie',
+                          unreadCount: unreadByTabLabel[d.label] ?? 0,
+                          showBadge: d.label == 'Messagerie' ||
+                              d.label == 'Activités',
                           color: selected
                               ? colorScheme.onSecondaryContainer
                               : colorScheme.onSurfaceVariant,

@@ -13,6 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:planzers/features/auth/auth_gate.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
+import 'package:planzers/core/notifications/notification_center_repository.dart';
+import 'package:planzers/core/notifications/notification_channel.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
 import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -28,12 +30,29 @@ class TripMessagingPage extends ConsumerStatefulWidget {
 class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  late final NotificationCenterRepository _notificationCenter;
   bool _sending = false;
   String? _selectedMessageId;
   DateTime? _lastReadMarkedAt;
+  DateTime? _lastPresencePingAt;
+  String? _presenceTripId;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationCenter = ref.read(notificationCenterRepositoryProvider);
+  }
 
   @override
   void dispose() {
+    final tripId = _presenceTripId;
+    if (tripId != null && tripId.isNotEmpty) {
+      unawaited(
+        _notificationCenter.clearOpenChannel(
+              tripId: tripId,
+            ),
+      );
+    }
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -65,17 +84,36 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     required List<TripMessage> messages,
   }) {
     if (!_isMessagingTabCurrentlyVisible()) return;
-    if (messages.isEmpty) return;
-    final latestSeenAt = messages.last.createdAt.toUtc();
+    final latestSeenAt = DateTime.now().toUtc();
     final lastMarked = _lastReadMarkedAt;
-    if (lastMarked != null && !latestSeenAt.isAfter(lastMarked)) {
+    if (lastMarked != null &&
+        latestSeenAt.difference(lastMarked) < const Duration(seconds: 2)) {
       return;
     }
     _lastReadMarkedAt = latestSeenAt;
     unawaited(
-      ref.read(tripMessagesRepositoryProvider).markMyMessagesAsReadUpTo(
+      _notificationCenter.markReadUpTo(
+        tripId: tripId,
+        channel: TripNotificationChannel.messages,
+        timestamp: latestSeenAt,
+      ),
+    );
+  }
+
+  void _syncPresenceIfNeeded(String tripId) {
+    if (!_isMessagingTabCurrentlyVisible()) return;
+    final now = DateTime.now().toUtc();
+    final sameTrip = _presenceTripId == tripId;
+    final shouldPing = !sameTrip ||
+        _lastPresencePingAt == null ||
+        now.difference(_lastPresencePingAt!) > const Duration(seconds: 25);
+    if (!shouldPing) return;
+    _presenceTripId = tripId;
+    _lastPresencePingAt = now;
+    unawaited(
+      _notificationCenter.setOpenChannel(
             tripId: tripId,
-            readUpTo: latestSeenAt,
+            channel: TripNotificationChannel.messages,
           ),
     );
   }
@@ -234,6 +272,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
+    _syncPresenceIfNeeded(trip.id);
     final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
         FirebaseAuth.instance.currentUser?.uid;
     final messagesAsync = ref.watch(tripMessagesStreamProvider(trip.id));

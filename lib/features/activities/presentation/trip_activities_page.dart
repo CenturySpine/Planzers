@@ -1,23 +1,107 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
+import 'package:planzers/core/notifications/notification_center_repository.dart';
+import 'package:planzers/core/notifications/notification_channel.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
-class TripActivitiesPage extends ConsumerWidget {
+class TripActivitiesPage extends ConsumerStatefulWidget {
   const TripActivitiesPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripActivitiesPage> createState() => _TripActivitiesPageState();
+}
+
+class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
+  late final NotificationCenterRepository _notificationCenter;
+  DateTime? _lastReadMarkedAt;
+  DateTime? _lastPresencePingAt;
+  String? _presenceTripId;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationCenter = ref.read(notificationCenterRepositoryProvider);
+  }
+
+  @override
+  void dispose() {
+    final tripId = _presenceTripId;
+    if (tripId != null && tripId.isNotEmpty) {
+      unawaited(
+        _notificationCenter.clearOpenChannel(
+              tripId: tripId,
+            ),
+      );
+    }
+    super.dispose();
+  }
+
+  bool _isActivitiesTabCurrentlyVisible() {
+    try {
+      final path = GoRouterState.of(context).uri.path;
+      return path.endsWith('/activities');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _markActivitiesAsReadIfNeeded({
+    required String tripId,
+    required List<TripActivity> items,
+  }) {
+    if (!_isActivitiesTabCurrentlyVisible()) return;
+    final latest = DateTime.now().toUtc();
+    final lastMarked = _lastReadMarkedAt;
+    if (lastMarked != null &&
+        latest.difference(lastMarked) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastReadMarkedAt = latest;
+    unawaited(
+      _notificationCenter.markReadUpTo(
+            tripId: tripId,
+            channel: TripNotificationChannel.activities,
+            timestamp: latest,
+          ),
+    );
+  }
+
+  void _syncPresenceIfNeeded(String tripId) {
+    if (!_isActivitiesTabCurrentlyVisible()) return;
+    final now = DateTime.now().toUtc();
+    final sameTrip = _presenceTripId == tripId;
+    final shouldPing = !sameTrip ||
+        _lastPresencePingAt == null ||
+        now.difference(_lastPresencePingAt!) > const Duration(seconds: 25);
+    if (!shouldPing) return;
+    _presenceTripId = tripId;
+    _lastPresencePingAt = now;
+    unawaited(
+      _notificationCenter.setOpenChannel(
+            tripId: tripId,
+            channel: TripNotificationChannel.activities,
+          ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final trip = TripScope.of(context);
+    _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
 
     return Scaffold(
       body: activitiesAsync.when(
         data: (items) {
+          _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
           if (items.isEmpty) {
             return ListView(
               padding: const EdgeInsets.all(24),

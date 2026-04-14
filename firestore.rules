@@ -33,6 +33,14 @@ service cloud.firestore {
       match /fcmTokens/{tokenDocId} {
         allow read, write: if signedIn() && request.auth.uid == userId;
       }
+
+      match /tripNotificationCounters/{tripId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+      }
+
+      match /tripNotificationPresence/{tripId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     match /trips/{tripId} {
