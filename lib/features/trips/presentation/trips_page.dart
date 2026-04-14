@@ -93,10 +93,22 @@ class _TripsPageState extends ConsumerState<TripsPage>
             children: [
               TabBar(
                 controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Passés'),
-                  Tab(text: 'En cours'),
-                  Tab(text: 'À venir'),
+                tabs: [
+                  _buildTimelineTab(
+                    context,
+                    label: 'Passés',
+                    count: grouped[_TripTimelineCategory.past]?.length ?? 0,
+                  ),
+                  _buildTimelineTab(
+                    context,
+                    label: 'En cours',
+                    count: grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
+                  ),
+                  _buildTimelineTab(
+                    context,
+                    label: 'À venir',
+                    count: grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
+                  ),
                 ],
               ),
               Expanded(
@@ -218,6 +230,26 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final aStart = a.startDate ?? a.endDate ?? a.createdAt;
     final bStart = b.startDate ?? b.endDate ?? b.createdAt;
     return aStart.compareTo(bStart);
+  }
+
+  Tab _buildTimelineTab(
+    BuildContext context, {
+    required String label,
+    required int count,
+  }) {
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+    return Tab(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          Text(
+            '$count',
+            style: labelStyle,
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openCreateTripDialog(
