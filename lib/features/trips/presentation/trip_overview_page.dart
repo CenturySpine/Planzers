@@ -329,6 +329,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+        final tripDateLabel =
+            formatTripDateRange(_trip.startDate, _trip.endDate);
 
         return ListView(
           padding: EdgeInsets.zero,
@@ -338,7 +340,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 _TripBanner(
                   imageUrl: liveBannerImageUrl,
                   busy: _isBannerBusy,
-                  onPick: canEdit ? _pickAndUploadBannerImage : null,
+                  onPick: canEdit && liveBannerImageUrl.isEmpty
+                      ? _pickAndUploadBannerImage
+                      : null,
                 ),
                 if (!_isEditing)
                   Positioned(
@@ -351,8 +355,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            Colors.black87,
-                            Colors.black45,
+                            Color(0xB1000000),
+                            Color(0x5C000000),
                             Colors.transparent,
                           ],
                         ),
@@ -379,6 +383,28 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   .titleMedium
                                   ?.copyWith(color: Colors.white),
                             ),
+                            if (tripDateLabel.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.date_range_outlined,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      tripDateLabel,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -601,27 +627,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     ),
                     const SizedBox(height: 16),
                   ] else ...[
-                    if (formatTripDateRange(_trip.startDate, _trip.endDate)
-                        .isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.date_range_outlined,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              formatTripDateRange(
-                                  _trip.startDate, _trip.endDate),
-                              style: Theme.of(context).textTheme.bodyLarge,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                     const SizedBox(height: 16),
                   ],
                   if (linkUrlForUi.isNotEmpty) ...[
