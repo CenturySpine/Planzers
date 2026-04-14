@@ -3,15 +3,39 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 
-class TripsPage extends ConsumerWidget {
+class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripsPage> createState() => _TripsPageState();
+}
+
+enum _TripTimelineCategory { past, ongoing, upcoming }
+
+class _TripsPageState extends ConsumerState<TripsPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsStreamProvider);
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -55,45 +79,76 @@ class TripsPage extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
-            itemCount: trips.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final trip = trips[index];
-              final canDelete = (myUid != null && trip.ownerId == myUid);
-              final dateLine =
-                  formatTripDateRange(trip.startDate, trip.endDate);
-              return ListTile(
-                onTap: () => context.push('/trips/${trip.id}/overview'),
-                title: Text(trip.title),
-                subtitle: Text(
-                  dateLine.isEmpty
-                      ? trip.destination
-                      : '$dateLine\n${trip.destination}',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+          final grouped = _groupTripsByTimeline(trips);
+          final colorScheme = Theme.of(context).colorScheme;
+          final palette = context.planzersColors;
+
+          final timelineColors = <_TripTimelineCategory, Color>{
+            _TripTimelineCategory.past: palette.warning,
+            _TripTimelineCategory.ongoing: colorScheme.primaryContainer,
+            _TripTimelineCategory.upcoming: colorScheme.tertiary,
+          };
+
+          return Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'Passés'),
+                  Tab(text: 'En cours'),
+                  Tab(text: 'À venir'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
                   children: [
-                    Text('${trip.memberIds.length} membre(s)'),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right),
-                    if (canDelete) ...[
-                      const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Supprimer',
-                        onPressed: () => _confirmAndDeleteTrip(
-                          context,
-                          ref,
-                          tripId: trip.id,
-                          tripTitle: trip.title,
-                        ),
-                        icon: const Icon(Icons.delete_outline),
+                    _TripsTimelineList(
+                      trips: grouped[_TripTimelineCategory.past] ?? const [],
+                      color: timelineColors[_TripTimelineCategory.past]!,
+                      emptyMessage: 'Aucun voyage passé.',
+                      myUid: myUid,
+                      onOpenTrip: (tripId) =>
+                          context.push('/trips/$tripId/overview'),
+                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                        context,
+                        ref,
+                        tripId: trip.id,
+                        tripTitle: trip.title,
                       ),
-                    ],
+                    ),
+                    _TripsTimelineList(
+                      trips: grouped[_TripTimelineCategory.ongoing] ?? const [],
+                      color: timelineColors[_TripTimelineCategory.ongoing]!,
+                      emptyMessage: 'Aucun voyage en cours.',
+                      myUid: myUid,
+                      onOpenTrip: (tripId) =>
+                          context.push('/trips/$tripId/overview'),
+                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                        context,
+                        ref,
+                        tripId: trip.id,
+                        tripTitle: trip.title,
+                      ),
+                    ),
+                    _TripsTimelineList(
+                      trips: grouped[_TripTimelineCategory.upcoming] ?? const [],
+                      color: timelineColors[_TripTimelineCategory.upcoming]!,
+                      emptyMessage: 'Aucun voyage à venir.',
+                      myUid: myUid,
+                      onOpenTrip: (tripId) =>
+                          context.push('/trips/$tripId/overview'),
+                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                        context,
+                        ref,
+                        tripId: trip.id,
+                        tripTitle: trip.title,
+                      ),
+                    ),
                   ],
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -105,6 +160,64 @@ class TripsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(List<Trip> trips) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final grouped = <_TripTimelineCategory, List<Trip>>{
+      _TripTimelineCategory.past: [],
+      _TripTimelineCategory.ongoing: [],
+      _TripTimelineCategory.upcoming: [],
+    };
+
+    for (final trip in trips) {
+      final category = _timelineCategoryForTrip(trip, today);
+      grouped[category]!.add(trip);
+    }
+
+    grouped[_TripTimelineCategory.past]!.sort(_comparePastTrips);
+    grouped[_TripTimelineCategory.ongoing]!.sort(_compareOngoingTrips);
+    grouped[_TripTimelineCategory.upcoming]!.sort(_compareUpcomingTrips);
+    return grouped;
+  }
+
+  _TripTimelineCategory _timelineCategoryForTrip(Trip trip, DateTime today) {
+    final start = trip.startDate != null
+        ? DateTime(trip.startDate!.year, trip.startDate!.month, trip.startDate!.day)
+        : null;
+    final end = trip.endDate != null
+        ? DateTime(trip.endDate!.year, trip.endDate!.month, trip.endDate!.day)
+        : null;
+
+    if (start == null && end == null) {
+      return _TripTimelineCategory.ongoing;
+    }
+    if (end != null && end.isBefore(today)) {
+      return _TripTimelineCategory.past;
+    }
+    if (start != null && start.isAfter(today)) {
+      return _TripTimelineCategory.upcoming;
+    }
+    return _TripTimelineCategory.ongoing;
+  }
+
+  int _comparePastTrips(Trip a, Trip b) {
+    final aEnd = a.endDate ?? a.startDate ?? a.createdAt;
+    final bEnd = b.endDate ?? b.startDate ?? b.createdAt;
+    return bEnd.compareTo(aEnd);
+  }
+
+  int _compareOngoingTrips(Trip a, Trip b) {
+    final aStart = a.startDate ?? a.createdAt;
+    final bStart = b.startDate ?? b.createdAt;
+    return bStart.compareTo(aStart);
+  }
+
+  int _compareUpcomingTrips(Trip a, Trip b) {
+    final aStart = a.startDate ?? a.endDate ?? a.createdAt;
+    final bStart = b.startDate ?? b.endDate ?? b.createdAt;
+    return aStart.compareTo(bStart);
   }
 
   Future<void> _openCreateTripDialog(
@@ -355,6 +468,147 @@ class TripsPage extends ConsumerWidget {
   }
 }
 
+class _TripsTimelineList extends StatelessWidget {
+  const _TripsTimelineList({
+    required this.trips,
+    required this.color,
+    required this.emptyMessage,
+    required this.myUid,
+    required this.onOpenTrip,
+    required this.onDeleteTrip,
+  });
+
+  final List<Trip> trips;
+  final Color color;
+  final String emptyMessage;
+  final String? myUid;
+  final ValueChanged<String> onOpenTrip;
+  final ValueChanged<Trip> onDeleteTrip;
+
+  @override
+  Widget build(BuildContext context) {
+    if (trips.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            emptyMessage,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      itemCount: trips.length,
+      itemBuilder: (context, index) {
+        final trip = trips[index];
+        final canDelete = myUid != null && trip.ownerId == myUid;
+        final dateLine = formatTripDateRange(trip.startDate, trip.endDate);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _TripCard(
+            trip: trip,
+            color: color,
+            canDelete: canDelete,
+            dateLine: dateLine,
+            onTap: () => onOpenTrip(trip.id),
+            onDelete: () => onDeleteTrip(trip),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TripCard extends StatelessWidget {
+  const _TripCard({
+    required this.trip,
+    required this.color,
+    required this.canDelete,
+    required this.dateLine,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  final Trip trip;
+  final Color color;
+  final bool canDelete;
+  final String dateLine;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Color.alphaBlend(
+      color.withValues(alpha: 0.12),
+      Theme.of(context).colorScheme.surface,
+    );
+    return Card(
+      margin: EdgeInsets.zero,
+      color: surface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trip.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (dateLine.isNotEmpty)
+                      Text(
+                        dateLine,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    if (trip.destination.trim().isNotEmpty) ...[
+                      if (dateLine.isNotEmpty) const SizedBox(height: 2),
+                      Text(
+                        trip.destination,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      '${trip.memberIds.length} membre(s)',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              if (canDelete)
+                IconButton(
+                  tooltip: 'Supprimer',
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _JoinTripByCodeDialog extends ConsumerStatefulWidget {
   const _JoinTripByCodeDialog({
     required this.parentContext,
@@ -428,7 +682,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
-        _error = TripsPage._messageForJoinByCodeError(e);
+        _error = _TripsPageState._messageForJoinByCodeError(e);
       });
     }
   }
