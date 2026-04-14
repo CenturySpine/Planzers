@@ -402,6 +402,173 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           ?.copyWith(color: Colors.white),
                                     ),
                                   ),
+                                  if (canEdit)
+                                    PopupMenuButton<String>(
+                                      tooltip: 'Actions voyage',
+                                      onSelected: (value) {
+                                        if (value == 'share') {
+                                          _shareInviteLink();
+                                          return;
+                                        }
+                                        if (value == 'participants') {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute<void>(
+                                              builder: (_) =>
+                                                  TripParticipantsPage(
+                                                tripId: _trip.id,
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        if (value == 'copyCode') {
+                                          _copyInviteCode();
+                                          return;
+                                        }
+                                        if (value == 'edit') {
+                                          _startEditing();
+                                        }
+                                      },
+                                      itemBuilder: (context) => const [
+                                        PopupMenuItem(
+                                          value: 'share',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.group_add_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Partager invitation'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'participants',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons
+                                                  .assignment_ind_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Participants'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'copyCode',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.vpn_key_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Copier le code'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.edit_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Modifier le voyage'),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      icon: _inviteClipboardBusy
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Colors.white),
+                                            )
+                                          : const Icon(Icons.more_vert,
+                                              color: Colors.white),
+                                    ),
+                                ],
+                              ),
+                            ] else if (canEdit) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Spacer(),
+                                  PopupMenuButton<String>(
+                                    tooltip: 'Actions voyage',
+                                    onSelected: (value) {
+                                      if (value == 'share') {
+                                        _shareInviteLink();
+                                        return;
+                                      }
+                                      if (value == 'participants') {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute<void>(
+                                            builder: (_) =>
+                                                TripParticipantsPage(
+                                              tripId: _trip.id,
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      if (value == 'copyCode') {
+                                        _copyInviteCode();
+                                        return;
+                                      }
+                                      if (value == 'edit') {
+                                        _startEditing();
+                                      }
+                                    },
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(
+                                        value: 'share',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.group_add_outlined),
+                                            SizedBox(width: 10),
+                                            Text('Partager invitation'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'participants',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.assignment_ind_outlined),
+                                            SizedBox(width: 10),
+                                            Text('Participants'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'copyCode',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.vpn_key_outlined),
+                                            SizedBox(width: 10),
+                                            Text('Copier le code'),
+                                          ],
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit_outlined),
+                                            SizedBox(width: 10),
+                                            Text('Modifier le voyage'),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                    icon: _inviteClipboardBusy
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white),
+                                          )
+                                        : const Icon(Icons.more_vert,
+                                            color: Colors.white),
+                                  ),
                                 ],
                               ),
                             ],
@@ -457,7 +624,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 children: [
                   if (_isEditing) ...[
@@ -629,14 +796,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   ] else ...[
                     const SizedBox(height: 16),
                   ],
-                  if (linkUrlForUi.isNotEmpty) ...[
-                    LinkPreviewCardFromFirestore(
-                      url: linkUrlForUi,
-                      preview: livePreview,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  if (canEdit)
+                  if (canEdit && _isEditing)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Wrap(
@@ -662,56 +822,25 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     )
                                   : const Icon(Icons.check),
                             ),
-                          ] else ...[
-                            IconButton(
-                              tooltip: 'Partager invitation',
-                              onPressed: _inviteClipboardBusy
-                                  ? null
-                                  : _shareInviteLink,
-                              icon: _inviteClipboardBusy
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.group_add_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Participants',
-                              onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => TripParticipantsPage(
-                                      tripId: _trip.id,
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.assignment_ind_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Copier le code d invitation',
-                              onPressed:
-                                  _inviteClipboardBusy ? null : _copyInviteCode,
-                              icon: const Icon(Icons.vpn_key_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Modifier le voyage',
-                              onPressed: _startEditing,
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
                           ],
                         ],
                       ),
                     ),
-                  if (linkUrlForUi.isNotEmpty) const SizedBox(height: 8),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (linkUrlForUi.isNotEmpty) ...[
+                            LinkPreviewCardFromFirestore(
+                              url: linkUrlForUi,
+                              preview: livePreview,
+                              showCard: false,
+                              showTitleLabel: false,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           _InfoRow(
                             label: 'Adresse',
                             value: _trip.address,
