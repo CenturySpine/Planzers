@@ -30,6 +30,30 @@ class ActivitiesRepository {
     return firestore.collection('trips').doc(tripId).collection('activities');
   }
 
+  Future<bool> _isTripAdmin(String tripId, String userId) async {
+    final tripSnap = await firestore.collection('trips').doc(tripId).get();
+    final tripData = tripSnap.data() ?? const <String, dynamic>{};
+    final ownerId = (tripData['ownerId'] as String?)?.trim() ?? '';
+    if (ownerId.isNotEmpty && ownerId == userId) return true;
+    final admins = (tripData['adminMemberIds'] as List<dynamic>? ?? const [])
+        .map((e) => e.toString().trim())
+        .where((id) => id.isNotEmpty);
+    return admins.contains(userId);
+  }
+
+  Future<void> _assertCanModifyActivity({
+    required String tripId,
+    required String userId,
+    required Map<String, dynamic> activityData,
+  }) async {
+    final isLocked = activityData['isLocked'] == true;
+    if (!isLocked) return;
+    final isAdmin = await _isTripAdmin(tripId, userId);
+    if (!isAdmin) {
+      throw StateError('Activite verrouillee: modification reservee aux admins');
+    }
+  }
+
   Stream<List<TripActivity>> watchTripActivities(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -49,6 +73,7 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
+    required bool isLocked,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -72,6 +97,7 @@ class ActivitiesRepository {
       'address': address.trim(),
       'freeComments': freeComments.trim(),
       'done': false,
+      'isLocked': isLocked,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -99,9 +125,49 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
+    await _assertCanModifyActivity(
+      tripId: cleanTripId,
+      userId: user.uid,
+      activityData: snap.data() ?? const <String, dynamic>{},
+    );
 
     await docRef.update({
       'done': done,
+      'doneAt': done ? FieldValue.serverTimestamp() : FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> setActivityPlannedAt({
+    required String tripId,
+    required String activityId,
+    DateTime? plannedAt,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final docRef = _activitiesCol(cleanTripId).doc(cleanActivityId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Activite introuvable');
+    }
+    await _assertCanModifyActivity(
+      tripId: cleanTripId,
+      userId: user.uid,
+      activityData: snap.data() ?? const <String, dynamic>{},
+    );
+
+    await docRef.update({
+      'plannedAt':
+          plannedAt != null ? Timestamp.fromDate(plannedAt) : FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -114,6 +180,7 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
+    required bool isLocked,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -136,10 +203,11 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    final createdBy = (snap.data()?['createdBy'] as String?)?.trim() ?? '';
-    if (createdBy.isEmpty || createdBy != user.uid) {
-      throw StateError('Modification reservee a l auteur de la proposition');
-    }
+    await _assertCanModifyActivity(
+      tripId: cleanTripId,
+      userId: user.uid,
+      activityData: snap.data() ?? const <String, dynamic>{},
+    );
 
     await docRef.update({
       'label': cleanLabel,
@@ -147,6 +215,7 @@ class ActivitiesRepository {
       'linkUrl': linkUrl.trim(),
       'address': address.trim(),
       'freeComments': freeComments.trim(),
+      'isLocked': isLocked,
       'itinerary': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -172,10 +241,11 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    final createdBy = (snap.data()?['createdBy'] as String?)?.trim() ?? '';
-    if (createdBy.isEmpty || createdBy != user.uid) {
-      throw StateError('Suppression reservee a l auteur de la proposition');
-    }
+    await _assertCanModifyActivity(
+      tripId: cleanTripId,
+      userId: user.uid,
+      activityData: snap.data() ?? const <String, dynamic>{},
+    );
 
     await docRef.delete();
   }

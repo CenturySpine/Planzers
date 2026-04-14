@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
@@ -47,6 +48,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
+  bool _isLocked = false;
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
@@ -77,6 +79,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         prev.address == next.address &&
         prev.freeComments == next.freeComments &&
         prev.category == next.category &&
+        prev.isLocked == next.isLocked &&
         prev.done == next.done;
   }
 
@@ -89,6 +92,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
+    _isLocked = activity.isLocked;
   }
 
   void _applyActivity(TripActivity activity) {
@@ -97,6 +101,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
+    _isLocked = activity.isLocked;
     _lastSyncedActivity = activity;
   }
 
@@ -128,6 +133,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
+            isLocked: _isLocked,
           );
       if (!mounted) return;
       setState(() => _editing = false);
@@ -232,9 +238,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         final activity = TripActivity.fromDoc(doc);
         _syncControllersWhenIdle(activity);
 
-        final createdBy = activity.createdBy.trim();
-        final canEdit =
-            myUid != null && myUid.isNotEmpty && createdBy == myUid;
+        final canEdit = myUid != null && myUid.isNotEmpty;
 
         return Scaffold(
           appBar: AppBar(
@@ -316,6 +320,9 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   onCategoryChanged: _saving
                       ? null
                       : (c) => setState(() => _category = c),
+                  isLocked: _isLocked,
+                  onLockChanged:
+                      _saving ? null : (v) => setState(() => _isLocked = v),
                   activity: activity,
                   validateOptionalUrl: _validateOptionalUrl,
                 )
@@ -338,7 +345,11 @@ class _ReadBody extends ConsumerWidget {
   final String tripId;
   final TripActivity activity;
 
-  Future<void> _toggleDone(WidgetRef ref, BuildContext context, bool value) async {
+  Future<void> _toggleDone(
+    WidgetRef ref,
+    BuildContext context,
+    bool value,
+  ) async {
     try {
       await ref.read(activitiesRepositoryProvider).setActivityDone(
             tripId: tripId,
@@ -354,21 +365,44 @@ class _ReadBody extends ConsumerWidget {
     }
   }
 
+  Future<DateTime?> _pickPlannedDate(BuildContext context) {
+    final now = DateTime.now();
+    final initial = DateUtils.dateOnly(activity.plannedAt?.toLocal() ?? now);
+    return showDatePicker(
+      context: context,
+      locale: const Locale('fr', 'FR'),
+      initialDate: initial,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 5),
+      helpText: 'Date prevue',
+    );
+  }
+
+  Future<void> _setPlannedDate(
+    WidgetRef ref,
+    BuildContext context,
+    DateTime? plannedAt,
+  ) async {
+    try {
+      await ref.read(activitiesRepositoryProvider).setActivityPlannedAt(
+            tripId: tripId,
+            activityId: activity.id,
+            plannedAt: plannedAt,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        CheckboxListTile(
-          value: activity.done,
-          onChanged: (v) {
-            if (v != null) _toggleDone(ref, context, v);
-          },
-          title: const Text('Faite'),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        ),
-        const SizedBox(height: 12),
         if (activity.linkUrl.trim().isNotEmpty) ...[
           LinkPreviewCardFromFirestore(
             url: activity.linkUrl.trim(),
@@ -469,6 +503,47 @@ class _ReadBody extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CheckboxListTile(
+                  value: activity.done,
+                  onChanged: (v) async {
+                    if (v == null) return;
+                    await _toggleDone(ref, context, v);
+                  },
+                  title: const Text('Activite faite'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  onPressed: () async {
+                    final pickedDate = await _pickPlannedDate(context);
+                    if (pickedDate == null) return;
+                    if (!context.mounted) return;
+                    await _setPlannedDate(ref, context, pickedDate);
+                  },
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: Text(
+                    activity.plannedAt == null
+                        ? 'Prevue le : non renseignee'
+                        : 'Prevue le ${DateFormat('d MMMM yyyy', 'fr_FR').format(activity.plannedAt!.toLocal())}',
+                  ),
+                ),
+                if (activity.plannedAt != null)
+                  TextButton(
+                    onPressed: () => _setPlannedDate(ref, context, null),
+                    child: const Text('Retirer la date prevue'),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -483,6 +558,8 @@ class _EditBody extends StatefulWidget {
     required this.commentsController,
     required this.category,
     required this.onCategoryChanged,
+    required this.isLocked,
+    required this.onLockChanged,
     required this.activity,
     required this.validateOptionalUrl,
   });
@@ -494,6 +571,8 @@ class _EditBody extends StatefulWidget {
   final TextEditingController commentsController;
   final TripActivityCategory category;
   final void Function(TripActivityCategory)? onCategoryChanged;
+  final bool isLocked;
+  final void Function(bool)? onLockChanged;
   final TripActivity activity;
   final String? Function(String?) validateOptionalUrl;
 
@@ -602,6 +681,16 @@ class _EditBodyState extends State<_EditBody> {
             ),
             minLines: 1,
             maxLines: 3,
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            value: widget.isLocked,
+            onChanged: widget.onLockChanged,
+            title: const Text('Activite verrouillee'),
+            subtitle: const Text(
+              'Si activee, seuls les admins peuvent modifier cette activite.',
+            ),
+            contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 12),
           TextFormField(

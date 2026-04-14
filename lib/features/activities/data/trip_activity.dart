@@ -14,6 +14,9 @@ class TripActivity {
     required this.createdBy,
     required this.createdAt,
     this.done = false,
+    this.isLocked = false,
+    this.plannedAt,
+    this.doneAt,
     this.linkPreview = const {},
     this.tripDrivingRoute,
   });
@@ -31,6 +34,9 @@ class TripActivity {
 
   /// Whether participants consider this outing done.
   final bool done;
+  final bool isLocked;
+  final DateTime? plannedAt;
+  final DateTime? doneAt;
 
   /// Same shape as trip `linkPreview` (filled by Cloud Function).
   final Map<String, dynamic> linkPreview;
@@ -58,6 +64,24 @@ class TripActivity {
         : doneRaw is String
             ? doneRaw.toLowerCase() == 'true'
             : false;
+    final lockedRaw = data['isLocked'];
+    final isLocked = lockedRaw is bool
+        ? lockedRaw
+        : lockedRaw is String
+            ? lockedRaw.toLowerCase() == 'true'
+            : false;
+    final doneAtRaw = data['doneAt'];
+    final doneAt = switch (doneAtRaw) {
+      Timestamp ts => ts.toDate(),
+      String s => DateTime.tryParse(s),
+      _ => null,
+    };
+    final plannedAtRaw = data['plannedAt'];
+    final plannedAt = switch (plannedAtRaw) {
+      Timestamp ts => ts.toDate(),
+      String s => DateTime.tryParse(s),
+      _ => null,
+    };
 
     return TripActivity(
       id: doc.id,
@@ -69,6 +93,9 @@ class TripActivity {
       createdBy: (data['createdBy'] as String?) ?? '',
       createdAt: createdAt,
       done: done,
+      isLocked: isLocked,
+      plannedAt: plannedAt,
+      doneAt: done ? doneAt : null,
       linkPreview: _previewFromFirestore(data['linkPreview']),
       tripDrivingRoute:
           ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),

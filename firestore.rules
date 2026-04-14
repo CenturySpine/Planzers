@@ -17,6 +17,21 @@ service cloud.firestore {
         && request.auth.uid in tripDoc(tripId).data.memberIds;
     }
 
+    function isTripAdmin(tripId) {
+      return isTripMember(tripId)
+        && (
+          tripDoc(tripId).data.ownerId == request.auth.uid
+          || (
+            tripDoc(tripId).data.adminMemberIds is list
+            && request.auth.uid in tripDoc(tripId).data.adminMemberIds
+          )
+        );
+    }
+
+    function activityLocked(data) {
+      return data.keys().hasAny(['isLocked']) && data.isLocked == true;
+    }
+
     function canReadTrip(data) {
       return signedIn()
         && (
@@ -80,7 +95,13 @@ service cloud.firestore {
       }
 
       match /activities/{activityId} {
-        allow read, write: if isTripMember(tripId);
+        allow read: if isTripMember(tripId);
+        allow create: if isTripMember(tripId);
+        allow update, delete: if isTripMember(tripId)
+          && (
+            !activityLocked(resource.data)
+            || isTripAdmin(tripId)
+          );
       }
 
       match /messages/{messageId} {

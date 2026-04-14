@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/core/notifications/notification_center_repository.dart';
@@ -123,22 +124,21 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             );
           }
 
-          final sortedItems = [...items]..sort((a, b) {
-              if (a.done != b.done) {
-                return a.done ? 1 : -1;
-              }
-              return b.createdAt.compareTo(a.createdAt);
-            });
+          final listEntries = _buildActivitiesEntries(items);
 
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-            itemCount: sortedItems.length,
+            itemCount: listEntries.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
-              final a = sortedItems[index];
+              final entry = listEntries[index];
+              if (entry.dayLabel != null) {
+                return _ActivityDayPill(label: entry.dayLabel!);
+              }
               return _ActivityListTile(
                 tripId: trip.id,
-                activity: a,
+                activity: entry.activity!,
+                tripMemberPublicLabels: trip.memberPublicLabels,
               );
             },
           );
@@ -164,14 +164,16 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
   }
 }
 
-class _ActivityListTile extends ConsumerWidget {
+class _ActivityListTile extends StatelessWidget {
   const _ActivityListTile({
     required this.tripId,
     required this.activity,
+    required this.tripMemberPublicLabels,
   });
 
   final String tripId;
   final TripActivity activity;
+  final Map<String, String> tripMemberPublicLabels;
 
   Future<void> _openDetail(BuildContext context) async {
     await Navigator.of(context).push<void>(
@@ -184,82 +186,157 @@ class _ActivityListTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _setDone(
-    BuildContext context,
-    WidgetRef ref,
-    bool value,
-  ) async {
-    try {
-      await ref.read(activitiesRepositoryProvider).setActivityDone(
-            tripId: tripId,
-            activityId: activity.id,
-            done: value,
-          );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    }
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final label =
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
       color: activity.done ? context.planzersColors.successContainer : null,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 4, right: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: activity.done,
-              onChanged: (v) {
-                if (v != null) _setDone(context, ref, v);
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: VisualDensity.compact,
-            ),
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => _openDetail(context),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        activity.category.categoryIcon,
-                        size: 28,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          label,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      LinkPreviewThumbnail(preview: activity.linkPreview),
-                    ],
-                  ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openDetail(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                activity.category.categoryIcon,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Proposé par ${_creatorLabel(activity)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              LinkPreviewThumbnail(preview: activity.linkPreview),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _creatorLabel(TripActivity activity) {
+    final id = activity.createdBy.trim();
+    if (id.isEmpty) return 'inconnu';
+    return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
+        ? tripMemberPublicLabels[id]!.trim()
+        : id;
+  }
+}
+
+List<_ActivitiesListEntry> _buildActivitiesEntries(List<TripActivity> items) {
+  final toPlan = items
+      .where((a) => !a.done && a.plannedAt == null)
+      .toList()
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  final dated = items
+      .where((a) => a.done || a.plannedAt != null)
+      .toList()
+    ..sort((a, b) {
+      final aDate = _activityDateForGrouping(a);
+      final bDate = _activityDateForGrouping(b);
+      final byDay = bDate.compareTo(aDate);
+      if (byDay != 0) return byDay;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+  final entries = <_ActivitiesListEntry>[];
+
+  if (toPlan.isNotEmpty) {
+    entries.add(const _ActivitiesListEntry.separator('A planifier'));
+    entries.addAll(toPlan.map(_ActivitiesListEntry.activity));
+  }
+
+  DateTime? previousDay;
+  for (final activity in dated) {
+    final date = _activityDateForGrouping(activity).toLocal();
+    final day = DateTime(date.year, date.month, date.day);
+    if (previousDay == null || previousDay != day) {
+      entries.add(_ActivitiesListEntry.separator(_dayLabelFor(day)));
+      previousDay = day;
+    }
+    entries.add(_ActivitiesListEntry.activity(activity));
+  }
+  return entries;
+}
+
+DateTime _activityDateForGrouping(TripActivity activity) {
+  return activity.plannedAt ?? activity.doneAt ?? activity.createdAt;
+}
+
+String _dayLabelFor(DateTime day) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  if (day == today) return "Aujourd'hui";
+  if (day == yesterday) return 'Hier';
+  return DateFormat('d MMM yyyy', 'fr_FR').format(day);
+}
+
+class _ActivityDayPill extends StatelessWidget {
+  const _ActivityDayPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivitiesListEntry {
+  const _ActivitiesListEntry.activity(this.activity) : dayLabel = null;
+  const _ActivitiesListEntry.separator(this.dayLabel) : activity = null;
+
+  final TripActivity? activity;
+  final String? dayLabel;
 }
 
 Future<void> _openAddActivitySheet(
@@ -312,6 +389,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
+  bool _isLocked = false;
   bool _saving = false;
 
   @override
@@ -359,6 +437,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
+            isLocked: _isLocked,
           );
       if (!mounted) return;
       widget.onSaved();
@@ -446,6 +525,16 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
               maxLines: 3,
             ),
             const SizedBox(height: 12),
+            SwitchListTile(
+              value: _isLocked,
+              onChanged: _saving ? null : (value) => setState(() => _isLocked = value),
+              title: const Text('Activite verrouillee'),
+              subtitle: const Text(
+                'Si activee, seuls les admins peuvent modifier cette activite.',
+              ),
+              contentPadding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _commentsController,
               textInputAction: TextInputAction.done,
