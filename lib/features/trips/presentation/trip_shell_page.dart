@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -32,6 +33,21 @@ void _scheduleTripMemberPublicLabelHealIfNeeded(WidgetRef ref, Trip trip) {
 
 /// Width at which we show a [NavigationRail] instead of a bottom nav bar.
 const double _kTripShellWideBreakpoint = 720;
+
+Widget _buildNavIcon({
+  required IconData icon,
+  required int unreadMessages,
+  required bool isMessagingTab,
+  Color? color,
+}) {
+  if (!isMessagingTab || unreadMessages <= 0) {
+    return Icon(icon, color: color);
+  }
+  return Badge.count(
+    count: unreadMessages,
+    child: Icon(icon, color: color),
+  );
+}
 
 class TripShellPage extends ConsumerWidget {
   const TripShellPage({
@@ -84,6 +100,20 @@ class TripShellPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tripAsync = ref.watch(tripStreamProvider(tripId));
+    final messagesAsync = ref.watch(tripMessagesStreamProvider(tripId));
+    final lastReadAtAsync = ref.watch(tripMessagesLastReadAtProvider(tripId));
+    final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+
+    var unreadMessages = 0;
+    final messages = messagesAsync.asData?.value;
+    final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
+    if (myUid != null && myUid.isNotEmpty && messages != null) {
+      unreadMessages = messages.where((message) {
+        if (message.authorId == myUid) return false;
+        if (lastReadAt == null) return true;
+        return message.createdAt.toUtc().isAfter(lastReadAt);
+      }).length;
+    }
 
     return tripAsync.when(
       data: (trip) {
@@ -110,8 +140,7 @@ class TripShellPage extends ConsumerWidget {
           trip: trip,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final useRail =
-                  constraints.maxWidth >= _kTripShellWideBreakpoint;
+              final useRail = constraints.maxWidth >= _kTripShellWideBreakpoint;
               final railExtended = constraints.maxWidth >= 900;
 
               return Scaffold(
@@ -141,8 +170,16 @@ class TripShellPage extends ConsumerWidget {
                         destinations: [
                           for (final d in _destinations)
                             NavigationRailDestination(
-                              icon: Icon(d.icon),
-                              selectedIcon: Icon(d.selectedIcon),
+                              icon: _buildNavIcon(
+                                icon: d.icon,
+                                unreadMessages: unreadMessages,
+                                isMessagingTab: d.label == 'Messagerie',
+                              ),
+                              selectedIcon: _buildNavIcon(
+                                icon: d.selectedIcon,
+                                unreadMessages: unreadMessages,
+                                isMessagingTab: d.label == 'Messagerie',
+                              ),
                               label: Text(d.label),
                             ),
                         ],
@@ -156,6 +193,7 @@ class TripShellPage extends ConsumerWidget {
                         selectedIndex: navigationShell.currentIndex,
                         onDestinationSelected: navigationShell.goBranch,
                         destinations: _destinations,
+                        unreadMessages: unreadMessages,
                       ),
               );
             },
@@ -200,11 +238,13 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
+    required this.unreadMessages,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<_TripNavDestination> destinations;
+  final int unreadMessages;
 
   static const double _barHeight = 80;
   static const double _minItemWidth = 80;
@@ -252,8 +292,10 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(
-                          selected ? d.selectedIcon : d.icon,
+                        child: _buildNavIcon(
+                          icon: selected ? d.selectedIcon : d.icon,
+                          unreadMessages: unreadMessages,
+                          isMessagingTab: d.label == 'Messagerie',
                           color: selected
                               ? colorScheme.onSecondaryContainer
                               : colorScheme.onSurfaceVariant,

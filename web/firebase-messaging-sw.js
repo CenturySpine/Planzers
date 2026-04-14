@@ -34,8 +34,11 @@ messaging.onBackgroundMessage((payload) => {
   const body = notification.body || '';
   const tripId = typeof data.tripId === 'string' ? data.tripId.trim() : '';
   const type = typeof data.type === 'string' ? data.type.trim() : '';
-  const targetPath =
-    type === 'trip_message' && tripId ? `/trips/${tripId}/messages` : '/trips';
+  const targetPathRaw =
+    typeof data.targetPath === 'string' ? data.targetPath.trim() : '';
+  const targetPath = targetPathRaw
+    ? targetPathRaw
+    : (type === 'trip_message' && tripId ? `/trips/${tripId}/messages` : '/trips');
 
   self.registration.showNotification(title, {
     body,

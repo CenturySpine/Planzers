@@ -16,6 +16,11 @@ final tripMessagesStreamProvider =
   return ref.watch(tripMessagesRepositoryProvider).watchMessages(tripId);
 });
 
+final tripMessagesLastReadAtProvider =
+    StreamProvider.autoDispose.family<DateTime?, String>((ref, tripId) {
+  return ref.watch(tripMessagesRepositoryProvider).watchMyLastReadAt(tripId);
+});
+
 class TripMessagesRepository {
   TripMessagesRepository({
     required this.firestore,
@@ -31,6 +36,20 @@ class TripMessagesRepository {
     return firestore.collection('trips').doc(tripId).collection('messages');
   }
 
+  static const String _messagesChannelKey = 'messages';
+
+  DocumentReference<Map<String, dynamic>> _myReadStateDoc(String tripId) {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    return firestore
+        .collection('trips')
+        .doc(tripId)
+        .collection('notificationReads')
+        .doc(uid);
+  }
+
   Stream<List<TripMessage>> watchMessages(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -43,6 +62,42 @@ class TripMessagesRepository {
         .map(
           (snap) => snap.docs.map(TripMessage.fromDoc).toList(),
         );
+  }
+
+  Stream<DateTime?> watchMyLastReadAt(String tripId) {
+    final cleanId = tripId.trim();
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (cleanId.isEmpty || uid.isEmpty) {
+      return Stream.value(null);
+    }
+    return _myReadStateDoc(cleanId).snapshots().map((doc) {
+      final data = doc.data();
+      if (data == null) return null;
+      final channels = data['channels'];
+      final raw = channels is Map<String, dynamic>
+          ? channels[_messagesChannelKey]
+          : null;
+      return switch (raw) {
+        Timestamp ts => ts.toDate(),
+        _ => null,
+      };
+    });
+  }
+
+  Future<void> markMyMessagesAsReadUpTo({
+    required String tripId,
+    required DateTime readUpTo,
+  }) async {
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+    await _myReadStateDoc(cleanTripId).set({
+      'channels': {
+        _messagesChannelKey: Timestamp.fromDate(readUpTo.toUtc()),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> sendMessage({

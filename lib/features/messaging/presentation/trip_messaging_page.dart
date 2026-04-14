@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planzers/features/auth/auth_gate.dart';
@@ -29,6 +30,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   final _scrollController = ScrollController();
   bool _sending = false;
   String? _selectedMessageId;
+  DateTime? _lastReadMarkedAt;
 
   @override
   void dispose() {
@@ -56,6 +58,35 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
       if (!_scrollController.hasClients) return;
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
+  }
+
+  void _markMessagesAsReadIfNeeded({
+    required String tripId,
+    required List<TripMessage> messages,
+  }) {
+    if (!_isMessagingTabCurrentlyVisible()) return;
+    if (messages.isEmpty) return;
+    final latestSeenAt = messages.last.createdAt.toUtc();
+    final lastMarked = _lastReadMarkedAt;
+    if (lastMarked != null && !latestSeenAt.isAfter(lastMarked)) {
+      return;
+    }
+    _lastReadMarkedAt = latestSeenAt;
+    unawaited(
+      ref.read(tripMessagesRepositoryProvider).markMyMessagesAsReadUpTo(
+            tripId: tripId,
+            readUpTo: latestSeenAt,
+          ),
+    );
+  }
+
+  bool _isMessagingTabCurrentlyVisible() {
+    try {
+      final path = GoRouterState.of(context).uri.path;
+      return path.endsWith('/messages');
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _send(String tripId) async {
@@ -87,8 +118,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   Future<bool> _editMessage(String tripId, TripMessage message) async {
     final newText = await showDialog<String>(
       context: context,
-      builder: (ctx) =>
-          _EditTripMessageDialog(initialText: message.text),
+      builder: (ctx) => _EditTripMessageDialog(initialText: message.text),
     );
 
     if (newText == null || !mounted) return false;
@@ -204,8 +234,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
-    final myUid =
-        ref.watch(authStateProvider).asData?.value?.uid ??
+    final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
         FirebaseAuth.instance.currentUser?.uid;
     final messagesAsync = ref.watch(tripMessagesStreamProvider(trip.id));
 
@@ -224,6 +253,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
         resizeToAvoidBottomInset: true,
         body: messagesAsync.when(
           data: (messages) {
+            _markMessagesAsReadIfNeeded(tripId: trip.id, messages: messages);
             final timeFmt = DateFormat.Hm('fr_FR');
             final dateFmt = DateFormat('d MMMM yyyy', 'fr_FR');
             final selected = _messageById(messages, _selectedMessageId);
@@ -290,8 +320,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                   'Aucun message pour l’instant. '
                                   'Écris le premier pour lancer la discussion.',
                                   textAlign: TextAlign.center,
-                                  style:
-                                      Theme.of(context).textTheme.bodyLarge,
+                                  style: Theme.of(context).textTheme.bodyLarge,
                                 ),
                               ),
                             )
@@ -305,13 +334,13 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                               itemBuilder: (context, index) {
                                 final entry = chatEntries[index];
                                 if (entry.dayLabel != null) {
-                                  return _MessageDayPill(label: entry.dayLabel!);
+                                  return _MessageDayPill(
+                                      label: entry.dayLabel!);
                                 }
                                 final m = entry.message!;
                                 final isMine =
                                     myUid != null && m.authorId == myUid;
-                                final isSelected =
-                                    m.id == _selectedMessageId;
+                                final isSelected = m.id == _selectedMessageId;
                                 final label = authorLabels[m.authorId] ??
                                     resolveTripMemberDisplayLabel(
                                       memberId: m.authorId,
@@ -341,14 +370,13 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                       },
                                       onSecondaryTap: pointerSelect
                                           ? () => setState(
-                                              () => _selectedMessageId = m.id,
-                                            )
+                                                () => _selectedMessageId = m.id,
+                                              )
                                           : null,
                                       onTap: (_selectedMessageId != null ||
                                               pointerSelect)
                                           ? () {
-                                              if (_selectedMessageId !=
-                                                  null) {
+                                              if (_selectedMessageId != null) {
                                                 setState(() {
                                                   if (_selectedMessageId ==
                                                       m.id) {
@@ -402,63 +430,63 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(12),
                                             child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.stretch,
-                                            children: [
-                                              Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment
-                                                        .baseline,
-                                                textBaseline:
-                                                    TextBaseline.alphabetic,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      label,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment
+                                                          .baseline,
+                                                  textBaseline:
+                                                      TextBaseline.alphabetic,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        label,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      timeLine,
                                                       style: Theme.of(context)
                                                           .textTheme
-                                                          .labelMedium
+                                                          .labelSmall
                                                           ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
                                                           ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    timeLine,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelSmall
-                                                        ?.copyWith(
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-                                              _TripMessageLinkedText(
-                                                text: m.text,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium,
-                                                selectable:
-                                                    _selectedMessageId ==
-                                                            null &&
-                                                        !pointerSelect,
-                                              ),
-                                            ],
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 6),
+                                                _TripMessageLinkedText(
+                                                  text: m.text,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                  selectable:
+                                                      _selectedMessageId ==
+                                                              null &&
+                                                          !pointerSelect,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
                                     ),
                                   ),
                                 );
@@ -490,16 +518,14 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                       vertical: 10,
                                     ),
                                   ),
-                                  onSubmitted: _sending
-                                      ? null
-                                      : (_) => _send(trip.id),
+                                  onSubmitted:
+                                      _sending ? null : (_) => _send(trip.id),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               IconButton.filled(
-                                onPressed: _sending
-                                    ? null
-                                    : () => _send(trip.id),
+                                onPressed:
+                                    _sending ? null : () => _send(trip.id),
                                 icon: _sending
                                     ? const SizedBox(
                                         width: 22,
@@ -550,8 +576,7 @@ class _TripMessageLinkedText extends StatefulWidget {
   final bool selectable;
 
   @override
-  State<_TripMessageLinkedText> createState() =>
-      _TripMessageLinkedTextState();
+  State<_TripMessageLinkedText> createState() => _TripMessageLinkedTextState();
 }
 
 class _TripMessageLinkedTextState extends State<_TripMessageLinkedText> {
@@ -784,8 +809,7 @@ class _EditTripMessageDialog extends StatefulWidget {
   final String initialText;
 
   @override
-  State<_EditTripMessageDialog> createState() =>
-      _EditTripMessageDialogState();
+  State<_EditTripMessageDialog> createState() => _EditTripMessageDialogState();
 }
 
 class _EditTripMessageDialogState extends State<_EditTripMessageDialog> {

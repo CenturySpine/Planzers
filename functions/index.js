@@ -420,6 +420,10 @@ const FCM_INVALID_TOKEN_CODES = new Set([
   'messaging/registration-token-not-registered',
 ]);
 
+const TRIP_NOTIFICATION_CHANNELS = Object.freeze({
+  MESSAGES: 'messages',
+});
+
 /**
  * Sends a push notification to other trip members when a message is created.
  * Tokens live under users/{uid}/fcmTokens (written by the Flutter app).
@@ -508,6 +512,8 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
       data: {
         tripId,
         type: 'trip_message',
+        channel: TRIP_NOTIFICATION_CHANNELS.MESSAGES,
+        targetPath: `/trips/${tripId}/messages`,
       },
     }));
 

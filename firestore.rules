@@ -17,6 +17,14 @@ service cloud.firestore {
         && request.auth.uid in tripDoc(tripId).data.memberIds;
     }
 
+    function canReadTrip(data) {
+      return signedIn()
+        && (
+          (data.ownerId is string && data.ownerId == request.auth.uid)
+          || (data.memberIds is list && request.auth.uid in data.memberIds)
+        );
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == userId;
@@ -28,7 +36,11 @@ service cloud.firestore {
     }
 
     match /trips/{tripId} {
-      allow read: if isTripMember(tripId);
+      // Query used by trips list: where('memberIds', arrayContains: uid).
+      allow list: if signedIn()
+        && request.auth.uid in resource.data.memberIds;
+      // Direct doc read (by id): creator or participant.
+      allow get: if canReadTrip(resource.data);
 
       allow create: if signedIn()
         && request.resource.data.ownerId == request.auth.uid
@@ -55,6 +67,14 @@ service cloud.firestore {
         allow read, write: if isTripMember(tripId);
       }
 
+      match /rooms/{roomId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
+      match /activities/{activityId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
       match /messages/{messageId} {
         allow read: if isTripMember(tripId);
         allow create: if isTripMember(tripId)
@@ -74,6 +94,15 @@ service cloud.firestore {
             .hasOnly(['text', 'updatedAt']);
         allow delete: if isTripMember(tripId)
           && resource.data.authorId == request.auth.uid;
+      }
+
+      match /notificationReads/{userId} {
+        allow read: if isTripMember(tripId)
+          && userId == request.auth.uid;
+        allow create, update: if isTripMember(tripId)
+          && userId == request.auth.uid
+          && request.resource.data.keys().hasOnly(['channels', 'updatedAt'])
+          && request.resource.data.channels is map;
       }
     }
   }

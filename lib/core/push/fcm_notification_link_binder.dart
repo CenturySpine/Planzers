@@ -24,6 +24,7 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   StreamSubscription<User?>? _authSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
   RemoteMessage? _pendingTripMessageNavigation;
+  String? _pendingTargetPath;
 
   @override
   void initState() {
@@ -56,6 +57,12 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
 
   void _enqueueTripNavigation(RemoteMessage? message) {
     if (message == null) return;
+    final targetPath = _targetPathFromData(message.data);
+    if (targetPath != null) {
+      _pendingTargetPath = targetPath;
+      _tryFlush();
+      return;
+    }
     final tripId = _tripIdFromData(message.data);
     if (tripId == null) return;
     if (_typeFromData(message.data) != 'trip_message') return;
@@ -66,6 +73,15 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   void _tryFlush() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    final targetPath = _pendingTargetPath;
+    if (targetPath != null && targetPath.isNotEmpty) {
+      _pendingTargetPath = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        appRouter.go(targetPath);
+      });
+      return;
+    }
     if (_pendingTripMessageNavigation == null) return;
 
     final tripId = _tripIdFromData(_pendingTripMessageNavigation!.data);
@@ -90,6 +106,14 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
     if (raw == null) return null;
     final s = raw.toString().trim();
     return s.isEmpty ? null : s;
+  }
+
+  static String? _targetPathFromData(Map<String, dynamic> data) {
+    final raw = data['targetPath'];
+    if (raw == null) return null;
+    final s = raw.toString().trim();
+    if (s.isEmpty || !s.startsWith('/')) return null;
+    return s;
   }
 
   @override
