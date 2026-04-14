@@ -40,6 +40,13 @@ final globalUnreadCountProvider = StreamProvider.autoDispose<int>((ref) {
   return ref.watch(notificationCenterRepositoryProvider).watchGlobalUnreadCount();
 });
 
+final myTripUnreadTotalsProvider =
+    StreamProvider.autoDispose<Map<String, int>>((ref) {
+  return ref
+      .watch(notificationCenterRepositoryProvider)
+      .watchMyTripUnreadTotals();
+});
+
 class TripNotificationCounters {
   TripNotificationCounters({
     required this.channels,
@@ -226,6 +233,27 @@ class NotificationCenterRepository {
         total += counters.total;
       }
       return total;
+    });
+  }
+
+  Stream<Map<String, int>> watchMyTripUnreadTotals() {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) {
+      return Stream.value(const <String, int>{});
+    }
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('tripNotificationCounters')
+        .snapshots()
+        .map((snap) {
+      final unreadByTrip = <String, int>{};
+      for (final doc in snap.docs) {
+        unreadByTrip[doc.id] = TripNotificationCounters.fromFirestore(
+          doc.data(),
+        ).total;
+      }
+      return unreadByTrip;
     });
   }
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/core/notifications/notification_center_repository.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planzers/features/trips/data/trip.dart';
@@ -37,6 +38,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   @override
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsStreamProvider);
+    final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
@@ -80,6 +82,19 @@ class _TripsPageState extends ConsumerState<TripsPage>
           }
 
           final grouped = _groupTripsByTimeline(trips);
+          final unreadByTrip = unreadByTripAsync.asData?.value ?? const <String, int>{};
+          final pastUnread = _sumUnreadForTrips(
+            grouped[_TripTimelineCategory.past] ?? const [],
+            unreadByTrip,
+          );
+          final ongoingUnread = _sumUnreadForTrips(
+            grouped[_TripTimelineCategory.ongoing] ?? const [],
+            unreadByTrip,
+          );
+          final upcomingUnread = _sumUnreadForTrips(
+            grouped[_TripTimelineCategory.upcoming] ?? const [],
+            unreadByTrip,
+          );
           final colorScheme = Theme.of(context).colorScheme;
           final palette = context.planzersColors;
 
@@ -97,17 +112,20 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   _buildTimelineTab(
                     context,
                     label: 'Passés',
-                    count: grouped[_TripTimelineCategory.past]?.length ?? 0,
+                    tripCount: grouped[_TripTimelineCategory.past]?.length ?? 0,
+                    unreadCount: pastUnread,
                   ),
                   _buildTimelineTab(
                     context,
                     label: 'En cours',
-                    count: grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
+                    tripCount: grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
+                    unreadCount: ongoingUnread,
                   ),
                   _buildTimelineTab(
                     context,
                     label: 'À venir',
-                    count: grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
+                    tripCount: grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
+                    unreadCount: upcomingUnread,
                   ),
                 ],
               ),
@@ -232,21 +250,43 @@ class _TripsPageState extends ConsumerState<TripsPage>
     return aStart.compareTo(bStart);
   }
 
+  int _sumUnreadForTrips(List<Trip> trips, Map<String, int> unreadByTrip) {
+    return trips.fold<int>(
+      0,
+      (sum, trip) => sum + (unreadByTrip[trip.id] ?? 0),
+    );
+  }
+
   Tab _buildTimelineTab(
     BuildContext context, {
     required String label,
-    required int count,
+    required int tripCount,
+    required int unreadCount,
   }) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall;
+    final labelStyle = Theme.of(
+      context,
+    ).textTheme.labelSmall?.copyWith(height: 1.0);
     return Tab(
+      height: 44,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label),
-          Text(
-            '$count',
-            style: labelStyle,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(label),
+              if (unreadCount > 0) ...[
+                const SizedBox(width: 6),
+                Badge.count(
+                  count: unreadCount,
+                  child: const SizedBox(width: 10, height: 10),
+                ),
+              ],
+            ],
           ),
+          const SizedBox(height: 1),
+          Text('($tripCount)', style: labelStyle),
         ],
       ),
     );
@@ -557,7 +597,7 @@ class _TripsTimelineList extends StatelessWidget {
   }
 }
 
-class _TripCard extends StatelessWidget {
+class _TripCard extends ConsumerWidget {
   const _TripCard({
     required this.trip,
     required this.color,
@@ -575,7 +615,9 @@ class _TripCard extends StatelessWidget {
   final VoidCallback onDelete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final countersAsync = ref.watch(tripNotificationCountersProvider(trip.id));
+    final unreadCount = countersAsync.asData?.value?.total ?? 0;
     final surface = Color.alphaBlend(
       color.withValues(alpha: 0.12),
       Theme.of(context).colorScheme.surface,
@@ -627,12 +669,25 @@ class _TripCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (canDelete)
-                IconButton(
-                  tooltip: 'Supprimer',
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (unreadCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4, bottom: 2),
+                      child: Badge.count(
+                        count: unreadCount,
+                        child: const Icon(Icons.notifications_none_outlined),
+                      ),
+                    ),
+                  if (canDelete)
+                    IconButton(
+                      tooltip: 'Supprimer',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                ],
+              ),
             ],
           ),
         ),

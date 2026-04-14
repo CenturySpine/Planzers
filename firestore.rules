@@ -17,6 +17,18 @@ service cloud.firestore {
         && request.auth.uid in tripDoc(tripId).data.memberIds;
     }
 
+    function isTripMemberAfterWrite(tripId) {
+      return signedIn()
+        && existsAfter(/databases/$(database)/documents/trips/$(tripId))
+        && getAfter(/databases/$(database)/documents/trips/$(tripId))
+          .data.keys().hasAll(['memberIds'])
+        && getAfter(/databases/$(database)/documents/trips/$(tripId))
+          .data.memberIds is list
+        && request.auth.uid in getAfter(
+          /databases/$(database)/documents/trips/$(tripId)
+        ).data.memberIds;
+    }
+
     function isTripAdmin(tripId) {
       return isTripMember(tripId)
         && (
@@ -83,7 +95,8 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
 
       match /expenseGroups/{groupId} {
-        allow read, write: if isTripMember(tripId);
+        allow read, update, delete: if isTripMember(tripId);
+        allow create: if isTripMember(tripId) || isTripMemberAfterWrite(tripId);
       }
 
       match /expenses/{expenseId} {
