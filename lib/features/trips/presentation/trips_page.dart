@@ -633,6 +633,8 @@ class _TripCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              _TripCardLeadingImage(imageUrl: trip.bannerImageUrl),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -691,6 +693,34 @@ class _TripCard extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TripCardLeadingImage extends StatelessWidget {
+  const _TripCardLeadingImage({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanUrl = (imageUrl ?? '').trim();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: 64,
+        height: 64,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: cleanUrl.isNotEmpty
+            ? Image.network(
+                cleanUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.photo_outlined);
+                },
+              )
+            : const Icon(Icons.landscape_outlined),
       ),
     );
   }

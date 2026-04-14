@@ -2,9 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/core/firebase/app_public_hosts.dart';
+import 'package:planzers/core/firebase/firebase_target.dart';
 import 'package:planzers/core/firebase/firebase_target_provider.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/trips/data/invite_join_context.dart';
@@ -13,9 +16,18 @@ import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
+  final configuredBucket = switch (target) {
+    FirebaseTarget.preview => 'planzers-preview.firebasestorage.app',
+    FirebaseTarget.prod => 'planzers.firebasestorage.app',
+  };
+  final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
+  final bucketUri =
+      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
   return TripsRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
+    storage: FirebaseStorage.instanceFor(bucket: bucketUri),
     mobileInviteBaseUri: mobileInviteBaseUriForTarget(target),
   );
 });
@@ -34,11 +46,13 @@ class TripsRepository {
   TripsRepository({
     required this.firestore,
     required this.auth,
+    required this.storage,
     required this.mobileInviteBaseUri,
   });
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final FirebaseStorage storage;
 
   /// Used for invite links from iOS/Android/desktop native. Web uses
   /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
@@ -615,5 +629,99 @@ class TripsRepository {
         FirebaseFunctions.instanceFor(region: 'europe-west1');
     final callable = regionFunctions.httpsCallable('leaveTrip');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
+  }
+
+  Future<void> upsertTripBannerImage({
+    required String tripId,
+    required Uint8List bytes,
+    required String fileExt,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+    if (bytes.isEmpty) {
+      throw StateError('Image invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut modifier la photo');
+    }
+
+    final previousPath = (data['bannerImagePath'] as String?)?.trim() ?? '';
+    final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
+    final ext = safeExt.isEmpty ? 'jpg' : safeExt;
+    final objectPath =
+        'trips/$cleanTripId/banner_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final contentType = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      _ => 'image/jpeg',
+    };
+    final objectRef = storage.ref(objectPath);
+    await objectRef.putData(
+      bytes,
+      SettableMetadata(contentType: contentType),
+    );
+    final url = await objectRef.getDownloadURL();
+
+    await tripRef.update(<String, dynamic>{
+      'bannerImageUrl': url,
+      'bannerImagePath': objectPath,
+      'bannerUpdatedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (previousPath.isNotEmpty && previousPath != objectPath) {
+      try {
+        await storage.ref(previousPath).delete();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> removeTripBannerImage({required String tripId}) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?) ?? '';
+    if (ownerId != user.uid) {
+      throw StateError('Seul le proprietaire peut modifier la photo');
+    }
+
+    final path = (data['bannerImagePath'] as String?)?.trim() ?? '';
+    if (path.isNotEmpty) {
+      try {
+        await storage.ref(path).delete();
+      } catch (_) {}
+    }
+
+    await tripRef.update(<String, dynamic>{
+      'bannerImageUrl': FieldValue.delete(),
+      'bannerImagePath': FieldValue.delete(),
+      'bannerUpdatedAt': FieldValue.delete(),
+    });
   }
 }

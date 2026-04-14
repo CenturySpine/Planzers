@@ -12,6 +12,8 @@ class Trip {
     required this.createdAt,
     this.startDate,
     this.endDate,
+    this.bannerImageUrl,
+    this.bannerImagePath,
     this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
   });
@@ -29,6 +31,8 @@ class Trip {
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? bannerImageUrl;
+  final String? bannerImagePath;
 
   /// Public display strings for members (e.g. email local part), readable by all
   /// trip participants; populated by Cloud Functions / client on create.
@@ -97,6 +101,8 @@ class Trip {
       createdAt: createdAt,
       startDate: _parseOptionalDate(data['startDate']),
       endDate: _parseOptionalDate(data['endDate']),
+      bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
+      bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       memberPublicLabels:
           memberPublicLabelsFromFirestore(data['memberPublicLabels']),
       adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),
@@ -114,6 +120,10 @@ class Trip {
       'createdAt': createdAt.toIso8601String(),
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
+      if ((bannerImageUrl ?? '').trim().isNotEmpty)
+        'bannerImageUrl': bannerImageUrl!.trim(),
+      if ((bannerImagePath ?? '').trim().isNotEmpty)
+        'bannerImagePath': bannerImagePath!.trim(),
       if (memberPublicLabels.isNotEmpty) 'memberPublicLabels': memberPublicLabels,
       if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
     };

@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
-import 'package:planzers/features/trips/presentation/trip_participants_page.dart';
 import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
+import 'package:planzers/features/trips/presentation/trip_participants_page.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -29,6 +30,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   bool _isEditing = false;
   bool _isSaving = false;
   bool _inviteClipboardBusy = false;
+  bool _isBannerBusy = false;
   DateTime? _editStartDate;
   DateTime? _editEndDate;
 
@@ -194,6 +196,134 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
+  Future<void> _pickAndUploadBannerImage() async {
+    if (_isBannerBusy) return;
+    final colorScheme = Theme.of(context).colorScheme;
+    setState(() => _isBannerBusy = true);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 95,
+      );
+      if (picked == null) {
+        return;
+      }
+      if (!mounted) return;
+
+      var imagePath = picked.path;
+      final cropWanted = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Ajuster l image ?'),
+          content: const Text(
+            'Tu peux recadrer et zoomer pour adapter la photo à la bannière.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Utiliser telle quelle'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Recadrer'),
+            ),
+          ],
+        ),
+      );
+
+      if (cropWanted == true) {
+        final cropped = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Recadrer la bannière',
+              toolbarColor: colorScheme.primary,
+              toolbarWidgetColor: Colors.white,
+              activeControlsWidgetColor: colorScheme.primary,
+              dimmedLayerColor: Colors.black54,
+              lockAspectRatio: false,
+              initAspectRatio: CropAspectRatioPreset.ratio16x9,
+            ),
+            IOSUiSettings(
+              title: 'Recadrer la bannière',
+              aspectRatioLockEnabled: false,
+              resetAspectRatioEnabled: true,
+            ),
+          ],
+        );
+        if (cropped == null) {
+          return;
+        }
+        imagePath = cropped.path;
+      }
+
+      final bytes = await XFile(imagePath).readAsBytes();
+      final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(imagePath);
+      final ext = extMatch?.group(1)?.toLowerCase() ?? 'jpg';
+      await ref.read(tripsRepositoryProvider).upsertTripBannerImage(
+            tripId: _trip.id,
+            bytes: bytes,
+            fileExt: ext,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo de bannière mise à jour')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur photo: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBannerBusy = false);
+      }
+    }
+  }
+
+  Future<void> _removeBannerImage() async {
+    if (_isBannerBusy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la photo ?'),
+        content: const Text('La bannière sera retirée du voyage.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isBannerBusy = true);
+    try {
+      await ref.read(tripsRepositoryProvider).removeTripBannerImage(tripId: _trip.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo supprimée')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur suppression photo: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBannerBusy = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
@@ -215,17 +345,74 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
                 .map((id) => id.toString())
                 .toList();
+        final liveBannerImageUrl =
+            (liveData?['bannerImageUrl'] as String?)?.trim() ??
+                (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Stack(
+              children: [
+                _TripBanner(
+                  imageUrl: liveBannerImageUrl,
+                  busy: _isBannerBusy,
+                  onPick: canEdit ? _pickAndUploadBannerImage : null,
+                ),
+                if (canEdit)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: Material(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(999),
+                      child: PopupMenuButton<String>(
+                        tooltip: 'Actions photo',
+                        enabled: !_isBannerBusy,
+                        onSelected: (value) {
+                          if (value == 'change') {
+                            _pickAndUploadBannerImage();
+                            return;
+                          }
+                          if (value == 'remove') {
+                            _removeBannerImage();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'change',
+                            child: Text('Changer de photo'),
+                          ),
+                          if (liveBannerImageUrl.isNotEmpty)
+                            const PopupMenuItem(
+                              value: 'remove',
+                              child: Text('Supprimer'),
+                            ),
+                        ],
+                        icon: _isBannerBusy
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.photo_camera_outlined, color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             if (canEdit)
               Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     if (_isEditing) ...[
                       IconButton(
@@ -238,24 +425,21 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         onPressed: _isSaving ? null : _save,
                         icon: _isSaving
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.check),
                       ),
                     ] else ...[
                       IconButton(
                         tooltip: 'Partager invitation',
-                        onPressed:
-                            _inviteClipboardBusy ? null : _shareInviteLink,
+                        onPressed: _inviteClipboardBusy ? null : _shareInviteLink,
                         icon: _inviteClipboardBusy
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.group_add_outlined),
                       ),
@@ -274,8 +458,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                       IconButton(
                         tooltip: 'Copier le code d invitation',
-                        onPressed:
-                            _inviteClipboardBusy ? null : _copyInviteCode,
+                        onPressed: _inviteClipboardBusy ? null : _copyInviteCode,
                         icon: const Icon(Icons.vpn_key_outlined),
                       ),
                       IconButton(
@@ -492,8 +675,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _OwnerInfoRow(ownerId: _trip.ownerId),
-                    const SizedBox(height: 12),
                     _InfoRow(
                       label: 'Adresse',
                       value: _trip.address,
@@ -518,11 +699,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         return '$n';
                       }(),
                     ),
-                    const SizedBox(height: 12),
-                    _InfoRow(
-                      label: 'Cree le',
-                      value: _trip.createdAt.toLocal().toString(),
-                    ),
                   ],
                 ),
               ),
@@ -539,6 +715,71 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           ],
         );
       },
+    );
+  }
+}
+
+class _TripBanner extends StatelessWidget {
+  const _TripBanner({
+    required this.imageUrl,
+    required this.busy,
+    required this.onPick,
+  });
+
+  final String imageUrl;
+  final bool busy;
+  final VoidCallback? onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(20));
+    return Material(
+      shape: shape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPick,
+        child: Container(
+          height: 200,
+          width: double.infinity,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: imageUrl.isNotEmpty
+              ? Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(child: Icon(Icons.broken_image_outlined, size: 42));
+                      },
+                    ),
+                    if (busy)
+                      const ColoredBox(
+                        color: Colors.black26,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                      ),
+                  ],
+                )
+              : Center(
+                  child: busy
+                      ? const CircularProgressIndicator(strokeWidth: 2.5)
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.add_photo_alternate_outlined, size: 36),
+                            const SizedBox(height: 8),
+                            Text(
+                              onPick == null
+                                  ? 'Aucune photo'
+                                  : 'Ajouter une photo de bannière',
+                            ),
+                          ],
+                        ),
+                ),
+        ),
+      ),
     );
   }
 }
@@ -704,43 +945,6 @@ class _InfoRow extends StatelessWidget {
             splashRadius: 18,
           ),
       ],
-    );
-  }
-}
-
-class _OwnerInfoRow extends StatelessWidget {
-  const _OwnerInfoRow({
-    required this.ownerId,
-  });
-
-  final String ownerId;
-
-  @override
-  Widget build(BuildContext context) {
-    if (ownerId.trim().isEmpty) {
-      return const _InfoRow(label: 'Proprietaire', value: 'Nom indisponible');
-    }
-
-    final ownerDocStream =
-        FirebaseFirestore.instance.collection('users').doc(ownerId).snapshots();
-
-    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: ownerDocStream,
-      builder: (context, snapshot) {
-        final data = snapshot.data?.data();
-        final displayName = (data?['displayName'] as String?)?.trim() ?? '';
-        final email = (data?['email'] as String?)?.trim() ?? '';
-
-        final emailLocal =
-            email.isNotEmpty ? displayLabelFromEmail(email) : '';
-        final ownerLabel = displayName.isNotEmpty
-            ? displayName
-            : email.isNotEmpty
-                ? (emailLocal.isNotEmpty ? emailLocal : email)
-                : 'Nom indisponible';
-
-        return _InfoRow(label: 'Proprietaire', value: ownerLabel);
-      },
     );
   }
 }

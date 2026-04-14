@@ -38,6 +38,10 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Permet de choisir une photo pour la bannière du voyage.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Permet d enregistrer une photo recadrée pour la bannière du voyage.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
