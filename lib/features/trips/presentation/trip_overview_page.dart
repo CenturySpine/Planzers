@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planzers/features/rooms/data/rooms_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
@@ -306,6 +307,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
+    final roomsCount = roomsAsync.asData?.value.length ?? 0;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
     final tripDocStream = FirebaseFirestore.instance
@@ -869,6 +872,32 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   ),
+                  if (!_isEditing) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _TripAccessTile(
+                            label: 'Chambres',
+                            icon: Icons.bed_outlined,
+                            countLabel: '$roomsCount',
+                            alertCount: 0,
+                            onTap: () => context.go('/trips/${_trip.id}/rooms'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _TripAccessTile(
+                            label: 'Voitures',
+                            icon: Icons.directions_car_outlined,
+                            countLabel: '0',
+                            alertCount: 0,
+                            onTap: () => context.go('/trips/${_trip.id}/cars'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (myUid != null &&
                       !canEdit &&
                       liveMemberIds
@@ -1111,6 +1140,81 @@ class _InfoRow extends StatelessWidget {
             splashRadius: 18,
           ),
       ],
+    );
+  }
+}
+
+class _TripAccessTile extends StatelessWidget {
+  const _TripAccessTile({
+    required this.label,
+    required this.icon,
+    required this.countLabel,
+    required this.alertCount,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final String countLabel;
+  final int alertCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: SizedBox(
+            height: 110,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: colorScheme.primary),
+                    const Spacer(),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(
+                          Icons.notifications_none_outlined,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        if (alertCount > 0)
+                          Positioned(
+                            right: -1,
+                            top: -1,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: colorScheme.error,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  countLabel,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

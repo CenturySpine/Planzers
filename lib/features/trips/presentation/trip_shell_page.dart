@@ -64,36 +64,31 @@ class TripShellPage extends ConsumerWidget {
 
   static const List<_TripNavDestination> _destinations = [
     _TripNavDestination(
+      branchIndex: 0,
       label: 'Aperçu',
       icon: Icons.dashboard_outlined,
       selectedIcon: Icons.dashboard,
     ),
     _TripNavDestination(
+      branchIndex: 1,
       label: 'Messagerie',
       icon: Icons.chat_bubble_outline,
       selectedIcon: Icons.chat_bubble,
     ),
     _TripNavDestination(
+      branchIndex: 2,
       label: 'Dépenses',
       icon: Icons.payments_outlined,
       selectedIcon: Icons.payments,
     ),
     _TripNavDestination(
-      label: 'Chambres',
-      icon: Icons.bed_outlined,
-      selectedIcon: Icons.bed,
-    ),
-    _TripNavDestination(
-      label: 'Voitures',
-      icon: Icons.directions_car_outlined,
-      selectedIcon: Icons.directions_car,
-    ),
-    _TripNavDestination(
+      branchIndex: 5,
       label: 'Repas',
       icon: Icons.restaurant_outlined,
       selectedIcon: Icons.restaurant,
     ),
     _TripNavDestination(
+      branchIndex: 6,
       label: 'Activités',
       icon: Icons.event_available_outlined,
       selectedIcon: Icons.event_available,
@@ -179,6 +174,12 @@ class TripShellPage extends ConsumerWidget {
             builder: (context, constraints) {
               final useRail = constraints.maxWidth >= _kTripShellWideBreakpoint;
               final railExtended = constraints.maxWidth >= 900;
+              final selectedDestinationIndex = _destinations.indexWhere(
+                (destination) =>
+                    destination.branchIndex == navigationShell.currentIndex,
+              );
+              final displayedSelectedIndex =
+                  selectedDestinationIndex >= 0 ? selectedDestinationIndex : 0;
 
               return Scaffold(
                 appBar: AppBar(
@@ -196,8 +197,12 @@ class TripShellPage extends ConsumerWidget {
                   children: [
                     if (useRail)
                       NavigationRail(
-                        selectedIndex: navigationShell.currentIndex,
-                        onDestinationSelected: navigationShell.goBranch,
+                        selectedIndex: displayedSelectedIndex,
+                        onDestinationSelected: (index) {
+                          navigationShell.goBranch(
+                            _destinations[index].branchIndex,
+                          );
+                        },
                         extended: railExtended,
                         // With extended: true, Flutter only allows none/null here;
                         // labels still show next to icons via [NavigationRailDestination.label].
@@ -229,8 +234,12 @@ class TripShellPage extends ConsumerWidget {
                 bottomNavigationBar: useRail
                     ? null
                     : _TripMobileScrollableNavBar(
-                        selectedIndex: navigationShell.currentIndex,
-                        onDestinationSelected: navigationShell.goBranch,
+                        selectedIndex: displayedSelectedIndex,
+                        onDestinationSelected: (index) {
+                          navigationShell.goBranch(
+                            _destinations[index].branchIndex,
+                          );
+                        },
                         destinations: _destinations,
                         unreadByTabLabel: {
                           'Messagerie': unreadMessages,
@@ -263,11 +272,13 @@ class TripShellPage extends ConsumerWidget {
 
 class _TripNavDestination {
   const _TripNavDestination({
+    required this.branchIndex,
     required this.label,
     required this.icon,
     required this.selectedIcon,
   });
 
+  final int branchIndex;
   final String label;
   final IconData icon;
   final IconData selectedIcon;
@@ -290,6 +301,8 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
 
   static const double _barHeight = 80;
   static const double _minItemWidth = 80;
+  static const double _horizontalListPadding = 7;
+  static const double _itemSpacing = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -307,9 +320,10 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
           height: _barHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: _horizontalListPadding),
             itemCount: destinations.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 4),
+            separatorBuilder: (_, __) => const SizedBox(width: _itemSpacing),
             itemBuilder: (context, index) {
               final d = destinations[index];
               final selected = selectedIndex == index;
