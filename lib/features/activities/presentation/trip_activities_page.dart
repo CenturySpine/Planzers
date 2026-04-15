@@ -11,6 +11,7 @@ import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planzers/features/trips/presentation/name_list_search.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
 class TripActivitiesPage extends ConsumerStatefulWidget {
@@ -25,6 +26,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
   String? _presenceTripId;
+  final TextEditingController _suggestionsSearchController =
+      TextEditingController();
+  final TextEditingController _plannedSearchController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -38,10 +43,12 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     if (tripId != null && tripId.isNotEmpty) {
       unawaited(
         _notificationCenter.clearOpenChannel(
-              tripId: tripId,
-            ),
+          tripId: tripId,
+        ),
       );
     }
+    _suggestionsSearchController.dispose();
+    _plannedSearchController.dispose();
     super.dispose();
   }
 
@@ -68,10 +75,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     _lastReadMarkedAt = latest;
     unawaited(
       _notificationCenter.markReadUpTo(
-            tripId: tripId,
-            channel: TripNotificationChannel.activities,
-            timestamp: latest,
-          ),
+        tripId: tripId,
+        channel: TripNotificationChannel.activities,
+        timestamp: latest,
+      ),
     );
   }
 
@@ -87,9 +94,9 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     _lastPresencePingAt = now;
     unawaited(
       _notificationCenter.setOpenChannel(
-            tripId: tripId,
-            channel: TripNotificationChannel.activities,
-          ),
+        tripId: tripId,
+        channel: TripNotificationChannel.activities,
+      ),
     );
   }
 
@@ -103,44 +110,58 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       body: activitiesAsync.when(
         data: (items) {
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
-          if (items.isEmpty) {
-            return ListView(
-              padding: const EdgeInsets.all(24),
+          final suggestionsQuery = _suggestionsSearchController.text;
+          final plannedQuery = _plannedSearchController.text;
+          final suggestionsEntries = _buildSuggestionsEntries(
+            items,
+            query: suggestionsQuery,
+            creatorLabelFor: (activity) =>
+                creatorLabelForActivity(activity, trip.memberPublicLabels),
+          );
+          final plannedEntries = _buildPlannedEntries(
+            items,
+            query: plannedQuery,
+            creatorLabelFor: (activity) =>
+                creatorLabelForActivity(activity, trip.memberPublicLabels),
+          );
+
+          return DefaultTabController(
+            length: 3,
+            child: Column(
               children: [
-                Text(
-                  'Activites',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
                 const SizedBox(height: 8),
-                Text(
-                  'Proposez des sorties : sport, randonnees, shopping, visites, restaurants. '
-                  'Chaque activite peut inclure un lien (apercu comme sur l\'apercu du voyage), '
-                  'une adresse pour le trajet depuis le logement, et des commentaires.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'Suggestions'),
+                    Tab(text: 'Planifiées'),
+                    Tab(text: 'Agenda'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _ActivitiesTabList(
+                        searchController: _suggestionsSearchController,
+                        onSearchChanged: (_) => setState(() {}),
+                        entries: suggestionsEntries,
+                        tripId: trip.id,
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        emptyMessage: 'Aucune suggestion.',
                       ),
+                      _ActivitiesTabList(
+                        searchController: _plannedSearchController,
+                        onSearchChanged: (_) => setState(() {}),
+                        entries: plannedEntries,
+                        tripId: trip.id,
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        emptyMessage: 'Aucune activité planifiée.',
+                      ),
+                      const _ActivitiesAgendaPlaceholder(),
+                    ],
+                  ),
                 ),
               ],
-            );
-          }
-
-          final listEntries = _buildActivitiesEntries(items);
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-            itemCount: listEntries.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final entry = listEntries[index];
-              if (entry.dayLabel != null) {
-                return _ActivityDayPill(label: entry.dayLabel!);
-              }
-              return _ActivityListTile(
-                tripId: trip.id,
-                activity: entry.activity!,
-                tripMemberPublicLabels: trip.memberPublicLabels,
-              );
-            },
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -159,6 +180,93 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
         tooltip: 'Proposer',
         onPressed: () => _openAddActivitySheet(context, ref, trip.id),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _ActivitiesTabList extends StatelessWidget {
+  const _ActivitiesTabList({
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.entries,
+    required this.tripId,
+    required this.tripMemberPublicLabels,
+    required this.emptyMessage,
+  });
+
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final List<_ActivitiesListEntry> entries;
+  final String tripId;
+  final Map<String, String> tripMemberPublicLabels;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: NameListSearchTextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+          ),
+        ),
+        Expanded(
+          child: entries.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      searchController.text.trim().isEmpty
+                          ? emptyMessage
+                          : kNameListSearchEmptyMessage,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    if (entry.dayLabel != null) {
+                      return _ActivityDayPill(label: entry.dayLabel!);
+                    }
+                    return _ActivityListTile(
+                      tripId: tripId,
+                      activity: entry.activity!,
+                      tripMemberPublicLabels: tripMemberPublicLabels,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivitiesAgendaPlaceholder extends StatelessWidget {
+  const _ActivitiesAgendaPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'Onglet agenda à venir.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
       ),
     );
   }
@@ -242,21 +350,43 @@ class _ActivityListTile extends StatelessWidget {
   }
 
   String _creatorLabel(TripActivity activity) {
-    final id = activity.createdBy.trim();
-    if (id.isEmpty) return 'inconnu';
-    return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
-        ? tripMemberPublicLabels[id]!.trim()
-        : id;
+    return creatorLabelForActivity(activity, tripMemberPublicLabels);
   }
 }
 
-List<_ActivitiesListEntry> _buildActivitiesEntries(List<TripActivity> items) {
-  final toPlan = items
-      .where((a) => !a.done && a.plannedAt == null)
+List<_ActivitiesListEntry> _buildSuggestionsEntries(
+  List<TripActivity> items, {
+  required String query,
+  required String Function(TripActivity activity) creatorLabelFor,
+}) {
+  final suggestions = items
+      .where((a) => a.plannedAt == null)
+      .where(
+        (a) => _activityMatchesQuery(
+          a,
+          query,
+          creatorLabel: creatorLabelFor(a),
+        ),
+      )
       .toList()
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  return suggestions.map(_ActivitiesListEntry.activity).toList();
+}
+
+List<_ActivitiesListEntry> _buildPlannedEntries(
+  List<TripActivity> items, {
+  required String query,
+  required String Function(TripActivity activity) creatorLabelFor,
+}) {
   final dated = items
-      .where((a) => a.done || a.plannedAt != null)
+      .where((a) => a.plannedAt != null)
+      .where(
+        (a) => _activityMatchesQuery(
+          a,
+          query,
+          creatorLabel: creatorLabelFor(a),
+        ),
+      )
       .toList()
     ..sort((a, b) {
       final aDate = _activityDateForGrouping(a);
@@ -267,11 +397,6 @@ List<_ActivitiesListEntry> _buildActivitiesEntries(List<TripActivity> items) {
     });
 
   final entries = <_ActivitiesListEntry>[];
-
-  if (toPlan.isNotEmpty) {
-    entries.add(const _ActivitiesListEntry.separator('A planifier'));
-    entries.addAll(toPlan.map(_ActivitiesListEntry.activity));
-  }
 
   DateTime? previousDay;
   for (final activity in dated) {
@@ -288,6 +413,42 @@ List<_ActivitiesListEntry> _buildActivitiesEntries(List<TripActivity> items) {
 
 DateTime _activityDateForGrouping(TripActivity activity) {
   return activity.plannedAt ?? activity.doneAt ?? activity.createdAt;
+}
+
+bool _activityMatchesQuery(
+  TripActivity activity,
+  String rawQuery, {
+  required String creatorLabel,
+}) {
+  final query = rawQuery.trim().toLowerCase();
+  if (query.isEmpty) return true;
+  final previewValues = activity.linkPreview.values
+      .whereType<String>()
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty);
+  final haystack = <String>[
+    activity.id,
+    activity.label,
+    activity.category.categoryLabelFr,
+    activity.linkUrl,
+    activity.address,
+    activity.freeComments,
+    activity.createdBy,
+    creatorLabel,
+    ...previewValues,
+  ].join(' ').toLowerCase();
+  return haystack.contains(query);
+}
+
+String creatorLabelForActivity(
+  TripActivity activity,
+  Map<String, String> tripMemberPublicLabels,
+) {
+  final id = activity.createdBy.trim();
+  if (id.isEmpty) return 'inconnu';
+  return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
+      ? tripMemberPublicLabels[id]!.trim()
+      : id;
 }
 
 String _dayLabelFor(DateTime day) {
@@ -527,7 +688,8 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             const SizedBox(height: 12),
             SwitchListTile(
               value: _isLocked,
-              onChanged: _saving ? null : (value) => setState(() => _isLocked = value),
+              onChanged:
+                  _saving ? null : (value) => setState(() => _isLocked = value),
               title: const Text('Activite verrouillee'),
               subtitle: const Text(
                 'Si activee, seuls les admins peuvent modifier cette activite.',
