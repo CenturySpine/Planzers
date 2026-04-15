@@ -808,7 +808,7 @@ class _SettlementSection extends StatelessWidget {
                   Text(
                     balancesByCurrency.isEmpty
                         ? 'Pas encore de calcul.'
-                        : 'Tout est équilibré.',
+                        : 'Tu ne dois rien à personne 😎',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
