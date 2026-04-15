@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/core/notifications/notification_center_repository.dart';
 import 'package:planzers/core/notifications/notification_channel.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
+import 'package:planzers/features/messaging/data/trip_message_reaction.dart';
 import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
 
@@ -28,6 +30,14 @@ class TripMessagingPage extends ConsumerStatefulWidget {
 }
 
 class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
+  static const List<String> _quickReactionEmojis = <String>[
+    '👍',
+    '❤️',
+    '😂',
+    '😮',
+    '🙏',
+  ];
+
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   late final NotificationCenterRepository _notificationCenter;
@@ -149,6 +159,111 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
       if (mounted) {
         setState(() => _sending = false);
       }
+    }
+  }
+
+  Future<String?> _pickEmoji() async {
+    return showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SizedBox(
+          height: math.min(MediaQuery.sizeOf(ctx).height * 0.55, 420),
+          child: EmojiPicker(
+            onEmojiSelected: (_, emoji) => Navigator.pop(ctx, emoji.emoji),
+            config: Config(
+              checkPlatformCompatibility: true,
+              emojiViewConfig: EmojiViewConfig(
+                columns: 8,
+                emojiSizeMax: 32,
+                noRecents: const Text('Aucun emoji recent'),
+              ),
+              categoryViewConfig: const CategoryViewConfig(
+                iconColor: Colors.grey,
+                iconColorSelected: Colors.blue,
+                indicatorColor: Colors.blue,
+              ),
+              bottomActionBarConfig: const BottomActionBarConfig(
+                showBackspaceButton: false,
+                showSearchViewButton: true,
+              ),
+              searchViewConfig: const SearchViewConfig(
+                buttonIconColor: Colors.blue,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _reactToMessage({
+    required String tripId,
+    required TripMessage message,
+    required List<TripMessageReaction> reactions,
+  }) async {
+    final myUid = ref.read(authStateProvider).asData?.value?.uid ??
+        FirebaseAuth.instance.currentUser?.uid;
+    if (myUid == null || myUid.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Utilisateur non connecte')),
+      );
+      return;
+    }
+
+    final selectedEmoji = await _pickEmoji();
+    if (selectedEmoji == null || !mounted) return;
+    await _setReactionWithEmoji(
+      tripId: tripId,
+      message: message,
+      reactions: reactions,
+      selectedEmoji: selectedEmoji,
+    );
+  }
+
+  Future<void> _setReactionWithEmoji({
+    required String tripId,
+    required TripMessage message,
+    required List<TripMessageReaction> reactions,
+    required String selectedEmoji,
+  }) async {
+    final myUid = ref.read(authStateProvider).asData?.value?.uid ??
+        FirebaseAuth.instance.currentUser?.uid;
+    if (myUid == null || myUid.trim().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Utilisateur non connecte')),
+      );
+      return;
+    }
+
+    final currentReaction = reactions
+        .where((r) => r.userId == myUid)
+        .cast<TripMessageReaction?>()
+        .firstWhere((r) => r != null, orElse: () => null);
+    final repository = ref.read(tripMessagesRepositoryProvider);
+    try {
+      if (currentReaction?.emoji == selectedEmoji) {
+        await repository.removeMyReaction(
+          tripId: tripId,
+          messageId: message.id,
+        );
+      } else {
+        await repository.setMyReaction(
+          tripId: tripId,
+          messageId: message.id,
+          emoji: selectedEmoji,
+        );
+      }
+      _clearSelection();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reaction impossible : $e')),
+      );
     }
   }
 
@@ -276,6 +391,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
         FirebaseAuth.instance.currentUser?.uid;
     final messagesAsync = ref.watch(tripMessagesStreamProvider(trip.id));
+    final reactionsAsync = ref.watch(tripMessageReactionsStreamProvider(trip.id));
 
     ref.listen(tripMessagesStreamProvider(trip.id), (_, next) {
       next.whenData((_) => _scrollToBottom());
@@ -311,59 +427,63 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                 if (m.authorId.trim().isNotEmpty) m.authorId.trim(),
             }.toList();
 
-            return StreamBuilder<Map<String, Map<String, dynamic>>>(
-              stream: ref
-                  .read(usersRepositoryProvider)
-                  .watchUsersDataByIds(labelUserIds),
-              builder: (context, userSnap) {
-                final userDocs =
-                    userSnap.data ?? const <String, Map<String, dynamic>>{};
-                final authorLabels = tripMemberLabelsFromUserDocsById(
-                  userDocs,
-                  labelUserIds,
-                  tripMemberPublicLabels: trip.memberPublicLabels,
-                  currentUserId: myUid,
-                  emptyFallback: 'Participant',
-                );
-                final pointerSelect = _pointerSelectsMessage(context);
-                final chatEntries = _buildChatEntries(messages, dateFmt);
+            return reactionsAsync.when(
+              data: (reactionsByMessage) {
+                return StreamBuilder<Map<String, Map<String, dynamic>>>(
+                  stream: ref
+                      .read(usersRepositoryProvider)
+                      .watchUsersDataByIds(labelUserIds),
+                  builder: (context, userSnap) {
+                    final userDocs =
+                        userSnap.data ?? const <String, Map<String, dynamic>>{};
+                    final authorLabels = tripMemberLabelsFromUserDocsById(
+                      userDocs,
+                      labelUserIds,
+                      tripMemberPublicLabels: trip.memberPublicLabels,
+                      currentUserId: myUid,
+                      emptyFallback: 'Participant',
+                    );
+                    final pointerSelect = _pointerSelectsMessage(context);
+                    final chatEntries = _buildChatEntries(messages, dateFmt);
 
-                return Column(
-                  children: [
-                    if (selected != null)
-                      _MessageSelectionAppBar(
-                        selectedIsMine: selectedIsMine,
-                        onClose: _clearSelection,
-                        onCopy: () => _copyMessage(selected),
-                        onEdit: selectedIsMine
-                            ? () async {
-                                final ok =
-                                    await _editMessage(trip.id, selected);
-                                if (ok && mounted) _clearSelection();
-                              }
-                            : null,
-                        onDelete: selectedIsMine
-                            ? () async {
-                                final ok =
-                                    await _deleteMessage(trip.id, selected);
-                                if (ok && mounted) _clearSelection();
-                              }
-                            : null,
-                      ),
-                    Expanded(
-                      child: messages.isEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Text(
-                                  'Aucun message pour l’instant. '
-                                  'Écris le premier pour lancer la discussion.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
+                    return Column(
+                      children: [
+                        if (selected != null)
+                          _MessageSelectionAppBar(
+                            selectedIsMine: selectedIsMine,
+                            onClose: _clearSelection,
+                            onCopy: () => _copyMessage(selected),
+                            onEdit: selectedIsMine
+                                ? () async {
+                                    final ok =
+                                        await _editMessage(trip.id, selected);
+                                    if (ok && mounted) _clearSelection();
+                                  }
+                                : null,
+                            onDelete: selectedIsMine
+                                ? () async {
+                                    final ok = await _deleteMessage(
+                                      trip.id,
+                                      selected,
+                                    );
+                                    if (ok && mounted) _clearSelection();
+                                  }
+                                : null,
+                          ),
+                        Expanded(
+                          child: messages.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text(
+                                      'Aucun message pour l’instant. '
+                                      'Écris le premier pour lancer la discussion.',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.bodyLarge,
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
                               controller: _scrollController,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -390,6 +510,10 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                       emptyFallback: 'Participant',
                                     );
                                 final timeLine = _timeLine(m, timeFmt);
+                                final reactions = reactionsByMessage[m.id] ??
+                                    const <TripMessageReaction>[];
+                                final groupedReactions =
+                                    _groupReactions(reactions, myUid: myUid);
 
                                 return Align(
                                   alignment: isMine
@@ -436,94 +560,148 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                 _selectedMessageId == null
                                             ? SystemMouseCursors.click
                                             : MouseCursor.defer,
-                                        child: Card(
-                                          margin: const EdgeInsets.symmetric(
-                                            vertical: 4,
-                                            horizontal: 4,
-                                          ),
-                                          elevation: isSelected ? 0 : null,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            side: isSelected
-                                                ? BorderSide(
-                                                    color: Theme.of(context)
+                                        child: Stack(
+                                          clipBehavior: Clip.none,
+                                          alignment: Alignment.topCenter,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                top: isSelected ? 34 : 0,
+                                              ),
+                                              child: Card(
+                                                margin: const EdgeInsets.symmetric(
+                                                  vertical: 4,
+                                                  horizontal: 4,
+                                                ),
+                                                elevation: isSelected ? 0 : null,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  side: isSelected
+                                                      ? BorderSide(
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .primary,
+                                                          width: 2,
+                                                        )
+                                                      : BorderSide.none,
+                                                ),
+                                                color: isSelected
+                                                    ? Theme.of(context)
                                                         .colorScheme
-                                                        .primary,
-                                                    width: 2,
-                                                  )
-                                                : BorderSide.none,
-                                          ),
-                                          color: isSelected
-                                              ? Theme.of(context)
-                                                  .colorScheme
-                                                  .primaryContainer
-                                                  .withValues(alpha: 0.55)
-                                              : (isMine
-                                                  ? Theme.of(context)
-                                                      .colorScheme
-                                                      .primaryContainer
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .surfaceContainerHighest),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(12),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment
-                                                          .baseline,
-                                                  textBaseline:
-                                                      TextBaseline.alphabetic,
-                                                  children: [
-                                                    Expanded(
-                                                      child: Text(
-                                                        label,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        .primaryContainer
+                                                        .withValues(alpha: 0.55)
+                                                    : (isMine
+                                                        ? Theme.of(context)
+                                                            .colorScheme
+                                                            .primaryContainer
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .surfaceContainerHighest),
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(12),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.stretch,
+                                                    children: [
+                                                      Row(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .baseline,
+                                                        textBaseline:
+                                                            TextBaseline.alphabetic,
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              label,
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .labelMedium
+                                                                  ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 8),
+                                                          Text(
+                                                            timeLine,
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .labelSmall
+                                                                ?.copyWith(
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .onSurfaceVariant,
+                                                                ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      _TripMessageLinkedText(
+                                                        text: m.text,
                                                         style: Theme.of(context)
                                                             .textTheme
-                                                            .labelMedium
-                                                            ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                            ),
+                                                            .bodyMedium,
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      timeLine,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .labelSmall
-                                                          ?.copyWith(
-                                                            color: Theme.of(
-                                                                    context)
-                                                                .colorScheme
-                                                                .onSurfaceVariant,
+                                                      if (groupedReactions
+                                                          .isNotEmpty)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                  top: 8),
+                                                          child: Wrap(
+                                                            spacing: 6,
+                                                            runSpacing: 6,
+                                                            children:
+                                                                groupedReactions
+                                                                    .map(
+                                                                      (group) =>
+                                                                          _ReactionChip(
+                                                                        emoji: group
+                                                                            .emoji,
+                                                                        count: group
+                                                                            .count,
+                                                                        highlighted:
+                                                                            group.containsCurrentUser,
+                                                                      ),
+                                                                    )
+                                                                    .toList(),
                                                           ),
-                                                    ),
-                                                  ],
+                                                        ),
+                                                    ],
+                                                  ),
                                                 ),
-                                                const SizedBox(height: 6),
-                                                _TripMessageLinkedText(
-                                                  text: m.text,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium,
-                                                  selectable:
-                                                      _selectedMessageId ==
-                                                              null &&
-                                                          !pointerSelect,
-                                                ),
-                                              ],
+                                              ),
                                             ),
-                                          ),
+                                            if (isSelected)
+                                              Positioned(
+                                                top: 0,
+                                                child: _InlineMessageQuickReactionBar(
+                                                  emojis: _quickReactionEmojis,
+                                                  onEmojiTap: (emoji) =>
+                                                      _setReactionWithEmoji(
+                                                    tripId: trip.id,
+                                                    message: m,
+                                                    reactions: reactions,
+                                                    selectedEmoji: emoji,
+                                                  ),
+                                                  onMoreTap: () => _reactToMessage(
+                                                    tripId: trip.id,
+                                                    message: m,
+                                                    reactions: reactions,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -531,8 +709,8 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                 );
                               },
                             ),
-                    ),
-                    Material(
+                        ),
+                        Material(
                       elevation: 2,
                       child: SafeArea(
                         top: false,
@@ -580,10 +758,22 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Erreur reactions : $e',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -607,12 +797,10 @@ class _TripMessageLinkedText extends StatefulWidget {
   const _TripMessageLinkedText({
     required this.text,
     required this.style,
-    required this.selectable,
   });
 
   final String text;
   final TextStyle? style;
-  final bool selectable;
 
   @override
   State<_TripMessageLinkedText> createState() => _TripMessageLinkedTextState();
@@ -696,9 +884,6 @@ class _TripMessageLinkedTextState extends State<_TripMessageLinkedText> {
   Widget build(BuildContext context) {
     _ensureSpans(context);
     final span = TextSpan(style: widget.style, children: _spans);
-    if (widget.selectable) {
-      return SelectableText.rich(span);
-    }
     return Text.rich(span);
   }
 }
@@ -838,6 +1023,142 @@ class _ChatListEntry {
 
   final TripMessage? message;
   final String? dayLabel;
+}
+
+class _InlineMessageQuickReactionBar extends StatelessWidget {
+  const _InlineMessageQuickReactionBar({
+    required this.emojis,
+    required this.onEmojiTap,
+    required this.onMoreTap,
+  });
+
+  final List<String> emojis;
+  final Future<void> Function(String emoji) onEmojiTap;
+  final Future<void> Function() onMoreTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final emoji in emojis)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1),
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: () => unawaited(onEmojiTap(emoji)),
+                  icon: Text(
+                    emoji,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  tooltip: 'Reagir avec $emoji',
+                ),
+              ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              onPressed: () => unawaited(onMoreTap()),
+              icon: const Icon(Icons.add),
+              tooltip: 'Plus d’emoticones',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+List<_ReactionGroup> _groupReactions(
+  List<TripMessageReaction> reactions, {
+  required String? myUid,
+}) {
+  final byEmoji = <String, _ReactionGroup>{};
+  for (final reaction in reactions) {
+    final emoji = reaction.emoji.trim();
+    if (emoji.isEmpty) continue;
+    final current = byEmoji[emoji];
+    final containsCurrentUser = myUid != null && reaction.userId == myUid;
+    if (current == null) {
+      byEmoji[emoji] = _ReactionGroup(
+        emoji: emoji,
+        count: 1,
+        containsCurrentUser: containsCurrentUser,
+      );
+    } else {
+      byEmoji[emoji] = _ReactionGroup(
+        emoji: emoji,
+        count: current.count + 1,
+        containsCurrentUser:
+            current.containsCurrentUser || containsCurrentUser,
+      );
+    }
+  }
+
+  final groups = byEmoji.values.toList()
+    ..sort((a, b) => b.count.compareTo(a.count));
+  return groups;
+}
+
+class _ReactionGroup {
+  const _ReactionGroup({
+    required this.emoji,
+    required this.count,
+    required this.containsCurrentUser,
+  });
+
+  final String emoji;
+  final int count;
+  final bool containsCurrentUser;
+}
+
+class _ReactionChip extends StatelessWidget {
+  const _ReactionChip({
+    required this.emoji,
+    required this.count,
+    required this.highlighted,
+  });
+
+  final String emoji;
+  final int count;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color:
+            highlighted ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          '$emoji $count',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Owns its [TextEditingController] for a correct dispose after the dialog

@@ -130,16 +130,44 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 4000;
         allow update: if isTripMember(tripId)
-          && resource.data.authorId == request.auth.uid
-          && request.resource.data.authorId == resource.data.authorId
-          && request.resource.data.createdAt == resource.data.createdAt
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 4000
-          && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['text', 'updatedAt']);
+          && (
+            (
+              resource.data.authorId == request.auth.uid
+              && request.resource.data.authorId == resource.data.authorId
+              && request.resource.data.createdAt == resource.data.createdAt
+              && request.resource.data.text is string
+              && request.resource.data.text.size() > 0
+              && request.resource.data.text.size() <= 4000
+              && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['text', 'updatedAt'])
+            )
+            || (
+              request.resource.data.authorId == resource.data.authorId
+              && request.resource.data.createdAt == resource.data.createdAt
+              && request.resource.data.text == resource.data.text
+              && request.resource.data.reactionsByUser is map
+              && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly([
+                  'reactionsByUser',
+                  'reactionsByUser.' + request.auth.uid,
+                  'updatedAt',
+                ])
+            )
+          );
         allow delete: if isTripMember(tripId)
           && resource.data.authorId == request.auth.uid;
+
+        match /reactions/{userId} {
+          allow read: if isTripMember(tripId);
+          allow create, update: if isTripMember(tripId)
+            && userId == request.auth.uid
+            && request.resource.data.keys().hasOnly(['emoji', 'createdAt', 'updatedAt'])
+            && request.resource.data.emoji is string
+            && request.resource.data.emoji.size() > 0
+            && request.resource.data.emoji.size() <= 16;
+          allow delete: if isTripMember(tripId)
+            && userId == request.auth.uid;
+        }
       }
 
       match /notificationReads/{userId} {

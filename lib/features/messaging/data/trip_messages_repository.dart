@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/messaging/data/trip_message.dart';
+import 'package:planzers/features/messaging/data/trip_message_reaction.dart';
 
 final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   return TripMessagesRepository(
@@ -21,6 +22,11 @@ final tripMessagesLastReadAtProvider =
   return ref.watch(tripMessagesRepositoryProvider).watchMyLastReadAt(tripId);
 });
 
+final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
+    .family<Map<String, List<TripMessageReaction>>, String>((ref, tripId) {
+  return ref.watch(tripMessagesRepositoryProvider).watchReactionsByMessage(tripId);
+});
+
 class TripMessagesRepository {
   TripMessagesRepository({
     required this.firestore,
@@ -34,6 +40,13 @@ class TripMessagesRepository {
 
   CollectionReference<Map<String, dynamic>> _messagesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('messages');
+  }
+
+  CollectionReference<Map<String, dynamic>> _messageReactionsCol({
+    required String tripId,
+    required String messageId,
+  }) {
+    return _messagesCol(tripId).doc(messageId).collection('reactions');
   }
 
   static const String _messagesChannelKey = 'messages';
@@ -176,5 +189,98 @@ class TripMessagesRepository {
     }
 
     await _messagesCol(cleanTripId).doc(cleanMessageId).delete();
+  }
+
+  Stream<Map<String, List<TripMessageReaction>>> watchReactionsByMessage(
+    String tripId,
+  ) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(const <String, List<TripMessageReaction>>{});
+    }
+
+    return _messagesCol(cleanId).snapshots().map((snap) {
+      final result = <String, List<TripMessageReaction>>{};
+      for (final messageDoc in snap.docs) {
+        final data = messageDoc.data();
+        final reactionsRaw = data['reactionsByUser'];
+        if (reactionsRaw is! Map<String, dynamic> || reactionsRaw.isEmpty) {
+          result[messageDoc.id] = const <TripMessageReaction>[];
+          continue;
+        }
+
+        final reactions = <TripMessageReaction>[];
+        reactionsRaw.forEach((uid, rawValue) {
+          final cleanUid = uid.trim();
+          final emoji = rawValue is String ? rawValue.trim() : '';
+          if (cleanUid.isEmpty || emoji.isEmpty) return;
+          reactions.add(
+            TripMessageReaction(
+              userId: cleanUid,
+              emoji: emoji,
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          );
+        });
+        result[messageDoc.id] = reactions;
+      }
+      return result;
+    });
+  }
+
+  Future<void> setMyReaction({
+    required String tripId,
+    required String messageId,
+    required String emoji,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    final cleanEmoji = emoji.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty || cleanEmoji.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final uid = user.uid.trim();
+    await _messagesCol(cleanTripId).doc(cleanMessageId).set({
+      'reactionsByUser': {uid: cleanEmoji},
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
+        .doc(uid)
+        .set({
+      'emoji': cleanEmoji,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> removeMyReaction({
+    required String tripId,
+    required String messageId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final uid = user.uid.trim();
+    await _messagesCol(cleanTripId).doc(cleanMessageId).set({
+      'reactionsByUser': {uid: FieldValue.delete()},
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
+        .doc(uid)
+        .delete();
   }
 }
