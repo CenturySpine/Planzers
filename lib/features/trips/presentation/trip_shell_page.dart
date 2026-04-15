@@ -93,6 +93,12 @@ class TripShellPage extends ConsumerWidget {
       icon: Icons.event_available_outlined,
       selectedIcon: Icons.event_available,
     ),
+    _TripNavDestination(
+      branchIndex: 7,
+      label: 'Courses',
+      icon: Icons.shopping_cart_outlined,
+      selectedIcon: Icons.shopping_cart,
+    ),
   ];
 
   @override

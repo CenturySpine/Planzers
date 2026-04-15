@@ -117,6 +117,10 @@ service cloud.firestore {
           );
       }
 
+      match /shoppingItems/{itemId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
       match /messages/{messageId} {
         allow read: if isTripMember(tripId);
         allow create: if isTripMember(tripId)
