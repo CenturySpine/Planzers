@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -226,6 +227,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       }
       if (!mounted) return;
 
+      final screenSize = MediaQuery.sizeOf(context);
+      final webCropWidth =
+          ((screenSize.width - 140).clamp(260.0, 900.0)).round();
+      final webCropHeight =
+          ((screenSize.height - 320).clamp(220.0, 700.0)).round();
+
       final cropped = await ImageCropper().cropImage(
         sourcePath: picked.path,
         uiSettings: [
@@ -243,6 +250,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             aspectRatioLockEnabled: false,
             resetAspectRatioEnabled: true,
           ),
+          if (kIsWeb)
+            WebUiSettings(
+              context: context,
+              presentStyle: WebPresentStyle.dialog,
+              size: CropperSize(
+                width: webCropWidth,
+                height: webCropHeight,
+              ),
+            ),
         ],
       );
       if (cropped == null) {

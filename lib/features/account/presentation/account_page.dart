@@ -42,6 +42,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       }
       if (!mounted) return;
 
+      final screenSize = MediaQuery.sizeOf(context);
+      final webCropWidth =
+          ((screenSize.width - 140).clamp(260.0, 520.0)).round();
+      final webCropHeight =
+          ((screenSize.height - 320).clamp(220.0, 520.0)).round();
+
       final cropped = await ImageCropper().cropImage(
         sourcePath: picked.path,
         uiSettings: [
@@ -59,6 +65,15 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
           ),
+          if (kIsWeb)
+            WebUiSettings(
+              context: context,
+              presentStyle: WebPresentStyle.dialog,
+              size: CropperSize(
+                width: webCropWidth,
+                height: webCropHeight,
+              ),
+            ),
         ],
       );
       if (cropped == null) {
