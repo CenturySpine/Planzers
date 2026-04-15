@@ -13,9 +13,14 @@ import 'package:planzers/features/trips/presentation/name_list_search.dart';
 /// already joined (profile labels). Invite flow still lists only `ph_*` rows
 /// via [getInviteJoinContext].
 class TripParticipantsPage extends ConsumerStatefulWidget {
-  const TripParticipantsPage({super.key, required this.tripId});
+  const TripParticipantsPage({
+    super.key,
+    required this.tripId,
+    this.readOnly = false,
+  });
 
   final String tripId;
+  final bool readOnly;
 
   @override
   ConsumerState<TripParticipantsPage> createState() =>
@@ -312,6 +317,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
             final userDataById = userSnap.data ?? const {};
             final rows = _participantRowsForTrip(trip, userDataById, myUid);
             final iamAdmin = trip.isTripAdmin(myUid);
+            final canManageParticipants = iamAdmin && !widget.readOnly;
             final searchQuery = _participantSearchController.text;
             final visibleRows = rows
                 .where(
@@ -335,7 +341,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (iamAdmin)
+                        if (canManageParticipants)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                             child: Text(
@@ -355,7 +361,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                         Padding(
                           padding: EdgeInsets.fromLTRB(
                             16,
-                            iamAdmin ? 8 : 12,
+                            canManageParticipants ? 8 : 12,
                             16,
                             8,
                           ),
@@ -394,7 +400,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                     final isOwnerRow = row.memberId.trim() ==
                                         trip.ownerId.trim();
                                     final canRemoveMember =
-                                        !row.isPlaceholder &&
+                                        canManageParticipants &&
+                                            !row.isPlaceholder &&
                                             !isOwnerRow &&
                                             row.memberId.trim() !=
                                                 (myUid ?? '').trim();
@@ -406,7 +413,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                     final scheme =
                                         Theme.of(context).colorScheme;
                                     final canCycleRole =
-                                        iamAdmin && !isOwnerRow;
+                                        canManageParticipants && !isOwnerRow;
 
                                     return Card(
                                       child: ListTile(
@@ -427,7 +434,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                               : null,
                                         ),
                                         title: Text(row.displayLabel),
-                                        trailing: row.isPlaceholder
+                                        trailing: row.isPlaceholder &&
+                                                canManageParticipants
                                             ? Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
@@ -488,11 +496,13 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                         ),
                       ],
                     ),
-              floatingActionButton: FloatingActionButton(
-                onPressed: _openAddDialog,
-                tooltip: 'Ajouter un voyageur prévu',
-                child: const Icon(Icons.add),
-              ),
+              floatingActionButton: canManageParticipants
+                  ? FloatingActionButton(
+                      onPressed: _openAddDialog,
+                      tooltip: 'Ajouter un voyageur prévu',
+                      child: const Icon(Icons.add),
+                    )
+                  : null,
             );
           },
         );
