@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:planzers/core/push/fcm_token_sync.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
 import 'package:planzers/features/account/presentation/palette_picker_button.dart';
@@ -21,6 +23,112 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _didInitFromFirestore = false;
   bool _isSaving = false;
   bool _isEnablingPush = false;
+  bool _isPhotoBusy = false;
+
+  Future<void> _pickAndUploadProfilePhoto(ImageSource source) async {
+    if (_isPhotoBusy) return;
+    final colorScheme = Theme.of(context).colorScheme;
+    setState(() => _isPhotoBusy = true);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 95,
+      );
+      if (picked == null) {
+        return;
+      }
+      if (!mounted) return;
+
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Recadrer la photo de profil',
+            toolbarColor: colorScheme.primary,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: colorScheme.primary,
+            dimmedLayerColor: Colors.black54,
+            lockAspectRatio: true,
+            initAspectRatio: CropAspectRatioPreset.square,
+          ),
+          IOSUiSettings(
+            title: 'Recadrer la photo de profil',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+      if (cropped == null) {
+        return;
+      }
+
+      final imagePath = cropped.path;
+      final bytes = await XFile(imagePath).readAsBytes();
+      final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(imagePath);
+      final ext = extMatch?.group(1)?.toLowerCase() ?? 'jpg';
+      await ref.read(accountRepositoryProvider).upsertMyProfilePhoto(
+            bytes: bytes,
+            fileExt: ext,
+          );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo de profil mise a jour')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur photo: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPhotoBusy = false);
+      }
+    }
+  }
+
+  Future<void> _removeProfilePhoto() async {
+    if (_isPhotoBusy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la photo ?'),
+        content: const Text('La photo de profil sera retiree.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isPhotoBusy = true);
+    try {
+      await ref.read(accountRepositoryProvider).removeMyProfilePhoto();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo de profil supprimee')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur suppression photo: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPhotoBusy = false);
+      }
+    }
+  }
 
   Widget _buildAvatar(String photoUrl, String email) {
     final fallback = CircleAvatar(
@@ -162,7 +270,73 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             children: [
               Align(
                 alignment: Alignment.center,
-                child: _buildAvatar(photoUrl, email),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _buildAvatar(photoUrl, email),
+                    Positioned(
+                      right: -6,
+                      bottom: -6,
+                      child: Material(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(999),
+                        child: PopupMenuButton<String>(
+                          tooltip: 'Actions photo de profil',
+                          enabled: !_isPhotoBusy,
+                          padding: EdgeInsets.zero,
+                          onSelected: (value) {
+                            if (value == 'gallery') {
+                              _pickAndUploadProfilePhoto(ImageSource.gallery);
+                              return;
+                            }
+                            if (value == 'camera') {
+                              _pickAndUploadProfilePhoto(ImageSource.camera);
+                              return;
+                            }
+                            if (value == 'remove') {
+                              _removeProfilePhoto();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'gallery',
+                              child: Text('Choisir dans la galerie'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'camera',
+                              child: Text('Prendre une photo'),
+                            ),
+                            if (photoUrl.isNotEmpty)
+                              const PopupMenuItem(
+                                value: 'remove',
+                                child: Text('Supprimer'),
+                              ),
+                          ],
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Center(
+                              child: _isPhotoBusy
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.8,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.photo_camera_outlined,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Text(

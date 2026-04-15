@@ -32,5 +32,11 @@ service firebase.storage {
       allow read: if isTripMember(tripId);
       allow write: if isTripOwner(tripId);
     }
+
+    // Profile assets are stored under:
+    // users/{uid}/profile_<timestamp>.<ext>
+    match /users/{uid}/{allPaths=**} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
   }
 }
