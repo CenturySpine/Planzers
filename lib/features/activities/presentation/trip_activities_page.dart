@@ -30,11 +30,16 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       TextEditingController();
   final TextEditingController _plannedSearchController =
       TextEditingController();
+  late DateTime _agendaCenterDay;
+  late DateTime _agendaSelectedDay;
 
   @override
   void initState() {
     super.initState();
     _notificationCenter = ref.read(notificationCenterRepositoryProvider);
+    final today = _dateOnly(DateTime.now());
+    _agendaCenterDay = today;
+    _agendaSelectedDay = today;
   }
 
   @override
@@ -124,6 +129,11 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             creatorLabelFor: (activity) =>
                 creatorLabelForActivity(activity, trip.memberPublicLabels),
           );
+          final agendaItems = _buildAgendaItemsForDay(
+            items,
+            selectedDay: _agendaSelectedDay,
+          );
+          final plannedDays = _plannedDaysSet(items);
 
           return DefaultTabController(
             length: 3,
@@ -156,7 +166,27 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         tripMemberPublicLabels: trip.memberPublicLabels,
                         emptyMessage: 'Aucune activité planifiée.',
                       ),
-                      const _ActivitiesAgendaPlaceholder(),
+                      _ActivitiesAgendaTab(
+                        centerDay: _agendaCenterDay,
+                        selectedDay: _agendaSelectedDay,
+                        plannedDays: plannedDays,
+                        agendaItems: agendaItems,
+                        tripId: trip.id,
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        onMoveBackward: () => setState(
+                          () => _agendaCenterDay = _agendaCenterDay.subtract(
+                            const Duration(days: 1),
+                          ),
+                        ),
+                        onMoveForward: () => setState(
+                          () => _agendaCenterDay = _agendaCenterDay.add(
+                            const Duration(days: 1),
+                          ),
+                        ),
+                        onSelectDay: (day) => setState(
+                          () => _agendaSelectedDay = day,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -252,20 +282,171 @@ class _ActivitiesTabList extends StatelessWidget {
   }
 }
 
-class _ActivitiesAgendaPlaceholder extends StatelessWidget {
-  const _ActivitiesAgendaPlaceholder();
+class _ActivitiesAgendaTab extends StatelessWidget {
+  const _ActivitiesAgendaTab({
+    required this.centerDay,
+    required this.selectedDay,
+    required this.plannedDays,
+    required this.agendaItems,
+    required this.tripId,
+    required this.tripMemberPublicLabels,
+    required this.onMoveBackward,
+    required this.onMoveForward,
+    required this.onSelectDay,
+  });
+
+  final DateTime centerDay;
+  final DateTime selectedDay;
+  final Set<DateTime> plannedDays;
+  final List<TripActivity> agendaItems;
+  final String tripId;
+  final Map<String, String> tripMemberPublicLabels;
+  final VoidCallback onMoveBackward;
+  final VoidCallback onMoveForward;
+  final ValueChanged<DateTime> onSelectDay;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Onglet agenda à venir.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    final weekDays = List<DateTime>.generate(
+      7,
+      (index) => centerDay.add(Duration(days: index - 3)),
+    );
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: onMoveBackward,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: 'Jour précédent',
               ),
+              Expanded(
+                child: Row(
+                  children: [
+                    for (final day in weekDays)
+                      Expanded(
+                        child: _AgendaDayCell(
+                          day: day,
+                          isSelected: _isSameDay(day, selectedDay),
+                          hasPlannedActivities: plannedDays.contains(day),
+                          onTap: () => onSelectDay(day),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: onMoveForward,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: 'Jour suivant',
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: agendaItems.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'Aucune activité planifiée ce jour.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+                  itemCount: agendaItems.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    return _ActivityListTile(
+                      tripId: tripId,
+                      activity: agendaItems[index],
+                      tripMemberPublicLabels: tripMemberPublicLabels,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AgendaDayCell extends StatelessWidget {
+  const _AgendaDayCell({
+    required this.day,
+    required this.isSelected,
+    required this.hasPlannedActivities,
+    required this.onTap,
+  });
+
+  final DateTime day;
+  final bool isSelected;
+  final bool hasPlannedActivities;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isToday = _isSameDay(day, _dateOnly(DateTime.now()));
+    final textColor = isSelected ? scheme.onPrimary : scheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: isSelected ? scheme.primary : scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isToday ? scheme.primary : Colors.transparent,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                DateFormat('E', 'fr_FR').format(day),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                DateFormat('d').format(day),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 8,
+                child: hasPlannedActivities
+                    ? DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? scheme.secondaryContainer
+                              : scheme.secondary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const SizedBox(width: 8, height: 8),
+                      )
+                    : const SizedBox(width: 8),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -411,8 +592,43 @@ List<_ActivitiesListEntry> _buildPlannedEntries(
   return entries;
 }
 
+List<TripActivity> _buildAgendaItemsForDay(
+  List<TripActivity> items, {
+  required DateTime selectedDay,
+}) {
+  final filtered = items
+      .where((activity) => activity.plannedAt != null)
+      .where(
+          (activity) => _isSameDay(_dateOnly(activity.plannedAt!), selectedDay))
+      .toList()
+    ..sort((a, b) {
+      final aPlanned = a.plannedAt!;
+      final bPlanned = b.plannedAt!;
+      final byPlanned = aPlanned.compareTo(bPlanned);
+      if (byPlanned != 0) return byPlanned;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+  return filtered;
+}
+
+Set<DateTime> _plannedDaysSet(List<TripActivity> items) {
+  return items
+      .where((activity) => activity.plannedAt != null)
+      .map((activity) => _dateOnly(activity.plannedAt!))
+      .toSet();
+}
+
 DateTime _activityDateForGrouping(TripActivity activity) {
   return activity.plannedAt ?? activity.doneAt ?? activity.createdAt;
+}
+
+DateTime _dateOnly(DateTime value) {
+  final local = value.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
+
+bool _isSameDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 bool _activityMatchesQuery(
