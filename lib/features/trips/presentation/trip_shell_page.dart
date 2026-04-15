@@ -76,6 +76,12 @@ class TripShellPage extends ConsumerWidget {
       selectedIcon: Icons.chat_bubble,
     ),
     _TripNavDestination(
+      branchIndex: 6,
+      label: 'Activités',
+      icon: Icons.event_available_outlined,
+      selectedIcon: Icons.event_available,
+    ),
+    _TripNavDestination(
       branchIndex: 2,
       label: 'Dépenses',
       icon: Icons.payments_outlined,
@@ -86,12 +92,6 @@ class TripShellPage extends ConsumerWidget {
       label: 'Repas',
       icon: Icons.restaurant_outlined,
       selectedIcon: Icons.restaurant,
-    ),
-    _TripNavDestination(
-      branchIndex: 6,
-      label: 'Activités',
-      icon: Icons.event_available_outlined,
-      selectedIcon: Icons.event_available,
     ),
     _TripNavDestination(
       branchIndex: 7,
