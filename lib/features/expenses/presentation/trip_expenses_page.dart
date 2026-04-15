@@ -506,6 +506,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
+  _ExpensePostView _activeView = _ExpensePostView.operations;
 
   Future<void> _confirmDeletePost() async {
     if (_deletingPost) return;
@@ -518,11 +519,11 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
           'et toutes ses opérations seront supprimés.',
         ),
         actions: [
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Annuler'),
           ),
-          FilledButton(
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Supprimer'),
           ),
@@ -563,74 +564,157 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
             children: [
-              IconButton(
-                tooltip: 'Modifier le poste',
-                visualDensity: VisualDensity.compact,
-                splashRadius: 16,
-                iconSize: 20,
-                onPressed: () async {
-                  await _TripExpensesPageState._openExpenseGroupEditor(
-                    context,
-                    ref,
-                    widget.tripId,
-                    widget.memberIds,
-                    widget.memberPublicLabels,
-                    existing: widget.group,
-                  );
+              SegmentedButton<_ExpensePostView>(
+                segments: const [
+                  ButtonSegment<_ExpensePostView>(
+                    value: _ExpensePostView.operations,
+                    label: Text('Dépenses'),
+                    icon: Icon(Icons.receipt_long_outlined),
+                  ),
+                  ButtonSegment<_ExpensePostView>(
+                    value: _ExpensePostView.settlement,
+                    label: Text('Équilibres'),
+                    icon: Icon(Icons.balance_outlined),
+                  ),
+                ],
+                selected: {_activeView},
+                onSelectionChanged: (selection) {
+                  if (selection.isEmpty) return;
+                  setState(() => _activeView = selection.first);
                 },
-                icon: const Icon(Icons.edit_outlined),
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  side: WidgetStateProperty.resolveWith((states) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    if (states.contains(WidgetState.selected)) {
+                      return BorderSide(color: colorScheme.secondary, width: 1.2);
+                    }
+                    return BorderSide(color: colorScheme.outlineVariant);
+                  }),
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    if (states.contains(WidgetState.selected)) {
+                      return colorScheme.onSecondaryContainer;
+                    }
+                    return colorScheme.onSurfaceVariant;
+                  }),
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    if (states.contains(WidgetState.selected)) {
+                      return colorScheme.secondaryContainer;
+                    }
+                    return Colors.transparent;
+                  }),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
               ),
-              IconButton(
-                tooltip: 'Supprimer le poste',
-                visualDensity: VisualDensity.compact,
-                splashRadius: 16,
-                iconSize: 20,
-                onPressed: _confirmDeletePost,
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.error,
+              Positioned(
+                right: -6,
+                child: PopupMenuButton<_ExpensePostMenuAction>(
+                  tooltip: 'Actions du poste',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (action) async {
+                    if (action == _ExpensePostMenuAction.edit) {
+                      await _TripExpensesPageState._openExpenseGroupEditor(
+                        context,
+                        ref,
+                        widget.tripId,
+                        widget.memberIds,
+                        widget.memberPublicLabels,
+                        existing: widget.group,
+                      );
+                      return;
+                    }
+                    await _confirmDeletePost();
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem<_ExpensePostMenuAction>(
+                      value: _ExpensePostMenuAction.edit,
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18),
+                          SizedBox(width: 10),
+                          Text('Modifier'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<_ExpensePostMenuAction>(
+                      value: _ExpensePostMenuAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Supprimer',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        _SettlementSection(
-          balancesByCurrency: settlement.balancesByCurrency,
-          transfers: settlement.suggestedTransfers,
-          memberLabels: widget.memberLabels,
-          viewerUserId: widget.viewerUserId,
-        ),
         const SizedBox(height: 12),
-        Text(
-          'Opérations',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 8),
-        if (widget.groupExpenses.isEmpty)
-          Text(
-            'Aucune opération dans ce poste.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+        if (_activeView == _ExpensePostView.settlement)
+          _SettlementSection(
+            balancesByCurrency: settlement.balancesByCurrency,
+            transfers: settlement.suggestedTransfers,
+            memberLabels: widget.memberLabels,
+            viewerUserId: widget.viewerUserId,
           )
         else
-          ..._buildExpensesGroupedByDate(
-            context,
-            widget.groupExpenses,
-            widget.tripId,
-            scope,
-            widget.memberLabels,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.groupExpenses.isEmpty)
+                Text(
+                  'Aucune opération dans ce poste.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                )
+              else
+                ..._buildExpensesGroupedByDate(
+                  context,
+                  widget.groupExpenses,
+                  widget.tripId,
+                  scope,
+                  widget.memberLabels,
+                ),
+            ],
           ),
         const SizedBox(height: 8),
       ],
     );
   }
 }
+
+enum _ExpensePostView { operations, settlement }
 
 String _formatMoney(String currency, double amount) {
   final c = currency.trim().toUpperCase();
@@ -672,6 +756,7 @@ String _formatSuggestedTransferLine({
 }
 
 enum _ExpenseDetailsMenuAction { edit, delete }
+enum _ExpensePostMenuAction { edit, delete }
 
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
@@ -693,153 +778,132 @@ class _SettlementSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.balance_outlined, color: colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Soldes (par devise)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (balancesByCurrency.isEmpty)
-                  Text(
-                    'Ajoute des dépenses pour voir la répartition.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                  )
-                else
-                  ...balancesByCurrency.entries.map((currencyEntry) {
-                    final currency = currencyEntry.key;
-                    final perUser = currencyEntry.value;
-                    if (perUser.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    final sortedIds = perUser.keys.toList()..sort();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            currency,
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          ...sortedIds.map((uid) {
-                            final bal = perUser[uid] ?? 0;
-                            final label = memberLabels[uid] ?? 'Voyageur';
-                            final isCreditor = bal > 0.009;
-                            final isDebtor = bal < -0.009;
-                            final tone = isCreditor
-                                ? colorScheme.primary
-                                : isDebtor
-                                    ? colorScheme.error
-                                    : colorScheme.onSurfaceVariant;
-                            final prefix = isCreditor
-                                ? 'À recevoir'
-                                : isDebtor
-                                    ? 'À payer'
-                                    : 'Équilibré';
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                children: [
-                                  Expanded(child: Text(label)),
-                                  Text(
-                                    '$prefix · ${_formatMoney(currency, bal.abs())}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: tone,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    );
-                  }),
-              ],
+        Row(
+          children: [
+            Icon(Icons.balance_outlined, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Soldes (par devise)',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.sync_alt, color: colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Remboursements suggérés',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                  ],
+        const SizedBox(height: 8),
+        if (balancesByCurrency.isEmpty)
+          Text(
+            'Ajoute des dépenses pour voir la répartition.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Nombre minimal de virements pour équilibrer les comptes (par devise).',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                if (transfers.isEmpty)
+          )
+        else
+          ...balancesByCurrency.entries.map((currencyEntry) {
+            final currency = currencyEntry.key;
+            final perUser = currencyEntry.value;
+            if (perUser.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            final sortedIds = perUser.keys.toList()..sort();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    balancesByCurrency.isEmpty
-                        ? 'Pas encore de calcul.'
-                        : 'Tu ne dois rien à personne 😎',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                  )
-                else
-                  ...transfers.map((t) {
+                    currency,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  ...sortedIds.map((uid) {
+                    final bal = perUser[uid] ?? 0;
+                    final label = memberLabels[uid] ?? 'Voyageur';
+                    final isCreditor = bal > 0.009;
+                    final isDebtor = bal < -0.009;
+                    final tone = isCreditor
+                        ? colorScheme.primary
+                        : isDebtor
+                            ? colorScheme.error
+                            : colorScheme.onSurfaceVariant;
+                    final prefix = isCreditor
+                        ? 'À recevoir'
+                        : isDebtor
+                            ? 'À payer'
+                            : 'Équilibré';
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.arrow_forward, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _formatSuggestedTransferLine(
-                                transfer: t,
-                                memberLabels: memberLabels,
-                                viewerUserId: viewerUserId,
-                              ),
-                              style: Theme.of(context).textTheme.bodyMedium,
+                          Expanded(child: Text(label)),
+                          Text(
+                            '$prefix · ${_formatMoney(currency, bal.abs())}',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color: tone,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     );
                   }),
-              ],
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(Icons.sync_alt, color: colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Remboursements suggérés',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
-          ),
+          ],
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Nombre minimal de virements pour équilibrer les comptes (par devise).',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 12),
+        if (transfers.isEmpty)
+          Text(
+            balancesByCurrency.isEmpty
+                ? 'Pas encore de calcul.'
+                : 'Tu ne dois rien à personne 😎',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          )
+        else
+          ...transfers.map((t) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.arrow_forward, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _formatSuggestedTransferLine(
+                        transfer: t,
+                        memberLabels: memberLabels,
+                        viewerUserId: viewerUserId,
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
       ],
     );
   }
