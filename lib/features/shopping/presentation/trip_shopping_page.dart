@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,10 +119,12 @@ class _ShoppingItemRow extends ConsumerStatefulWidget {
 }
 
 class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
+  static const Duration _autoSaveDebounce = Duration(milliseconds: 600);
   late TextEditingController _labelController;
   late TextEditingController _quantityController;
   late ShoppingUnit _selectedUnit;
   bool _isSaving = false;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
@@ -156,6 +160,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _labelController.dispose();
     _quantityController.dispose();
     _labelFocusNode.dispose();
@@ -170,18 +175,34 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
     return value.toString();
   }
 
+  double _parseQuantity(String raw) {
+    final normalized = raw.trim().replaceAll(',', '.');
+    return double.tryParse(normalized) ?? 1.0;
+  }
+
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(_autoSaveDebounce, _save);
+  }
+
   Future<void> _save() async {
     if (_isSaving) return;
+    final label = _labelController.text.trim();
+    final quantity = _parseQuantity(_quantityController.text);
+    final safeQuantity = quantity > 0 ? quantity : 1.0;
+    final hasChanged = label != widget.item.label.trim() ||
+        safeQuantity != widget.item.quantityValue ||
+        _selectedUnit != widget.item.quantityUnit;
+    if (!hasChanged) return;
+
     setState(() => _isSaving = true);
     try {
-      final quantity =
-          double.tryParse(_quantityController.text.trim()) ?? 1.0;
       await ref.read(shoppingRepositoryProvider).updateItem(
             tripId: widget.tripId,
             itemId: widget.item.id,
-            label: _labelController.text,
+            label: label,
             checked: widget.item.checked,
-            quantityValue: quantity > 0 ? quantity : 1.0,
+            quantityValue: safeQuantity,
             quantityUnit: _selectedUnit,
           );
     } finally {
@@ -205,20 +226,18 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
   }
 
   void _incrementQuantity() {
-    final current =
-        double.tryParse(_quantityController.text.trim()) ?? 1.0;
+    final current = _parseQuantity(_quantityController.text);
     final next = (current + 1).toDouble();
     _quantityController.text = _formatQuantity(next);
-    _save();
+    _scheduleAutoSave();
   }
 
   void _decrementQuantity() {
-    final current =
-        double.tryParse(_quantityController.text.trim()) ?? 1.0;
+    final current = _parseQuantity(_quantityController.text);
     final next = (current - 1).toDouble();
     if (next <= 0) return;
     _quantityController.text = _formatQuantity(next);
-    _save();
+    _scheduleAutoSave();
   }
 
   @override
@@ -273,6 +292,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
                     ),
                 onSubmitted: (_) => _save(),
                 onEditingComplete: _save,
+                onChanged: (_) => _scheduleAutoSave(),
               ),
             ),
 
@@ -283,7 +303,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
               selectedUnit: _selectedUnit,
               onUnitChanged: (unit) {
                 setState(() => _selectedUnit = unit);
-                _save();
+                _scheduleAutoSave();
               },
               onDecrement: _decrementQuantity,
               onIncrement: _incrementQuantity,
@@ -357,6 +377,7 @@ class _QuantityControls extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
             onSubmitted: (_) => onSave(),
             onEditingComplete: onSave,
+            onChanged: (_) => onSave(),
           ),
         ),
 
