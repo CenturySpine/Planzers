@@ -42,7 +42,7 @@ class ShoppingRepository {
         .map((snap) => snap.docs.map(ShoppingItem.fromDoc).toList());
   }
 
-  Future<void> addItem({
+  Future<String> addItem({
     required String tripId,
     required String label,
     double quantityValue = 1.0,
@@ -55,7 +55,7 @@ class ShoppingRepository {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
 
-    await _col(cleanTripId).add({
+    final doc = await _col(cleanTripId).add({
       'label': label.trim(),
       'checked': false,
       'quantityValue': quantityValue,
@@ -64,6 +64,7 @@ class ShoppingRepository {
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
     });
+    return doc.id;
   }
 
   Future<void> updateItem({
@@ -114,6 +115,30 @@ class ShoppingRepository {
     });
   }
 
+  Future<void> setClaimedBy({
+    required String tripId,
+    required String itemId,
+    String? claimedBy,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanItemId = itemId.trim();
+    if (cleanTripId.isEmpty || cleanItemId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final cleanClaimedBy = claimedBy?.trim();
+    await _col(cleanTripId).doc(cleanItemId).update({
+      'claimedBy': (cleanClaimedBy == null || cleanClaimedBy.isEmpty)
+          ? FieldValue.delete()
+          : cleanClaimedBy,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
+  }
+
   Future<void> deleteItem({
     required String tripId,
     required String itemId,
@@ -128,5 +153,28 @@ class ShoppingRepository {
     }
 
     await _col(cleanTripId).doc(cleanItemId).delete();
+  }
+
+  Future<int> deleteCheckedItems({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    final checkedSnapshot = await _col(cleanTripId)
+        .where('checked', isEqualTo: true)
+        .get();
+
+    if (checkedSnapshot.docs.isEmpty) return 0;
+
+    final batch = firestore.batch();
+    for (final doc in checkedSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+    return checkedSnapshot.docs.length;
   }
 }

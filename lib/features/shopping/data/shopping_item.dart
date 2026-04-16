@@ -4,18 +4,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum ShoppingUnit {
   unit,
   grams,
-  kilograms;
+  kilograms,
+  milliliters,
+  liters;
 
   String get label => switch (this) {
         ShoppingUnit.unit => 'unité',
         ShoppingUnit.grams => 'g',
         ShoppingUnit.kilograms => 'kg',
+        ShoppingUnit.milliliters => 'ml',
+        ShoppingUnit.liters => 'L',
       };
 
   String get firestoreValue => switch (this) {
         ShoppingUnit.unit => 'unit',
         ShoppingUnit.grams => 'g',
         ShoppingUnit.kilograms => 'kg',
+        ShoppingUnit.milliliters => 'ml',
+        ShoppingUnit.liters => 'l',
       };
 
   static ShoppingUnit fromFirestore(dynamic raw) {
@@ -39,6 +45,7 @@ class ShoppingItem {
     required this.createdAt,
     this.order = 0,
     this.createdBy,
+    this.claimedBy,
   });
 
   final String id;
@@ -49,6 +56,7 @@ class ShoppingItem {
   final DateTime createdAt;
   final int order;
   final String? createdBy;
+  final String? claimedBy;
 
   factory ShoppingItem.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
@@ -89,6 +97,7 @@ class ShoppingItem {
       createdAt: createdAt,
       order: order,
       createdBy: (data['createdBy'] as String?)?.trim(),
+      claimedBy: (data['claimedBy'] as String?)?.trim(),
     );
   }
 
