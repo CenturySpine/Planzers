@@ -1,13 +1,29 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountMenuButton extends StatelessWidget {
   const AccountMenuButton({super.key});
 
+  static final Uri _apkDownloadUri = Uri.parse(
+    'https://github.com/CenturySpine/Planzers/releases/latest/download/planerz-preview.apk',
+  );
+
   Future<void> _goToAccount(BuildContext context) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     context.push('/account');
+  }
+
+  Future<void> _downloadApk(BuildContext context) async {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final ok = await launchUrl(_apkDownloadUri);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d’ouvrir le lien')),
+      );
+    }
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -57,16 +73,25 @@ class AccountMenuButton extends StatelessWidget {
           await _goToAccount(context);
           return;
         }
+        if (value == 'download_apk') {
+          await _downloadApk(context);
+          return;
+        }
         if (value == 'logout') {
           await _logout(context);
         }
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem<String>(
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
           value: 'account',
           child: Text('Mon compte'),
         ),
-        PopupMenuItem<String>(
+        if (kIsWeb)
+          const PopupMenuItem<String>(
+            value: 'download_apk',
+            child: Text('Télécharger l’APK'),
+          ),
+        const PopupMenuItem<String>(
           value: 'logout',
           child: Text('Se deconnecter'),
         ),
