@@ -558,13 +558,16 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final settlement =
-        computeViewerSettlement(widget.groupExpenses, widget.viewerUserId);
     final viewerUserId = widget.viewerUserId?.trim();
+    final settlement =
+        computeViewerSettlement(widget.groupExpenses, viewerUserId);
     final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
     final myTotalsByCurrency = _sumByCurrency(
       widget.allTripExpenses.where(
-        (expense) => viewerUserId != null && expense.paidBy.trim() == viewerUserId,
+        (expense) {
+          final paidBy = expense.paidBy.trim();
+          return viewerUserId != null && paidBy == viewerUserId;
+        },
       ),
     );
     final scope = participantScopeMemberIdsForGroup(
