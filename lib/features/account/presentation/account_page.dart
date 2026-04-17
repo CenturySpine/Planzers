@@ -92,7 +92,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       if (!mounted) return;
       setState(() => _autoOpenCurrentTrip = !enabled);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mise a jour option: $e')),
+        SnackBar(content: Text('Erreur mise à jour option : $e')),
       );
     } finally {
       if (mounted) {
@@ -205,7 +205,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Ouvrir auto le voyage en cours'),
                       subtitle: const Text(
-                        'Ouvre automatiquement le voyage si un seul est en cours aujourd\'hui.',
+                        "Ouvre automatiquement le voyage si un seul est en cours aujourd'hui.",
                       ),
                       value: _autoOpenCurrentTrip,
                       onChanged: _isSavingAutoOpenPreference
