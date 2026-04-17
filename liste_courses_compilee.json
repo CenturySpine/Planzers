@@ -4137,6 +4137,17 @@
                       "type":  "food"
                   },
                   {
+                      "id":  "crustaces",
+                      "label":  "Crustaces",
+                      "aliases":  [
+
+                                  ],
+                      "category":  "Poissonnerie",
+                      "subcategory":  "",
+                      "defaultUnit":  "piece",
+                      "type":  "food"
+                  },
+                  {
                       "id":  "sardines",
                       "label":  "Sardines",
                       "aliases":  [
