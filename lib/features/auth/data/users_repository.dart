@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/account/data/account_preferences.dart';
 
 final usersRepositoryProvider = Provider<UsersRepository>((ref) {
   return UsersRepository(firestore: FirebaseFirestore.instance);
@@ -25,6 +26,7 @@ class UsersRepository {
         'account': {
           'email': user.email,
           'photoUrl': user.photoURL,
+          autoOpenCurrentTripPreferenceKey: true,
         },
         'lastSignInAt': now,
       };

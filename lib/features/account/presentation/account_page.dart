@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/account/data/account_preferences.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
@@ -16,7 +17,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _accountNameController = TextEditingController();
   bool _didInitFromFirestore = false;
+  bool _didInitAutoOpenPreferenceFromFirestore = false;
   bool _isSaving = false;
+  bool _isSavingAutoOpenPreference = false;
+  bool _autoOpenCurrentTrip = true;
 
   Widget _buildAvatar(String photoUrl, String email) {
     final fallback = CircleAvatar(
@@ -76,6 +80,27 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
+  Future<void> _saveAutoOpenCurrentTripPreference(bool enabled) async {
+    if (_isSavingAutoOpenPreference) return;
+
+    setState(() => _isSavingAutoOpenPreference = true);
+    try {
+      await ref
+          .read(accountRepositoryProvider)
+          .updateAutoOpenCurrentTripPreference(enabled);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _autoOpenCurrentTrip = !enabled);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur mise a jour option: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingAutoOpenPreference = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authUser = FirebaseAuth.instance.currentUser;
@@ -117,10 +142,17 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   ? (data['photoUrl'] as String).trim()
                   : (authUser.photoURL ?? '').trim();
           final accountName = (account['name'] as String?)?.trim() ?? '';
+          final autoOpenCurrentTripPreference =
+              readAutoOpenCurrentTripPreference(data);
 
           if (!_didInitFromFirestore) {
             _accountNameController.text = accountName;
             _didInitFromFirestore = true;
+          }
+          if (!_didInitAutoOpenPreferenceFromFirestore &&
+              !_isSavingAutoOpenPreference) {
+            _autoOpenCurrentTrip = autoOpenCurrentTripPreference;
+            _didInitAutoOpenPreferenceFromFirestore = true;
           }
 
           final effectiveName = accountName.isNotEmpty ? accountName : email;
@@ -169,6 +201,21 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 16),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Ouvrir auto le voyage en cours'),
+                      subtitle: const Text(
+                        'Ouvre automatiquement le voyage si un seul est en cours aujourd\'hui.',
+                      ),
+                      value: _autoOpenCurrentTrip,
+                      onChanged: _isSavingAutoOpenPreference
+                          ? null
+                          : (enabled) {
+                              setState(() => _autoOpenCurrentTrip = enabled);
+                              _saveAutoOpenCurrentTripPreference(enabled);
+                            },
+                    ),
+                    const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
                       child: FilledButton(

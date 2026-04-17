@@ -2,16 +2,57 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/account/data/account_repository.dart';
 import 'package:planzers/features/account/presentation/account_menu_button.dart';
+import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planzers/features/trips/presentation/auto_open_current_trip.dart';
 
-class TripsPage extends ConsumerWidget {
+class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripsPage> createState() => _TripsPageState();
+}
+
+class _TripsPageState extends ConsumerState<TripsPage> {
+  bool _didEvaluateAutoOpenForCurrentView = false;
+
+  void _maybeAutoOpenCurrentTrip(
+    BuildContext context,
+    List<Trip> trips, {
+    required bool preferenceResolved,
+    required bool isPreferenceEnabled,
+  }) {
+    if (!preferenceResolved || _didEvaluateAutoOpenForCurrentView) {
+      return;
+    }
+
+    _didEvaluateAutoOpenForCurrentView = true;
+    final tripToAutoOpen = resolveTripToAutoOpen(
+      trips: trips,
+      isPreferenceEnabled: isPreferenceEnabled,
+    );
+    if (tripToAutoOpen == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.push('/trips/${tripToAutoOpen.id}', extra: tripToAutoOpen);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsStreamProvider);
+    final autoOpenCurrentTripEnabledAsync = ref.watch(
+      autoOpenCurrentTripEnabledProvider,
+    );
     final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final preferenceResolved =
+        autoOpenCurrentTripEnabledAsync.hasValue ||
+        autoOpenCurrentTripEnabledAsync.hasError;
+    final autoOpenCurrentTripEnabled =
+        autoOpenCurrentTripEnabledAsync.value ?? true;
 
     return Scaffold(
       appBar: AppBar(
@@ -27,6 +68,13 @@ class TripsPage extends ConsumerWidget {
       ),
       body: tripsAsync.when(
         data: (trips) {
+          _maybeAutoOpenCurrentTrip(
+            context,
+            trips,
+            preferenceResolved: preferenceResolved,
+            isPreferenceEnabled: autoOpenCurrentTripEnabled,
+          );
+
           if (trips.isEmpty) {
             return const Center(
               child: Text(

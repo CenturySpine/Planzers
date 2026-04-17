@@ -127,6 +127,8 @@ class _TripDetailsPageState extends ConsumerState<TripDetailsPage> {
           ownerId: _trip.ownerId,
           memberIds: _trip.memberIds,
           createdAt: _trip.createdAt,
+          startDate: _trip.startDate,
+          endDate: _trip.endDate,
         );
         _isEditing = false;
       });
