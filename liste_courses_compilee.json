@@ -4137,8 +4137,19 @@
                       "type":  "food"
                   },
                   {
-                      "id":  "crustaces",
-                      "label":  "Crustaces",
+                      "id":  "homard",
+                      "label":  "Homard",
+                      "aliases":  [
+
+                                  ],
+                      "category":  "Poissonnerie",
+                      "subcategory":  "",
+                      "defaultUnit":  "piece",
+                      "type":  "food"
+                  },
+                  {
+                      "id":  "langoustines",
+                      "label":  "Langoustines",
                       "aliases":  [
 
                                   ],
