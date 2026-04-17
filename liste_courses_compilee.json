@@ -4137,6 +4137,28 @@
                       "type":  "food"
                   },
                   {
+                      "id":  "homard",
+                      "label":  "Homard",
+                      "aliases":  [
+
+                                  ],
+                      "category":  "Poissonnerie",
+                      "subcategory":  "",
+                      "defaultUnit":  "piece",
+                      "type":  "food"
+                  },
+                  {
+                      "id":  "langoustines",
+                      "label":  "Langoustines",
+                      "aliases":  [
+
+                                  ],
+                      "category":  "Poissonnerie",
+                      "subcategory":  "",
+                      "defaultUnit":  "piece",
+                      "type":  "food"
+                  },
+                  {
                       "id":  "sardines",
                       "label":  "Sardines",
                       "aliases":  [
