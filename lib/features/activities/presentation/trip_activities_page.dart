@@ -137,6 +137,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
 
           return DefaultTabController(
             length: 3,
+            initialIndex: 2,
             child: Column(
               children: [
                 const SizedBox(height: 8),
@@ -175,12 +176,12 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         tripMemberPublicLabels: trip.memberPublicLabels,
                         onMoveBackward: () => setState(
                           () => _agendaCenterDay = _agendaCenterDay.subtract(
-                            const Duration(days: 1),
+                            const Duration(days: 7),
                           ),
                         ),
                         onMoveForward: () => setState(
                           () => _agendaCenterDay = _agendaCenterDay.add(
-                            const Duration(days: 1),
+                            const Duration(days: 7),
                           ),
                         ),
                         onSelectDay: (day) => setState(
@@ -314,13 +315,16 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
           child: Row(
             children: [
               IconButton(
                 onPressed: onMoveBackward,
                 icon: const Icon(Icons.chevron_left),
-                tooltip: 'Jour précédent',
+                tooltip: 'Semaine précédente',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                visualDensity: VisualDensity.compact,
               ),
               Expanded(
                 child: Row(
@@ -340,7 +344,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
               IconButton(
                 onPressed: onMoveForward,
                 icon: const Icon(Icons.chevron_right),
-                tooltip: 'Jour suivant',
+                tooltip: 'Semaine suivante',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
