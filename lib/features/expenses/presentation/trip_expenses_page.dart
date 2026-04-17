@@ -560,10 +560,11 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   Widget build(BuildContext context) {
     final settlement =
         computeViewerSettlement(widget.groupExpenses, widget.viewerUserId);
+    final viewerUserId = widget.viewerUserId?.trim();
     final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
     final myTotalsByCurrency = _sumByCurrency(
       widget.allTripExpenses.where(
-        (expense) => expense.paidBy.trim() == widget.viewerUserId?.trim(),
+        (expense) => viewerUserId != null && expense.paidBy.trim() == viewerUserId,
       ),
     );
     final scope = participantScopeMemberIdsForGroup(
@@ -731,6 +732,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 
 enum _ExpensePostView { operations, settlement }
 
+const _kDefaultExpenseCurrency = 'EUR';
+
 Map<String, double> _sumByCurrency(Iterable<TripExpense> expenses) {
   final totals = <String, double>{};
   for (final expense in expenses) {
@@ -746,7 +749,9 @@ Map<String, double> _sumByCurrency(Iterable<TripExpense> expenses) {
 }
 
 String _formatTotalsByCurrency(Map<String, double> totalsByCurrency) {
-  if (totalsByCurrency.isEmpty) return _formatMoney('EUR', 0);
+  if (totalsByCurrency.isEmpty) {
+    return _formatMoney(_kDefaultExpenseCurrency, 0);
+  }
   final sortedEntries = totalsByCurrency.entries.toList()
     ..sort((a, b) => a.key.compareTo(b.key));
   return sortedEntries
