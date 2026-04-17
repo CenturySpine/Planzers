@@ -24,6 +24,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _isSaving = false;
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
+  bool _isUpdatingAutoOpenCurrentTrip = false;
 
   Future<void> _pickAndUploadProfilePhoto(ImageSource source) async {
     if (_isPhotoBusy) return;
@@ -228,6 +229,25 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
+  Future<void> _updateAutoOpenCurrentTripPreference(bool enabled) async {
+    if (_isUpdatingAutoOpenCurrentTrip) return;
+    setState(() => _isUpdatingAutoOpenCurrentTrip = true);
+    try {
+      await ref
+          .read(accountRepositoryProvider)
+          .updateAutoOpenCurrentTripOnLaunchPreference(enabled);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur mise à jour préférence: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingAutoOpenCurrentTrip = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authUser = FirebaseAuth.instance.currentUser;
@@ -272,6 +292,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   ? (data['photoUrl'] as String).trim()
                   : (authUser.photoURL ?? '').trim();
           final accountName = (account['name'] as String?)?.trim() ?? '';
+          final autoOpenCurrentTripOnLaunch =
+              autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
 
           if (!_didInitFromFirestore) {
             _accountNameController.text = accountName;
@@ -396,6 +418,18 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 key: _formKey,
                 child: Column(
                   children: [
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      value: autoOpenCurrentTripOnLaunch,
+                      onChanged: _isUpdatingAutoOpenCurrentTrip
+                          ? null
+                          : _updateAutoOpenCurrentTripPreference,
+                      title: const Text('Ouvrir automatiquement le voyage en cours'),
+                      subtitle: const Text(
+                        'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _accountNameController,
                       decoration: const InputDecoration(

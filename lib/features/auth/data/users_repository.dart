@@ -36,6 +36,13 @@ class UsersRepository {
       } else {
         transaction.set(userRef, {
           ...data,
+          'account': {
+            'email': user.email,
+            'photoUrl': user.photoURL,
+            'preferences': {
+              'autoOpenCurrentTripOnLaunch': true,
+            },
+          },
           'createdAt': now,
         });
       }

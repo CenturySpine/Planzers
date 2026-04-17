@@ -25,6 +25,23 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   );
 });
 
+bool autoOpenCurrentTripOnLaunchEnabledFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final preferences =
+      (account['preferences'] as Map<String, dynamic>?) ?? const {};
+  final raw = preferences['autoOpenCurrentTripOnLaunch'];
+  if (raw is bool) {
+    return raw;
+  }
+  return true;
+}
+
+final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
+  return ref
+      .watch(accountRepositoryProvider)
+      .watchAutoOpenCurrentTripOnLaunchPreference();
+});
+
 class AccountRepository {
   AccountRepository({
     required this.firestore,
@@ -55,6 +72,30 @@ class AccountRepository {
       throw StateError('Utilisateur non connecte');
     }
     return firestore.collection('users').doc(uid).snapshots();
+  }
+
+  Stream<bool> watchAutoOpenCurrentTripOnLaunchPreference() {
+    return watchMyUserDocument().map((snapshot) {
+      final data = snapshot.data() ?? const <String, dynamic>{};
+      return autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
+    });
+  }
+
+  Future<void> updateAutoOpenCurrentTripOnLaunchPreference(bool enabled) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final userRef = firestore.collection('users').doc(uid);
+    await userRef.set({
+      'account': {
+        'preferences': {
+          'autoOpenCurrentTripOnLaunch': enabled,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> updateAccountName(String accountName) async {
