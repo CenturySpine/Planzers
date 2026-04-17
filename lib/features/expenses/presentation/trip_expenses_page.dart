@@ -319,14 +319,15 @@ class _TripExpensesBody extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-              child: _ExpensePostPanel(
-                tripId: tripId,
-                group: visibleGroups.single,
-                groupExpenses: expenses
-                    .where((e) => e.groupId == visibleGroups.single.id)
-                    .toList(),
-                memberIds: memberIds,
-                memberPublicLabels: memberPublicLabels,
+               child: _ExpensePostPanel(
+                 tripId: tripId,
+                 group: visibleGroups.single,
+                 allTripExpenses: expenses,
+                 groupExpenses: expenses
+                     .where((e) => e.groupId == visibleGroups.single.id)
+                     .toList(),
+                 memberIds: memberIds,
+                 memberPublicLabels: memberPublicLabels,
                 memberLabels: labels,
                 viewerUserId: viewerId,
               ),
@@ -462,14 +463,15 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
               for (final group in widget.groups)
                 SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                  child: _ExpensePostPanel(
-                    tripId: widget.tripId,
-                    group: group,
-                    groupExpenses:
-                        widget.expenses.where((e) => e.groupId == group.id).toList(),
-                    memberIds: widget.memberIds,
-                    memberPublicLabels: widget.memberPublicLabels,
-                    memberLabels: widget.memberLabels,
+                   child: _ExpensePostPanel(
+                     tripId: widget.tripId,
+                     group: group,
+                     allTripExpenses: widget.expenses,
+                     groupExpenses:
+                         widget.expenses.where((e) => e.groupId == group.id).toList(),
+                     memberIds: widget.memberIds,
+                     memberPublicLabels: widget.memberPublicLabels,
+                     memberLabels: widget.memberLabels,
                     viewerUserId: widget.viewerUserId,
                   ),
                 ),
@@ -485,6 +487,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   const _ExpensePostPanel({
     required this.tripId,
     required this.group,
+    required this.allTripExpenses,
     required this.groupExpenses,
     required this.memberIds,
     required this.memberPublicLabels,
@@ -494,6 +497,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
   final String tripId;
   final TripExpenseGroup group;
+  final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
@@ -554,8 +558,18 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final viewerUserId = widget.viewerUserId?.trim();
     final settlement =
-        computeViewerSettlement(widget.groupExpenses, widget.viewerUserId);
+        computeViewerSettlement(widget.groupExpenses, viewerUserId);
+    final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
+    final myTotalsByCurrency = _sumByCurrency(
+      widget.allTripExpenses.where(
+        (expense) {
+          final paidBy = expense.paidBy.trim();
+          return viewerUserId != null && paidBy == viewerUserId;
+        },
+      ),
+    );
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
       widget.memberIds,
@@ -685,12 +699,17 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             balancesByCurrency: settlement.balancesByCurrency,
             transfers: settlement.suggestedTransfers,
             memberLabels: widget.memberLabels,
-            viewerUserId: widget.viewerUserId,
+            viewerUserId: viewerUserId,
           )
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _ExpenseTotalsHeader(
+                myTotalsByCurrency: myTotalsByCurrency,
+                tripTotalsByCurrency: tripTotalsByCurrency,
+              ),
+              const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
                 Text(
                   'Aucune opération dans ce poste.',
@@ -715,6 +734,33 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 }
 
 enum _ExpensePostView { operations, settlement }
+
+const _kDefaultExpenseCurrency = 'EUR';
+
+Map<String, double> _sumByCurrency(Iterable<TripExpense> expenses) {
+  final totals = <String, double>{};
+  for (final expense in expenses) {
+    final currency = expense.currency.trim().toUpperCase();
+    if (currency.isEmpty) continue;
+    totals.update(
+      currency,
+      (value) => value + expense.amount,
+      ifAbsent: () => expense.amount,
+    );
+  }
+  return totals;
+}
+
+String _formatTotalsByCurrency(Map<String, double> totalsByCurrency) {
+  if (totalsByCurrency.isEmpty) {
+    return _formatMoney(_kDefaultExpenseCurrency, 0);
+  }
+  final sortedEntries = totalsByCurrency.entries.toList()
+    ..sort((a, b) => a.key.compareTo(b.key));
+  return sortedEntries
+      .map((entry) => _formatMoney(entry.key, entry.value))
+      .join(' · ');
+}
 
 String _formatMoney(String currency, double amount) {
   final c = currency.trim().toUpperCase();
@@ -757,6 +803,60 @@ String _formatSuggestedTransferLine({
 
 enum _ExpenseDetailsMenuAction { edit, delete }
 enum _ExpensePostMenuAction { edit, delete }
+
+class _ExpenseTotalsHeader extends StatelessWidget {
+  const _ExpenseTotalsHeader({
+    required this.myTotalsByCurrency,
+    required this.tripTotalsByCurrency,
+  });
+
+  final Map<String, double> myTotalsByCurrency;
+  final Map<String, double> tripTotalsByCurrency;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        );
+    final valueStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        );
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Mes dépenses totales', style: labelStyle),
+              const SizedBox(height: 2),
+              Text(
+                _formatTotalsByCurrency(myTotalsByCurrency),
+                style: valueStyle,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('Coût total du séjour', style: labelStyle),
+              const SizedBox(height: 2),
+              Text(
+                _formatTotalsByCurrency(tripTotalsByCurrency),
+                textAlign: TextAlign.right,
+                style: valueStyle,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
