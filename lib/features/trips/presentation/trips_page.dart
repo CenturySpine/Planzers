@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/core/notifications/notification_center_repository.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
+import 'package:planzers/features/account/data/account_repository.dart';
 import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -22,6 +23,7 @@ enum _TripTimelineCategory { past, ongoing, upcoming }
 class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  bool _didHandleAutoOpenCurrentTrip = false;
 
   @override
   void initState() {
@@ -39,6 +41,9 @@ class _TripsPageState extends ConsumerState<TripsPage>
   Widget build(BuildContext context) {
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
+    final autoOpenCurrentTripOnLaunchAsync = ref.watch(
+      autoOpenCurrentTripOnLaunchProvider,
+    );
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
@@ -82,6 +87,12 @@ class _TripsPageState extends ConsumerState<TripsPage>
           }
 
           final grouped = _groupTripsByTimeline(trips);
+          _maybeAutoOpenCurrentTrip(
+            context,
+            ongoingTrips: grouped[_TripTimelineCategory.ongoing] ?? const [],
+            autoOpenCurrentTripOnLaunch:
+                autoOpenCurrentTripOnLaunchAsync.asData?.value,
+          );
           final unreadByTrip = unreadByTripAsync.asData?.value ?? const <String, int>{};
           final pastUnread = _sumUnreadForTrips(
             grouped[_TripTimelineCategory.past] ?? const [],
@@ -190,6 +201,24 @@ class _TripsPageState extends ConsumerState<TripsPage>
         ),
       ),
     );
+  }
+
+  void _maybeAutoOpenCurrentTrip(
+    BuildContext context, {
+    required List<Trip> ongoingTrips,
+    required bool? autoOpenCurrentTripOnLaunch,
+  }) {
+    if (_didHandleAutoOpenCurrentTrip) return;
+    if (autoOpenCurrentTripOnLaunch == null) return;
+
+    _didHandleAutoOpenCurrentTrip = true;
+    if (!autoOpenCurrentTripOnLaunch || ongoingTrips.length != 1) return;
+
+    final tripId = ongoingTrips.single.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.push('/trips/$tripId/overview');
+    });
   }
 
   Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(List<Trip> trips) {
