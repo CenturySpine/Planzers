@@ -699,7 +699,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             balancesByCurrency: settlement.balancesByCurrency,
             transfers: settlement.suggestedTransfers,
             memberLabels: widget.memberLabels,
-            viewerUserId: widget.viewerUserId,
+            viewerUserId: viewerUserId,
           )
         else
           Column(
