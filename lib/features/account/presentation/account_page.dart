@@ -239,7 +239,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mise a jour preference: $e')),
+        SnackBar(content: Text('Erreur mise à jour préférence: $e')),
       );
     } finally {
       if (mounted) {
@@ -426,7 +426,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                           : _updateAutoOpenCurrentTripPreference,
                       title: const Text('Ouvrir automatiquement le voyage en cours'),
                       subtitle: const Text(
-                        'Si un seul voyage est en cours aujourd hui, il s ouvre au lancement.',
+                        'Si un seul voyage est en cours aujourd\'hui, il s ouvre au lancement.',
                       ),
                     ),
                     const SizedBox(height: 12),
