@@ -1044,14 +1044,17 @@ class _SettlementSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Checkbox(
-                    value: false,
-                    onChanged: markingInProgress
-                        ? null
-                        : (value) async {
-                            if (value != true) return;
-                            await onMarkTransferDone(t);
-                          },
+                  Semantics(
+                    label: 'Marquer ce remboursement comme effectué',
+                    child: Checkbox(
+                      value: false,
+                      onChanged: markingInProgress
+                          ? null
+                          : (value) async {
+                              if (value != true) return;
+                              await onMarkTransferDone(t);
+                            },
+                    ),
                   ),
                   Expanded(
                     child: Text(

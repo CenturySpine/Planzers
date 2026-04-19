@@ -394,15 +394,15 @@ class ExpensesRepository {
     final fromUserId = transfer.fromUserId.trim();
     final toUserId = transfer.toUserId.trim();
     final currency = transfer.currency.trim().toUpperCase();
-    final amount = ((transfer.amount * 100).round() / 100);
     if (fromUserId.isEmpty || toUserId.isEmpty || currency.isEmpty) {
       throw StateError('Remboursement invalide');
     }
-    if (amount <= 0) {
+    final cents = (transfer.amount * 100).round();
+    if (cents <= 0) {
       throw StateError('Montant invalide');
     }
 
-    final cents = (amount * 100).round();
+    final amount = cents / 100.0;
     final docId =
         '${cleanGroupId}__${currency}__${fromUserId}__${toUserId}__$cents';
     await _settledTransfersCol(cleanTripId).doc(docId).set({
