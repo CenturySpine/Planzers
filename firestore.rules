@@ -103,6 +103,10 @@ service cloud.firestore {
         allow read, write: if isTripMember(tripId);
       }
 
+      match /expenseSettledTransfers/{transferId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
       match /rooms/{roomId} {
         allow read, write: if isTripMember(tripId);
       }
