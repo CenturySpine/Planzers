@@ -32,6 +32,25 @@ List<String> participantScopeMemberIdsForGroup(
   return clean.where((id) => allowed.contains(id)).toList()..sort();
 }
 
+/// Settled transfers involving [viewerUserId], or all if viewer is null/blank.
+List<SettledTransfer> settledTransfersVisibleToViewer(
+  List<SettledTransfer> groupSettled,
+  String? viewerUserId,
+) {
+  final v = viewerUserId?.trim();
+  final filtered = v == null || v.isEmpty
+      ? groupSettled.toList()
+      : groupSettled
+          .where((t) {
+            final from = t.fromUserId.trim();
+            final to = t.toUserId.trim();
+            return from == v || to == v;
+          })
+          .toList();
+  filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  return filtered;
+}
+
 class TripExpensesPage extends ConsumerStatefulWidget {
   const TripExpensesPage({super.key});
 
@@ -728,7 +747,11 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         if (_activeView == _ExpensePostView.settlement)
           _SettlementSection(
             balancesByCurrency: settlement.balancesByCurrency,
-            transfers: settlement.suggestedTransfers,
+            pendingTransfers: settlement.suggestedTransfers,
+            settledTransfers: settledTransfersVisibleToViewer(
+              widget.groupSettledTransfers,
+              viewerUserId,
+            ),
             memberLabels: widget.memberLabels,
             viewerUserId: viewerUserId,
             markingInProgress: _savingSettledTransfer,
@@ -740,6 +763,25 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       tripId: widget.tripId,
                       groupId: widget.group.id,
                       transfer: transfer,
+                    );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur: $e')),
+                );
+              } finally {
+                if (mounted) {
+                  setState(() => _savingSettledTransfer = false);
+                }
+              }
+            },
+            onUnmarkSettled: (settled) async {
+              if (_savingSettledTransfer) return;
+              setState(() => _savingSettledTransfer = true);
+              try {
+                await ref.read(expensesRepositoryProvider).deleteSettledTransfer(
+                      tripId: widget.tripId,
+                      settledTransferId: settled.id,
                     );
               } catch (e) {
                 if (!mounted) return;
@@ -913,19 +955,23 @@ class _ExpenseTotalsHeader extends StatelessWidget {
 class _SettlementSection extends StatelessWidget {
   const _SettlementSection({
     required this.balancesByCurrency,
-    required this.transfers,
+    required this.pendingTransfers,
+    required this.settledTransfers,
     required this.memberLabels,
     required this.viewerUserId,
     required this.markingInProgress,
     required this.onMarkTransferDone,
+    required this.onUnmarkSettled,
   });
 
   final BalancesByCurrency balancesByCurrency;
-  final List<SuggestedTransfer> transfers;
+  final List<SuggestedTransfer> pendingTransfers;
+  final List<SettledTransfer> settledTransfers;
   final Map<String, String> memberLabels;
   final String? viewerUserId;
   final bool markingInProgress;
   final Future<void> Function(SuggestedTransfer transfer) onMarkTransferDone;
+  final Future<void> Function(SettledTransfer settled) onUnmarkSettled;
 
   @override
   Widget build(BuildContext context) {
@@ -1028,7 +1074,7 @@ class _SettlementSection extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 12),
-        if (transfers.isEmpty)
+        if (pendingTransfers.isEmpty && settledTransfers.isEmpty)
           Text(
             balancesByCurrency.isEmpty
                 ? 'Pas encore de calcul.'
@@ -1037,39 +1083,69 @@ class _SettlementSection extends StatelessWidget {
                   color: colorScheme.onSurfaceVariant,
                 ),
           )
-        else
-          ...transfers.map((t) {
+        else ...[
+          ...pendingTransfers.map((t) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    label: 'Marquer ce remboursement comme effectué',
-                    child: Checkbox(
-                      value: false,
-                      onChanged: markingInProgress
-                          ? null
-                          : (value) async {
-                              if (value != true) return;
-                              await onMarkTransferDone(t);
-                            },
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Semantics(
+                label: 'Marquer ce remboursement comme effectué',
+                child: CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: false,
+                  onChanged: markingInProgress
+                      ? null
+                      : (value) async {
+                          if (value != true) return;
+                          await onMarkTransferDone(t);
+                        },
+                  title: Text(
+                    _formatSuggestedTransferLine(
+                      transfer: t,
+                      memberLabels: memberLabels,
+                      viewerUserId: viewerUserId,
                     ),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  Expanded(
-                    child: Text(
-                      _formatSuggestedTransferLine(
-                        transfer: t,
-                        memberLabels: memberLabels,
-                        viewerUserId: viewerUserId,
-                      ),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           }),
+          ...settledTransfers.map((s) {
+            final t = s.toSuggestedTransfer();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Semantics(
+                label: 'Annuler le marquage de ce remboursement',
+                child: CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: true,
+                  onChanged: markingInProgress
+                      ? null
+                      : (value) async {
+                          if (value != false) return;
+                          await onUnmarkSettled(s);
+                        },
+                  title: Text(
+                    _formatSuggestedTransferLine(
+                      transfer: t,
+                      memberLabels: memberLabels,
+                      viewerUserId: viewerUserId,
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ],
     );
   }

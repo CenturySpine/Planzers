@@ -415,4 +415,22 @@ class ExpensesRepository {
       'createdBy': user.uid,
     });
   }
+
+  /// Removes a previously recorded settlement so balances and suggestions revert.
+  Future<void> deleteSettledTransfer({
+    required String tripId,
+    required String settledTransferId,
+  }) async {
+    if (auth.currentUser == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanDocId = settledTransferId.trim();
+    if (cleanTripId.isEmpty || cleanDocId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    await _settledTransfersCol(cleanTripId).doc(cleanDocId).delete();
+  }
 }
