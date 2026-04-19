@@ -34,3 +34,10 @@ These rules apply to everyone working on the repository, including automated cod
 
 - Read this file at the start of substantive work on the repo.
 - Obey user instructions that override or refine these defaults when they conflict.
+
+### Challenging requests (web / mobile / Flutter)
+
+- **Simplicity over “making it work at any cost”:** Do not add complicated or clever code just to satisfy a literal wording when a simpler, conventional solution matches the intent and fits the stack.
+- **Assume product context, not platform expertise:** The product owner may not be deeply familiar with web, mobile, or Flutter. Treat feature requests as hypotheses to validate against current best practices, platform norms, and what is realistically maintainable in this codebase.
+- **Push back constructively:** When the requested approach is suboptimal, uncommon, or discouraged, say so clearly and propose alternatives (standard patterns, platform-recommended flows, or a different feature shape). Prefer honest trade-offs over fragile workarounds.
+- **Say when something “isn’t done” here:** If something is impractical, a poor fit, or not realistically done on these technologies or distribution channels (e.g. app stores, browser constraints), state that plainly rather than implementing a brittle workaround.
