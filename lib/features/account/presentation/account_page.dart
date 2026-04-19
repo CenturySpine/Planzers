@@ -8,6 +8,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:planzers/core/push/fcm_token_sync.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
+import 'package:planzers/features/account/presentation/account_allergens_page.dart';
 import 'package:planzers/features/account/presentation/palette_picker_button.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
@@ -229,6 +230,15 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
+  void _openAllergensPage(Map<String, dynamic> userData) {
+    final initial = foodAllergenCatalogIdsFromUserData(userData);
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => AccountAllergensPage(initialCatalogIds: initial),
+      ),
+    );
+  }
+
   Future<void> _updateAutoOpenCurrentTripPreference(bool enabled) async {
     if (_isUpdatingAutoOpenCurrentTrip) return;
     setState(() => _isUpdatingAutoOpenCurrentTrip = true);
@@ -407,6 +417,13 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 ),
               ),
               const SizedBox(height: 28),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Allergènes alimentaires'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _openAllergensPage(data),
+              ),
+              const SizedBox(height: 16),
               Text(
                 'Préférences',
                 style: Theme.of(context).textTheme.titleMedium,

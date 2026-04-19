@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +18,7 @@ import 'package:planzers/features/trips/presentation/open_address_in_google_maps
 import 'package:planzers/features/trips/presentation/trip_date_format.dart';
 import 'package:planzers/features/trips/presentation/trip_participants_page.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planzers/features/trips/presentation/trip_stay_edit_dialog.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -208,6 +211,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _openTripStayDialog() async {
+    await showTripStayEditDialog(context: context, trip: _trip);
   }
 
   Future<void> _pickAndUploadBannerImage() async {
@@ -448,6 +455,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           );
                                           return;
                                         }
+                                        if (value == 'stay' && isTripMember) {
+                                          unawaited(_openTripStayDialog());
+                                          return;
+                                        }
                                         if (value == 'share' && canEdit) {
                                           _shareInviteLink();
                                           return;
@@ -472,6 +483,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             ],
                                           ),
                                         ),
+                                        if (isTripMember)
+                                          const PopupMenuItem(
+                                            value: 'stay',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.date_range_outlined),
+                                                SizedBox(width: 10),
+                                                Text('Mes dates sur le voyage'),
+                                              ],
+                                            ),
+                                          ),
                                         if (canEdit)
                                           const PopupMenuItem(
                                             value: 'share',
@@ -533,6 +555,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         );
                                         return;
                                       }
+                                      if (value == 'stay' && isTripMember) {
+                                        unawaited(_openTripStayDialog());
+                                        return;
+                                      }
                                       if (value == 'share' && canEdit) {
                                         _shareInviteLink();
                                         return;
@@ -556,6 +582,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           ],
                                         ),
                                       ),
+                                      if (isTripMember)
+                                        const PopupMenuItem(
+                                          value: 'stay',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.date_range_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Mes dates sur le voyage'),
+                                            ],
+                                          ),
+                                        ),
                                       if (canEdit)
                                         const PopupMenuItem(
                                           value: 'share',

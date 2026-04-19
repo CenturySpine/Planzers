@@ -317,11 +317,19 @@ class TripsRepository {
         );
       }
     }
+    DateTime? parseIso(String? s) {
+      final t = s?.trim() ?? '';
+      if (t.isEmpty) return null;
+      return DateTime.tryParse(t);
+    }
+
     return InviteJoinContext(
       tripId: tripId,
       tripTitle: tripTitle,
       placeholders: list,
       requiresPlaceholderChoice: requires,
+      tripStartDate: parseIso(raw['tripStartDate'] as String?),
+      tripEndDate: parseIso(raw['tripEndDate'] as String?),
     );
   }
 

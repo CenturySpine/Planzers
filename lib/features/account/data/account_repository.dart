@@ -25,6 +25,19 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   );
 });
 
+/// Stored under [account.foodAllergenCatalogIds] (merge-safe).
+List<String> foodAllergenCatalogIdsFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final raw = account['foodAllergenCatalogIds'] ?? data['foodAllergenCatalogIds'];
+  if (raw is List) {
+    return raw
+        .map((e) => e.toString().trim())
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+  }
+  return const [];
+}
+
 bool autoOpenCurrentTripOnLaunchEnabledFromUserData(Map<String, dynamic> data) {
   final account = (data['account'] as Map<String, dynamic>?) ?? const {};
   final preferences =
@@ -96,6 +109,38 @@ class AccountRepository {
       },
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<List<String>> readMyFoodAllergenCatalogIds() async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final snap = await firestore.collection('users').doc(uid).get();
+    return foodAllergenCatalogIdsFromUserData(snap.data() ?? const {});
+  }
+
+  Future<void> updateFoodAllergenCatalogIds(List<String> catalogIds) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final userRef = firestore.collection('users').doc(uid);
+    final cleaned = catalogIds
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    await userRef.set(
+      {
+        'account': {
+          'foodAllergenCatalogIds': cleaned,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   Future<void> updateAccountName(String accountName) async {

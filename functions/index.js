@@ -1286,11 +1286,24 @@ exports.getInviteJoinContext = onCall(
         displayName: normalizeString(labels[id]) || 'Voyageur',
       }));
 
+    const startTs = data.startDate;
+    const endTs = data.endDate;
+    const tripStartDate =
+      startTs && typeof startTs.toDate === 'function'
+        ? startTs.toDate().toISOString()
+        : null;
+    const tripEndDate =
+      endTs && typeof endTs.toDate === 'function'
+        ? endTs.toDate().toISOString()
+        : null;
+
     return {
       tripId: tripRef.id,
       tripTitle: normalizeString(data.title) || 'Voyage',
       placeholders,
       requiresPlaceholderChoice: placeholders.length > 0,
+      tripStartDate,
+      tripEndDate,
     };
   }
 );

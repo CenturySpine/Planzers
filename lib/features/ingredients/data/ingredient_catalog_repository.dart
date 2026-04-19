@@ -117,3 +117,24 @@ class _IngredientMatch {
   final IngredientCatalogItem item;
   final int score;
 }
+
+/// Catalog rows with [IngredientCatalogItem.type] == `allergen`.
+final allergenCatalogItemsProvider =
+    FutureProvider<List<IngredientCatalogItem>>((ref) async {
+  final all =
+      await ref.read(ingredientCatalogRepositoryProvider).loadCatalog();
+  return all
+      .where((i) => i.type == 'allergen')
+      .toList(growable: false);
+});
+
+final allergenAutocompleteProvider =
+    Provider.family<AsyncValue<List<IngredientCatalogItem>>, String>((
+  ref,
+  query,
+) {
+  final catalogAsync = ref.watch(allergenCatalogItemsProvider);
+  return catalogAsync.whenData(
+    (items) => IngredientCatalogRepository.search(items, query),
+  );
+});

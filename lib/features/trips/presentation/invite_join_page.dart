@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
+import 'package:planzers/features/account/data/account_repository.dart';
+import 'package:planzers/features/ingredients/presentation/food_allergens_list_editor.dart';
 import 'package:planzers/features/trips/data/invite_join_context.dart';
+import 'package:planzers/features/trips/data/trip_member_profile_repository.dart';
+import 'package:planzers/features/trips/data/trip_member_stay.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/name_list_search.dart';
+import 'package:planzers/features/trips/presentation/trip_stay_bounds_editor.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
   const InviteJoinPage({
@@ -41,6 +48,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   String? _selectedPlaceholderId;
   final TextEditingController _placeholderSearchController =
       TextEditingController();
+
+  /// 0: choose name, 1: stay + allergens (only when [requiresPlaceholderChoice]).
+  int _inviteFormStep = 0;
+  TripMemberStay? _stayDraft;
+  List<String> _allergenCatalogIds = const [];
 
   void _goToTripsList() {
     context.go('/trips');
@@ -190,10 +202,17 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       if (!mounted) return;
       setState(() {
         _context = ctx;
+        _inviteFormStep = 0;
         _placeholderSearchController.clear();
         if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
           final sorted = _sortedPlaceholders(ctx);
           _selectedPlaceholderId = sorted.first.id;
+          _stayDraft = TripMemberStay.defaultForInviteContext(
+            tripStartDate: ctx.tripStartDate,
+            tripEndDate: ctx.tripEndDate,
+          );
+        } else {
+          _stayDraft = null;
         }
       });
       if (!ctx.requiresPlaceholderChoice) {
@@ -244,9 +263,16 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
   }
 
-  Future<void> _confirmPlaceholderAndJoin() async {
-    final ctx = _context;
-    if (ctx == null || !ctx.requiresPlaceholderChoice) return;
+  Future<void> _loadAllergenIdsForForm() async {
+    try {
+      final ids =
+          await ref.read(accountRepositoryProvider).readMyFoodAllergenCatalogIds();
+      if (!mounted) return;
+      setState(() => _allergenCatalogIds = ids);
+    } catch (_) {}
+  }
+
+  void _continueFromNameStep() {
     final id = _selectedPlaceholderId?.trim();
     if (id == null || id.isEmpty) {
       setState(() {
@@ -254,7 +280,66 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       });
       return;
     }
+    setState(() {
+      _error = null;
+      _inviteFormStep = 1;
+    });
+    unawaited(_loadAllergenIdsForForm());
+  }
+
+  void _backToNameStep() {
+    setState(() {
+      _inviteFormStep = 0;
+      _error = null;
+    });
+  }
+
+  Future<void> _completeInviteWithDetails() async {
+    final ctx = _context;
+    final stay = _stayDraft;
+    final id = _selectedPlaceholderId?.trim();
+    if (ctx == null || stay == null || id == null) return;
+
+    if (!TripMemberStay.isChronological(stay)) {
+      setState(() {
+        _error = 'La plage de dates est invalide.';
+      });
+      return;
+    }
+    if (!TripMemberStay.withinInviteDateBounds(
+      stay: stay,
+      tripStartDate: ctx.tripStartDate,
+      tripEndDate: ctx.tripEndDate,
+    )) {
+      setState(() {
+        _error = 'Les dates doivent rester dans les dates du voyage.';
+      });
+      return;
+    }
+
     await _join(placeholderMemberId: id);
+    if (!_joined || !mounted) return;
+
+    try {
+      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
+            tripId: widget.tripId,
+            stay: stay,
+          );
+      await ref.read(accountRepositoryProvider).updateFoodAllergenCatalogIds(
+            _allergenCatalogIds,
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Voyage rejoint, mais préférences non enregistrées : '
+              '${_messageForError(e)}',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -274,10 +359,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     );
   }
 
-  Widget _buildPlaceholderChoiceLayout(String tripHeadline) {
+  Widget _buildPlaceholderChoiceLayout(String tripTitle) {
     final ctx = _context!;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
+    final stepTitle = _inviteFormStep == 0
+        ? 'Rejoindre le voyage 1/2'
+        : 'Rejoindre le voyage 2/2';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -294,64 +382,110 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    tripHeadline,
+                    stepTitle,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Tu ne pourras faire ce choix qu’une seule fois pour ce voyage.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Qui es-tu dans ce voyage ?',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  NameListSearchTextField(
-                    controller: _placeholderSearchController,
-                    onChanged: (_) => _onPlaceholderSearchChanged(sorted),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? Center(
-                            child: Text(
-                              kNameListSearchEmptyMessage,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            itemCount: filtered.length,
-                            itemBuilder: (context, index) {
-                              final option = filtered[index];
-                              final accentIndex =
-                                  sorted.indexWhere((e) => e.id == option.id);
-                              return _placeholderChoiceTile(
-                                option: option,
-                                accentIndex:
-                                    accentIndex >= 0 ? accentIndex : index,
-                              );
-                            },
+                  if (tripTitle.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '« $tripTitle »',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  if (_inviteFormStep == 0) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tu ne pourras faire ce choix qu’une seule fois pour ce voyage.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Qui es-tu dans ce voyage ?',
+                      style: Theme.of(context).textTheme.titleSmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    NameListSearchTextField(
+                      controller: _placeholderSearchController,
+                      onChanged: (_) => _onPlaceholderSearchChanged(sorted),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                kNameListSearchEmptyMessage,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final option = filtered[index];
+                                final accentIndex =
+                                    sorted.indexWhere((e) => e.id == option.id);
+                                return _placeholderChoiceTile(
+                                  option: option,
+                                  accentIndex:
+                                      accentIndex >= 0 ? accentIndex : index,
+                                );
+                              },
+                            ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_stayDraft != null)
+                              TripStayBoundsEditor(
+                                tripStartDate: ctx.tripStartDate,
+                                tripEndDate: ctx.tripEndDate,
+                                value: _stayDraft!,
+                                onChanged: (v) =>
+                                    setState(() => _stayDraft = v),
+                              ),
+                            const SizedBox(height: 20),
+                            FoodAllergensListEditor(
+                              selectedCatalogIds: _allergenCatalogIds,
+                              onChanged: (ids) => setState(
+                                () => _allergenCatalogIds = ids,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: _joining ? null : _backToNameStep,
+                        child: const Text('Modifier le choix du voyageur'),
+                      ),
+                    ),
+                  ],
                   if (_error != null) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -375,9 +509,14 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       Expanded(
                         flex: 2,
                         child: FilledButton(
-                          onPressed:
-                              _joining ? null : _confirmPlaceholderAndJoin,
-                          child: const Text('Rejoindre le voyage'),
+                          onPressed: _joining
+                              ? null
+                              : (_inviteFormStep == 0
+                                  ? _continueFromNameStep
+                                  : _completeInviteWithDetails),
+                          child: Text(
+                            _inviteFormStep == 0 ? 'Continuer' : 'Valider',
+                          ),
                         ),
                       ),
                     ],
@@ -441,7 +580,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     final Widget bodyChild;
     if (placeholderPick) {
-      bodyChild = _buildPlaceholderChoiceLayout(tripHeadline);
+      bodyChild = _buildPlaceholderChoiceLayout(tripTitle);
     } else {
       bodyChild = Center(
         child: ConstrainedBox(

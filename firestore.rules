@@ -182,6 +182,14 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['channels', 'updatedAt'])
           && request.resource.data.channels is map;
       }
+
+      /// Per-member trip data (presence bounds, etc.).
+      match /members/{memberId} {
+        allow read: if isTripMember(tripId);
+        allow create, update: if isTripMember(tripId)
+          && memberId == request.auth.uid;
+        allow delete: if false;
+      }
     }
   }
 }
