@@ -54,115 +54,124 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/app_icon.png',
-                width: 120,
-                height: 120,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                'PLANERZ',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 56,
-                  fontWeight: FontWeight.bold,
-                  height: 1.0,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'WE ENTRE AMIS',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  height: 1.0,
-                  letterSpacing: 0.6,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 40),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _signInWithGoogle,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: _googleSignInText,
-                      disabledForegroundColor:
-                          _googleSignInText.withValues(alpha: 0.55),
-                      side: const BorderSide(
-                        color: _googleSignInBorder,
-                        width: 1,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 28),
+                    const Text(
+                      'PLANERZ',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
                       ),
                     ),
-                    child: _isLoading
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color:
-                                      _googleSignInText.withValues(alpha: 0.7),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                'Connexion...',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      _googleSignInText.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/images/google_g.svg',
-                                width: 20,
-                                height: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Continuer avec Google',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: _googleSignInText,
-                                  letterSpacing: 0.15,
-                                ),
-                              ),
-                            ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'WE ENTRE AMIS',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                        letterSpacing: 0.6,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: _isLoading ? null : _signInWithGoogle,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: _googleSignInText,
+                            disabledForegroundColor:
+                                _googleSignInText.withValues(alpha: 0.55),
+                            side: const BorderSide(
+                              color: _googleSignInBorder,
+                              width: 1,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                  ),
+                          child: _isLoading
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: _googleSignInText.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Connexion...',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: _googleSignInText.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/images/google_g.svg',
+                                      width: 20,
+                                      height: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      'Continuer avec Google',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: _googleSignInText,
+                                        letterSpacing: 0.15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
