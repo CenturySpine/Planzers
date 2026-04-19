@@ -235,14 +235,19 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                             ),
                           ),
                         )
-                      : ListView.builder(
+                      : ListView.separated(
                           padding: const EdgeInsets.only(
-                            left: 8,
-                            right: 8,
-                            top: 8,
+                            left: 4,
+                            right: 4,
+                            top: 4,
                             bottom: 88,
                           ),
                           itemCount: filteredItems.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
+                          ),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
                             return _ShoppingItemRow(
@@ -579,90 +584,118 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
         _normalize(query) != _acceptedSuggestionLabel;
     final isDuplicateLabel = _isDuplicateLabel(_labelController.text);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Checkbox(
-                  value: isChecked,
-                  onChanged: _toggleChecked,
-                ),
-                _ClaimButton(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: isChecked,
+                onChanged: _toggleChecked,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              Transform.translate(
+                offset: const Offset(-4, 0),
+                child: _ClaimButton(
                   isClaimedByMe: isClaimedByMe,
                   isClaimedByOther: isClaimedByOther,
                   currentUser: currentUser,
                   onTap: _toggleClaim,
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _labelController,
-                    focusNode: _labelFocusNode,
-                    decoration: InputDecoration(
-                      hintText: 'Article…',
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 8,
-                      ),
-                      suffixIconConstraints: const BoxConstraints(
-                        minHeight: 18,
-                        minWidth: 18,
-                      ),
-                      suffixIcon: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: _isSaving
-                            ? const Padding(
-                                padding: EdgeInsets.all(2),
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _labelController,
+                  focusNode: _labelFocusNode,
+                  decoration: InputDecoration(
+                    hintText: 'Article…',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 6,
                     ),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          decoration: isChecked
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                          color: isChecked
-                              ? colorScheme.onSurfaceVariant
-                              : colorScheme.onSurface,
-                        ),
-                    onSubmitted: (_) => _save(),
-                    onEditingComplete: _save,
-                    onChanged: (_) => _scheduleAutoSave(),
+                    suffixIconConstraints: const BoxConstraints(
+                      minHeight: 18,
+                      minWidth: 18,
+                    ),
+                    suffixIcon: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: _isSaving
+                          ? const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        decoration: isChecked
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        color: isChecked
+                            ? colorScheme.onSurfaceVariant
+                            : colorScheme.onSurface,
+                      ),
+                  onSubmitted: (_) => _save(),
+                  onEditingComplete: _save,
+                  onChanged: (_) => _scheduleAutoSave(),
                 ),
-                _QuantityControls(
-                  quantityController: _quantityController,
-                  quantityFocusNode: _quantityFocusNode,
-                  selectedUnit: _selectedUnit,
-                  measurementKind: _measurementKind,
-                  onUnitChanged: (unit) {
-                    setState(() {
-                      _selectedUnit = unit;
-                      _measurementKind = _measurementKindFromUnit(unit);
-                    });
-                    _scheduleAutoSave();
-                  },
-                  onDecrement: _decrementQuantity,
-                  onIncrement: _incrementQuantity,
-                  onSave: _save,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  iconSize: 20,
+              ),
+              _QuantityControls(
+                quantityController: _quantityController,
+                quantityFocusNode: _quantityFocusNode,
+                selectedUnit: _selectedUnit,
+                measurementKind: _measurementKind,
+                onUnitChanged: (unit) {
+                  setState(() {
+                    _selectedUnit = unit;
+                    _measurementKind = _measurementKindFromUnit(unit);
+                  });
+                  _scheduleAutoSave();
+                },
+                onDecrement: _decrementQuantity,
+                onIncrement: _incrementQuantity,
+                onSave: _save,
+              ),
+              PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                tooltip: 'Plus d\'actions',
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 40),
+                icon: Icon(
+                  Icons.more_vert,
+                  size: 20,
                   color: colorScheme.onSurfaceVariant,
-                  onPressed: _delete,
-                  tooltip: 'Supprimer',
                 ),
-              ],
-            ),
+                onSelected: (value) {
+                  if (value == 'delete') _delete();
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Supprimer',
+                          style: TextStyle(color: colorScheme.error),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
             if (showSuggestions)
               suggestionsAsync.when(
                 data: (suggestions) {
@@ -673,7 +706,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
                   if (filtered.isEmpty) return const SizedBox.shrink();
                   return Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.only(left: 48, right: 40, bottom: 4),
+                    margin: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
                     decoration: BoxDecoration(
                       color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(10),
@@ -714,7 +747,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
               ),
             if (isDuplicateLabel)
               Padding(
-                padding: const EdgeInsets.only(left: 48, right: 12, bottom: 6),
+                padding: const EdgeInsets.only(left: 4, right: 8, bottom: 4),
                 child: Row(
                   children: [
                     Icon(
@@ -734,8 +767,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
                   ],
                 ),
               ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -775,21 +807,22 @@ class _QuantityControls extends StatelessWidget {
           ShoppingUnit.kilograms,
         ],
     };
+    final qtyBtnStyle = IconButton.styleFrom(
+      padding: const EdgeInsets.all(2),
+      minimumSize: const Size(24, 24),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Decrement
         IconButton(
+          style: qtyBtnStyle,
           icon: const Icon(Icons.remove),
-          iconSize: 18,
+          iconSize: 16,
           onPressed: onDecrement,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
-
-        // Quantity text field
         SizedBox(
-          width: 48,
+          width: 36,
           child: TextField(
             controller: quantityController,
             focusNode: quantityFocusNode,
@@ -801,7 +834,7 @@ class _QuantityControls extends StatelessWidget {
             decoration: const InputDecoration(
               border: InputBorder.none,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
             ),
             style: Theme.of(context).textTheme.bodyMedium,
             onSubmitted: (_) => onSave(),
@@ -809,21 +842,18 @@ class _QuantityControls extends StatelessWidget {
             onChanged: (_) => onSave(),
           ),
         ),
-
-        // Increment
         IconButton(
+          style: qtyBtnStyle,
           icon: const Icon(Icons.add),
-          iconSize: 18,
+          iconSize: 16,
           onPressed: onIncrement,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
-
-        // Unit selector
         DropdownButton<ShoppingUnit>(
           value: selectedUnit,
           underline: const SizedBox.shrink(),
           isDense: true,
+          padding: EdgeInsets.zero,
+          alignment: AlignmentDirectional.centerStart,
           items: unitOptions
               .map(
                 (u) => DropdownMenuItem(
@@ -865,14 +895,20 @@ class _ClaimButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compactStyle = IconButton.styleFrom(
+      padding: const EdgeInsets.all(2),
+      minimumSize: const Size(28, 28),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
     if (isClaimedByMe) {
       final photoUrl = (currentUser?.photoURL ?? '').trim();
       final avatar = CircleAvatar(
-        radius: 11,
+        radius: 10,
         backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
         child: photoUrl.isEmpty ? Text(_initialsFromUser(currentUser)) : null,
       );
       return IconButton(
+        style: compactStyle,
         tooltip: 'Retirer mon claim',
         onPressed: () => onTap(),
         icon: avatar,
@@ -881,16 +917,18 @@ class _ClaimButton extends StatelessWidget {
 
     if (isClaimedByOther) {
       return IconButton(
+        style: compactStyle,
         tooltip: 'Déjà claimé par un autre participant',
         onPressed: null,
-        icon: const Icon(Icons.accessibility_new, size: 18),
+        icon: const Icon(Icons.accessibility_new, size: 17),
       );
     }
 
     return IconButton(
+      style: compactStyle,
       tooltip: 'Je m\'en occupe',
       onPressed: () => onTap(),
-      icon: const Icon(Icons.accessibility_new_outlined, size: 18),
+      icon: const Icon(Icons.accessibility_new_outlined, size: 17),
     );
   }
 }
