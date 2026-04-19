@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:planzers/core/firebase/firebase_options_selector.dart';
 import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planzers/core/notifications/cupidon_match_popup_binder.dart';
 import 'package:planzers/core/notifications/global_unread_badge_binder.dart';
 import 'package:planzers/core/push/fcm_notification_link_binder.dart';
 
@@ -85,7 +86,9 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
         }
 
         return GlobalUnreadBadgeBinder(
-          child: FcmNotificationLinkBinder(child: widget.child),
+          child: CupidonMatchPopupBinder(
+            child: FcmNotificationLinkBinder(child: widget.child),
+          ),
         );
       },
     );

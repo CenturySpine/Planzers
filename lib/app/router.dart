@@ -11,6 +11,7 @@ import 'package:planzers/features/shopping/presentation/trip_shopping_page.dart'
 import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
 import 'package:planzers/features/trips/presentation/trip_shell_page.dart';
 import 'package:planzers/features/trips/presentation/trips_page.dart';
+import 'package:planzers/features/cupidon/presentation/cupidon_space_page.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[
@@ -40,6 +41,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountPage(),
+    ),
+    GoRoute(
+      path: '/account/cupidon',
+      builder: (context, state) => const CupidonSpacePage(),
     ),
     GoRoute(
       path: '/trips/:tripId',

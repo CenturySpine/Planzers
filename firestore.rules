@@ -68,6 +68,10 @@ service cloud.firestore {
       match /tripNotificationPresence/{tripId} {
         allow read, write: if signedIn() && request.auth.uid == userId;
       }
+
+      match /cupidonMatches/{matchId} {
+        allow read, delete: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     match /trips/{tripId} {
@@ -189,6 +193,10 @@ service cloud.firestore {
         allow create, update: if isTripMember(tripId)
           && memberId == request.auth.uid;
         allow delete: if false;
+      }
+
+      match /cupidonLikes/{likeId} {
+        allow read: if isTripMember(tripId);
       }
     }
   }

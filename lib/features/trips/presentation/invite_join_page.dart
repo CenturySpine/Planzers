@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
+import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/ingredients/presentation/food_allergens_list_editor.dart';
 import 'package:planzers/features/trips/data/invite_join_context.dart';
 import 'package:planzers/features/trips/data/trip_member_profile_repository.dart';
@@ -53,6 +54,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   int _inviteFormStep = 0;
   TripMemberStay? _stayDraft;
   List<String> _allergenCatalogIds = const [];
+  bool _inviteCupidonEnabled = false;
 
   void _goToTripsList() {
     context.go('/trips');
@@ -185,7 +187,18 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       return;
     }
 
+    await _loadCupidonDefaultFromProfile();
     await _loadContextAndMaybeJoin();
+  }
+
+  Future<void> _loadCupidonDefaultFromProfile() async {
+    try {
+      final enabled = await ref
+          .read(accountRepositoryProvider)
+          .readCupidonEnabledByDefaultPreference();
+      if (!mounted) return;
+      setState(() => _inviteCupidonEnabled = enabled);
+    } catch (_) {}
   }
 
   Future<void> _loadContextAndMaybeJoin() async {
@@ -246,6 +259,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       setState(() {
         _joined = true;
       });
+      await _persistCupidonPreferenceForTrip();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vous avez rejoint le voyage')),
       );
@@ -265,10 +280,20 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   Future<void> _loadAllergenIdsForForm() async {
     try {
-      final ids =
-          await ref.read(accountRepositoryProvider).readMyFoodAllergenCatalogIds();
+      final ids = await ref
+          .read(accountRepositoryProvider)
+          .readMyFoodAllergenCatalogIds();
       if (!mounted) return;
       setState(() => _allergenCatalogIds = ids);
+    } catch (_) {}
+  }
+
+  Future<void> _persistCupidonPreferenceForTrip() async {
+    try {
+      await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
+            tripId: widget.tripId,
+            enabled: _inviteCupidonEnabled,
+          );
     } catch (_) {}
   }
 
@@ -328,6 +353,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       await ref.read(accountRepositoryProvider).updateFoodAllergenCatalogIds(
             _allergenCatalogIds,
           );
+      await _persistCupidonPreferenceForTrip();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -393,7 +419,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Text(
                       '« $tripTitle »',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -472,6 +499,18 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                               selectedCatalogIds: _allergenCatalogIds,
                               onChanged: (ids) => setState(
                                 () => _allergenCatalogIds = ids,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SwitchListTile.adaptive(
+                              contentPadding: EdgeInsets.zero,
+                              value: _inviteCupidonEnabled,
+                              onChanged: (value) => setState(
+                                () => _inviteCupidonEnabled = value,
+                              ),
+                              title: const Text('Activer le mode Cupidon'),
+                              subtitle: const Text(
+                                'Tu pourras liker des participants du voyage.',
                               ),
                             ),
                           ],

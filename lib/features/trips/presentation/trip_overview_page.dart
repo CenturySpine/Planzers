@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/rooms/data/rooms_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -217,6 +218,28 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     await showTripStayEditDialog(context: context, trip: _trip);
   }
 
+  Future<void> _toggleMyCupidonMode(bool enabled) async {
+    try {
+      await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
+            tripId: _trip.id,
+            enabled: enabled,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled ? 'Mode Cupidon activé' : 'Mode Cupidon désactivé',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur mode Cupidon: $e')),
+      );
+    }
+  }
+
   Future<void> _pickAndUploadBannerImage() async {
     if (_isBannerBusy) return;
     final colorScheme = Theme.of(context).colorScheme;
@@ -345,6 +368,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final roomsCount = roomsAsync.asData?.value.length ?? 0;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
+    final myCupidonEnabledAsync =
+        ref.watch(myTripCupidonEnabledProvider(_trip.id));
+    final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
         .doc(_trip.id)
@@ -469,6 +495,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         }
                                         if (value == 'edit' && canEdit) {
                                           _startEditing();
+                                          return;
+                                        }
+                                        if (value == 'cupidon' &&
+                                            isTripMember) {
+                                          _toggleMyCupidonMode(
+                                              !myCupidonEnabled);
                                         }
                                       },
                                       itemBuilder: (context) => [
@@ -527,6 +559,25 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
+                                        if (isTripMember)
+                                          PopupMenuItem(
+                                            value: 'cupidon',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  myCupidonEnabled
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  myCupidonEnabled
+                                                      ? 'Désactiver Cupidon'
+                                                      : 'Activer Cupidon',
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                       icon: canEdit && _inviteClipboardBusy
                                           ? const SizedBox(
@@ -569,6 +620,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       }
                                       if (value == 'edit' && canEdit) {
                                         _startEditing();
+                                        return;
+                                      }
+                                      if (value == 'cupidon' && isTripMember) {
+                                        _toggleMyCupidonMode(!myCupidonEnabled);
                                       }
                                     },
                                     itemBuilder: (context) => [
@@ -623,6 +678,25 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               Icon(Icons.edit_outlined),
                                               SizedBox(width: 10),
                                               Text('Modifier le voyage'),
+                                            ],
+                                          ),
+                                        ),
+                                      if (isTripMember)
+                                        PopupMenuItem(
+                                          value: 'cupidon',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                myCupidonEnabled
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                myCupidonEnabled
+                                                    ? 'Désactiver Cupidon'
+                                                    : 'Activer Cupidon',
+                                              ),
                                             ],
                                           ),
                                         ),

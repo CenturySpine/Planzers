@@ -426,6 +426,7 @@ const TRIP_NOTIFICATION_CHANNELS = Object.freeze({
   ACTIVITIES: 'activities',
 });
 const CHANNEL_PRESENCE_MAX_AGE_MS = 120000;
+const CUPIDON_MATCH_TYPE = 'cupidon_match';
 
 function tripCounterRef(uid, tripId) {
   return admin
@@ -512,8 +513,11 @@ async function incrementTripUnreadCounters({ tripId, recipients, channel }) {
 async function collectRecipientTokenEntries(db, recipients) {
   /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference }[]} */
   const tokenEntries = [];
+  /** @type {Map<string, FirebaseFirestore.DocumentReference>} */
+  const byToken = new Map();
   await Promise.all(
-    recipients.map(async (uid) => {
+    [...new Set(recipients.map((uid) => normalizeString(uid)).filter(Boolean))].map(
+      async (uid) => {
       try {
         const tokensSnap = await db
           .collection('users')
@@ -522,8 +526,8 @@ async function collectRecipientTokenEntries(db, recipients) {
           .get();
         for (const doc of tokensSnap.docs) {
           const t = normalizeString((doc.data() || {}).token);
-          if (t) {
-            tokenEntries.push({ token: t, ref: doc.ref });
+          if (t && !byToken.has(t)) {
+            byToken.set(t, doc.ref);
           }
         }
       } catch (e) {
@@ -531,7 +535,34 @@ async function collectRecipientTokenEntries(db, recipients) {
       }
     })
   );
+  for (const [token, ref] of byToken.entries()) {
+    tokenEntries.push({ token, ref });
+  }
   return tokenEntries;
+}
+
+async function markFunctionEventProcessedOnce(functionName, eventId) {
+  const cleanFunction = normalizeString(functionName);
+  const cleanEventId = normalizeString(eventId);
+  if (!cleanFunction || !cleanEventId) {
+    return true;
+  }
+  const db = admin.firestore();
+  const lockRef = db
+    .collection('functionEventLocks')
+    .doc(`${cleanFunction}__${cleanEventId}`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(lockRef);
+    if (snap.exists) {
+      return false;
+    }
+    tx.set(lockRef, {
+      functionName: cleanFunction,
+      eventId: cleanEventId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
 }
 
 async function cleanupInvalidFcmTokens(db, sendResult, tokenEntries) {
@@ -655,6 +686,95 @@ function buildTripNotificationEventData(event) {
   return data;
 }
 
+function cupidonLikeDocId(likerId, targetId) {
+  return `${normalizeString(likerId)}__${normalizeString(targetId)}`;
+}
+
+function cupidonMatchDocId(tripId, uidA, uidB) {
+  const ids = [normalizeString(uidA), normalizeString(uidB)].sort();
+  return `${normalizeString(tripId)}__${ids[0]}__${ids[1]}`;
+}
+
+function hasCupidonEnabled(memberData) {
+  return !!(memberData && memberData.cupidonEnabled === true);
+}
+
+async function resolveTripMemberLabel(tripData, uid) {
+  const labels =
+    tripData.memberPublicLabels && typeof tripData.memberPublicLabels === 'object'
+      ? tripData.memberPublicLabels
+      : {};
+  const fromTrip = normalizeString(labels[uid]);
+  if (fromTrip) return fromTrip;
+  try {
+    const userRecord = await admin.auth().getUser(uid);
+    return emailLocalPart(userRecord.email || '') || 'Utilisateur';
+  } catch (e) {
+    console.warn('resolveTripMemberLabel getUser', uid, e);
+    return 'Utilisateur';
+  }
+}
+
+/**
+ * @param {Record<string, unknown>} tripData
+ * @param {string} uid
+ * @returns {Promise<{ label: string, photoUrl: string }>}
+ */
+async function resolveTripMemberProfile(tripData, uid) {
+  const label = await resolveTripMemberLabel(tripData, uid);
+  let photoUrl = '';
+  try {
+    const userSnap = await admin.firestore().collection('users').doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    const account =
+      userData.account && typeof userData.account === 'object'
+        ? userData.account
+        : {};
+    photoUrl = normalizeString(account.photoUrl) || normalizeString(userData.photoUrl);
+  } catch (e) {
+    console.warn('resolveTripMemberProfile user doc', uid, e);
+  }
+  return { label, photoUrl };
+}
+
+async function sendCupidonMatchPush({
+  tripId,
+  tripTitle,
+  notifiedUid,
+  otherLabel,
+  otherPhotoUrl,
+  createdAt,
+}) {
+  const db = admin.firestore();
+  const tokenEntries = await collectRecipientTokenEntries(db, [notifiedUid]);
+  if (tokenEntries.length === 0) return;
+  const messages = tokenEntries.map(({ token }) => ({
+    token,
+    notification: {
+      title: `Mode Cupidon · ${tripTitle}`,
+      body: `Match mutuel avec ${otherLabel}`,
+    },
+    data: buildTripNotificationEventData({
+      channel: TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
+      tripId,
+      actorId: notifiedUid,
+      type: CUPIDON_MATCH_TYPE,
+      targetPath: '/account/cupidon',
+      createdAt:
+        createdAt instanceof admin.firestore.Timestamp ? createdAt : undefined,
+      payload: {
+        tripTitle,
+        otherLabel,
+        ...(normalizeString(otherPhotoUrl)
+          ? { otherPhotoUrl: normalizeString(otherPhotoUrl) }
+          : {}),
+      },
+    }),
+  }));
+  const result = await admin.messaging().sendEach(messages);
+  await cleanupInvalidFcmTokens(db, result, tokenEntries);
+}
+
 /**
  * Sends a push notification to other trip members when a message is created.
  * Tokens live under users/{uid}/fcmTokens (written by the Flutter app).
@@ -667,6 +787,12 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
+    const proceed = await markFunctionEventProcessedOnce(
+      'notifyTripMessageRecipients',
+      event.id
+    );
+    if (!proceed) return;
+
     const snap = event.data;
     if (!snap) return;
 
@@ -754,6 +880,12 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
+    const proceed = await markFunctionEventProcessedOnce(
+      'notifyTripActivityRecipients',
+      event.id
+    );
+    if (!proceed) return;
+
     const snap = event.data;
     if (!snap) return;
 
@@ -1670,6 +1802,273 @@ exports.registerMyTripMemberLabel = onCall(
     await tripRef.update({
       [`memberPublicLabels.${uid}`]: emailLocal,
     });
+    return { ok: true };
+  }
+);
+
+exports.setTripCupidonEnabled = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const enabled = request.data?.enabled === true;
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+
+    await tripRef
+      .collection('members')
+      .doc(uid)
+      .set(
+        {
+          cupidonEnabled: enabled,
+          cupidonUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+    return { ok: true };
+  }
+);
+
+exports.toggleTripCupidonLike = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const targetMemberId = normalizeString(request.data?.targetMemberId);
+    const isLiked = request.data?.isLiked === true;
+    if (!tripId || !targetMemberId) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+    if (targetMemberId === uid) {
+      throw new HttpsError('invalid-argument', 'Tu ne peux pas te liker');
+    }
+    if (isPlaceholderMemberId(targetMemberId)) {
+      throw new HttpsError('invalid-argument', 'Participant invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid) || !memberIds.includes(targetMemberId)) {
+      throw new HttpsError('permission-denied', 'Participants invalides');
+    }
+
+    const [myMemberSnap, targetMemberSnap] = await Promise.all([
+      tripRef.collection('members').doc(uid).get(),
+      tripRef.collection('members').doc(targetMemberId).get(),
+    ]);
+    if (!hasCupidonEnabled(myMemberSnap.data())) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Active le mode Cupidon pour liker des participants'
+      );
+    }
+    if (!hasCupidonEnabled(targetMemberSnap.data())) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce participant n’a pas activé le mode Cupidon'
+      );
+    }
+
+    const likeRef = tripRef
+      .collection('cupidonLikes')
+      .doc(cupidonLikeDocId(uid, targetMemberId));
+    if (isLiked) {
+      await likeRef.set(
+        {
+          likerId: uid,
+          targetId: targetMemberId,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      const reciprocalRef = tripRef
+        .collection('cupidonLikes')
+        .doc(cupidonLikeDocId(targetMemberId, uid));
+      const reciprocalSnap = await reciprocalRef.get();
+      if (!reciprocalSnap.exists) {
+        return { ok: true, match: false };
+      }
+
+      const matchId = cupidonMatchDocId(tripId, uid, targetMemberId);
+      const tripMatchRef = tripRef.collection('cupidonMatches').doc(matchId);
+      const meMatchRef = db
+        .collection('users')
+        .doc(uid)
+        .collection('cupidonMatches')
+        .doc(matchId);
+      const targetMatchRef = db
+        .collection('users')
+        .doc(targetMemberId)
+        .collection('cupidonMatches')
+        .doc(matchId);
+      const tripTitle = normalizeString(tripData.title) || 'Voyage';
+      const [myProfile, targetProfile] = await Promise.all([
+        resolveTripMemberProfile(tripData, uid),
+        resolveTripMemberProfile(tripData, targetMemberId),
+      ]);
+      const matchDataForMe = {
+        matchId,
+        tripId,
+        tripTitle,
+        otherMemberId: targetMemberId,
+        otherMemberLabel: targetProfile.label,
+        otherMemberPhotoUrl: targetProfile.photoUrl,
+        createdAt: matchCreatedAt,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      const matchDataForTarget = {
+        matchId,
+        tripId,
+        tripTitle,
+        otherMemberId: uid,
+        otherMemberLabel: myProfile.label,
+        otherMemberPhotoUrl: myProfile.photoUrl,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      // Deduplicate match creation in concurrent like scenarios.
+      const created = await db.runTransaction(async (tx) => {
+        const tripMatchSnap = await tx.get(tripMatchRef);
+        if (tripMatchSnap.exists) {
+          return false;
+        }
+        const matchCreatedAt = admin.firestore.FieldValue.serverTimestamp();
+        tx.set(tripMatchRef, {
+          matchId,
+          tripId,
+          memberIds: [uid, targetMemberId],
+          createdAt: matchCreatedAt,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        tx.set(
+          meMatchRef,
+          {
+            ...matchDataForMe,
+            createdAt: matchCreatedAt,
+          },
+          { merge: true }
+        );
+        tx.set(
+          targetMatchRef,
+          {
+            ...matchDataForTarget,
+            createdAt: matchCreatedAt,
+          },
+          { merge: true }
+        );
+        return true;
+      });
+
+      if (!created) {
+        return { ok: true, match: true };
+      }
+
+      await Promise.all([
+        sendCupidonMatchPush({
+          tripId,
+          tripTitle,
+          notifiedUid: uid,
+          otherLabel: targetProfile.label,
+          otherPhotoUrl: targetProfile.photoUrl,
+          createdAt: admin.firestore.Timestamp.now(),
+        }),
+        sendCupidonMatchPush({
+          tripId,
+          tripTitle,
+          notifiedUid: targetMemberId,
+          otherLabel: myProfile.label,
+          otherPhotoUrl: myProfile.photoUrl,
+          createdAt: admin.firestore.Timestamp.now(),
+        }),
+      ]);
+
+      return { ok: true, match: true };
+    }
+
+    await likeRef.delete();
+    return { ok: true, match: false };
+  }
+);
+
+exports.deleteCupidonMatch = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const matchId = normalizeString(request.data?.matchId);
+    if (!matchId) {
+      throw new HttpsError('invalid-argument', 'Match invalide');
+    }
+
+    const ref = admin
+      .firestore()
+      .collection('users')
+      .doc(uid)
+      .collection('cupidonMatches')
+      .doc(matchId);
+    const matchSnap = await ref.get();
+    const matchData = matchSnap.exists ? matchSnap.data() || {} : {};
+    await ref.delete();
+
+    const tripId = normalizeString(matchData.tripId);
+    const otherMemberId = normalizeString(matchData.otherMemberId);
+    if (tripId && otherMemberId && otherMemberId !== uid) {
+      const likeRef = admin
+        .firestore()
+        .collection('trips')
+        .doc(tripId)
+        .collection('cupidonLikes')
+        .doc(cupidonLikeDocId(uid, otherMemberId));
+      await likeRef.delete();
+    }
     return { ok: true };
   }
 );

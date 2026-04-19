@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
@@ -60,6 +61,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
 
   final Set<String> _removingMemberIds = <String>{};
   final Set<String> _cyclingMemberIds = <String>{};
+  final Set<String> _likingMemberIds = <String>{};
   final TextEditingController _participantSearchController =
       TextEditingController();
 
@@ -297,10 +299,39 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     }
   }
 
+  Future<void> _toggleCupidonLike({
+    required String targetMemberId,
+    required bool currentlyLiked,
+  }) async {
+    final cleanId = targetMemberId.trim();
+    if (cleanId.isEmpty || _likingMemberIds.contains(cleanId)) return;
+    setState(() => _likingMemberIds.add(cleanId));
+    try {
+      await ref.read(cupidonRepositoryProvider).setLike(
+            tripId: widget.tripId,
+            targetMemberId: cleanId,
+            isLiked: !currentlyLiked,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageForError(e))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _likingMemberIds.remove(cleanId));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncTrip = ref.watch(tripStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final cupidonEnabledAsync =
+        ref.watch(tripCupidonEnabledMemberIdsProvider(widget.tripId));
+    final myLikesAsync =
+        ref.watch(myCupidonLikedTargetIdsProvider(widget.tripId));
 
     return asyncTrip.when(
       data: (trip) {
@@ -315,9 +346,20 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           stream: usersStream,
           builder: (context, userSnap) {
             final userDataById = userSnap.data ?? const {};
-            final rows = _participantRowsForTrip(trip, userDataById, myUid);
+            final enabledCupidonMemberIds =
+                cupidonEnabledAsync.asData?.value ?? const <String>{};
+            final likedByMe = myLikesAsync.asData?.value ?? const <String>{};
+            final rows = _participantRowsForTrip(
+              trip,
+              userDataById,
+              myUid,
+              enabledCupidonMemberIds: enabledCupidonMemberIds,
+              likedByMe: likedByMe,
+            );
             final iamAdmin = trip.isTripAdmin(myUid);
             final canManageParticipants = iamAdmin && !widget.readOnly;
+            final myCupidonEnabled =
+                enabledCupidonMemberIds.contains((myUid ?? '').trim());
             final searchQuery = _participantSearchController.text;
             final visibleRows = rows
                 .where(
@@ -464,31 +506,80 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                   ),
                                                 ],
                                               )
-                                            : canRemoveMember
-                                                ? IconButton(
-                                                    tooltip: 'Retirer',
-                                                    icon: isRemoving
-                                                        ? const SizedBox(
-                                                            width: 22,
-                                                            height: 22,
-                                                            child:
-                                                                CircularProgressIndicator(
-                                                              strokeWidth: 2,
+                                            : Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (!row.isPlaceholder &&
+                                                      row.memberId.trim() !=
+                                                          (myUid ?? '')
+                                                              .trim() &&
+                                                      myCupidonEnabled)
+                                                    IconButton(
+                                                      tooltip: row.likedByMe
+                                                          ? 'Retirer le like'
+                                                          : 'Liker',
+                                                      onPressed: _likingMemberIds
+                                                              .contains(row
+                                                                  .memberId
+                                                                  .trim())
+                                                          ? null
+                                                          : () =>
+                                                              _toggleCupidonLike(
+                                                                targetMemberId:
+                                                                    row.memberId,
+                                                                currentlyLiked:
+                                                                    row.likedByMe,
+                                                              ),
+                                                      icon: _likingMemberIds
+                                                              .contains(row
+                                                                  .memberId
+                                                                  .trim())
+                                                          ? const SizedBox(
+                                                              width: 22,
+                                                              height: 22,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                            )
+                                                          : Icon(
+                                                              row.likedByMe
+                                                                  ? Icons
+                                                                      .favorite
+                                                                  : Icons
+                                                                      .favorite_border,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .error,
                                                             ),
-                                                          )
-                                                        : const Icon(Icons
-                                                            .delete_outline),
-                                                    onPressed: isRemoving
-                                                        ? null
-                                                        : () =>
-                                                            _confirmRemoveMember(
-                                                              memberId:
-                                                                  row.memberId,
-                                                              label: row
-                                                                  .displayLabel,
-                                                            ),
-                                                  )
-                                                : null,
+                                                    ),
+                                                  if (canRemoveMember)
+                                                    IconButton(
+                                                      tooltip: 'Retirer',
+                                                      icon: isRemoving
+                                                          ? const SizedBox(
+                                                              width: 22,
+                                                              height: 22,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                            )
+                                                          : const Icon(Icons
+                                                              .delete_outline),
+                                                      onPressed: isRemoving
+                                                          ? null
+                                                          : () =>
+                                                              _confirmRemoveMember(
+                                                                memberId: row
+                                                                    .memberId,
+                                                                label: row
+                                                                    .displayLabel,
+                                                              ),
+                                                    ),
+                                                ],
+                                              ),
                                       ),
                                     );
                                   },
@@ -522,8 +613,10 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
 List<_ParticipantRow> _participantRowsForTrip(
   Trip trip,
   Map<String, Map<String, dynamic>> userDataById,
-  String? myUid,
-) {
+  String? myUid, {
+  required Set<String> enabledCupidonMemberIds,
+  required Set<String> likedByMe,
+}) {
   final labels = trip.memberPublicLabels;
   final rows = trip.memberIds
       .map((id) => id.trim())
@@ -538,6 +631,7 @@ List<_ParticipantRow> _participantRowsForTrip(
         isPlaceholder: true,
         displayLabel: label,
         isAdmin: trip.memberHasAdminRole(id),
+        likedByMe: false,
       );
     }
     final label = resolveTripMemberDisplayLabel(
@@ -552,6 +646,7 @@ List<_ParticipantRow> _participantRowsForTrip(
       isPlaceholder: false,
       displayLabel: label,
       isAdmin: trip.memberHasAdminRole(id),
+      likedByMe: likedByMe.contains(id),
     );
   }).toList();
   rows.sort(
@@ -637,10 +732,12 @@ class _ParticipantRow {
     required this.isPlaceholder,
     required this.displayLabel,
     required this.isAdmin,
+    required this.likedByMe,
   });
 
   final String memberId;
   final bool isPlaceholder;
   final String displayLabel;
   final bool isAdmin;
+  final bool likedByMe;
 }

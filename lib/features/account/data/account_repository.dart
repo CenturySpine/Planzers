@@ -16,8 +16,9 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   };
   final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
-  final bucketUri =
-      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
+  final bucketUri = effectiveBucket.startsWith('gs://')
+      ? effectiveBucket
+      : 'gs://$effectiveBucket';
   return AccountRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
@@ -28,7 +29,8 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 /// Stored under [account.foodAllergenCatalogIds] (merge-safe).
 List<String> foodAllergenCatalogIdsFromUserData(Map<String, dynamic> data) {
   final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-  final raw = account['foodAllergenCatalogIds'] ?? data['foodAllergenCatalogIds'];
+  final raw =
+      account['foodAllergenCatalogIds'] ?? data['foodAllergenCatalogIds'];
   if (raw is List) {
     return raw
         .map((e) => e.toString().trim())
@@ -49,10 +51,27 @@ bool autoOpenCurrentTripOnLaunchEnabledFromUserData(Map<String, dynamic> data) {
   return true;
 }
 
+bool cupidonEnabledByDefaultFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final preferences =
+      (account['preferences'] as Map<String, dynamic>?) ?? const {};
+  final raw = preferences['cupidonEnabledByDefault'];
+  if (raw is bool) {
+    return raw;
+  }
+  return false;
+}
+
 final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
       .watchAutoOpenCurrentTripOnLaunchPreference();
+});
+
+final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
+  return ref
+      .watch(accountRepositoryProvider)
+      .watchCupidonEnabledByDefaultPreference();
 });
 
 class AccountRepository {
@@ -94,6 +113,13 @@ class AccountRepository {
     });
   }
 
+  Stream<bool> watchCupidonEnabledByDefaultPreference() {
+    return watchMyUserDocument().map((snapshot) {
+      final data = snapshot.data() ?? const <String, dynamic>{};
+      return cupidonEnabledByDefaultFromUserData(data);
+    });
+  }
+
   Future<void> updateAutoOpenCurrentTripOnLaunchPreference(bool enabled) async {
     final uid = auth.currentUser?.uid;
     if (uid == null || uid.trim().isEmpty) {
@@ -109,6 +135,32 @@ class AccountRepository {
       },
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> updateCupidonEnabledByDefaultPreference(bool enabled) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final userRef = firestore.collection('users').doc(uid);
+    await userRef.set({
+      'account': {
+        'preferences': {
+          'cupidonEnabledByDefault': enabled,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<bool> readCupidonEnabledByDefaultPreference() async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final snap = await firestore.collection('users').doc(uid).get();
+    return cupidonEnabledByDefaultFromUserData(snap.data() ?? const {});
   }
 
   Future<List<String>> readMyFoodAllergenCatalogIds() async {
@@ -212,11 +264,12 @@ class AccountRepository {
     final data = snapshot.data() ?? const <String, dynamic>{};
     final account = (data['account'] as Map<String, dynamic>?) ?? const {};
     final googlePhotoUrl = _googlePhotoUrlFromAuth(user);
-    final previousPath = (account['photoPath'] as String?)?.trim().isNotEmpty == true
-        ? (account['photoPath'] as String).trim()
-        : (data['photoPath'] as String?)?.trim().isNotEmpty == true
-            ? (data['photoPath'] as String).trim()
-            : '';
+    final previousPath =
+        (account['photoPath'] as String?)?.trim().isNotEmpty == true
+            ? (account['photoPath'] as String).trim()
+            : (data['photoPath'] as String?)?.trim().isNotEmpty == true
+                ? (data['photoPath'] as String).trim()
+                : '';
 
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
@@ -274,12 +327,12 @@ class AccountRepository {
     }
     final data = snapshot.data() ?? const <String, dynamic>{};
     final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-    final fallbackGooglePhoto = (account['googlePhotoUrl'] as String?)?.trim().isNotEmpty ==
-            true
-        ? (account['googlePhotoUrl'] as String).trim()
-        : (data['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true
-            ? (data['googlePhotoUrl'] as String).trim()
-            : _googlePhotoUrlFromAuth(user);
+    final fallbackGooglePhoto =
+        (account['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true
+            ? (account['googlePhotoUrl'] as String).trim()
+            : (data['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true
+                ? (data['googlePhotoUrl'] as String).trim()
+                : _googlePhotoUrlFromAuth(user);
     final path = (account['photoPath'] as String?)?.trim().isNotEmpty == true
         ? (account['photoPath'] as String).trim()
         : (data['photoPath'] as String?)?.trim().isNotEmpty == true

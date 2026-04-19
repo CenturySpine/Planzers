@@ -23,6 +23,7 @@ class FcmNotificationLinkBinder extends StatefulWidget {
 class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   StreamSubscription<User?>? _authSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
+  StreamSubscription<RemoteMessage>? _foregroundSub;
   RemoteMessage? _pendingTripMessageNavigation;
   String? _pendingTargetPath;
 
@@ -35,6 +36,9 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
 
     _openedAppSub =
         FirebaseMessaging.onMessageOpenedApp.listen(_enqueueTripNavigation);
+    _foregroundSub = FirebaseMessaging.onMessage.listen(
+      _onForegroundMessage,
+    );
 
     _authSub =
         FirebaseAuth.instance.authStateChanges().listen((_) => _tryFlush());
@@ -45,8 +49,64 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   @override
   void dispose() {
     _openedAppSub?.cancel();
+    _foregroundSub?.cancel();
     _authSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _onForegroundMessage(RemoteMessage message) async {
+    final type = _typeFromData(message.data);
+    if (type != 'cupidon_match') {
+      return;
+    }
+    final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
+    if (navContext == null) {
+      return;
+    }
+    final tripTitle = _payloadValue(message.data, 'tripTitle') ?? 'Voyage';
+    final otherLabel = _payloadValue(message.data, 'otherLabel') ?? 'Quelqu’un';
+    final otherPhotoUrl = _payloadValue(message.data, 'otherPhotoUrl') ?? '';
+    await showDialog<void>(
+      context: navContext,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.favorite, color: Colors.pink),
+            SizedBox(width: 8),
+            Text('Tu as un match'),
+          ],
+        ),
+        content: Row(
+          children: [
+            CircleAvatar(
+              backgroundImage:
+                  otherPhotoUrl.isEmpty ? null : NetworkImage(otherPhotoUrl),
+              child: otherPhotoUrl.isEmpty
+                  ? Text(otherLabel.isEmpty ? '?' : otherLabel[0].toUpperCase())
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('$otherLabel\n$tripTitle'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Fermer'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              appRouter.go('/account/cupidon');
+            },
+            child: const Text('Voir mes matchs'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _consumeInitialMessage() async {
@@ -114,6 +174,13 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
     final s = raw.toString().trim();
     if (s.isEmpty || !s.startsWith('/')) return null;
     return s;
+  }
+
+  static String? _payloadValue(Map<String, dynamic> data, String key) {
+    final raw = data['payload_$key'];
+    if (raw == null) return null;
+    final s = raw.toString().trim();
+    return s.isEmpty ? null : s;
   }
 
   @override

@@ -286,18 +286,20 @@ class _AccountPageState extends ConsumerState<AccountPage> {
           }
 
           final data = snapshot.data?.data() ?? const <String, dynamic>{};
-          final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+          final account =
+              (data['account'] as Map<String, dynamic>?) ?? const {};
 
           final email = (account['email'] as String?)?.trim().isNotEmpty == true
               ? (account['email'] as String).trim()
               : (data['email'] as String?)?.trim().isNotEmpty == true
                   ? (data['email'] as String).trim()
                   : (authUser.email ?? '').trim();
-          final photoUrl = (account['photoUrl'] as String?)?.trim().isNotEmpty == true
-              ? (account['photoUrl'] as String).trim()
-              : (data['photoUrl'] as String?)?.trim().isNotEmpty == true
-                  ? (data['photoUrl'] as String).trim()
-                  : (authUser.photoURL ?? '').trim();
+          final photoUrl =
+              (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+                  ? (account['photoUrl'] as String).trim()
+                  : (data['photoUrl'] as String?)?.trim().isNotEmpty == true
+                      ? (data['photoUrl'] as String).trim()
+                      : (authUser.photoURL ?? '').trim();
           final accountName = (account['name'] as String?)?.trim() ?? '';
           final autoOpenCurrentTripOnLaunch =
               autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
@@ -423,6 +425,13 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _openAllergensPage(data),
               ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Espace Cupidon'),
+                subtitle: const Text('Historique des matchs'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/account/cupidon'),
+              ),
               const SizedBox(height: 16),
               Text(
                 'Préférences',
@@ -450,7 +459,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _isEnablingPush ? null : _enablePushNotifications,
+                    onPressed:
+                        _isEnablingPush ? null : _enablePushNotifications,
                     icon: _isEnablingPush
                         ? const SizedBox(
                             width: 16,
