@@ -97,7 +97,9 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        const SnackBar(
+          content: Text('Impossible d’enregistrer ce like pour le moment.'),
+        ),
       );
     } finally {
       if (mounted) {

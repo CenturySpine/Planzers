@@ -1902,12 +1902,7 @@ exports.toggleTripCupidonLike = onCall(
         'Active le mode Cupidon pour liker des participants'
       );
     }
-    if (!hasCupidonEnabled(targetMemberSnap.data())) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce participant n’a pas activé le mode Cupidon'
-      );
-    }
+    const targetCupidonEnabled = hasCupidonEnabled(targetMemberSnap.data());
 
     const likeRef = tripRef
       .collection('cupidonLikes')
@@ -1923,6 +1918,9 @@ exports.toggleTripCupidonLike = onCall(
         { merge: true }
       );
 
+      if (!targetCupidonEnabled) {
+        return { ok: true, match: false };
+      }
       const reciprocalRef = tripRef
         .collection('cupidonLikes')
         .doc(cupidonLikeDocId(targetMemberId, uid));
@@ -1955,7 +1953,7 @@ exports.toggleTripCupidonLike = onCall(
         otherMemberId: targetMemberId,
         otherMemberLabel: targetProfile.label,
         otherMemberPhotoUrl: targetProfile.photoUrl,
-        createdAt: matchCreatedAt,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       };
       const matchDataForTarget = {
