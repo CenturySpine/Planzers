@@ -89,6 +89,15 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     });
   }
 
+  Future<void> _scrollToBottomAnimated() async {
+    if (!_scrollController.hasClients) return;
+    await _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void _markMessagesAsReadIfNeeded({
     required String tripId,
     required List<TripMessage> messages,
@@ -471,8 +480,10 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                 : null,
                           ),
                         Expanded(
-                          child: messages.isEmpty
-                              ? Center(
+                          child: Stack(
+                            children: [
+                              if (messages.isEmpty)
+                                Center(
                                   child: Padding(
                                     padding: const EdgeInsets.all(24),
                                     child: Text(
@@ -483,232 +494,265 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                     ),
                                   ),
                                 )
-                              : ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              itemCount: chatEntries.length,
-                              itemBuilder: (context, index) {
-                                final entry = chatEntries[index];
-                                if (entry.dayLabel != null) {
-                                  return _MessageDayPill(
-                                      label: entry.dayLabel!);
-                                }
-                                final m = entry.message!;
-                                final isMine =
-                                    myUid != null && m.authorId == myUid;
-                                final isSelected = m.id == _selectedMessageId;
-                                final label = authorLabels[m.authorId] ??
-                                    resolveTripMemberDisplayLabel(
-                                      memberId: m.authorId,
-                                      userData: null,
-                                      tripMemberPublicLabels:
-                                          trip.memberPublicLabels,
-                                      currentUserId: myUid,
-                                      emptyFallback: 'Participant',
+                              else
+                                ListView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  itemCount: chatEntries.length,
+                                  itemBuilder: (context, index) {
+                                    final entry = chatEntries[index];
+                                    if (entry.dayLabel != null) {
+                                      return _MessageDayPill(
+                                          label: entry.dayLabel!);
+                                    }
+                                    final m = entry.message!;
+                                    final isMine =
+                                        myUid != null && m.authorId == myUid;
+                                    final isSelected = m.id == _selectedMessageId;
+                                    final label = authorLabels[m.authorId] ??
+                                        resolveTripMemberDisplayLabel(
+                                          memberId: m.authorId,
+                                          userData: null,
+                                          tripMemberPublicLabels:
+                                              trip.memberPublicLabels,
+                                          currentUserId: myUid,
+                                          emptyFallback: 'Participant',
+                                        );
+                                    final timeLine = _timeLine(m, timeFmt);
+                                    final reactions = reactionsByMessage[m.id] ??
+                                        const <TripMessageReaction>[];
+                                    final groupedReactions =
+                                        _groupReactions(reactions, myUid: myUid);
+                                    final totalReactionCount =
+                                        groupedReactions.fold<int>(
+                                      0,
+                                      (sum, group) => sum + group.count,
                                     );
-                                final timeLine = _timeLine(m, timeFmt);
-                                final reactions = reactionsByMessage[m.id] ??
-                                    const <TripMessageReaction>[];
-                                final groupedReactions =
-                                    _groupReactions(reactions, myUid: myUid);
+                                    final reactionEmojis = groupedReactions
+                                        .map((group) => group.emoji)
+                                        .toList();
+                                    final hasMyReaction = groupedReactions.any(
+                                      (group) => group.containsCurrentUser,
+                                    );
 
-                                return Align(
-                                  alignment: isMine
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxWidth: math.min(
-                                        MediaQuery.sizeOf(context).width * 0.85,
-                                        560,
-                                      ),
-                                    ),
-                                    child: GestureDetector(
-                                      onLongPress: () {
-                                        setState(
-                                            () => _selectedMessageId = m.id);
-                                      },
-                                      onSecondaryTap: pointerSelect
-                                          ? () => setState(
-                                                () => _selectedMessageId = m.id,
-                                              )
-                                          : null,
-                                      onTap: (_selectedMessageId != null ||
-                                              pointerSelect)
-                                          ? () {
-                                              if (_selectedMessageId != null) {
-                                                setState(() {
-                                                  if (_selectedMessageId ==
-                                                      m.id) {
-                                                    _selectedMessageId = null;
+                                    return Align(
+                                      alignment: isMine
+                                          ? Alignment.centerRight
+                                          : Alignment.centerLeft,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth: math.min(
+                                            MediaQuery.sizeOf(context).width *
+                                                0.85,
+                                            560,
+                                          ),
+                                        ),
+                                        child: GestureDetector(
+                                          onLongPress: () {
+                                            setState(
+                                                () => _selectedMessageId = m.id);
+                                          },
+                                          onSecondaryTap: pointerSelect
+                                              ? () => setState(
+                                                    () =>
+                                                        _selectedMessageId = m.id,
+                                                  )
+                                              : null,
+                                          onTap: (_selectedMessageId != null ||
+                                                  pointerSelect)
+                                              ? () {
+                                                  if (_selectedMessageId !=
+                                                      null) {
+                                                    setState(() {
+                                                      if (_selectedMessageId ==
+                                                          m.id) {
+                                                        _selectedMessageId = null;
+                                                      } else {
+                                                        _selectedMessageId = m.id;
+                                                      }
+                                                    });
                                                   } else {
-                                                    _selectedMessageId = m.id;
+                                                    setState(() =>
+                                                        _selectedMessageId =
+                                                            m.id);
                                                   }
-                                                });
-                                              } else {
-                                                setState(() =>
-                                                    _selectedMessageId = m.id);
-                                              }
-                                            }
-                                          : null,
-                                      behavior: HitTestBehavior.opaque,
-                                      child: MouseRegion(
-                                        cursor: pointerSelect &&
-                                                _selectedMessageId == null
-                                            ? SystemMouseCursors.click
-                                            : MouseCursor.defer,
-                                        child: Stack(
-                                          clipBehavior: Clip.none,
-                                          alignment: Alignment.topCenter,
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                top: isSelected ? 34 : 0,
-                                              ),
-                                              child: Card(
-                                                margin: const EdgeInsets.symmetric(
-                                                  vertical: 4,
-                                                  horizontal: 4,
-                                                ),
-                                                elevation: isSelected ? 0 : null,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  side: isSelected
-                                                      ? BorderSide(
-                                                          color: Theme.of(context)
-                                                              .colorScheme
-                                                              .primary,
-                                                          width: 2,
-                                                        )
-                                                      : BorderSide.none,
-                                                ),
-                                                color: isSelected
-                                                    ? Theme.of(context)
-                                                        .colorScheme
-                                                        .primaryContainer
-                                                        .withValues(alpha: 0.55)
-                                                    : (isMine
+                                                }
+                                              : null,
+                                          behavior: HitTestBehavior.opaque,
+                                          child: MouseRegion(
+                                            cursor: pointerSelect &&
+                                                    _selectedMessageId == null
+                                                ? SystemMouseCursors.click
+                                                : MouseCursor.defer,
+                                            child: Stack(
+                                              clipBehavior: Clip.none,
+                                              alignment: Alignment.topCenter,
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    top: isSelected ? 34 : 0,
+                                                    bottom:
+                                                        groupedReactions.isNotEmpty
+                                                            ? 16
+                                                            : 0,
+                                                  ),
+                                                  child: Card(
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                      vertical: 4,
+                                                      horizontal: 4,
+                                                    ),
+                                                    elevation:
+                                                        isSelected ? 0 : null,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      side: isSelected
+                                                          ? BorderSide(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                              width: 2,
+                                                            )
+                                                          : BorderSide.none,
+                                                    ),
+                                                    color: isSelected
                                                         ? Theme.of(context)
                                                             .colorScheme
                                                             .primaryContainer
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .surfaceContainerHighest),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(12),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.stretch,
-                                                    children: [
-                                                      Row(
+                                                            .withValues(
+                                                                alpha: 0.55)
+                                                        : (isMine
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .primaryContainer
+                                                            : Theme.of(context)
+                                                                .colorScheme
+                                                                .surfaceContainerHighest),
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(12),
+                                                      child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
-                                                                .baseline,
-                                                        textBaseline:
-                                                            TextBaseline.alphabetic,
+                                                                .stretch,
                                                         children: [
-                                                          Expanded(
-                                                            child: Text(
-                                                              label,
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .labelMedium
-                                                                  ?.copyWith(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                          const SizedBox(width: 8),
-                                                          Text(
-                                                            timeLine,
-                                                            style: Theme.of(context)
-                                                                .textTheme
-                                                                .labelSmall
-                                                                ?.copyWith(
-                                                                  color: Theme.of(
+                                                          Row(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .baseline,
+                                                            textBaseline:
+                                                                TextBaseline
+                                                                    .alphabetic,
+                                                            children: [
+                                                              Expanded(
+                                                                child: Text(
+                                                                  label,
+                                                                  maxLines: 1,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: Theme.of(
                                                                           context)
-                                                                      .colorScheme
-                                                                      .onSurfaceVariant,
+                                                                      .textTheme
+                                                                      .labelMedium
+                                                                      ?.copyWith(
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
                                                                 ),
+                                                              ),
+                                                              const SizedBox(
+                                                                  width: 8),
+                                                              Text(
+                                                                timeLine,
+                                                                style: Theme.of(
+                                                                        context)
+                                                                    .textTheme
+                                                                    .labelSmall
+                                                                    ?.copyWith(
+                                                                      color: Theme.of(
+                                                                              context)
+                                                                          .colorScheme
+                                                                          .onSurfaceVariant,
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 6),
+                                                          _TripMessageLinkedText(
+                                                            text: m.text,
+                                                            style: Theme.of(
+                                                                    context)
+                                                                .textTheme
+                                                                .bodyMedium,
                                                           ),
                                                         ],
                                                       ),
-                                                      const SizedBox(height: 6),
-                                                      _TripMessageLinkedText(
-                                                        text: m.text,
-                                                        style: Theme.of(context)
-                                                            .textTheme
-                                                            .bodyMedium,
+                                                    ),
+                                                  ),
+                                                ),
+                                                if (groupedReactions.isNotEmpty)
+                                                  Positioned(
+                                                    bottom: 2,
+                                                    left: isMine ? null : 8,
+                                                    right: isMine ? 8 : null,
+                                                    child:
+                                                        _MessageReactionsBadge(
+                                                      emojis: reactionEmojis,
+                                                      totalCount:
+                                                          totalReactionCount,
+                                                      highlighted: hasMyReaction,
+                                                    ),
+                                                  ),
+                                                if (isSelected)
+                                                  Positioned(
+                                                    top: 0,
+                                                    child:
+                                                        _InlineMessageQuickReactionBar(
+                                                      emojis:
+                                                          _quickReactionEmojis,
+                                                      onEmojiTap: (emoji) =>
+                                                          _setReactionWithEmoji(
+                                                        tripId: trip.id,
+                                                        message: m,
+                                                        reactions: reactions,
+                                                        selectedEmoji: emoji,
                                                       ),
-                                                      if (groupedReactions
-                                                          .isNotEmpty)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                  top: 8),
-                                                          child: Wrap(
-                                                            spacing: 6,
-                                                            runSpacing: 6,
-                                                            children:
-                                                                groupedReactions
-                                                                    .map(
-                                                                      (group) =>
-                                                                          _ReactionChip(
-                                                                        emoji: group
-                                                                            .emoji,
-                                                                        count: group
-                                                                            .count,
-                                                                        highlighted:
-                                                                            group.containsCurrentUser,
-                                                                      ),
-                                                                    )
-                                                                    .toList(),
-                                                          ),
-                                                        ),
-                                                    ],
+                                                      onMoreTap: () =>
+                                                          _reactToMessage(
+                                                        tripId: trip.id,
+                                                        message: m,
+                                                        reactions: reactions,
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
-                                              ),
+                                              ],
                                             ),
-                                            if (isSelected)
-                                              Positioned(
-                                                top: 0,
-                                                child: _InlineMessageQuickReactionBar(
-                                                  emojis: _quickReactionEmojis,
-                                                  onEmojiTap: (emoji) =>
-                                                      _setReactionWithEmoji(
-                                                    tripId: trip.id,
-                                                    message: m,
-                                                    reactions: reactions,
-                                                    selectedEmoji: emoji,
-                                                  ),
-                                                  onMoreTap: () => _reactToMessage(
-                                                    tripId: trip.id,
-                                                    message: m,
-                                                    reactions: reactions,
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    );
+                                  },
+                                ),
+                              if (messages.isNotEmpty)
+                                Positioned(
+                                  right: 14,
+                                  bottom: 14,
+                                  child: _ScrollToBottomButton(
+                                    onPressed: () =>
+                                        unawaited(_scrollToBottomAnimated()),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                            ],
+                          ),
                         ),
                         Material(
                       elevation: 2,
@@ -1128,34 +1172,69 @@ class _ReactionGroup {
   final bool containsCurrentUser;
 }
 
-class _ReactionChip extends StatelessWidget {
-  const _ReactionChip({
-    required this.emoji,
-    required this.count,
+class _MessageReactionsBadge extends StatelessWidget {
+  const _MessageReactionsBadge({
+    required this.emojis,
+    required this.totalCount,
     required this.highlighted,
   });
 
-  final String emoji;
-  final int count;
+  final List<String> emojis;
+  final int totalCount;
   final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final emojisLabel = emojis.join(' ');
     return DecoratedBox(
       decoration: BoxDecoration(
         color:
             highlighted ? scheme.primaryContainer : scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Text(
-          '$emoji $count',
+          '$emojisLabel $totalCount',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
         ),
+      ),
+    );
+  }
+}
+
+class _ScrollToBottomButton extends StatelessWidget {
+  const _ScrollToBottomButton({
+    required this.onPressed,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHigh.withValues(alpha: 0.95),
+      elevation: 2,
+      shape: const CircleBorder(),
+      child: IconButton(
+        onPressed: onPressed,
+        iconSize: 18,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        tooltip: 'Aller en bas',
+        icon: const Icon(Icons.keyboard_double_arrow_down_rounded),
       ),
     );
   }
