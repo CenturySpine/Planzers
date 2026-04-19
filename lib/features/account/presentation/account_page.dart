@@ -263,9 +263,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mon compte'),
-        actions: const [
-          PalettePickerButton(),
-        ],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: ref.read(accountRepositoryProvider).watchMyUserDocument(),
@@ -299,8 +296,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             _accountNameController.text = accountName;
             _didInitFromFirestore = true;
           }
-
-          final effectiveName = accountName.isNotEmpty ? accountName : email;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -375,20 +370,66 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Text(
                 email.isNotEmpty ? email : 'Email indisponible',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _accountNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom du compte',
+                        hintText: 'Ex: Alex',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if ((value ?? '').trim().length > 60) {
+                          return 'Maximum 60 caracteres';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Si vide, le nom affiche sera votre email.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
               Text(
-                effectiveName,
-                textAlign: TextAlign.center,
+                'Préférences',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Palette de couleurs'),
+                trailing: const PalettePickerButton(),
+              ),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: autoOpenCurrentTripOnLaunch,
+                onChanged: _isUpdatingAutoOpenCurrentTrip
+                    ? null
+                    : _updateAutoOpenCurrentTripPreference,
+                title: const Text('Ouvrir automatiquement le voyage en cours'),
+                subtitle: const Text(
+                  'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.',
+                ),
+              ),
               if (kIsWeb) ...[
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -412,58 +453,19 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   'Sur iPhone: installer l app sur l ecran d accueil, puis activer ici.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                const SizedBox(height: 24),
               ],
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      value: autoOpenCurrentTripOnLaunch,
-                      onChanged: _isUpdatingAutoOpenCurrentTrip
-                          ? null
-                          : _updateAutoOpenCurrentTripPreference,
-                      title: const Text('Ouvrir automatiquement le voyage en cours'),
-                      subtitle: const Text(
-                        'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _accountNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom du compte',
-                        hintText: 'Ex: Alex',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if ((value ?? '').trim().length > 60) {
-                          return 'Maximum 60 caracteres';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Si vide, le nom affiche sera votre email.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton(
-                        onPressed: _isSaving ? null : _save,
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Enregistrer'),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 32),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: _isSaving ? null : _save,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Enregistrer'),
                 ),
               ),
             ],
