@@ -93,6 +93,54 @@ void main() {
     expect(settlement.suggestedTransfers.single.fromUserId, 'b');
   });
 
+  test(
+    'settled transfers are applied to balances and removed from suggestions',
+    () {
+      final expenses = [
+        _e(paidBy: 'a', participants: ['a', 'b'], amount: 100),
+      ];
+      final settlement = computeViewerSettlement(
+        expenses,
+        null,
+        settledTransfers: const [
+          SuggestedTransfer(
+            fromUserId: 'b',
+            toUserId: 'a',
+            amount: 50,
+            currency: 'EUR',
+          ),
+        ],
+      );
+
+      final balances = settlement.balancesByCurrency['EUR']!;
+      expect(balances['a'], closeTo(0, 0.01));
+      expect(balances['b'], closeTo(0, 0.01));
+      expect(settlement.suggestedTransfers, isEmpty);
+    },
+  );
+
+  test('partial settled transfer reduces remaining suggestion amount', () {
+    final expenses = [
+      _e(paidBy: 'a', participants: ['a', 'b'], amount: 100),
+    ];
+    final settlement = computeViewerSettlement(
+      expenses,
+      null,
+      settledTransfers: const [
+        SuggestedTransfer(
+          fromUserId: 'b',
+          toUserId: 'a',
+          amount: 20,
+          currency: 'EUR',
+        ),
+      ],
+    );
+    expect(settlement.suggestedTransfers, hasLength(1));
+    expect(settlement.suggestedTransfers.single.fromUserId, 'b');
+    expect(settlement.suggestedTransfers.single.toUserId, 'a');
+    expect(settlement.suggestedTransfers.single.amount, closeTo(30, 0.01));
+  });
+
   test('custom split: balances follow participantShares', () {
     final expenses = [
       _e(

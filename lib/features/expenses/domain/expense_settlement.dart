@@ -40,8 +40,13 @@ class ViewerSettlement {
 ViewerSettlement computeViewerSettlement(
   Iterable<TripExpense> expenses,
   String? viewerUserId,
+  {Iterable<SuggestedTransfer> settledTransfers = const []}
 ) {
   final balances = computeBalances(expenses);
+  applySettledTransfersToBalances(
+    balances: balances,
+    settledTransfers: settledTransfers,
+  );
   var transfers = suggestTransfers(balances);
   final v = viewerUserId?.trim();
   if (v != null && v.isNotEmpty) {
@@ -53,6 +58,40 @@ ViewerSettlement computeViewerSettlement(
     balancesByCurrency: balances,
     suggestedTransfers: transfers,
   );
+}
+
+/// Applies already-paid transfers on top of computed balances.
+///
+/// This makes paid transfers disappear from suggestions and impacts displayed
+/// balances.
+void applySettledTransfersToBalances({
+  required BalancesByCurrency balances,
+  required Iterable<SuggestedTransfer> settledTransfers,
+}) {
+  for (final transfer in settledTransfers) {
+    final fromUserId = transfer.fromUserId.trim();
+    final toUserId = transfer.toUserId.trim();
+    final currency = transfer.currency.trim().toUpperCase();
+    final amount = _roundMoney(transfer.amount);
+    if (fromUserId.isEmpty || toUserId.isEmpty || currency.isEmpty) continue;
+    if (amount <= _kBalanceEpsilon) continue;
+
+    final bucket = balances.putIfAbsent(currency, () => <String, double>{});
+    final fromBalance = (bucket[fromUserId] ?? 0) + amount;
+    final toBalance = (bucket[toUserId] ?? 0) - amount;
+    bucket[fromUserId] = _roundMoney(fromBalance);
+    bucket[toUserId] = _roundMoney(toBalance);
+
+    if (bucket[fromUserId]!.abs() <= _kBalanceEpsilon) {
+      bucket.remove(fromUserId);
+    }
+    if (bucket[toUserId]!.abs() <= _kBalanceEpsilon) {
+      bucket.remove(toUserId);
+    }
+    if (bucket.isEmpty) {
+      balances.remove(currency);
+    }
+  }
 }
 
 /// Supported expense currencies for MVP (display + separate balance buckets).

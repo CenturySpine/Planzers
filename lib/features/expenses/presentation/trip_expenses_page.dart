@@ -8,6 +8,7 @@ import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/expenses/data/expense.dart';
 import 'package:planzers/features/expenses/data/expense_group.dart';
 import 'package:planzers/features/expenses/data/expenses_repository.dart';
+import 'package:planzers/features/expenses/data/settled_transfer.dart';
 import 'package:planzers/features/expenses/domain/expense_settlement.dart';
 import 'package:planzers/features/expenses/presentation/expense_group_editor_sheet.dart';
 import 'package:planzers/features/trips/presentation/trip_scope.dart';
@@ -46,32 +47,44 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
+    final settledTransfersAsync =
+        ref.watch(tripSettledTransfersStreamProvider(trip.id));
 
     return Scaffold(
       body: groupsAsync.when(
         data: (groups) => expensesAsync.when(
-          data: (expenses) {
-            return _TripExpensesBody(
-              tripId: trip.id,
-              memberIds: trip.memberIds,
-              memberPublicLabels: trip.memberPublicLabels,
-              groups: groups,
-              expenses: expenses,
-              activeGroupId: _activeGroupId,
-              onActiveGroupChanged: (groupId) {
-                if (_activeGroupId == groupId) return;
-                setState(() => _activeGroupId = groupId);
-              },
-              onCreateExpensePost: () => _openExpenseGroupEditor(
-                context,
-                ref,
-                trip.id,
-                trip.memberIds,
-                trip.memberPublicLabels,
-                existing: null,
+          data: (expenses) => settledTransfersAsync.when(
+            data: (settledTransfers) {
+              return _TripExpensesBody(
+                tripId: trip.id,
+                memberIds: trip.memberIds,
+                memberPublicLabels: trip.memberPublicLabels,
+                groups: groups,
+                expenses: expenses,
+                settledTransfers: settledTransfers,
+                activeGroupId: _activeGroupId,
+                onActiveGroupChanged: (groupId) {
+                  if (_activeGroupId == groupId) return;
+                  setState(() => _activeGroupId = groupId);
+                },
+                onCreateExpensePost: () => _openExpenseGroupEditor(
+                  context,
+                  ref,
+                  trip.id,
+                  trip.memberIds,
+                  trip.memberPublicLabels,
+                  existing: null,
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('Erreur: $e', textAlign: TextAlign.center),
               ),
-            );
-          },
+            ),
+          ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Padding(
@@ -206,6 +219,7 @@ class _TripExpensesBody extends StatelessWidget {
     required this.memberPublicLabels,
     required this.groups,
     required this.expenses,
+    required this.settledTransfers,
     required this.activeGroupId,
     required this.onActiveGroupChanged,
     required this.onCreateExpensePost,
@@ -216,6 +230,7 @@ class _TripExpensesBody extends StatelessWidget {
   final Map<String, String> memberPublicLabels;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
+  final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
   final VoidCallback onCreateExpensePost;
@@ -324,11 +339,14 @@ class _TripExpensesBody extends StatelessWidget {
                  group: visibleGroups.single,
                  allTripExpenses: expenses,
                  groupExpenses: expenses
-                     .where((e) => e.groupId == visibleGroups.single.id)
+                      .where((e) => e.groupId == visibleGroups.single.id)
+                      .toList(),
+                 groupSettledTransfers: settledTransfers
+                     .where((t) => t.groupId == visibleGroups.single.id)
                      .toList(),
-                 memberIds: memberIds,
-                 memberPublicLabels: memberPublicLabels,
-                memberLabels: labels,
+                  memberIds: memberIds,
+                  memberPublicLabels: memberPublicLabels,
+                 memberLabels: labels,
                 viewerUserId: viewerId,
               ),
             ),
@@ -338,8 +356,9 @@ class _TripExpensesBody extends StatelessWidget {
             child: _ExpensePostsTabbedView(
               tripId: tripId,
               groups: visibleGroups,
-              expenses: expenses,
-              memberIds: memberIds,
+               expenses: expenses,
+               settledTransfers: settledTransfers,
+                memberIds: memberIds,
               memberPublicLabels: memberPublicLabels,
               memberLabels: labels,
               viewerUserId: viewerId,
@@ -357,6 +376,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.tripId,
     required this.groups,
     required this.expenses,
+    required this.settledTransfers,
     required this.memberIds,
     required this.memberPublicLabels,
     required this.memberLabels,
@@ -368,6 +388,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final String tripId;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
+  final List<SettledTransfer> settledTransfers;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
   final Map<String, String> memberLabels;
@@ -466,10 +487,13 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                    child: _ExpensePostPanel(
                      tripId: widget.tripId,
                      group: group,
-                     allTripExpenses: widget.expenses,
-                     groupExpenses:
-                         widget.expenses.where((e) => e.groupId == group.id).toList(),
-                     memberIds: widget.memberIds,
+                      allTripExpenses: widget.expenses,
+                      groupExpenses:
+                          widget.expenses.where((e) => e.groupId == group.id).toList(),
+                      groupSettledTransfers: widget.settledTransfers
+                          .where((t) => t.groupId == group.id)
+                          .toList(),
+                      memberIds: widget.memberIds,
                      memberPublicLabels: widget.memberPublicLabels,
                      memberLabels: widget.memberLabels,
                     viewerUserId: widget.viewerUserId,
@@ -489,6 +513,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.group,
     required this.allTripExpenses,
     required this.groupExpenses,
+    required this.groupSettledTransfers,
     required this.memberIds,
     required this.memberPublicLabels,
     required this.memberLabels,
@@ -499,6 +524,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final TripExpenseGroup group;
   final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
+  final List<SettledTransfer> groupSettledTransfers;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
   final Map<String, String> memberLabels;
@@ -510,6 +536,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
+  bool _savingSettledTransfer = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
 
   Future<void> _confirmDeletePost() async {
@@ -559,8 +586,12 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   @override
   Widget build(BuildContext context) {
     final viewerUserId = widget.viewerUserId?.trim();
-    final settlement =
-        computeViewerSettlement(widget.groupExpenses, viewerUserId);
+    final settlement = computeViewerSettlement(
+      widget.groupExpenses,
+      viewerUserId,
+      settledTransfers: widget.groupSettledTransfers
+          .map((transfer) => transfer.toSuggestedTransfer()),
+    );
     final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
     final myTotalsByCurrency = _sumByCurrency(
       widget.allTripExpenses.where(
@@ -700,6 +731,27 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             transfers: settlement.suggestedTransfers,
             memberLabels: widget.memberLabels,
             viewerUserId: viewerUserId,
+            markingInProgress: _savingSettledTransfer,
+            onMarkTransferDone: (transfer) async {
+              if (_savingSettledTransfer) return;
+              setState(() => _savingSettledTransfer = true);
+              try {
+                await ref.read(expensesRepositoryProvider).markTransferAsSettled(
+                      tripId: widget.tripId,
+                      groupId: widget.group.id,
+                      transfer: transfer,
+                    );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur: $e')),
+                );
+              } finally {
+                if (mounted) {
+                  setState(() => _savingSettledTransfer = false);
+                }
+              }
+            },
           )
         else
           Column(
@@ -864,12 +916,16 @@ class _SettlementSection extends StatelessWidget {
     required this.transfers,
     required this.memberLabels,
     required this.viewerUserId,
+    required this.markingInProgress,
+    required this.onMarkTransferDone,
   });
 
   final BalancesByCurrency balancesByCurrency;
   final List<SuggestedTransfer> transfers;
   final Map<String, String> memberLabels;
   final String? viewerUserId;
+  final bool markingInProgress;
+  final Future<void> Function(SuggestedTransfer transfer) onMarkTransferDone;
 
   @override
   Widget build(BuildContext context) {
@@ -988,8 +1044,18 @@ class _SettlementSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.arrow_forward, size: 18),
-                  const SizedBox(width: 8),
+                  Semantics(
+                    label: 'Marquer ce remboursement comme effectué',
+                    child: Checkbox(
+                      value: false,
+                      onChanged: markingInProgress
+                          ? null
+                          : (value) async {
+                              if (value != true) return;
+                              await onMarkTransferDone(t);
+                            },
+                    ),
+                  ),
                   Expanded(
                     child: Text(
                       _formatSuggestedTransferLine(
