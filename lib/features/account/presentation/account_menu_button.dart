@@ -1,10 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planzers/features/account/data/account_repository.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class AccountMenuButton extends StatelessWidget {
+class AccountMenuButton extends ConsumerWidget {
   const AccountMenuButton({super.key});
 
   static final Uri _apkDownloadUri = Uri.parse(
@@ -34,11 +38,11 @@ class AccountMenuButton extends StatelessWidget {
     }
   }
 
-  Widget _buildAvatar(String photoUrl, String email) {
+  Widget _buildAvatar(String photoUrl, String displayLabel) {
     final fallback = CircleAvatar(
       radius: 14,
       child: Text(
-        email.isNotEmpty ? email[0].toUpperCase() : '?',
+        avatarInitialFromDisplayLabel(displayLabel),
         style: const TextStyle(fontSize: 12),
       ),
     );
@@ -61,10 +65,32 @@ class AccountMenuButton extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
-    final photoUrl = (user?.photoURL ?? '').trim();
     final email = (user?.email ?? '').trim();
+    final displayLabel = (user?.displayName ?? '').trim().isNotEmpty
+        ? (user?.displayName ?? '').trim()
+        : displayLabelFromEmail(email);
+    final Stream<DocumentSnapshot<Map<String, dynamic>>>? userDocStream = user == null
+        ? null
+        : ref.read(accountRepositoryProvider).watchMyUserDocument();
+
+    final avatar = userDocStream == null
+        ? _buildAvatar('', displayLabel)
+        : StreamBuilder(
+            stream: userDocStream,
+            builder: (BuildContext context,
+                AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot) {
+              final data = snapshot.data?.data() ?? const <String, dynamic>{};
+              final account =
+                  (data['account'] as Map<String, dynamic>?) ?? const {};
+              final photoUrl =
+                  (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+                      ? (account['photoUrl'] as String).trim()
+                      : (data['photoUrl'] as String?)?.trim() ?? '';
+              return _buildAvatar(photoUrl, displayLabel);
+            },
+          );
 
     return PopupMenuButton<String>(
       tooltip: 'Mon compte',
@@ -98,7 +124,7 @@ class AccountMenuButton extends StatelessWidget {
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: _buildAvatar(photoUrl, email),
+        child: avatar,
       ),
     );
   }

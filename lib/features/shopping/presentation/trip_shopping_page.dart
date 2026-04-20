@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planzers/features/shopping/data/shopping_item.dart';
 import 'package:planzers/features/shopping/data/shopping_repository.dart';
@@ -125,6 +127,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final filteredItems = searchFilteredItems
         .where((item) => _matchesFilter(item, _activeFilter))
         .toList(growable: false);
+    final claimedByIds = widget.items
+        .map((item) => item.claimedBy?.trim() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
 
     final normalizedLabelCounts = <String, int>{};
     for (final item in widget.items) {
@@ -134,10 +141,17 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
           (normalizedLabelCounts[normalized] ?? 0) + 1;
     }
 
-    return Stack(
-      children: [
-        Column(
+    final usersDataStream =
+        ref.read(usersRepositoryProvider).watchUsersDataByIds(claimedByIds);
+
+    return StreamBuilder<Map<String, Map<String, dynamic>>>(
+      stream: usersDataStream,
+      builder: (context, usersSnap) {
+        final usersDataById = usersSnap.data ?? const <String, Map<String, dynamic>>{};
+        return Stack(
           children: [
+            Column(
+              children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
               child: NameListSearchTextField(
@@ -253,6 +267,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                               key: ValueKey(item.id),
                               tripId: widget.tripId,
                               item: item,
+                              usersDataById: usersDataById,
                               normalizedLabelCounts: normalizedLabelCounts,
                               autoFocusLabel:
                                   item.id == _pendingAutofocusItemId,
@@ -264,19 +279,21 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                             );
                           },
                         ),
+                ),
+              ],
+            ),
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: FloatingActionButton(
+                heroTag: 'add_shopping_item',
+                onPressed: _addItem,
+                child: const Icon(Icons.add),
+              ),
             ),
           ],
-        ),
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: FloatingActionButton(
-            heroTag: 'add_shopping_item',
-            onPressed: _addItem,
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -304,6 +321,7 @@ class _ShoppingItemRow extends ConsumerStatefulWidget {
     super.key,
     required this.tripId,
     required this.item,
+    required this.usersDataById,
     required this.normalizedLabelCounts,
     this.autoFocusLabel = false,
     this.onAutoFocusHandled,
@@ -311,6 +329,7 @@ class _ShoppingItemRow extends ConsumerStatefulWidget {
 
   final String tripId;
   final ShoppingItem item;
+  final Map<String, Map<String, dynamic>> usersDataById;
   final Map<String, int> normalizedLabelCounts;
   final bool autoFocusLabel;
   final VoidCallback? onAutoFocusHandled;
@@ -320,6 +339,14 @@ class _ShoppingItemRow extends ConsumerStatefulWidget {
 }
 
 class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
+  String _photoUrlFromUserData(Map<String, dynamic>? userData) {
+    if (userData == null) return '';
+    final account = (userData['account'] as Map<String, dynamic>?) ?? const {};
+    final accountPhoto = (account['photoUrl'] as String?)?.trim() ?? '';
+    if (accountPhoto.isNotEmpty) return accountPhoto;
+    return (userData['photoUrl'] as String?)?.trim() ?? '';
+  }
+
   bool _isDuplicateLabel(String value) {
     final normalized = _normalizeItemLabel(value);
     if (normalized.isEmpty) return false;
@@ -368,6 +395,16 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
     final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
+    final claimedByUserData =
+        claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
+    final claimedByLabel = resolveTripMemberDisplayLabel(
+      memberId: claimedBy,
+      userData: claimedByUserData,
+      tripMemberPublicLabels: const {},
+      currentUserId: currentUid,
+      emptyFallback: 'Voyageur',
+    );
+    final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);
     final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
           decoration:
               isChecked ? TextDecoration.lineThrough : TextDecoration.none,
@@ -406,7 +443,8 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
           child: _ClaimButton(
             isClaimedByMe: isClaimedByMe,
             isClaimedByOther: isClaimedByOther,
-            currentUser: currentUser,
+            claimedByLabel: claimedByLabel,
+            claimedByPhotoUrl: claimedByPhotoUrl,
             onTap: _toggleClaim,
           ),
         ),
@@ -419,34 +457,53 @@ class _ClaimButton extends StatelessWidget {
   const _ClaimButton({
     required this.isClaimedByMe,
     required this.isClaimedByOther,
-    required this.currentUser,
+    required this.claimedByLabel,
+    required this.claimedByPhotoUrl,
     required this.onTap,
   });
 
   final bool isClaimedByMe;
   final bool isClaimedByOther;
-  final User? currentUser;
+  final String claimedByLabel;
+  final String claimedByPhotoUrl;
   final Future<void> Function() onTap;
-
-  String _initialsFromUser(User? user) {
-    final base = (user?.displayName ?? user?.email ?? '').trim();
-    if (base.isEmpty) return '?';
-    return base[0].toUpperCase();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    const badgeSize = 26.0;
+    const badgeRadius = 11.0;
+
+    Widget claimAvatar({
+      required String label,
+      required String photoUrl,
+      required Color backgroundColor,
+      required Color foregroundColor,
+    }) {
+      final cleanUrl = photoUrl.trim();
+      return CircleAvatar(
+        radius: badgeRadius,
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+        foregroundImage: cleanUrl.isNotEmpty ? NetworkImage(cleanUrl) : null,
+        child: Text(
+          avatarInitialFromDisplayLabel(label),
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        ),
+      );
+    }
+
     final compactStyle = IconButton.styleFrom(
       padding: const EdgeInsets.all(2),
-      minimumSize: const Size(28, 28),
+      minimumSize: const Size(badgeSize, badgeSize),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
     if (isClaimedByMe) {
-      final photoUrl = (currentUser?.photoURL ?? '').trim();
-      final avatar = CircleAvatar(
-        radius: 10,
-        backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-        child: photoUrl.isEmpty ? Text(_initialsFromUser(currentUser)) : null,
+      final avatar = claimAvatar(
+        label: claimedByLabel,
+        photoUrl: claimedByPhotoUrl,
+        backgroundColor: colorScheme.primaryContainer,
+        foregroundColor: colorScheme.onPrimaryContainer,
       );
       return IconButton(
         style: compactStyle,
@@ -457,11 +514,19 @@ class _ClaimButton extends StatelessWidget {
     }
 
     if (isClaimedByOther) {
-      return IconButton(
-        style: compactStyle,
-        tooltip: 'Déjà claimé par un autre participant',
-        onPressed: null,
-        icon: const Icon(Icons.accessibility_new, size: 17),
+      final avatar = claimAvatar(
+        label: claimedByLabel,
+        photoUrl: claimedByPhotoUrl,
+        backgroundColor: colorScheme.secondaryContainer,
+        foregroundColor: colorScheme.onSecondaryContainer,
+      );
+      return Tooltip(
+        message: 'Déjà claimé par $claimedByLabel',
+        child: SizedBox(
+          width: badgeSize,
+          height: badgeSize,
+          child: Center(child: avatar),
+        ),
       );
     }
 

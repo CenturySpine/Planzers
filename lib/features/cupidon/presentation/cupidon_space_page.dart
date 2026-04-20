@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 
 class CupidonSpacePage extends ConsumerStatefulWidget {
@@ -188,11 +189,11 @@ class _ProfileBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cleanPhotoUrl = photoUrl.trim();
-    final initial = label.trim().isEmpty ? '?' : label.trim()[0].toUpperCase();
+    final initial = avatarInitialFromDisplayLabel(label);
     return CircleAvatar(
-      backgroundImage:
+      foregroundImage:
           cleanPhotoUrl.isEmpty ? null : NetworkImage(cleanPhotoUrl),
-      child: cleanPhotoUrl.isEmpty ? Text(initial) : null,
+      child: Text(initial),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planzers/app/router.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 
 class CupidonMatchPopupBinder extends StatefulWidget {
   const CupidonMatchPopupBinder({required this.child, super.key});
@@ -104,16 +105,10 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
         content: Row(
           children: [
             CircleAvatar(
-              backgroundImage: payload.otherMemberPhotoUrl.isEmpty
+              foregroundImage: payload.otherMemberPhotoUrl.isEmpty
                   ? null
                   : NetworkImage(payload.otherMemberPhotoUrl),
-              child: payload.otherMemberPhotoUrl.isEmpty
-                  ? Text(
-                      payload.otherMemberLabel.isEmpty
-                          ? '?'
-                          : payload.otherMemberLabel[0].toUpperCase(),
-                    )
-                  : null,
+              child: Text(avatarInitialFromDisplayLabel(payload.otherMemberLabel)),
             ),
             const SizedBox(width: 12),
             Expanded(

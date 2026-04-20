@@ -19,26 +19,47 @@ class UsersRepository {
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(userRef);
       final now = FieldValue.serverTimestamp();
-      final data = <String, dynamic>{
+      final googlePhotoUrl = (user.photoURL ?? '').trim();
+      final baseData = <String, dynamic>{
         'uid': user.uid,
         'email': user.email,
         'displayName': user.displayName,
-        'photoUrl': user.photoURL,
         'account': {
           'email': user.email,
-          'photoUrl': user.photoURL,
         },
         'lastSignInAt': now,
       };
+      if (googlePhotoUrl.isNotEmpty) {
+        baseData['googlePhotoUrl'] = googlePhotoUrl;
+        (baseData['account'] as Map<String, dynamic>)['googlePhotoUrl'] =
+            googlePhotoUrl;
+      }
 
       if (snapshot.exists) {
-        transaction.set(userRef, data, SetOptions(merge: true));
+        final existing = snapshot.data() ?? const <String, dynamic>{};
+        final existingAccount =
+            (existing['account'] as Map<String, dynamic>?) ?? const {};
+        final existingAccountPhoto =
+            (existingAccount['photoUrl'] as String?)?.trim() ?? '';
+        final existingRootPhoto = (existing['photoUrl'] as String?)?.trim() ?? '';
+        final hasCustomPhoto =
+            existingAccountPhoto.isNotEmpty || existingRootPhoto.isNotEmpty;
+
+        final patch = <String, dynamic>{...baseData};
+        if (!hasCustomPhoto && googlePhotoUrl.isNotEmpty) {
+          patch['photoUrl'] = googlePhotoUrl;
+          (patch['account'] as Map<String, dynamic>)['photoUrl'] =
+              googlePhotoUrl;
+        }
+        transaction.set(userRef, patch, SetOptions(merge: true));
       } else {
         transaction.set(userRef, {
-          ...data,
+          ...baseData,
+          if (googlePhotoUrl.isNotEmpty) 'photoUrl': googlePhotoUrl,
           'account': {
             'email': user.email,
-            'photoUrl': user.photoURL,
+            if (googlePhotoUrl.isNotEmpty) 'photoUrl': googlePhotoUrl,
+            if (googlePhotoUrl.isNotEmpty) 'googlePhotoUrl': googlePhotoUrl,
             'preferences': {
               'autoOpenCurrentTripOnLaunch': true,
             },

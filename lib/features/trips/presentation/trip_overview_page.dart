@@ -1572,15 +1572,13 @@ class _ParticipantBadgesPreview extends StatelessWidget {
             radius: 11,
             backgroundColor: colorScheme.secondaryContainer,
             foregroundColor: colorScheme.onSecondaryContainer,
-            backgroundImage: participant.photoUrl.isEmpty
+            foregroundImage: participant.photoUrl.isEmpty
                 ? null
                 : NetworkImage(participant.photoUrl),
-            child: participant.photoUrl.isEmpty
-                ? Text(
-                    participant.initial,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  )
-                : null,
+            child: Text(
+              participant.initial,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ),
         if (remaining > 0)
           CircleAvatar(

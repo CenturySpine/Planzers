@@ -10,6 +10,7 @@ import 'package:planzers/core/push/fcm_token_sync.dart';
 import 'package:planzers/features/account/data/account_repository.dart';
 import 'package:planzers/features/account/presentation/account_allergens_page.dart';
 import 'package:planzers/features/account/presentation/palette_picker_button.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key});
@@ -22,10 +23,22 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _accountNameController = TextEditingController();
   bool _didInitFromFirestore = false;
+  bool _didRequestPhotoSync = false;
   bool _isSaving = false;
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
   bool _isUpdatingAutoOpenCurrentTrip = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_didRequestPhotoSync) {
+      _didRequestPhotoSync = true;
+      Future<void>.microtask(() async {
+        await ref.read(accountRepositoryProvider).syncMyGoogleProfilePhotoToStorage();
+      });
+    }
+  }
 
   Future<void> _pickAndUploadProfilePhoto(ImageSource source) async {
     if (_isPhotoBusy) return;
@@ -147,11 +160,11 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
-  Widget _buildAvatar(String photoUrl, String email) {
+  Widget _buildAvatar(String photoUrl, String displayLabel) {
     final fallback = CircleAvatar(
       radius: 42,
       child: Text(
-        email.isNotEmpty ? email[0].toUpperCase() : '?',
+        avatarInitialFromDisplayLabel(displayLabel),
         style: const TextStyle(fontSize: 24),
       ),
     );
@@ -299,8 +312,13 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   ? (account['photoUrl'] as String).trim()
                   : (data['photoUrl'] as String?)?.trim().isNotEmpty == true
                       ? (data['photoUrl'] as String).trim()
-                      : (authUser.photoURL ?? '').trim();
+                      : '';
           final accountName = (account['name'] as String?)?.trim() ?? '';
+          final displayLabel = accountName.isNotEmpty
+              ? accountName
+              : (authUser.displayName ?? '').trim().isNotEmpty
+                  ? (authUser.displayName ?? '').trim()
+                  : displayLabelFromEmail(email);
           final autoOpenCurrentTripOnLaunch =
               autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
 
@@ -317,7 +335,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    _buildAvatar(photoUrl, email),
+                    _buildAvatar(photoUrl, displayLabel),
                     Positioned(
                       right: -6,
                       bottom: -6,

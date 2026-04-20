@@ -12,6 +12,13 @@ String displayLabelFromEmail(String email) {
   return e.substring(0, at).trim();
 }
 
+/// First uppercase character used for avatar fallback.
+String avatarInitialFromDisplayLabel(String label) {
+  final trimmed = label.trim();
+  if (trimmed.isEmpty) return '?';
+  return trimmed[0].toUpperCase();
+}
+
 /// Label for a trip member (chip, expenses, etc.).
 ///
 /// Prefers [account.name], then Firebase [displayName], then the local part of

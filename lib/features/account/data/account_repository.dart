@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:planzers/core/firebase/firebase_target.dart';
 import 'package:planzers/core/firebase/firebase_target_provider.dart';
 
@@ -96,6 +97,32 @@ class AccountRepository {
       }
     }
     return '';
+  }
+
+  bool _isGooglePhotoUrl(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null) return false;
+    final host = uri.host.toLowerCase();
+    return host.contains('googleusercontent.com');
+  }
+
+  String _extFromContentTypeOrUrl(String contentType, String url) {
+    final cleanType = contentType.toLowerCase();
+    if (cleanType.contains('png')) return 'png';
+    if (cleanType.contains('webp')) return 'webp';
+    if (cleanType.contains('heic') || cleanType.contains('heif')) {
+      return 'heic';
+    }
+    if (cleanType.contains('jpeg') || cleanType.contains('jpg')) return 'jpg';
+
+    final parsed = Uri.tryParse(url);
+    if (parsed == null) return 'jpg';
+    final path = parsed.path.toLowerCase();
+    if (path.endsWith('.png')) return 'png';
+    if (path.endsWith('.webp')) return 'webp';
+    if (path.endsWith('.heic') || path.endsWith('.heif')) return 'heic';
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'jpg';
+    return 'jpg';
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> watchMyUserDocument() {
@@ -240,6 +267,55 @@ class AccountRepository {
     }
     if (opCount > 0) {
       await batch.commit();
+    }
+  }
+
+  /// On sign-in/profile refresh, copy Google-hosted avatar to Firebase Storage
+  /// and promote the Storage URL as canonical profile image.
+  Future<void> syncMyGoogleProfilePhotoToStorage() async {
+    final user = auth.currentUser;
+    final uid = user?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      return;
+    }
+
+    final userRef = firestore.collection('users').doc(uid);
+    final snapshot = await userRef.get();
+    if (!snapshot.exists) {
+      return;
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+    final canonicalUrl = (account['photoUrl'] as String?)?.trim().isNotEmpty ==
+            true
+        ? (account['photoUrl'] as String).trim()
+        : (data['photoUrl'] as String?)?.trim() ?? '';
+
+    final googlePhotoUrl =
+        (account['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true
+            ? (account['googlePhotoUrl'] as String).trim()
+            : (data['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true
+                ? (data['googlePhotoUrl'] as String).trim()
+                : _googlePhotoUrlFromAuth(user);
+
+    if (googlePhotoUrl.isEmpty) return;
+    if (canonicalUrl.isNotEmpty && !_isGooglePhotoUrl(canonicalUrl)) return;
+
+    try {
+      final response = await http.get(Uri.parse(googlePhotoUrl));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return;
+      }
+      final bytes = response.bodyBytes;
+      if (bytes.isEmpty) return;
+      final ext = _extFromContentTypeOrUrl(
+        response.headers['content-type'] ?? '',
+        googlePhotoUrl,
+      );
+      await upsertMyProfilePhoto(bytes: bytes, fileExt: ext);
+    } catch (_) {
+      // Best effort: keep app flow healthy even when avatar sync fails.
     }
   }
 
