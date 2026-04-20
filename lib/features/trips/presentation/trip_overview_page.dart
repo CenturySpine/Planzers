@@ -16,6 +16,7 @@ import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/rooms/data/rooms_repository.dart';
+import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/trips/data/trip.dart';
 import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
@@ -1153,70 +1154,84 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   ),
                   if (!_isEditing) ...[
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TripAccessTile(
-                            label: 'Participants',
-                            icon: Icons.assignment_ind_outlined,
-                            countLabel: '$participantsCount',
-                            alertCount: 0,
-                            previewParticipants: participantsPreview,
-                            onTap: () =>
-                                _openParticipantsPage(readOnly: !canEdit),
+                    Builder(builder: (context) {
+                      final cs = Theme.of(context).colorScheme;
+                      final pz = context.planzersColors;
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _TripAccessTile(
+                                  label: 'Participants',
+                                  icon: Icons.assignment_ind_outlined,
+                                  countLabel: '$participantsCount',
+                                  alertCount: 0,
+                                  backgroundColor: cs.tertiaryContainer,
+                                  previewParticipants: participantsPreview,
+                                  onTap: () =>
+                                      _openParticipantsPage(readOnly: !canEdit),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _TripAccessTile(
+                                  label: 'Activités',
+                                  icon: Icons.event_note_outlined,
+                                  countLabel: '$plannedActivitiesCount',
+                                  alertCount: 0,
+                                  backgroundColor: cs.secondaryContainer,
+                                  detailLines: activitiesTodayLabels,
+                                  showDetailBullets: false,
+                                  wrapDetailLines: true,
+                                  emptyStateMessage:
+                                      'Pas d activités prévues aujourd hui',
+                                  onTap: () => context.go(
+                                    '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _TripAccessTile(
-                            label: 'Activités',
-                            icon: Icons.event_note_outlined,
-                            countLabel: '$plannedActivitiesCount',
-                            alertCount: 0,
-                            detailLines: activitiesTodayLabels,
-                            showDetailBullets: false,
-                            wrapDetailLines: true,
-                            emptyStateMessage:
-                                'Pas d activités prévues aujourd hui',
-                            onTap: () => context.go(
-                              '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
-                            ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _TripAccessTile(
+                                  label: 'Chambres',
+                                  icon: Icons.bed_outlined,
+                                  countLabel: '$roomsCount',
+                                  alertCount: 0,
+                                  backgroundColor: pz.successContainer,
+                                  detailLines: roomsDetailLines,
+                                  showDetailBullets: false,
+                                  wrapDetailLines: true,
+                                  emphasizedDetailLineIndex: 1,
+                                  emptyStateMessage: 'Aucune chambre attribuée',
+                                  onTap: () =>
+                                      context.go('/trips/${_trip.id}/rooms'),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _TripAccessTile(
+                                  label: 'Voitures',
+                                  icon: Icons.directions_car_outlined,
+                                  countLabel: '0',
+                                  alertCount: 0,
+                                  backgroundColor: cs.surfaceContainerHighest,
+                                  showDetailBullets: false,
+                                  wrapDetailLines: true,
+                                  emptyStateMessage: '[A venir]',
+                                  onTap: () =>
+                                      context.go('/trips/${_trip.id}/cars'),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TripAccessTile(
-                            label: 'Chambres',
-                            icon: Icons.bed_outlined,
-                            countLabel: '$roomsCount',
-                            alertCount: 0,
-                            detailLines: roomsDetailLines,
-                            showDetailBullets: false,
-                            wrapDetailLines: true,
-                            emphasizedDetailLineIndex: 1,
-                            emptyStateMessage: 'Aucune chambre attribuée',
-                            onTap: () => context.go('/trips/${_trip.id}/rooms'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _TripAccessTile(
-                            label: 'Voitures',
-                            icon: Icons.directions_car_outlined,
-                            countLabel: '0',
-                            alertCount: 0,
-                            showDetailBullets: false,
-                            wrapDetailLines: true,
-                            emptyStateMessage: '[A venir]',
-                            onTap: () => context.go('/trips/${_trip.id}/cars'),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      );
+                    }),
                   ],
                   if (myUid != null &&
                       !canEdit &&
@@ -1473,6 +1488,7 @@ class _TripAccessTile extends StatelessWidget {
     required this.countLabel,
     required this.alertCount,
     required this.onTap,
+    this.backgroundColor,
     this.previewParticipants = const [],
     this.detailLines = const [],
     this.showDetailBullets = true,
@@ -1486,6 +1502,7 @@ class _TripAccessTile extends StatelessWidget {
   final String countLabel;
   final int alertCount;
   final VoidCallback onTap;
+  final Color? backgroundColor;
   final List<_ParticipantBadgePreviewEntry> previewParticipants;
   final List<String> detailLines;
   final bool showDetailBullets;
@@ -1502,6 +1519,7 @@ class _TripAccessTile extends StatelessWidget {
     final visibleDetails = detailLines.take(3).toList();
     final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
+      color: backgroundColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
