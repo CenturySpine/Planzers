@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planzers/core/notifications/notification_center_repository.dart';
+import 'package:planzers/core/notifications/notification_channel.dart';
 import 'package:planzers/features/activities/data/activities_repository.dart';
 import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
@@ -419,6 +421,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   Widget build(BuildContext context) {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
+    final activitiesCountersAsync =
+        ref.watch(tripNotificationCountersProvider(_trip.id));
+    final activitiesLastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: _trip.id, channel: TripNotificationChannel.activities),
+      ),
+    );
     final rooms = roomsAsync.asData?.value ?? const [];
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
@@ -503,6 +512,26 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   );
                 })
                 .toList();
+            final activitiesCounters = activitiesCountersAsync.asData?.value;
+            var unreadActivities = 0;
+            if (activitiesCounters != null &&
+                activitiesCounters
+                    .hasChannel(TripNotificationChannel.activities)) {
+              unreadActivities = activitiesCounters
+                  .unreadFor(TripNotificationChannel.activities);
+            } else if (myUid != null && myUid.isNotEmpty) {
+              final allActivities = activitiesAsync.asData?.value;
+              final lastReadAt =
+                  activitiesLastReadAtAsync.asData?.value?.toUtc();
+              if (allActivities != null) {
+                unreadActivities = allActivities.where((activity) {
+                  if (activity.createdBy == myUid) return false;
+                  if (lastReadAt == null) return true;
+                  return activity.createdAt.toUtc().isAfter(lastReadAt);
+                }).length;
+              }
+            }
+
             final activitiesToday = (activitiesAsync.asData?.value ?? const <TripActivity>[])
                 .where((activity) => activity.plannedAt != null)
                 .where((activity) => _dateOnly(activity.plannedAt!) == today)
@@ -544,8 +573,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            Color(0xB1000000),
-                            Color(0x5C000000),
+                            Color(0xCC2E206D),
+                            Color(0x662E206D),
                             Colors.transparent,
                           ],
                         ),
@@ -1166,8 +1195,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   label: 'Participants',
                                   icon: Icons.assignment_ind_outlined,
                                   countLabel: '$participantsCount',
-                                  alertCount: 0,
                                   backgroundColor: cs.tertiaryContainer,
+                                  iconColor: cs.primary,
                                   previewParticipants: participantsPreview,
                                   onTap: () =>
                                       _openParticipantsPage(readOnly: !canEdit),
@@ -1179,8 +1208,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   label: 'Activités',
                                   icon: Icons.event_note_outlined,
                                   countLabel: '$plannedActivitiesCount',
-                                  alertCount: 0,
-                                  backgroundColor: cs.secondaryContainer,
+                                  alertCount: unreadActivities,
+                                  backgroundColor: pz.warningContainer,
+                                  iconColor: cs.tertiary,
                                   detailLines: activitiesTodayLabels,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1201,8 +1231,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   label: 'Chambres',
                                   icon: Icons.bed_outlined,
                                   countLabel: '$roomsCount',
-                                  alertCount: 0,
                                   backgroundColor: pz.successContainer,
+                                  iconColor: pz.success,
                                   detailLines: roomsDetailLines,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1218,8 +1248,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   label: 'Voitures',
                                   icon: Icons.directions_car_outlined,
                                   countLabel: '0',
-                                  alertCount: 0,
-                                  backgroundColor: cs.surfaceContainerHighest,
+                                  backgroundColor: cs.secondaryContainer,
+                                  iconColor: cs.secondary,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
                                   emptyStateMessage: '[A venir]',
@@ -1272,7 +1302,16 @@ class _TripBanner extends StatelessWidget {
       child: Container(
         height: 280,
         width: double.infinity,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFFF2F4FD),
+              const Color(0xFFD2DAF8),
+            ],
+          ),
+        ),
         child: imageUrl.isNotEmpty
             ? Stack(
                 fit: StackFit.expand,
@@ -1300,13 +1339,21 @@ class _TripBanner extends StatelessWidget {
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.add_photo_alternate_outlined,
-                              size: 36),
+                          Icon(Icons.add_photo_alternate_outlined,
+                              size: 36,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant),
                           const SizedBox(height: 8),
                           Text(
                             onPick == null
                                 ? 'Aucune photo'
                                 : 'Ajouter une photo de bannière',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -1486,9 +1533,10 @@ class _TripAccessTile extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.countLabel,
-    required this.alertCount,
     required this.onTap,
+    this.alertCount = 0,
     this.backgroundColor,
+    this.iconColor,
     this.previewParticipants = const [],
     this.detailLines = const [],
     this.showDetailBullets = true,
@@ -1503,13 +1551,14 @@ class _TripAccessTile extends StatelessWidget {
   final int alertCount;
   final VoidCallback onTap;
   final Color? backgroundColor;
+  final Color? iconColor;
   final List<_ParticipantBadgePreviewEntry> previewParticipants;
   final List<String> detailLines;
   final bool showDetailBullets;
   final bool wrapDetailLines;
   final int? emphasizedDetailLineIndex;
   final String? emptyStateMessage;
-  static const double _kTileHeight = 166;
+  static const double _kTileHeight = 148;
 
   @override
   Widget build(BuildContext context) {
@@ -1534,8 +1583,9 @@ class _TripAccessTile extends StatelessWidget {
                   children: [
                     Text(
                       countLabel,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
                           ),
                     ),
                     Expanded(
@@ -1549,7 +1599,11 @@ class _TripAccessTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Icon(icon, color: colorScheme.primary),
+                    Badge.count(
+                      count: alertCount,
+                      isLabelVisible: alertCount > 0,
+                      child: Icon(icon, color: iconColor ?? colorScheme.primary),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -1631,38 +1685,6 @@ class _TripAccessTile extends StatelessWidget {
                                   )
                             : const SizedBox.shrink(),
                   ),
-                ),
-                Row(
-                  children: [
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Icon(
-                              Icons.notifications_none_outlined,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            if (alertCount > 0)
-                              Positioned(
-                                right: -1,
-                                top: -1,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.error,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
               ],
             ),
