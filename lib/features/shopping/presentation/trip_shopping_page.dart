@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planzers/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planzers/features/shopping/data/shopping_item.dart';
 import 'package:planzers/features/shopping/data/shopping_repository.dart';
 import 'package:planzers/features/trips/presentation/name_list_search.dart';
@@ -17,13 +13,11 @@ class TripShoppingPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = TripScope.of(context);
-    final itemsAsync =
-        ref.watch(tripShoppingItemsStreamProvider(trip.id));
+    final itemsAsync = ref.watch(tripShoppingItemsStreamProvider(trip.id));
 
     return itemsAsync.when(
       data: (items) => _ShoppingList(tripId: trip.id, items: items),
-      loading: () =>
-          const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -208,7 +202,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                           const SizedBox(height: 8),
                           Text(
                             'Appuyez sur + pour ajouter un article.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
                                   color: Theme.of(context)
                                       .colorScheme
                                       .onSurfaceVariant,
@@ -246,7 +243,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                           separatorBuilder: (_, __) => Divider(
                             height: 1,
                             thickness: 1,
-                            color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.35),
                           ),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
@@ -255,7 +254,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                               tripId: widget.tripId,
                               item: item,
                               normalizedLabelCounts: normalizedLabelCounts,
-                              autoFocusLabel: item.id == _pendingAutofocusItemId,
+                              autoFocusLabel:
+                                  item.id == _pendingAutofocusItemId,
                               onAutoFocusHandled: () {
                                 if (!mounted) return;
                                 if (_pendingAutofocusItemId != item.id) return;
@@ -320,162 +320,13 @@ class _ShoppingItemRow extends ConsumerStatefulWidget {
 }
 
 class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
-  static const Duration _autoSaveDebounce = Duration(milliseconds: 600);
-  late TextEditingController _labelController;
-  late TextEditingController _quantityController;
-  late ShoppingUnit _selectedUnit;
-  _MeasurementKind _measurementKind = _MeasurementKind.solid;
-  String? _acceptedSuggestionLabel;
-  bool _isSaving = false;
-  Timer? _autoSaveTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _labelController = TextEditingController(text: widget.item.label);
-    _quantityController = TextEditingController(
-      text: _formatQuantity(widget.item.quantityValue),
-    );
-    _selectedUnit = widget.item.quantityUnit;
-    _measurementKind = _measurementKindFromUnit(_selectedUnit);
-    _labelController.addListener(_onLabelChanged);
-    _labelFocusNode.addListener(_onFocusChanged);
-    _quantityFocusNode.addListener(_onFocusChanged);
-    if (widget.autoFocusLabel && widget.item.label.trim().isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _labelFocusNode.requestFocus();
-        widget.onAutoFocusHandled?.call();
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(_ShoppingItemRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Sync Firestore changes into fields only when the field is not focused
-    if (!_labelFocusNode.hasFocus &&
-        oldWidget.item.label != widget.item.label) {
-      _labelController.text = widget.item.label;
-    }
-    if (!_quantityFocusNode.hasFocus) {
-      if (oldWidget.item.quantityValue != widget.item.quantityValue) {
-        _quantityController.text =
-            _formatQuantity(widget.item.quantityValue);
-      }
-      if (oldWidget.item.quantityUnit != widget.item.quantityUnit) {
-        setState(() {
-          _selectedUnit = widget.item.quantityUnit;
-          _measurementKind = _measurementKindFromUnit(_selectedUnit);
-        });
-      }
-    }
-    if (!oldWidget.autoFocusLabel &&
-        widget.autoFocusLabel &&
-        widget.item.label.trim().isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _labelFocusNode.requestFocus();
-        widget.onAutoFocusHandled?.call();
-      });
-    }
-  }
-
-  final FocusNode _labelFocusNode = FocusNode();
-  final FocusNode _quantityFocusNode = FocusNode();
-
-  void _onLabelChanged() {
-    final accepted = _acceptedSuggestionLabel;
-    if (accepted != null && _normalize(_labelController.text) != accepted) {
-      _acceptedSuggestionLabel = null;
-    }
-    if (mounted) setState(() {});
-  }
-
-  void _onFocusChanged() {
-    if (mounted) setState(() {});
-  }
-
-  String _normalize(String input) {
-    return input.trim().toLowerCase();
-  }
-
-  void _syncMeasurementKindFromUnit() {
-    final kind = _measurementKindFromUnit(_selectedUnit);
-    if (kind != _measurementKind) {
-      _measurementKind = kind;
-    }
-  }
-
-  _MeasurementKind _measurementKindFromUnit(ShoppingUnit unit) {
-    return switch (unit) {
-      ShoppingUnit.milliliters || ShoppingUnit.liters =>
-        _MeasurementKind.liquid,
-      _ => _MeasurementKind.solid,
-    };
-  }
-
   bool _isDuplicateLabel(String value) {
     final normalized = _normalizeItemLabel(value);
     if (normalized.isEmpty) return false;
     final totalCount = widget.normalizedLabelCounts[normalized] ?? 0;
-    final ownMatches = _normalizeItemLabel(widget.item.label) == normalized ? 1 : 0;
+    final ownMatches =
+        _normalizeItemLabel(widget.item.label) == normalized ? 1 : 0;
     return (totalCount - ownMatches) > 0;
-  }
-
-  @override
-  void dispose() {
-    _autoSaveTimer?.cancel();
-    _labelController.removeListener(_onLabelChanged);
-    _labelFocusNode.removeListener(_onFocusChanged);
-    _quantityFocusNode.removeListener(_onFocusChanged);
-    _labelController.dispose();
-    _quantityController.dispose();
-    _labelFocusNode.dispose();
-    _quantityFocusNode.dispose();
-    super.dispose();
-  }
-
-  String _formatQuantity(double value) {
-    if (value == value.truncateToDouble()) {
-      return value.toInt().toString();
-    }
-    return value.toString();
-  }
-
-  double _parseQuantity(String raw) {
-    final normalized = raw.trim().replaceAll(',', '.');
-    return double.tryParse(normalized) ?? 1.0;
-  }
-
-  void _scheduleAutoSave() {
-    _autoSaveTimer?.cancel();
-    _autoSaveTimer = Timer(_autoSaveDebounce, _save);
-  }
-
-  Future<void> _save() async {
-    if (_isSaving) return;
-    final label = _labelController.text.trim();
-    final quantity = _parseQuantity(_quantityController.text);
-    final safeQuantity = quantity > 0 ? quantity : 1.0;
-    final hasChanged = label != widget.item.label.trim() ||
-        safeQuantity != widget.item.quantityValue ||
-        _selectedUnit != widget.item.quantityUnit;
-    if (!hasChanged) return;
-
-    setState(() => _isSaving = true);
-    try {
-      await ref.read(shoppingRepositoryProvider).updateItem(
-            tripId: widget.tripId,
-            itemId: widget.item.id,
-            label: label,
-            checked: widget.item.checked,
-            quantityValue: safeQuantity,
-            quantityUnit: _selectedUnit,
-          );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
   }
 
   Future<void> _toggleChecked(bool? value) async {
@@ -508,65 +359,6 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
         );
   }
 
-  void _incrementQuantity() {
-    final current = _parseQuantity(_quantityController.text);
-    final next = (current + 1).toDouble();
-    _quantityController.text = _formatQuantity(next);
-    _scheduleAutoSave();
-  }
-
-  void _decrementQuantity() {
-    final current = _parseQuantity(_quantityController.text);
-    final next = (current - 1).toDouble();
-    if (next <= 0) return;
-    _quantityController.text = _formatQuantity(next);
-    _scheduleAutoSave();
-  }
-
-  ShoppingUnit _unitFromCatalogDefault(String rawUnit) {
-    final unit = rawUnit.trim().toLowerCase();
-    switch (unit) {
-      case 'g':
-      case 'gramme':
-      case 'grammes':
-        return ShoppingUnit.grams;
-      case 'kg':
-      case 'kilogramme':
-      case 'kilogrammes':
-        return ShoppingUnit.kilograms;
-      case 'ml':
-      case 'millilitre':
-      case 'millilitres':
-        return ShoppingUnit.liters;
-      case 'l':
-      case 'litre':
-      case 'litres':
-        return ShoppingUnit.liters;
-      default:
-        return ShoppingUnit.unit;
-    }
-  }
-
-  Future<void> _applySuggestion(IngredientCatalogItem suggestion) async {
-    _autoSaveTimer?.cancel();
-    _acceptedSuggestionLabel = _normalize(suggestion.label);
-    _labelController.value = TextEditingValue(
-      text: suggestion.label,
-      selection: TextSelection.collapsed(offset: suggestion.label.length),
-    );
-    final suggestedUnit = _unitFromCatalogDefault(suggestion.defaultUnit);
-    if (suggestedUnit != _selectedUnit) {
-      setState(() {
-        _selectedUnit = suggestedUnit;
-        _measurementKind = _measurementKindFromUnit(suggestedUnit);
-      });
-    }
-    // Close suggestions after a successful pick.
-    _labelFocusNode.unfocus();
-    await _save();
-    if (mounted) setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -576,298 +368,47 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
     final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
-    _syncMeasurementKindFromUnit();
-    final query = _labelController.text.trim();
-    final suggestionsAsync = ref.watch(ingredientAutocompleteProvider(query));
-    final showSuggestions = _labelFocusNode.hasFocus &&
-        query.isNotEmpty &&
-        _normalize(query) != _acceptedSuggestionLabel;
-    final isDuplicateLabel = _isDuplicateLabel(_labelController.text);
+    final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+          decoration:
+              isChecked ? TextDecoration.lineThrough : TextDecoration.none,
+          color:
+              isChecked ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+        );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Checkbox(
-                value: isChecked,
-                onChanged: _toggleChecked,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-              Transform.translate(
-                offset: const Offset(-4, 0),
-                child: _ClaimButton(
-                  isClaimedByMe: isClaimedByMe,
-                  isClaimedByOther: isClaimedByOther,
-                  currentUser: currentUser,
-                  onTap: _toggleClaim,
-                ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _labelController,
-                  focusNode: _labelFocusNode,
-                  decoration: InputDecoration(
-                    hintText: 'Article…',
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 2,
-                      vertical: 6,
-                    ),
-                    suffixIconConstraints: const BoxConstraints(
-                      minHeight: 18,
-                      minWidth: 18,
-                    ),
-                    suffixIcon: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: _isSaving
-                          ? const Padding(
-                              padding: EdgeInsets.all(2),
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        decoration: isChecked
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        color: isChecked
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.onSurface,
-                      ),
-                  onSubmitted: (_) => _save(),
-                  onEditingComplete: _save,
-                  onChanged: (_) => _scheduleAutoSave(),
-                ),
-              ),
-              _QuantityControls(
-                quantityController: _quantityController,
-                quantityFocusNode: _quantityFocusNode,
-                selectedUnit: _selectedUnit,
-                measurementKind: _measurementKind,
-                onUnitChanged: (unit) {
-                  setState(() {
-                    _selectedUnit = unit;
-                    _measurementKind = _measurementKindFromUnit(unit);
-                  });
-                  _scheduleAutoSave();
-                },
-                onDecrement: _decrementQuantity,
-                onIncrement: _incrementQuantity,
-                onSave: _save,
-              ),
-              PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                tooltip: 'Plus d\'actions',
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 40),
-                icon: Icon(
-                  Icons.more_vert,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                onSelected: (value) {
-                  if (value == 'delete') _delete();
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          size: 20,
-                          color: colorScheme.error,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Supprimer',
-                          style: TextStyle(color: colorScheme.error),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return IngredientLineEditor(
+      label: widget.item.label,
+      quantityValue: widget.item.quantityValue,
+      quantityUnit: widget.item.quantityUnit,
+      onSave: (value) async {
+        await ref.read(shoppingRepositoryProvider).updateItem(
+              tripId: widget.tripId,
+              itemId: widget.item.id,
+              label: value.label,
+              checked: widget.item.checked,
+              quantityValue: value.quantityValue,
+              quantityUnit: value.quantityUnit,
+            );
+      },
+      onDelete: _delete,
+      autoFocusLabel: widget.autoFocusLabel,
+      onAutoFocusHandled: widget.onAutoFocusHandled,
+      isDuplicateLabel: _isDuplicateLabel,
+      labelStyle: labelStyle,
+      prefixWidgets: [
+        Checkbox(
+          value: isChecked,
+          onChanged: _toggleChecked,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: VisualDensity.compact,
+        ),
+        Transform.translate(
+          offset: const Offset(-4, 0),
+          child: _ClaimButton(
+            isClaimedByMe: isClaimedByMe,
+            isClaimedByOther: isClaimedByOther,
+            currentUser: currentUser,
+            onTap: _toggleClaim,
           ),
-            if (showSuggestions)
-              suggestionsAsync.when(
-                data: (suggestions) {
-                  final filtered = suggestions
-                      .where((s) => s.type == 'food')
-                      .take(5)
-                      .toList(growable: false);
-                  if (filtered.isEmpty) return const SizedBox.shrink();
-                  return Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
-                      children: filtered
-                          .map(
-                            (suggestion) => Listener(
-                              onPointerDown: (_) {
-                                unawaited(_applySuggestion(suggestion));
-                              },
-                              child: ListTile(
-                                dense: true,
-                                visualDensity: const VisualDensity(
-                                  horizontal: 0,
-                                  vertical: -3,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 0,
-                                ),
-                                minVerticalPadding: 0,
-                                title: Text(
-                                  suggestion.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                onTap: () {},
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (error, stackTrace) => const SizedBox.shrink(),
-              ),
-            if (isDuplicateLabel)
-              Padding(
-                padding: const EdgeInsets.only(left: 4, right: 8, bottom: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 16,
-                      color: colorScheme.error,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Cet élément existe déjà dans la liste.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.error,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuantityControls extends StatelessWidget {
-  const _QuantityControls({
-    required this.quantityController,
-    required this.quantityFocusNode,
-    required this.selectedUnit,
-    required this.measurementKind,
-    required this.onUnitChanged,
-    required this.onDecrement,
-    required this.onIncrement,
-    required this.onSave,
-  });
-
-  final TextEditingController quantityController;
-  final FocusNode quantityFocusNode;
-  final ShoppingUnit selectedUnit;
-  final _MeasurementKind measurementKind;
-  final ValueChanged<ShoppingUnit> onUnitChanged;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    final unitOptions = switch (measurementKind) {
-      _MeasurementKind.liquid => const [
-          ShoppingUnit.milliliters,
-          ShoppingUnit.liters,
-        ],
-      _MeasurementKind.solid => const [
-          ShoppingUnit.unit,
-          ShoppingUnit.grams,
-          ShoppingUnit.kilograms,
-        ],
-    };
-    final qtyBtnStyle = IconButton.styleFrom(
-      padding: const EdgeInsets.all(2),
-      minimumSize: const Size(24, 24),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          style: qtyBtnStyle,
-          icon: const Icon(Icons.remove),
-          iconSize: 16,
-          onPressed: onDecrement,
-        ),
-        SizedBox(
-          width: 36,
-          child: TextField(
-            controller: quantityController,
-            focusNode: quantityFocusNode,
-            textAlign: TextAlign.center,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-            ],
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-            ),
-            style: Theme.of(context).textTheme.bodyMedium,
-            onSubmitted: (_) => onSave(),
-            onEditingComplete: onSave,
-            onChanged: (_) => onSave(),
-          ),
-        ),
-        IconButton(
-          style: qtyBtnStyle,
-          icon: const Icon(Icons.add),
-          iconSize: 16,
-          onPressed: onIncrement,
-        ),
-        DropdownButton<ShoppingUnit>(
-          value: selectedUnit,
-          underline: const SizedBox.shrink(),
-          isDense: true,
-          padding: EdgeInsets.zero,
-          alignment: AlignmentDirectional.centerStart,
-          items: unitOptions
-              .map(
-                (u) => DropdownMenuItem(
-                  value: u,
-                  child: Text(
-                    u.label,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (unit) {
-            if (unit != null) onUnitChanged(unit);
-          },
         ),
       ],
     );
@@ -931,9 +472,4 @@ class _ClaimButton extends StatelessWidget {
       icon: const Icon(Icons.accessibility_new_outlined, size: 17),
     );
   }
-}
-
-enum _MeasurementKind {
-  solid,
-  liquid,
 }

@@ -1368,10 +1368,7 @@
       "subcategory": "Sans lactose",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-lactose",
-        "allergene-proteines-de-lait"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -1382,10 +1379,7 @@
       "subcategory": "Sans lactose",
       "defaultUnit": "ml",
       "type": "food",
-      "allergens": [
-        "allergene-lactose",
-        "allergene-proteines-de-lait"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -1396,10 +1390,7 @@
       "subcategory": "Sans lactose",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-lactose",
-        "allergene-proteines-de-lait"
-      ],
+      "allergens": [],
       "mayContainAllergens": [
         "allergene-histamine"
       ]
@@ -1414,10 +1405,7 @@
       "subcategory": "Sans lactose",
       "defaultUnit": "ml",
       "type": "food",
-      "allergens": [
-        "allergene-lactose",
-        "allergene-proteines-de-lait"
-      ],
+      "allergens": [],
       "mayContainAllergens": [
         "allergene-fodmap"
       ]
@@ -1432,10 +1420,7 @@
       "subcategory": "Sans lactose",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-lactose",
-        "allergene-proteines-de-lait"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -2593,9 +2578,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -2608,9 +2591,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -4482,9 +4463,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -4495,9 +4474,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -4508,9 +4485,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -4521,9 +4496,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "g",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {
@@ -4534,9 +4507,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "piece",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": [
         "allergene-sesame"
       ]
@@ -4551,9 +4522,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "piece",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": [
         "allergene-sesame"
       ]
@@ -4824,9 +4793,7 @@
       "subcategory": "Sans gluten",
       "defaultUnit": "piece",
       "type": "food",
-      "allergens": [
-        "allergene-gluten"
-      ],
+      "allergens": [],
       "mayContainAllergens": []
     },
     {

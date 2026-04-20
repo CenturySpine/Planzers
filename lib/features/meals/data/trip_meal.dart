@@ -1,6 +1,153 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:planzers/features/trips/data/trip_day_part.dart';
 
+enum MealComponentKind {
+  entree,
+  plat,
+  dessert,
+  autre;
+
+  String get firestoreValue => switch (this) {
+        MealComponentKind.entree => 'entree',
+        MealComponentKind.plat => 'plat',
+        MealComponentKind.dessert => 'dessert',
+        MealComponentKind.autre => 'autre',
+      };
+
+  String get labelFr => switch (this) {
+        MealComponentKind.entree => 'Entree',
+        MealComponentKind.plat => 'Plat',
+        MealComponentKind.dessert => 'Dessert',
+        MealComponentKind.autre => 'Autre',
+      };
+
+  static MealComponentKind fromFirestore(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    return switch (normalized) {
+      'entree' => MealComponentKind.entree,
+      'plat' => MealComponentKind.plat,
+      'dessert' => MealComponentKind.dessert,
+      'autre' => MealComponentKind.autre,
+      _ => MealComponentKind.autre,
+    };
+  }
+}
+
+class MealComponentIngredient {
+  const MealComponentIngredient({
+    required this.catalogItemId,
+    required this.label,
+    required this.quantityValue,
+    required this.quantityUnit,
+  });
+
+  final String catalogItemId;
+  final String label;
+  final double quantityValue;
+  final String quantityUnit;
+
+  factory MealComponentIngredient.fromMap(Map<String, dynamic> map) {
+    final quantityRaw = map['quantityValue'];
+    return MealComponentIngredient(
+      catalogItemId: (map['catalogItemId'] as String? ?? '').trim(),
+      label: (map['label'] as String? ?? '').trim(),
+      quantityValue: switch (quantityRaw) {
+        num n => n.toDouble(),
+        _ => 1.0,
+      },
+      quantityUnit: (map['quantityUnit'] as String? ?? 'unit').trim(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'catalogItemId': catalogItemId.trim(),
+      'label': label.trim(),
+      'quantityValue': quantityValue > 0 ? quantityValue : 1.0,
+      'quantityUnit':
+          quantityUnit.trim().isEmpty ? 'unit' : quantityUnit.trim(),
+    };
+  }
+
+  MealComponentIngredient copyWith({
+    String? catalogItemId,
+    String? label,
+    double? quantityValue,
+    String? quantityUnit,
+  }) {
+    return MealComponentIngredient(
+      catalogItemId: catalogItemId ?? this.catalogItemId,
+      label: label ?? this.label,
+      quantityValue: quantityValue ?? this.quantityValue,
+      quantityUnit: quantityUnit ?? this.quantityUnit,
+    );
+  }
+}
+
+class MealComponent {
+  const MealComponent({
+    required this.id,
+    required this.kind,
+    required this.order,
+    required this.ingredients,
+    this.title = '',
+  });
+
+  final String id;
+  final MealComponentKind kind;
+  final String title;
+  final int order;
+  final List<MealComponentIngredient> ingredients;
+
+  factory MealComponent.fromMap(Map<String, dynamic> map) {
+    final orderRaw = map['order'];
+    final ingredientsRaw = (map['ingredients'] as List<dynamic>? ?? const []);
+    return MealComponent(
+      id: (map['id'] as String? ?? '').trim(),
+      kind: MealComponentKind.fromFirestore(map['kind'] as String?),
+      title: (map['title'] as String? ?? '').trim(),
+      order: switch (orderRaw) {
+        int n => n,
+        num n => n.toInt(),
+        _ => 0,
+      },
+      ingredients: ingredientsRaw
+          .whereType<Map>()
+          .map((row) => MealComponentIngredient.fromMap(
+                Map<String, dynamic>.from(row),
+              ))
+          .where((i) => i.label.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id.trim(),
+      'kind': kind.firestoreValue,
+      'title': title.trim(),
+      'order': order,
+      'ingredients': ingredients.map((i) => i.toMap()).toList(growable: false),
+    };
+  }
+
+  MealComponent copyWith({
+    String? id,
+    MealComponentKind? kind,
+    String? title,
+    int? order,
+    List<MealComponentIngredient>? ingredients,
+  }) {
+    return MealComponent(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      order: order ?? this.order,
+      ingredients: ingredients ?? this.ingredients,
+    );
+  }
+}
+
 /// A meal planned on a trip (Firestore: `trips/{tripId}/meals/{mealId}`).
 class TripMeal {
   TripMeal({
@@ -13,6 +160,7 @@ class TripMeal {
     required this.createdAt,
     this.updatedAt,
     this.notes = '',
+    this.components = const [],
   });
 
   final String id;
@@ -29,6 +177,7 @@ class TripMeal {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String notes;
+  final List<MealComponent> components;
 
   /// Convenience accessor for participant count.
   int get participantCount => participantIds.length;
@@ -81,6 +230,11 @@ class TripMeal {
           .where((id) => id.isNotEmpty)
           .toList(),
       notes: (data['notes'] as String?)?.trim() ?? '',
+      components: ((data['components'] as List<dynamic>?) ?? const [])
+          .whereType<Map>()
+          .map((raw) => MealComponent.fromMap(Map<String, dynamic>.from(raw)))
+          .toList(growable: false)
+        ..sort((a, b) => a.order.compareTo(b.order)),
       createdBy: (data['createdBy'] as String?)?.trim() ?? '',
       createdAt: _parseDateOrNow(data['createdAt']),
       updatedAt: _parseOptionalDate(data['updatedAt']),
@@ -112,6 +266,7 @@ class TripMeal {
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
       'notes': notes.trim(),
+      'components': components.map((c) => c.toMap()).toList(growable: false),
       'createdBy': createdBy.trim(),
       'createdAt': FieldValue.serverTimestamp(),
     };
@@ -125,6 +280,7 @@ class TripMeal {
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
       'notes': notes.trim(),
+      'components': components.map((c) => c.toMap()).toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -139,6 +295,7 @@ class TripMeal {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? notes,
+    List<MealComponent>? components,
   }) {
     return TripMeal(
       id: id ?? this.id,
@@ -150,6 +307,7 @@ class TripMeal {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       notes: notes ?? this.notes,
+      components: components ?? this.components,
     );
   }
 
