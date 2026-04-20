@@ -265,6 +265,10 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                 child: TextField(
                   controller: _labelController,
                   focusNode: _labelFocusNode,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.done,
+                  minLines: 1,
+                  maxLines: null,
                   decoration: InputDecoration(
                     hintText: widget.hintText,
                     border: InputBorder.none,

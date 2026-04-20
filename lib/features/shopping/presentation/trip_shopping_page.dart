@@ -119,13 +119,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final checkedCount = widget.items.where((item) => item.checked).length;
     final searchQuery = _searchController.text;
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
         .toList(growable: false);
     final filteredItems = searchFilteredItems
-        .where((item) => _matchesFilter(item, _activeFilter))
+        .where((item) => _matchesFilter(item, _activeFilter, currentUid))
         .toList(growable: false);
     final claimedByIds = widget.items
         .map((item) => item.claimedBy?.trim() ?? '')
@@ -162,37 +163,43 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: SegmentedButton<_ShoppingFilter>(
-                      segments: const [
-                        ButtonSegment<_ShoppingFilter>(
-                          value: _ShoppingFilter.all,
-                          label: Text('Tout'),
-                        ),
-                        ButtonSegment<_ShoppingFilter>(
-                          value: _ShoppingFilter.todo,
-                          label: Text('À acheter'),
-                        ),
-                        ButtonSegment<_ShoppingFilter>(
-                          value: _ShoppingFilter.done,
-                          label: Text('Déjà cochés'),
-                        ),
-                      ],
-                      selected: {_activeFilter},
-                      onSelectionChanged: (selection) {
-                        if (selection.isEmpty) return;
-                        setState(() => _activeFilter = selection.first);
-                      },
-                    ),
+                  SegmentedButton<_ShoppingFilter>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment<_ShoppingFilter>(
+                        value: _ShoppingFilter.all,
+                        icon: Icon(Icons.apps_outlined),
+                        tooltip: 'Tous les éléments',
+                      ),
+                      ButtonSegment<_ShoppingFilter>(
+                        value: _ShoppingFilter.todo,
+                        icon: Icon(Icons.radio_button_unchecked),
+                        tooltip: 'À acheter',
+                      ),
+                      ButtonSegment<_ShoppingFilter>(
+                        value: _ShoppingFilter.done,
+                        icon: Icon(Icons.check_circle_outline),
+                        tooltip: 'Déjà cochés',
+                      ),
+                      ButtonSegment<_ShoppingFilter>(
+                        value: _ShoppingFilter.claimedByMe,
+                        icon: Icon(Icons.person_pin_circle_outlined),
+                        tooltip: 'Claimés par moi',
+                      ),
+                    ],
+                    selected: {_activeFilter},
+                    onSelectionChanged: (selection) {
+                      if (selection.isEmpty) return;
+                      setState(() => _activeFilter = selection.first);
+                    },
                   ),
                   const SizedBox(width: 8),
-                  TextButton.icon(
-                    onPressed: checkedCount == 0
-                        ? null
-                        : () => _confirmAndDeleteChecked(context),
-                    icon: const Icon(Icons.delete_sweep_outlined),
-                    label: const Text('Supprimer'),
+                  IconButton(
+                    tooltip: 'Aide des filtres',
+                    icon: const Icon(Icons.help_outline),
+                    onPressed: () => _showFilterHelp(context),
                   ),
                 ],
               ),
@@ -285,11 +292,72 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
             Positioned(
               right: 16,
               bottom: 16,
-              child: FloatingActionButton(
-                heroTag: 'add_shopping_item',
-                onPressed: _addItem,
-                child: const Icon(Icons.add),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'add_shopping_item',
+                    onPressed: _addItem,
+                    child: const Icon(Icons.add),
+                  ),
+                  const SizedBox(height: 12),
+                  FloatingActionButton(
+                    heroTag: 'delete_checked_shopping_items',
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                    onPressed: checkedCount == 0
+                        ? null
+                        : () => _confirmAndDeleteChecked(context),
+                    child: const Icon(Icons.delete_sweep_outlined),
+                  ),
+                ],
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showFilterHelp(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Filtres de la liste'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Le filtre affiche uniquement les éléments correspondant à l’état sélectionné.',
+              ),
+              SizedBox(height: 12),
+              _FilterLegendRow(
+                icon: Icons.apps_outlined,
+                label: 'Tous les éléments',
+              ),
+              SizedBox(height: 8),
+              _FilterLegendRow(
+                icon: Icons.radio_button_unchecked,
+                label: 'À acheter',
+              ),
+              SizedBox(height: 8),
+              _FilterLegendRow(
+                icon: Icons.check_circle_outline,
+                label: 'Déjà achetés',
+              ),
+              SizedBox(height: 8),
+              _FilterLegendRow(
+                icon: Icons.person_pin_circle_outlined,
+                label: 'Je m\'en occupe !',
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(dialogContext).pop,
+              child: const Text('Fermer'),
             ),
           ],
         );
@@ -302,11 +370,13 @@ String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
 }
 
-bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter) {
+bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
+  final claimedBy = item.claimedBy?.trim() ?? '';
   return switch (filter) {
     _ShoppingFilter.all => true,
     _ShoppingFilter.todo => !item.checked,
     _ShoppingFilter.done => item.checked,
+    _ShoppingFilter.claimedByMe => claimedBy.isNotEmpty && claimedBy == currentUid,
   };
 }
 
@@ -314,6 +384,28 @@ enum _ShoppingFilter {
   all,
   todo,
   done,
+  claimedByMe,
+}
+
+class _FilterLegendRow extends StatelessWidget {
+  const _FilterLegendRow({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18),
+        const SizedBox(width: 8),
+        Expanded(child: Text(label)),
+      ],
+    );
+  }
 }
 
 class _ShoppingItemRow extends ConsumerStatefulWidget {
