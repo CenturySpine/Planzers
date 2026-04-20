@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/auth/presentation/profile_badge.dart';
 import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
@@ -462,6 +463,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                     return Card(
                                       child: ListTile(
                                         leading: _participantRoleLeading(
+                                          context: context,
                                           scheme: scheme,
                                           row: row,
                                           isOwnerRow: isOwnerRow,
@@ -649,6 +651,7 @@ List<_ParticipantRow> _participantRowsForTrip(
       displayLabel: label,
       isAdmin: trip.memberHasAdminRole(id),
       likedByMe: likedByMe.contains(id),
+      profileData: userDataById[id],
     );
   }).toList();
   rows.sort(
@@ -662,6 +665,7 @@ List<_ParticipantRow> _participantRowsForTrip(
 const double _kParticipantRoleLeadingExtent = 48;
 
 Widget _participantRoleLeading({
+  required BuildContext context,
   required ColorScheme scheme,
   required _ParticipantRow row,
   required bool isOwnerRow,
@@ -688,20 +692,51 @@ Widget _participantRoleLeading({
     );
   }
 
-  if (row.isPlaceholder && !canCycleRole) {
-    return inFixedBox(
-      Icon(
-        showAdminIcon
-            ? Icons.admin_panel_settings_outlined
-            : Icons.person_outline,
-        color: showAdminIcon ? scheme.primary : scheme.outline,
-      ),
-    );
-  }
-
   final tooltip = canCycleRole
       ? 'Changer le rôle'
       : (isOwnerRow ? 'Créateur' : (showAdminIcon ? 'Administrateur' : null));
+
+  final baseBadge = buildProfileBadge(
+    context: context,
+    displayLabel: row.displayLabel,
+    userData: row.profileData,
+    size: 28,
+  );
+
+  final icon = showAdminIcon
+      ? Stack(
+          clipBehavior: Clip.none,
+          children: [
+            baseBadge,
+            Positioned(
+              right: -4,
+              bottom: -4,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.surface,
+                  border: Border.all(color: scheme.primary, width: 1),
+                ),
+                child: Icon(
+                  Icons.verified_user,
+                  size: 10,
+                  color: scheme.primary,
+                ),
+              ),
+            ),
+          ],
+        )
+      : baseBadge;
+
+  if (!canCycleRole) {
+    final fixed = inFixedBox(icon);
+    if (tooltip == null || tooltip.trim().isEmpty) {
+      return fixed;
+    }
+    return Tooltip(message: tooltip, child: fixed);
+  }
 
   return SizedBox(
     width: _kParticipantRoleLeadingExtent,
@@ -716,12 +751,7 @@ Widget _participantRoleLeading({
       style: IconButton.styleFrom(
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      icon: Icon(
-        showAdminIcon
-            ? Icons.admin_panel_settings_outlined
-            : Icons.person_outline,
-        color: showAdminIcon ? scheme.primary : scheme.onSurfaceVariant,
-      ),
+      icon: icon,
       tooltip: tooltip,
       onPressed: onCycle,
     ),
@@ -735,6 +765,7 @@ class _ParticipantRow {
     required this.displayLabel,
     required this.isAdmin,
     required this.likedByMe,
+    this.profileData,
   });
 
   final String memberId;
@@ -742,4 +773,5 @@ class _ParticipantRow {
   final String displayLabel;
   final bool isAdmin;
   final bool likedByMe;
+  final Map<String, dynamic>? profileData;
 }

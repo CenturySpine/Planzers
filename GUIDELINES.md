@@ -18,6 +18,7 @@ These rules apply to everyone working on the repository, including automated cod
 - Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
 - Match existing patterns in the codebase (structure, naming, state management, routing).
 - After non-trivial edits, run `flutter analyze` and fix new issues.
+- **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
 
 ## Stack (reference)
 

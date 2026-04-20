@@ -19,6 +19,30 @@ String avatarInitialFromDisplayLabel(String label) {
   return trimmed[0].toUpperCase();
 }
 
+bool _isGoogleHostedPhotoUrl(String url) {
+  final raw = url.trim();
+  if (raw.isEmpty) return false;
+  final uri = Uri.tryParse(raw);
+  final host = uri?.host.toLowerCase() ?? '';
+  return host.contains('googleusercontent.com') ||
+      host.contains('google.com') ||
+      host.contains('ggpht.com');
+}
+
+/// Canonical profile badge URL from our own user profile data.
+///
+/// We intentionally reject Google-hosted URLs to avoid calling third-party
+/// avatar hosts from participant lists.
+String tripMemberStoredProfileBadgeUrl(Map<String, dynamic>? data) {
+  if (data == null) return '';
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final accountPhoto = (account['photoUrl'] as String?)?.trim() ?? '';
+  if (accountPhoto.isNotEmpty && !_isGoogleHostedPhotoUrl(accountPhoto)) {
+    return accountPhoto;
+  }
+  return '';
+}
+
 /// Label for a trip member (chip, expenses, etc.).
 ///
 /// Prefers [account.name], then Firebase [displayName], then the local part of
