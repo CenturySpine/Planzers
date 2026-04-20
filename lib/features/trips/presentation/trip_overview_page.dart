@@ -400,6 +400,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 .where((id) => id.isNotEmpty)
                 .contains(myUid);
         final canViewParticipants = canEdit || isTripMember;
+        final participantsCount = liveMemberIds
+            .map((id) => id.trim())
+            .where((id) => id.isNotEmpty)
+            .length;
 
         return ListView(
           padding: EdgeInsets.zero,
@@ -996,24 +1000,27 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     ),
                             actionTooltip: 'Ouvrir la localisation',
                           ),
-                          const SizedBox(height: 12),
-                          _InfoRow(
-                            label: 'Participants',
-                            value: () {
-                              final n = liveMemberIds
-                                  .map((id) => id.trim())
-                                  .where((id) => id.isNotEmpty)
-                                  .length;
-                              if (n == 0) return '-';
-                              return '$n';
-                            }(),
-                          ),
                         ],
                       ),
                     ),
                   ),
                   if (!_isEditing) ...[
                     const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _TripAccessTile(
+                            label: 'Participants',
+                            icon: Icons.assignment_ind_outlined,
+                            countLabel: '$participantsCount',
+                            alertCount: 0,
+                            onTap: () =>
+                                _openParticipantsPage(readOnly: !canEdit),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
