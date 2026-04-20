@@ -124,7 +124,8 @@ class TripShellPage extends ConsumerWidget {
     final messages = messagesAsync.asData?.value;
     final activities = activitiesAsync.asData?.value;
     final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
-    final activitiesLastReadAt = activitiesLastReadAtAsync.asData?.value?.toUtc();
+    final activitiesLastReadAt =
+        activitiesLastReadAtAsync.asData?.value?.toUtc();
     final counters = countersAsync.asData?.value;
     if (counters != null &&
         counters.hasChannel(TripNotificationChannel.messages)) {
@@ -357,8 +358,8 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                         child: _buildNavIcon(
                           icon: selected ? d.selectedIcon : d.icon,
                           unreadCount: unreadByTabLabel[d.label] ?? 0,
-                          showBadge: d.label == 'Messagerie' ||
-                              d.label == 'Activités',
+                          showBadge:
+                              d.label == 'Messagerie' || d.label == 'Activités',
                           color: selected
                               ? colorScheme.onSecondaryContainer
                               : colorScheme.onSurfaceVariant,
@@ -401,8 +402,8 @@ class TripCarsPage extends StatelessWidget {
   }
 }
 
-class TripMealsPage extends StatelessWidget {
-  const TripMealsPage({super.key});
+class TripMealsPlaceholderPage extends StatelessWidget {
+  const TripMealsPlaceholderPage({super.key});
 
   @override
   Widget build(BuildContext context) {

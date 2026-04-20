@@ -129,6 +129,10 @@ service cloud.firestore {
         allow read, write: if isTripMember(tripId);
       }
 
+      match /meals/{mealId} {
+        allow read, write: if isTripMember(tripId);
+      }
+
       match /messages/{messageId} {
         allow read: if isTripMember(tripId);
         allow create: if isTripMember(tripId)

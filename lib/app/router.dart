@@ -6,6 +6,8 @@ import 'package:planzers/features/trips/presentation/invite_join_page.dart';
 import 'package:planzers/features/activities/presentation/trip_activities_page.dart';
 import 'package:planzers/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planzers/features/messaging/presentation/trip_messaging_page.dart';
+import 'package:planzers/features/meals/presentation/trip_meal_details_page.dart';
+import 'package:planzers/features/meals/presentation/trip_meals_page.dart';
 import 'package:planzers/features/rooms/presentation/trip_rooms_page.dart';
 import 'package:planzers/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
@@ -56,6 +58,19 @@ final GoRouter appRouter = GoRouter(
         return null;
       },
       routes: <RouteBase>[
+        GoRoute(
+          path: 'meals/new',
+          builder: (context, state) => TripMealDetailsPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'meals/:mealId',
+          builder: (context, state) => TripMealDetailsPage(
+            tripId: state.pathParameters['tripId']!,
+            mealId: state.pathParameters['mealId']!,
+          ),
+        ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
             final tripId = state.pathParameters['tripId']!;
