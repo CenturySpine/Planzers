@@ -20,8 +20,21 @@ class PalettePickerButton extends ConsumerWidget {
       tooltip: 'Palette',
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 0, maxWidth: 280),
-      onSelected: (id) {
-        ref.read(appPaletteProvider.notifier).setPalette(id);
+      onSelected: (id) async {
+        await ref.read(appPaletteProvider.notifier).setPalette(id);
+        if (!context.mounted) return;
+        final label = switch (id) {
+          AppPaletteId.cupidon => 'Cupidon',
+          AppPaletteId.oligarch => 'Oligarch',
+        };
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('Palette $label enregistrée'),
+              duration: const Duration(milliseconds: 1100),
+            ),
+          );
       },
       itemBuilder: (context) => [
         _paletteMenuItem(

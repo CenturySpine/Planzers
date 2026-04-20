@@ -90,8 +90,19 @@ service cloud.firestore {
         resource.data.ownerId == request.auth.uid ||
         (
           request.auth.uid in resource.data.memberIds &&
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['memberPublicLabels.' + request.auth.uid])
+          (
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['memberPublicLabels.' + request.auth.uid])
+            || (
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['memberPublicLabels'])
+              && request.resource.data.memberPublicLabels is map
+              && resource.data.memberPublicLabels is map
+              && request.resource.data.memberPublicLabels
+                .diff(resource.data.memberPublicLabels).affectedKeys()
+                .hasOnly([request.auth.uid])
+            )
+          )
         )
       );
 

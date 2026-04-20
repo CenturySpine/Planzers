@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,8 +19,8 @@ class AccountAllergensPage extends ConsumerStatefulWidget {
 
 class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
   late List<String> _ids;
-  bool _dirty = false;
   bool _saving = false;
+  List<String>? _pendingIds;
 
   @override
   void initState() {
@@ -26,67 +28,68 @@ class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
     _ids = List<String>.from(widget.initialCatalogIds);
   }
 
-  Future<void> _leave() async {
+  Future<void> _saveNow(List<String> ids) async {
     if (_saving) return;
-    if (_dirty) {
-      setState(() => _saving = true);
-      try {
-        await ref.read(accountRepositoryProvider).updateFoodAllergenCatalogIds(
-              _ids,
-            );
+    setState(() => _saving = true);
+    var target = ids;
+    try {
+      while (true) {
+        await ref
+            .read(accountRepositoryProvider)
+            .updateFoodAllergenCatalogIds(target);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Allergènes enregistrés')),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-        setState(() => _saving = false);
-        return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Allergènes enregistrés'),
+              duration: Duration(milliseconds: 1100),
+            ),
+          );
+
+        final next = _pendingIds;
+        if (next == null) {
+          break;
+        }
+        _pendingIds = null;
+        target = next;
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Erreur enregistrement allergènes: $e')),
+        );
+    } finally {
       if (mounted) {
         setState(() => _saving = false);
       }
     }
-    if (mounted) {
-      Navigator.of(context).pop();
+  }
+
+  void _onChanged(List<String> next) {
+    setState(() => _ids = next);
+    if (_saving) {
+      _pendingIds = next;
+      return;
     }
+    unawaited(_saveNow(next));
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) return;
-        await _leave();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _saving ? null : _leave,
-            tooltip: 'Retour',
-          ),
-          title: const Text('Allergènes alimentaires'),
-        ),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              FoodAllergensListEditor(
-                selectedCatalogIds: _ids,
-                onChanged: (next) {
-                  setState(() {
-                    _ids = next;
-                    _dirty = true;
-                  });
-                },
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Allergènes alimentaires')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            FoodAllergensListEditor(
+              selectedCatalogIds: _ids,
+              onChanged: _onChanged,
+            ),
+          ],
         ),
       ),
     );

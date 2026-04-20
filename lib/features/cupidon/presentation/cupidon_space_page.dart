@@ -22,6 +22,19 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
       await ref
           .read(accountRepositoryProvider)
           .updateCupidonEnabledByDefaultPreference(enabled);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Mode Cupidon activé par défaut'
+                  : 'Mode Cupidon désactivé par défaut',
+            ),
+            duration: const Duration(milliseconds: 1100),
+          ),
+        );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

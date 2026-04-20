@@ -259,6 +259,19 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       await ref
           .read(accountRepositoryProvider)
           .updateAutoOpenCurrentTripOnLaunchPreference(enabled);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Ouverture auto du voyage activée'
+                  : 'Ouverture auto du voyage désactivée',
+            ),
+            duration: const Duration(milliseconds: 1100),
+          ),
+        );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -414,19 +427,43 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextFormField(
-                      controller: _accountNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom du compte',
-                        hintText: 'Ex: Alex',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if ((value ?? '').trim().length > 60) {
-                          return 'Maximum 60 caracteres';
-                        }
-                        return null;
-                      },
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _accountNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nom du compte',
+                              hintText: 'Ex: Alex',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if ((value ?? '').trim().length > 60) {
+                                return 'Maximum 60 caracteres';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: IconButton.filled(
+                            onPressed: _isSaving ? null : _save,
+                            tooltip: 'Enregistrer le nom',
+                            icon: _isSaving
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -499,20 +536,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-              const SizedBox(height: 32),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Enregistrer'),
-                ),
-              ),
             ],
           );
         },
