@@ -5,30 +5,35 @@ import 'package:flutter/material.dart';
 class PlanzersColors extends ThemeExtension<PlanzersColors> {
   const PlanzersColors({
     required this.success,
-    required this.warning,
     required this.successContainer,
+    required this.warning,
+    required this.warningContainer,
   });
 
   final Color success;
-  final Color warning;
   final Color successContainer;
+  final Color warning;
+  final Color warningContainer;
 
   static const PlanzersColors fallback = PlanzersColors(
     success: Color(0xFF4DC75E),
-    warning: Color(0xFFAE8F56),
     successContainer: Color(0xFFE8F8EA),
+    warning: Color(0xFFAE8F56),
+    warningContainer: Color(0xFFF7EDDC),
   );
 
   @override
   PlanzersColors copyWith({
     Color? success,
-    Color? warning,
     Color? successContainer,
+    Color? warning,
+    Color? warningContainer,
   }) {
     return PlanzersColors(
       success: success ?? this.success,
-      warning: warning ?? this.warning,
       successContainer: successContainer ?? this.successContainer,
+      warning: warning ?? this.warning,
+      warningContainer: warningContainer ?? this.warningContainer,
     );
   }
 
@@ -37,9 +42,11 @@ class PlanzersColors extends ThemeExtension<PlanzersColors> {
     if (other is! PlanzersColors) return this;
     return PlanzersColors(
       success: Color.lerp(success, other.success, t)!,
-      warning: Color.lerp(warning, other.warning, t)!,
       successContainer:
           Color.lerp(successContainer, other.successContainer, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      warningContainer:
+          Color.lerp(warningContainer, other.warningContainer, t)!,
     );
   }
 }

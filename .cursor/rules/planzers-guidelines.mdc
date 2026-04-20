@@ -25,6 +25,7 @@ These rules apply to everyone working on the repository, including automated cod
 - After non-trivial edits, run `flutter analyze` and fix new issues.
 - **Shell/commit commands on this workspace (PowerShell):** do not use Bash-specific syntax such as `&&` chaining or HEREDOC forms like `cat <<'EOF'` in commit commands. Use PowerShell-compatible sequencing (`;`) and multiline strings (here-strings) when building commit messages.
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
+- **Palette changes:** Any modification to `BrandPaletteData` or `PlanzersColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](../../PALETTES.md).
 
 ## Stack (reference)
 

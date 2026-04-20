@@ -27,9 +27,10 @@ class BrandPaletteData {
     required this.secondary,
     required this.secondaryContainer,
     required this.success,
-    required this.warning,
-    required this.deep,
     required this.successContainer,
+    required this.warning,
+    required this.warningContainer,
+    required this.deep,
     required this.surface,
     required this.surfaceContainerHighest,
     required this.scaffoldBackground,
@@ -48,9 +49,10 @@ class BrandPaletteData {
   final Color secondary;
   final Color secondaryContainer;
   final Color success;
-  final Color warning;
-  final Color deep;
   final Color successContainer;
+  final Color warning;
+  final Color warningContainer;
+  final Color deep;
   final Color surface;
   final Color surfaceContainerHighest;
   final Color scaffoldBackground;
@@ -69,9 +71,10 @@ class BrandPaletteData {
     secondary: Color(0xFF7ECFDD),
     secondaryContainer: Color(0xFFCFEFF4),
     success: Color(0xFF4DC75E),
-    warning: Color(0xFFAE8F56),
-    deep: Color(0xFF2E0B29),
     successContainer: Color(0xFFE8F8EA),
+    warning: Color(0xFFAE8F56),
+    warningContainer: Color(0xFFF7EDDC),
+    deep: Color(0xFF2E0B29),
     surface: Color(0xFFFFFBFE),
     surfaceContainerHighest: Color(0xFFE8D7E2),
     scaffoldBackground: Color(0xFFF6EDF3),
@@ -83,27 +86,27 @@ class BrandPaletteData {
     onInverseSurface: Color(0xFFFDEEF8),
   );
 
-  /// Second palette: #70CDC5, #5A725E, #2B2129, #8A41A4, #3554D0, #F1CACA,
-  /// #1D18BF, #A1B823 (roles sémantiques pour l’UI claire).
+  /// Source Figma: #3A58F8 #2E206D #FECD55 #F9600F #BDE2F9 #2EB37F #FCCEFC #ACACAE
   static const BrandPaletteData oligarch = BrandPaletteData(
-    primary: Color(0xFF3554D0),
-    primaryLight: Color(0xFF9EADF0),
-    primarySoft: Color(0xFFE8EDFA),
-    accent: Color(0xFF8A41A4),
+    primary: Color(0xFF3A58F8),
+    primaryLight: Color(0xFFBDE2F9),
+    primarySoft: Color(0xFFE5F2FD),
+    accent: Color(0xFFD44D00),
     secondary: Color(0xFF70CDC5),
     secondaryContainer: Color(0xFFCFF5F0),
-    success: Color(0xFF5A725E),
-    warning: Color(0xFFB0924A),
-    deep: Color(0xFF2B2129),
-    successContainer: Color(0xFFE5EDE6),
+    success: Color(0xFF2EB37F),
+    successContainer: Color(0xFFCCF5E4),
+    warning: Color(0xFFC49A00),
+    warningContainer: Color(0xFFFFF3CC),
+    deep: Color(0xFF2E206D),
     surface: Color(0xFFFFFBFF),
-    surfaceContainerHighest: Color(0xFFE1E6F4),
-    scaffoldBackground: Color(0xFFF4F6FC),
-    appBarBackground: Color(0xFFD9E0F4),
-    onSurfaceVariant: Color(0xFF4B5065),
-    outline: Color(0xFF767B8F),
-    outlineVariant: Color(0xFFC5CBE0),
-    inverseSurface: Color(0xFF2B2129),
-    onInverseSurface: Color(0xFFF1F3F9),
+    surfaceContainerHighest: Color(0xFFDCE3FA),
+    scaffoldBackground: Color(0xFFF2F4FD),
+    appBarBackground: Color(0xFFD2DAF8),
+    onSurfaceVariant: Color(0xFF483D6B),
+    outline: Color(0xFF6E6A8A),
+    outlineVariant: Color(0xFFC0BCDC),
+    inverseSurface: Color(0xFF2E206D),
+    onInverseSurface: Color(0xFFEFF0FA),
   );
 }

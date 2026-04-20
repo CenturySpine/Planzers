@@ -58,8 +58,9 @@ class AppTheme {
       extensions: <ThemeExtension<dynamic>>[
         PlanzersColors(
           success: p.success,
-          warning: p.warning,
           successContainer: p.successContainer,
+          warning: p.warning,
+          warningContainer: p.warningContainer,
         ),
       ],
     );
