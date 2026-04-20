@@ -599,6 +599,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           _startEditing();
                                           return;
                                         }
+                                        if (value == 'settings' &&
+                                            canViewParticipants) {
+                                          context.go('/trips/${_trip.id}/settings');
+                                          return;
+                                        }
                                         if (value == 'cupidon' &&
                                             isTripMember) {
                                           _toggleMyCupidonMode(
@@ -658,6 +663,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                 Icon(Icons.edit_outlined),
                                                 SizedBox(width: 10),
                                                 Text('Modifier le voyage'),
+                                              ],
+                                            ),
+                                          ),
+                                        if (canViewParticipants)
+                                          const PopupMenuItem(
+                                            value: 'settings',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.settings_outlined),
+                                                SizedBox(width: 10),
+                                                Text('Paramètres du voyage'),
                                               ],
                                             ),
                                           ),
@@ -724,6 +740,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         _startEditing();
                                         return;
                                       }
+                                      if (value == 'settings' &&
+                                          canViewParticipants) {
+                                        context.go('/trips/${_trip.id}/settings');
+                                        return;
+                                      }
                                       if (value == 'cupidon' && isTripMember) {
                                         _toggleMyCupidonMode(!myCupidonEnabled);
                                       }
@@ -780,6 +801,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               Icon(Icons.edit_outlined),
                                               SizedBox(width: 10),
                                               Text('Modifier le voyage'),
+                                            ],
+                                          ),
+                                        ),
+                                      if (canViewParticipants)
+                                        const PopupMenuItem(
+                                          value: 'settings',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.settings_outlined),
+                                              SizedBox(width: 10),
+                                              Text('Paramètres du voyage'),
                                             ],
                                           ),
                                         ),
