@@ -10,9 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
 import 'package:planzers/features/rooms/data/rooms_repository.dart';
 import 'package:planzers/features/trips/data/trip.dart';
+import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
 import 'package:planzers/features/trips/data/trips_repository.dart';
 import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
@@ -40,6 +43,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   bool _isBannerBusy = false;
   DateTime? _editStartDate;
   DateTime? _editEndDate;
+  Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
+  String? _usersDataStreamKey;
 
   Trip get _trip => TripScope.of(context);
 
@@ -362,6 +367,39 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
+  String _initialFromLabel(String label) {
+    final clean = label.trim();
+    if (clean.isEmpty) return '?';
+    return clean.substring(0, 1).toUpperCase();
+  }
+
+  Stream<Map<String, Map<String, dynamic>>> _usersDataStreamFor(
+    List<String> memberIds,
+  ) {
+    final realIds = memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .where((id) => !isTripPlaceholderMemberId(id))
+        .toList();
+    final sorted = [...realIds]..sort();
+    final key = sorted.join('\x1e');
+    if (_usersDataStreamKey == key && _usersDataStreamCache != null) {
+      return _usersDataStreamCache!;
+    }
+    _usersDataStreamKey = key;
+    _usersDataStreamCache =
+        ref.read(usersRepositoryProvider).watchUsersDataByIds(realIds);
+    return _usersDataStreamCache!;
+  }
+
+  String _photoUrlFromUserData(Map<String, dynamic>? userData) {
+    if (userData == null) return '';
+    final account = (userData['account'] as Map<String, dynamic>?) ?? const {};
+    final accountPhoto = (account['photoUrl'] as String?)?.trim() ?? '';
+    if (accountPhoto.isNotEmpty) return accountPhoto;
+    return (userData['photoUrl'] as String?)?.trim() ?? '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
@@ -387,6 +425,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
                 .map((id) => id.toString())
                 .toList();
+        final liveMemberPublicLabels = Trip.memberPublicLabelsFromFirestore(
+          liveData?['memberPublicLabels'],
+        );
         final liveBannerImageUrl =
             (liveData?['bannerImageUrl'] as String?)?.trim() ??
                 (_trip.bannerImageUrl ?? '').trim();
@@ -404,10 +445,38 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             .map((id) => id.trim())
             .where((id) => id.isNotEmpty)
             .length;
+        final mergedMemberPublicLabels = {
+          ..._trip.memberPublicLabels,
+          ...liveMemberPublicLabels,
+        };
+        final usersStream = _usersDataStreamFor(liveMemberIds);
 
-        return ListView(
-          padding: EdgeInsets.zero,
-          children: [
+        return StreamBuilder<Map<String, Map<String, dynamic>>>(
+          stream: usersStream,
+          builder: (context, userSnap) {
+            final usersDataById = userSnap.data ?? const {};
+            final memberLabels = tripMemberLabelsFromUserDocsById(
+              usersDataById,
+              liveMemberIds,
+              tripMemberPublicLabels: mergedMemberPublicLabels,
+              currentUserId: myUid,
+              emptyFallback: 'Voyageur',
+            );
+            final participantsPreview = liveMemberIds
+                .map((id) => id.trim())
+                .where((id) => id.isNotEmpty)
+                .map((id) {
+                  final label = memberLabels[id]?.trim() ?? 'Voyageur';
+                  return _ParticipantBadgePreviewEntry(
+                    initial: _initialFromLabel(label),
+                    photoUrl: _photoUrlFromUserData(usersDataById[id]),
+                  );
+                })
+                .toList();
+
+            return ListView(
+              padding: EdgeInsets.zero,
+              children: [
             Stack(
               children: [
                 _TripBanner(
@@ -1014,6 +1083,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             icon: Icons.assignment_ind_outlined,
                             countLabel: '$participantsCount',
                             alertCount: 0,
+                            previewParticipants: participantsPreview,
                             onTap: () =>
                                 _openParticipantsPage(readOnly: !canEdit),
                           ),
@@ -1058,6 +1128,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               ),
             ),
           ],
+            );
+          },
         );
       },
     );
@@ -1298,6 +1370,7 @@ class _TripAccessTile extends StatelessWidget {
     required this.countLabel,
     required this.alertCount,
     required this.onTap,
+    this.previewParticipants = const [],
   });
 
   final String label;
@@ -1305,6 +1378,7 @@ class _TripAccessTile extends StatelessWidget {
   final String countLabel;
   final int alertCount;
   final VoidCallback onTap;
+  final List<_ParticipantBadgePreviewEntry> previewParticipants;
 
   @override
   Widget build(BuildContext context) {
@@ -1316,7 +1390,7 @@ class _TripAccessTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: SizedBox(
-            height: 110,
+            height: previewParticipants.isEmpty ? 110 : 132,
             child: Column(
               children: [
                 Row(
@@ -1357,6 +1431,10 @@ class _TripAccessTile extends StatelessWidget {
                   label,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
+                if (previewParticipants.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _ParticipantBadgesPreview(participants: previewParticipants),
+                ],
               ],
             ),
           ),
@@ -1364,4 +1442,61 @@ class _TripAccessTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ParticipantBadgesPreview extends StatelessWidget {
+  const _ParticipantBadgesPreview({required this.participants});
+
+  final List<_ParticipantBadgePreviewEntry> participants;
+
+  static const int _maxVisible = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = participants.take(_maxVisible).toList();
+    final remaining = participants.length - visible.length;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        for (final participant in visible)
+          CircleAvatar(
+            radius: 11,
+            backgroundColor: colorScheme.secondaryContainer,
+            foregroundColor: colorScheme.onSecondaryContainer,
+            backgroundImage: participant.photoUrl.isEmpty
+                ? null
+                : NetworkImage(participant.photoUrl),
+            child: participant.photoUrl.isEmpty
+                ? Text(
+                    participant.initial,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  )
+                : null,
+          ),
+        if (remaining > 0)
+          CircleAvatar(
+            radius: 11,
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            foregroundColor: colorScheme.onSurfaceVariant,
+            child: Text(
+              '+$remaining',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ParticipantBadgePreviewEntry {
+  const _ParticipantBadgePreviewEntry({
+    required this.initial,
+    required this.photoUrl,
+  });
+
+  final String initial;
+  final String photoUrl;
 }
