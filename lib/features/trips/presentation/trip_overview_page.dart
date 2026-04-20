@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planzers/features/activities/data/activities_repository.dart';
+import 'package:planzers/features/activities/data/trip_activity.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/auth/data/users_repository.dart';
 import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
@@ -400,9 +402,22 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     return (userData['photoUrl'] as String?)?.trim() ?? '';
   }
 
+  DateTime _dateOnly(DateTime value) {
+    final local = value.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
+
+  String _agendaDayParam(DateTime day) {
+    final local = _dateOnly(day);
+    final month = local.month.toString().padLeft(2, '0');
+    final dayStr = local.day.toString().padLeft(2, '0');
+    return '${local.year}-$month-$dayStr';
+  }
+
   @override
   Widget build(BuildContext context) {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
+    final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
     final roomsCount = roomsAsync.asData?.value.length ?? 0;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canEdit = (myUid != null && myUid == _trip.ownerId);
@@ -445,6 +460,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             .map((id) => id.trim())
             .where((id) => id.isNotEmpty)
             .length;
+        final today = _dateOnly(DateTime.now());
         final mergedMemberPublicLabels = {
           ..._trip.memberPublicLabels,
           ...liveMemberPublicLabels,
@@ -472,6 +488,19 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     photoUrl: _photoUrlFromUserData(usersDataById[id]),
                   );
                 })
+                .toList();
+            final activitiesToday = (activitiesAsync.asData?.value ?? const <TripActivity>[])
+                .where((activity) => activity.plannedAt != null)
+                .where((activity) => _dateOnly(activity.plannedAt!) == today)
+                .toList()
+              ..sort((a, b) {
+                final byPlanned = a.plannedAt!.compareTo(b.plannedAt!);
+                if (byPlanned != 0) return byPlanned;
+                return b.createdAt.compareTo(a.createdAt);
+              });
+            final activitiesTodayLabels = activitiesToday
+                .map((activity) => activity.label.trim())
+                .where((label) => label.isNotEmpty)
                 .toList();
 
             return ListView(
@@ -1088,6 +1117,19 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                 _openParticipantsPage(readOnly: !canEdit),
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _TripAccessTile(
+                            label: 'Activités du jour',
+                            icon: Icons.event_note_outlined,
+                            countLabel: '${activitiesToday.length}',
+                            alertCount: 0,
+                            detailLines: activitiesTodayLabels,
+                            onTap: () => context.go(
+                              '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -1371,6 +1413,7 @@ class _TripAccessTile extends StatelessWidget {
     required this.alertCount,
     required this.onTap,
     this.previewParticipants = const [],
+    this.detailLines = const [],
   });
 
   final String label;
@@ -1379,10 +1422,16 @@ class _TripAccessTile extends StatelessWidget {
   final int alertCount;
   final VoidCallback onTap;
   final List<_ParticipantBadgePreviewEntry> previewParticipants;
+  final List<String> detailLines;
+  static const double _kTileHeight = 146;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final hasPreview = previewParticipants.isNotEmpty;
+    final hasDetails = detailLines.isNotEmpty;
+    final visibleDetails = detailLines.take(2).toList();
+    final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -1390,7 +1439,7 @@ class _TripAccessTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: SizedBox(
-            height: previewParticipants.isEmpty ? 110 : 132,
+            height: _kTileHeight,
             child: Column(
               children: [
                 Row(
@@ -1431,9 +1480,34 @@ class _TripAccessTile extends StatelessWidget {
                   label,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                if (previewParticipants.isNotEmpty) ...[
+                if (hasPreview) ...[
                   const SizedBox(height: 8),
                   _ParticipantBadgesPreview(participants: previewParticipants),
+                ],
+                if (hasDetails) ...[
+                  const SizedBox(height: 8),
+                  ...[
+                    for (final line in visibleDetails)
+                      Text(
+                        '- $line',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                  ],
+                  if (moreDetailsCount > 0)
+                    Text(
+                      '+$moreDetailsCount activité${moreDetailsCount > 1 ? 's' : ''}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
                 ],
               ],
             ),

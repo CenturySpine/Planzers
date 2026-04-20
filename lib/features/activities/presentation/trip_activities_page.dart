@@ -32,6 +32,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       TextEditingController();
   late DateTime _agendaCenterDay;
   late DateTime _agendaSelectedDay;
+  bool _agendaDayFromRouteApplied = false;
 
   @override
   void initState() {
@@ -40,6 +41,30 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     final today = _dateOnly(DateTime.now());
     _agendaCenterDay = today;
     _agendaSelectedDay = today;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_agendaDayFromRouteApplied) return;
+    _agendaDayFromRouteApplied = true;
+    final routeDay = _agendaDayFromRoute();
+    if (routeDay == null) return;
+    _agendaCenterDay = routeDay;
+    _agendaSelectedDay = routeDay;
+  }
+
+  DateTime? _agendaDayFromRoute() {
+    try {
+      final raw = GoRouterState.of(context).uri.queryParameters['agendaDay'];
+      final value = (raw ?? '').trim();
+      if (value.isEmpty) return null;
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null) return null;
+      return _dateOnly(parsed);
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
