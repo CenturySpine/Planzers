@@ -2,7 +2,7 @@
 
 These rules apply to everyone working on the repository, including automated coding agents.
 
-**Sync:** This file, [`CLAUDE.md`](CLAUDE.md), and [`.cursor/rules/planzers-guidelines.mdc`](.cursor/rules/planzers-guidelines.mdc) must always contain identical policy. **Whenever you modify any one of them, update the other two as well.**
+**Sync:** This file, [`GUIDELINES.md`](GUIDELINES.md), and [`.cursor/rules/planzers-guidelines.mdc`](.cursor/rules/planzers-guidelines.mdc) must always contain identical policy. **Whenever you modify any one of them, update the other two as well.**
 
 ## Language
 
