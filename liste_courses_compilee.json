@@ -4880,6 +4880,780 @@
       "mayContainAllergens": [
         "allergene-histamine"
       ]
+    },
+    {
+      "id": "fromage-raclette",
+      "label": "Fromage a raclette",
+      "aliases": [
+        "raclette"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "reblochon",
+      "label": "Reblochon",
+      "aliases": [
+        "fromage reblochon"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "parmesan",
+      "label": "Parmesan",
+      "aliases": [
+        "parmigiano"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "chevre",
+      "label": "Fromage de chevre",
+      "aliases": [
+        "chevre"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "bleu",
+      "label": "Fromage bleu",
+      "aliases": [
+        "bleu"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-frais",
+      "label": "Fromage frais",
+      "aliases": [
+        "frais"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vin-rouge",
+      "label": "Vin rouge",
+      "aliases": [
+        "rouge"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-blanc",
+      "label": "Vin blanc",
+      "aliases": [
+        "blanc"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cremant",
+      "label": "Cremant",
+      "aliases": [
+        "vin cremant"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-mousseux",
+      "label": "Vin mousseux",
+      "aliases": [
+        "mousseux"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "champagne",
+      "label": "Champagne",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "prosecco",
+      "label": "Prosecco",
+      "aliases": [
+        "proseco"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "rhum",
+      "label": "Rhum",
+      "aliases": [
+        "rhum blanc",
+        "rhum ambré"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "whisky",
+      "label": "Whisky",
+      "aliases": [
+        "whiskey"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "comte",
+      "label": "Comte",
+      "aliases": [
+        "comté"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "emmental",
+      "label": "Emmental",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gruyere",
+      "label": "Gruyere",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "brie",
+      "label": "Brie",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "camembert",
+      "label": "Camembert",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "roquefort",
+      "label": "Roquefort",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "tomme",
+      "label": "Tomme",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "raclette-charcuterie-fromage",
+      "label": "Raclette (fromage + charcuterie)",
+      "aliases": [
+        "raclette complete"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fondue-fromage",
+      "label": "Fondue fromage",
+      "aliases": [
+        "fondue savoyarde"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cheddar",
+      "label": "Cheddar",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gorgonzola",
+      "label": "Gorgonzola",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cancoillotte",
+      "label": "Cancoillotte",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fromage-tranche",
+      "label": "Fromage en tranches",
+      "aliases": [
+        "tranches fromage"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "burrata",
+      "label": "Burrata",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pecorino",
+      "label": "Pecorino",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "munster",
+      "label": "Munster",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-rose",
+      "label": "Vin rose",
+      "aliases": [
+        "rose"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-bio",
+      "label": "Vin bio",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "petillant-naturel",
+      "label": "Petillant naturel",
+      "aliases": [
+        "pet nat"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cava",
+      "label": "Cava",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cidre-brut",
+      "label": "Cidre brut",
+      "aliases": [
+        "cidre"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-blonde",
+      "label": "Biere blonde",
+      "aliases": [
+        "blonde"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-ipa",
+      "label": "Biere IPA",
+      "aliases": [
+        "ipa"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-sans-gluten",
+      "label": "Biere sans gluten",
+      "aliases": [
+        "sans gluten"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "gin",
+      "label": "Gin",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vodka",
+      "label": "Vodka",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tequila",
+      "label": "Tequila",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cognac",
+      "label": "Cognac",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "armagnac",
+      "label": "Armagnac",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "calvados",
+      "label": "Calvados",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "liqueur",
+      "label": "Liqueur",
+      "aliases": [
+        "creme de cassis"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "aperol",
+      "label": "Aperol",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "campari",
+      "label": "Campari",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "pastis",
+      "label": "Pastis",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "porto",
+      "label": "Porto",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "martini",
+      "label": "Martini",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "sake",
+      "label": "Sake",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
     }
   ]
 }
