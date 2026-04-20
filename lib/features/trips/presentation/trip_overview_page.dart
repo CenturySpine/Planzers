@@ -1197,7 +1197,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             detailLines: roomsDetailLines,
                             showDetailBullets: false,
                             wrapDetailLines: true,
-                            emphasizeFirstDetailLine: true,
+                            emphasizedDetailLineIndex: 1,
                             emptyStateMessage: 'Aucune chambre attribuée',
                             onTap: () => context.go('/trips/${_trip.id}/rooms'),
                           ),
@@ -1477,7 +1477,7 @@ class _TripAccessTile extends StatelessWidget {
     this.detailLines = const [],
     this.showDetailBullets = true,
     this.wrapDetailLines = false,
-    this.emphasizeFirstDetailLine = false,
+    this.emphasizedDetailLineIndex,
     this.emptyStateMessage,
   });
 
@@ -1490,7 +1490,7 @@ class _TripAccessTile extends StatelessWidget {
   final List<String> detailLines;
   final bool showDetailBullets;
   final bool wrapDetailLines;
-  final bool emphasizeFirstDetailLine;
+  final int? emphasizedDetailLineIndex;
   final String? emptyStateMessage;
   static const double _kTileHeight = 166;
 
@@ -1512,30 +1512,26 @@ class _TripAccessTile extends StatelessWidget {
             child: Column(
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Column(
-                      children: [
-                        Icon(icon, color: colorScheme.primary),
-                        const SizedBox(height: 2),
-                        Text(
-                          countLabel,
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                        ),
-                      ],
+                    Text(
+                      countLabel,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                     ),
-                    const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall,
+                      child: Center(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 10),
+                    Icon(icon, color: colorScheme.primary),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -1560,11 +1556,14 @@ class _TripAccessTile extends StatelessWidget {
                                           : TextOverflow.ellipsis,
                                       softWrap: true,
                                       textAlign: TextAlign.center,
-                                      style: (emphasizeFirstDetailLine && i == 0
+                                      style: ((emphasizedDetailLineIndex !=
+                                                      null &&
+                                                  i == 0)
                                               ? Theme.of(context)
                                                   .textTheme
                                                   .titleMedium
-                                              : emphasizeFirstDetailLine
+                                              : emphasizedDetailLineIndex !=
+                                                      null
                                                   ? Theme.of(context)
                                                       .textTheme
                                                       .bodyMedium
@@ -1572,7 +1571,14 @@ class _TripAccessTile extends StatelessWidget {
                                                       .textTheme
                                                       .bodySmall)
                                           ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
+                                            color:
+                                                emphasizedDetailLineIndex == i
+                                                ? colorScheme.primary
+                                                : colorScheme.onSurfaceVariant,
+                                            fontWeight: emphasizedDetailLineIndex ==
+                                                    i
+                                                ? FontWeight.w700
+                                                : null,
                                           ),
                                     ),
                                   if (moreDetailsCount > 0)
