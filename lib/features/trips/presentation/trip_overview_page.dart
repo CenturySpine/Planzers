@@ -418,8 +418,21 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   Widget build(BuildContext context) {
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
-    final roomsCount = roomsAsync.asData?.value.length ?? 0;
+    final rooms = roomsAsync.asData?.value ?? const [];
+    final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myAssignedRoomNames = myUid == null
+        ? const <String>[]
+        : rooms
+            .where((room) => room.assignedMemberIds.contains(myUid))
+            .map((room) => room.name.trim().isEmpty ? 'Chambre sans nom' : room.name.trim())
+            .toList();
+    final roomsDetailLines = myAssignedRoomNames.isEmpty
+        ? const <String>[]
+        : [
+            myAssignedRoomNames.length == 1 ? 'Ma chambre' : 'Mes chambres',
+            myAssignedRoomNames.join(', '),
+          ];
     final canEdit = (myUid != null && myUid == _trip.ownerId);
     final myCupidonEnabledAsync =
         ref.watch(myTripCupidonEnabledProvider(_trip.id));
@@ -502,6 +515,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 .map((activity) => activity.label.trim())
                 .where((label) => label.isNotEmpty)
                 .toList();
+            final plannedActivitiesCount =
+                (activitiesAsync.asData?.value ?? const <TripActivity>[])
+                    .where((activity) => activity.plannedAt != null)
+                    .length;
 
             return ListView(
               padding: EdgeInsets.zero,
@@ -1152,11 +1169,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _TripAccessTile(
-                            label: 'Activités du jour',
+                            label: 'Activités',
                             icon: Icons.event_note_outlined,
-                            countLabel: '${activitiesToday.length}',
+                            countLabel: '$plannedActivitiesCount',
                             alertCount: 0,
                             detailLines: activitiesTodayLabels,
+                            showDetailBullets: false,
+                            wrapDetailLines: true,
+                            emptyStateMessage:
+                                'Pas d activités prévues aujourd hui',
                             onTap: () => context.go(
                               '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
                             ),
@@ -1173,6 +1194,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             icon: Icons.bed_outlined,
                             countLabel: '$roomsCount',
                             alertCount: 0,
+                            detailLines: roomsDetailLines,
+                            showDetailBullets: false,
+                            wrapDetailLines: true,
+                            emphasizeFirstDetailLine: true,
+                            emptyStateMessage: 'Aucune chambre attribuée',
                             onTap: () => context.go('/trips/${_trip.id}/rooms'),
                           ),
                         ),
@@ -1183,6 +1209,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             icon: Icons.directions_car_outlined,
                             countLabel: '0',
                             alertCount: 0,
+                            showDetailBullets: false,
+                            wrapDetailLines: true,
+                            emptyStateMessage: '[A venir]',
                             onTap: () => context.go('/trips/${_trip.id}/cars'),
                           ),
                         ),
@@ -1446,6 +1475,10 @@ class _TripAccessTile extends StatelessWidget {
     required this.onTap,
     this.previewParticipants = const [],
     this.detailLines = const [],
+    this.showDetailBullets = true,
+    this.wrapDetailLines = false,
+    this.emphasizeFirstDetailLine = false,
+    this.emptyStateMessage,
   });
 
   final String label;
@@ -1455,14 +1488,18 @@ class _TripAccessTile extends StatelessWidget {
   final VoidCallback onTap;
   final List<_ParticipantBadgePreviewEntry> previewParticipants;
   final List<String> detailLines;
-  static const double _kTileHeight = 146;
+  final bool showDetailBullets;
+  final bool wrapDetailLines;
+  final bool emphasizeFirstDetailLine;
+  final String? emptyStateMessage;
+  static const double _kTileHeight = 166;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasPreview = previewParticipants.isNotEmpty;
     final hasDetails = detailLines.isNotEmpty;
-    final visibleDetails = detailLines.take(2).toList();
+    final visibleDetails = detailLines.take(3).toList();
     final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
       child: InkWell(
@@ -1475,72 +1512,134 @@ class _TripAccessTile extends StatelessWidget {
             child: Column(
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(icon, color: colorScheme.primary),
-                    const Spacer(),
-                    Stack(
-                      clipBehavior: Clip.none,
+                    Column(
                       children: [
-                        Icon(
-                          Icons.notifications_none_outlined,
-                          color: colorScheme.onSurfaceVariant,
+                        Icon(icon, color: colorScheme.primary),
+                        const SizedBox(height: 2),
+                        Text(
+                          countLabel,
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                         ),
-                        if (alertCount > 0)
-                          Positioned(
-                            right: -1,
-                            top: -1,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: colorScheme.error,
-                                shape: BoxShape.circle,
-                              ),
+                      ],
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: Center(
+                    child: hasPreview
+                        ? _ParticipantBadgesPreview(
+                            participants: previewParticipants,
+                          )
+                        : hasDetails
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var i = 0; i < visibleDetails.length; i++)
+                                    Text(
+                                      showDetailBullets
+                                          ? '- ${visibleDetails[i]}'
+                                          : visibleDetails[i],
+                                      maxLines: wrapDetailLines ? null : 1,
+                                      overflow: wrapDetailLines
+                                          ? TextOverflow.visible
+                                          : TextOverflow.ellipsis,
+                                      softWrap: true,
+                                      textAlign: TextAlign.center,
+                                      style: (emphasizeFirstDetailLine && i == 0
+                                              ? Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                              : emphasizeFirstDetailLine
+                                                  ? Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                  : Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall)
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                  if (moreDetailsCount > 0)
+                                    Text(
+                                      '+$moreDetailsCount',
+                                      maxLines: wrapDetailLines ? null : 1,
+                                      overflow: wrapDetailLines
+                                          ? TextOverflow.visible
+                                          : TextOverflow.ellipsis,
+                                      softWrap: true,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                ],
+                              )
+                            : emptyStateMessage != null
+                                ? Text(
+                                    emptyStateMessage!,
+                                    textAlign: TextAlign.center,
+                                    softWrap: true,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                  )
+                            : const SizedBox.shrink(),
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Icon(
+                              Icons.notifications_none_outlined,
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                          ),
+                            if (alertCount > 0)
+                              Positioned(
+                                right: -1,
+                                top: -1,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.error,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
-                const Spacer(),
-                Text(
-                  countLabel,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                if (hasPreview) ...[
-                  const SizedBox(height: 8),
-                  _ParticipantBadgesPreview(participants: previewParticipants),
-                ],
-                if (hasDetails) ...[
-                  const SizedBox(height: 8),
-                  ...[
-                    for (final line in visibleDetails)
-                      Text(
-                        '- $line',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                  ],
-                  if (moreDetailsCount > 0)
-                    Text(
-                      '+$moreDetailsCount activité${moreDetailsCount > 1 ? 's' : ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                ],
               ],
             ),
           ),
@@ -1555,7 +1654,7 @@ class _ParticipantBadgesPreview extends StatelessWidget {
 
   final List<_ParticipantBadgePreviewEntry> participants;
 
-  static const int _maxVisible = 5;
+  static const int _maxVisible = 10;
 
   @override
   Widget build(BuildContext context) {
@@ -1569,7 +1668,7 @@ class _ParticipantBadgesPreview extends StatelessWidget {
       children: [
         for (final participant in visible)
           CircleAvatar(
-            radius: 11,
+            radius: 13,
             backgroundColor: colorScheme.secondaryContainer,
             foregroundColor: colorScheme.onSecondaryContainer,
             foregroundImage: participant.photoUrl.isEmpty
@@ -1582,7 +1681,7 @@ class _ParticipantBadgesPreview extends StatelessWidget {
           ),
         if (remaining > 0)
           CircleAvatar(
-            radius: 11,
+            radius: 13,
             backgroundColor: colorScheme.surfaceContainerHighest,
             foregroundColor: colorScheme.onSurfaceVariant,
             child: Text(
