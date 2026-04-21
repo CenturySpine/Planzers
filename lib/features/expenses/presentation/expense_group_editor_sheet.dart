@@ -127,9 +127,28 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                _isEdit ? 'Modifier le poste' : 'Nouveau poste de dépenses',
-                style: Theme.of(context).textTheme.titleLarge,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      _isEdit
+                          ? Icons.edit_outlined
+                          : Icons.create_new_folder_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _isEdit ? 'Modifier le poste' : 'Nouveau poste de dépenses',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -144,9 +163,21 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                     (v == null || v.trim().isEmpty) ? 'Obligatoire' : null,
               ),
               const SizedBox(height: 16),
-              Text(
-                'Qui voit ce poste',
-                style: Theme.of(context).textTheme.titleSmall,
+              Row(
+                children: [
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Qui voit ce poste',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               if (members.isEmpty)
@@ -180,9 +211,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                     }
                     return Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:planzers/app/theme/planzers_colors.dart';
 import 'package:planzers/features/auth/data/user_display_label.dart';
 import 'package:planzers/features/expenses/data/expense.dart';
 import 'package:planzers/features/expenses/data/expense_group.dart';
@@ -175,7 +176,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Crée d’abord un poste de dépenses (icône dossier dans l’en-tête).',
+            "Crée d'abord un poste de dépenses (icône dossier dans l'en-tête).",
           ),
         ),
       );
@@ -316,22 +317,36 @@ class _TripExpensesBody extends StatelessWidget {
     Map<String, String> memberPublicLabels,
     VoidCallback onCreateExpensePost,
   ) {
+    final cs = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+        Container(
+          margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [cs.primary, cs.inverseSurface],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   'Postes de dépenses',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: cs.onInverseSurface,
+                      ),
                 ),
               ),
               IconButton(
                 tooltip: 'Nouveau poste',
-                icon: const Icon(Icons.create_new_folder_outlined),
+                icon: Icon(
+                  Icons.create_new_folder_outlined,
+                  color: cs.onInverseSurface,
+                ),
                 onPressed: onCreateExpensePost,
               ),
             ],
@@ -340,12 +355,23 @@ class _TripExpensesBody extends StatelessWidget {
         if (visibleGroups.isEmpty)
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              child: Text(
-                'Aucun poste de dépenses pour l’instant. Utilise l’icône dossier en haut pour en créer un.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    size: 48,
+                    color: cs.primary.withValues(alpha: 0.35),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Aucun poste de dépenses pour l'instant. Utilise l'icône dossier en haut pour en créer un.",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                  ),
+                ],
               ),
             ),
           )
@@ -805,11 +831,30 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               ),
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
-                Text(
-                  'Aucune opération dans ce poste.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 40,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Aucune opération dans ce poste.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
                 )
               else
                 ..._buildExpensesGroupedByDate(
@@ -909,45 +954,57 @@ class _ExpenseTotalsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: colorScheme.onSurfaceVariant,
+          color: cs.onSurfaceVariant,
         );
     final valueStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         );
 
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Mes dépenses totales', style: labelStyle),
-              const SizedBox(height: 2),
-              Text(
-                _formatTotalsByCurrency(myTotalsByCurrency),
-                style: valueStyle,
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Mes dépenses totales', style: labelStyle),
+                const SizedBox(height: 3),
+                Text(
+                  _formatTotalsByCurrency(myTotalsByCurrency),
+                  style: valueStyle?.copyWith(color: cs.primary),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('Coût total du séjour', style: labelStyle),
-              const SizedBox(height: 2),
-              Text(
-                _formatTotalsByCurrency(tripTotalsByCurrency),
-                textAlign: TextAlign.right,
-                style: valueStyle,
-              ),
-            ],
+          Container(
+            width: 1,
+            height: 36,
+            color: cs.outlineVariant,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
           ),
-        ),
-      ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('Coût total du séjour', style: labelStyle),
+                const SizedBox(height: 3),
+                Text(
+                  _formatTotalsByCurrency(tripTotalsByCurrency),
+                  textAlign: TextAlign.right,
+                  style: valueStyle?.copyWith(color: cs.inverseSurface),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -975,28 +1032,27 @@ class _SettlementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
+    final pz = context.planzersColors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Icon(Icons.balance_outlined, color: colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              'Soldes (par devise)',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        _SectionHeader(
+          icon: Icons.balance_outlined,
+          label: 'Soldes (par devise)',
+          iconColor: cs.secondary,
         ),
         const SizedBox(height: 8),
         if (balancesByCurrency.isEmpty)
-          Text(
-            'Ajoute des dépenses pour voir la répartition.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'Ajoute des dépenses pour voir la répartition.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
           )
         else
           ...balancesByCurrency.entries.map((currencyEntry) {
@@ -1008,69 +1064,95 @@ class _SettlementSection extends StatelessWidget {
             final sortedIds = perUser.keys.toList()..sort();
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    currency,
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  ...sortedIds.map((uid) {
-                    final bal = perUser[uid] ?? 0;
-                    final label = memberLabels[uid] ?? 'Voyageur';
-                    final isCreditor = bal > 0.009;
-                    final isDebtor = bal < -0.009;
-                    final tone = isCreditor
-                        ? colorScheme.primary
-                        : isDebtor
-                            ? colorScheme.error
-                            : colorScheme.onSurfaceVariant;
-                    final prefix = isCreditor
-                        ? 'À recevoir'
-                        : isDebtor
-                            ? 'À payer'
-                            : 'Équilibré';
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        children: [
-                          Expanded(child: Text(label)),
-                          Text(
-                            '$prefix · ${_formatMoney(currency, bal.abs())}',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
-                              color: tone,
-                              fontWeight: FontWeight.w500,
-                            ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      currency,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            letterSpacing: 1.1,
                           ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
+                    ),
+                    const SizedBox(height: 6),
+                    ...sortedIds.map((uid) {
+                      final bal = perUser[uid] ?? 0;
+                      final label = memberLabels[uid] ?? 'Voyageur';
+                      final isCreditor = bal > 0.009;
+                      final isDebtor = bal < -0.009;
+
+                      final chipBg = isCreditor
+                          ? pz.successContainer
+                          : isDebtor
+                              ? cs.errorContainer
+                              : cs.surfaceContainerHighest;
+                      final chipFg = isCreditor
+                          ? pz.success
+                          : isDebtor
+                              ? cs.error
+                              : cs.onSurfaceVariant;
+                      final prefix = isCreditor
+                          ? 'À recevoir'
+                          : isDebtor
+                              ? 'À payer'
+                              : 'Équilibré';
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: chipBg,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '$prefix · ${_formatMoney(currency, bal.abs())}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: chipFg,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             );
           }),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Icon(Icons.sync_alt, color: colorScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Remboursements suggérés',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ],
+        const SizedBox(height: 4),
+        _SectionHeader(
+          icon: Icons.sync_alt,
+          label: 'Remboursements suggérés',
+          iconColor: cs.primary,
         ),
         const SizedBox(height: 4),
         Text(
           'Nombre minimal de virements pour équilibrer les comptes (par devise).',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: cs.onSurfaceVariant,
               ),
         ),
         const SizedBox(height: 12),
@@ -1080,7 +1162,7 @@ class _SettlementSection extends StatelessWidget {
                 ? 'Pas encore de calcul.'
                 : 'Tu ne dois rien à personne 😎',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                  color: cs.onSurfaceVariant,
                 ),
           )
         else ...[
@@ -1138,7 +1220,7 @@ class _SettlementSection extends StatelessWidget {
                       viewerUserId: viewerUserId,
                     ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                          color: cs.onSurfaceVariant,
                         ),
                   ),
                 ),
@@ -1146,6 +1228,34 @@ class _SettlementSection extends StatelessWidget {
             );
           }),
         ],
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
       ],
     );
   }
@@ -1175,6 +1285,7 @@ List<Widget> _buildExpensesGroupedByDate(
   }
 
   final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+  final cs = Theme.of(context).colorScheme;
 
   final widgets = <Widget>[];
   for (var i = 0; i < days.length; i++) {
@@ -1183,13 +1294,26 @@ List<Widget> _buildExpensesGroupedByDate(
 
     widgets.add(
       Padding(
-        padding: EdgeInsets.only(top: i == 0 ? 0 : 12, bottom: 4),
-        child: Text(
-          DateFormat.yMMMEd('fr_FR').format(day),
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+        padding: EdgeInsets.only(top: i == 0 ? 0 : 12, bottom: 6),
+        child: Row(
+          children: [
+            Container(
+              width: 3,
+              height: 14,
+              decoration: BoxDecoration(
+                color: cs.primary,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              DateFormat.yMMMEd('fr_FR').format(day),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: cs.inverseSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
         ),
       ),
     );
@@ -1241,47 +1365,73 @@ class _ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = expense;
+    final cs = Theme.of(context).colorScheme;
     final paidByLabel = memberLabels[e.paidBy] ?? 'Voyageur';
 
     return Card(
       margin: EdgeInsets.zero,
+      color: cs.surfaceContainerHighest,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openDetails(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Container(
+                width: 4,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      e.title.isEmpty ? 'Sans titre' : e.title,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Payé par $paidByLabel',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        e.title.isEmpty ? 'Sans titre' : e.title,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Payé par $paidByLabel',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _formatMoney(e.currency, e.amount),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _formatMoney(e.currency, e.amount),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -1649,6 +1799,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toList();
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -1683,13 +1834,57 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Summary banner
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [cs.primaryContainer, cs.secondaryContainer],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.expense.title.isEmpty
+                            ? 'Sans titre'
+                            : widget.expense.title,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              color: cs.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _formatMoney(
+                        widget.expense.currency,
+                        widget.expense.amount,
+                      ),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: cs.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
               if (members.isEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    'Aucun voyageur n’est autorisé dans ce poste : modifie le poste ou le voyage pour pouvoir ajuster le partage.',
+                    "Aucun voyageur n'est autorisé dans ce poste : modifie le poste ou le voyage pour pouvoir ajuster le partage.",
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.error,
+                          color: cs.error,
                         ),
                   ),
                 ),
@@ -1840,9 +2035,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                           ? 'Équitablement'
                           : 'Montants',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
+                            color: cs.onSurfaceVariant,
                           ),
                     ),
                 ],
@@ -1851,7 +2044,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+                    color: cs.outlineVariant,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2048,6 +2241,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   @override
   Widget build(BuildContext context) {
     final members = _scopeMemberIds;
+    final cs = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -2057,16 +2251,33 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Nouvelle dépense',
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.add_card_outlined,
+                    size: 20,
+                    color: cs.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Nouvelle dépense',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
             ),
             if (members.isEmpty) ...[
               const SizedBox(height: 12),
               Text(
                 'Aucun voyageur autorisé dans ce poste pour partager une dépense.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
+                      color: cs.error,
                     ),
               ),
             ],
@@ -2202,7 +2413,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
+                            color: cs.outlineVariant,
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
