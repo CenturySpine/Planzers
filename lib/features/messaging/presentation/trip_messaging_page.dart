@@ -542,15 +542,16 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                       alignment: isMine
                                           ? Alignment.centerRight
                                           : Alignment.centerLeft,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          maxWidth: math.min(
-                                            MediaQuery.sizeOf(context).width *
-                                                0.85,
-                                            560,
+                                      child: IntrinsicWidth(
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: math.min(
+                                              MediaQuery.sizeOf(context).width *
+                                                  0.85,
+                                              560,
+                                            ),
                                           ),
-                                        ),
-                                        child: GestureDetector(
+                                          child: GestureDetector(
                                           onLongPress: () {
                                             setState(
                                                 () => _selectedMessageId = m.id);
@@ -636,63 +637,57 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                                 .colorScheme
                                                                 .surfaceContainerHighest),
                                                     child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(12),
+                                                      padding: const EdgeInsets
+                                                          .fromLTRB(12, 12, 12, 3),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
                                                                 .stretch,
                                                         children: [
-                                                          Row(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .baseline,
-                                                            textBaseline:
-                                                                TextBaseline
-                                                                    .alphabetic,
-                                                            children: [
-                                                              Expanded(
-                                                                child: Text(
-                                                                  label,
-                                                                  maxLines: 1,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                  style: Theme.of(
-                                                                          context)
-                                                                      .textTheme
-                                                                      .labelMedium
-                                                                      ?.copyWith(
-                                                                        fontWeight:
-                                                                            FontWeight.w600,
-                                                                      ),
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 8),
-                                                              Text(
-                                                                timeLine,
-                                                                style: Theme.of(
-                                                                        context)
-                                                                    .textTheme
-                                                                    .labelSmall
-                                                                    ?.copyWith(
-                                                                      color: Theme.of(
-                                                                              context)
-                                                                          .colorScheme
-                                                                          .onSurfaceVariant,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 6),
+                                                          if (!isMine) ...[
+                                                            Text(
+                                                              label,
+                                                              maxLines: 1,
+                                                              overflow: TextOverflow
+                                                                  .ellipsis,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .labelMedium
+                                                                  ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                  ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 6),
+                                                          ],
                                                           _TripMessageLinkedText(
                                                             text: m.text,
                                                             style: Theme.of(
                                                                     context)
                                                                 .textTheme
                                                                 .bodyMedium,
+                                                          ),
+                                                          const SizedBox(
+                                                              height: 2),
+                                                          Align(
+                                                            alignment: Alignment
+                                                                .centerRight,
+                                                            child: Text(
+                                                              timeLine,
+                                                              style: Theme.of(
+                                                                      context)
+                                                                  .textTheme
+                                                                  .labelSmall
+                                                                  ?.copyWith(
+                                                                    color: Theme.of(
+                                                                            context)
+                                                                        .colorScheme
+                                                                        .onSurfaceVariant,
+                                                                  ),
+                                                            ),
                                                           ),
                                                         ],
                                                       ),
@@ -736,6 +731,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                   ),
                                               ],
                                             ),
+                                          ),
                                           ),
                                         ),
                                       ),
