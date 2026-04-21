@@ -472,37 +472,10 @@ class _ChatWidgetState extends State<ChatWidget> {
                       final reactionEmojis =
                           groupedReactions.map((g) => g.emoji).toList();
 
-                      // Inline time + edited trailing span
+                      // Time + edited indicator colors
                       final timeColor = isMine
                           ? Colors.black.withValues(alpha: 0.5)
                           : scheme.onSurfaceVariant;
-                      final trailingSpan = WidgetSpan(
-                        alignment: PlaceholderAlignment.bottom,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (m.wasEdited) ...[
-                                Icon(
-                                  Icons.edit_rounded,
-                                  size: 10,
-                                  color: timeColor,
-                                ),
-                                const SizedBox(width: 2),
-                              ],
-                              Text(
-                                timeFmt.format(
-                                  (m.wasEdited ? m.updatedAt! : m.createdAt)
-                                      .toLocal(),
-                                ),
-                                style: theme.textTheme.labelSmall
-                                    ?.copyWith(color: timeColor),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
 
                       // Bubble color
                       final Color bubbleColor;
@@ -587,7 +560,31 @@ class _ChatWidgetState extends State<ChatWidget> {
                                                 ? Colors.black
                                                 : null,
                                           ),
-                                          trailingSpan: trailingSpan,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            if (m.wasEdited) ...[
+                                              Icon(
+                                                Icons.edit_rounded,
+                                                size: 10,
+                                                color: timeColor,
+                                              ),
+                                              const SizedBox(width: 2),
+                                            ],
+                                            Text(
+                                              timeFmt.format(
+                                                (m.wasEdited
+                                                        ? m.updatedAt!
+                                                        : m.createdAt)
+                                                    .toLocal(),
+                                              ),
+                                              style: theme.textTheme.labelSmall
+                                                  ?.copyWith(color: timeColor),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -770,12 +767,10 @@ class _ChatLinkedText extends StatefulWidget {
   const _ChatLinkedText({
     required this.text,
     required this.style,
-    this.trailingSpan,
   });
 
   final String text;
   final TextStyle? style;
-  final WidgetSpan? trailingSpan;
 
   @override
   State<_ChatLinkedText> createState() => _ChatLinkedTextState();
@@ -854,10 +849,7 @@ class _ChatLinkedTextState extends State<_ChatLinkedText> {
   @override
   Widget build(BuildContext context) {
     _ensureTextSpans(context);
-    final allSpans = widget.trailingSpan != null
-        ? [..._textSpans, const TextSpan(text: ' '), widget.trailingSpan!]
-        : _textSpans;
-    return Text.rich(TextSpan(style: widget.style, children: allSpans));
+    return Text.rich(TextSpan(style: widget.style, children: _textSpans));
   }
 }
 
