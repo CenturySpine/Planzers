@@ -555,10 +555,6 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                     final reactionEmojis = groupedReactions
                                         .map((group) => group.emoji)
                                         .toList();
-                                    final hasMyReaction = groupedReactions.any(
-                                      (group) => group.containsCurrentUser,
-                                    );
-
                                     return Align(
                                       alignment: isMine
                                           ? Alignment.centerRight
@@ -737,7 +733,6 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                       emojis: reactionEmojis,
                                                       totalCount:
                                                           totalReactionCount,
-                                                      highlighted: hasMyReaction,
                                                     ),
                                                   ),
                                                 if (isSelected)
@@ -1205,21 +1200,19 @@ class _MessageReactionsBadge extends StatelessWidget {
   const _MessageReactionsBadge({
     required this.emojis,
     required this.totalCount,
-    required this.highlighted,
   });
 
   final List<String> emojis;
   final int totalCount;
-  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final emojisLabel = emojis.join(' ');
+    final countLabel = totalCount > 1 ? ' $totalCount' : '';
     return DecoratedBox(
       decoration: BoxDecoration(
-        color:
-            highlighted ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: scheme.outlineVariant),
         boxShadow: const [
@@ -1233,7 +1226,7 @@ class _MessageReactionsBadge extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         child: Text(
-          '$emojisLabel $totalCount',
+          '$emojisLabel$countLabel',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
