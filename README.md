@@ -1,11 +1,13 @@
-# Planzers - App mobile voyage entre amis
+# Planerz - App mobile voyage entre amis
 
 Application Flutter multiplateforme (Android, iOS, Web) pour centraliser la gestion d'un voyage entre amis:
 - covoiturage
 - courses
 - planification des repas
 - partage des depenses
+- suggestion et planification d'activtés
 - informations pratiques
+- messagerie
 
 ## Vision
 
