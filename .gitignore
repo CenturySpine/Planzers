@@ -36,3 +36,5 @@ ios/Runner/Firebase/preview/GoogleService-Info.plist
 Thumbs.db
 .DS_Store
 *.jks
+*-key.json
+node_modules/

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "firebase-admin": "^8.13.0",
+    "node-firestore-import-export": "^1.1.0"
+  }
+}
