@@ -526,6 +526,27 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                         const <TripMessageReaction>[];
                                     final groupedReactions =
                                         _groupReactions(reactions, myUid: myUid);
+                                    final previousMessage = index > 0
+                                        ? chatEntries[index - 1].message
+                                        : null;
+                                    final isPreviousMessageSameDay =
+                                        previousMessage != null &&
+                                            DateUtils.isSameDay(
+                                              previousMessage.createdAt.toLocal(),
+                                              m.createdAt.toLocal(),
+                                            );
+                                    final previousMessageReactions =
+                                        previousMessage == null
+                                            ? const <TripMessageReaction>[]
+                                            : (reactionsByMessage[
+                                                      previousMessage.id] ??
+                                                  const <TripMessageReaction>[]);
+                                    final extraTopCardMargin =
+                                        isPreviousMessageSameDay &&
+                                                previousMessageReactions
+                                                    .isNotEmpty
+                                            ? 6.0
+                                            : 0.0;
                                     final totalReactionCount =
                                         groupedReactions.fold<int>(
                                       0,
@@ -602,9 +623,11 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                   ),
                                                   child: Card(
                                                     margin:
-                                                        const EdgeInsets.symmetric(
-                                                      vertical: 4,
-                                                      horizontal: 4,
+                                                        EdgeInsets.fromLTRB(
+                                                      2,
+                                                      2 + extraTopCardMargin,
+                                                      2,
+                                                      2,
                                                     ),
                                                     elevation:
                                                         isSelected ? 0 : null,
@@ -638,7 +661,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                                 .surfaceContainerHighest),
                                                     child: Padding(
                                                       padding: const EdgeInsets
-                                                          .fromLTRB(12, 12, 12, 3),
+                                                          .fromLTRB(10, 8, 10, 2),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
@@ -661,33 +684,43 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                                   ),
                                                             ),
                                                             const SizedBox(
-                                                                height: 6),
+                                                                height: 3),
                                                           ],
-                                                          _TripMessageLinkedText(
-                                                            text: m.text,
-                                                            style: Theme.of(
-                                                                    context)
-                                                                .textTheme
-                                                                .bodyMedium,
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 2),
-                                                          Align(
-                                                            alignment: Alignment
-                                                                .centerRight,
-                                                            child: Text(
-                                                              timeLine,
-                                                              style: Theme.of(
-                                                                      context)
-                                                                  .textTheme
-                                                                  .labelSmall
-                                                                  ?.copyWith(
-                                                                    color: Theme.of(
-                                                                            context)
-                                                                        .colorScheme
-                                                                        .onSurfaceVariant,
-                                                                  ),
-                                                            ),
+                                                          Stack(
+                                                            children: [
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                  right: 86,
+                                                                ),
+                                                                child:
+                                                                    _TripMessageLinkedText(
+                                                                  text: m.text,
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .bodyMedium,
+                                                                ),
+                                                              ),
+                                                              Positioned(
+                                                                right: 0,
+                                                                bottom: 0,
+                                                                child: Text(
+                                                                  timeLine,
+                                                                  style: Theme.of(
+                                                                          context)
+                                                                      .textTheme
+                                                                      .labelSmall
+                                                                      ?.copyWith(
+                                                                        color: Theme.of(
+                                                                                context)
+                                                                            .colorScheme
+                                                                            .onSurfaceVariant,
+                                                                      ),
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
@@ -696,7 +729,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
                                                 ),
                                                 if (groupedReactions.isNotEmpty)
                                                   Positioned(
-                                                    bottom: 2,
+                                                    bottom: -4,
                                                     left: isMine ? null : 8,
                                                     right: isMine ? 8 : null,
                                                     child:
