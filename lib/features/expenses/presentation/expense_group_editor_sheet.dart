@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/expenses/data/expense_group.dart';
-import 'package:planzers/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expenses_repository.dart';
 
 const double _kGroupVisibilityColumnWidth = 48;
 

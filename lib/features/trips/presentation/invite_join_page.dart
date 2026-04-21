@@ -5,16 +5,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/app/theme/planzers_colors.dart';
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
-import 'package:planzers/features/ingredients/presentation/food_allergens_list_editor.dart';
-import 'package:planzers/features/trips/data/invite_join_context.dart';
-import 'package:planzers/features/trips/data/trip_member_profile_repository.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
-import 'package:planzers/features/trips/data/trips_repository.dart';
-import 'package:planzers/features/trips/presentation/name_list_search.dart';
-import 'package:planzers/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
+import 'package:planerz/features/ingredients/presentation/food_allergens_list_editor.dart';
+import 'package:planerz/features/trips/data/invite_join_context.dart';
+import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
   const InviteJoinPage({

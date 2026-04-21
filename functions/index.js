@@ -7,7 +7,10 @@ const {
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const cheerio = require('cheerio');
 
+const { setGlobalOptions } = require('firebase-functions/v2');
+
 admin.initializeApp();
+setGlobalOptions({ region: 'europe-west9' });
 
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();

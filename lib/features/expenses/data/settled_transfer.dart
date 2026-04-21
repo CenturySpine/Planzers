@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:planzers/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 
 class SettledTransfer {
   const SettledTransfer({

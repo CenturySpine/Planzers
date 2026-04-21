@@ -1,20 +1,20 @@
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/account/presentation/account_page.dart';
-import 'package:planzers/features/auth/auth_gate.dart';
-import 'package:planzers/features/auth/sign_in_page.dart';
-import 'package:planzers/features/trips/presentation/invite_join_page.dart';
-import 'package:planzers/features/activities/presentation/trip_activities_page.dart';
-import 'package:planzers/features/expenses/presentation/trip_expenses_page.dart';
-import 'package:planzers/features/messaging/presentation/trip_messaging_page.dart';
-import 'package:planzers/features/meals/presentation/trip_meal_details_page.dart';
-import 'package:planzers/features/meals/presentation/trip_meals_page.dart';
-import 'package:planzers/features/rooms/presentation/trip_rooms_page.dart';
-import 'package:planzers/features/shopping/presentation/trip_shopping_page.dart';
-import 'package:planzers/features/trips/presentation/trip_overview_page.dart';
-import 'package:planzers/features/trips/presentation/trip_settings_page.dart';
-import 'package:planzers/features/trips/presentation/trip_shell_page.dart';
-import 'package:planzers/features/trips/presentation/trips_page.dart';
-import 'package:planzers/features/cupidon/presentation/cupidon_space_page.dart';
+import 'package:planerz/features/account/presentation/account_page.dart';
+import 'package:planerz/features/auth/auth_gate.dart';
+import 'package:planerz/features/auth/sign_in_page.dart';
+import 'package:planerz/features/trips/presentation/invite_join_page.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
+import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
+import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart';
+import 'package:planerz/features/meals/presentation/trip_meal_details_page.dart';
+import 'package:planerz/features/meals/presentation/trip_meals_page.dart';
+import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
+import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
+import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
+import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
+import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
+import 'package:planerz/features/trips/presentation/trips_page.dart';
+import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[

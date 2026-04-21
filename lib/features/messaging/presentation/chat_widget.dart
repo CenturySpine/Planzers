@@ -8,10 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:planzers/features/auth/presentation/profile_badge.dart';
-import 'package:planzers/features/messaging/data/trip_message.dart';
-import 'package:planzers/features/messaging/data/trip_message_reaction.dart';
-import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/messaging/data/trip_message.dart';
+import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
+import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 
 /// Generic chat widget that can be instantiated independently of any specific
 /// data source. All operations are injected as callbacks; all data is passed

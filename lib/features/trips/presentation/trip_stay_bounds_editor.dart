@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:planzers/features/trips/data/trip_day_part.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 
 /// Inclusive stay range: from date+part through date+part (matin / midi / soir).
 class TripStayBoundsEditor extends StatelessWidget {

@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 
 class TripSettingsPage extends ConsumerWidget {
   const TripSettingsPage({

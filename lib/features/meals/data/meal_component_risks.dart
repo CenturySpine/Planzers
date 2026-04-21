@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/auth/data/users_repository.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
 
 final usersDataByIdsProvider = StreamProvider.autoDispose
     .family<Map<String, Map<String, dynamic>>, String>(

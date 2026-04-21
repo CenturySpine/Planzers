@@ -1,4 +1,4 @@
-package com.planzers.planzers
+package fr.centuryspine.planerz
 
 import io.flutter.embedding.android.FlutterActivity
 

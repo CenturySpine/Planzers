@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:planzers/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 
 enum MealComponentKind {
   entree,

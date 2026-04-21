@@ -1,4 +1,4 @@
-import 'package:planzers/features/expenses/data/expense.dart';
+import 'package:planerz/features/expenses/data/expense.dart';
 
 /// Net balance per person in one currency (positive = others owe this person).
 typedef BalancesByCurrency = Map<String, Map<String, double>>;

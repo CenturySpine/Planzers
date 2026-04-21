@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planzers/features/expenses/data/expense.dart';
-import 'package:planzers/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/data/expense.dart';
+import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 
 TripExpense _e({
   required String paidBy,

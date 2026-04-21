@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/auth/data/users_repository.dart';
-import 'package:planzers/features/ingredients/presentation/ingredient_line_editor.dart';
-import 'package:planzers/features/shopping/data/shopping_item.dart';
-import 'package:planzers/features/shopping/data/shopping_repository.dart';
-import 'package:planzers/features/trips/presentation/name_list_search.dart';
-import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
+import 'package:planerz/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/shopping/data/shopping_repository.dart';
+import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 class TripShoppingPage extends ConsumerWidget {
   const TripShoppingPage({super.key});

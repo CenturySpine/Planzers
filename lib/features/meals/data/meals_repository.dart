@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/meals/data/trip_meal.dart';
-import 'package:planzers/features/trips/data/trip_day_part.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 
 final mealsRepositoryProvider = Provider<MealsRepository>((ref) {
   return MealsRepository(

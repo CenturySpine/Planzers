@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:planzers/app/theme/brand_palette.dart';
-import 'package:planzers/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/brand_palette.dart';
+import 'package:planerz/app/theme/planzers_colors.dart';
 
 class AppTheme {
   const AppTheme._();

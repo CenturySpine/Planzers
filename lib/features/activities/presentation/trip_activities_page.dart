@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/app/theme/planzers_colors.dart';
-import 'package:planzers/core/notifications/notification_center_repository.dart';
-import 'package:planzers/core/notifications/notification_channel.dart';
-import 'package:planzers/features/activities/data/activities_repository.dart';
-import 'package:planzers/features/activities/data/trip_activity.dart';
-import 'package:planzers/features/activities/presentation/trip_activity_detail_page.dart';
-import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
-import 'package:planzers/features/trips/presentation/name_list_search.dart';
-import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 class TripActivitiesPage extends ConsumerStatefulWidget {
   const TripActivitiesPage({super.key});

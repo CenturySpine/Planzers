@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/app/theme/app_palette_provider.dart';
-import 'package:planzers/app/theme/brand_palette.dart';
+import 'package:planerz/app/theme/app_palette_provider.dart';
+import 'package:planerz/app/theme/brand_palette.dart';
 
 class PalettePickerButton extends ConsumerWidget {
   const PalettePickerButton({super.key});

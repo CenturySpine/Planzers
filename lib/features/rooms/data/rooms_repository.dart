@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/rooms/data/trip_room.dart';
+import 'package:planerz/features/rooms/data/trip_room.dart';
 
 final roomsRepositoryProvider = Provider<RoomsRepository>((ref) {
   return RoomsRepository(

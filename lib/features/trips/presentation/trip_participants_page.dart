@@ -2,14 +2,14 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/auth/presentation/profile_badge.dart';
-import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
-import 'package:planzers/features/auth/data/users_repository.dart';
-import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
-import 'package:planzers/features/trips/data/trips_repository.dart';
-import 'package:planzers/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/name_list_search.dart';
 
 /// Trip member list: placeholders (voyageurs prévus) and participants who have
 /// already joined (profile labels). Invite flow still lists only `ph_*` rows

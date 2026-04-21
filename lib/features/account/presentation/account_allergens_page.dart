@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/ingredients/presentation/food_allergens_list_editor.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/ingredients/presentation/food_allergens_list_editor.dart';
 
 /// Full-screen allergen editor (avoids dialog resizing when suggestions open).
 class AccountAllergensPage extends ConsumerStatefulWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
 
 /// Add/remove allergen catalog ids with autocomplete (catalog type `allergen`).
 class FoodAllergensListEditor extends ConsumerStatefulWidget {

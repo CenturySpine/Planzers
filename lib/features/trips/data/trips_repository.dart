@@ -6,13 +6,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/core/firebase/app_public_hosts.dart';
-import 'package:planzers/core/firebase/firebase_target.dart';
-import 'package:planzers/core/firebase/firebase_target_provider.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/trips/data/invite_join_context.dart';
-import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/core/firebase/app_public_hosts.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/trips/data/invite_join_context.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);

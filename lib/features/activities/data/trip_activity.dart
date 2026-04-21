@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:planzers/features/activities/data/activity_trip_driving_route.dart';
+import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 
 /// Proposed outing / activity for a trip
 /// (`trips/{tripId}/activities/{activityId}`).

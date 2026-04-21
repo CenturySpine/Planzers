@@ -36,12 +36,15 @@ class DefaultFirebaseOptionsPreview {
   // Temporary fallback values copied from prod.
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA84GI-A3YJGUGnT6XPGa8VZ4NSKSJKsXQ',
-    appId: '1:426381891835:web:26bade9d1738a1e419785e',
-    messagingSenderId: '426381891835',
-    projectId: 'planzers-preview',
-    authDomain: 'planzers-preview.firebaseapp.com',
-    storageBucket: 'planzers-preview.firebasestorage.app',
+
+  apiKey: "AIzaSyCh1WtquB9vido6MZDLAPdAA0TqDCqVYWk",
+  authDomain: "planerz-preview.firebaseapp.com",
+  projectId: "planerz-preview",
+  storageBucket: "planerz-preview.firebasestorage.app",
+  messagingSenderId: "1072541832110",
+  appId: "1:1072541832110:web:bb11a3f3bde9fbfe546e3f",
+  measurementId: "G-8X0K4KJR7R"
+
   );
 
   // They must be replaced with the real "Planzers-preview" app IDs.

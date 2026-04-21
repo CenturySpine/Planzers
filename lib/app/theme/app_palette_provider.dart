@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/app/theme/brand_palette.dart';
+import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _palettePrefsKey = 'app_palette_id';

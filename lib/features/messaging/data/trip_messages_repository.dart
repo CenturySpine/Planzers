@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/messaging/data/trip_message.dart';
-import 'package:planzers/features/messaging/data/trip_message_reaction.dart';
+import 'package:planerz/features/messaging/data/trip_message.dart';
+import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
 
 final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   return TripMessagesRepository(

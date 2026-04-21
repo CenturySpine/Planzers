@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccountMenuButton extends ConsumerWidget {

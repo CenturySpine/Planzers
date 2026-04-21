@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:planzers/app/router.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planerz/app/router.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 
 class CupidonMatchPopupBinder extends StatefulWidget {
   const CupidonMatchPopupBinder({required this.child, super.key});

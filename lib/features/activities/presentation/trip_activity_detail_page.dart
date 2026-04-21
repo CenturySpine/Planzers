@@ -3,10 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planzers/features/activities/data/activities_repository.dart';
-import 'package:planzers/features/activities/data/trip_activity.dart';
-import 'package:planzers/features/trips/presentation/link_preview_from_firestore.dart';
-import 'package:planzers/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
+import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 
 extension TripActivityCategoryPresentation on TripActivityCategory {
   IconData get categoryIcon => switch (this) {

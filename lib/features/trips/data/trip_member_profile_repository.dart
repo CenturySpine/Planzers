@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 
 final tripMemberProfileRepositoryProvider =
     Provider<TripMemberProfileRepository>((ref) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 
 /// Builds a profile badge from a user profile map.
 ///

@@ -31,13 +31,15 @@ class DefaultFirebaseOptionsProd {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
-    appId: '1:936277491452:web:1794a04a8c81d6f8f1e179',
-    messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    authDomain: 'planzers.firebaseapp.com',
-    storageBucket: 'planzers.firebasestorage.app',
-    measurementId: 'G-Z68T9LKMH7',
+
+  apiKey: "AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM",
+  authDomain: "planerz.firebaseapp.com",
+  projectId: "planerz",
+  storageBucket: "planerz.firebasestorage.app",
+  messagingSenderId: "968267093466",
+  appId: "1:968267093466:web:fe185a5604145fe3d29ce3",
+  measurementId: "G-MDP337D1C0"
+
   );
 
   static const FirebaseOptions android = FirebaseOptions(

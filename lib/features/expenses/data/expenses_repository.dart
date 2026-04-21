@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/expenses/data/expense.dart';
-import 'package:planzers/features/expenses/data/expense_group.dart';
-import 'package:planzers/features/expenses/data/settled_transfer.dart';
-import 'package:planzers/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/data/expense.dart';
+import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/settled_transfer.dart';
+import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 
 final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
   return ExpensesRepository(

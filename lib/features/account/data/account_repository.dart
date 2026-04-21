@@ -6,8 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:planzers/core/firebase/firebase_target.dart';
-import 'package:planzers/core/firebase/firebase_target_provider.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);

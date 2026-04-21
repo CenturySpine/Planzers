@@ -1,4 +1,4 @@
-import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
 
 /// Optional full invite base URL (path `/invite` included or not — normalized below).
 /// When set, used for mobile invite links regardless of [FirebaseTarget].

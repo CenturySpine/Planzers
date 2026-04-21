@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
-import 'package:planzers/core/notifications/app_icon_badge.dart';
-import 'package:planzers/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/app_icon_badge.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
 
 class GlobalUnreadBadgeBinder extends StatefulWidget {
   const GlobalUnreadBadgeBinder({required this.child, super.key});

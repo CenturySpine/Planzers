@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planzers/app/theme/planzers_colors.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/expenses/data/expense.dart';
-import 'package:planzers/features/expenses/data/expense_group.dart';
-import 'package:planzers/features/expenses/data/expenses_repository.dart';
-import 'package:planzers/features/expenses/data/settled_transfer.dart';
-import 'package:planzers/features/expenses/domain/expense_settlement.dart';
-import 'package:planzers/features/expenses/presentation/expense_group_editor_sheet.dart';
-import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/expenses/data/expense.dart';
+import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/settled_transfer.dart';
+import 'package:planerz/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/presentation/expense_group_editor_sheet.dart';
+import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 /// Trip members who may appear as payers/participants for this expense post.
 List<String> participantScopeMemberIdsForGroup(

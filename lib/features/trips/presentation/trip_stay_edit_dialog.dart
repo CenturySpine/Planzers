@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trip_member_profile_repository.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
-import 'package:planzers/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
 
 Future<void> showTripStayEditDialog({
   required BuildContext context,

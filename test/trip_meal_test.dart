@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:planzers/features/meals/data/trip_meal.dart';
-import 'package:planzers/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 
 TripMeal _meal({
   required String id,

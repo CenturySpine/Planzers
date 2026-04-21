@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/ingredients/presentation/ingredient_line_editor.dart';
-import 'package:planzers/features/meals/data/meal_component_risks.dart';
-import 'package:planzers/features/meals/data/trip_meal.dart';
-import 'package:planzers/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
+import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
+import 'package:planerz/features/meals/data/meal_component_risks.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/shopping/data/shopping_item.dart';
 
 class MealComponentEditorPage extends StatefulWidget {
   const MealComponentEditorPage({

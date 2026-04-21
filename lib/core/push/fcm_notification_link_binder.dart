@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:planzers/app/router.dart';
+import 'package:planerz/app/router.dart';
 
 /// Opens the trip messaging tab when the user taps a trip chat push notification.
 ///

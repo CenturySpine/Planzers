@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 
 /// Inclusive stay bounds for a traveler on a trip (calendar days + day part).
 class TripMemberStay {

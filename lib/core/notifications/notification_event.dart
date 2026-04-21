@@ -1,4 +1,4 @@
-import 'package:planzers/core/notifications/notification_channel.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
 
 class TripNotificationEvent {
   const TripNotificationEvent({

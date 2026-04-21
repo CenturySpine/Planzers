@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
 
 final activitiesRepositoryProvider = Provider<ActivitiesRepository>((ref) {
   return ActivitiesRepository(

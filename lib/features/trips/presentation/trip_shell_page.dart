@@ -2,14 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/core/notifications/notification_center_repository.dart';
-import 'package:planzers/core/notifications/notification_channel.dart';
-import 'package:planzers/features/account/presentation/account_app_bar_actions.dart';
-import 'package:planzers/features/activities/data/activities_repository.dart';
-import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
-import 'package:planzers/features/trips/data/trip.dart';
-import 'package:planzers/features/trips/data/trips_repository.dart';
-import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 /// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
 /// avant le déploiement des fonctions). Au plus un appel par voyage et par

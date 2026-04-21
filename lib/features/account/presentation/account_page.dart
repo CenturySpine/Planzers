@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:planzers/core/push/fcm_token_sync.dart';
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/account/presentation/account_allergens_page.dart';
-import 'package:planzers/features/account/presentation/palette_picker_button.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
+import 'package:planerz/core/push/fcm_token_sync.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/account/presentation/account_allergens_page.dart';
+import 'package:planerz/features/account/presentation/palette_picker_button.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key});

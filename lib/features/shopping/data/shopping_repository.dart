@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/shopping/data/shopping_item.dart';
 
 final shoppingRepositoryProvider = Provider<ShoppingRepository>((ref) {
   return ShoppingRepository(

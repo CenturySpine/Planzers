@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/auth/data/auth_repository.dart';
+import 'package:planerz/features/auth/data/auth_repository.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
 const Color _googleSignInText = Color(0xFF3C4043);

@@ -1,5 +1,0 @@
-{
-  "//": "Generate this file from Firebase project 'planzers-preview'.",
-  "//_1": "Then save it as android/app/src/preview/google-services.json",
-  "//_2": "Command: flutterfire configure --project=planzers-preview"
-}

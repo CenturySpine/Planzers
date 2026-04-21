@@ -4,15 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planzers/features/auth/auth_gate.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/auth/data/users_repository.dart';
-import 'package:planzers/core/notifications/notification_center_repository.dart';
-import 'package:planzers/core/notifications/notification_channel.dart';
-import 'package:planzers/features/messaging/data/trip_message.dart';
-import 'package:planzers/features/messaging/data/trip_messages_repository.dart';
-import 'package:planzers/features/messaging/presentation/chat_widget.dart';
-import 'package:planzers/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/features/auth/auth_gate.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/features/messaging/data/trip_message.dart';
+import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/messaging/presentation/chat_widget.dart';
+import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 /// Trip-scoped text chat; history is visible to all current [Trip] members.
 ///

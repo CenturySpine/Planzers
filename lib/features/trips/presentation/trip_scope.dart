@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planzers/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 
 /// Provides the live [Trip] for the current trip hub (shell + tab pages).
 class TripScope extends InheritedWidget {

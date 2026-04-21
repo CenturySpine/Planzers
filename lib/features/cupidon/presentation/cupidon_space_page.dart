@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/account/data/account_repository.dart';
-import 'package:planzers/features/auth/data/user_display_label.dart';
-import 'package:planzers/features/cupidon/data/cupidon_repository.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 
 class CupidonSpacePage extends ConsumerStatefulWidget {
   const CupidonSpacePage({super.key});

@@ -2,15 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_repository.dart';
-import 'package:planzers/features/meals/data/meal_component_risks.dart';
-import 'package:planzers/features/meals/data/meals_repository.dart';
-import 'package:planzers/features/meals/data/trip_meal.dart';
-import 'package:planzers/features/meals/presentation/meal_component_editor_page.dart';
-import 'package:planzers/features/trips/data/trip_day_part.dart';
-import 'package:planzers/features/trips/data/trip_member_stay.dart';
-import 'package:planzers/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planerz/features/meals/data/meal_component_risks.dart';
+import 'package:planerz/features/meals/data/meals_repository.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/meals/presentation/meal_component_editor_page.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 
 class TripMealDetailsPage extends ConsumerStatefulWidget {
   const TripMealDetailsPage({

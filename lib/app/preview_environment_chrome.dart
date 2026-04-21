@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:planzers/app/theme/planzers_colors.dart';
-import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
 
 /// Top strip when running the preview Firebase / build target.
 class PreviewEnvironmentChrome extends StatelessWidget {

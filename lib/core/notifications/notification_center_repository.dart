@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/core/notifications/notification_channel.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
 
 final notificationCenterRepositoryProvider =
     Provider<NotificationCenterRepository>((ref) {

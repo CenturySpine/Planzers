@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_item.dart';
-import 'package:planzers/features/ingredients/data/ingredient_catalog_repository.dart';
-import 'package:planzers/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
+import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planerz/features/shopping/data/shopping_item.dart';
 
 class IngredientLineValue {
   const IngredientLineValue({
