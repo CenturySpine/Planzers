@@ -69,7 +69,7 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
     final body = message.notification?.body ?? '';
     if (title.isEmpty && body.isEmpty) return;
 
-    showForegroundNotificationSnackBar(
+    showForegroundNotification(
       title: title,
       body: body,
       targetPath: _targetPathFromData(message.data),

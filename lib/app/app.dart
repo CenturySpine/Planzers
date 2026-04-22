@@ -9,7 +9,6 @@ import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/core/firebase/bootstrap.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
-import 'package:planerz/core/notifications/notification_messenger.dart';
 
 class PlanerzApp extends StatelessWidget {
   const PlanerzApp({required this.firebaseTarget, super.key});
@@ -62,7 +61,6 @@ class _PlanerzThemedApp extends ConsumerWidget {
             // confirmations). Isolated from the notification messenger above so
             // the two queues never interfere.
             child: ScaffoldMessenger(
-              key: notificationMessengerKey,
               child: child ?? const SizedBox.shrink(),
             ),
           ),
