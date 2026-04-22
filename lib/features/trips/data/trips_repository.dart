@@ -169,6 +169,13 @@ class TripsRepository {
       throw StateError('Seul le proprietaire peut supprimer ce voyage');
     }
 
+    final bannerPath = (data?['bannerImagePath'] as String?)?.trim() ?? '';
+    if (bannerPath.isNotEmpty) {
+      try {
+        await storage.ref(bannerPath).delete();
+      } catch (_) {}
+    }
+
     await docRef.delete();
   }
 
