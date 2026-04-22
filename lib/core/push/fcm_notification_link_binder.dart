@@ -68,8 +68,10 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
     final title = message.notification?.title ?? '';
     final body = message.notification?.body ?? '';
     if (title.isEmpty && body.isEmpty) return;
+    if (!mounted) return;
 
     showForegroundNotification(
+      overlay: Overlay.of(context),
       title: title,
       body: body,
       targetPath: _targetPathFromData(message.data),

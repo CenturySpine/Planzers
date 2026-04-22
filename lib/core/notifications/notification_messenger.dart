@@ -12,16 +12,17 @@ IconData _iconForChannel(String? channel) => switch (channel) {
       _ => Icons.notifications,
     };
 
+/// Shows a top-of-screen banner.
+///
+/// Pass [overlay] from the calling widget's [BuildContext] via
+/// [Overlay.of(context)] to guarantee availability on all platforms.
 void showForegroundNotification({
+  required OverlayState overlay,
   required String title,
   required String body,
   required String? targetPath,
   required String? channel,
 }) {
-  final overlay =
-      appRouter.routerDelegate.navigatorKey.currentState?.overlay;
-  if (overlay == null) return;
-
   _dismissTimer?.cancel();
   _activeEntry?.remove();
   _activeEntry = null;
