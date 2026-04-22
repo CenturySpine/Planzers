@@ -43,7 +43,6 @@ class _PlanerzThemedApp extends ConsumerWidget {
     return MaterialApp.router(
       title: firebaseTarget.isPreview ? 'Planerz · Preview' : 'Planerz',
       debugShowCheckedModeBanner: false,
-      scaffoldMessengerKey: notificationMessengerKey,
       theme: AppTheme.light(paletteId.data),
       themeMode: ThemeMode.light,
       // Required for [showDatePicker] with fr_FR: default delegates only
@@ -63,6 +62,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
             // confirmations). Isolated from the notification messenger above so
             // the two queues never interfere.
             child: ScaffoldMessenger(
+              key: notificationMessengerKey,
               child: child ?? const SizedBox.shrink(),
             ),
           ),
