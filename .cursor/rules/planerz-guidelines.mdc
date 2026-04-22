@@ -27,6 +27,14 @@ These rules apply to everyone working on the repository, including automated cod
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
 - **Palette changes:** Any modification to `BrandPaletteData` or `PlanerzColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](../../PALETTES.md).
 
+## Deployment and version control (agents)
+
+These rules apply to **automated coding agents and assistants** (not an expectation on every human contributor to self-enforce the same way).
+
+- **Firebase deploy:** Do **not** run `firebase deploy` on your own initiative — including **Cloud Functions**, **Firestore rules**, **Storage rules**, **indexes**, or any **combined** `firebase deploy` target. After changes that require a remote deploy, **explicitly tell the product owner** that they must run the deploy themselves, and **show the exact command(s)** for what needs updating (e.g. `firebase deploy --only functions --project <project>`, or rules/indexes/storage as in [`RELEASE.md`](../../RELEASE.md)). You may use [`RELEASE.md`](../../RELEASE.md) for project IDs and common patterns.
+
+- **Git commits:** Do **not** run `git commit` (or create commits) on your own initiative. The product owner **decides what to commit and when**; keep changes in the working tree until they request a commit.
+
 ## Stack (reference)
 
 - **Flutter / Dart** with **Riverpod** for state.
