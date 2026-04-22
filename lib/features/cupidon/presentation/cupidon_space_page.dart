@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
@@ -14,6 +17,14 @@ class CupidonSpacePage extends ConsumerStatefulWidget {
 class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
   bool _updatingDefault = false;
   final Set<String> _deletingMatchIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ref.read(notificationCenterRepositoryProvider).clearAllCupidonUnread(),
+    );
+  }
 
   Future<void> _updateDefaultCupidonEnabled(bool enabled) async {
     if (_updatingDefault) return;

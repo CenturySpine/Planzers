@@ -1,9 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -26,7 +27,7 @@ class AccountMenuButton extends ConsumerWidget {
     final ok = await launchUrl(_apkDownloadUri);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d’ouvrir le lien')),
+        const SnackBar(content: Text("Impossible d'ouvrir le lien")),
       );
     }
   }
@@ -78,6 +79,9 @@ class AccountMenuButton extends ConsumerWidget {
         ? null
         : ref.read(accountRepositoryProvider).watchMyUserDocument();
 
+    final cupidonCount =
+        ref.watch(cupidonGlobalUnreadCountProvider).valueOrNull ?? 0;
+
     final avatar = userDocStream == null
         ? _buildAvatar('', displayLabel)
         : StreamBuilder(
@@ -94,6 +98,20 @@ class AccountMenuButton extends ConsumerWidget {
               return _buildAvatar(photoUrl, displayLabel);
             },
           );
+
+    final avatarWithBadge = cupidonCount > 0
+        ? Stack(
+            clipBehavior: Clip.none,
+            children: [
+              avatar,
+              Positioned(
+                right: -4,
+                top: -4,
+                child: _CupidonHeartBadge(count: cupidonCount),
+              ),
+            ],
+          )
+        : avatar;
 
     return PopupMenuButton<String>(
       tooltip: 'Mon compte',
@@ -118,7 +136,7 @@ class AccountMenuButton extends ConsumerWidget {
         if (kIsWeb)
           const PopupMenuItem<String>(
             value: 'download_apk',
-            child: Text('Télécharger l’APK'),
+            child: Text("Télécharger l'APK"),
           ),
         const PopupMenuItem<String>(
           value: 'logout',
@@ -127,8 +145,37 @@ class AccountMenuButton extends ConsumerWidget {
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: avatar,
+        child: avatarWithBadge,
       ),
+    );
+  }
+}
+
+class _CupidonHeartBadge extends StatelessWidget {
+  const _CupidonHeartBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 9 ? '9+' : count.toString();
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const Icon(Icons.favorite, color: Colors.pink, size: 16),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 1),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 7,
+              fontWeight: FontWeight.bold,
+              height: 1,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
