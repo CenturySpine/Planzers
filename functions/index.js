@@ -498,15 +498,20 @@ async function incrementTripUnreadCounters({ tripId, recipients, channel }) {
   for (const uid of recipients) {
     const cleanUid = normalizeString(uid);
     if (!cleanUid) continue;
+    /** @type {Record<string, unknown>} */
+    const payload = {
+      channels: {
+        [channel]: FieldValue.increment(1),
+      },
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    // Cupidon unread is shown on the profile only; do not bump trip-level total.
+    if (channel !== TRIP_NOTIFICATION_CHANNELS.CUPIDON) {
+      payload.total = FieldValue.increment(1);
+    }
     batch.set(
       tripCounterRef(cleanUid, tripId),
-      {
-        channels: {
-          [channel]: FieldValue.increment(1),
-        },
-        total: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
+      payload,
       { merge: true }
     );
     n++;
@@ -608,6 +613,24 @@ function channelsMap(data) {
   return channels;
 }
 
+/**
+ * Trip list / shell badge total: messages + activities only (Cupidon is profile-only).
+ * @param {Record<string, unknown>} channels
+ * @returns {number}
+ */
+function tripNotificationShellTotalFromChannels(channels) {
+  if (!channels || typeof channels !== 'object') {
+    return 0;
+  }
+  const msgsRaw = channels[TRIP_NOTIFICATION_CHANNELS.MESSAGES];
+  const actsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ACTIVITIES];
+  const msgs =
+    typeof msgsRaw === 'number' ? msgsRaw : Number(msgsRaw) || 0;
+  const acts =
+    typeof actsRaw === 'number' ? actsRaw : Number(actsRaw) || 0;
+  return msgs + acts;
+}
+
 function channelReadTimestamp(data, channel) {
   const channels = channelsMap(data);
   const raw = channels[channel];
@@ -647,10 +670,7 @@ async function setTripChannelCounter({ tripId, uid, channel, value }) {
   const prevData = snap.exists ? snap.data() || {} : {};
   const prevChannels = channelsMap(prevData);
   const nextChannels = { ...prevChannels, [channel]: value };
-  const total = Object.values(nextChannels).reduce((sum, current) => {
-    const n = typeof current === 'number' ? current : Number(current) || 0;
-    return sum + n;
-  }, 0);
+  const total = tripNotificationShellTotalFromChannels(nextChannels);
   await counterRef.set(
     {
       channels: nextChannels,
@@ -725,13 +745,6 @@ function hasCupidonEnabled(memberData) {
 }
 
 /**
- * Reconciles cupidon unread counter with the real amount of remaining matches
- * for one user and one trip.
- * @param {FirebaseFirestore.Firestore} db
- * @param {string} uid
- * @param {string} tripId
- */
-/**
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} uid
  * @param {string} tripId
@@ -777,21 +790,15 @@ async function reconcileCupidonUnreadCounterForTrip(db, uid, tripId) {
     const snap = await tx.get(ref);
     const data = snap.exists ? snap.data() || {} : {};
     const channels = channelsMap(data);
-    const previousCupidonUnreadRaw = channels[TRIP_NOTIFICATION_CHANNELS.CUPIDON];
-    const previousCupidonUnread =
-      typeof previousCupidonUnreadRaw === 'number'
-        ? previousCupidonUnreadRaw
-        : Number(previousCupidonUnreadRaw) || 0;
-    const totalRaw = data.total;
-    const total = typeof totalRaw === 'number' ? totalRaw : Number(totalRaw) || 0;
-    const nextTotal = Math.max(0, total - previousCupidonUnread + actualCupidonUnread);
+    const merged = {
+      ...channels,
+      [TRIP_NOTIFICATION_CHANNELS.CUPIDON]: actualCupidonUnread,
+    };
+    const nextTotal = tripNotificationShellTotalFromChannels(merged);
     tx.set(
       ref,
       {
-        channels: {
-          ...channels,
-          [TRIP_NOTIFICATION_CHANNELS.CUPIDON]: actualCupidonUnread,
-        },
+        channels: merged,
         total: nextTotal,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
@@ -1345,7 +1352,7 @@ exports.reconcileMyCupidonNotificationCounters = onCall(
 
       const totalRaw = data.total;
       const total = typeof totalRaw === 'number' ? totalRaw : Number(totalRaw) || 0;
-      const nextTotal = msgs + acts + actual;
+      const nextTotal = msgs + acts;
 
       if (prev === actual && total === nextTotal) {
         continue;

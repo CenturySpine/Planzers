@@ -67,6 +67,12 @@ class TripNotificationCounters {
 
   int unreadFor(TripNotificationChannel channel) => channels[channel] ?? 0;
 
+  /// Unread shown on trip list and trip shell (messages + activities only).
+  /// Cupidon is profile-only; [total] may still include legacy cupidon values.
+  int get tripShellUnreadTotal =>
+      unreadFor(TripNotificationChannel.messages) +
+      unreadFor(TripNotificationChannel.activities);
+
   bool hasChannel(TripNotificationChannel channel) => channels.containsKey(channel);
 
   static TripNotificationCounters fromFirestore(Map<String, dynamic> data) {
@@ -239,7 +245,7 @@ class NotificationCenterRepository {
       var total = 0;
       for (final doc in snap.docs) {
         final counters = TripNotificationCounters.fromFirestore(doc.data());
-        total += counters.total;
+        total += counters.tripShellUnreadTotal;
       }
       return total;
     });
@@ -281,7 +287,7 @@ class NotificationCenterRepository {
       for (final doc in snap.docs) {
         unreadByTrip[doc.id] = TripNotificationCounters.fromFirestore(
           doc.data(),
-        ).total;
+        ).tripShellUnreadTotal;
       }
       return unreadByTrip;
     });
@@ -316,8 +322,7 @@ class NotificationCenterRepository {
       final counters = TripNotificationCounters.fromFirestore(data);
       if (counters.unreadFor(TripNotificationChannel.cupidon) == 0) continue;
 
-      final newTotal =
-          counters.total - counters.unreadFor(TripNotificationChannel.cupidon);
+      final newTotal = counters.tripShellUnreadTotal;
       batch.update(doc.reference, {
         'channels.${TripNotificationChannel.cupidon.firestoreKey}': 0,
         'total': newTotal < 0 ? 0 : newTotal,

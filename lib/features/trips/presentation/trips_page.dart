@@ -646,7 +646,8 @@ class _TripCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final countersAsync = ref.watch(tripNotificationCountersProvider(trip.id));
-    final unreadCount = countersAsync.asData?.value?.total ?? 0;
+    final unreadCount =
+        countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
     final surface = Color.alphaBlend(
       color.withValues(alpha: 0.12),
       Theme.of(context).colorScheme.surface,

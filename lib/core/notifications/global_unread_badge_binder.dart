@@ -52,7 +52,8 @@ class _GlobalUnreadBadgeBinderState extends State<GlobalUnreadBadgeBinder> {
         .listen((snap) {
       var total = 0;
       for (final doc in snap.docs) {
-        total += TripNotificationCounters.fromFirestore(doc.data()).total;
+        total +=
+            TripNotificationCounters.fromFirestore(doc.data()).tripShellUnreadTotal;
       }
       if (_lastAppliedCount == total) {
         return;
