@@ -96,8 +96,6 @@ Depuis `android/`:
 ./gradlew signingReport
 ```
 
-Sous Windows PowerShell:
-
 ```powershell
 .\gradlew signingReport
 ```
@@ -105,6 +103,18 @@ Sous Windows PowerShell:
 - Copier la valeur **SHA1** (et idealement **SHA-256**) du variant `debug`.
 - Firebase -> *Project settings* -> app Android -> **Add fingerprint**.
 - Sur une **nouvelle machine de dev physique**, refaire cette etape: le keystore debug local peut changer, donc il faut ajouter les nouveaux fingerprints.
+- Pour extraire les empreintes du **keystore de signature (`.jks`)** (release), utiliser `keytool`:
+
+```powershell
+keytool -list -v -keystore ".\planerz-keystore.jks" -alias "planerz"
+```
+
+Si tu ne connais pas l'alias du keystore:
+
+```powershell
+keytool -list -keystore ".\planerz-keystore.jks"
+```
+
 - Telecharger `google-services.json` apres ajout des fingerprints, puis le placer selon le flavor:
   - `android/app/src/preview/google-services.json` pour `--flavor preview`
   - `android/app/src/prod/google-services.json` pour `--flavor prod`
@@ -115,21 +125,32 @@ Sous Windows PowerShell:
 - Le placer dans `ios/Runner/GoogleService-Info.plist`.
 - Verifier que `ios/Runner/Info.plist` contient `CFBundleURLTypes` avec le `REVERSED_CLIENT_ID`.
 
-### 7. Lier Flutter au projet Firebase (FlutterFire)
+### 7. Lier Flutter au projet Firebase (FlutterFire, flavors preview/prod)
 
-Depuis la racine du projet:
+Ne pas utiliser une config unique (`lib/firebase_options.dart`) pour ce projet:
+on maintient explicitement deux fichiers:
+- `lib/firebase_options_preview.dart`
+- `lib/firebase_options_prod.dart`
 
-```bash
-dart pub global run flutterfire_cli:flutterfire configure
+Depuis la racine du projet, lancer **les deux commandes** suivantes:
+
+```powershell
+dart pub global run flutterfire_cli:flutterfire configure --project=planerz-preview --out=lib/firebase_options_preview.dart --android-package-name=fr.centuryspine.planerz.preview --ios-bundle-id=fr.centuryspine.planerz.preview --yes
+```
+```powershell
+dart pub global run flutterfire_cli:flutterfire configure --project=planerz --out=lib/firebase_options_prod.dart --android-package-name=fr.centuryspine.planerz --ios-bundle-id=fr.centuryspine.planerz --yes
 ```
 
-- Repondre `yes` si la CLI propose de reutiliser `firebase.json`.
-- Cocher les plateformes que tu utilises.
-- Verifier que `lib/firebase_options.dart` est regenere.
+Notes importantes:
+- Si FlutterFire propose de reutiliser des apps avec un mauvais package/bundle id, refuser et recreer les bonnes apps.
+- Pour le web, il n'y a pas de package name Android/iOS, mais il faut garder une web app dediee par projet (`planerz-preview` vs `planerz`) et regenerer les options pour recuperer les bons `appId/apiKey`.
+- Verifier ensuite que les fichiers Android restent bien separes par flavor:
+  - `android/app/src/preview/google-services.json`
+  - `android/app/src/prod/google-services.json`
 
 ### 8. Lancer l'application
 
-```bash
+```powershell
 flutter clean
 flutter pub get
 flutter run -d windows
@@ -159,13 +180,13 @@ Cette app utilise une Cloud Function pour generer les metadonnees de preview (`l
 
 - Etre connecte avec la Firebase CLI:
 
-```bash
+```powershell
 firebase login
 ```
 
 - Installer les dependances des fonctions:
 
-```bash
+```powershell
 cd functions
 npm install
 cd ..
@@ -175,7 +196,7 @@ cd ..
 
 Depuis la racine du repo:
 
-```bash
+```powershell
 firebase deploy --only functions --project planerz
 ```
 
@@ -192,7 +213,7 @@ Au premier deploy, Firebase peut demander une politique de retention des images 
 
 Si tu modifies `functions/index.js`:
 
-```bash
+```powershell
 firebase deploy --only functions --project planerz
 ```
 
