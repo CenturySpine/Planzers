@@ -5,11 +5,17 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
+import 'package:planerz/core/notifications/notification_messenger.dart';
 
-/// Opens the trip messaging tab when the user taps a trip chat push notification.
+/// Handles foreground FCM messages and deep-link navigation from notifications.
 ///
-/// Handles cold start ([getInitialMessage]) and background ([onMessageOpenedApp]).
-/// Waits for a signed-in user before navigating.
+/// Foreground behaviour (all platforms):
+/// - Cupidon match → dialog
+/// - All other types → SnackBar via [notificationMessengerKey]
+///
+/// Navigation from tapped notifications (mobile only):
+/// - Cold start via [getInitialMessage]
+/// - Background tap via [onMessageOpenedApp]
 class FcmNotificationLinkBinder extends StatefulWidget {
   const FcmNotificationLinkBinder({required this.child, super.key});
 
@@ -30,20 +36,17 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      return;
+
+    // Foreground messages work on all platforms (SW handles background on web).
+    _foregroundSub = FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+
+    if (!kIsWeb) {
+      _openedAppSub =
+          FirebaseMessaging.onMessageOpenedApp.listen(_enqueueTripNavigation);
+      _authSub =
+          FirebaseAuth.instance.authStateChanges().listen((_) => _tryFlush());
+      unawaited(_consumeInitialMessage());
     }
-
-    _openedAppSub =
-        FirebaseMessaging.onMessageOpenedApp.listen(_enqueueTripNavigation);
-    _foregroundSub = FirebaseMessaging.onMessage.listen(
-      _onForegroundMessage,
-    );
-
-    _authSub =
-        FirebaseAuth.instance.authStateChanges().listen((_) => _tryFlush());
-
-    unawaited(_consumeInitialMessage());
   }
 
   @override
@@ -56,16 +59,33 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
 
   Future<void> _onForegroundMessage(RemoteMessage message) async {
     final type = _typeFromData(message.data);
-    if (type != 'cupidon_match') {
+
+    if (type == 'cupidon_match') {
+      await _showCupidonDialog(message);
       return;
     }
+
+    final title = message.notification?.title ?? '';
+    final body = message.notification?.body ?? '';
+    if (title.isEmpty && body.isEmpty) return;
+
+    showForegroundNotificationSnackBar(
+      title: title,
+      body: body,
+      targetPath: _targetPathFromData(message.data),
+      channel: _channelFromData(message.data),
+    );
+  }
+
+  Future<void> _showCupidonDialog(RemoteMessage message) async {
     final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
-    if (navContext == null) {
-      return;
-    }
+    if (navContext == null) return;
+
     final tripTitle = _payloadValue(message.data, 'tripTitle') ?? 'Voyage';
-    final otherLabel = _payloadValue(message.data, 'otherLabel') ?? 'Quelqu’un';
+    final otherLabel =
+        _payloadValue(message.data, 'otherLabel') ?? "Quelqu'un";
     final otherPhotoUrl = _payloadValue(message.data, 'otherPhotoUrl') ?? '';
+
     await showDialog<void>(
       context: navContext,
       useRootNavigator: true,
@@ -83,13 +103,15 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
               backgroundImage:
                   otherPhotoUrl.isEmpty ? null : NetworkImage(otherPhotoUrl),
               child: otherPhotoUrl.isEmpty
-                  ? Text(otherLabel.isEmpty ? '?' : otherLabel[0].toUpperCase())
+                  ? Text(
+                      otherLabel.isEmpty
+                          ? '?'
+                          : otherLabel[0].toUpperCase(),
+                    )
                   : null,
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text('$otherLabel\n$tripTitle'),
-            ),
+            Expanded(child: Text('$otherLabel\n$tripTitle')),
           ],
         ),
         actions: [
@@ -155,31 +177,28 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   }
 
   static String? _tripIdFromData(Map<String, dynamic> data) {
-    final raw = data['tripId'];
-    if (raw == null) return null;
-    final s = raw.toString().trim();
+    final s = data['tripId']?.toString().trim() ?? '';
     return s.isEmpty ? null : s;
   }
 
   static String? _typeFromData(Map<String, dynamic> data) {
-    final raw = data['type'];
-    if (raw == null) return null;
-    final s = raw.toString().trim();
+    final s = data['type']?.toString().trim() ?? '';
+    return s.isEmpty ? null : s;
+  }
+
+  static String? _channelFromData(Map<String, dynamic> data) {
+    final s = data['channel']?.toString().trim() ?? '';
     return s.isEmpty ? null : s;
   }
 
   static String? _targetPathFromData(Map<String, dynamic> data) {
-    final raw = data['targetPath'];
-    if (raw == null) return null;
-    final s = raw.toString().trim();
+    final s = data['targetPath']?.toString().trim() ?? '';
     if (s.isEmpty || !s.startsWith('/')) return null;
     return s;
   }
 
   static String? _payloadValue(Map<String, dynamic> data, String key) {
-    final raw = data['payload_$key'];
-    if (raw == null) return null;
-    final s = raw.toString().trim();
+    final s = data['payload_$key']?.toString().trim() ?? '';
     return s.isEmpty ? null : s;
   }
 
