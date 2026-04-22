@@ -18,12 +18,22 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
   bool _updatingDefault = false;
   final Set<String> _deletingMatchIds = <String>{};
 
+  Future<void> _clearCupidonUnread() async {
+    try {
+      await ref
+          .read(notificationCenterRepositoryProvider)
+          .reconcileMyCupidonCountersFromServer();
+    } catch (_) {
+      // Keep page usable even if counter cleanup fails transiently.
+    }
+    ref.invalidate(cupidonGlobalUnreadCountProvider);
+    ref.invalidate(globalUnreadCountProvider);
+  }
+
   @override
   void initState() {
     super.initState();
-    unawaited(
-      ref.read(notificationCenterRepositoryProvider).clearAllCupidonUnread(),
-    );
+    unawaited(_clearCupidonUnread());
   }
 
   Future<void> _updateDefaultCupidonEnabled(bool enabled) async {
@@ -83,6 +93,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
     setState(() => _deletingMatchIds.add(cleanId));
     try {
       await ref.read(cupidonRepositoryProvider).deleteMyMatch(cleanId);
+      await _clearCupidonUnread();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

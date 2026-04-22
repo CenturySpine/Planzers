@@ -126,7 +126,7 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              appRouter.go('/account/cupidon');
+              appRouter.push('/account/cupidon');
             },
             child: const Text('Voir mes matchs'),
           ),

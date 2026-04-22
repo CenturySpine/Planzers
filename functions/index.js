@@ -706,8 +706,166 @@ function cupidonMatchDocId(tripId, uidA, uidB) {
   return `${normalizeString(tripId)}__${ids[0]}__${ids[1]}`;
 }
 
+/**
+ * Match doc ids are `${tripId}__${uidSmall}__${uidLarge}` (see cupidonMatchDocId).
+ * Derives tripId when `tripId` field is missing or legacy data differs.
+ * @param {string} matchDocId
+ * @returns {string}
+ */
+function tripIdFromCupidonMatchDocId(matchDocId) {
+  const clean = normalizeString(matchDocId);
+  if (!clean) return '';
+  const parts = clean.split('__').filter(Boolean);
+  if (parts.length < 3) return '';
+  return parts.slice(0, -2).join('__');
+}
+
 function hasCupidonEnabled(memberData) {
   return !!(memberData && memberData.cupidonEnabled === true);
+}
+
+/**
+ * Reconciles cupidon unread counter with the real amount of remaining matches
+ * for one user and one trip.
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {string} uid
+ * @param {string} tripId
+ */
+/**
+ * @param {FirebaseFirestore.Firestore} db
+ * @param {string} uid
+ * @param {string} tripId
+ * @returns {Promise<number>}
+ */
+async function countUserCupidonMatchesForTrip(db, uid, tripId) {
+  const cleanUid = normalizeString(uid);
+  const cleanTripId = normalizeString(tripId);
+  if (!cleanUid || !cleanTripId) return 0;
+
+  const snap = await db
+    .collection('users')
+    .doc(cleanUid)
+    .collection('cupidonMatches')
+    .get();
+  let n = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    let tid = normalizeString(data.tripId);
+    if (!tid) {
+      tid = tripIdFromCupidonMatchDocId(doc.id);
+    }
+    if (tid === cleanTripId) {
+      n++;
+    }
+  }
+  return n;
+}
+
+async function reconcileCupidonUnreadCounterForTrip(db, uid, tripId) {
+  const cleanUid = normalizeString(uid);
+  const cleanTripId = normalizeString(tripId);
+  if (!cleanUid || !cleanTripId) return;
+
+  const actualCupidonUnread = await countUserCupidonMatchesForTrip(
+    db,
+    cleanUid,
+    cleanTripId
+  );
+
+  const ref = tripCounterRef(cleanUid, cleanTripId);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const data = snap.exists ? snap.data() || {} : {};
+    const channels = channelsMap(data);
+    const previousCupidonUnreadRaw = channels[TRIP_NOTIFICATION_CHANNELS.CUPIDON];
+    const previousCupidonUnread =
+      typeof previousCupidonUnreadRaw === 'number'
+        ? previousCupidonUnreadRaw
+        : Number(previousCupidonUnreadRaw) || 0;
+    const totalRaw = data.total;
+    const total = typeof totalRaw === 'number' ? totalRaw : Number(totalRaw) || 0;
+    const nextTotal = Math.max(0, total - previousCupidonUnread + actualCupidonUnread);
+    tx.set(
+      ref,
+      {
+        channels: {
+          ...channels,
+          [TRIP_NOTIFICATION_CHANNELS.CUPIDON]: actualCupidonUnread,
+        },
+        total: nextTotal,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  });
+}
+
+/**
+ * Removes the match from trip/users docs and clears cupidon unread counter
+ * impact for both members.
+ * @param {{
+ *   db: FirebaseFirestore.Firestore,
+ *   tripId: string,
+ *   uidA: string,
+ *   uidB: string,
+ *   matchId: string,
+ * }} params
+ * @returns {Promise<boolean>} true when trip match doc existed and got removed
+ */
+async function removeCupidonMatchEverywhereAndCounters({
+  db,
+  tripId,
+  uidA,
+  uidB,
+  matchId,
+}) {
+  const cleanTripId = normalizeString(tripId);
+  const cleanA = normalizeString(uidA);
+  const cleanB = normalizeString(uidB);
+  const cleanMatchId = normalizeString(matchId);
+  if (!cleanTripId || !cleanA || !cleanB || !cleanMatchId) {
+    return false;
+  }
+
+  const tripMatchRef = db
+    .collection('trips')
+    .doc(cleanTripId)
+    .collection('cupidonMatches')
+    .doc(cleanMatchId);
+  const userAMatchRef = db
+    .collection('users')
+    .doc(cleanA)
+    .collection('cupidonMatches')
+    .doc(cleanMatchId);
+  const userBMatchRef = db
+    .collection('users')
+    .doc(cleanB)
+    .collection('cupidonMatches')
+    .doc(cleanMatchId);
+
+  const removed = await db.runTransaction(async (tx) => {
+    const tripMatchSnap = await tx.get(tripMatchRef);
+    if (!tripMatchSnap.exists) {
+      return false;
+    }
+    tx.delete(tripMatchRef);
+    tx.delete(userAMatchRef);
+    tx.delete(userBMatchRef);
+    return true;
+  });
+
+  if (!removed) {
+    // Self-heal partial states: user match docs may still exist even if trip doc
+    // was already deleted by a prior operation.
+    await Promise.all([userAMatchRef.delete(), userBMatchRef.delete()]);
+  }
+
+  await Promise.all([
+    reconcileCupidonUnreadCounterForTrip(db, cleanA, cleanTripId),
+    reconcileCupidonUnreadCounterForTrip(db, cleanB, cleanTripId),
+  ]);
+
+  return removed;
 }
 
 async function resolveTripMemberLabel(tripData, uid) {
@@ -1112,7 +1270,118 @@ exports.resyncMyTripUnreadCounters = onCall(
       }
     }
 
+    for (const tripDoc of memberTripsSnap.docs) {
+      await reconcileCupidonUnreadCounterForTrip(db, uid, tripDoc.id);
+    }
+
     return { ok: true, tripCount: memberTripsSnap.size };
+  }
+);
+
+/**
+ * Realigns `channels.cupidon` + `total` for every trip counter doc from real
+ * `users/{uid}/cupidonMatches` counts (fixes ghost counters after partial deletes).
+ */
+exports.reconcileMyCupidonNotificationCounters = onCall(
+  {
+    region: 'europe-west1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const db = admin.firestore();
+    const FieldValue = admin.firestore.FieldValue;
+
+    const matchesSnap = await db
+      .collection('users')
+      .doc(uid)
+      .collection('cupidonMatches')
+      .get();
+
+    /** @type {Map<string, number>} */
+    const byTrip = new Map();
+    for (const doc of matchesSnap.docs) {
+      const data = doc.data() || {};
+      let tid = normalizeString(data.tripId);
+      if (!tid) {
+        tid = tripIdFromCupidonMatchDocId(doc.id);
+      }
+      if (!tid) {
+        continue;
+      }
+      byTrip.set(tid, (byTrip.get(tid) || 0) + 1);
+    }
+
+    const countersSnap = await db
+      .collection('users')
+      .doc(uid)
+      .collection('tripNotificationCounters')
+      .get();
+
+    let batch = db.batch();
+    let ops = 0;
+    let docsUpdated = 0;
+
+    for (const doc of countersSnap.docs) {
+      const tripId = doc.id;
+      const actual = byTrip.get(tripId) ?? 0;
+      const data = doc.data() || {};
+      const channels = channelsMap(data);
+      const prevRaw = channels[TRIP_NOTIFICATION_CHANNELS.CUPIDON];
+      const prev =
+        typeof prevRaw === 'number' ? prevRaw : Number(prevRaw) || 0;
+
+      const msgsRaw = channels[TRIP_NOTIFICATION_CHANNELS.MESSAGES];
+      const actsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ACTIVITIES];
+      const msgs =
+        typeof msgsRaw === 'number' ? msgsRaw : Number(msgsRaw) || 0;
+      const acts =
+        typeof actsRaw === 'number' ? actsRaw : Number(actsRaw) || 0;
+
+      const totalRaw = data.total;
+      const total = typeof totalRaw === 'number' ? totalRaw : Number(totalRaw) || 0;
+      const nextTotal = msgs + acts + actual;
+
+      if (prev === actual && total === nextTotal) {
+        continue;
+      }
+
+      docsUpdated++;
+      batch.set(
+        doc.ref,
+        {
+          channels: {
+            ...channels,
+            [TRIP_NOTIFICATION_CHANNELS.CUPIDON]: actual,
+          },
+          total: nextTotal,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      ops++;
+      if (ops >= 400) {
+        await batch.commit();
+        batch = db.batch();
+        ops = 0;
+      }
+    }
+
+    if (ops > 0) {
+      await batch.commit();
+    }
+
+    return {
+      ok: true,
+      counterDocs: countersSnap.size,
+      matchDocs: matchesSnap.size,
+      docsUpdated,
+    };
   }
 );
 
@@ -2051,6 +2320,14 @@ exports.toggleTripCupidonLike = onCall(
     }
 
     await likeRef.delete();
+    const matchId = cupidonMatchDocId(tripId, uid, targetMemberId);
+    await removeCupidonMatchEverywhereAndCounters({
+      db,
+      tripId,
+      uidA: uid,
+      uidB: targetMemberId,
+      matchId,
+    });
     return { ok: true, match: false };
   }
 );
@@ -2070,8 +2347,8 @@ exports.deleteCupidonMatch = onCall(
       throw new HttpsError('invalid-argument', 'Match invalide');
     }
 
-    const ref = admin
-      .firestore()
+    const db = admin.firestore();
+    const ref = db
       .collection('users')
       .doc(uid)
       .collection('cupidonMatches')
@@ -2083,13 +2360,19 @@ exports.deleteCupidonMatch = onCall(
     const tripId = normalizeString(matchData.tripId);
     const otherMemberId = normalizeString(matchData.otherMemberId);
     if (tripId && otherMemberId && otherMemberId !== uid) {
-      const likeRef = admin
-        .firestore()
+      const likeRef = db
         .collection('trips')
         .doc(tripId)
         .collection('cupidonLikes')
         .doc(cupidonLikeDocId(uid, otherMemberId));
       await likeRef.delete();
+      await removeCupidonMatchEverywhereAndCounters({
+        db,
+        tripId,
+        uidA: uid,
+        uidB: otherMemberId,
+        matchId,
+      });
     }
     return { ok: true };
   }

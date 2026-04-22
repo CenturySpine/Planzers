@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -284,6 +285,16 @@ class NotificationCenterRepository {
       }
       return unreadByTrip;
     });
+  }
+
+  /// Realigns Cupidon channel + totals from real `cupidonMatches` (server-side).
+  /// Needed because Firestore rules do not allow client writes on counters.
+  Future<void> reconcileMyCupidonCountersFromServer() async {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) return;
+    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+        .httpsCallable('reconcileMyCupidonNotificationCounters');
+    await callable.call();
   }
 
   /// Resets all Cupidon unread counters to zero across every trip. Call when
