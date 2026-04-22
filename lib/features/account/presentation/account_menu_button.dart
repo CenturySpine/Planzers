@@ -80,7 +80,7 @@ class AccountMenuButton extends ConsumerWidget {
         : ref.read(accountRepositoryProvider).watchMyUserDocument();
 
     final cupidonCount =
-        ref.watch(cupidonGlobalUnreadCountProvider).valueOrNull ?? 0;
+        ref.watch(cupidonGlobalUnreadCountProvider).asData?.value ?? 0;
 
     final avatar = userDocStream == null
         ? _buildAvatar('', displayLabel)
