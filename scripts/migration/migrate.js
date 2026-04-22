@@ -1,6 +1,44 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
 
+async function migrateCollection(sourceCollRef, destCollRef) {
+    const snapshot = await sourceCollRef.get();
+    if (snapshot.empty) return 0;
+
+    let total = 0;
+    let batch = destCollRef.firestore.batch();
+    let batchCount = 0;
+
+    for (const doc of snapshot.docs) {
+        const destDocRef = destCollRef.doc(doc.id);
+        batch.set(destDocRef, doc.data());
+        total++;
+        batchCount++;
+
+        if (batchCount === 500) {
+            await batch.commit();
+            batch = destCollRef.firestore.batch();
+            batchCount = 0;
+        }
+    }
+    if (batchCount > 0) {
+        await batch.commit();
+    }
+
+    // Recurse into subcollections of each document
+    for (const doc of snapshot.docs) {
+        const subCollections = await doc.ref.listCollections();
+        for (const subColl of subCollections) {
+            const destSubCollRef = destCollRef.doc(doc.id).collection(subColl.id);
+            console.log(`  → sous-collection: ${sourceCollRef.id}/${doc.id}/${subColl.id}`);
+            const subTotal = await migrateCollection(subColl, destSubCollRef);
+            total += subTotal;
+        }
+    }
+
+    return total;
+}
+
 async function migrate() {
     try {
         console.log("Lecture des clés...");
@@ -14,7 +52,6 @@ async function migrate() {
 
         const destApp = admin.initializeApp({
             credential: admin.credential.cert(destKey),
-            // Utilisation du domaine de bucket par défaut
             storageBucket: destKey.project_id + '.firebasestorage.app'
         }, 'dest');
 
@@ -23,50 +60,26 @@ async function migrate() {
 
         console.log("--- MIGRATION FIRESTORE ---");
         const collections = await sourceDb.listCollections();
-        
+
         for (const collection of collections) {
             console.log(`Exportation de la collection: ${collection.id}...`);
-            const snapshot = await collection.get();
-            let count = 0;
-            
-            // Batch writes for performance
-            let batch = destDb.batch();
-            let batchCount = 0;
-            
-            for (const doc of snapshot.docs) {
-                const destRef = destDb.collection(collection.id).doc(doc.id);
-                batch.set(destRef, doc.data());
-                count++;
-                batchCount++;
-                
-                if (batchCount === 500) {
-                    await batch.commit();
-                    batch = destDb.batch();
-                    batchCount = 0;
-                }
-            }
-            if (batchCount > 0) {
-                await batch.commit();
-            }
-            console.log(`✔ ${count} documents copiés dans ${collection.id}.`);
+            const destCollRef = destDb.collection(collection.id);
+            const count = await migrateCollection(collection, destCollRef);
+            console.log(`✔ ${count} documents copiés dans ${collection.id} (sous-collections incluses).`);
         }
 
         console.log("\n--- MIGRATION STORAGE ---");
-        // On essaie avec les URLs par défaut, si l'utilisateur a des buckets custom, il faudra ajuster
         const sourceBucket = sourceApp.storage().bucket();
-        // Le nouveau bucket créé par l'utilisateur
         const destBucket = destApp.storage().bucket(destKey.project_id + '.firebasestorage.app');
 
         console.log("Récupération de la liste des fichiers source...");
         try {
             const [files] = await sourceBucket.getFiles();
             console.log(`${files.length} fichiers trouvés.`);
-            
+
             for (const file of files) {
                 console.log(`Copie de ${file.name}...`);
                 const destFile = destBucket.file(file.name);
-                
-                // Pipeline de stream: Source -> Dest
                 await new Promise((resolve, reject) => {
                     file.createReadStream()
                         .on('error', reject)
