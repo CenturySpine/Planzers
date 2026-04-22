@@ -28,7 +28,12 @@ firebase.initializeApp(usePreview ? previewConfig : prodConfig);
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
+  // Suppress system notification when the PWA window is already visible —
+  // the Flutter app handles foreground messages itself via onMessage.
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  if (clients.some((c) => c.visibilityState === 'visible')) return;
+
   const notification = payload.notification || {};
   const data = payload.data || {};
   const title = notification.title || 'Planerz';
@@ -43,9 +48,7 @@ messaging.onBackgroundMessage((payload) => {
 
   self.registration.showNotification(title, {
     body,
-    data: {
-      url: targetPath,
-    },
+    data: { url: targetPath },
   });
 });
 

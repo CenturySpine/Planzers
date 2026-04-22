@@ -11,7 +11,7 @@ import 'package:planerz/core/notifications/notification_messenger.dart';
 ///
 /// Foreground behaviour (all platforms):
 /// - Cupidon match → dialog
-/// - All other types → SnackBar via [notificationMessengerKey]
+/// - All other types → in-app top banner (Stack overlay)
 ///
 /// Navigation from tapped notifications (mobile only):
 /// - Cold start via [getInitialMessage]
@@ -26,12 +26,22 @@ class FcmNotificationLinkBinder extends StatefulWidget {
       _FcmNotificationLinkBinderState();
 }
 
+typedef _BannerData = ({
+  String title,
+  String body,
+  String? targetPath,
+  String? channel,
+});
+
 class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   StreamSubscription<User?>? _authSub;
   StreamSubscription<RemoteMessage>? _openedAppSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
   RemoteMessage? _pendingTripMessageNavigation;
   String? _pendingTargetPath;
+
+  _BannerData? _banner;
+  Timer? _bannerTimer;
 
   @override
   void initState() {
@@ -51,6 +61,7 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
 
   @override
   void dispose() {
+    _bannerTimer?.cancel();
     _openedAppSub?.cancel();
     _foregroundSub?.cancel();
     _authSub?.cancel();
@@ -70,13 +81,23 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
     if (title.isEmpty && body.isEmpty) return;
     if (!mounted) return;
 
-    showForegroundNotification(
-      overlay: Overlay.of(context),
-      title: title,
-      body: body,
-      targetPath: _targetPathFromData(message.data),
-      channel: _channelFromData(message.data),
-    );
+    _bannerTimer?.cancel();
+    setState(() {
+      _banner = (
+        title: title,
+        body: body,
+        targetPath: _targetPathFromData(message.data),
+        channel: _channelFromData(message.data),
+      );
+    });
+    _bannerTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _banner = null);
+    });
+  }
+
+  void _dismissBanner() {
+    _bannerTimer?.cancel();
+    if (mounted) setState(() => _banner = null);
   }
 
   Future<void> _showCupidonDialog(RemoteMessage message) async {
@@ -205,5 +226,27 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    final banner = _banner;
+    if (banner == null) return widget.child;
+
+    final top = MediaQuery.of(context).padding.top;
+    return Stack(
+      children: [
+        widget.child,
+        Positioned(
+          top: top + 8,
+          left: 16,
+          right: 16,
+          child: ForegroundNotificationBanner(
+            title: banner.title,
+            body: banner.body,
+            channel: banner.channel,
+            targetPath: banner.targetPath,
+            onDismiss: _dismissBanner,
+          ),
+        ),
+      ],
+    );
+  }
 }

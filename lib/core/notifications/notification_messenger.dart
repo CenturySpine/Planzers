@@ -1,78 +1,25 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
 
-OverlayEntry? _activeEntry;
-Timer? _dismissTimer;
-
-IconData _iconForChannel(String? channel) => switch (channel) {
+IconData iconForNotificationChannel(String? channel) => switch (channel) {
       'messages' => Icons.chat_bubble,
       'activities' => Icons.event_note,
       _ => Icons.notifications,
     };
 
-/// Shows a top-of-screen banner.
-///
-/// Pass [overlay] from the calling widget's [BuildContext] via
-/// [Overlay.of(context)] to guarantee availability on all platforms.
-void showForegroundNotification({
-  required OverlayState overlay,
-  required String title,
-  required String body,
-  required String? targetPath,
-  required String? channel,
-}) {
-  _dismissTimer?.cancel();
-  _activeEntry?.remove();
-  _activeEntry = null;
-
-  late final OverlayEntry entry;
-  entry = OverlayEntry(
-    builder: (context) {
-      final top = MediaQuery.of(context).padding.top;
-      return Positioned(
-        top: top + 8,
-        left: 16,
-        right: 16,
-        child: _NotificationBanner(
-          title: title,
-          body: body,
-          icon: _iconForChannel(channel),
-          targetPath: targetPath,
-          onDismiss: () {
-            entry.remove();
-            if (_activeEntry == entry) _activeEntry = null;
-            _dismissTimer?.cancel();
-          },
-        ),
-      );
-    },
-  );
-
-  _activeEntry = entry;
-  overlay.insert(entry);
-
-  _dismissTimer = Timer(const Duration(seconds: 3), () {
-    if (_activeEntry == entry) {
-      entry.remove();
-      _activeEntry = null;
-    }
-  });
-}
-
-class _NotificationBanner extends StatelessWidget {
-  const _NotificationBanner({
+class ForegroundNotificationBanner extends StatelessWidget {
+  const ForegroundNotificationBanner({
     required this.title,
     required this.body,
-    required this.icon,
+    required this.channel,
     required this.targetPath,
     required this.onDismiss,
+    super.key,
   });
 
   final String title;
   final String body;
-  final IconData icon;
+  final String? channel;
   final String? targetPath;
   final VoidCallback onDismiss;
 
@@ -95,7 +42,11 @@ class _NotificationBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(icon, color: cs.onInverseSurface, size: 20),
+              Icon(
+                iconForNotificationChannel(channel),
+                color: cs.onInverseSurface,
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
