@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart'
 /// Default [FirebaseOptions] for use with your preview Firebase app.
 ///
 /// Replace this file by running:
-/// flutterfire configure --project=Planzers-preview --out=lib/firebase_options_preview.dart
+/// flutterfire configure --project=planerz-preview --out=lib/firebase_options_preview.dart
 class DefaultFirebaseOptionsPreview {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -47,43 +47,43 @@ class DefaultFirebaseOptionsPreview {
 
   );
 
-  // They must be replaced with the real "Planzers-preview" app IDs.
+  // They must be replaced with the real "planerz-preview" app IDs.
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBJX6EcNcuXnr2E8DzFfDXJhBhSgeCURRQ',
     appId: '1:426381891835:android:45a663058ce12d5e19785e',
     messagingSenderId: '426381891835',
-    projectId: 'planzers-preview',
-    storageBucket: 'planzers-preview.firebasestorage.app',
+    projectId: 'planerz-preview',
+    storageBucket: 'planerz-preview.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDec66Zd9tPZga2WaKv5ze9LwiqDm6HKsY',
     appId: '1:426381891835:ios:91679112f908d89919785e',
     messagingSenderId: '426381891835',
-    projectId: 'planzers-preview',
-    storageBucket: 'planzers-preview.firebasestorage.app',
+    projectId: 'planerz-preview',
+    storageBucket: 'planerz-preview.firebasestorage.app',
     iosClientId: '426381891835-ud77v01t8ler9od6i0u6581t3nblr0iv.apps.googleusercontent.com',
-    iosBundleId: 'com.planzers.planzers',
+    iosBundleId: 'fr.centuryspine.planerz.preview',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDec66Zd9tPZga2WaKv5ze9LwiqDm6HKsY',
     appId: '1:426381891835:ios:91679112f908d89919785e',
     messagingSenderId: '426381891835',
-    projectId: 'planzers-preview',
-    storageBucket: 'planzers-preview.firebasestorage.app',
+    projectId: 'planerz-preview',
+    storageBucket: 'planerz-preview.firebasestorage.app',
     iosClientId: '426381891835-ud77v01t8ler9od6i0u6581t3nblr0iv.apps.googleusercontent.com',
-    iosBundleId: 'com.planzers.planzers',
+    iosBundleId: 'fr.centuryspine.planerz.preview',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyA84GI-A3YJGUGnT6XPGa8VZ4NSKSJKsXQ',
     appId: '1:426381891835:web:c4949244c666cbdf19785e',
     messagingSenderId: '426381891835',
-    projectId: 'planzers-preview',
-    authDomain: 'planzers-preview.firebaseapp.com',
-    storageBucket: 'planzers-preview.firebasestorage.app',
+    projectId: 'planerz-preview',
+    authDomain: 'planerz-preview.firebaseapp.com',
+    storageBucket: 'planerz-preview.firebasestorage.app',
   );
 
 }

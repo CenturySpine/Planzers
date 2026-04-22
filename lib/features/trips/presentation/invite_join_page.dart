@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/ingredients/presentation/food_allergens_list_editor.dart';
@@ -62,7 +62,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   List<Color> _joinOptionAccentColors(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final pz = context.planzersColors;
+    final pz = context.planerzColors;
     return <Color>[
       cs.secondary,
       cs.tertiary,
@@ -648,7 +648,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                 ] else if (_joined) ...[
                   Icon(
                     Icons.check_circle,
-                    color: context.planzersColors.success,
+                    color: context.planerzColors.success,
                     size: 52,
                   ),
                   const SizedBox(height: 12),

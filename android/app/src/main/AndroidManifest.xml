@@ -1,12 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:label="planzers"
+        android:label="planerz"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="planzers_default_channel" />
+            android:value="planerz_default_channel" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,15 +36,15 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="https"
-                    android:host="planzers.web.app"
+                    android:host="planerz.web.app"
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
-                    android:host="planzers.centuryspine.org"
+                    android:host="planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
-                    android:host="preview.planzers.centuryspine.org"
+                    android:host="preview.planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
             </intent-filter>
         </activity>

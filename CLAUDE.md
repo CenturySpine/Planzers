@@ -1,8 +1,8 @@
-# Planzers — project guidelines
+# Planerz — project guidelines
 
 These rules apply to everyone working on the repository, including automated coding agents.
 
-**Sync:** This file, [`GUIDELINES.md`](GUIDELINES.md), and [`.cursor/rules/planzers-guidelines.mdc`](.cursor/rules/planzers-guidelines.mdc) must always contain identical policy. **Whenever you modify any one of them, update the other two as well.**
+**Sync:** This file, [`GUIDELINES.md`](GUIDELINES.md), and [`.cursor/rules/planerz-guidelines.mdc`](.cursor/rules/planerz-guidelines.mdc) must always contain identical policy. **Whenever you modify any one of them, update the other two as well.**
 
 ## Language
 
@@ -20,7 +20,7 @@ These rules apply to everyone working on the repository, including automated cod
 - After non-trivial edits, run `flutter analyze` and fix new issues.
 - **Shell/commit commands on this workspace (PowerShell):** do not use Bash-specific syntax such as `&&` chaining or HEREDOC forms like `cat <<'EOF'` in commit commands. Use PowerShell-compatible sequencing (`;`) and multiline strings (here-strings) when building commit messages.
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
-- **Palette changes:** Any modification to `BrandPaletteData` or `PlanzersColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](PALETTES.md).
+- **Palette changes:** Any modification to `BrandPaletteData` or `PlanerzColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](PALETTES.md).
 
 ## Stack (reference)
 
@@ -37,7 +37,7 @@ These rules apply to everyone working on the repository, including automated cod
 
 - Read this file at the start of substantive work on the repo.
 - Obey user instructions that override or refine these defaults when they conflict.
-- **Sync obligation:** If you edit any one of `GUIDELINES.md`, `CLAUDE.md`, or `.cursor/rules/planzers-guidelines.mdc`, update the other two to match.
+- **Sync obligation:** If you edit any one of `GUIDELINES.md`, `CLAUDE.md`, or `.cursor/rules/planerz-guidelines.mdc`, update the other two to match.
 
 ### Challenging requests (web / mobile / Flutter)
 

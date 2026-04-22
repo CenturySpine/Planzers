@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -513,7 +513,7 @@ class _ActivityListTile extends StatelessWidget {
         activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
 
     return Card(
-      color: activity.done ? context.planzersColors.successContainer : null,
+      color: activity.done ? context.planerzColors.successContainer : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => _openDetail(context),

@@ -10,5 +10,5 @@ Future<void> main() async {
   configureUrlStrategyIfWeb();
   configureFcmBackgroundHandling();
   await initializeAppDateFormatting();
-  runApp(const PlanzersApp(firebaseTarget: FirebaseTarget.prod));
+  runApp(const PlanerzApp(firebaseTarget: FirebaseTarget.prod));
 }

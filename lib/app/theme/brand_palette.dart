@@ -16,7 +16,7 @@ extension AppPaletteIdX on AppPaletteId {
       };
 }
 
-/// All colors that feed [ThemeData] and [PlanzersColors].
+/// All colors that feed [ThemeData] and [PlanerzColors].
 @immutable
 class BrandPaletteData {
   const BrandPaletteData({

@@ -17,8 +17,8 @@ import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
   final configuredBucket = switch (target) {
-    FirebaseTarget.preview => 'planzers-preview.firebasestorage.app',
-    FirebaseTarget.prod => 'planzers.firebasestorage.app',
+    FirebaseTarget.preview => 'planerz-preview.firebasestorage.app',
+    FirebaseTarget.prod => 'planerz.firebasestorage.app',
   };
   final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;

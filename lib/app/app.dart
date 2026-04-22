@@ -10,8 +10,8 @@ import 'package:planerz/core/firebase/bootstrap.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 
-class PlanzersApp extends StatelessWidget {
-  const PlanzersApp({required this.firebaseTarget, super.key});
+class PlanerzApp extends StatelessWidget {
+  const PlanerzApp({required this.firebaseTarget, super.key});
 
   final FirebaseTarget firebaseTarget;
 
@@ -21,13 +21,13 @@ class PlanzersApp extends StatelessWidget {
       overrides: [
         firebaseTargetProvider.overrideWithValue(firebaseTarget),
       ],
-      child: _PlanzersThemedApp(firebaseTarget: firebaseTarget),
+      child: _PlanerzThemedApp(firebaseTarget: firebaseTarget),
     );
   }
 }
 
-class _PlanzersThemedApp extends ConsumerWidget {
-  const _PlanzersThemedApp({required this.firebaseTarget});
+class _PlanerzThemedApp extends ConsumerWidget {
+  const _PlanerzThemedApp({required this.firebaseTarget});
 
   final FirebaseTarget firebaseTarget;
 
@@ -40,7 +40,7 @@ class _PlanzersThemedApp extends ConsumerWidget {
     };
 
     return MaterialApp.router(
-      title: firebaseTarget.isPreview ? 'Planzers · Preview' : 'Planzers',
+      title: firebaseTarget.isPreview ? 'Planerz · Preview' : 'Planerz',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(paletteId.data),
       themeMode: ThemeMode.light,

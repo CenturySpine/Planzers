@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://planzers.centuryspine.org"],
+    "origin": ["https://planerz.centuryspine.org"],
     "method": ["GET", "HEAD", "OPTIONS"],
     "responseHeader": ["Content-Type", "Authorization"],
     "maxAgeSeconds": 3600

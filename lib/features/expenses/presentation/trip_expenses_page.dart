@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
@@ -1033,7 +1033,7 @@ class _SettlementSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final pz = context.planzersColors;
+    final pz = context.planerzColors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

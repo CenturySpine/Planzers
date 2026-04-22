@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
-import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 
 class AppTheme {
   const AppTheme._();
@@ -56,7 +56,7 @@ class AppTheme {
         elevation: 1,
       ),
       extensions: <ThemeExtension<dynamic>>[
-        PlanzersColors(
+        PlanerzColors(
           success: p.success,
           successContainer: p.successContainer,
           warning: p.warning,

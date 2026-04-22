@@ -18,7 +18,7 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
-import 'package:planerz/app/theme/planzers_colors.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -1185,7 +1185,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     const SizedBox(height: 12),
                     Builder(builder: (context) {
                       final cs = Theme.of(context).colorScheme;
-                      final pz = context.planzersColors;
+                      final pz = context.planerzColors;
                       return Column(
                         children: [
                           Row(

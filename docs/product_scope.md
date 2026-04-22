@@ -1,4 +1,4 @@
-# Product Scope - Planzers
+# Product Scope - Planerz
 
 ## Problemes cibles
 

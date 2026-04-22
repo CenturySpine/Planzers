@@ -62,8 +62,8 @@ Si `where.exe java` ne retourne rien:
 ### 2. Cloner et installer les dependances
 
 ```bash
-git clone <url-du-repo> Planzers
-cd Planzers
+git clone <url-du-repo> Planerz
+cd Planerz
 flutter pub get
 ```
 
@@ -83,7 +83,7 @@ dart pub global run flutterfire_cli:flutterfire --version
 ### 4. Configurer Firebase (console)
 
 Dans la console Firebase:
-- Creer ou choisir le projet (ex: `planzers`)
+- Creer ou choisir le projet (ex: `planerz`)
 - **Authentication** -> *Sign-in method* -> activer **Google**
 - **Firestore Database** -> creer la base (mode dev/test)
 - Creer les apps de plateforme necessaires (Android, iOS, Web)
@@ -176,7 +176,7 @@ cd ..
 Depuis la racine du repo:
 
 ```bash
-firebase deploy --only functions --project planzers
+firebase deploy --only functions --project planerz
 ```
 
 Au premier deploy, Firebase peut demander une politique de retention des images de conteneur (Artifact Registry). Recommandation: `30` jours.
@@ -193,7 +193,7 @@ Au premier deploy, Firebase peut demander une politique de retention des images 
 Si tu modifies `functions/index.js`:
 
 ```bash
-firebase deploy --only functions --project planzers
+firebase deploy --only functions --project planerz
 ```
 
 ## Structure recommandee

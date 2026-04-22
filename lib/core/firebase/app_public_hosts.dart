@@ -7,13 +7,13 @@ const String _kInviteBaseUrlOverride = String.fromEnvironment('INVITE_BASE_URL')
 /// Production web app origin (scheme + host, optional port). No trailing slash.
 const String _kProdPublicAppOrigin = String.fromEnvironment(
   'PROD_PUBLIC_APP_ORIGIN',
-  defaultValue: 'https://planzers.centuryspine.org',
+  defaultValue: 'https://planerz.centuryspine.org',
 );
 
 /// Preview web app origin (Vercel preview, staging host, etc.).
 const String _kPreviewPublicAppOrigin = String.fromEnvironment(
   'PREVIEW_PUBLIC_APP_ORIGIN',
-  defaultValue: 'https://preview.planzers.centuryspine.org',
+  defaultValue: 'https://preview.planerz.centuryspine.org',
 );
 
 /// Base URI for `/invite?…` when sharing from **mobile** (iOS/Android/desktop native).

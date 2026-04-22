@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
   <key>NOTE</key>
-  <string>Download GoogleService-Info.plist from Firebase project 'planzers-preview' and save it as ios/Runner/Firebase/preview/GoogleService-Info.plist</string>
+  <string>Download GoogleService-Info.plist from Firebase project 'planerz-preview' and save it as ios/Runner/Firebase/preview/GoogleService-Info.plist</string>
 </dict>
 </plist>

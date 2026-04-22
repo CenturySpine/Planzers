@@ -3,22 +3,23 @@ importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
 
 const prodConfig = {
-  apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
-  appId: '1:936277491452:web:1794a04a8c81d6f8f1e179',
-  messagingSenderId: '936277491452',
-  projectId: 'planzers',
-  authDomain: 'planzers.firebaseapp.com',
-  storageBucket: 'planzers.firebasestorage.app',
-  measurementId: 'G-Z68T9LKMH7',
+  apiKey: 'AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM',
+  appId: '1:968267093466:web:fe185a5604145fe3d29ce3',
+  messagingSenderId: '968267093466',
+  projectId: 'planerz',
+  authDomain: 'planerz.firebaseapp.com',
+  storageBucket: 'planerz.firebasestorage.app',
+  measurementId: 'G-MDP337D1C0',
 };
 
 const previewConfig = {
-  apiKey: 'AIzaSyA84GI-A3YJGUGnT6XPGa8VZ4NSKSJKsXQ',
-  appId: '1:426381891835:web:26bade9d1738a1e419785e',
-  messagingSenderId: '426381891835',
-  projectId: 'planzers-preview',
-  authDomain: 'planzers-preview.firebaseapp.com',
-  storageBucket: 'planzers-preview.firebasestorage.app',
+  apiKey: 'AIzaSyCh1WtquB9vido6MZDLAPdAA0TqDCqVYWk',
+  appId: '1:1072541832110:web:bb11a3f3bde9fbfe546e3f',
+  messagingSenderId: '1072541832110',
+  projectId: 'planerz-preview',
+  authDomain: 'planerz-preview.firebaseapp.com',
+  storageBucket: 'planerz-preview.firebasestorage.app',
+  measurementId: 'G-8X0K4KJR7R',
 };
 
 const host = self.location.hostname || '';
@@ -30,7 +31,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   const notification = payload.notification || {};
   const data = payload.data || {};
-  const title = notification.title || 'Planzers';
+  const title = notification.title || 'Planerz';
   const body = notification.body || '';
   const tripId = typeof data.tripId === 'string' ? data.tripId.trim() : '';
   const type = typeof data.type === 'string' ? data.type.trim() : '';

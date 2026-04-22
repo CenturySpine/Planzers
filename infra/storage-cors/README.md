@@ -12,15 +12,15 @@ This folder contains versioned CORS policies for Firebase Storage buckets.
 From the repository root:
 
 ```powershell
-gsutil cors set infra/storage-cors/preview.cors.json gs://planzers-preview.firebasestorage.app
-gsutil cors set infra/storage-cors/prod.cors.json gs://planzers.firebasestorage.app
+gsutil cors set infra/storage-cors/preview.cors.json gs://planerz-preview.firebasestorage.app
+gsutil cors set infra/storage-cors/prod.cors.json gs://planerz.firebasestorage.app
 ```
 
 ## Verify the active policies
 
 ```powershell
-gsutil cors get gs://planzers-preview.firebasestorage.app
-gsutil cors get gs://planzers.firebasestorage.app
+gsutil cors get gs://planerz-preview.firebasestorage.app
+gsutil cors get gs://planerz.firebasestorage.app
 ```
 
 ## Notes
