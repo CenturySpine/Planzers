@@ -1,15 +1,30 @@
 enum TripNotificationChannel {
   messages,
-  activities;
+  activities,
+  cupidon;
 
   String get firestoreKey => switch (this) {
-        TripNotificationChannel.messages => 'messages',
-        TripNotificationChannel.activities => 'activities',
+        messages => 'messages',
+        activities => 'activities',
+        cupidon => 'cupidon',
+      };
+
+  String get androidChannelId => switch (this) {
+        messages => 'planerz_messages',
+        activities => 'planerz_activities',
+        cupidon => 'planerz_cupidon',
+      };
+
+  String get androidChannelName => switch (this) {
+        messages => 'Messages de voyage',
+        activities => 'Activités de voyage',
+        cupidon => 'Mode Cupidon',
       };
 
   String get targetPathSuffix => switch (this) {
-        TripNotificationChannel.messages => 'messages',
-        TripNotificationChannel.activities => 'activities',
+        messages => 'messages',
+        activities => 'activities',
+        cupidon => 'cupidon',
       };
 
   static TripNotificationChannel? fromFirestoreKey(String raw) {

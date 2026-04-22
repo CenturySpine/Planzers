@@ -144,6 +144,35 @@ Future<bool> enablePushNotificationsFromUserAction(User user) async {
   }
 }
 
+/// Removes this device's FCM token from Firestore and cancels the refresh
+/// subscription. Call before signing out so stale tokens don't accumulate.
+Future<void> deleteFcmTokenOnSignOut(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  unawaited(_tokenRefreshSub?.cancel());
+  _tokenRefreshSub = null;
+  _foregroundListenerAttached = false;
+
+  try {
+    final messaging = FirebaseMessaging.instance;
+    final token = await messaging.getToken(
+      vapidKey: kIsWeb && _kFcmWebVapidKey.isNotEmpty ? _kFcmWebVapidKey : null,
+    );
+    if (token == null || token.isEmpty) return;
+
+    final docId = _tokenDocId(token);
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(cleanUid)
+        .collection('fcmTokens')
+        .doc(docId)
+        .delete();
+  } catch (e) {
+    debugPrint('FCM token cleanup on sign-out: $e');
+  }
+}
+
 void _attachForegroundLogOnce() {
   if (_foregroundListenerAttached || kIsWeb) {
     return;

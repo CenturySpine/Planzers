@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,6 +33,8 @@ class AccountMenuButton extends ConsumerWidget {
 
   Future<void> _logout(BuildContext context) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) await deleteFcmTokenOnSignOut(uid);
     await FirebaseAuth.instance.signOut();
     if (context.mounted) {
       context.go('/sign-in');

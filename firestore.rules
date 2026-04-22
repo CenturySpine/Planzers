@@ -214,5 +214,10 @@ service cloud.firestore {
         allow read: if isTripMember(tripId);
       }
     }
+
+    // Written exclusively by Cloud Functions (Admin SDK). Clients have no access.
+    match /notificationQueue/{notifId} {
+      allow read, write: if false;
+    }
   }
 }

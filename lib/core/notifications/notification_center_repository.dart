@@ -47,6 +47,14 @@ final myTripUnreadTotalsProvider =
       .watchMyTripUnreadTotals();
 });
 
+/// Total unread Cupidon matches across all trips. Used for the heart badge on
+/// the profile nav item.
+final cupidonGlobalUnreadCountProvider = StreamProvider.autoDispose<int>((ref) {
+  return ref
+      .watch(notificationCenterRepositoryProvider)
+      .watchCupidonGlobalUnreadCount();
+});
+
 class TripNotificationCounters {
   TripNotificationCounters({
     required this.channels,
@@ -236,6 +244,27 @@ class NotificationCenterRepository {
     });
   }
 
+  /// Streams the total number of unread Cupidon matches across all trips.
+  Stream<int> watchCupidonGlobalUnreadCount() {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) {
+      return Stream.value(0);
+    }
+    return firestore
+        .collection('users')
+        .doc(uid)
+        .collection('tripNotificationCounters')
+        .snapshots()
+        .map((snap) {
+      var total = 0;
+      for (final doc in snap.docs) {
+        final counters = TripNotificationCounters.fromFirestore(doc.data());
+        total += counters.unreadFor(TripNotificationChannel.cupidon);
+      }
+      return total;
+    });
+  }
+
   Stream<Map<String, int>> watchMyTripUnreadTotals() {
     final uid = auth.currentUser?.uid.trim() ?? '';
     if (uid.isEmpty) {
@@ -257,6 +286,42 @@ class NotificationCenterRepository {
     });
   }
 
+  /// Resets all Cupidon unread counters to zero across every trip. Call when
+  /// the user views the Cupidon screen.
+  Future<void> clearAllCupidonUnread() async {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) return;
+
+    final snap = await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('tripNotificationCounters')
+        .get();
+
+    var batch = firestore.batch();
+    var ops = 0;
+    for (final doc in snap.docs) {
+      final data = doc.data();
+      final counters = TripNotificationCounters.fromFirestore(data);
+      if (counters.unreadFor(TripNotificationChannel.cupidon) == 0) continue;
+
+      final newTotal =
+          counters.total - counters.unreadFor(TripNotificationChannel.cupidon);
+      batch.update(doc.reference, {
+        'channels.${TripNotificationChannel.cupidon.firestoreKey}': 0,
+        'total': newTotal < 0 ? 0 : newTotal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      ops++;
+      if (ops >= 400) {
+        await batch.commit();
+        batch = firestore.batch();
+        ops = 0;
+      }
+    }
+    if (ops > 0) await batch.commit();
+  }
+
   Future<int> computeUnreadCount({
     required String tripId,
     required TripNotificationChannel channel,
@@ -271,10 +336,14 @@ class NotificationCenterRepository {
     final channelCollection = switch (channel) {
       TripNotificationChannel.messages => 'messages',
       TripNotificationChannel.activities => 'activities',
+      TripNotificationChannel.cupidon =>
+        throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
     };
     final actorField = switch (channel) {
       TripNotificationChannel.messages => 'authorId',
       TripNotificationChannel.activities => 'createdBy',
+      TripNotificationChannel.cupidon =>
+        throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
     };
 
     final baseQuery = firestore
