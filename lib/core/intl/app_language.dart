@@ -18,4 +18,15 @@ enum AppLanguage {
     }
     return null;
   }
+
+  static AppLanguage? fromLocale(Locale? locale) {
+    if (locale == null) return null;
+    for (final language in AppLanguage.values) {
+      if (language.locale.languageCode == locale.languageCode &&
+          (language.locale.countryCode ?? '') == (locale.countryCode ?? '')) {
+        return language;
+      }
+    }
+    return null;
+  }
 }

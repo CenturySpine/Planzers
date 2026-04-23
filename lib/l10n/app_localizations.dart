@@ -529,7 +529,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsDeleteDialogBody.
   ///
   /// In fr, this message translates to:
-  /// **'Cette action est définitive.\\n\\nVoyage : {tripTitle}'**
+  /// **'Cette action est définitive.\n\nVoyage : {tripTitle}'**
   String tripsDeleteDialogBody(Object tripTitle);
 
   /// No description provided for @tripsDeleted.

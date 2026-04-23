@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/core/intl/app_language.dart';
+import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -133,9 +135,14 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     }
   }
 
+  Future<void> _setLanguage(AppLanguage language) async {
+    await ref.read(appLocalePreferenceProvider.notifier).setLanguage(language);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final selectedLanguage = ref.watch(currentAppLanguageProvider);
     final animatedLabels = <String>[
       l10n.signInAnimatedLabelOutings,
       l10n.signInAnimatedLabelWeekends,
@@ -340,6 +347,59 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                       ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Material(
+                                color: selectedLanguage == AppLanguage.frFr
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer
+                                        .withValues(alpha: 0.75)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => _setLanguage(AppLanguage.frFr),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      '🇫🇷',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Material(
+                                color: selectedLanguage == AppLanguage.enUs
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer
+                                        .withValues(alpha: 0.75)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(999),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: () => _setLanguage(AppLanguage.enUs),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      '🇺🇸',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

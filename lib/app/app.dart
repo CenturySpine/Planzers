@@ -9,6 +9,7 @@ import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/core/firebase/bootstrap.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
+import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
 
 class PlanerzApp extends StatelessWidget {
@@ -46,7 +47,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(paletteId.data),
       themeMode: ThemeMode.light,
-      locale: localeAsync.asData?.value,
+      locale: localeAsync.asData?.value ?? AppLanguage.frFr.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: appRouter,

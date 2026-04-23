@@ -242,7 +242,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tripsDeleteDialogBody(Object tripTitle) {
-    return 'This action is permanent.\\n\\nTrip: $tripTitle';
+    return 'This action is permanent.\n\nTrip: $tripTitle';
   }
 
   @override
@@ -1877,7 +1877,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String tripsDeleteDialogBody(Object tripTitle) {
-    return 'This action is permanent.\\n\\nTrip: $tripTitle';
+    return 'This action is permanent.\n\nTrip: $tripTitle';
   }
 
   @override

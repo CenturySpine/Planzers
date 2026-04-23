@@ -62,7 +62,6 @@ class UsersRepository {
             if (googlePhotoUrl.isNotEmpty) 'googlePhotoUrl': googlePhotoUrl,
             'preferences': {
               'autoOpenCurrentTripOnLaunch': true,
-              'language': 'fr_FR',
             },
           },
           'createdAt': now,

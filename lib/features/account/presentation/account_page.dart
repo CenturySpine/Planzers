@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:planerz/core/intl/app_language.dart';
+import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
@@ -255,7 +256,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isUpdatingLanguage = true);
     try {
-      await ref.read(accountRepositoryProvider).updatePreferredLanguage(language);
+      await ref.read(appLocalePreferenceProvider.notifier).setLanguage(language);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -265,11 +266,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             duration: const Duration(milliseconds: 1100),
           ),
         );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.accountLanguageUpdateError(e.toString()))),
-      );
     } finally {
       if (mounted) {
         setState(() => _isUpdatingLanguage = false);
@@ -324,6 +320,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final currentLanguage = ref.watch(currentAppLanguageProvider);
     final authUser = FirebaseAuth.instance.currentUser;
     if (authUser == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -540,27 +537,65 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.accountLanguageTitle),
                 subtitle: Text(l10n.accountLanguageSubtitle),
-                trailing: DropdownButtonHideUnderline(
-                  child: DropdownButton<AppLanguage>(
-                    value: preferredLanguageFromUserData(data) ?? AppLanguage.frFr,
-                    onChanged: _isUpdatingLanguage
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              _updatePreferredLanguage(value);
-                            }
-                          },
-                    items: [
-                      DropdownMenuItem(
-                        value: AppLanguage.frFr,
-                        child: Text(l10n.languageFrench),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      color: currentLanguage == AppLanguage.frFr
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer.withValues(alpha: 0.75)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(999),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: _isUpdatingLanguage
+                            ? null
+                            : () => _updatePreferredLanguage(AppLanguage.frFr),
+                        child: Tooltip(
+                          message: l10n.languageFrench,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              '🇫🇷',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
                       ),
-                      DropdownMenuItem(
-                        value: AppLanguage.enUs,
-                        child: Text(l10n.languageEnglishUs),
+                    ),
+                    const SizedBox(width: 6),
+                    Material(
+                      color: currentLanguage == AppLanguage.enUs
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer.withValues(alpha: 0.75)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(999),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: _isUpdatingLanguage
+                            ? null
+                            : () => _updatePreferredLanguage(AppLanguage.enUs),
+                        child: Tooltip(
+                          message: l10n.languageEnglishUs,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            child: Text(
+                              '🇺🇸',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SwitchListTile.adaptive(

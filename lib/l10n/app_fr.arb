@@ -96,7 +96,7 @@
   "tripsCreateValidationDateOrder": "La date de fin doit être le même jour ou après la date de début",
   "tripsCreateAction": "Créer",
   "tripsDeleteDialogTitle": "Supprimer ce voyage ?",
-  "tripsDeleteDialogBody": "Cette action est définitive.\\n\\nVoyage : {tripTitle}",
+  "tripsDeleteDialogBody": "Cette action est définitive.\n\nVoyage : {tripTitle}",
   "@tripsDeleteDialogBody": {
     "placeholders": {
       "tripTitle": {}

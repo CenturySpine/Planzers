@@ -245,7 +245,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String tripsDeleteDialogBody(Object tripTitle) {
-    return 'Cette action est définitive.\\n\\nVoyage : $tripTitle';
+    return 'Cette action est définitive.\n\nVoyage : $tripTitle';
   }
 
   @override
@@ -1890,7 +1890,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String tripsDeleteDialogBody(Object tripTitle) {
-    return 'Cette action est définitive.\\n\\nVoyage : $tripTitle';
+    return 'Cette action est définitive.\n\nVoyage : $tripTitle';
   }
 
   @override

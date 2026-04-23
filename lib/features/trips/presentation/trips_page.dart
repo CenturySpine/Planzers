@@ -659,11 +659,11 @@ class _TripsPageState extends ConsumerState<TripsPage>
             l10n.tripsDeleteDialogBody(tripTitle),
           ),
           actions: [
-            TextButton(
+            FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(l10n.commonCancel),
             ),
-            FilledButton(
+            OutlinedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(l10n.commonDelete),
             ),

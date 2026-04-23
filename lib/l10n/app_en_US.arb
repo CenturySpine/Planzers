@@ -96,7 +96,7 @@
   "tripsCreateValidationDateOrder": "End date must be on or after start date",
   "tripsCreateAction": "Create",
   "tripsDeleteDialogTitle": "Delete this trip?",
-  "tripsDeleteDialogBody": "This action is permanent.\\n\\nTrip: {tripTitle}",
+  "tripsDeleteDialogBody": "This action is permanent.\n\nTrip: {tripTitle}",
   "@tripsDeleteDialogBody": {
     "placeholders": {
       "tripTitle": {}
