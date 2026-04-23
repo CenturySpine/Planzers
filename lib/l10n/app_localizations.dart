@@ -124,6 +124,180 @@ abstract class AppLocalizations {
   /// **'Supprimer'**
   String get commonDelete;
 
+  /// No description provided for @aboutTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'À propos'**
+  String get aboutTitle;
+
+  /// No description provided for @aboutLoadError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de charger la page À propos.'**
+  String get aboutLoadError;
+
+  /// No description provided for @aboutCarouselTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quelques souvenirs'**
+  String get aboutCarouselTitle;
+
+  /// No description provided for @aboutCarouselCaption1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saint-Gervais-les-Bains (Haute-Savoie), 2025'**
+  String get aboutCarouselCaption1;
+
+  /// No description provided for @aboutCarouselCaption2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Surf à Peniche (Portugal), septembre 2023'**
+  String get aboutCarouselCaption2;
+
+  /// No description provided for @aboutCarouselCaption3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lac de Tavaneuse, Abondance (Haute-Savoie), juillet 2025'**
+  String get aboutCarouselCaption3;
+
+  /// No description provided for @aboutCarouselCaption4.
+  ///
+  /// In fr, this message translates to:
+  /// **'Capo Rosso, Corse-du-Sud, avril 2026'**
+  String get aboutCarouselCaption4;
+
+  /// No description provided for @aboutCarouselCaption5.
+  ///
+  /// In fr, this message translates to:
+  /// **'Week-end via ferrata en solo, Bourg-d\'Oisans (Isère), juin 2025'**
+  String get aboutCarouselCaption5;
+
+  /// No description provided for @aboutCarouselCaption6.
+  ///
+  /// In fr, this message translates to:
+  /// **'Via ferrata du fort l\'Écluse (Ain), septembre 2024'**
+  String get aboutCarouselCaption6;
+
+  /// No description provided for @aboutCarouselCaption7.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vélo remis à neuf dans un atelier d\'auto-réparation à Lyon, juillet 2024'**
+  String get aboutCarouselCaption7;
+
+  /// No description provided for @aboutCarouselCaption7LinkLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir l\'atelier Etablicyclette'**
+  String get aboutCarouselCaption7LinkLabel;
+
+  /// No description provided for @aboutCarouselCaption8.
+  ///
+  /// In fr, this message translates to:
+  /// **'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024'**
+  String get aboutCarouselCaption8;
+
+  /// No description provided for @aboutFullNameAndAge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bruno Chappe, 48 ans'**
+  String get aboutFullNameAndAge;
+
+  /// No description provided for @aboutIntroText.
+  ///
+  /// In fr, this message translates to:
+  /// **'Développeur, passionné de rando et montagne, j\'ai créé Planerz parce qu\'à chaque organisation de week-end ou voyage entre amis, on jongle entre plusieurs outils (messagerie, suivi des dépenses, tableurs pour chambres, voitures, repas et activités). Mon objectif : centraliser toute l\'organisation dans un seul endroit.'**
+  String get aboutIntroText;
+
+  /// No description provided for @aboutPassionsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Passions et occupations'**
+  String get aboutPassionsTitle;
+
+  /// No description provided for @aboutPassionHiking.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rando'**
+  String get aboutPassionHiking;
+
+  /// No description provided for @aboutPassionBachata.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bachata'**
+  String get aboutPassionBachata;
+
+  /// No description provided for @aboutPassionClimbing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Escalade'**
+  String get aboutPassionClimbing;
+
+  /// No description provided for @aboutPassionRunning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Running'**
+  String get aboutPassionRunning;
+
+  /// No description provided for @aboutPassionCinema.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ciné'**
+  String get aboutPassionCinema;
+
+  /// No description provided for @aboutPassionSeries.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séries'**
+  String get aboutPassionSeries;
+
+  /// No description provided for @aboutPassionGolf.
+  ///
+  /// In fr, this message translates to:
+  /// **'Golf'**
+  String get aboutPassionGolf;
+
+  /// No description provided for @aboutPassionCooking.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cuisine'**
+  String get aboutPassionCooking;
+
+  /// No description provided for @aboutPassionBikeRepair.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réparation vélo'**
+  String get aboutPassionBikeRepair;
+
+  /// No description provided for @aboutPassionImprov.
+  ///
+  /// In fr, this message translates to:
+  /// **'Théâtre d\'impro'**
+  String get aboutPassionImprov;
+
+  /// No description provided for @aboutPassionBoardGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux de société'**
+  String get aboutPassionBoardGames;
+
+  /// No description provided for @aboutNetworksTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réseaux'**
+  String get aboutNetworksTitle;
+
+  /// No description provided for @aboutContactTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Contact'**
+  String get aboutContactTitle;
+
+  /// No description provided for @aboutQuotesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Citations'**
+  String get aboutQuotesTitle;
+
   /// No description provided for @legalInfoTitle.
   ///
   /// In fr, this message translates to:

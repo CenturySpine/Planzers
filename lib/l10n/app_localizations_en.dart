@@ -21,6 +21,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDelete => 'Delete';
 
   @override
+  String get aboutTitle => 'About';
+
+  @override
+  String get aboutLoadError => 'Unable to load the About page.';
+
+  @override
+  String get aboutCarouselTitle => 'Some highlights';
+
+  @override
+  String get aboutCarouselCaption1 =>
+      'Saint-Gervais-les-Bains (Haute-Savoie), 2025';
+
+  @override
+  String get aboutCarouselCaption2 =>
+      'Surfing in Peniche (Portugal), September 2023';
+
+  @override
+  String get aboutCarouselCaption3 =>
+      'Lac de Tavaneuse, Abondance (Haute-Savoie), July 2025';
+
+  @override
+  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, April 2026';
+
+  @override
+  String get aboutCarouselCaption5 =>
+      'Solo via ferrata weekend, Bourg-d\'Oisans (Isère), June 2025';
+
+  @override
+  String get aboutCarouselCaption6 =>
+      'Fort l\'Écluse via ferrata (Ain), September 2024';
+
+  @override
+  String get aboutCarouselCaption7 =>
+      'Refurbished bike in a self-repair workshop in Lyon, July 2024';
+
+  @override
+  String get aboutCarouselCaption7LinkLabel =>
+      'See the Etablicyclette workshop';
+
+  @override
+  String get aboutCarouselCaption8 =>
+      'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
+
+  @override
+  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
+
+  @override
+  String get aboutIntroText =>
+      'Developer and travel enthusiast, I build Planerz to make organizing trips with friends easier.';
+
+  @override
+  String get aboutPassionsTitle => 'Passions and activities';
+
+  @override
+  String get aboutPassionHiking => 'Hiking';
+
+  @override
+  String get aboutPassionBachata => 'Bachata';
+
+  @override
+  String get aboutPassionClimbing => 'Climbing';
+
+  @override
+  String get aboutPassionRunning => 'Running';
+
+  @override
+  String get aboutPassionCinema => 'Cinema';
+
+  @override
+  String get aboutPassionSeries => 'Series';
+
+  @override
+  String get aboutPassionGolf => 'Golf';
+
+  @override
+  String get aboutPassionCooking => 'Cooking';
+
+  @override
+  String get aboutPassionBikeRepair => 'Bike repair';
+
+  @override
+  String get aboutPassionImprov => 'Improv theater';
+
+  @override
+  String get aboutPassionBoardGames => 'Board games';
+
+  @override
+  String get aboutNetworksTitle => 'Networks';
+
+  @override
+  String get aboutContactTitle => 'Contact';
+
+  @override
+  String get aboutQuotesTitle => 'Quotes';
+
+  @override
   String get legalInfoTitle => 'Legal information';
 
   @override
@@ -1654,6 +1750,102 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonDelete => 'Delete';
+
+  @override
+  String get aboutTitle => 'About';
+
+  @override
+  String get aboutLoadError => 'Unable to load the About page.';
+
+  @override
+  String get aboutCarouselTitle => 'Some highlights';
+
+  @override
+  String get aboutCarouselCaption1 =>
+      'Saint-Gervais-les-Bains (Haute-Savoie), 2025';
+
+  @override
+  String get aboutCarouselCaption2 =>
+      'Surfing in Peniche (Portugal), September 2023';
+
+  @override
+  String get aboutCarouselCaption3 =>
+      'Lac de Tavaneuse, Abondance (Haute-Savoie), July 2025';
+
+  @override
+  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, April 2026';
+
+  @override
+  String get aboutCarouselCaption5 =>
+      'Solo via ferrata weekend, Bourg-d\'Oisans (Isère), June 2025';
+
+  @override
+  String get aboutCarouselCaption6 =>
+      'Fort l\'Écluse via ferrata (Ain), September 2024';
+
+  @override
+  String get aboutCarouselCaption7 =>
+      'Refurbished bike in a self-repair workshop in Lyon, July 2024';
+
+  @override
+  String get aboutCarouselCaption7LinkLabel =>
+      'See the Etablicyclette workshop';
+
+  @override
+  String get aboutCarouselCaption8 =>
+      'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
+
+  @override
+  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
+
+  @override
+  String get aboutIntroText =>
+      'Developer and travel enthusiast, I build Planerz to make organizing trips with friends easier.';
+
+  @override
+  String get aboutPassionsTitle => 'Passions and activities';
+
+  @override
+  String get aboutPassionHiking => 'Hiking';
+
+  @override
+  String get aboutPassionBachata => 'Bachata';
+
+  @override
+  String get aboutPassionClimbing => 'Climbing';
+
+  @override
+  String get aboutPassionRunning => 'Running';
+
+  @override
+  String get aboutPassionCinema => 'Cinema';
+
+  @override
+  String get aboutPassionSeries => 'Series';
+
+  @override
+  String get aboutPassionGolf => 'Golf';
+
+  @override
+  String get aboutPassionCooking => 'Cooking';
+
+  @override
+  String get aboutPassionBikeRepair => 'Bike repair';
+
+  @override
+  String get aboutPassionImprov => 'Improv theater';
+
+  @override
+  String get aboutPassionBoardGames => 'Board games';
+
+  @override
+  String get aboutNetworksTitle => 'Networks';
+
+  @override
+  String get aboutContactTitle => 'Contact';
+
+  @override
+  String get aboutQuotesTitle => 'Quotes';
 
   @override
   String get legalInfoTitle => 'Legal information';

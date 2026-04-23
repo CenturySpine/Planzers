@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -291,6 +292,31 @@ class _TripsPageState extends ConsumerState<TripsPage>
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(l10n.legalInfoTitle),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '|',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () => context.push(AboutPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(l10n.aboutTitle),
                     ),
                     const SizedBox(width: 8),
                     Text(

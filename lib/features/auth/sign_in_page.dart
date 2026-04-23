@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
+import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -444,8 +445,33 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () => context.push(AboutPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(l10n.aboutTitle),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
-                      '© 2026 Bruno Chappe',
+                      '|',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.appCopyright,
                       style: TextStyle(
                         fontSize: _legalLinkFontSize,
                         fontWeight: FontWeight.w400,
