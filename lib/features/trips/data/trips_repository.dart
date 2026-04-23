@@ -12,6 +12,7 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
@@ -201,9 +202,19 @@ class TripsRepository {
     }
 
     final data = snapshot.data();
-    final ownerId = (data?['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut modifier ce voyage');
+    final tripData = data ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, tripData);
+    final callerRole = resolveTripPermissionRole(
+      trip: trip,
+      userId: user.uid,
+    );
+    final requiredRole = TripGeneralPermissions.fromFirestore(
+      (tripData['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
+    ).editGeneralInfoMinRole;
+    final isMember = trip.memberIds.contains(user.uid);
+    if (!isMember ||
+        !isTripRoleAllowed(currentRole: callerRole, minRole: requiredRole)) {
+      throw StateError('Droits insuffisants pour modifier le voyage');
     }
 
     final update = <String, dynamic>{

@@ -21,6 +21,7 @@ import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
@@ -447,7 +448,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 : l10n.tripOverviewMyRooms,
             myAssignedRoomNames.join(', '),
           ];
+    final currentRole = resolveTripPermissionRole(
+      trip: _trip,
+      userId: myUid,
+    );
     final canEdit = (myUid != null && myUid == _trip.ownerId);
+    final canEditGeneralInfo = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.editGeneralInfoMinRole,
+    );
     final myCupidonEnabledAsync =
         ref.watch(myTripCupidonEnabledProvider(_trip.id));
     final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
@@ -648,7 +657,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           _copyInviteCode();
                                           return;
                                         }
-                                        if (value == 'edit' && canEdit) {
+                                        if (value == 'edit' && canEditGeneralInfo) {
                                           _startEditing();
                                           return;
                                         }
@@ -708,7 +717,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
+                                        if (canEditGeneralInfo)
                                           PopupMenuItem(
                                             value: 'edit',
                                             child: Row(
@@ -789,7 +798,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         _copyInviteCode();
                                         return;
                                       }
-                                      if (value == 'edit' && canEdit) {
+                                      if (value == 'edit' && canEditGeneralInfo) {
                                         _startEditing();
                                         return;
                                       }
@@ -846,7 +855,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
+                                      if (canEditGeneralInfo)
                                         PopupMenuItem(
                                           value: 'edit',
                                           child: Row(
@@ -1130,7 +1139,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   ] else ...[
                     const SizedBox(height: 16),
                   ],
-                  if (canEdit && _isEditing)
+                  if (canEditGeneralInfo && _isEditing)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Wrap(

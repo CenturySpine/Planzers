@@ -40,6 +40,40 @@ service cloud.firestore {
         );
     }
 
+    function tripCallerRoleRank(tripId) {
+      return tripDoc(tripId).data.ownerId == request.auth.uid
+        ? 2
+        : (
+            tripDoc(tripId).data.adminMemberIds is list
+            && request.auth.uid in tripDoc(tripId).data.adminMemberIds
+          )
+          ? 1
+          : 0;
+    }
+
+    function roleRank(roleName) {
+      return roleName == 'owner'
+        ? 2
+        : roleName == 'admin'
+          ? 1
+          : 0;
+    }
+
+    function tripEditGeneralInfoMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.editGeneralInfo is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.editGeneralInfo
+        : 'admin';
+    }
+
+    function canEditTripGeneralInfo(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditGeneralInfoMinRole(tripId));
+    }
+
     function activityLocked(data) {
       return data.keys().hasAny(['isLocked']) && data.isLocked == true;
     }
@@ -88,6 +122,17 @@ service cloud.firestore {
 
       allow update: if signedIn() && (
         resource.data.ownerId == request.auth.uid ||
+        (
+          canEditTripGeneralInfo(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title',
+            'destination',
+            'address',
+            'linkUrl',
+            'startDate',
+            'endDate',
+          ])
+        ) ||
         (
           request.auth.uid in resource.data.memberIds &&
           (

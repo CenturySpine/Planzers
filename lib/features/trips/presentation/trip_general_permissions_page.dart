@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/widgets/permission_min_role_selector.dart';
@@ -101,9 +102,10 @@ class _TripGeneralPermissionsPageState
         final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
         final myRole = _roleLabelFor(
           l10n: l10n,
-          uid: myUid,
-          ownerId: trip.ownerId,
-          adminMemberIds: trip.adminMemberIds,
+          role: resolveTripPermissionRole(
+            trip: trip,
+            userId: myUid,
+          ),
         );
 
         return Scaffold(
@@ -257,15 +259,13 @@ class _TripGeneralPermissionsPageState
 
 String _roleLabelFor({
   required AppLocalizations l10n,
-  required String? uid,
-  required String ownerId,
-  required List<String> adminMemberIds,
+  required TripPermissionRole role,
 }) {
-  final currentUid = uid?.trim() ?? '';
-  if (currentUid.isEmpty) return l10n.roleParticipant;
-  if (currentUid == ownerId.trim()) return l10n.roleOwner;
-  if (adminMemberIds.contains(currentUid)) return l10n.roleAdmin;
-  return l10n.roleParticipant;
+  return switch (role) {
+    TripPermissionRole.participant => l10n.roleParticipant,
+    TripPermissionRole.admin => l10n.roleAdmin,
+    TripPermissionRole.owner => l10n.roleOwner,
+  };
 }
 
 class _GeneralPermissionItem extends StatelessWidget {

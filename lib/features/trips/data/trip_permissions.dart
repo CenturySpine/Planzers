@@ -13,6 +13,16 @@ enum TripPermissionRole {
   }
 
   String toFirestore() => name;
+
+  int get rank {
+    return switch (this) {
+      TripPermissionRole.participant => 0,
+      TripPermissionRole.admin => 1,
+      TripPermissionRole.owner => 2,
+    };
+  }
+
+  bool allows(TripPermissionRole requiredRole) => rank >= requiredRole.rank;
 }
 
 enum TripGeneralPermissionAction {
