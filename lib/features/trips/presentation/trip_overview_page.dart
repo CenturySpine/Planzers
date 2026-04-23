@@ -26,7 +26,6 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
-import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_edit_dialog.dart';
 
@@ -215,13 +214,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   void _openParticipantsPage({required bool readOnly}) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TripParticipantsPage(
-          tripId: _trip.id,
-          readOnly: readOnly,
-        ),
-      ),
+    context.push(
+      '/trips/${_trip.id}/participants?readOnly=${readOnly ? '1' : '0'}',
     );
   }
 

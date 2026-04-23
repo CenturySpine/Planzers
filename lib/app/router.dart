@@ -13,6 +13,7 @@ import 'package:planerz/features/meals/presentation/trip_meals_page.dart';
 import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
 import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
+import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
@@ -87,6 +88,18 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => TripSettingsPage(
             tripId: state.pathParameters['tripId']!,
           ),
+        ),
+        GoRoute(
+          path: 'participants',
+          builder: (context, state) {
+            final readOnlyParam =
+                (state.uri.queryParameters['readOnly'] ?? '').trim();
+            final readOnly = readOnlyParam == '1' || readOnlyParam == 'true';
+            return TripParticipantsPage(
+              tripId: state.pathParameters['tripId']!,
+              readOnly: readOnly,
+            );
+          },
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
