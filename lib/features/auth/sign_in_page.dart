@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +28,81 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   bool _isLoading = false;
   static const double _legalLinkFontSize = 12;
   static const double _footerReservedHeight = 32;
+  static const List<String> _animatedLabels = [
+    'SORTIES',
+    'WEEK-ENDS',
+    'VOYAGES',
+  ];
+  static const Duration _labelDisplayDuration = Duration(seconds: 3);
+  static const Duration _labelTransitionDuration = Duration(milliseconds: 420);
+
+  int _animatedLabelIndex = 0;
+  Timer? _subtitleTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleSubtitleStep();
+  }
+
+  @override
+  void dispose() {
+    _subtitleTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleSubtitleStep() {
+    if (_animatedLabelIndex >= _animatedLabels.length - 1) {
+      return;
+    }
+
+    _subtitleTimer?.cancel();
+    _subtitleTimer = Timer(_labelDisplayDuration, _advanceSubtitle);
+  }
+
+  void _advanceSubtitle() {
+    if (!mounted || _animatedLabelIndex >= _animatedLabels.length - 1) {
+      return;
+    }
+
+    setState(() {
+      _animatedLabelIndex += 1;
+    });
+    _scheduleSubtitleStep();
+  }
+
+  double _labelWidth(
+    BuildContext context,
+    TextStyle style,
+    String label,
+  ) {
+    final textScaler = MediaQuery.textScalerOf(context);
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+
+    return painter.width;
+  }
+
+  double _maxAnimatedLabelWidth(BuildContext context, TextStyle style) {
+    final textScaler = MediaQuery.textScalerOf(context);
+    var maxWidth = 0.0;
+
+    for (final label in _animatedLabels) {
+      final painter = TextPainter(
+        text: TextSpan(text: label, style: style),
+        textDirection: TextDirection.ltr,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout();
+      maxWidth = math.max(maxWidth, painter.width);
+    }
+
+    return maxWidth;
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() {
@@ -59,6 +135,24 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   @override
   Widget build(BuildContext context) {
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final subtitleStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      height: 1.0,
+      letterSpacing: 0.6,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
+    final animatedLabelLineHeight =
+        (subtitleStyle.fontSize ?? 18) * (subtitleStyle.height ?? 1.0);
+    final currentAnimatedLabel = _animatedLabels[_animatedLabelIndex];
+    final isFinalAnimatedLabel =
+        _animatedLabelIndex >= _animatedLabels.length - 1;
+    // During transitions we keep extra room to avoid clipping for long labels.
+    // On the final label we collapse to the actual text width so the whole
+    // subtitle recenters with the page title.
+    final animatedLabelWidth = isFinalAnimatedLabel
+        ? _labelWidth(context, subtitleStyle, currentAnimatedLabel) + 6
+        : _maxAnimatedLabelWidth(context, subtitleStyle) + 24;
 
     return Scaffold(
       body: Stack(
@@ -68,124 +162,181 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               child: LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
-                child: ConstrainedBox(
+                  child: ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: math.max(
                         0,
                         constraints.maxHeight - _footerReservedHeight,
                       ),
                     ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                    Image.asset(
-                      'assets/images/app_icon.png',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'PLANERZ',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.bold,
-                        height: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'WE ENTRE AMIS',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
-                        letterSpacing: 0.6,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _isLoading ? null : _signInWithGoogle,
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: _googleSignInText,
-                            disabledForegroundColor:
-                                _googleSignInText.withValues(alpha: 0.55),
-                            side: const BorderSide(
-                              color: _googleSignInBorder,
-                              width: 1,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 28,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/images/app_icon.png',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 28),
+                          const Text(
+                            'PLANERZ',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 56,
+                              fontWeight: FontWeight.bold,
+                              height: 1.0,
                             ),
                           ),
-                          child: _isLoading
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: _googleSignInText.withValues(
-                                          alpha: 0.7,
-                                        ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedContainer(
+                                duration: _labelTransitionDuration,
+                                curve: Curves.easeOut,
+                                width: animatedLabelWidth,
+                                height: animatedLabelLineHeight,
+                                child: ClipRect(
+                                  child: AnimatedSwitcher(
+                                    duration: _labelTransitionDuration,
+                                    switchInCurve: Curves.easeOut,
+                                    switchOutCurve: Curves.easeIn,
+                                    transitionBuilder: (child, animation) {
+                                      final incomingKey = ValueKey<String>(
+                                        currentAnimatedLabel,
+                                      );
+                                      final isIncoming =
+                                          child.key == incomingKey;
+                                      final curvedAnimation = CurvedAnimation(
+                                        parent: isIncoming
+                                            ? animation
+                                            : ReverseAnimation(animation),
+                                        curve: isIncoming
+                                            ? Curves.easeOut
+                                            : Curves.easeIn,
+                                      );
+                                      final offsetAnimation = Tween<Offset>(
+                                        begin: isIncoming
+                                            ? const Offset(0, 1)
+                                            : Offset.zero,
+                                        end: isIncoming
+                                            ? Offset.zero
+                                            : const Offset(0, -1),
+                                      ).animate(curvedAnimation);
+
+                                      return SlideTransition(
+                                        position: offsetAnimation,
+                                        child: child,
+                                      );
+                                    },
+                                    child: Align(
+                                      key: ValueKey<String>(
+                                        currentAnimatedLabel,
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        currentAnimatedLabel,
+                                        textAlign: TextAlign.right,
+                                        style: subtitleStyle,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Connexion...',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                        color: _googleSignInText.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/google_g.svg',
-                                      width: 20,
-                                      height: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Continuer avec Google',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                        color: _googleSignInText,
-                                        letterSpacing: 0.15,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                        ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'ENTRE AMIS',
+                                textAlign: TextAlign.center,
+                                style: subtitleStyle,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 400),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed:
+                                    _isLoading ? null : _signInWithGoogle,
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: _googleSignInText,
+                                  disabledForegroundColor:
+                                      _googleSignInText.withValues(alpha: 0.55),
+                                  side: const BorderSide(
+                                    color: _googleSignInBorder,
+                                    width: 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 28,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color:
+                                                  _googleSignInText.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            'Connexion...',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  _googleSignInText.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/images/google_g.svg',
+                                            width: 20,
+                                            height: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Text(
+                                            'Continuer avec Google',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: _googleSignInText,
+                                              letterSpacing: 0.15,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                      ],
-                    ),
-                  ),
                   ),
                 ),
               ),
@@ -201,7 +352,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextButton(
-                      onPressed: () => context.push(LegalInformationPage.routePath),
+                      onPressed: () =>
+                          context.push(LegalInformationPage.routePath),
                       style: TextButton.styleFrom(
                         foregroundColor: legalLinkColor,
                         textStyle: const TextStyle(
