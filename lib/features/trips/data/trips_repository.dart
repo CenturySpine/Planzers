@@ -13,6 +13,7 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -737,6 +738,87 @@ class TripsRepository {
       'bannerImageUrl': FieldValue.delete(),
       'bannerImagePath': FieldValue.delete(),
       'bannerUpdatedAt': FieldValue.delete(),
+    });
+  }
+
+  Future<void> updateTripGeneralPermission({
+    required String tripId,
+    required TripGeneralPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
+    final adminIds = ((data['adminMemberIds'] as List<dynamic>?) ?? const [])
+        .map((id) => id.toString().trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    final isOwner = ownerId == user.uid;
+    final isAdmin = adminIds.contains(user.uid);
+    if (!isOwner && !isAdmin) {
+      throw StateError('Seuls les admins peuvent modifier ces permissions');
+    }
+
+    final fieldName = switch (action) {
+      TripGeneralPermissionAction.editGeneralInfo => 'editGeneralInfo',
+      TripGeneralPermissionAction.manageBanner => 'manageBanner',
+      TripGeneralPermissionAction.shareAccess => 'shareAccess',
+      TripGeneralPermissionAction.deleteTrip => 'deleteTrip',
+    };
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.tripGeneral.$fieldName': minRole.toFirestore(),
+    });
+  }
+
+  Future<void> resetTripGeneralPermissionsToDefaults({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
+    final adminIds = ((data['adminMemberIds'] as List<dynamic>?) ?? const [])
+        .map((id) => id.toString().trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
+    final isOwner = ownerId == user.uid;
+    final isAdmin = adminIds.contains(user.uid);
+    if (!isOwner && !isAdmin) {
+      throw StateError('Seuls les admins peuvent modifier ces permissions');
+    }
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.tripGeneral': TripGeneralPermissions.defaults.toFirestore(),
     });
   }
 }

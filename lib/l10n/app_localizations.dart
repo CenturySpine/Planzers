@@ -934,6 +934,60 @@ abstract class AppLocalizations {
   /// **'Participant'**
   String get roleParticipant;
 
+  /// No description provided for @tripGeneralPermissionsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Caractéristiques générales du voyage'**
+  String get tripGeneralPermissionsTitle;
+
+  /// No description provided for @tripGeneralPermissionsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions minimales par défaut pour les actions globales du voyage.'**
+  String get tripGeneralPermissionsDescription;
+
+  /// No description provided for @tripPermissionEditGeneralInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier les infos générales'**
+  String get tripPermissionEditGeneralInfo;
+
+  /// No description provided for @tripPermissionManageBanner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer la photo de bannière'**
+  String get tripPermissionManageBanner;
+
+  /// No description provided for @tripPermissionShareAccess.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partager l\'accès du voyage'**
+  String get tripPermissionShareAccess;
+
+  /// No description provided for @tripPermissionDeleteTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer le voyage'**
+  String get tripPermissionDeleteTrip;
+
+  /// No description provided for @tripPermissionsResetDefaultsAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réinitialiser (valeurs par défaut)'**
+  String get tripPermissionsResetDefaultsAction;
+
+  /// No description provided for @tripPermissionsResetDone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valeurs par défaut réappliquées'**
+  String get tripPermissionsResetDone;
+
+  /// No description provided for @tripPermissionMinRole.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôle minimal : {role}'**
+  String tripPermissionMinRole(Object role);
+
   /// No description provided for @tripSectionTrip.
   ///
   /// In fr, this message translates to:

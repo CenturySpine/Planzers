@@ -474,6 +474,38 @@ class AppLocalizationsFr extends AppLocalizations {
   String get roleParticipant => 'Participant';
 
   @override
+  String get tripGeneralPermissionsTitle =>
+      'Caractéristiques générales du voyage';
+
+  @override
+  String get tripGeneralPermissionsDescription =>
+      'Permissions minimales par défaut pour les actions globales du voyage.';
+
+  @override
+  String get tripPermissionEditGeneralInfo => 'Modifier les infos générales';
+
+  @override
+  String get tripPermissionManageBanner => 'Gérer la photo de bannière';
+
+  @override
+  String get tripPermissionShareAccess => 'Partager l\'accès du voyage';
+
+  @override
+  String get tripPermissionDeleteTrip => 'Supprimer le voyage';
+
+  @override
+  String get tripPermissionsResetDefaultsAction =>
+      'Réinitialiser (valeurs par défaut)';
+
+  @override
+  String get tripPermissionsResetDone => 'Valeurs par défaut réappliquées';
+
+  @override
+  String tripPermissionMinRole(Object role) {
+    return 'Rôle minimal : $role';
+  }
+
+  @override
   String get tripSectionTrip => 'Voyage';
 
   @override
@@ -2212,6 +2244,38 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get roleParticipant => 'Participant';
+
+  @override
+  String get tripGeneralPermissionsTitle =>
+      'Caractéristiques générales du voyage';
+
+  @override
+  String get tripGeneralPermissionsDescription =>
+      'Permissions minimales par défaut pour les actions globales du voyage.';
+
+  @override
+  String get tripPermissionEditGeneralInfo => 'Modifier les infos générales';
+
+  @override
+  String get tripPermissionManageBanner => 'Gérer la photo de bannière';
+
+  @override
+  String get tripPermissionShareAccess => 'Partager l\'accès du voyage';
+
+  @override
+  String get tripPermissionDeleteTrip => 'Supprimer le voyage';
+
+  @override
+  String get tripPermissionsResetDefaultsAction =>
+      'Réinitialiser (valeurs par défaut)';
+
+  @override
+  String get tripPermissionsResetDone => 'Valeurs par défaut réappliquées';
+
+  @override
+  String tripPermissionMinRole(Object role) {
+    return 'Rôle minimal : $role';
+  }
 
   @override
   String get tripSectionTrip => 'Voyage';

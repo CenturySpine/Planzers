@@ -199,6 +199,20 @@
   "roleOwner": "Owner",
   "roleAdmin": "Admin",
   "roleParticipant": "Participant",
+  "tripGeneralPermissionsTitle": "General trip characteristics",
+  "tripGeneralPermissionsDescription": "Default minimum permissions for trip-wide actions.",
+  "tripPermissionEditGeneralInfo": "Edit general information",
+  "tripPermissionManageBanner": "Manage banner photo",
+  "tripPermissionShareAccess": "Share trip access",
+  "tripPermissionDeleteTrip": "Delete trip",
+  "tripPermissionsResetDefaultsAction": "Reset (default values)",
+  "tripPermissionsResetDone": "Default values restored",
+  "tripPermissionMinRole": "Minimum role: {role}",
+  "@tripPermissionMinRole": {
+    "placeholders": {
+      "role": {}
+    }
+  },
   "tripSectionTrip": "Trip",
   "tripSectionTripDescription": "Rules related to general trip information.",
   "tripSectionExpenses": "Expenses",

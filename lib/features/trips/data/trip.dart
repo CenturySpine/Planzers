@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 class Trip {
   Trip({
@@ -16,6 +17,7 @@ class Trip {
     this.bannerImagePath,
     this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
+    this.generalPermissions = TripGeneralPermissions.defaults,
   });
 
   final String id;
@@ -28,6 +30,7 @@ class Trip {
 
   /// Co-admins (trip creator is always admin via [ownerId]).
   final List<String> adminMemberIds;
+  final TripGeneralPermissions generalPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -106,6 +109,9 @@ class Trip {
       memberPublicLabels:
           memberPublicLabelsFromFirestore(data['memberPublicLabels']),
       adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),
+      generalPermissions: TripGeneralPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
+      ),
     );
   }
 
@@ -126,6 +132,9 @@ class Trip {
         'bannerImagePath': bannerImagePath!.trim(),
       if (memberPublicLabels.isNotEmpty) 'memberPublicLabels': memberPublicLabels,
       if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
+      'permissions': <String, dynamic>{
+        'tripGeneral': generalPermissions.toFirestore(),
+      },
     };
   }
 }

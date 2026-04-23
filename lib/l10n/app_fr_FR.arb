@@ -199,6 +199,20 @@
   "roleOwner": "Créateur",
   "roleAdmin": "Admin",
   "roleParticipant": "Participant",
+  "tripGeneralPermissionsTitle": "Caractéristiques générales du voyage",
+  "tripGeneralPermissionsDescription": "Permissions minimales par défaut pour les actions globales du voyage.",
+  "tripPermissionEditGeneralInfo": "Modifier les infos générales",
+  "tripPermissionManageBanner": "Gérer la photo de bannière",
+  "tripPermissionShareAccess": "Partager l'accès du voyage",
+  "tripPermissionDeleteTrip": "Supprimer le voyage",
+  "tripPermissionsResetDefaultsAction": "Réinitialiser (valeurs par défaut)",
+  "tripPermissionsResetDone": "Valeurs par défaut réappliquées",
+  "tripPermissionMinRole": "Rôle minimal : {role}",
+  "@tripPermissionMinRole": {
+    "placeholders": {
+      "role": {}
+    }
+  },
   "tripSectionTrip": "Voyage",
   "tripSectionTripDescription": "Règles liées aux informations générales du voyage.",
   "tripSectionExpenses": "Dépenses",

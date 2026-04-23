@@ -85,6 +85,7 @@ class TripSettingsPage extends ConsumerWidget {
                 title: l10n.tripSectionTrip,
                 icon: Icons.luggage_outlined,
                 description: l10n.tripSectionTripDescription,
+                onTap: () => context.push('/trips/$tripId/settings/trip'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionExpenses,
@@ -154,11 +155,13 @@ class _SettingsSectionCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.description,
+    this.onTap,
   });
 
   final String title;
   final IconData icon;
   final String description;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +171,7 @@ class _SettingsSectionCard extends StatelessWidget {
         title: Text(title),
         subtitle: Text(description),
         trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

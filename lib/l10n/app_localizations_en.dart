@@ -470,6 +470,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleParticipant => 'Participant';
 
   @override
+  String get tripGeneralPermissionsTitle => 'General trip characteristics';
+
+  @override
+  String get tripGeneralPermissionsDescription =>
+      'Default minimum permissions for trip-wide actions.';
+
+  @override
+  String get tripPermissionEditGeneralInfo => 'Edit general information';
+
+  @override
+  String get tripPermissionManageBanner => 'Manage banner photo';
+
+  @override
+  String get tripPermissionShareAccess => 'Share trip access';
+
+  @override
+  String get tripPermissionDeleteTrip => 'Delete trip';
+
+  @override
+  String get tripPermissionsResetDefaultsAction => 'Reset (default values)';
+
+  @override
+  String get tripPermissionsResetDone => 'Default values restored';
+
+  @override
+  String tripPermissionMinRole(Object role) {
+    return 'Minimum role: $role';
+  }
+
+  @override
   String get tripSectionTrip => 'Trip';
 
   @override
@@ -2199,6 +2229,36 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get roleParticipant => 'Participant';
+
+  @override
+  String get tripGeneralPermissionsTitle => 'General trip characteristics';
+
+  @override
+  String get tripGeneralPermissionsDescription =>
+      'Default minimum permissions for trip-wide actions.';
+
+  @override
+  String get tripPermissionEditGeneralInfo => 'Edit general information';
+
+  @override
+  String get tripPermissionManageBanner => 'Manage banner photo';
+
+  @override
+  String get tripPermissionShareAccess => 'Share trip access';
+
+  @override
+  String get tripPermissionDeleteTrip => 'Delete trip';
+
+  @override
+  String get tripPermissionsResetDefaultsAction => 'Reset (default values)';
+
+  @override
+  String get tripPermissionsResetDone => 'Default values restored';
+
+  @override
+  String tripPermissionMinRole(Object role) {
+    return 'Minimum role: $role';
+  }
 
   @override
   String get tripSectionTrip => 'Trip';
