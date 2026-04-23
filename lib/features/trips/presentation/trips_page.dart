@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -146,7 +145,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     unreadByTrip,
                   );
                   final colorScheme = Theme.of(context).colorScheme;
-                  final palette = context.planerzColors;
 
                   final timelineContainerColors = <_TripTimelineCategory, Color>{
                     _TripTimelineCategory.past:
@@ -156,9 +154,9 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     _TripTimelineCategory.upcoming: colorScheme.tertiaryContainer,
                   };
                   final timelineTitleColors = <_TripTimelineCategory, Color>{
-                    _TripTimelineCategory.past: palette.warning,
-                    _TripTimelineCategory.ongoing: palette.success,
-                    _TripTimelineCategory.upcoming: colorScheme.tertiary,
+                    _TripTimelineCategory.past: colorScheme.primary,
+                    _TripTimelineCategory.ongoing: colorScheme.primary,
+                    _TripTimelineCategory.upcoming: colorScheme.primary,
                   };
 
                   return Column(
