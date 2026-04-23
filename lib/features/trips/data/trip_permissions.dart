@@ -162,9 +162,12 @@ enum TripExpensesPermissionAction {
   createExpensePost,
   editExpensePost,
   deleteExpensePost,
+  createExpense,
+  editExpense,
+  deleteExpense,
 }
 
-/// Permissions for expense **posts** (`expenseGroups`): create / edit / delete.
+/// Permissions for expense **posts** (`expenseGroups`) and **lines** (`expenses`).
 ///
 /// Firestore: `trips/{id}.permissions.expenses`.
 class TripExpensesPermissions {
@@ -172,17 +175,26 @@ class TripExpensesPermissions {
     required this.createExpensePostMinRole,
     required this.editExpensePostMinRole,
     required this.deleteExpensePostMinRole,
+    required this.createExpenseMinRole,
+    required this.editExpenseMinRole,
+    required this.deleteExpenseMinRole,
   });
 
   final TripPermissionRole createExpensePostMinRole;
   final TripPermissionRole editExpensePostMinRole;
   final TripPermissionRole deleteExpensePostMinRole;
+  final TripPermissionRole createExpenseMinRole;
+  final TripPermissionRole editExpenseMinRole;
+  final TripPermissionRole deleteExpenseMinRole;
 
-  /// Everyone can manage posts by default; visibility still restricts who sees a post.
+  /// Everyone can manage posts and lines by default; post visibility still applies elsewhere.
   static const defaults = TripExpensesPermissions(
     createExpensePostMinRole: TripPermissionRole.participant,
     editExpensePostMinRole: TripPermissionRole.participant,
     deleteExpensePostMinRole: TripPermissionRole.participant,
+    createExpenseMinRole: TripPermissionRole.participant,
+    editExpenseMinRole: TripPermissionRole.participant,
+    deleteExpenseMinRole: TripPermissionRole.participant,
   );
 
   factory TripExpensesPermissions.fromFirestore(dynamic raw) {
@@ -199,6 +211,15 @@ class TripExpensesPermissions {
       deleteExpensePostMinRole: raw['deleteExpensePost'] == null
           ? TripPermissionRole.participant
           : TripPermissionRole.fromFirestore(raw['deleteExpensePost']),
+      createExpenseMinRole: raw['createExpense'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['createExpense']),
+      editExpenseMinRole: raw['editExpense'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['editExpense']),
+      deleteExpenseMinRole: raw['deleteExpense'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['deleteExpense']),
     );
   }
 
@@ -207,6 +228,9 @@ class TripExpensesPermissions {
       'createExpensePost': createExpensePostMinRole.toFirestore(),
       'editExpensePost': editExpensePostMinRole.toFirestore(),
       'deleteExpensePost': deleteExpensePostMinRole.toFirestore(),
+      'createExpense': createExpenseMinRole.toFirestore(),
+      'editExpense': editExpenseMinRole.toFirestore(),
+      'deleteExpense': deleteExpenseMinRole.toFirestore(),
     };
   }
 
@@ -215,6 +239,9 @@ class TripExpensesPermissions {
       TripExpensesPermissionAction.createExpensePost => createExpensePostMinRole,
       TripExpensesPermissionAction.editExpensePost => editExpensePostMinRole,
       TripExpensesPermissionAction.deleteExpensePost => deleteExpensePostMinRole,
+      TripExpensesPermissionAction.createExpense => createExpenseMinRole,
+      TripExpensesPermissionAction.editExpense => editExpenseMinRole,
+      TripExpensesPermissionAction.deleteExpense => deleteExpenseMinRole,
     };
   }
 }

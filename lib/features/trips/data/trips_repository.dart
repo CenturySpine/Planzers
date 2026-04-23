@@ -1003,6 +1003,9 @@ class TripsRepository {
       TripExpensesPermissionAction.createExpensePost => 'createExpensePost',
       TripExpensesPermissionAction.editExpensePost => 'editExpensePost',
       TripExpensesPermissionAction.deleteExpensePost => 'deleteExpensePost',
+      TripExpensesPermissionAction.createExpense => 'createExpense',
+      TripExpensesPermissionAction.editExpense => 'editExpense',
+      TripExpensesPermissionAction.deleteExpense => 'deleteExpense',
     };
 
     await tripRef.update(<String, dynamic>{

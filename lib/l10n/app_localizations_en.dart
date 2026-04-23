@@ -552,6 +552,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPermissionExpensesDeletePost => 'Delete an expense post';
 
   @override
+  String get tripPermissionExpensesCreateExpense => 'Create an expense';
+
+  @override
+  String get tripPermissionExpensesEditExpense => 'Edit an expense';
+
+  @override
+  String get tripPermissionExpensesDeleteExpense => 'Delete an expense';
+
+  @override
   String get tripSectionTrip => 'Trip';
 
   @override
@@ -2363,6 +2372,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionExpensesDeletePost => 'Delete an expense post';
+
+  @override
+  String get tripPermissionExpensesCreateExpense => 'Create an expense';
+
+  @override
+  String get tripPermissionExpensesEditExpense => 'Edit an expense';
+
+  @override
+  String get tripPermissionExpensesDeleteExpense => 'Delete an expense';
 
   @override
   String get tripSectionTrip => 'Trip';

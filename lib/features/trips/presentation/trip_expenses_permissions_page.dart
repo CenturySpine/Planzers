@@ -204,6 +204,46 @@ class _TripExpensesPermissionsPageState
                           minRole: role,
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      _ExpensesPermissionItem(
+                        title: l10n.tripPermissionExpensesCreateExpense,
+                        minRole: trip.expensesPermissions.createExpenseMinRole,
+                        icon: Icons.add_circle_outline,
+                        busy: _savingActions.contains(
+                          TripExpensesPermissionAction.createExpense,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripExpensesPermissionAction.createExpense,
+                          minRole: role,
+                        ),
+                      ),
+                      _ExpensesPermissionItem(
+                        title: l10n.tripPermissionExpensesEditExpense,
+                        minRole: trip.expensesPermissions.editExpenseMinRole,
+                        icon: Icons.edit_note_outlined,
+                        busy: _savingActions.contains(
+                          TripExpensesPermissionAction.editExpense,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripExpensesPermissionAction.editExpense,
+                          minRole: role,
+                        ),
+                      ),
+                      _ExpensesPermissionItem(
+                        title: l10n.tripPermissionExpensesDeleteExpense,
+                        minRole: trip.expensesPermissions.deleteExpenseMinRole,
+                        icon: Icons.remove_circle_outline,
+                        busy: _savingActions.contains(
+                          TripExpensesPermissionAction.deleteExpense,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripExpensesPermissionAction.deleteExpense,
+                          minRole: role,
+                        ),
+                      ),
                     ],
                   ),
                 ),

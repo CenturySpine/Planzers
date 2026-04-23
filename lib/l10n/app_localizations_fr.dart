@@ -560,6 +560,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'Supprimer un poste de dépense';
 
   @override
+  String get tripPermissionExpensesCreateExpense => 'Créer une dépense';
+
+  @override
+  String get tripPermissionExpensesEditExpense => 'Modifier une dépense';
+
+  @override
+  String get tripPermissionExpensesDeleteExpense => 'Supprimer une dépense';
+
+  @override
   String get tripSectionTrip => 'Voyage';
 
   @override
@@ -2384,6 +2393,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPermissionExpensesDeletePost =>
       'Supprimer un poste de dépense';
+
+  @override
+  String get tripPermissionExpensesCreateExpense => 'Créer une dépense';
+
+  @override
+  String get tripPermissionExpensesEditExpense => 'Modifier une dépense';
+
+  @override
+  String get tripPermissionExpensesDeleteExpense => 'Supprimer une dépense';
 
   @override
   String get tripSectionTrip => 'Voyage';

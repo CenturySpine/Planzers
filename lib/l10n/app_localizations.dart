@@ -1078,6 +1078,24 @@ abstract class AppLocalizations {
   /// **'Supprimer un poste de dépense'**
   String get tripPermissionExpensesDeletePost;
 
+  /// No description provided for @tripPermissionExpensesCreateExpense.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer une dépense'**
+  String get tripPermissionExpensesCreateExpense;
+
+  /// No description provided for @tripPermissionExpensesEditExpense.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier une dépense'**
+  String get tripPermissionExpensesEditExpense;
+
+  /// No description provided for @tripPermissionExpensesDeleteExpense.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer une dépense'**
+  String get tripPermissionExpensesDeleteExpense;
+
   /// No description provided for @tripSectionTrip.
   ///
   /// In fr, this message translates to:
