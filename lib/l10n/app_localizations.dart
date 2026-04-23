@@ -1036,6 +1036,18 @@ abstract class AppLocalizations {
   /// **'Passer un utilisateur en admin / participant'**
   String get tripPermissionParticipantsToggleAdmin;
 
+  /// No description provided for @tripPermissionsColumnAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Action'**
+  String get tripPermissionsColumnAction;
+
+  /// No description provided for @tripPermissionsColumnMinRole.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôle minimal'**
+  String get tripPermissionsColumnMinRole;
+
   /// No description provided for @tripSectionTrip.
   ///
   /// In fr, this message translates to:

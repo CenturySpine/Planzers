@@ -27,6 +27,7 @@ class PermissionMinRoleSelector extends StatelessWidget {
       );
     }
     return DropdownButton<TripPermissionRole>(
+      isExpanded: true,
       value: value,
       onChanged: enabled
           ? (next) {

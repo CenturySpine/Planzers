@@ -216,6 +216,8 @@
   "tripPermissionParticipantsDeletePlaceholder": "Delete a temporary participant",
   "tripPermissionParticipantsDeleteRegistered": "Delete a registered participant",
   "tripPermissionParticipantsToggleAdmin": "Toggle user role between admin and participant",
+  "tripPermissionsColumnAction": "Action",
+  "tripPermissionsColumnMinRole": "Minimum role",
   "tripSectionTrip": "Trip",
   "tripSectionTripDescription": "Rules related to general trip information.",
   "tripSectionExpenses": "Expenses",

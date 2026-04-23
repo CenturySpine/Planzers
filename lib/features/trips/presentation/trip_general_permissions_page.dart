@@ -8,6 +8,8 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/widgets/permission_min_role_selector.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
+const double _permissionsColumnSpacing = 12;
+
 class TripGeneralPermissionsPage extends ConsumerStatefulWidget {
   const TripGeneralPermissionsPage({
     super.key,
@@ -104,10 +106,6 @@ class _TripGeneralPermissionsPageState
           trip: trip,
           userId: myUid,
         );
-        final myRole = _roleLabelFor(
-          l10n: l10n,
-          role: currentRole,
-        );
         final canAccessTripSettings = isTripRoleAllowed(
           currentRole: currentRole,
           minRole: trip.generalPermissions.manageTripSettingsMinRole,
@@ -148,25 +146,6 @@ class _TripGeneralPermissionsPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.tripMyRole(myRole)),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.tripRoleHierarchyHint,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
                       Text(
                         l10n.tripGeneralPermissionsTitle,
                         style: Theme.of(context).textTheme.titleMedium,
@@ -179,25 +158,11 @@ class _TripGeneralPermissionsPageState
                             ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Spacer(),
-                          TextButton.icon(
-                            onPressed:
-                                (_isResettingDefaults || _savingActions.isNotEmpty)
-                                    ? null
-                                    : _resetDefaults,
-                            icon: _isResettingDefaults
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.refresh),
-                            label: Text(l10n.tripPermissionsResetDefaultsAction),
-                          ),
-                        ],
+                      _PermissionsColumnsHeader(
+                        actionLabel: l10n.tripPermissionsColumnAction,
+                        minRoleLabel: l10n.tripPermissionsColumnMinRole,
                       ),
+                      const SizedBox(height: 4),
                       _GeneralPermissionItem(
                         title: l10n.tripPermissionEditGeneralInfo,
                         minRole: trip.generalPermissions.editGeneralInfoMinRole,
@@ -267,6 +232,24 @@ class _TripGeneralPermissionsPageState
                   ),
                 ),
               ),
+              Row(
+                children: [
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: (_isResettingDefaults || _savingActions.isNotEmpty)
+                        ? null
+                        : _resetDefaults,
+                    icon: _isResettingDefaults
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: Text(l10n.tripPermissionsResetDefaultsAction),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -292,17 +275,6 @@ class _TripGeneralPermissionsPageState
   }
 }
 
-String _roleLabelFor({
-  required AppLocalizations l10n,
-  required TripPermissionRole role,
-}) {
-  return switch (role) {
-    TripPermissionRole.participant => l10n.roleParticipant,
-    TripPermissionRole.admin => l10n.roleAdmin,
-    TripPermissionRole.owner => l10n.roleOwner,
-  };
-}
-
 class _GeneralPermissionItem extends StatelessWidget {
   const _GeneralPermissionItem({
     required this.title,
@@ -322,16 +294,78 @@ class _GeneralPermissionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: PermissionMinRoleSelector(
-        value: minRole,
-        busy: busy,
-        enabled: enabled,
-        onChanged: onChanged,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 6,
+            child: Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 12),
+                Expanded(child: Text(title)),
+              ],
+            ),
+          ),
+          const SizedBox(width: _permissionsColumnSpacing),
+          Expanded(
+            flex: 4,
+            child: PermissionMinRoleSelector(
+              value: minRole,
+              busy: busy,
+              enabled: enabled,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PermissionsColumnsHeader extends StatelessWidget {
+  const _PermissionsColumnsHeader({
+    required this.actionLabel,
+    required this.minRoleLabel,
+  });
+
+  final String actionLabel;
+  final String minRoleLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: colorScheme.onSecondaryContainer,
+          fontWeight: FontWeight.w700,
+        );
+
+    Widget buildCartouche(String label) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(label, style: textStyle),
+      );
+    }
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 6,
+            child: buildCartouche(actionLabel),
+          ),
+          const SizedBox(width: _permissionsColumnSpacing),
+          Expanded(
+            flex: 4,
+            child: buildCartouche(minRoleLabel),
+          ),
+        ],
       ),
     );
   }

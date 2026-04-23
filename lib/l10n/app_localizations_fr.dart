@@ -537,6 +537,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Passer un utilisateur en admin / participant';
 
   @override
+  String get tripPermissionsColumnAction => 'Action';
+
+  @override
+  String get tripPermissionsColumnMinRole => 'Rôle minimal';
+
+  @override
   String get tripSectionTrip => 'Voyage';
 
   @override
@@ -2338,6 +2344,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPermissionParticipantsToggleAdmin =>
       'Passer un utilisateur en admin / participant';
+
+  @override
+  String get tripPermissionsColumnAction => 'Action';
+
+  @override
+  String get tripPermissionsColumnMinRole => 'Rôle minimal';
 
   @override
   String get tripSectionTrip => 'Voyage';

@@ -530,6 +530,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Toggle user role between admin and participant';
 
   @override
+  String get tripPermissionsColumnAction => 'Action';
+
+  @override
+  String get tripPermissionsColumnMinRole => 'Minimum role';
+
+  @override
   String get tripSectionTrip => 'Trip';
 
   @override
@@ -2319,6 +2325,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripPermissionParticipantsToggleAdmin =>
       'Toggle user role between admin and participant';
+
+  @override
+  String get tripPermissionsColumnAction => 'Action';
+
+  @override
+  String get tripPermissionsColumnMinRole => 'Minimum role';
 
   @override
   String get tripSectionTrip => 'Trip';
