@@ -520,15 +520,8 @@ class _ActivityListTile extends StatelessWidget {
   final TripActivity activity;
   final Map<String, String> tripMemberPublicLabels;
 
-  Future<void> _openDetail(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => TripActivityDetailPage(
-          tripId: tripId,
-          activityId: activity.id,
-        ),
-      ),
-    );
+  void _openDetail(BuildContext context) {
+    context.push('/trips/$tripId/activities/${activity.id}');
   }
 
   @override

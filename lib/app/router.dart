@@ -6,6 +6,7 @@ import 'package:planerz/features/auth/sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_details_page.dart';
@@ -100,6 +101,13 @@ final GoRouter appRouter = GoRouter(
               readOnly: readOnly,
             );
           },
+        ),
+        GoRoute(
+          path: 'activities/:activityId',
+          builder: (context, state) => TripActivityDetailPage(
+            tripId: state.pathParameters['tripId']!,
+            activityId: state.pathParameters['activityId']!,
+          ),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
