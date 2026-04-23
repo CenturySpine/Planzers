@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
 const Color _googleSignInText = Color(0xFF3C4043);
@@ -28,11 +29,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   bool _isLoading = false;
   static const double _legalLinkFontSize = 12;
   static const double _footerReservedHeight = 32;
-  static const List<String> _animatedLabels = [
-    'SORTIES',
-    'WEEK-ENDS',
-    'VOYAGES',
-  ];
+  static const int _animatedLabelCount = 3;
   static const Duration _labelDisplayDuration = Duration(seconds: 3);
   static const Duration _labelTransitionDuration = Duration(milliseconds: 420);
 
@@ -52,7 +49,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   }
 
   void _scheduleSubtitleStep() {
-    if (_animatedLabelIndex >= _animatedLabels.length - 1) {
+    if (_animatedLabelIndex >= _animatedLabelCount - 1) {
       return;
     }
 
@@ -61,7 +58,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   }
 
   void _advanceSubtitle() {
-    if (!mounted || _animatedLabelIndex >= _animatedLabels.length - 1) {
+    if (!mounted || _animatedLabelIndex >= _animatedLabelCount - 1) {
       return;
     }
 
@@ -87,11 +84,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     return painter.width;
   }
 
-  double _maxAnimatedLabelWidth(BuildContext context, TextStyle style) {
+  double _maxAnimatedLabelWidth(
+    BuildContext context,
+    TextStyle style,
+    List<String> animatedLabels,
+  ) {
     final textScaler = MediaQuery.textScalerOf(context);
     var maxWidth = 0.0;
 
-    for (final label in _animatedLabels) {
+    for (final label in animatedLabels) {
       final painter = TextPainter(
         text: TextSpan(text: label, style: style),
         textDirection: TextDirection.ltr,
@@ -134,6 +135,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final animatedLabels = <String>[
+      l10n.signInAnimatedLabelOutings,
+      l10n.signInAnimatedLabelWeekends,
+      l10n.signInAnimatedLabelTrips,
+    ];
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final subtitleStyle = TextStyle(
       fontSize: 18,
@@ -144,15 +151,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     );
     final animatedLabelLineHeight =
         (subtitleStyle.fontSize ?? 18) * (subtitleStyle.height ?? 1.0);
-    final currentAnimatedLabel = _animatedLabels[_animatedLabelIndex];
+    final currentAnimatedLabel = animatedLabels[_animatedLabelIndex];
     final isFinalAnimatedLabel =
-        _animatedLabelIndex >= _animatedLabels.length - 1;
+        _animatedLabelIndex >= animatedLabels.length - 1;
     // During transitions we keep extra room to avoid clipping for long labels.
     // On the final label we collapse to the actual text width so the whole
     // subtitle recenters with the page title.
     final animatedLabelWidth = isFinalAnimatedLabel
         ? _labelWidth(context, subtitleStyle, currentAnimatedLabel) + 6
-        : _maxAnimatedLabelWidth(context, subtitleStyle) + 24;
+        : _maxAnimatedLabelWidth(context, subtitleStyle, animatedLabels) + 24;
 
     return Scaffold(
       body: Stack(
@@ -247,7 +254,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'ENTRE AMIS',
+                                l10n.signInSubtitleStatic,
                                 textAlign: TextAlign.center,
                                 style: subtitleStyle,
                               ),
@@ -297,7 +304,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                           ),
                                           const SizedBox(width: 12),
                                           Text(
-                                            'Connexion...',
+                                            l10n.signInLoading,
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w500,
@@ -320,8 +327,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                             height: 20,
                                           ),
                                           const SizedBox(width: 12),
-                                          const Text(
-                                            'Continuer avec Google',
+                                          Text(
+                                            l10n.signInContinueWithGoogle,
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w500,
@@ -365,7 +372,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Informations legales'),
+                      child: Text(l10n.legalInfoTitle),
                     ),
                     const SizedBox(width: 8),
                     Text(

@@ -8,6 +8,7 @@ import 'package:planerz/core/notifications/unread_counters_sync.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   final usersRepository = ref.watch(usersRepositoryProvider);
@@ -50,7 +51,9 @@ class AuthGate extends ConsumerWidget {
       ),
       error: (error, stackTrace) => Scaffold(
         body: Center(
-          child: Text('Erreur auth: $error'),
+          child: Text(
+            AppLocalizations.of(context)!.authErrorWithDetails(error.toString()),
+          ),
         ),
       ),
     );

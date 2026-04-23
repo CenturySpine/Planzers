@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 const double _kGroupVisibilityColumnWidth = 48;
 
@@ -68,8 +69,8 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
     if (form == null || !form.validate()) return;
     if (_visibleToIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Coche au moins une personne qui voit ce poste'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.expenseGroupSelectAtLeastOne),
         ),
       );
       return;
@@ -87,7 +88,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Poste mis à jour')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.expenseGroupUpdated)),
         );
       } else {
         await repo.addExpenseGroup(
@@ -97,14 +98,18 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Poste créé')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.expenseGroupCreated)),
         );
       }
       widget.onDone();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -114,6 +119,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final members = _cleanMembers;
     return Padding(
       padding: EdgeInsets.only(
@@ -145,7 +151,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    _isEdit ? 'Modifier le poste' : 'Nouveau poste de dépenses',
+                    _isEdit ? l10n.expenseGroupEditTitle : l10n.expenseGroupNewTitle,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ],
@@ -154,13 +160,13 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Nom du poste',
-                  hintText: 'Ex. Commun, Cadeau, Weekend…',
+                decoration: InputDecoration(
+                  labelText: l10n.expenseGroupNameLabel,
+                  hintText: l10n.expenseGroupNameHint,
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obligatoire' : null,
+                    (v == null || v.trim().isEmpty) ? l10n.commonRequired : null,
               ),
               const SizedBox(height: 16),
               Row(
@@ -172,7 +178,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Qui voit ce poste',
+                    l10n.expenseGroupWhoSees,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -182,7 +188,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
               const SizedBox(height: 8),
               if (members.isEmpty)
                 Text(
-                  'Aucun voyageur sur ce voyage.',
+                  l10n.tripParticipantsEmpty,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -206,7 +212,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                         userData: docsById[id],
                         tripMemberPublicLabels: widget.memberPublicLabels,
                         currentUserId: uid,
-                        emptyFallback: 'Voyageur',
+                        emptyFallback: l10n.tripParticipantsTraveler,
                       );
                     }
                     return Container(
@@ -220,12 +226,12 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
                             child: Row(
                               children: [
-                                const Expanded(child: Text('Voyageur')),
+                                Expanded(child: Text(l10n.tripParticipantsTraveler)),
                                 SizedBox(
                                   width: _kGroupVisibilityColumnWidth,
                                   child: Center(
                                     child: Tooltip(
-                                      message: 'Voit le poste',
+                                      message: l10n.expenseGroupCanSee,
                                       child: Icon(
                                         Icons.visibility_outlined,
                                         size: 18,
@@ -289,7 +295,9 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                         width: 22,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Text(_isEdit ? 'Enregistrer' : 'Créer le poste'),
+                    : Text(
+                        _isEdit ? l10n.commonSave : l10n.expenseGroupCreateAction,
+                      ),
               ),
             ],
           ),

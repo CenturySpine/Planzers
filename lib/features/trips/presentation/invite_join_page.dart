@@ -15,6 +15,7 @@ import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
   const InviteJoinPage({
@@ -31,14 +32,14 @@ class InviteJoinPage extends ConsumerStatefulWidget {
 }
 
 class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
-  static String _messageForError(Object e) {
+  static String _messageForError(BuildContext context, Object e) {
     if (e is FirebaseFunctionsException) {
       final m = e.message;
       if (m != null && m.trim().isNotEmpty) {
         return m.trim();
       }
     }
-    return e.toString();
+    return AppLocalizations.of(context)!.commonErrorWithDetails(e.toString());
   }
 
   bool _loadingContext = true;
@@ -234,7 +235,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = _messageForError(e);
+        _error = _messageForError(context, e);
       });
     } finally {
       if (mounted) {
@@ -262,12 +263,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       await _persistCupidonPreferenceForTrip();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vous avez rejoint le voyage')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.inviteJoinedTrip)),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = _messageForError(e);
+        _error = _messageForError(context, e);
       });
     } finally {
       if (mounted) {
@@ -301,7 +302,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final id = _selectedPlaceholderId?.trim();
     if (id == null || id.isEmpty) {
       setState(() {
-        _error = 'Choisis un voyageur sur la liste.';
+        _error = AppLocalizations.of(context)!.inviteChooseTravelerError;
       });
       return;
     }
@@ -327,7 +328,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     if (!TripMemberStay.isChronological(stay)) {
       setState(() {
-        _error = 'La plage de dates est invalide.';
+        _error = AppLocalizations.of(context)!.tripStayInvalidRange;
       });
       return;
     }
@@ -337,7 +338,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       tripEndDate: ctx.tripEndDate,
     )) {
       setState(() {
-        _error = 'Les dates doivent rester dans les dates du voyage.';
+        _error = AppLocalizations.of(context)!.tripStayOutOfTripBounds;
       });
       return;
     }
@@ -360,7 +361,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           SnackBar(
             content: Text(
               'Voyage rejoint, mais préférences non enregistrées : '
-              '${_messageForError(e)}',
+              '${_messageForError(context, e)}',
             ),
           ),
         );
@@ -369,29 +370,31 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
     final showCancel = !_joined;
     final placeholderPick = _context?.requiresPlaceholderChoice == true &&
         !_loadingContext &&
         !_joining;
     return AppBar(
-      title: const Text('Invitation'),
+      title: Text(l10n.inviteTitle),
       actions: [
         if (showCancel && !placeholderPick)
           TextButton(
             onPressed: _loadingContext || _joining ? null : _goToTripsList,
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
       ],
     );
   }
 
   Widget _buildPlaceholderChoiceLayout(String tripTitle) {
+    final l10n = AppLocalizations.of(context)!;
     final ctx = _context!;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
     final stepTitle = _inviteFormStep == 0
-        ? 'Rejoindre le voyage 1/2'
-        : 'Rejoindre le voyage 2/2';
+        ? l10n.inviteJoinTripStepOne
+        : l10n.inviteJoinTripStepTwo;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -428,7 +431,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   if (_inviteFormStep == 0) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Tu ne pourras faire ce choix qu’une seule fois pour ce voyage.',
+                      l10n.inviteChooseTravelerWarning,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -438,7 +441,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Qui es-tu dans ce voyage ?',
+                      l10n.inviteWhoAreYouInTrip,
                       style: Theme.of(context).textTheme.titleSmall,
                       textAlign: TextAlign.center,
                     ),
@@ -452,7 +455,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       child: filtered.isEmpty
                           ? Center(
                               child: Text(
-                                kNameListSearchEmptyMessage,
+                                nameListSearchEmptyMessage(context),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context)
                                     .textTheme
@@ -508,9 +511,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                               onChanged: (value) => setState(
                                 () => _inviteCupidonEnabled = value,
                               ),
-                              title: const Text('Activer le mode Cupidon'),
-                              subtitle: const Text(
-                                'Tu pourras liker des participants du voyage.',
+                              title: Text(l10n.cupidonEnableAction),
+                              subtitle: Text(
+                                l10n.inviteCupidonSubtitle,
                               ),
                             ),
                           ],
@@ -521,7 +524,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       alignment: Alignment.centerLeft,
                       child: TextButton(
                         onPressed: _joining ? null : _backToNameStep,
-                        child: const Text('Modifier le choix du voyageur'),
+                        child: Text(l10n.inviteEditTravelerChoice),
                       ),
                     ),
                   ],
@@ -541,7 +544,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _joining ? null : _goToTripsList,
-                          child: const Text('Annuler'),
+                          child: Text(l10n.commonCancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -554,7 +557,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                   ? _continueFromNameStep
                                   : _completeInviteWithDetails),
                           child: Text(
-                            _inviteFormStep == 0 ? 'Continuer' : 'Valider',
+                            _inviteFormStep == 0
+                                ? l10n.commonContinue
+                                : l10n.commonConfirm,
                           ),
                         ),
                       ),
@@ -571,16 +576,17 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final hasInvalidParams =
         widget.tripId.trim().isEmpty || widget.token.trim().isEmpty;
     if (hasInvalidParams) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Invitation'),
+          title: Text(l10n.inviteTitle),
           actions: [
             TextButton(
               onPressed: _goToTripsList,
-              child: const Text('Annuler'),
+              child: Text(l10n.commonCancel),
             ),
           ],
         ),
@@ -590,14 +596,14 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Lien d’invitation invalide.',
+                Text(
+                  l10n.inviteInvalidLink,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 OutlinedButton(
                   onPressed: _goToTripsList,
-                  child: const Text('Retour aux voyages'),
+                  child: Text(l10n.inviteBackToTrips),
                 ),
               ],
             ),
@@ -608,8 +614,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     final tripTitle = _context?.tripTitle.trim() ?? '';
     final tripHeadline = tripTitle.isEmpty
-        ? 'Rejoindre ce voyage'
-        : 'Rejoindre le voyage « $tripTitle »';
+        ? l10n.inviteJoinThisTrip
+        : l10n.inviteJoinTripWithTitle(tripTitle);
 
     final placeholderPick = _context != null &&
         _context!.requiresPlaceholderChoice &&
@@ -632,8 +638,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                 if (_loadingContext) ...[
                   const Center(child: CircularProgressIndicator()),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Vérification de l’invitation…',
+                  Text(
+                    l10n.inviteChecking,
                     textAlign: TextAlign.center,
                   ),
                 ] else if (_joining) ...[
@@ -641,8 +647,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 16),
                   Text(
                     tripTitle.isEmpty
-                        ? 'Ajout au voyage en cours…'
-                        : 'Ajout au voyage « $tripTitle » en cours…',
+                        ? l10n.inviteJoiningInProgress
+                        : l10n.inviteJoiningTripWithTitle(tripTitle),
                     textAlign: TextAlign.center,
                   ),
                 ] else if (_joined) ...[
@@ -652,26 +658,26 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     size: 52,
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Invitation acceptée',
+                  Text(
+                    l10n.inviteAccepted,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Tu fais partie du voyage. Les autres participants te verront avec ton compte.',
+                  Text(
+                    l10n.inviteAcceptedSubtitle,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: () =>
                         context.go('/trips/${widget.tripId}/overview'),
-                    child: const Text('Ouvrir le voyage'),
+                    child: Text(l10n.inviteOpenTrip),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: _goToTripsList,
-                    child: const Text('Voir mes voyages'),
+                    child: Text(l10n.inviteSeeMyTrips),
                   ),
                 ] else if (_context != null &&
                     !_context!.requiresPlaceholderChoice &&
@@ -685,8 +691,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Nous n’avons pas pu finaliser ton entrée dans le voyage. '
-                    'Vérifie ta connexion et réessaie, ou demande un nouveau lien à l’organisateur.',
+                    l10n.inviteCouldNotFinalizeJoin,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.35,
@@ -709,7 +714,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _joining ? null : _goToTripsList,
-                          child: const Text('Annuler'),
+                          child: Text(l10n.commonCancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -719,7 +724,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                           onPressed: _joining
                               ? null
                               : () => _join(placeholderMemberId: null),
-                          child: const Text('Réessayer'),
+                          child: Text(l10n.commonRetry),
                         ),
                       ),
                     ],
@@ -732,7 +737,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Rejoindre un voyage',
+                    l10n.inviteJoinATrip,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -740,8 +745,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Impossible d’ouvrir l’invitation pour le moment. '
-                    'Vérifie ta connexion ou demande un nouveau lien à l’organisateur.',
+                    l10n.inviteOpenFailed,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.35,
@@ -764,7 +768,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _loadingContext ? null : _goToTripsList,
-                          child: const Text('Annuler'),
+                          child: Text(l10n.commonCancel),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -773,7 +777,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         child: FilledButton(
                           onPressed:
                               _loadingContext ? null : _loadContextAndMaybeJoin,
-                          child: const Text('Réessayer'),
+                          child: Text(l10n.commonRetry),
                         ),
                       ),
                     ],

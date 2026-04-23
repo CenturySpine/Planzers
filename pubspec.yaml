@@ -42,6 +42,7 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - liste_courses_compilee.json
@@ -49,6 +50,8 @@ flutter:
     - assets/images/google_g.svg
     - legal/mentions_legales.txt
     - legal/vie_privee_rgpd.txt
+    - legal/mentions_legales_en.txt
+    - legal/vie_privee_rgpd_en.txt
 
 flutter_launcher_icons:
   android: true

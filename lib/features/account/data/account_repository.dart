@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
+import 'package:planerz/core/intl/app_language.dart';
 
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -15,7 +16,14 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
     FirebaseTarget.preview => 'planerz-preview.firebasestorage.app',
     FirebaseTarget.prod => 'planerz.firebasestorage.app',
   };
-  final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  // On Web, reading Firebase.app() too early can throw an interop error
+  // during startup; fallback to target-configured bucket in that case.
+  String rawBucket = '';
+  try {
+    rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  } catch (_) {
+    rawBucket = '';
+  }
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
   final bucketUri = effectiveBucket.startsWith('gs://')
       ? effectiveBucket
@@ -61,6 +69,17 @@ bool cupidonEnabledByDefaultFromUserData(Map<String, dynamic> data) {
     return raw;
   }
   return false;
+}
+
+AppLanguage? preferredLanguageFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final preferences =
+      (account['preferences'] as Map<String, dynamic>?) ?? const {};
+  final raw = preferences['language'];
+  if (raw is String) {
+    return AppLanguage.fromCode(raw);
+  }
+  return null;
 }
 
 final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
@@ -147,6 +166,19 @@ class AccountRepository {
     });
   }
 
+  Stream<AppLanguage?> watchPreferredLanguage() {
+    return auth.authStateChanges().asyncExpand((user) {
+      final uid = user?.uid.trim() ?? '';
+      if (uid.isEmpty) {
+        return Stream.value(null);
+      }
+      return firestore.collection('users').doc(uid).snapshots().map((snapshot) {
+        final data = snapshot.data() ?? const <String, dynamic>{};
+        return preferredLanguageFromUserData(data);
+      });
+    });
+  }
+
   Future<void> updateAutoOpenCurrentTripOnLaunchPreference(bool enabled) async {
     final uid = auth.currentUser?.uid;
     if (uid == null || uid.trim().isEmpty) {
@@ -174,6 +206,23 @@ class AccountRepository {
       'account': {
         'preferences': {
           'cupidonEnabledByDefault': enabled,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updatePreferredLanguage(AppLanguage language) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final userRef = firestore.collection('users').doc(uid);
+    await userRef.set({
+      'account': {
+        'preferences': {
+          'language': language.code,
         },
         'updatedAt': FieldValue.serverTimestamp(),
       },

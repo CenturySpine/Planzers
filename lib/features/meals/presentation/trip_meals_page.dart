@@ -6,6 +6,7 @@ import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMealsPage extends ConsumerWidget {
   const TripMealsPage({super.key});
@@ -21,7 +22,10 @@ class TripMealsPage extends ConsumerWidget {
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Erreur: $e', textAlign: TextAlign.center),
+          child: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -46,7 +50,7 @@ class _MealsList extends StatelessWidget {
     return grouped;
   }
 
-  String _dateKeyToFrenchLabel(String dateKey) {
+  String _dateKeyToLabel(BuildContext context, String dateKey) {
     final dt = TripMeal(
       id: '',
       name: '',
@@ -56,7 +60,10 @@ class _MealsList extends StatelessWidget {
       createdBy: '',
       createdAt: DateTime.now(),
     ).mealDateAsDateTime;
-    final formatter = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
+    final formatter = DateFormat(
+      'EEEE d MMMM yyyy',
+      Localizations.localeOf(context).toString(),
+    );
     return formatter.format(dt);
   }
 
@@ -76,12 +83,12 @@ class _MealsList extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Aucun repas',
+                  AppLocalizations.of(context)!.mealsNoMeal,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Appuyez sur + pour planifier un repas.',
+                  AppLocalizations.of(context)!.mealsPressPlusToPlan,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -103,7 +110,7 @@ class _MealsList extends StatelessWidget {
                   final mealsForDate = grouped[dateKey] ?? [];
                   return _MealDateSection(
                     dateKey: dateKey,
-                    dateLabel: _dateKeyToFrenchLabel(dateKey),
+                    dateLabel: _dateKeyToLabel(context, dateKey),
                     meals: mealsForDate,
                     tripId: tripId,
                   );
@@ -196,14 +203,16 @@ class _MealCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      meal.name.isEmpty ? 'Sans titre' : meal.name,
+                      meal.name.isEmpty
+                          ? AppLocalizations.of(context)!.activitiesUntitled
+                          : meal.name,
                       style: Theme.of(context).textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      meal.dayPartLabelFr,
+                      _dayPartLabel(context, meal.mealDayPart),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -222,4 +231,13 @@ class _MealCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _dayPartLabel(BuildContext context, TripDayPart dayPart) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (dayPart) {
+    TripDayPart.morning => l10n.dayPartMorning,
+    TripDayPart.midday => l10n.dayPartMidday,
+    TripDayPart.evening => l10n.dayPartEvening,
+  };
 }

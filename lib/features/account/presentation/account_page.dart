@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
 import 'package:planerz/features/account/presentation/palette_picker_button.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key});
@@ -28,6 +30,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
   bool _isUpdatingAutoOpenCurrentTrip = false;
+  bool _isUpdatingLanguage = false;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   }
 
   Future<void> _pickAndUploadProfilePhoto(ImageSource source) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isPhotoBusy) return;
     final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isPhotoBusy = true);
@@ -67,7 +71,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         sourcePath: picked.path,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Recadrer la photo de profil',
+            toolbarTitle: l10n.accountCropProfilePhotoTitle,
             toolbarColor: colorScheme.primary,
             toolbarWidgetColor: Colors.white,
             activeControlsWidgetColor: colorScheme.primary,
@@ -76,7 +80,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             initAspectRatio: CropAspectRatioPreset.square,
           ),
           IOSUiSettings(
-            title: 'Recadrer la photo de profil',
+            title: l10n.accountCropProfilePhotoTitle,
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
           ),
@@ -106,12 +110,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo de profil mise a jour')),
+        SnackBar(content: Text(l10n.accountPhotoUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur photo: $e')),
+        SnackBar(content: Text(l10n.accountPhotoError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -121,20 +125,21 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   }
 
   Future<void> _removeProfilePhoto() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isPhotoBusy) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la photo ?'),
-        content: const Text('La photo de profil sera retiree.'),
+        title: Text(l10n.accountRemovePhotoDialogTitle),
+        content: Text(l10n.accountRemovePhotoDialogBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -146,12 +151,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       await ref.read(accountRepositoryProvider).removeMyProfilePhoto();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo de profil supprimee')),
+        SnackBar(content: Text(l10n.accountPhotoDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression photo: $e')),
+        SnackBar(content: Text(l10n.accountPhotoDeleteError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -193,6 +198,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isSaving) return;
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
@@ -204,12 +210,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
           .updateAccountName(_accountNameController.text);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Compte mis a jour')),
+        SnackBar(content: Text(l10n.accountUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mise a jour compte: $e')),
+        SnackBar(content: Text(l10n.accountUpdateError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -219,6 +225,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   }
 
   Future<void> _enablePushNotifications() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isEnablingPush) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -231,14 +238,41 @@ class _AccountPageState extends ConsumerState<AccountPage> {
         SnackBar(
           content: Text(
             success
-                ? 'Notifications activees.'
-                : 'Impossible d activer les notifications.',
+                ? l10n.accountNotificationsEnabled
+                : l10n.accountNotificationsEnableError,
           ),
         ),
       );
     } finally {
       if (mounted) {
         setState(() => _isEnablingPush = false);
+      }
+    }
+  }
+
+  Future<void> _updatePreferredLanguage(AppLanguage language) async {
+    if (_isUpdatingLanguage) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _isUpdatingLanguage = true);
+    try {
+      await ref.read(accountRepositoryProvider).updatePreferredLanguage(language);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l10n.accountLanguageUpdated),
+            duration: const Duration(milliseconds: 1100),
+          ),
+        );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accountLanguageUpdateError(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingLanguage = false);
       }
     }
   }
@@ -253,6 +287,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   }
 
   Future<void> _updateAutoOpenCurrentTripPreference(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isUpdatingAutoOpenCurrentTrip) return;
     setState(() => _isUpdatingAutoOpenCurrentTrip = true);
     try {
@@ -266,8 +301,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
           SnackBar(
             content: Text(
               enabled
-                  ? 'Ouverture auto du voyage activée'
-                  : 'Ouverture auto du voyage désactivée',
+                  ? l10n.accountAutoOpenCurrentTripEnabled
+                  : l10n.accountAutoOpenCurrentTripDisabled,
             ),
             duration: const Duration(milliseconds: 1100),
           ),
@@ -275,7 +310,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mise à jour préférence: $e')),
+        SnackBar(
+          content: Text(l10n.accountPreferenceUpdateError(e.toString())),
+        ),
       );
     } finally {
       if (mounted) {
@@ -286,6 +323,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final authUser = FirebaseAuth.instance.currentUser;
     if (authUser == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -298,7 +336,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mon compte'),
+        title: Text(l10n.accountTitle),
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: ref.read(accountRepositoryProvider).watchMyUserDocument(),
@@ -356,7 +394,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(999),
                         child: PopupMenuButton<String>(
-                          tooltip: 'Actions photo de profil',
+                          tooltip: l10n.accountPhotoActionsTooltip,
                           enabled: !_isPhotoBusy,
                           padding: EdgeInsets.zero,
                           onSelected: (value) {
@@ -373,18 +411,18 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                             }
                           },
                           itemBuilder: (context) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'gallery',
-                              child: Text('Choisir dans la galerie'),
+                              child: Text(l10n.accountChooseFromGallery),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'camera',
-                              child: Text('Prendre une photo'),
+                              child: Text(l10n.accountTakePhoto),
                             ),
                             if (photoUrl.isNotEmpty)
-                              const PopupMenuItem(
+                              PopupMenuItem(
                                 value: 'remove',
-                                child: Text('Supprimer'),
+                                child: Text(l10n.commonDelete),
                               ),
                           ],
                           child: SizedBox(
@@ -415,7 +453,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                email.isNotEmpty ? email : 'Email indisponible',
+                email.isNotEmpty ? email : l10n.accountEmailUnavailable,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -433,14 +471,14 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         Expanded(
                           child: TextFormField(
                             controller: _accountNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nom du compte',
-                              hintText: 'Ex: Alex',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.accountNameLabel,
+                              hintText: l10n.accountNameHint,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if ((value ?? '').trim().length > 60) {
-                                return 'Maximum 60 caracteres';
+                                return l10n.accountNameMaxLength;
                               }
                               return null;
                             },
@@ -451,7 +489,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                           padding: const EdgeInsets.only(top: 4),
                           child: IconButton.filled(
                             onPressed: _isSaving ? null : _save,
-                            tooltip: 'Enregistrer le nom',
+                            tooltip: l10n.accountSaveNameTooltip,
                             icon: _isSaving
                                 ? const SizedBox(
                                     width: 16,
@@ -467,7 +505,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Si vide, le nom affiche sera votre email.',
+                      l10n.accountNameFallbackHelp,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -476,27 +514,54 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               const SizedBox(height: 28),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Allergènes alimentaires'),
+                title: Text(l10n.accountFoodAllergens),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _openAllergensPage(data),
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Espace Cupidon'),
-                subtitle: const Text('Historique des matchs'),
+                title: Text(l10n.accountCupidonSpace),
+                subtitle: Text(l10n.accountCupidonHistory),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/account/cupidon'),
               ),
               const SizedBox(height: 16),
               Text(
-                'Préférences',
+                l10n.accountPreferencesSectionTitle,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Palette de couleurs'),
+                title: Text(l10n.accountColorPalette),
                 trailing: const PalettePickerButton(),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.accountLanguageTitle),
+                subtitle: Text(l10n.accountLanguageSubtitle),
+                trailing: DropdownButtonHideUnderline(
+                  child: DropdownButton<AppLanguage>(
+                    value: preferredLanguageFromUserData(data) ?? AppLanguage.frFr,
+                    onChanged: _isUpdatingLanguage
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              _updatePreferredLanguage(value);
+                            }
+                          },
+                    items: [
+                      DropdownMenuItem(
+                        value: AppLanguage.frFr,
+                        child: Text(l10n.languageFrench),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLanguage.enUs,
+                        child: Text(l10n.languageEnglishUs),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
@@ -504,9 +569,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 onChanged: _isUpdatingAutoOpenCurrentTrip
                     ? null
                     : _updateAutoOpenCurrentTripPreference,
-                title: const Text('Ouvrir automatiquement le voyage en cours'),
-                subtitle: const Text(
-                  'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.',
+                title: Text(l10n.accountAutoOpenCurrentTripTitle),
+                subtitle: Text(
+                  l10n.accountAutoOpenCurrentTripSubtitle,
                 ),
               ),
               if (kIsWeb) ...[
@@ -525,14 +590,14 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         : const Icon(Icons.notifications_active_outlined),
                     label: Text(
                       _isEnablingPush
-                          ? 'Activation en cours...'
-                          : 'Activer les notifications',
+                          ? l10n.accountEnabling
+                          : l10n.accountEnableNotifications,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sur iPhone: installer l app sur l ecran d accueil, puis activer ici.',
+                  l10n.accountWebPushHelp,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

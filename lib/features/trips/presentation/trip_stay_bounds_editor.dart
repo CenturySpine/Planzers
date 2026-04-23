@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
@@ -47,7 +48,6 @@ class TripStayBoundsEditor extends StatelessWidget {
       initialDate: _clampDate(initial, bounds),
       firstDate: bounds.start,
       lastDate: bounds.end,
-      locale: const Locale('fr', 'FR'),
     );
     if (picked == null) return;
     final key = TripMemberStay.dateKeyFromDateTime(picked);
@@ -64,35 +64,47 @@ class TripStayBoundsEditor extends StatelessWidget {
     return d;
   }
 
-  String _dateLabel(String dateKey) {
+  String _dateLabel(BuildContext context, String dateKey) {
     final d = TripMemberStay.parseDateKey(dateKey);
     if (d == null) return dateKey;
-    return DateFormat.yMMMd('fr_FR').format(d);
+    return DateFormat.yMMMd(Localizations.localeOf(context).toString())
+        .format(d);
+  }
+
+  String _dayPartLabel(AppLocalizations l10n, TripDayPart part) {
+    return switch (part) {
+      TripDayPart.morning => l10n.dayPartMorning,
+      TripDayPart.midday => l10n.dayPartMidday,
+      TripDayPart.evening => l10n.dayPartEvening,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Dates de présence',
+          l10n.tripStayPresenceDatesTitle,
           style: textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
         _BoundRow(
-          label: 'Du',
-          dateLabel: _dateLabel(value.startDateKey),
+          label: l10n.tripStayFromLabel,
+          dateLabel: _dateLabel(context, value.startDateKey),
           part: value.startDayPart,
+          partLabelFor: (part) => _dayPartLabel(l10n, part),
           onPickDate: () => _pickDate(context, isStart: true),
           onPartChanged: (p) => onChanged(value.copyWith(startDayPart: p)),
         ),
         const SizedBox(height: 12),
         _BoundRow(
-          label: 'au',
-          dateLabel: _dateLabel(value.endDateKey),
+          label: l10n.tripStayToLabel,
+          dateLabel: _dateLabel(context, value.endDateKey),
           part: value.endDayPart,
+          partLabelFor: (part) => _dayPartLabel(l10n, part),
           onPickDate: () => _pickDate(context, isStart: false),
           onPartChanged: (p) => onChanged(value.copyWith(endDayPart: p)),
         ),
@@ -106,6 +118,7 @@ class _BoundRow extends StatelessWidget {
     required this.label,
     required this.dateLabel,
     required this.part,
+    required this.partLabelFor,
     required this.onPickDate,
     required this.onPartChanged,
   });
@@ -113,6 +126,7 @@ class _BoundRow extends StatelessWidget {
   final String label;
   final String dateLabel;
   final TripDayPart part;
+  final String Function(TripDayPart part) partLabelFor;
   final VoidCallback onPickDate;
   final ValueChanged<TripDayPart> onPartChanged;
 
@@ -145,7 +159,7 @@ class _BoundRow extends StatelessWidget {
                 .map(
                   (p) => DropdownMenuItem(
                     value: p,
-                    child: Text(tripDayPartLabelFr(p)),
+                    child: Text(partLabelFor(p)),
                   ),
                 )
                 .toList(),

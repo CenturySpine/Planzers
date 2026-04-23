@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class CupidonMatchPopupBinder extends StatefulWidget {
   const CupidonMatchPopupBinder({required this.child, super.key});
@@ -68,10 +69,9 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
         final trip = (data['tripTitle'] as String?)?.trim();
         _queue.add(
           _CupidonPopupPayload(
-            otherMemberLabel:
-                other != null && other.isNotEmpty ? other : 'Quelqu’un',
+            otherMemberLabel: other ?? '',
             otherMemberPhotoUrl: photo != null && photo.isNotEmpty ? photo : '',
-            tripTitle: trip != null && trip.isNotEmpty ? trip : 'Voyage',
+            tripTitle: trip ?? '',
           ),
         );
       }
@@ -91,15 +91,21 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
     }
     _dialogOpen = true;
     final payload = _queue.removeAt(0);
+    final l10n = AppLocalizations.of(navContext)!;
+    final otherMemberLabel = payload.otherMemberLabel.trim().isNotEmpty
+        ? payload.otherMemberLabel
+        : l10n.cupidonPopupUnknownMember;
+    final tripTitle =
+        payload.tripTitle.trim().isNotEmpty ? payload.tripTitle : l10n.tripLabelGeneric;
     await showDialog<void>(
       context: navContext,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.favorite, color: Colors.pink),
-            SizedBox(width: 8),
-            Text('Tu as un match'),
+            const Icon(Icons.favorite, color: Colors.pink),
+            const SizedBox(width: 8),
+            Text(l10n.cupidonPopupTitle),
           ],
         ),
         content: Row(
@@ -108,12 +114,12 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
               foregroundImage: payload.otherMemberPhotoUrl.isEmpty
                   ? null
                   : NetworkImage(payload.otherMemberPhotoUrl),
-              child: Text(avatarInitialFromDisplayLabel(payload.otherMemberLabel)),
+              child: Text(avatarInitialFromDisplayLabel(otherMemberLabel)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '${payload.otherMemberLabel}\n${payload.tripTitle}',
+                '$otherMemberLabel\n$tripTitle',
               ),
             ),
           ],
@@ -121,14 +127,14 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: Text(l10n.commonClose),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               appRouter.push('/account/cupidon');
             },
-            child: const Text('Voir mes matchs'),
+            child: Text(l10n.cupidonPopupViewMatchesAction),
           ),
         ],
       ),

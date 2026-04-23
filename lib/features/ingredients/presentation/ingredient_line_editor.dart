@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
@@ -244,6 +245,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     _measurementKind = _measurementKindFromUnit(_selectedUnit);
     final colorScheme = Theme.of(context).colorScheme;
     final query = _labelController.text.trim();
@@ -311,7 +313,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
               ),
               PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
-                tooltip: 'Plus d\'actions',
+                tooltip: l10n.commonMoreActions,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 40),
                 icon: Icon(Icons.more_vert,
                     size: 20, color: colorScheme.onSurfaceVariant),
@@ -328,7 +330,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                         Icon(Icons.delete_outline,
                             size: 20, color: colorScheme.error),
                         const SizedBox(width: 10),
-                        Text('Supprimer',
+                        Text(l10n.commonDelete,
                             style: TextStyle(color: colorScheme.error)),
                       ],
                     ),

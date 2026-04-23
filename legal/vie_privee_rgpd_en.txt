@@ -1,0 +1,57 @@
+PRIVACY / GDPR
+Last update: 23/04/2026
+
+1) Data controller
+- Bruno Chappe
+- Contact: century.spine@gmail.com
+- Official domain: centuryspine.org
+
+2) Processed data
+Direct personal data:
+- User account email address
+
+Other functional service data:
+- Free nickname entered by the user
+- Collaborative content (trips, participants, messages, expenses, activities,
+  shopping, meals, practical information)
+- Shared attachments and photos
+- Technical data required for operation and security
+
+3) Purpose and legal basis
+- Service execution: authentication, account management, collaborative app
+  features
+- Legitimate interest: security, abuse prevention, operational continuity
+- Consent: notifications according to permissions granted by the user on their
+  device/browser
+
+4) Location and subprocessors
+Data is hosted in Europe (europe-west9 region) and subject to European law.
+The website is delivered through Vercel's global CDN infrastructure (no single
+static hosting region).
+
+Technical subprocessors:
+- Vercel (web hosting)
+- Google Firebase: Authentication, Firestore, Storage, Functions, FCM
+
+5) Retention period
+- Account and content data: retained while the account is active
+- Deletion/anonymization after validated request: within 30 days
+- Technical backups: purged within 90 days maximum
+- Security/anti-abuse data: limited and proportionate retention
+  (12 months maximum)
+
+6) Exercising rights
+Under GDPR, you can request access, correction, deletion, or restriction of
+your data.
+
+To request account deletion:
+- Write to century.spine@gmail.com
+- Indicate the account email address to delete
+
+7) Cookies and trackers
+The application does not use advertising cookies or third-party marketing
+audience measurement. Only strictly necessary technical trackers for operation
+(session, authentication, security) may be used.
+
+8) Applicable law
+This policy is governed by European law applicable to personal data protection.

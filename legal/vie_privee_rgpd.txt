@@ -1,59 +1,59 @@
-VIE PRIVEE / RGPD
-Derniere mise a jour : 23/04/2026
+VIE PRIVÉE / RGPD
+Dernière mise à jour : 23/04/2026
 
 1) Responsable du traitement
 - Bruno Chappe
 - Contact : century.spine@gmail.com
 - Domaine officiel : centuryspine.org
 
-2) Donnees traitees
-Donnees personnelles directes :
+2) Données traitées
+Données personnelles directes :
 - Adresse e-mail du compte utilisateur
 
-Autres donnees fonctionnelles du service :
-- Pseudo libre renseigne par l'utilisateur
-- Contenus collaboratifs (voyages, participants, messages, depenses, activites,
+Autres données fonctionnelles du service :
+- Pseudo libre renseigné par l'utilisateur
+- Contenus collaboratifs (voyages, participants, messages, dépenses, activités,
   courses, repas, informations pratiques)
-- Pieces jointes et photos partagees
-- Donnees techniques necessaires au fonctionnement et a la securite
+- Pièces jointes et photos partagées
+- Données techniques nécessaires au fonctionnement et à la sécurité
 
-3) Finalites et base legale
-- Execution du service : authentification, gestion du compte, fonctionnalites
+3) Finalités et base légale
+- Exécution du service : authentification, gestion du compte, fonctionnalités
   collaboratives de l'application
-- Interet legitime : securite, prevention des abus, maintien operationnel
-- Consentement : notifications selon les autorisations accordees par
+- Intérêt légitime : sécurité, prévention des abus, maintien opérationnel
+- Consentement : notifications selon les autorisations accordées par
   l'utilisateur sur son appareil/navigateur
 
 4) Localisation et sous-traitants
-Les donnees sont hebergees en Europe (region europe-west9) et soumises au droit
-europeen.
-Le site web est diffuse via l'infrastructure CDN mondiale de Vercel (pas de
-region d'hebergement statique unique).
+Les données sont hébergées en Europe (région europe-west9) et soumises au droit
+européen.
+Le site web est diffusé via l'infrastructure CDN mondiale de Vercel (pas de
+région d'hébergement statique unique).
 
 Sous-traitants techniques :
-- Vercel (hebergement web)
+- Vercel (hébergement web)
 - Google Firebase : Authentication, Firestore, Storage, Functions, FCM
 
-5) Duree de conservation
-- Donnees de compte et contenus : conservation tant que le compte est actif
-- Suppression/anonymisation apres demande validee : sous 30 jours
+5) Durée de conservation
+- Données de compte et contenus : conservation tant que le compte est actif
+- Suppression/anonymisation après demande validée : sous 30 jours
 - Sauvegardes techniques : purge sous 90 jours maximum
-- Donnees de securite/anti-abus : conservation limitee et proportionnee
+- Données de sécurité/anti-abus : conservation limitée et proportionnée
   (12 mois maximum)
 
 6) Exercice des droits
-Conformement au RGPD, vous pouvez demander l'acces, la rectification,
-l'effacement ou la limitation de vos donnees.
+Conformément au RGPD, vous pouvez demander l'accès, la rectification,
+l'effacement ou la limitation de vos données.
 
 Pour demander la suppression d'un compte :
-- Ecrire a century.spine@gmail.com
-- Indiquer l'adresse e-mail du compte a supprimer
+- Écrire à century.spine@gmail.com
+- Indiquer l'adresse e-mail du compte à supprimer
 
 7) Cookies et traceurs
 L'application n'utilise pas de cookies publicitaires ni de mesure d'audience
-marketing tierce. Seuls les traceurs techniques strictement necessaires au
-fonctionnement (session, authentification, securite) peuvent etre utilises.
+marketing tierce. Seuls les traceurs techniques strictement nécessaires au
+fonctionnement (session, authentification, sécurité) peuvent être utilisés.
 
 8) Droit applicable
-La presente politique est regie par le droit europeen applicable a la
-protection des donnees personnelles.
+La présente politique est régie par le droit européen applicable à la
+protection des données personnelles.

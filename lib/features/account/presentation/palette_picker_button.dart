@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_palette_provider.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class PalettePickerButton extends ConsumerWidget {
   const PalettePickerButton({super.key});
@@ -10,6 +11,7 @@ class PalettePickerButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final paletteAsync = ref.watch(appPaletteProvider);
     final AppPaletteId current = switch (paletteAsync) {
       AsyncData(:final value) => value,
@@ -17,7 +19,7 @@ class PalettePickerButton extends ConsumerWidget {
     };
 
     return PopupMenuButton<AppPaletteId>(
-      tooltip: 'Palette',
+      tooltip: l10n.accountColorPalette,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 0, maxWidth: 280),
       onSelected: (id) async {
@@ -31,7 +33,7 @@ class PalettePickerButton extends ConsumerWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(
-              content: Text('Palette $label enregistrée'),
+              content: Text(l10n.paletteSaved(label)),
               duration: const Duration(milliseconds: 1100),
             ),
           );

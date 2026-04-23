@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
@@ -49,6 +50,7 @@ class _FoodAllergensListEditorState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final catalogAsync = ref.watch(allergenCatalogItemsProvider);
     final catalogItems = catalogAsync.asData?.value;
     final idToLabel = <String, String>{
@@ -63,7 +65,7 @@ class _FoodAllergensListEditorState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Allergènes et intolérances',
+          l10n.foodAllergensAndIntolerances,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 8),
@@ -84,9 +86,9 @@ class _FoodAllergensListEditorState
         TextField(
           controller: _controller,
           focusNode: _focusNode,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Ajouter…',
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText: l10n.commonAddEllipsis,
           ),
           onChanged: (_) => setState(() {}),
           onSubmitted: (raw) {

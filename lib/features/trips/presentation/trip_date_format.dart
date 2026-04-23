@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Single date for form rows, or placeholder when unset.
-String formatOptionalTripDate(DateTime? d) {
-  if (d == null) return 'Non renseignée';
-  return DateFormat.yMMMEd('fr_FR').format(d);
+String formatOptionalTripDate(BuildContext context, DateTime? d) {
+  final l10n = AppLocalizations.of(context)!;
+  if (d == null) return l10n.commonNotProvided;
+  return DateFormat.yMMMEd(Localizations.localeOf(context).toString())
+      .format(d);
 }
 
-/// User-facing label for optional trip bounds (French UI).
-String formatTripDateRange(DateTime? start, DateTime? end) {
-  final fmt = DateFormat.yMMMEd('fr_FR');
+/// User-facing label for optional trip bounds.
+String formatTripDateRange(BuildContext context, DateTime? start, DateTime? end) {
+  final l10n = AppLocalizations.of(context)!;
+  final fmt = DateFormat.yMMMEd(Localizations.localeOf(context).toString());
   if (start != null && end != null) {
-    return 'Du ${fmt.format(start)} au ${fmt.format(end)}';
+    return l10n.tripDateRangeBetween(fmt.format(start), fmt.format(end));
   }
   if (start != null) {
-    return 'À partir du ${fmt.format(start)}';
+    return l10n.tripDateRangeFrom(fmt.format(start));
   }
   if (end != null) {
-    return "Jusqu'au ${fmt.format(end)}";
+    return l10n.tripDateRangeUntil(fmt.format(end));
   }
   return '';
 }

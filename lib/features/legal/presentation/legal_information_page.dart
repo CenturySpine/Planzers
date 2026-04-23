@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class LegalInformationPage extends StatelessWidget {
   const LegalInformationPage({super.key});
@@ -7,11 +8,16 @@ class LegalInformationPage extends StatelessWidget {
   static const String routePath = '/legal';
   static const String _mentionsAssetPath = 'legal/mentions_legales.txt';
   static const String _privacyAssetPath = 'legal/vie_privee_rgpd.txt';
+  static const String _mentionsAssetPathEn = 'legal/mentions_legales_en.txt';
+  static const String _privacyAssetPathEn = 'legal/vie_privee_rgpd_en.txt';
 
-  Future<_LegalContent> _loadContent() async {
+  Future<_LegalContent> _loadContent(Locale locale) async {
+    final isEnglish = locale.languageCode == 'en';
+    final mentionsPath = isEnglish ? _mentionsAssetPathEn : _mentionsAssetPath;
+    final privacyPath = isEnglish ? _privacyAssetPathEn : _privacyAssetPath;
     final results = await Future.wait<String>([
-      rootBundle.loadString(_mentionsAssetPath),
-      rootBundle.loadString(_privacyAssetPath),
+      rootBundle.loadString(mentionsPath),
+      rootBundle.loadString(privacyPath),
     ]);
     return _LegalContent(
       mentionsLegales: results[0],
@@ -21,12 +27,13 @@ class LegalInformationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Informations legales'),
+        title: Text(l10n.legalInfoTitle),
       ),
       body: FutureBuilder<_LegalContent>(
-        future: _loadContent(),
+        future: _loadContent(Localizations.localeOf(context)),
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
@@ -36,7 +43,7 @@ class LegalInformationPage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Impossible de charger les informations legales.',
+                  l10n.legalInfoLoadError,
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -51,10 +58,10 @@ class LegalInformationPage extends StatelessWidget {
               children: [
                 Material(
                   color: Theme.of(context).colorScheme.surface,
-                  child: const TabBar(
+                  child: TabBar(
                     tabs: [
-                      Tab(text: 'Mentions legales'),
-                      Tab(text: 'Vie privee / RGPD'),
+                      Tab(text: l10n.legalMentionsTab),
+                      Tab(text: l10n.legalPrivacyTab),
                     ],
                   ),
                 ),
@@ -62,11 +69,11 @@ class LegalInformationPage extends StatelessWidget {
                   child: TabBarView(
                     children: [
                       _LegalSectionContent(
-                        title: 'Mentions legales',
+                        title: l10n.legalMentionsTab,
                         body: content.mentionsLegales,
                       ),
                       _LegalSectionContent(
-                        title: 'Vie privee / RGPD',
+                        title: l10n.legalPrivacyTab,
                         body: content.viePriveeRgpd,
                       ),
                     ],

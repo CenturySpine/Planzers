@@ -8,6 +8,7 @@ import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripShoppingPage extends ConsumerWidget {
   const TripShoppingPage({super.key});
@@ -23,7 +24,7 @@ class TripShoppingPage extends ConsumerWidget {
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Erreur : $e'),
+          child: Text(AppLocalizations.of(context)!.commonErrorWithDetails(e.toString())),
         ),
       ),
     );
@@ -72,6 +73,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
   }
 
   Future<void> _confirmAndDeleteChecked(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final checkedCount = widget.items.where((item) => item.checked).length;
     if (checkedCount == 0) return;
 
@@ -79,18 +81,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Supprimer les éléments cochés ?'),
+          title: Text(l10n.shoppingDeleteCheckedTitle),
           content: Text(
-            '$checkedCount élément(s) sera(ont) supprimé(s) définitivement. Cette opération est irréversible.',
+            l10n.shoppingDeleteCheckedContent(checkedCount),
           ),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Annuler'),
+              child: Text(l10n.commonCancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Supprimer'),
+              child: Text(l10n.commonDelete),
             ),
           ],
         );
@@ -106,19 +108,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       if (!context.mounted) return;
       messenger.showSnackBar(
         SnackBar(
-          content: Text('$deletedCount élément(s) supprimé(s).'),
+          content: Text(l10n.shoppingDeletedCount(deletedCount)),
         ),
       );
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Erreur : $e')),
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final currentUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final checkedCount = widget.items.where((item) => item.checked).length;
     final searchQuery = _searchController.text;
@@ -167,26 +170,26 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                 children: [
                   SegmentedButton<_ShoppingFilter>(
                     showSelectedIcon: false,
-                    segments: const [
+                    segments: [
                       ButtonSegment<_ShoppingFilter>(
                         value: _ShoppingFilter.all,
-                        icon: Icon(Icons.apps_outlined),
-                        tooltip: 'Tous les éléments',
+                        icon: const Icon(Icons.apps_outlined),
+                        tooltip: l10n.shoppingFilterAll,
                       ),
                       ButtonSegment<_ShoppingFilter>(
                         value: _ShoppingFilter.todo,
-                        icon: Icon(Icons.radio_button_unchecked),
-                        tooltip: 'À acheter',
+                        icon: const Icon(Icons.radio_button_unchecked),
+                        tooltip: l10n.shoppingFilterTodo,
                       ),
                       ButtonSegment<_ShoppingFilter>(
                         value: _ShoppingFilter.done,
-                        icon: Icon(Icons.check_circle_outline),
-                        tooltip: 'Déjà cochés',
+                        icon: const Icon(Icons.check_circle_outline),
+                        tooltip: l10n.shoppingFilterDone,
                       ),
                       ButtonSegment<_ShoppingFilter>(
                         value: _ShoppingFilter.claimedByMe,
-                        icon: Icon(Icons.person_pin_circle_outlined),
-                        tooltip: 'Claimés par moi',
+                        icon: const Icon(Icons.person_pin_circle_outlined),
+                        tooltip: l10n.shoppingFilterClaimedByMe,
                       ),
                     ],
                     selected: {_activeFilter},
@@ -197,7 +200,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Aide des filtres',
+                    tooltip: l10n.shoppingFilterHelpTooltip,
                     icon: const Icon(Icons.help_outline),
                     onPressed: () => _showFilterHelp(context),
                   ),
@@ -217,12 +220,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Liste de courses vide',
+                            l10n.shoppingEmptyTitle,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Appuyez sur + pour ajouter un article.',
+                            l10n.shoppingEmptySubtitle,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -240,7 +243,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                           child: Padding(
                             padding: const EdgeInsets.all(24),
                             child: Text(
-                              kNameListSearchEmptyMessage,
+                              nameListSearchEmptyMessage(context),
                               textAlign: TextAlign.center,
                               style: Theme.of(context)
                                   .textTheme
@@ -320,44 +323,45 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
   }
 
   Future<void> _showFilterHelp(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Filtres de la liste'),
-          content: const Column(
+          title: Text(l10n.shoppingFiltersTitle),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Le filtre affiche uniquement les éléments correspondant à l’état sélectionné.',
+                l10n.shoppingFiltersHelpBody,
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               _FilterLegendRow(
                 icon: Icons.apps_outlined,
-                label: 'Tous les éléments',
+                label: l10n.shoppingFilterAll,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _FilterLegendRow(
                 icon: Icons.radio_button_unchecked,
-                label: 'À acheter',
+                label: l10n.shoppingFilterTodo,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _FilterLegendRow(
                 icon: Icons.check_circle_outline,
-                label: 'Déjà achetés',
+                label: l10n.shoppingFilterDone,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               _FilterLegendRow(
                 icon: Icons.person_pin_circle_outlined,
-                label: 'Je m\'en occupe !',
+                label: l10n.shoppingFilterClaimedByMe,
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: Navigator.of(dialogContext).pop,
-              child: const Text('Fermer'),
+              child: Text(l10n.commonClose),
             ),
           ],
         );
@@ -494,7 +498,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
       userData: claimedByUserData,
       tripMemberPublicLabels: const {},
       currentUserId: currentUid,
-      emptyFallback: 'Voyageur',
+      emptyFallback: AppLocalizations.of(context)!.shoppingTravelerFallback,
     );
     final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);
     final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -538,6 +542,7 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
             claimedByLabel: claimedByLabel,
             claimedByPhotoUrl: claimedByPhotoUrl,
             onTap: _toggleClaim,
+            l10n: AppLocalizations.of(context)!,
           ),
         ),
       ],
@@ -552,6 +557,7 @@ class _ClaimButton extends StatelessWidget {
     required this.claimedByLabel,
     required this.claimedByPhotoUrl,
     required this.onTap,
+    required this.l10n,
   });
 
   final bool isClaimedByMe;
@@ -559,6 +565,7 @@ class _ClaimButton extends StatelessWidget {
   final String claimedByLabel;
   final String claimedByPhotoUrl;
   final Future<void> Function() onTap;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -599,7 +606,7 @@ class _ClaimButton extends StatelessWidget {
       );
       return IconButton(
         style: compactStyle,
-        tooltip: 'Retirer mon claim',
+        tooltip: l10n.shoppingClaimRemoveMine,
         onPressed: () => onTap(),
         icon: avatar,
       );
@@ -613,7 +620,7 @@ class _ClaimButton extends StatelessWidget {
         foregroundColor: colorScheme.onSecondaryContainer,
       );
       return Tooltip(
-        message: 'Déjà claimé par $claimedByLabel',
+        message: l10n.shoppingClaimAlreadyBy(claimedByLabel),
         child: SizedBox(
           width: badgeSize,
           height: badgeSize,
@@ -624,7 +631,7 @@ class _ClaimButton extends StatelessWidget {
 
     return IconButton(
       style: compactStyle,
-      tooltip: 'Je m\'en occupe',
+      tooltip: l10n.shoppingClaimTake,
       onPressed: () => onTap(),
       icon: const Icon(Icons.accessibility_new_outlined, size: 17),
     );

@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
@@ -30,14 +31,15 @@ class TripParticipantsPage extends ConsumerStatefulWidget {
 }
 
 class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
-  static String _messageForError(Object e) {
+  static String _messageForError(BuildContext context, Object e) {
+    final l10n = AppLocalizations.of(context)!;
     if (e is FirebaseFunctionsException) {
       final m = e.message;
       if (m != null && m.trim().isNotEmpty) {
         return m.trim();
       }
     }
-    return e.toString();
+    return l10n.commonErrorWithDetails(e.toString());
   }
 
   Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
@@ -77,6 +79,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     required String displayLabel,
     required bool wasAdmin,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final cleanId = memberId.trim();
     if (cleanId.isEmpty || _cyclingMemberIds.contains(cleanId)) return;
 
@@ -87,20 +90,19 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
             memberId: cleanId,
           );
       if (!mounted) return;
-      final label =
-          displayLabel.trim().isEmpty ? 'Ce participant' : displayLabel;
+      final label = displayLabel.trim().isEmpty
+          ? l10n.tripParticipantsThisParticipant
+          : displayLabel;
       final message = wasAdmin
-          ? 'Rôle administrateur retiré ($label).'
-          : '$label est administrateur.';
+          ? l10n.tripParticipantsAdminRemoved(label)
+          : l10n.tripParticipantsAdminGranted(label);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible d’enregistrer ce like pour le moment.'),
-        ),
+        SnackBar(content: Text(l10n.tripParticipantsLikeSaveError)),
       );
     } finally {
       if (mounted) {
@@ -110,28 +112,29 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
   }
 
   Future<void> _openAddDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ajouter un voyageur prévu'),
+        title: Text(l10n.tripParticipantsAddPlannedTravelerTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Nom',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.commonName,
+            border: const OutlineInputBorder(),
           ),
           textInputAction: TextInputAction.done,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ajouter'),
+            child: Text(l10n.commonAdd),
           ),
         ],
       ),
@@ -150,12 +153,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyageur prévu ajouté')),
+        SnackBar(content: Text(l10n.tripParticipantsPlannedTravelerAdded)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        SnackBar(content: Text(_messageForError(context, e))),
       );
     }
   }
@@ -164,28 +167,29 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     required String placeholderId,
     required String currentName,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: currentName);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Modifier le nom'),
+        title: Text(l10n.tripParticipantsEditNameTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Nom',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: l10n.commonName,
+            border: const OutlineInputBorder(),
           ),
           textInputAction: TextInputAction.done,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Enregistrer'),
+            child: Text(l10n.commonSave),
           ),
         ],
       ),
@@ -205,12 +209,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nom mis à jour')),
+        SnackBar(content: Text(l10n.tripParticipantsNameUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        SnackBar(content: Text(_messageForError(context, e))),
       );
     }
   }
@@ -219,19 +223,20 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     required String placeholderId,
     required String label,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Retirer ce voyageur prévu ?'),
-        content: Text('« $label » sera retiré des participants.'),
+        title: Text(l10n.tripParticipantsRemovePlannedTravelerTitle),
+        content: Text(l10n.tripParticipantsRemovePlannedTravelerBody(label)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Retirer'),
+            child: Text(l10n.tripParticipantsRemoveAction),
           ),
         ],
       ),
@@ -244,12 +249,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyageur prévu retiré')),
+        SnackBar(content: Text(l10n.tripParticipantsPlannedTravelerRemoved)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        SnackBar(content: Text(_messageForError(context, e))),
       );
     }
   }
@@ -258,22 +263,23 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     required String memberId,
     required String label,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final cleanId = memberId.trim();
     if (cleanId.isEmpty || _removingMemberIds.contains(cleanId)) return;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Retirer ce participant ?'),
-        content: Text('Retirer « $label » du voyage ?'),
+        title: Text(l10n.tripParticipantsRemoveParticipantTitle),
+        content: Text(l10n.tripParticipantsRemoveParticipantBody(label)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Retirer'),
+            child: Text(l10n.tripParticipantsRemoveAction),
           ),
         ],
       ),
@@ -288,12 +294,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Participant retiré du voyage')),
+        SnackBar(content: Text(l10n.tripParticipantsRemovedFromTrip)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        SnackBar(content: Text(_messageForError(context, e))),
       );
     } finally {
       if (mounted) {
@@ -318,7 +324,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
+        SnackBar(content: Text(_messageForError(context, e))),
       );
     } finally {
       if (mounted) {
@@ -329,6 +335,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final asyncTrip = ref.watch(tripStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final cupidonEnabledAsync =
@@ -340,8 +347,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
       data: (trip) {
         if (trip == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Participants')),
-            body: const Center(child: Text('Voyage introuvable')),
+            appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
+            body: Center(child: Text(l10n.tripNotFound)),
           );
         }
         final usersStream = _usersDataStreamFor(trip);
@@ -356,6 +363,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
               trip,
               userDataById,
               myUid,
+              l10n: l10n,
               enabledCupidonMemberIds: enabledCupidonMemberIds,
               likedByMe: likedByMe,
             );
@@ -372,13 +380,13 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                 .toList();
 
             return Scaffold(
-              appBar: AppBar(title: const Text('Participants')),
+              appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
               body: rows.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(24),
                         child: Text(
-                          'Aucun participant.',
+                          l10n.tripParticipantsEmpty,
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -390,9 +398,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                             child: Text(
-                              'Clique sur l’icône à gauche d’un voyageur '
-                              '(prévu ou inscrit) pour lui donner ou retirer '
-                              'le rôle administrateur (sauf le créateur).',
+                              l10n.tripParticipantsAdminHint,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -421,7 +427,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(24),
                                     child: Text(
-                                      kNameListSearchEmptyMessage,
+                                      nameListSearchEmptyMessage(context),
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
@@ -486,7 +492,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   IconButton(
-                                                    tooltip: 'Modifier',
+                                                    tooltip: l10n.commonEdit,
                                                     icon: const Icon(
                                                         Icons.edit_outlined),
                                                     onPressed: () =>
@@ -498,7 +504,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                     ),
                                                   ),
                                                   IconButton(
-                                                    tooltip: 'Retirer',
+                                                    tooltip: l10n.tripParticipantsRemoveAction,
                                                     icon: const Icon(
                                                         Icons.delete_outline),
                                                     onPressed: () =>
@@ -520,8 +526,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                       myCupidonEnabled)
                                                     IconButton(
                                                       tooltip: row.likedByMe
-                                                          ? 'Retirer le like'
-                                                          : 'Liker',
+                                                          ? l10n.tripParticipantsUnlike
+                                                          : l10n.tripParticipantsLike,
                                                       onPressed: _likingMemberIds
                                                               .contains(row
                                                                   .memberId
@@ -560,7 +566,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                     ),
                                                   if (canRemoveMember)
                                                     IconButton(
-                                                      tooltip: 'Retirer',
+                                                      tooltip: l10n.tripParticipantsRemoveAction,
                                                       icon: isRemoving
                                                           ? const SizedBox(
                                                               width: 22,
@@ -594,7 +600,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
               floatingActionButton: canManageParticipants
                   ? FloatingActionButton(
                       onPressed: _openAddDialog,
-                      tooltip: 'Ajouter un voyageur prévu',
+                      tooltip: l10n.tripParticipantsAddPlannedTravelerTitle,
                       child: const Icon(Icons.add),
                     )
                   : null,
@@ -603,12 +609,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
         );
       },
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Participants')),
+        appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Participants')),
-        body: Center(child: Text('$e')),
+        appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
+        body: Center(child: Text(l10n.commonErrorWithDetails(e.toString()))),
       ),
     );
   }
@@ -618,6 +624,7 @@ List<_ParticipantRow> _participantRowsForTrip(
   Trip trip,
   Map<String, Map<String, dynamic>> userDataById,
   String? myUid, {
+  required AppLocalizations l10n,
   required Set<String> enabledCupidonMemberIds,
   required Set<String> likedByMe,
 }) {
@@ -629,7 +636,7 @@ List<_ParticipantRow> _participantRowsForTrip(
     if (isTripPlaceholderMemberId(id)) {
       final label = (labels[id]?.trim().isNotEmpty ?? false)
           ? labels[id]!.trim()
-          : 'Voyageur';
+          : l10n.tripParticipantsTraveler;
       return _ParticipantRow(
         memberId: id,
         isPlaceholder: true,
@@ -643,7 +650,7 @@ List<_ParticipantRow> _participantRowsForTrip(
       userData: userDataById[id],
       tripMemberPublicLabels: labels,
       currentUserId: myUid,
-      emptyFallback: 'Utilisateur',
+      emptyFallback: l10n.tripParticipantsUser,
     );
     return _ParticipantRow(
       memberId: id,
@@ -693,8 +700,10 @@ Widget _participantRoleLeading({
   }
 
   final tooltip = canCycleRole
-      ? 'Changer le rôle'
-      : (isOwnerRow ? 'Créateur' : (showAdminIcon ? 'Administrateur' : null));
+          ? AppLocalizations.of(context)!.tripParticipantsChangeRole
+      : (isOwnerRow
+            ? AppLocalizations.of(context)!.roleOwner
+            : (showAdminIcon ? AppLocalizations.of(context)!.roleAdmin : null));
 
   final baseBadge = buildProfileBadge(
     context: context,

@@ -10,6 +10,7 @@ import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
 /// avant le déploiement des fonctions). Au plus un appel par voyage et par
@@ -121,6 +122,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final tripId = widget.tripId;
     final navigationShell = widget.navigationShell;
     final tripAsync = ref.watch(tripStreamProvider(tripId));
@@ -174,16 +176,26 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           _ => 0,
         };
 
+    String localizedNavLabel(String label) => switch (label) {
+          'Aperçu' => l10n.tripTabOverview,
+          'Messagerie' => l10n.tripTabMessages,
+          'Activités' => l10n.tripTabActivities,
+          'Dépenses' => l10n.tripTabExpenses,
+          'Repas' => l10n.tripTabMeals,
+          'Courses' => l10n.tripTabShopping,
+          _ => label,
+        };
+
     return tripAsync.when(
       data: (trip) {
         if (trip == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Voyage')),
-            body: const Center(
+            appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
+            body: Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Voyage introuvable ou acces refuse.',
+                  l10n.tripNotFoundOrNoAccess,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -191,7 +203,8 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           );
         }
 
-        final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
+        final titleForAppBar =
+            trip.title.isEmpty ? l10n.tripLabelGeneric : trip.title;
         _precacheTripBannerIfNeeded(trip.bannerImageUrl);
 
         _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
@@ -218,7 +231,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back),
                           onPressed: () => context.go('/trips'),
-                          tooltip: 'Mes voyages',
+                          tooltip: l10n.tripsMyTrips,
                         )
                       : _TripAppBarPhotoLeading(imageUrl: trip.bannerImageUrl),
                   actions: const [
@@ -256,7 +269,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                                 showBadge: d.label == 'Messagerie' ||
                                     d.label == 'Activités',
                               ),
-                              label: Text(d.label),
+                              label: Text(localizedNavLabel(d.label)),
                             ),
                         ],
                       ),
@@ -287,12 +300,12 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Voyage')),
+        appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Erreur: $error',
+              l10n.commonErrorWithDetails(error.toString()),
               textAlign: TextAlign.center,
             ),
           ),
@@ -373,6 +386,7 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final bg = NavigationBarTheme.of(context).backgroundColor ??
         colorScheme.surfaceContainer;
@@ -427,7 +441,15 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        d.label,
+                        switch (d.label) {
+                          'Aperçu' => l10n.tripTabOverview,
+                          'Messagerie' => l10n.tripTabMessages,
+                          'Activités' => l10n.tripTabActivities,
+                          'Dépenses' => l10n.tripTabExpenses,
+                          'Repas' => l10n.tripTabMeals,
+                          'Courses' => l10n.tripTabShopping,
+                          _ => d.label,
+                        },
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
@@ -454,10 +476,11 @@ class TripCarsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
-      title: 'Voitures',
+      title: l10n.tripCarsTitle,
       icon: Icons.directions_car_outlined,
-      message: 'Covoiturage et véhicules. Contenu à venir.',
+      message: l10n.tripCarsComingSoon,
     );
   }
 }
@@ -467,10 +490,11 @@ class TripMealsPlaceholderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
-      title: 'Repas',
+      title: l10n.tripTabMeals,
       icon: Icons.restaurant_outlined,
-      message: 'Planning des repas. Contenu à venir.',
+      message: l10n.tripMealsComingSoon,
     );
   }
 }
@@ -488,8 +512,9 @@ class _TripSectionPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
-    final tripLabel = trip.title.isEmpty ? 'Ce voyage' : trip.title;
+    final tripLabel = trip.title.isEmpty ? l10n.tripThisTrip : trip.title;
 
     return ListView(
       padding: const EdgeInsets.all(24),

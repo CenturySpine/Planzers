@@ -12,6 +12,7 @@ import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
 import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Generic chat widget that can be instantiated independently of any specific
 /// data source. All operations are injected as callbacks; all data is passed
@@ -156,7 +157,11 @@ class _ChatWidgetState extends State<ChatWidget> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Envoi impossible : $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.chatSendImpossible(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -180,7 +185,9 @@ class _ChatWidgetState extends State<ChatWidget> {
               emojiViewConfig: EmojiViewConfig(
                 columns: 8,
                 emojiSizeMax: 32,
-                noRecents: const Text('Aucun emoji recent'),
+                noRecents: Text(
+                  AppLocalizations.of(context)!.chatNoRecentEmoji,
+                ),
               ),
               categoryViewConfig: CategoryViewConfig(
                 iconColor: scheme.onSurfaceVariant,
@@ -209,7 +216,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     if (myUid == null || myUid.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Utilisateur non connecte')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.chatUserNotConnected)),
       );
       return;
     }
@@ -231,7 +238,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     if (myUid == null || myUid.trim().isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Utilisateur non connecte')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.chatUserNotConnected)),
       );
       return;
     }
@@ -249,7 +256,11 @@ class _ChatWidgetState extends State<ChatWidget> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reaction impossible : $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.chatReactionImpossible(e.toString()),
+          ),
+        ),
       );
     }
   }
@@ -266,7 +277,11 @@ class _ChatWidgetState extends State<ChatWidget> {
     } catch (e) {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Modification impossible : $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.chatEditImpossible(e.toString()),
+          ),
+        ),
       );
       return false;
     }
@@ -276,15 +291,15 @@ class _ChatWidgetState extends State<ChatWidget> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        content: const Text('Supprimer ce message ?'),
+        content: Text(AppLocalizations.of(context)!.chatDeleteMessageConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.commonDelete),
           ),
         ],
       ),
@@ -296,7 +311,11 @@ class _ChatWidgetState extends State<ChatWidget> {
     } catch (e) {
       if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Suppression impossible : $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.chatDeleteImpossible(e.toString()),
+          ),
+        ),
       );
       return false;
     }
@@ -307,7 +326,7 @@ class _ChatWidgetState extends State<ChatWidget> {
     if (!mounted) return;
     _clearSelection();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Copié')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.chatCopied)),
     );
   }
 
@@ -347,11 +366,12 @@ class _ChatWidgetState extends State<ChatWidget> {
   }
 
   String _dayLabelFor(DateTime day, DateFormat dateFmt) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    if (day == today) return "Aujourd'hui";
-    if (day == yesterday) return 'Hier';
+    if (day == today) return l10n.commonToday;
+    if (day == yesterday) return l10n.commonYesterday;
     return dateFmt.format(day);
   }
 
@@ -368,11 +388,13 @@ class _ChatWidgetState extends State<ChatWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final myUid = widget.currentUserId;
     final messages = widget.messages;
     final reactionsByMessage = widget.reactions;
-    final timeFmt = DateFormat.Hm('fr_FR');
-    final dateFmt = DateFormat('d MMMM yyyy', 'fr_FR');
+    final localeTag = Localizations.localeOf(context).toString();
+    final timeFmt = DateFormat.Hm(localeTag);
+    final dateFmt = DateFormat('d MMMM yyyy', localeTag);
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
@@ -420,8 +442,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(
-                        "Aucun message pour l'instant. "
-                        'Écris le premier pour lancer la discussion.',
+                        l10n.chatEmptyState,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyLarge,
                       ),
@@ -444,7 +465,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                       final isMine = myUid != null && m.authorId == myUid;
                       final isSelected = m.id == _selectedMessageId;
                       final label =
-                          widget.authorLabels[m.authorId] ?? 'Participant';
+                          widget.authorLabels[m.authorId] ?? l10n.roleParticipant;
                       final reactions = reactionsByMessage[m.id] ??
                           const <TripMessageReaction>[];
                       final groupedReactions =
@@ -709,7 +730,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                         maxLines: 5,
                         textCapitalization: TextCapitalization.sentences,
                         decoration: InputDecoration(
-                          hintText: 'Message…',
+                          hintText: l10n.chatMessageHint,
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -746,7 +767,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.send),
-                      tooltip: 'Envoyer',
+                      tooltip: l10n.chatSend,
                     ),
                   ],
                 ),
@@ -871,7 +892,7 @@ Future<void> _openChatUrl(BuildContext context, String url) async {
   if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien invalide')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.linkInvalid)),
       );
     }
     return;
@@ -883,7 +904,7 @@ Future<void> _openChatUrl(BuildContext context, String url) async {
   );
   if (!didLaunch && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Impossible d'ouvrir le lien")),
+      SnackBar(content: Text(AppLocalizations.of(context)!.linkOpenImpossible)),
     );
   }
 }
@@ -921,25 +942,25 @@ class _MessageSelectionAppBar extends StatelessWidget {
             children: [
               IconButton(
                 icon: const Icon(Icons.close),
-                tooltip: 'Fermer',
+                tooltip: AppLocalizations.of(context)!.commonClose,
                 onPressed: onClose,
               ),
               const Spacer(),
               if (onEdit != null)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Modifier',
+                  tooltip: AppLocalizations.of(context)!.commonEdit,
                   onPressed: () => unawaited(onEdit!()),
                 ),
               if (onDelete != null)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Supprimer',
+                  tooltip: AppLocalizations.of(context)!.commonDelete,
                   onPressed: () => unawaited(onDelete!()),
                 ),
               IconButton(
                 icon: const Icon(Icons.copy_outlined),
-                tooltip: 'Copier',
+                tooltip: AppLocalizations.of(context)!.chatCopy,
                 onPressed: onCopy,
               ),
             ],
@@ -1054,7 +1075,7 @@ class _InlineMessageQuickReactionBar extends StatelessWidget {
                     emoji,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  tooltip: 'Reagir avec $emoji',
+                  tooltip: AppLocalizations.of(context)!.chatReactWithEmoji(emoji),
                 ),
               ),
             IconButton(
@@ -1062,7 +1083,7 @@ class _InlineMessageQuickReactionBar extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
               onPressed: () => unawaited(onMoreTap()),
               icon: const Icon(Icons.add),
-              tooltip: "Plus d'emoticones",
+              tooltip: AppLocalizations.of(context)!.chatMoreEmojis,
             ),
           ],
         ),
@@ -1179,7 +1200,7 @@ class _ScrollToBottomButton extends StatelessWidget {
         iconSize: 18,
         visualDensity: VisualDensity.compact,
         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        tooltip: 'Aller en bas',
+        tooltip: AppLocalizations.of(context)!.chatGoBottom,
         icon: Icon(
           Icons.keyboard_double_arrow_down_rounded,
           color: scheme.onInverseSurface,
@@ -1220,7 +1241,7 @@ class _EditChatMessageDialogState extends State<_EditChatMessageDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Modifier le message'),
+      title: Text(AppLocalizations.of(context)!.chatEditMessageTitle),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -1234,7 +1255,7 @@ class _EditChatMessageDialogState extends State<_EditChatMessageDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annuler'),
+          child: Text(AppLocalizations.of(context)!.commonCancel),
         ),
         FilledButton(
           onPressed: () {
@@ -1242,7 +1263,7 @@ class _EditChatMessageDialogState extends State<_EditChatMessageDialog> {
             if (t.isEmpty) return;
             Navigator.pop(context, t);
           },
-          child: const Text('Enregistrer'),
+          child: Text(AppLocalizations.of(context)!.commonSave),
         ),
       ],
     );

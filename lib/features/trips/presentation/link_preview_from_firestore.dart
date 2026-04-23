@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Renders Open Graph / meta preview data stored on a Firestore document
@@ -9,22 +10,23 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
     super.key,
     required this.url,
     required this.preview,
-    this.titleLabel = 'Lien',
+    this.titleLabel,
     this.showCard = true,
     this.showTitleLabel = true,
   });
 
   final String url;
   final Map<String, dynamic> preview;
-  final String titleLabel;
+  final String? titleLabel;
   final bool showCard;
   final bool showTitleLabel;
 
   Future<void> _openLink(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     final parsed = Uri.tryParse(url.trim());
     if (parsed == null || !parsed.isAbsolute) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lien invalide')),
+        SnackBar(content: Text(l10n.linkInvalid)),
       );
       return;
     }
@@ -37,13 +39,14 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
 
     if (!didLaunch && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir le lien')),
+        SnackBar(content: Text(l10n.linkOpenImpossible)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final status = (preview['status'] as String?) ?? '';
     final title = (preview['title'] as String?) ?? '';
     final description = (preview['description'] as String?) ?? '';
@@ -61,7 +64,10 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (showTitleLabel) ...[
-            Text(titleLabel, style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              titleLabel ?? l10n.linkLabel,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
           ],
           InkWell(
@@ -95,7 +101,7 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
             ),
           ] else if (!hasPreview) ...[
             Text(
-              'Apercu indisponible pour ce lien.',
+              l10n.linkPreviewUnavailable,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ] else ...[

@@ -1,0 +1,35 @@
+LEGAL NOTICE
+Last update: 23/04/2026
+
+Publisher
+- Bruno Chappe (individual)
+- Official domain: centuryspine.org
+- Contact: century.spine@gmail.com
+- Postal address: provided upon legitimate request
+
+Publication director
+- Bruno Chappe
+
+Hosting and technical subprocessors
+- Vercel (web hosting)
+- Google Firebase:
+  - Firebase Authentication
+  - Cloud Firestore
+  - Cloud Storage
+  - Cloud Functions
+  - Firebase Cloud Messaging
+
+Open source code
+- GitHub (Planerz project source code)
+- Source code license: GNU AGPL v3 (or any later version)
+- Copyright (c) 2026 Bruno Chappe
+
+Intellectual property
+The Planerz application, its content, structure, and visual elements are
+protected by applicable intellectual property laws. Unless prior authorization
+is granted, any reproduction, adaptation, or reuse is prohibited, subject to
+the rights granted for source code under the GNU AGPL v3 (or later version).
+
+Contact
+For any question or complaint related to the service, write to:
+century.spine@gmail.com

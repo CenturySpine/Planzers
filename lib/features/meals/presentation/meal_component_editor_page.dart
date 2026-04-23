@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
@@ -102,6 +103,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final allergenLabelById = <String, String>{
       for (final item
           in widget.catalogItems.where((it) => it.type == 'allergen'))
@@ -117,7 +119,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(_component),
-            child: const Text('Terminer'),
+            child: Text(l10n.commonDone),
           ),
         ],
       ),
@@ -126,9 +128,9 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         children: [
           DropdownButtonFormField<MealComponentKind>(
             initialValue: _component.kind,
-            decoration: const InputDecoration(
-              labelText: 'Type de composant',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.mealComponentTypeLabel,
+              border: const OutlineInputBorder(),
             ),
             items: [
               for (final kind in MealComponentKind.values)
@@ -147,9 +149,9 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
           const SizedBox(height: 12),
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Nom du composant (optionnel)',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.mealComponentNameOptionalLabel,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (_) => _syncTitle(),
             onEditingComplete: _syncTitle,
@@ -163,12 +165,14 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
               children: [
                 for (final id in _risk.containsAllergenIds)
                   Chip(
-                    label: Text('Contient ${allergenLabelById[id] ?? id}'),
+                    label: Text(l10n.mealContainsAllergen(allergenLabelById[id] ?? id)),
                     avatar: const Icon(Icons.warning_amber_rounded, size: 16),
                   ),
                 for (final id in _risk.mayContainAllergenIds)
                   Chip(
-                    label: Text('Peut contenir ${allergenLabelById[id] ?? id}'),
+                    label: Text(
+                      l10n.mealMayContainAllergen(allergenLabelById[id] ?? id),
+                    ),
                     avatar: const Icon(Icons.info_outline, size: 16),
                   ),
               ],
@@ -176,7 +180,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             const SizedBox(height: 12),
           ],
           Text(
-            'Ingrédients',
+            l10n.mealIngredientsTitle,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -188,14 +192,14 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
               quantityValue: _component.ingredients[i].quantityValue,
               quantityUnit:
                   _unitFromRaw(_component.ingredients[i].quantityUnit),
-              hintText: 'Ingredient…',
+              hintText: l10n.mealIngredientHint,
               onSave: (value) async => _updateIngredient(i, value),
               onDelete: () async => _deleteIngredient(i),
             ),
           TextButton.icon(
             onPressed: _addIngredient,
             icon: const Icon(Icons.add),
-            label: const Text('Ajouter un ingredient'),
+            label: Text(l10n.mealAddIngredient),
           ),
         ],
       ),

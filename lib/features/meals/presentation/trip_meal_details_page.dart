@@ -11,6 +11,7 @@ import 'package:planerz/features/meals/presentation/meal_component_editor_page.d
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMealDetailsPage extends ConsumerStatefulWidget {
   const TripMealDetailsPage({
@@ -59,14 +60,29 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   String get _mealDateKey => TripMemberStay.dateKeyFromDateTime(_mealDate);
 
   String _defaultMealName() {
-    final moment = switch (_mealDayPart) {
-      TripDayPart.morning => 'Petit dej',
-      TripDayPart.midday => 'Dejeuner',
-      TripDayPart.evening => 'Diner',
-    };
-    final dayName = DateFormat('EEEE', 'fr_FR').format(_mealDate);
-    final dateLabel = DateFormat('d MMMM', 'fr_FR').format(_mealDate);
+    final l10n = AppLocalizations.of(context)!;
+    final moment = _mealMomentLabel(l10n, _mealDayPart);
+    final localeTag = Localizations.localeOf(context).toString();
+    final dayName = DateFormat('EEEE', localeTag).format(_mealDate);
+    final dateLabel = DateFormat('d MMMM', localeTag).format(_mealDate);
     return '$moment $dayName $dateLabel';
+  }
+
+  String _mealMomentLabel(AppLocalizations l10n, TripDayPart dayPart) {
+    return switch (dayPart) {
+      TripDayPart.morning => l10n.mealMomentBreakfast,
+      TripDayPart.midday => l10n.mealMomentLunch,
+      TripDayPart.evening => l10n.mealMomentDinner,
+    };
+  }
+
+  String _componentKindLabel(AppLocalizations l10n, MealComponentKind kind) {
+    return switch (kind) {
+      MealComponentKind.entree => l10n.mealComponentKindEntree,
+      MealComponentKind.plat => l10n.mealComponentKindMain,
+      MealComponentKind.dessert => l10n.mealComponentKindDessert,
+      MealComponentKind.autre => l10n.mealComponentKindOther,
+    };
   }
 
   void _refreshAutoNameIfNeeded() {
@@ -152,18 +168,18 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Modifications non enregistrées'),
-        content: const Text(
-          'Tu as des changements non enregistrés. Quitter sans enregistrer ?',
+        title: Text(AppLocalizations.of(context)!.commonUnsavedChangesTitle),
+        content: Text(
+          AppLocalizations.of(context)!.mealUnsavedChangesBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Rester'),
+            child: Text(AppLocalizations.of(context)!.commonStay),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Quitter'),
+            child: Text(AppLocalizations.of(context)!.tripOverviewLeaveAction),
           ),
         ],
       ),
@@ -251,18 +267,26 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          .showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.commonErrorWithDetails(
+                  e.toString(),
+                ),
+              ),
+            ),
+          );
     }
   }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      locale: const Locale('fr', 'FR'),
+      locale: Localizations.localeOf(context),
       initialDate: _mealDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      helpText: 'Date du repas',
+      helpText: AppLocalizations.of(context)!.mealDateHelp,
     );
     if (picked == null || !mounted) return;
     setState(() {
@@ -294,7 +318,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         if (!mounted) return;
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Repas créé')));
+            .showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.mealCreated)),
+            );
       } else {
         await repo.updateMeal(
           tripId: widget.tripId,
@@ -309,12 +335,22 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         if (!mounted) return;
         setState(_saveCurrentAsBaseline);
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Repas mis à jour')));
+            .showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+            );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          .showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.commonErrorWithDetails(
+                  e.toString(),
+                ),
+              ),
+            ),
+          );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -325,16 +361,16 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Supprimer ce repas ?'),
-        content: const Text('Ce repas sera supprimé définitivement.'),
+        title: Text(AppLocalizations.of(context)!.mealDeleteTitle),
+        content: Text(AppLocalizations.of(context)!.mealDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.commonDelete),
           ),
         ],
       ),
@@ -350,11 +386,21 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Repas supprimé')));
+          .showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.mealDeleted)),
+          );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          .showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.commonErrorWithDetails(
+                  e.toString(),
+                ),
+              ),
+            ),
+          );
     } finally {
       if (mounted) setState(() => _isDeleting = false);
     }
@@ -362,6 +408,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
     final participantIdsForRisk = _participantIds.toList()..sort();
     final participantIdsRiskKey = participantIdsForRisk.join('|');
@@ -380,13 +427,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text('Erreur: $e')),
+        body: Center(child: Text(l10n.commonErrorWithDetails(e.toString()))),
       ),
       data: (trip) {
         if (trip == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text('Voyage introuvable')),
+            body: Center(child: Text(l10n.tripNotFound)),
           );
         }
         final memberIds = trip.memberIds
@@ -397,10 +444,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         final labels = <String, String>{
           for (final id in memberIds)
             id: (id == myUid)
-                ? 'Moi'
+                ? l10n.commonMe
                 : ((trip.memberPublicLabels[id]?.trim().isNotEmpty ?? false)
                     ? trip.memberPublicLabels[id]!.trim()
-                    : 'Participant')
+                    : l10n.roleParticipant)
         };
 
         return mealAsync.when(
@@ -408,13 +455,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (e, _) => Scaffold(
             appBar: AppBar(),
-            body: Center(child: Text('Erreur: $e')),
+            body: Center(child: Text(l10n.commonErrorWithDetails(e.toString()))),
           ),
           data: (meal) {
             if (!widget.isCreate && meal == null) {
               return Scaffold(
                 appBar: AppBar(),
-                body: const Center(child: Text('Repas introuvable')),
+                body: Center(child: Text(l10n.mealNotFound)),
               );
             }
             if (meal != null) {
@@ -443,13 +490,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 child: Scaffold(
                   appBar: AppBar(
                     title: Text(
-                      '${widget.isCreate ? 'Nouveau repas' : 'Modifier le repas'}'
-                      '${_hasUnsavedChanges ? ' • non enregistré' : ''}',
+                      '${widget.isCreate ? l10n.mealNew : l10n.mealEdit}'
+                      '${_hasUnsavedChanges ? ' • ${l10n.commonUnsaved}' : ''}',
                     ),
                     actions: [
                       if (!widget.isCreate)
                         IconButton(
-                          tooltip: 'Supprimer',
+                          tooltip: l10n.commonDelete,
                           onPressed: _isDeleting ? null : _confirmAndDelete,
                           icon: _isDeleting
                               ? const SizedBox(
@@ -470,13 +517,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         TextFormField(
                           controller: _nameController,
                           textInputAction: TextInputAction.done,
-                          decoration: const InputDecoration(
-                            labelText: 'Nom du repas',
+                          decoration: InputDecoration(
+                            labelText: l10n.mealNameLabel,
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if ((value ?? '').trim().isEmpty) {
-                              return 'Nom obligatoire';
+                              return l10n.mealNameRequired;
                             }
                             return null;
                           },
@@ -484,18 +531,22 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         const SizedBox(height: 12),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Date'),
-                          subtitle: Text(DateFormat('EEEE d MMMM yyyy', 'fr_FR')
-                              .format(_mealDate)),
+                          title: Text(l10n.commonDate),
+                          subtitle: Text(
+                            DateFormat(
+                              'EEEE d MMMM yyyy',
+                              Localizations.localeOf(context).toString(),
+                            ).format(_mealDate),
+                          ),
                           trailing: TextButton.icon(
                             onPressed: _pickDate,
                             icon: const Icon(Icons.calendar_today_outlined),
-                            label: const Text('Choisir'),
+                            label: Text(l10n.commonChoose),
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Moment',
+                          l10n.mealMomentLabel,
                           style: Theme.of(context).textTheme.labelLarge,
                         ),
                         const SizedBox(height: 8),
@@ -504,7 +555,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           children: [
                             for (final part in TripDayPart.values)
                               ChoiceChip(
-                                label: Text(tripDayPartLabelFr(part)),
+                                label: Text(_dayPartLabel(context, part)),
                                 selected: _mealDayPart == part,
                                 onSelected: (_) => setState(() {
                                   _mealDayPart = part;
@@ -518,7 +569,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Participants (${_participantIds.length})',
+                                l10n.mealParticipantsCount(_participantIds.length),
                                 style: Theme.of(context).textTheme.labelLarge,
                               ),
                             ),
@@ -526,7 +577,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               onPressed: () =>
                                   _autoRecalculateParticipants(memberIds),
                               icon: const Icon(Icons.auto_fix_high_outlined),
-                              label: const Text('Auto'),
+                              label: Text(l10n.commonAuto),
                             ),
                           ],
                         ),
@@ -537,7 +588,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           children: [
                             for (final memberId in memberIds)
                               FilterChip(
-                                label: Text(labels[memberId] ?? 'Participant'),
+                                label: Text(labels[memberId] ?? l10n.roleParticipant),
                                 selected: _participantIds.contains(memberId),
                                 onSelected: (selected) {
                                   setState(() {
@@ -556,18 +607,22 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                'Composants du repas',
+                                l10n.mealComponentsTitle,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ),
                             PopupMenuButton<MealComponentKind>(
-                              tooltip: 'Ajouter un composant',
+                              tooltip: l10n.mealAddComponent,
                               onSelected: _addComponent,
                               itemBuilder: (context) => [
                                 for (final kind in MealComponentKind.values)
                                   PopupMenuItem(
                                     value: kind,
-                                    child: Text('Ajouter ${kind.labelFr}'),
+                                    child: Text(
+                                      l10n.mealAddComponentWithKind(
+                                        _componentKindLabel(l10n, kind),
+                                      ),
+                                    ),
                                   ),
                               ],
                               child: const Padding(
@@ -580,7 +635,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         const SizedBox(height: 8),
                         if (_components.isEmpty)
                           Text(
-                            'Ajoute un composant (entree, plat, dessert, autre).',
+                            l10n.mealAddComponentHint,
                             style: Theme.of(context).textTheme.bodyMedium,
                           )
                         else
@@ -637,20 +692,21 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   ),
                                   title: Text(
                                     component.title.trim().isEmpty
-                                        ? component.kind.labelFr
+                                        ? _componentKindLabel(l10n, component.kind)
                                         : component.title.trim(),
                                   ),
                                   subtitle: Text(
-                                    '${component.ingredients.length} ingrédient(s)',
+                                    l10n.mealIngredientsCount(
+                                      component.ingredients.length,
+                                    ),
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       if (changedComponentIds
                                           .contains(component.id))
-                                        const Tooltip(
-                                          message:
-                                              'Composant modifié non enregistré',
+                                        Tooltip(
+                                          message: l10n.mealComponentChangedUnsaved,
                                           child:
                                               Icon(Icons.edit_note, size: 20),
                                         ),
@@ -662,10 +718,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         Tooltip(
                                           message: [
                                             ...risk.containsAllergenIds.map((id) =>
-                                                'Contient ${allergenLabelById[id] ?? id}'),
+                                                l10n.mealContainsAllergen(
+                                                  allergenLabelById[id] ?? id,
+                                                )),
                                             ...risk.mayContainAllergenIds.map(
                                                 (id) =>
-                                                    'Peut contenir ${allergenLabelById[id] ?? id}'),
+                                                    l10n.mealMayContainAllergen(
+                                                      allergenLabelById[id] ?? id,
+                                                    )),
                                           ].join('\n'),
                                           child: const Icon(
                                             Icons.warning_amber_rounded,
@@ -673,7 +733,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           ),
                                         ),
                                       IconButton(
-                                        tooltip: 'Supprimer ce composant',
+                                        tooltip: l10n.mealDeleteComponent,
                                         onPressed: () =>
                                             _deleteComponent(component.id),
                                         icon: const Icon(Icons.delete_outline),
@@ -703,7 +763,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               )
                             : const Icon(Icons.save_outlined),
                         label: Text(
-                            _isSaving ? 'Enregistrement...' : 'Enregistrer'),
+                          _isSaving ? l10n.commonSaving : l10n.commonSave,
+                        ),
                       ),
                     ),
                   ),
@@ -713,4 +774,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       },
     );
   }
+}
+
+String _dayPartLabel(BuildContext context, TripDayPart dayPart) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (dayPart) {
+    TripDayPart.morning => l10n.dayPartMorning,
+    TripDayPart.midday => l10n.dayPartMidday,
+    TripDayPart.evening => l10n.dayPartEvening,
+  };
 }

@@ -10,6 +10,7 @@ import 'package:planerz/features/legal/presentation/legal_information_page.dart'
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
@@ -40,6 +41,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
@@ -61,14 +63,14 @@ class _TripsPageState extends ConsumerState<TripsPage>
         children: [
           FloatingActionButton(
             heroTag: 'trips_join_invite',
-            tooltip: 'Rejoindre avec un code d\'invitation',
+            tooltip: l10n.tripsJoinWithInviteTooltip,
             onPressed: () => _openJoinByInviteCodeDialog(context),
             child: const Icon(Icons.vpn_key_outlined),
           ),
           const SizedBox(height: 16),
           FloatingActionButton(
             heroTag: 'trips_create',
-            tooltip: 'Nouveau voyage',
+            tooltip: l10n.tripsNewTripTooltip,
             onPressed: () => _openCreateTripDialog(context, ref),
             child: const Icon(Icons.add),
           ),
@@ -100,7 +102,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Mes voyages',
+                          l10n.tripsMyTrips,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -117,11 +119,11 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   child: tripsAsync.when(
                 data: (trips) {
                   if (trips.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(24),
                         child: Text(
-                          'Aucun voyage pour le moment.\nCree ton premier voyage.',
+                          l10n.tripsEmptyState,
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -171,21 +173,21 @@ class _TripsPageState extends ConsumerState<TripsPage>
                         tabs: [
                           _buildTimelineTab(
                             context,
-                            label: 'Passés',
+                            label: l10n.tripsTimelinePast,
                             tripCount:
                                 grouped[_TripTimelineCategory.past]?.length ?? 0,
                             unreadCount: pastUnread,
                           ),
                           _buildTimelineTab(
                             context,
-                            label: 'En cours',
+                            label: l10n.tripsTimelineOngoing,
                             tripCount:
                                 grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
                             unreadCount: ongoingUnread,
                           ),
                           _buildTimelineTab(
                             context,
-                            label: 'À venir',
+                            label: l10n.tripsTimelineUpcoming,
                             tripCount:
                                 grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
                             unreadCount: upcomingUnread,
@@ -202,7 +204,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   timelineContainerColors[_TripTimelineCategory.past]!,
                               titleColor:
                                   timelineTitleColors[_TripTimelineCategory.past]!,
-                              emptyMessage: 'Aucun voyage passé.',
+                              emptyMessage: l10n.tripsEmptyPast,
                               myUid: myUid,
                               onOpenTrip: (tripId) =>
                                   context.push('/trips/$tripId/overview'),
@@ -219,7 +221,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   timelineContainerColors[_TripTimelineCategory.ongoing]!,
                               titleColor:
                                   timelineTitleColors[_TripTimelineCategory.ongoing]!,
-                              emptyMessage: 'Aucun voyage en cours.',
+                              emptyMessage: l10n.tripsEmptyOngoing,
                               myUid: myUid,
                               onOpenTrip: (tripId) =>
                                   context.push('/trips/$tripId/overview'),
@@ -237,7 +239,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   timelineContainerColors[_TripTimelineCategory.upcoming]!,
                               titleColor:
                                   timelineTitleColors[_TripTimelineCategory.upcoming]!,
-                              emptyMessage: 'Aucun voyage à venir.',
+                              emptyMessage: l10n.tripsEmptyUpcoming,
                               myUid: myUid,
                               onOpenTrip: (tripId) =>
                                   context.push('/trips/$tripId/overview'),
@@ -258,7 +260,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     error: (error, stackTrace) => Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text('Erreur Firestore: $error'),
+                        child: Text(l10n.tripsFirestoreError(error.toString())),
                       ),
                     ),
                   ),
@@ -288,7 +290,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Informations legales'),
+                      child: Text(l10n.legalInfoTitle),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -301,7 +303,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '© 2026 Bruno Chappe',
+                      l10n.appCopyright,
                       style: TextStyle(
                         fontSize: _legalLinkFontSize,
                         fontWeight: FontWeight.w400,
@@ -440,6 +442,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final titleController = TextEditingController();
     final destinationController = TextEditingController();
     String? error;
@@ -476,7 +479,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
             }
 
             return AlertDialog(
-              title: const Text('Creer un voyage'),
+              title: Text(l10n.tripsCreateDialogTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -484,19 +487,20 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   children: [
                     TextField(
                       controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Titre'),
+                      decoration: InputDecoration(labelText: l10n.tripsTitleLabel),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: destinationController,
-                      decoration:
-                          const InputDecoration(labelText: 'Destination'),
+                      decoration: InputDecoration(
+                        labelText: l10n.tripsDestinationLabel,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de début'),
-                      subtitle: Text(formatOptionalTripDate(startDate)),
+                      title: Text(l10n.tripsStartDateLabel),
+                      subtitle: Text(formatOptionalTripDate(context, startDate)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -516,8 +520,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de fin'),
-                      subtitle: Text(formatOptionalTripDate(endDate)),
+                      title: Text(l10n.tripsEndDateLabel),
+                      subtitle: Text(formatOptionalTripDate(context, endDate)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -550,7 +554,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Annuler'),
+                  child: Text(l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: () async {
@@ -559,15 +563,14 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
                     if (title.isEmpty || destination.isEmpty) {
                       setDialogState(() {
-                        error = 'Titre et destination obligatoires';
+                        error = l10n.tripsCreateValidationRequired;
                       });
                       return;
                     }
 
                     if (isEndBeforeStart(startDate, endDate)) {
                       setDialogState(() {
-                        error =
-                            'La date de fin doit être le même jour ou après la date de début';
+                        error = l10n.tripsCreateValidationDateOrder;
                       });
                       return;
                     }
@@ -588,7 +591,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       });
                     }
                   },
-                  child: const Text('Creer'),
+                  child: Text(l10n.tripsCreateAction),
                 ),
               ],
             );
@@ -617,17 +620,18 @@ class _TripsPageState extends ConsumerState<TripsPage>
     );
   }
 
-  static String _messageForJoinByCodeError(Object e) {
+  static String _messageForJoinByCodeError(BuildContext context, Object e) {
+    final l10n = AppLocalizations.of(context)!;
     if (e is FirebaseFunctionsException) {
       switch (e.code) {
         case 'not-found':
-          return 'Ce code d\'invitation est introuvable.';
+          return l10n.tripsJoinCodeNotFound;
         case 'permission-denied':
-          return 'Ce code d\'invitation n\'est plus valide.';
+          return l10n.tripsJoinCodeNotValid;
         case 'invalid-argument':
-          return 'Code d\'invitation invalide.';
+          return l10n.tripsJoinCodeInvalid;
         case 'unauthenticated':
-          return 'Connecte-toi pour rejoindre un voyage.';
+          return l10n.tripsJoinCodeUnauthenticated;
         default:
           break;
       }
@@ -645,22 +649,23 @@ class _TripsPageState extends ConsumerState<TripsPage>
     required String tripId,
     required String tripTitle,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Supprimer ce voyage ?'),
+          title: Text(l10n.tripsDeleteDialogTitle),
           content: Text(
-            'Cette action est definitive.\n\nVoyage: $tripTitle',
+            l10n.tripsDeleteDialogBody(tripTitle),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Annuler'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Supprimer'),
+              child: Text(l10n.commonDelete),
             ),
           ],
         );
@@ -673,12 +678,12 @@ class _TripsPageState extends ConsumerState<TripsPage>
       await ref.read(tripsRepositoryProvider).deleteTrip(tripId: tripId);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyage supprime')),
+        SnackBar(content: Text(l10n.tripsDeleted)),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression: $e')),
+        SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
       );
     }
   }
@@ -757,7 +762,11 @@ class _TripsTimelineList extends StatelessWidget {
       itemBuilder: (context, index) {
         final trip = trips[index];
         final canDelete = myUid != null && trip.ownerId == myUid;
-        final dateLine = formatTripDateRange(trip.startDate, trip.endDate);
+        final dateLine = formatTripDateRange(
+          context,
+          trip.startDate,
+          trip.endDate,
+        );
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: _TripCard(
@@ -840,7 +849,9 @@ class _TripCard extends ConsumerWidget {
                     ],
                     const SizedBox(height: 6),
                     Text(
-                      '${trip.memberIds.length} membre(s)',
+                      AppLocalizations.of(context)!.tripsMemberCount(
+                        trip.memberIds.length,
+                      ),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -861,7 +872,7 @@ class _TripCard extends ConsumerWidget {
                     ),
                   if (canDelete)
                     IconButton(
-                      tooltip: 'Supprimer',
+                      tooltip: AppLocalizations.of(context)!.commonDelete,
                       onPressed: onDelete,
                       icon: const Icon(Icons.delete_outline),
                     ),
@@ -957,9 +968,10 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
   }
 
   Future<void> _submitEnterCode() async {
+    final l10n = AppLocalizations.of(context)!;
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _error = 'Saisis le code d\'invitation.');
+      setState(() => _error = l10n.tripsJoinCodeRequired);
       return;
     }
     setState(() {
@@ -976,30 +988,30 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
-        _error = _TripsPageState._messageForJoinByCodeError(e);
+        _error = _TripsPageState._messageForJoinByCodeError(context, e);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Code d\'invitation'),
+      title: Text(l10n.tripsJoinCodeDialogTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Colle le code envoye par l\'organisateur du voyage '
-              '(pas le lien, uniquement le code).',
+            Text(
+              l10n.tripsJoinCodeDialogHelp,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _codeController,
-              decoration: const InputDecoration(
-                labelText: 'Code',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.tripsJoinCodeLabel,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
               autocorrect: false,
@@ -1023,7 +1035,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
           onPressed: _isSubmitting
               ? null
               : () => Navigator.of(widget.navigatorContext).pop(),
-          child: const Text('Annuler'),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _isSubmitting
@@ -1035,7 +1047,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                   height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Rejoindre'),
+              : Text(l10n.tripsJoinCodeAction),
         ),
       ],
     );
