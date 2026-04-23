@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -48,7 +47,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mes voyages'),
+        title: const _TripsAppBranding(),
         actions: const [
           AccountAppBarActions(),
         ],
@@ -72,133 +71,195 @@ class _TripsPageState extends ConsumerState<TripsPage>
           ),
         ],
       ),
-      body: tripsAsync.when(
-        data: (trips) {
-          if (trips.isEmpty) {
-            return const Center(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Aucun voyage pour le moment.\nCree ton premier voyage.',
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
-              ),
-            );
-          }
-
-          final grouped = _groupTripsByTimeline(trips);
-          _maybeAutoOpenCurrentTrip(
-            context,
-            ongoingTrips: grouped[_TripTimelineCategory.ongoing] ?? const [],
-            autoOpenCurrentTripOnLaunch:
-                autoOpenCurrentTripOnLaunchAsync.asData?.value,
-          );
-          final unreadByTrip = unreadByTripAsync.asData?.value ?? const <String, int>{};
-          final pastUnread = _sumUnreadForTrips(
-            grouped[_TripTimelineCategory.past] ?? const [],
-            unreadByTrip,
-          );
-          final ongoingUnread = _sumUnreadForTrips(
-            grouped[_TripTimelineCategory.ongoing] ?? const [],
-            unreadByTrip,
-          );
-          final upcomingUnread = _sumUnreadForTrips(
-            grouped[_TripTimelineCategory.upcoming] ?? const [],
-            unreadByTrip,
-          );
-          final colorScheme = Theme.of(context).colorScheme;
-          final palette = context.planerzColors;
-
-          final timelineColors = <_TripTimelineCategory, Color>{
-            _TripTimelineCategory.past: palette.warning,
-            _TripTimelineCategory.ongoing: colorScheme.primaryContainer,
-            _TripTimelineCategory.upcoming: colorScheme.tertiary,
-          };
-
-          return Column(
-            children: [
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  _buildTimelineTab(
-                    context,
-                    label: 'Passés',
-                    tripCount: grouped[_TripTimelineCategory.past]?.length ?? 0,
-                    unreadCount: pastUnread,
-                  ),
-                  _buildTimelineTab(
-                    context,
-                    label: 'En cours',
-                    tripCount: grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
-                    unreadCount: ongoingUnread,
-                  ),
-                  _buildTimelineTab(
-                    context,
-                    label: 'À venir',
-                    tripCount: grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
-                    unreadCount: upcomingUnread,
-                  ),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+                child: Row(
                   children: [
-                    _TripsTimelineList(
-                      trips: grouped[_TripTimelineCategory.past] ?? const [],
-                      color: timelineColors[_TripTimelineCategory.past]!,
-                      emptyMessage: 'Aucun voyage passé.',
-                      myUid: myUid,
-                      onOpenTrip: (tripId) =>
-                          context.push('/trips/$tripId/overview'),
-                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                        context,
-                        ref,
-                        tripId: trip.id,
-                        tripTitle: trip.title,
-                      ),
+                    Icon(
+                      Icons.explore_outlined,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                    _TripsTimelineList(
-                      trips: grouped[_TripTimelineCategory.ongoing] ?? const [],
-                      color: timelineColors[_TripTimelineCategory.ongoing]!,
-                      emptyMessage: 'Aucun voyage en cours.',
-                      myUid: myUid,
-                      onOpenTrip: (tripId) =>
-                          context.push('/trips/$tripId/overview'),
-                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                        context,
-                        ref,
-                        tripId: trip.id,
-                        tripTitle: trip.title,
-                      ),
-                    ),
-                    _TripsTimelineList(
-                      trips: grouped[_TripTimelineCategory.upcoming] ?? const [],
-                      color: timelineColors[_TripTimelineCategory.upcoming]!,
-                      emptyMessage: 'Aucun voyage à venir.',
-                      myUid: myUid,
-                      onOpenTrip: (tripId) =>
-                          context.push('/trips/$tripId/overview'),
-                      onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                        context,
-                        ref,
-                        tripId: trip.id,
-                        tripTitle: trip.title,
-                      ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Mes voyages',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
                     ),
                   ],
                 ),
               ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Erreur Firestore: $error'),
+            ),
           ),
-        ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: tripsAsync.when(
+                data: (trips) {
+                  if (trips.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Aucun voyage pour le moment.\nCree ton premier voyage.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+
+                  final grouped = _groupTripsByTimeline(trips);
+                  _maybeAutoOpenCurrentTrip(
+                    context,
+                    ongoingTrips: grouped[_TripTimelineCategory.ongoing] ?? const [],
+                    autoOpenCurrentTripOnLaunch:
+                        autoOpenCurrentTripOnLaunchAsync.asData?.value,
+                  );
+                  final unreadByTrip =
+                      unreadByTripAsync.asData?.value ?? const <String, int>{};
+                  final pastUnread = _sumUnreadForTrips(
+                    grouped[_TripTimelineCategory.past] ?? const [],
+                    unreadByTrip,
+                  );
+                  final ongoingUnread = _sumUnreadForTrips(
+                    grouped[_TripTimelineCategory.ongoing] ?? const [],
+                    unreadByTrip,
+                  );
+                  final upcomingUnread = _sumUnreadForTrips(
+                    grouped[_TripTimelineCategory.upcoming] ?? const [],
+                    unreadByTrip,
+                  );
+                  final colorScheme = Theme.of(context).colorScheme;
+
+                  final timelineContainerColors = <_TripTimelineCategory, Color>{
+                    _TripTimelineCategory.past:
+                        Theme.of(context).scaffoldBackgroundColor,
+                    _TripTimelineCategory.ongoing:
+                        colorScheme.surfaceContainerHighest,
+                    _TripTimelineCategory.upcoming: colorScheme.tertiaryContainer,
+                  };
+                  final timelineTitleColors = <_TripTimelineCategory, Color>{
+                    _TripTimelineCategory.past: colorScheme.primary,
+                    _TripTimelineCategory.ongoing: colorScheme.primary,
+                    _TripTimelineCategory.upcoming: colorScheme.primary,
+                  };
+
+                  return Column(
+                    children: [
+                      TabBar(
+                        controller: _tabController,
+                        tabs: [
+                          _buildTimelineTab(
+                            context,
+                            label: 'Passés',
+                            tripCount:
+                                grouped[_TripTimelineCategory.past]?.length ?? 0,
+                            unreadCount: pastUnread,
+                          ),
+                          _buildTimelineTab(
+                            context,
+                            label: 'En cours',
+                            tripCount:
+                                grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
+                            unreadCount: ongoingUnread,
+                          ),
+                          _buildTimelineTab(
+                            context,
+                            label: 'À venir',
+                            tripCount:
+                                grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
+                            unreadCount: upcomingUnread,
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _TripsTimelineList(
+                              trips: grouped[_TripTimelineCategory.past] ?? const [],
+                              containerColor:
+                                  timelineContainerColors[_TripTimelineCategory.past]!,
+                              titleColor:
+                                  timelineTitleColors[_TripTimelineCategory.past]!,
+                              emptyMessage: 'Aucun voyage passé.',
+                              myUid: myUid,
+                              onOpenTrip: (tripId) =>
+                                  context.push('/trips/$tripId/overview'),
+                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                context,
+                                ref,
+                                tripId: trip.id,
+                                tripTitle: trip.title,
+                              ),
+                            ),
+                            _TripsTimelineList(
+                              trips: grouped[_TripTimelineCategory.ongoing] ?? const [],
+                              containerColor:
+                                  timelineContainerColors[_TripTimelineCategory.ongoing]!,
+                              titleColor:
+                                  timelineTitleColors[_TripTimelineCategory.ongoing]!,
+                              emptyMessage: 'Aucun voyage en cours.',
+                              myUid: myUid,
+                              onOpenTrip: (tripId) =>
+                                  context.push('/trips/$tripId/overview'),
+                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                context,
+                                ref,
+                                tripId: trip.id,
+                                tripTitle: trip.title,
+                              ),
+                            ),
+                            _TripsTimelineList(
+                              trips:
+                                  grouped[_TripTimelineCategory.upcoming] ?? const [],
+                              containerColor:
+                                  timelineContainerColors[_TripTimelineCategory.upcoming]!,
+                              titleColor:
+                                  timelineTitleColors[_TripTimelineCategory.upcoming]!,
+                              emptyMessage: 'Aucun voyage à venir.',
+                              myUid: myUid,
+                              onOpenTrip: (tripId) =>
+                                  context.push('/trips/$tripId/overview'),
+                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                context,
+                                ref,
+                                tripId: trip.id,
+                                tripTitle: trip.title,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text('Erreur Firestore: $error'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -569,10 +630,41 @@ class _TripsPageState extends ConsumerState<TripsPage>
   }
 }
 
+class _TripsAppBranding extends StatelessWidget {
+  const _TripsAppBranding();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/images/app_icon.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          'PLANERZ',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
 class _TripsTimelineList extends StatelessWidget {
   const _TripsTimelineList({
     required this.trips,
-    required this.color,
+    required this.containerColor,
+    required this.titleColor,
     required this.emptyMessage,
     required this.myUid,
     required this.onOpenTrip,
@@ -580,7 +672,8 @@ class _TripsTimelineList extends StatelessWidget {
   });
 
   final List<Trip> trips;
-  final Color color;
+  final Color containerColor;
+  final Color titleColor;
   final String emptyMessage;
   final String? myUid;
   final ValueChanged<String> onOpenTrip;
@@ -604,7 +697,8 @@ class _TripsTimelineList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      clipBehavior: Clip.none,
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 96),
       itemCount: trips.length,
       itemBuilder: (context, index) {
         final trip = trips[index];
@@ -614,7 +708,8 @@ class _TripsTimelineList extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: _TripCard(
             trip: trip,
-            color: color,
+            containerColor: containerColor,
+            titleColor: titleColor,
             canDelete: canDelete,
             dateLine: dateLine,
             onTap: () => onOpenTrip(trip.id),
@@ -629,7 +724,8 @@ class _TripsTimelineList extends StatelessWidget {
 class _TripCard extends ConsumerWidget {
   const _TripCard({
     required this.trip,
-    required this.color,
+    required this.containerColor,
+    required this.titleColor,
     required this.canDelete,
     required this.dateLine,
     required this.onTap,
@@ -637,7 +733,8 @@ class _TripCard extends ConsumerWidget {
   });
 
   final Trip trip;
-  final Color color;
+  final Color containerColor;
+  final Color titleColor;
   final bool canDelete;
   final String dateLine;
   final VoidCallback onTap;
@@ -648,13 +745,9 @@ class _TripCard extends ConsumerWidget {
     final countersAsync = ref.watch(tripNotificationCountersProvider(trip.id));
     final unreadCount =
         countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
-    final surface = Color.alphaBlend(
-      color.withValues(alpha: 0.12),
-      Theme.of(context).colorScheme.surface,
-    );
     return Card(
       margin: EdgeInsets.zero,
-      color: surface,
+      color: containerColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
@@ -672,7 +765,7 @@ class _TripCard extends ConsumerWidget {
                     Text(
                       trip.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: color,
+                            color: titleColor,
                             fontWeight: FontWeight.w700,
                           ),
                     ),

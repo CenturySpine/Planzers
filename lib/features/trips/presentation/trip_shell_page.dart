@@ -52,7 +52,7 @@ Widget _buildNavIcon({
   );
 }
 
-class TripShellPage extends ConsumerWidget {
+class TripShellPage extends ConsumerStatefulWidget {
   const TripShellPage({
     super.key,
     required this.tripId,
@@ -102,7 +102,27 @@ class TripShellPage extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripShellPage> createState() => _TripShellPageState();
+}
+
+class _TripShellPageState extends ConsumerState<TripShellPage> {
+  String? _lastPrecachingBannerUrl;
+
+  void _precacheTripBannerIfNeeded(String? rawUrl) {
+    final cleanUrl = (rawUrl ?? '').trim();
+    if (cleanUrl.isEmpty || cleanUrl == _lastPrecachingBannerUrl) return;
+    _lastPrecachingBannerUrl = cleanUrl;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      precacheImage(NetworkImage(cleanUrl), context).catchError((Object _) {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tripId = widget.tripId;
+    final navigationShell = widget.navigationShell;
     final tripAsync = ref.watch(tripStreamProvider(tripId));
     final countersAsync = ref.watch(tripNotificationCountersProvider(tripId));
     final messagesAsync = ref.watch(tripMessagesStreamProvider(tripId));
@@ -172,6 +192,7 @@ class TripShellPage extends ConsumerWidget {
         }
 
         final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
+        _precacheTripBannerIfNeeded(trip.bannerImageUrl);
 
         _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
 
@@ -181,21 +202,25 @@ class TripShellPage extends ConsumerWidget {
             builder: (context, constraints) {
               final useRail = constraints.maxWidth >= _kTripShellWideBreakpoint;
               final railExtended = constraints.maxWidth >= 900;
-              final selectedDestinationIndex = _destinations.indexWhere(
+              final selectedDestinationIndex = TripShellPage._destinations.indexWhere(
                 (destination) =>
                     destination.branchIndex == navigationShell.currentIndex,
               );
               final displayedSelectedIndex =
                   selectedDestinationIndex >= 0 ? selectedDestinationIndex : 0;
+              final isOnTripOverview = navigationShell.currentIndex == 0;
 
               return Scaffold(
                 appBar: AppBar(
+                  automaticallyImplyLeading: false,
                   title: Text(titleForAppBar),
-                  leading: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.go('/trips'),
-                    tooltip: 'Mes voyages',
-                  ),
+                  leading: isOnTripOverview
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => context.go('/trips'),
+                          tooltip: 'Mes voyages',
+                        )
+                      : _TripAppBarPhotoLeading(imageUrl: trip.bannerImageUrl),
                   actions: const [
                     AccountAppBarActions(),
                   ],
@@ -207,7 +232,7 @@ class TripShellPage extends ConsumerWidget {
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
                           navigationShell.goBranch(
-                            _destinations[index].branchIndex,
+                            TripShellPage._destinations[index].branchIndex,
                           );
                         },
                         extended: railExtended,
@@ -217,7 +242,7 @@ class TripShellPage extends ConsumerWidget {
                             ? NavigationRailLabelType.none
                             : NavigationRailLabelType.selected,
                         destinations: [
-                          for (final d in _destinations)
+                          for (final d in TripShellPage._destinations)
                             NavigationRailDestination(
                               icon: _buildNavIcon(
                                 icon: d.icon,
@@ -244,10 +269,10 @@ class TripShellPage extends ConsumerWidget {
                         selectedIndex: displayedSelectedIndex,
                         onDestinationSelected: (index) {
                           navigationShell.goBranch(
-                            _destinations[index].branchIndex,
+                            TripShellPage._destinations[index].branchIndex,
                           );
                         },
-                        destinations: _destinations,
+                        destinations: TripShellPage._destinations,
                         unreadByTabLabel: {
                           'Messagerie': unreadMessages,
                           'Activités': unreadActivities,
@@ -270,6 +295,41 @@ class TripShellPage extends ConsumerWidget {
               'Erreur: $error',
               textAlign: TextAlign.center,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripAppBarPhotoLeading extends StatelessWidget {
+  const _TripAppBarPhotoLeading({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanUrl = (imageUrl ?? '').trim();
+    final backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: backgroundColor),
+            child: cleanUrl.isNotEmpty
+                ? Image.network(
+                    cleanUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.landscape_outlined, size: 18);
+                    },
+                  )
+                : const Icon(Icons.landscape_outlined, size: 18),
           ),
         ),
       ),

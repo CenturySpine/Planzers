@@ -31,54 +31,53 @@ class DefaultFirebaseOptionsProd {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-
-  apiKey: "AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM",
-  authDomain: "planerz.firebaseapp.com",
-  projectId: "planerz",
-  storageBucket: "planerz.firebasestorage.app",
-  messagingSenderId: "968267093466",
-  appId: "1:968267093466:web:fe185a5604145fe3d29ce3",
-  measurementId: "G-MDP337D1C0"
-
+    apiKey: 'AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM',
+    appId: '1:968267093466:web:c8bb48142b46a05cd29ce3',
+    messagingSenderId: '968267093466',
+    projectId: 'planerz',
+    authDomain: 'planerz.firebaseapp.com',
+    storageBucket: 'planerz.firebasestorage.app',
+    measurementId: 'G-NGGPNLLR0J',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBoTSZLo8BZqy21Aym5nwGMucnylehWnj0',
-    appId: '1:936277491452:android:43d7c2d65282a6ebf1e179',
-    messagingSenderId: '936277491452',
+    apiKey: 'AIzaSyDAbqV4V0XhqdKQI-MShFzbl3JWuBGrNwo',
+    appId: '1:968267093466:android:dedcff179c3fc51fd29ce3',
+    messagingSenderId: '968267093466',
     projectId: 'planerz',
     storageBucket: 'planerz.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC6e1d6ejoOofBGHmrk2Ts8Gkurfwj65Yg',
-    appId: '1:936277491452:ios:256ff6995b4d0ceef1e179',
-    messagingSenderId: '936277491452',
+    apiKey: 'AIzaSyA8hf0qUyo_3eWHBbuPN0B8WL8gWYEaEI0',
+    appId: '1:968267093466:ios:b4cefce64376cd54d29ce3',
+    messagingSenderId: '968267093466',
     projectId: 'planerz',
     storageBucket: 'planerz.firebasestorage.app',
-    iosClientId:
-        '936277491452-34g7ggce0othki802d4sn4v5vkgmnn54.apps.googleusercontent.com',
+    androidClientId: '968267093466-flhm7osctcqf5g9npfqo0crtnor3s8om.apps.googleusercontent.com',
+    iosClientId: '968267093466-db1re1pv2r6ddpskp3khq15sf7o6sg8f.apps.googleusercontent.com',
     iosBundleId: 'fr.centuryspine.planerz',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyC6e1d6ejoOofBGHmrk2Ts8Gkurfwj65Yg',
-    appId: '1:936277491452:ios:256ff6995b4d0ceef1e179',
-    messagingSenderId: '936277491452',
+    apiKey: 'AIzaSyA8hf0qUyo_3eWHBbuPN0B8WL8gWYEaEI0',
+    appId: '1:968267093466:ios:b4cefce64376cd54d29ce3',
+    messagingSenderId: '968267093466',
     projectId: 'planerz',
     storageBucket: 'planerz.firebasestorage.app',
-    iosClientId:
-        '936277491452-34g7ggce0othki802d4sn4v5vkgmnn54.apps.googleusercontent.com',
+    androidClientId: '968267093466-flhm7osctcqf5g9npfqo0crtnor3s8om.apps.googleusercontent.com',
+    iosClientId: '968267093466-db1re1pv2r6ddpskp3khq15sf7o6sg8f.apps.googleusercontent.com',
     iosBundleId: 'fr.centuryspine.planerz',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
-    appId: '1:936277491452:web:7682cb5708ece121f1e179',
-    messagingSenderId: '936277491452',
+    apiKey: 'AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM',
+    appId: '1:968267093466:web:f04bee3c5e841154d29ce3',
+    messagingSenderId: '968267093466',
     projectId: 'planerz',
     authDomain: 'planerz.firebaseapp.com',
     storageBucket: 'planerz.firebasestorage.app',
-    measurementId: 'G-PR5BTR8MWV',
+    measurementId: 'G-32WK1Q6N89',
   );
+
 }
