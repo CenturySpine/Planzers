@@ -1,11 +1,13 @@
-# Planzers - App mobile voyage entre amis
+# Planerz - App mobile voyage entre amis
 
 Application Flutter multiplateforme (Android, iOS, Web) pour centraliser la gestion d'un voyage entre amis:
 - covoiturage
 - courses
 - planification des repas
 - partage des depenses
+- suggestion et planification d'activtés
 - informations pratiques
+- messagerie
 
 ## Vision
 
@@ -26,12 +28,13 @@ Offrir un seul espace collaboratif pour preparer et suivre un voyage de groupe s
 ### 1. Prerequis systeme
 
 - Installer **Flutter SDK** (canal stable) et ajouter `<flutter>/bin` au `PATH`.
+- Installer **Android Studio** (inclut SDK Android, outils Gradle et JDK `jbr`).
 - Sur Windows, activer **Mode developpeur** (plugins Flutter avec symlinks).
 - Installer **Node.js LTS** (necessaire pour `npm`), puis la **Firebase CLI**:
   - `npm install -g firebase-tools`
 - Installer **Java 17+** (recommande: JDK inclus d'Android Studio: `...\Android Studio\jbr`).
 - Configurer les variables d'environnement Windows:
-  - `JAVA_HOME` -> chemin du JDK (ex: `C:\Program Files\Android\Android Studio\jbr`)
+  - `JAVA_HOME` -> chemin du JDK **sans `\bin`** (ex: `C:\Program Files\Android\Android Studio\jbr`)
   - ajouter `%JAVA_HOME%\bin` au `Path`
   - ajouter `C:\Users\<ton-user>\AppData\Local\Pub\Cache\bin` au `Path` (pour `flutterfire`)
 - Ouvrir un nouveau terminal et verifier:
@@ -43,11 +46,24 @@ java -version
 firebase --version
 ```
 
+Verification complementaire recommandee sous Windows (utile si Gradle ne trouve pas Java):
+
+```powershell
+echo $env:JAVA_HOME
+where.exe java
+java -version
+```
+
+Si `where.exe java` ne retourne rien:
+- verifier que `JAVA_HOME` pointe bien vers le dossier JDK (pas `...\jbr\bin`)
+- verifier que `%JAVA_HOME%\bin` est present dans `Path`
+- fermer completement Cursor/terminal puis reouvrir une nouvelle session
+
 ### 2. Cloner et installer les dependances
 
 ```bash
-git clone <url-du-repo> Planzers
-cd Planzers
+git clone <url-du-repo> Planerz
+cd Planerz
 flutter pub get
 ```
 
@@ -67,12 +83,12 @@ dart pub global run flutterfire_cli:flutterfire --version
 ### 4. Configurer Firebase (console)
 
 Dans la console Firebase:
-- Creer ou choisir le projet (ex: `planzers`)
+- Creer ou choisir le projet (ex: `planerz`)
 - **Authentication** -> *Sign-in method* -> activer **Google**
 - **Firestore Database** -> creer la base (mode dev/test)
 - Creer les apps de plateforme necessaires (Android, iOS, Web)
 
-### 5. Android: SHA-1 + `google-services.json`
+### 5. Android: SHA-1/SHA-256 + `google-services.json`
 
 Depuis `android/`:
 
@@ -80,15 +96,28 @@ Depuis `android/`:
 ./gradlew signingReport
 ```
 
-Sous Windows PowerShell:
-
 ```powershell
 .\gradlew signingReport
 ```
 
 - Copier la valeur **SHA1** (et idealement **SHA-256**) du variant `debug`.
 - Firebase -> *Project settings* -> app Android -> **Add fingerprint**.
-- Telecharger `google-services.json` et le placer dans `android/app/google-services.json`.
+- Sur une **nouvelle machine de dev physique**, refaire cette etape: le keystore debug local peut changer, donc il faut ajouter les nouveaux fingerprints.
+- Pour extraire les empreintes du **keystore de signature (`.jks`)** (release), utiliser `keytool`:
+
+```powershell
+keytool -list -v -keystore ".\planerz-keystore.jks" -alias "planerz"
+```
+
+Si tu ne connais pas l'alias du keystore:
+
+```powershell
+keytool -list -keystore ".\planerz-keystore.jks"
+```
+
+- Telecharger `google-services.json` apres ajout des fingerprints, puis le placer selon le flavor:
+  - `android/app/src/preview/google-services.json` pour `--flavor preview`
+  - `android/app/src/prod/google-services.json` pour `--flavor prod`
 
 ### 6. iOS: `GoogleService-Info.plist`
 
@@ -96,21 +125,32 @@ Sous Windows PowerShell:
 - Le placer dans `ios/Runner/GoogleService-Info.plist`.
 - Verifier que `ios/Runner/Info.plist` contient `CFBundleURLTypes` avec le `REVERSED_CLIENT_ID`.
 
-### 7. Lier Flutter au projet Firebase (FlutterFire)
+### 7. Lier Flutter au projet Firebase (FlutterFire, flavors preview/prod)
 
-Depuis la racine du projet:
+Ne pas utiliser une config unique (`lib/firebase_options.dart`) pour ce projet:
+on maintient explicitement deux fichiers:
+- `lib/firebase_options_preview.dart`
+- `lib/firebase_options_prod.dart`
 
-```bash
-dart pub global run flutterfire_cli:flutterfire configure
+Depuis la racine du projet, lancer **les deux commandes** suivantes:
+
+```powershell
+dart pub global run flutterfire_cli:flutterfire configure --project=planerz-preview --out=lib/firebase_options_preview.dart --android-package-name=fr.centuryspine.planerz.preview --ios-bundle-id=fr.centuryspine.planerz.preview --yes
+```
+```powershell
+dart pub global run flutterfire_cli:flutterfire configure --project=planerz --out=lib/firebase_options_prod.dart --android-package-name=fr.centuryspine.planerz --ios-bundle-id=fr.centuryspine.planerz --yes
 ```
 
-- Repondre `yes` si la CLI propose de reutiliser `firebase.json`.
-- Cocher les plateformes que tu utilises.
-- Verifier que `lib/firebase_options.dart` est regenere.
+Notes importantes:
+- Si FlutterFire propose de reutiliser des apps avec un mauvais package/bundle id, refuser et recreer les bonnes apps.
+- Pour le web, il n'y a pas de package name Android/iOS, mais il faut garder une web app dediee par projet (`planerz-preview` vs `planerz`) et regenerer les options pour recuperer les bons `appId/apiKey`.
+- Verifier ensuite que les fichiers Android restent bien separes par flavor:
+  - `android/app/src/preview/google-services.json`
+  - `android/app/src/prod/google-services.json`
 
 ### 8. Lancer l'application
 
-```bash
+```powershell
 flutter clean
 flutter pub get
 flutter run -d windows
@@ -140,13 +180,13 @@ Cette app utilise une Cloud Function pour generer les metadonnees de preview (`l
 
 - Etre connecte avec la Firebase CLI:
 
-```bash
+```powershell
 firebase login
 ```
 
 - Installer les dependances des fonctions:
 
-```bash
+```powershell
 cd functions
 npm install
 cd ..
@@ -156,8 +196,8 @@ cd ..
 
 Depuis la racine du repo:
 
-```bash
-firebase deploy --only functions --project planzers
+```powershell
+firebase deploy --only functions --project planerz
 ```
 
 Au premier deploy, Firebase peut demander une politique de retention des images de conteneur (Artifact Registry). Recommandation: `30` jours.
@@ -173,8 +213,8 @@ Au premier deploy, Firebase peut demander une politique de retention des images 
 
 Si tu modifies `functions/index.js`:
 
-```bash
-firebase deploy --only functions --project planzers
+```powershell
+firebase deploy --only functions --project planerz
 ```
 
 ## Structure recommandee
@@ -191,43 +231,3 @@ Voir le dossier `docs/`:
 3. Liste de courses collaborative
 4. Planning des repas
 5. Suivi des depenses et repartition
-
-## Architecture Flutter recommandee
-
-- Pattern: **Feature-first** + **Clean-ish architecture**
-- State management: Riverpod
-- Navigation: go_router
-- Data: repositories (Firestore / Auth / Storage)
-- Modeles: immutable + serialisation JSON
-
-Arborescence suggeree:
-
-```text
-lib/
-  app/
-    app.dart
-    router.dart
-    theme.dart
-  core/
-    error/
-    utils/
-    widgets/
-  features/
-    auth/
-    trips/
-    carpool/
-    groceries/
-    meals/
-    expenses/
-  data/
-    repositories/
-    services/
-```
-
-## Prochaines etapes concretes
-
-1. Installer Flutter et creer le projet de base.
-2. Connecter Firebase avec `flutterfire configure`.
-3. Implementer Auth + ecran de creation de voyage.
-4. Construire les collections Firestore du MVP.
-5. Ajouter les regles de securite Firestore.

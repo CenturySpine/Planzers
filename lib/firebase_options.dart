@@ -44,9 +44,9 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
     appId: '1:936277491452:web:1794a04a8c81d6f8f1e179',
     messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    authDomain: 'planzers.firebaseapp.com',
-    storageBucket: 'planzers.firebasestorage.app',
+    projectId: 'planerz',
+    authDomain: 'planerz.firebaseapp.com',
+    storageBucket: 'planerz.firebasestorage.app',
     measurementId: 'G-Z68T9LKMH7',
   );
 
@@ -54,37 +54,37 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyBoTSZLo8BZqy21Aym5nwGMucnylehWnj0',
     appId: '1:936277491452:android:43d7c2d65282a6ebf1e179',
     messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    storageBucket: 'planzers.firebasestorage.app',
+    projectId: 'planerz',
+    storageBucket: 'planerz.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC6e1d6ejoOofBGHmrk2Ts8Gkurfwj65Yg',
     appId: '1:936277491452:ios:256ff6995b4d0ceef1e179',
     messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    storageBucket: 'planzers.firebasestorage.app',
+    projectId: 'planerz',
+    storageBucket: 'planerz.firebasestorage.app',
     iosClientId: '936277491452-34g7ggce0othki802d4sn4v5vkgmnn54.apps.googleusercontent.com',
-    iosBundleId: 'com.planzers.planzers',
+    iosBundleId: 'fr.centuryspine.planerz',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC6e1d6ejoOofBGHmrk2Ts8Gkurfwj65Yg',
     appId: '1:936277491452:ios:256ff6995b4d0ceef1e179',
     messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    storageBucket: 'planzers.firebasestorage.app',
+    projectId: 'planerz',
+    storageBucket: 'planerz.firebasestorage.app',
     iosClientId: '936277491452-34g7ggce0othki802d4sn4v5vkgmnn54.apps.googleusercontent.com',
-    iosBundleId: 'com.planzers.planzers',
+    iosBundleId: 'fr.centuryspine.planerz',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
     appId: '1:936277491452:web:7682cb5708ece121f1e179',
     messagingSenderId: '936277491452',
-    projectId: 'planzers',
-    authDomain: 'planzers.firebaseapp.com',
-    storageBucket: 'planzers.firebasestorage.app',
+    projectId: 'planerz',
+    authDomain: 'planerz.firebaseapp.com',
+    storageBucket: 'planerz.firebasestorage.app',
     measurementId: 'G-PR5BTR8MWV',
   );
 

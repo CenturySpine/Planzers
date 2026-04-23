@@ -1,27 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:planzers/app/router.dart';
-import 'package:planzers/core/firebase/bootstrap.dart';
-import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/app/preview_environment_chrome.dart';
+import 'package:planerz/app/router.dart';
+import 'package:planerz/app/theme/app_palette_provider.dart';
+import 'package:planerz/app/theme/app_theme.dart';
+import 'package:planerz/app/theme/brand_palette.dart';
+import 'package:planerz/core/firebase/bootstrap.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
 
-class PlanzersApp extends StatelessWidget {
-  const PlanzersApp({required this.firebaseTarget, super.key});
+class PlanerzApp extends StatelessWidget {
+  const PlanerzApp({required this.firebaseTarget, super.key});
 
   final FirebaseTarget firebaseTarget;
 
   @override
   Widget build(BuildContext context) {
+    return ProviderScope(
+      overrides: [
+        firebaseTargetProvider.overrideWithValue(firebaseTarget),
+      ],
+      child: _PlanerzThemedApp(firebaseTarget: firebaseTarget),
+    );
+  }
+}
+
+class _PlanerzThemedApp extends ConsumerWidget {
+  const _PlanerzThemedApp({required this.firebaseTarget});
+
+  final FirebaseTarget firebaseTarget;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paletteAsync = ref.watch(appPaletteProvider);
+    final AppPaletteId paletteId = switch (paletteAsync) {
+      AsyncData(:final value) => value,
+      _ => AppPaletteId.cupidon,
+    };
+
     return MaterialApp.router(
-      title: 'Planzers',
+      title: firebaseTarget.isPreview ? 'Planerz · Preview' : 'Planerz',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(paletteId.data),
+      themeMode: ThemeMode.light,
+      // Required for [showDatePicker] with fr_FR: default delegates only
+      // support English ([DefaultMaterialLocalizations]).
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [
+        Locale('fr', 'FR'),
+        Locale('en', 'US'),
+      ],
       routerConfig: appRouter,
       builder: (context, child) {
         return FirebaseBootstrap(
           target: firebaseTarget,
-          child: child ?? const SizedBox.shrink(),
+          child: PreviewEnvironmentChrome(
+            target: firebaseTarget,
+            // Inner ScaffoldMessenger for feedback SnackBars (errors,
+            // confirmations). Isolated from the notification messenger above so
+            // the two queues never interfere.
+            child: ScaffoldMessenger(
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
         );
       },
     );

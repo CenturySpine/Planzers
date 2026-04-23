@@ -1,12 +1,14 @@
-name: planzers
+name: planerz
 description: Application de gestion de voyage entre amis.
 publish_to: "none"
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
+  flutter_web_plugins:
+    sdk: flutter
   cloud_firestore: ^6.2.0
   cloud_functions: ^6.1.0
   crypto: ^3.0.7
@@ -16,11 +18,22 @@ dependencies:
   firebase_storage: ^13.2.0
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   flutter_riverpod: ^3.3.1
+  flutter_svg: ^2.2.4
+  app_badge_plus: ^1.2.8
+  flutter_local_notifications: ^17.2.4
   go_router: ^17.1.0
+  google_fonts: ^8.0.2
   google_sign_in: ^7.2.0
+  image_cropper: ^12.2.0
+  image_picker: ^1.2.0
   intl: ^0.20.2
+  shared_preferences: ^2.5.5
   url_launcher: ^6.3.2
+  emoji_picker_flutter: ^4.4.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
@@ -31,10 +44,23 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - liste_courses_compilee.json
     - assets/images/app_icon.png
+    - assets/images/google_g.svg
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/images/app_icon.png
   remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/images/app_icon.png
+    background_color: "#2d1b4e"
+    theme_color: "#6b4e9e"
+  macos:
+    generate: true
+    image_path: assets/images/app_icon.png
+  windows:
+    generate: true
+    image_path: assets/images/app_icon.png

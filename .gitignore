@@ -9,6 +9,7 @@
 
 # Android / iOS build outputs
 android/.gradle/
+android/.kotlin/
 android/app/debug
 android/app/profile
 android/app/release
@@ -34,3 +35,6 @@ ios/Runner/Firebase/preview/GoogleService-Info.plist
 # OS
 Thumbs.db
 .DS_Store
+*.jks
+*-key.json
+node_modules/

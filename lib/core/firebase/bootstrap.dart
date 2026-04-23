@@ -1,10 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:planzers/core/firebase/firebase_options_selector.dart';
-import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_options_selector.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/notifications/cupidon_match_popup_binder.dart';
+import 'package:planerz/core/notifications/global_unread_badge_binder.dart';
+import 'package:planerz/core/push/fcm_notification_link_binder.dart';
 
 class FirebaseBootstrap extends StatefulWidget {
-  const FirebaseBootstrap({required this.target, required this.child, super.key});
+  const FirebaseBootstrap(
+      {required this.target, required this.child, super.key});
 
   final FirebaseTarget target;
   final Widget child;
@@ -19,9 +23,38 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
   @override
   void initState() {
     super.initState();
-    _initialization = Firebase.initializeApp(
-      options: firebaseOptionsFor(widget.target),
-    );
+    _initialization = _initializeFirebase();
+  }
+
+  Future<FirebaseApp> _initializeFirebase() async {
+    final options = firebaseOptionsFor(widget.target);
+    final alreadyInitialized =
+        Firebase.apps.where((app) => app.name == defaultFirebaseAppName);
+    if (alreadyInitialized.isNotEmpty) {
+      final existing = alreadyInitialized.first;
+
+      final sameProject = existing.options.projectId == options.projectId;
+      final sameAppId = existing.options.appId == options.appId;
+      if (sameProject && sameAppId) {
+        return existing;
+      }
+
+      // Android can auto-init with google-services.json before Flutter starts.
+      // If that app targets another Firebase project/flavor, force re-init
+      // with the explicit flavor options passed to this bootstrap.
+      await existing.delete();
+    }
+
+    try {
+      return await Firebase.initializeApp(
+        options: options,
+      );
+    } on FirebaseException catch (error) {
+      if (error.code == 'duplicate-app') {
+        return Firebase.app();
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -52,7 +85,11 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
           );
         }
 
-        return widget.child;
+        return GlobalUnreadBadgeBinder(
+          child: CupidonMatchPopupBinder(
+            child: FcmNotificationLinkBinder(child: widget.child),
+          ),
+        );
       },
     );
   }

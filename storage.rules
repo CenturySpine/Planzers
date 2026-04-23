@@ -1,0 +1,42 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function tripDoc(tripId) {
+      return firestore.get(/databases/(default)/documents/trips/$(tripId));
+    }
+
+    function tripExists(tripId) {
+      return firestore.exists(/databases/(default)/documents/trips/$(tripId));
+    }
+
+    function isTripMember(tripId) {
+      return signedIn()
+        && tripExists(tripId)
+        && tripDoc(tripId).data.memberIds is list
+        && request.auth.uid in tripDoc(tripId).data.memberIds;
+    }
+
+    function isTripOwner(tripId) {
+      return signedIn()
+        && tripExists(tripId)
+        && tripDoc(tripId).data.ownerId == request.auth.uid;
+    }
+
+    // Banner assets are stored under:
+    // trips/{tripId}/banner_<timestamp>.<ext>
+    match /trips/{tripId}/{allPaths=**} {
+      allow read: if isTripMember(tripId);
+      allow write: if isTripOwner(tripId);
+    }
+
+    // Profile assets are stored under:
+    // users/{uid}/profile_<timestamp>.<ext>
+    match /users/{uid}/{allPaths=**} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}

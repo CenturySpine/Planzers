@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planzers/app/app.dart';
-import 'package:planzers/core/firebase/firebase_target.dart';
+import 'package:planerz/app/app.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/intl/intl_locale_setup.dart';
+import 'package:planerz/core/platform/url_strategy.dart';
+import 'package:planerz/core/push/fcm_background_handler.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const ProviderScope(
-      child: PlanzersApp(firebaseTarget: FirebaseTarget.preview),
-    ),
-  );
+  configureUrlStrategyIfWeb();
+  configureFcmBackgroundHandling();
+  await initializeAppDateFormatting();
+  runApp(const PlanerzApp(firebaseTarget: FirebaseTarget.preview));
 }

@@ -1,0 +1,5659 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-16",
+  "items": [
+    {
+      "id": "allergene-sulfites",
+      "label": "Sulfites",
+      "aliases": [
+        "dioxyde de soufre"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Additifs",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-latex-alimentaire",
+      "label": "Latex alimentaire",
+      "aliases": [
+        "syndrome latex-fruits"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Autres",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-gluten",
+      "label": "Gluten",
+      "aliases": [
+        "ble",
+        "orge",
+        "seigle"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Cereales",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-moutarde",
+      "label": "Moutarde",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Condiments",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-amandes",
+      "label": "Amandes",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-arachides",
+      "label": "Arachides",
+      "aliases": [
+        "cacahuetes"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-fruits-a-coque",
+      "label": "Fruits a coque",
+      "aliases": [
+        "noix",
+        "amandes",
+        "noisettes"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noisettes",
+      "label": "Noisettes",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noix",
+      "label": "Noix",
+      "aliases": [
+        "allergie noix"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noix-de-cajou",
+      "label": "Noix de cajou",
+      "aliases": [
+        "cajou"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noix-de-macadamia",
+      "label": "Noix de macadamia",
+      "aliases": [
+        "macadamia"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noix-de-pecan",
+      "label": "Noix de pecan",
+      "aliases": [
+        "pecan"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-noix-du-bresil",
+      "label": "Noix du Bresil",
+      "aliases": [
+        "bresil"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-pistaches",
+      "label": "Pistaches",
+      "aliases": [
+        "pistache"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-sesame",
+      "label": "Sesame",
+      "aliases": [
+        "graines de sesame"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Graines",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-lactose",
+      "label": "Lactose",
+      "aliases": [
+        "intolerance lactose"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Lait",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-proteines-de-lait",
+      "label": "Proteines de lait",
+      "aliases": [
+        "plv",
+        "allergie lait"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Lait",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-celeri",
+      "label": "Celeri",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Legumes",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-lupin",
+      "label": "Lupin",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Legumineuses",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-soja",
+      "label": "Soja",
+      "aliases": [
+        "proteines de soja"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Legumineuses",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-crustaces",
+      "label": "Crustaces",
+      "aliases": [
+        "crevettes",
+        "crabe",
+        "homard"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Produits animaux",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-mollusques",
+      "label": "Mollusques",
+      "aliases": [
+        "huitres",
+        "moules",
+        "calamars"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Produits animaux",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-oeuf",
+      "label": "Oeuf",
+      "aliases": [
+        "oeufs"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Produits animaux",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-poisson",
+      "label": "Poisson",
+      "aliases": [],
+      "category": "Allergenes",
+      "subcategory": "Produits animaux",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-fodmap",
+      "label": "FODMAP",
+      "aliases": [
+        "fodmaps"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Sensibilites",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "allergene-histamine",
+      "label": "Histamine",
+      "aliases": [
+        "intolerance histamine"
+      ],
+      "category": "Allergenes",
+      "subcategory": "Sensibilites",
+      "defaultUnit": "",
+      "type": "allergen"
+    },
+    {
+      "id": "croquettes",
+      "label": "Croquettes",
+      "aliases": [],
+      "category": "Animaux",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "pet"
+    },
+    {
+      "id": "litiere",
+      "label": "Litiere",
+      "aliases": [],
+      "category": "Animaux",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "pet"
+    },
+    {
+      "id": "patee",
+      "label": "Patee",
+      "aliases": [],
+      "category": "Animaux",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "pet"
+    },
+    {
+      "id": "glace",
+      "label": "Glace",
+      "aliases": [],
+      "category": "Autres",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "pain",
+      "label": "Pain",
+      "aliases": [],
+      "category": "Autres",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "compotes",
+      "label": "Compotes",
+      "aliases": [],
+      "category": "Bebe",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "baby"
+    },
+    {
+      "id": "couches",
+      "label": "Couches",
+      "aliases": [],
+      "category": "Bebe",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "baby"
+    },
+    {
+      "id": "lait-bebe",
+      "label": "Lait bebe",
+      "aliases": [],
+      "category": "Bebe",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "baby"
+    },
+    {
+      "id": "petits-pots",
+      "label": "Petits pots",
+      "aliases": [],
+      "category": "Bebe",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "baby"
+    },
+    {
+      "id": "aperitif",
+      "label": "Aperitif",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-arachides"
+      ]
+    },
+    {
+      "id": "biere",
+      "label": "Biere",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "eau",
+      "label": "Eau",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "eau-gazeuse",
+      "label": "Eau gazeuse",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "jus-de-citron",
+      "label": "Jus de citron",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "jus-de-fruits",
+      "label": "Jus de fruits",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "jus-d-orange",
+      "label": "Jus d'orange",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sirop",
+      "label": "Sirop",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "soda",
+      "label": "Soda",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vin",
+      "label": "Vin",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "boeuf",
+      "label": "Boeuf",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-oeuf"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "charcuterie",
+      "label": "Charcuterie",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine",
+        "allergene-moutarde",
+        "allergene-soja",
+        "allergene-sulfites"
+      ]
+    },
+    {
+      "id": "escalopes-de-poulet",
+      "label": "Escalopes de poulet",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "jambon",
+      "label": "Jambon",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "lard",
+      "label": "Lard",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "lardons",
+      "label": "Lardons",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "porc",
+      "label": "Porc",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poulet",
+      "label": "Poulet",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "steak-hache",
+      "label": "Steak hache",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "steaks-haches-de-boeuf",
+      "label": "Steaks haches de boeuf",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-oeuf"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "veau",
+      "label": "Veau",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "volaille",
+      "label": "Volaille",
+      "aliases": [],
+      "category": "Boucherie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "concentre-de-tomate",
+      "label": "Concentre de tomate",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "coulis-de-tomate",
+      "label": "Coulis de tomate",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "haricots-blancs",
+      "label": "Haricots blancs",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "haricots-noirs",
+      "label": "Haricots noirs",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "haricots-rouges",
+      "label": "Haricots rouges",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "haricots-verts",
+      "label": "Haricots verts",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "lait-concentre",
+      "label": "Lait concentre",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap",
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "maa-s",
+      "label": "MaÃ¯s",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "olives",
+      "label": "Olives",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "pate",
+      "label": "Pate",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "petits-pois",
+      "label": "Petits pois",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "pois-chiches",
+      "label": "Pois chiches",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "sauce-tomate",
+      "label": "Sauce tomate",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-histamine",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "tomates-concassees",
+      "label": "Tomates concassees",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "tomates-pelees",
+      "label": "Tomates pelees",
+      "aliases": [],
+      "category": "Conserves",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "beurre-doux",
+      "label": "Beurre doux",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-sale",
+      "label": "Beurre sale",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "creme-fraiche",
+      "label": "Creme fraiche",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "creme-vegetale",
+      "label": "Creme vegetale",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "emmental-rape",
+      "label": "Emmental rape",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "feta",
+      "label": "Feta",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fromage",
+      "label": "Fromage",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-blanc",
+      "label": "Fromage blanc",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-rape",
+      "label": "Fromage rape",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "gruyere-rape",
+      "label": "Gruyere rape",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "lait",
+      "label": "Lait",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "lait-demi-ecreme",
+      "label": "Lait demi-ecreme",
+      "aliases": [
+        "lait demi ecreme"
+      ],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "lait-ecreme",
+      "label": "Lait ecreme",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "lait-entier",
+      "label": "Lait entier",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "lait-vegetal",
+      "label": "Lait vegetal",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "margarine",
+      "label": "Margarine",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "mascarpone",
+      "label": "Mascarpone",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "mozzarella",
+      "label": "Mozzarella",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "oeufs",
+      "label": "Oeufs",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "petit-suisse-nature",
+      "label": "Petit suisse nature",
+      "aliases": [
+        "petits suisses"
+      ],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ricotta",
+      "label": "Ricotta",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "skyr-nature",
+      "label": "Skyr nature",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "yaourt-grec",
+      "label": "Yaourt grec",
+      "aliases": [
+        "yaourts grecs"
+      ],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "yaourts",
+      "label": "Yaourts",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "yaourts-nature",
+      "label": "Yaourts nature",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-allege",
+      "label": "Beurre allege",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "creme-fraiche-legere",
+      "label": "Creme fraiche legere",
+      "aliases": [
+        "creme legere"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "emmental-rape-allege",
+      "label": "Emmental rape allegé",
+      "aliases": [
+        "emmental rape allege"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fromage-blanc-0",
+      "label": "Fromage blanc 0%",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-rape-allege",
+      "label": "Fromage rape allegé",
+      "aliases": [
+        "fromage rape allege"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "gruyere-rape-allege",
+      "label": "Gruyere rape allegé",
+      "aliases": [
+        "gruyere rape allege"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "mozzarella-legere",
+      "label": "Mozzarella legere",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ricotta-legere",
+      "label": "Ricotta legere",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "yaourt-nature-0",
+      "label": "Yaourt nature 0%",
+      "aliases": [
+        "yaourt 0"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Allege",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-sans-lactose",
+      "label": "Beurre sans lactose",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Sans lactose",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "creme-sans-lactose",
+      "label": "Creme sans lactose",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Sans lactose",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fromage-blanc-sans-lactose",
+      "label": "Fromage blanc sans lactose",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Sans lactose",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "lait-sans-lactose",
+      "label": "Lait sans lactose",
+      "aliases": [
+        "lait delactose"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Sans lactose",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "yaourt-sans-lactose",
+      "label": "Yaourt sans lactose",
+      "aliases": [
+        "yaourts sans lactose"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Sans lactose",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "anti-insectes",
+      "label": "Anti-insectes",
+      "aliases": [],
+      "category": "Divers",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "charbon-de-bois",
+      "label": "Charbon de bois",
+      "aliases": [],
+      "category": "Divers",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "produit-velo",
+      "label": "Produit velo",
+      "aliases": [],
+      "category": "Divers",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "adoucissant",
+      "label": "Adoucissant",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "bicarbonate",
+      "label": "Bicarbonate",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "chiffons",
+      "label": "Chiffons",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "eponge",
+      "label": "Eponge",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "essuie-tout",
+      "label": "Essuie-tout",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "lessive",
+      "label": "Lessive",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "household"
+    },
+    {
+      "id": "liquide-vaisselle",
+      "label": "Liquide vaisselle",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "household"
+    },
+    {
+      "id": "papier-alu",
+      "label": "Papier alu",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "papier-sulfurise",
+      "label": "Papier sulfurise",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "poubelle",
+      "label": "Poubelle",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "produit-lave-vaisselle",
+      "label": "Produit lave-vaisselle",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "household"
+    },
+    {
+      "id": "produit-sols",
+      "label": "Produit sols",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "produit-vitres",
+      "label": "Produit vitres",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "produit-wc",
+      "label": "Produit WC",
+      "aliases": [],
+      "category": "Entretien",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "household"
+    },
+    {
+      "id": "ail-semoule",
+      "label": "Ail semoule",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten",
+        "allergene-mollusques"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "bicarbonate-alimentaire",
+      "label": "Bicarbonate alimentaire",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "biscuits-apero",
+      "label": "Biscuits apero",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "bouillon-cube",
+      "label": "Bouillon cube",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-celeri"
+      ]
+    },
+    {
+      "id": "bouillon-de-boeuf",
+      "label": "Bouillon de boeuf",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "cube",
+      "type": "food",
+      "allergens": [
+        "allergene-oeuf"
+      ],
+      "mayContainAllergens": [
+        "allergene-celeri"
+      ]
+    },
+    {
+      "id": "bouillon-de-legumes",
+      "label": "Bouillon de legumes",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "cube",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-celeri"
+      ]
+    },
+    {
+      "id": "bouillon-de-volaille",
+      "label": "Bouillon de volaille",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "cube",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "boulgour",
+      "label": "Boulgour",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "boulgour-complet",
+      "label": "Boulgour complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "chapelure",
+      "label": "Chapelure",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "coriandre-moulue",
+      "label": "Coriandre moulue",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cornichon",
+      "label": "Cornichon",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "couscous-complet",
+      "label": "Couscous complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "croutons",
+      "label": "Croutons",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cumin",
+      "label": "Cumin",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "curcuma",
+      "label": "Curcuma",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "curry",
+      "label": "Curry",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "epices",
+      "label": "Epices",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "farine",
+      "label": "Farine",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "farine-complete",
+      "label": "Farine complete",
+      "aliases": [
+        "farine intégrale"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "farine-semi-complete",
+      "label": "Farine semi-complete",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fecule-de-mais",
+      "label": "Fecule de mais",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fleur-de-sel",
+      "label": "Fleur de sel",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gingembre-moulu",
+      "label": "Gingembre moulu",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "graines",
+      "label": "Graines",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gros-sel",
+      "label": "Gros sel",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "herbes-de-provence",
+      "label": "Herbes de Provence",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "huile",
+      "label": "Huile",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "huile-de-colza",
+      "label": "Huile de colza",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "huile-de-sesame",
+      "label": "Huile de sesame",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sesame"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ketchup",
+      "label": "Ketchup",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "lait-de-coco",
+      "label": "Lait de coco",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "legumineuses",
+      "label": "Legumineuses",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "lentilles",
+      "label": "Lentilles",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "levure-chimique",
+      "label": "Levure chimique",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "levure-de-boulanger",
+      "label": "Levure de boulanger",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "mayonnaise",
+      "label": "Mayonnaise",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-oeuf"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "moutarde",
+      "label": "Moutarde",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-moutarde"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "moutarde-a-l-ancienne",
+      "label": "Moutarde a l'ancienne",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-moutarde"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "moutarde-de-dijon",
+      "label": "Moutarde de Dijon",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-moutarde"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "panko",
+      "label": "Panko",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "paprika-doux",
+      "label": "Paprika doux",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "paprika-fume",
+      "label": "Paprika fume",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates",
+      "label": "Pates",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates-au-ble-complet",
+      "label": "Pates au ble complet",
+      "aliases": [
+        "pates blé complet"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "pates-completes",
+      "label": "Pates completes",
+      "aliases": [
+        "pates complètes"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates-de-legumes",
+      "label": "Pates de legumes",
+      "aliases": [
+        "pates lentilles",
+        "pates pois chiches"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates-semi-completes",
+      "label": "Pates semi-completes",
+      "aliases": [
+        "pates semi complètes"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "piment-doux",
+      "label": "Piment doux",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "piment-fort",
+      "label": "Piment fort",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poivre",
+      "label": "Poivre",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poivre-blanc",
+      "label": "Poivre blanc",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poivre-en-grains",
+      "label": "Poivre en grains",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poivre-noir",
+      "label": "Poivre noir",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "puree",
+      "label": "Puree",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "quinoa",
+      "label": "Quinoa",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "quinoa-complet",
+      "label": "Quinoa complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "riz",
+      "label": "Riz",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "riz-basmati-complet",
+      "label": "Riz basmati complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "riz-complet",
+      "label": "Riz complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "riz-sauvage",
+      "label": "Riz sauvage",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "riz-semi-complet",
+      "label": "Riz semi-complet",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sauce-huitre",
+      "label": "Sauce huitre",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-mollusques"
+      ],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "sauce-poisson",
+      "label": "Sauce poisson",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-histamine",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "sauce-soja",
+      "label": "Sauce soja",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-soja"
+      ],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "sauce-soja-sucree",
+      "label": "Sauce soja sucree",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-soja"
+      ],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "sauce-worcestershire",
+      "label": "Sauce Worcestershire",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-celeri",
+        "allergene-gluten",
+        "allergene-lactose",
+        "allergene-moutarde",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "sel",
+      "label": "Sel",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sel-fin",
+      "label": "Sel fin",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "semoule",
+      "label": "Semoule",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten",
+        "allergene-mollusques"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "semoule-complete",
+      "label": "Semoule complete",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten",
+        "allergene-mollusques"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sucre",
+      "label": "Sucre",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vinaigre",
+      "label": "Vinaigre",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vinaigre-blanc",
+      "label": "Vinaigre blanc",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vinaigre-de-riz",
+      "label": "Vinaigre de riz",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vinaigre-de-vin-blanc",
+      "label": "Vinaigre de vin blanc",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vinaigre-de-vin-rouge",
+      "label": "Vinaigre de vin rouge",
+      "aliases": [],
+      "category": "Epicerie salee",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "farine-sans-gluten",
+      "label": "Farine sans gluten",
+      "aliases": [
+        "mix farine sans gluten"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates-sans-gluten",
+      "label": "Pates sans gluten",
+      "aliases": [
+        "pates sg"
+      ],
+      "category": "Epicerie salee",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "agar-agar",
+      "label": "Agar-agar",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "amande",
+      "label": "Amande",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-amandes",
+        "allergene-fruits-a-coque"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-d-amande",
+      "label": "Beurre d'amande",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-amandes",
+        "allergene-fruits-a-coque",
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-de-cacahuete",
+      "label": "Beurre de cacahuete",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-arachides",
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "beurre-de-noisette",
+      "label": "Beurre de noisette",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-lactose",
+        "allergene-noisettes",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cassonade",
+      "label": "Cassonade",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "citron-confit",
+      "label": "Citron confit",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "datte",
+      "label": "Datte",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "extrait-de-vanille",
+      "label": "Extrait de vanille",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fruits-secs",
+      "label": "Fruits secs",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gelatine",
+      "label": "Gelatine",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gingembre-confit",
+      "label": "Gingembre confit",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noisette",
+      "label": "Noisette",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noisettes"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix",
+      "label": "Noix",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-coco-rapee",
+      "label": "Noix de coco rapee",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pignon",
+      "label": "Pignon",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poudre-d-amande",
+      "label": "Poudre d'amande",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-amandes",
+        "allergene-fruits-a-coque"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sirop-d-agave",
+      "label": "Sirop d'agave",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sirop-d-erable",
+      "label": "Sirop d'erable",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "sucre-blanc",
+      "label": "Sucre blanc",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sucre-entier",
+      "label": "Sucre entier",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sucre-glace",
+      "label": "Sucre glace",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "sucre-roux",
+      "label": "Sucre roux",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sucre-vanille",
+      "label": "Sucre vanille",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tahin",
+      "label": "Tahin",
+      "aliases": [],
+      "category": "Epicerie sucree",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "amandes",
+      "label": "Amandes",
+      "aliases": [
+        "amande",
+        "amandes entieres"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-amandes",
+        "allergene-fruits-a-coque"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cacahuetes",
+      "label": "Cacahuetes",
+      "aliases": [
+        "cacahuete",
+        "cacahouete",
+        "cacahouetes",
+        "arachides"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-arachides"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "chataignes",
+      "label": "Chataignes",
+      "aliases": [
+        "chataigne",
+        "marron"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-latex-alimentaire"
+      ]
+    },
+    {
+      "id": "marrons",
+      "label": "Marrons",
+      "aliases": [
+        "marron",
+        "marrons cuits"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noisettes",
+      "label": "Noisettes",
+      "aliases": [
+        "noisette",
+        "noisettes entieres"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noisettes"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-cajou",
+      "label": "Noix de cajou",
+      "aliases": [
+        "cajou",
+        "noix cajou",
+        "noix de cajoux"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix",
+        "allergene-noix-de-cajou"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-grenoble",
+      "label": "Noix de Grenoble",
+      "aliases": [
+        "noix",
+        "noix classique"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-gluten",
+        "allergene-noix"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "noix-de-macadamia",
+      "label": "Noix de macadamia",
+      "aliases": [
+        "macadamia",
+        "noix macadamia"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix",
+        "allergene-noix-de-macadamia"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-pecan",
+      "label": "Noix de pecan",
+      "aliases": [
+        "pecan",
+        "noix pecan"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix",
+        "allergene-noix-de-pecan"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-pignon",
+      "label": "Noix de pignon",
+      "aliases": [
+        "pignon",
+        "pignons",
+        "pignons de pin",
+        "noix de pin"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-du-bresil",
+      "label": "Noix du Bresil",
+      "aliases": [
+        "noix bresil",
+        "bresil",
+        "noix du brazil"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix",
+        "allergene-noix-du-bresil"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pistaches",
+      "label": "Pistaches",
+      "aliases": [
+        "pistache",
+        "pistaches decortiquees"
+      ],
+      "category": "Epicerie sucree",
+      "subcategory": "Fruits a coque",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-pistaches"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "abricot",
+      "label": "Abricot",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ananas",
+      "label": "Ananas",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "avocat",
+      "label": "Avocat",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-latex-alimentaire"
+      ]
+    },
+    {
+      "id": "banane",
+      "label": "Banane",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-latex-alimentaire"
+      ]
+    },
+    {
+      "id": "carambole",
+      "label": "Carambole",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cerise",
+      "label": "Cerise",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "citron",
+      "label": "Citron",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "citron-vert",
+      "label": "Citron vert",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "clementine",
+      "label": "Clementine",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "datte-fraiche",
+      "label": "Datte fraiche",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "figue",
+      "label": "Figue",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fraise",
+      "label": "Fraise",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "framboise",
+      "label": "Framboise",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fruit-de-la-passion",
+      "label": "Fruit de la passion",
+      "aliases": [
+        "passion",
+        "fruits de la passion"
+      ],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fruits-rouges",
+      "label": "Fruits rouges",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "goyave",
+      "label": "Goyave",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "grenade",
+      "label": "Grenade",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "kaki",
+      "label": "Kaki",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "kiwi",
+      "label": "Kiwi",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-latex-alimentaire"
+      ]
+    },
+    {
+      "id": "kumquat",
+      "label": "Kumquat",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "litchi",
+      "label": "Litchi",
+      "aliases": [
+        "letchi",
+        "lychee"
+      ],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "longane",
+      "label": "Longane",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "mangue",
+      "label": "Mangue",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "melon",
+      "label": "Melon",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "noix-de-coco",
+      "label": "Noix de coco",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-fruits-a-coque",
+        "allergene-noix"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "orange",
+      "label": "Orange",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pamplemousse",
+      "label": "Pamplemousse",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "papaye",
+      "label": "Papaye",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pasteque",
+      "label": "Pasteque",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "peche",
+      "label": "Peche",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "physalis",
+      "label": "Physalis",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pitaya",
+      "label": "Pitaya",
+      "aliases": [
+        "fruit du dragon",
+        "dragon fruit"
+      ],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poire",
+      "label": "Poire",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "pomme",
+      "label": "Pomme",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "prune",
+      "label": "Prune",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "raisin",
+      "label": "Raisin",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ramboutan",
+      "label": "Ramboutan",
+      "aliases": [],
+      "category": "Fruits",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "aneth",
+      "label": "Aneth",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "basilic",
+      "label": "Basilic",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ciboule",
+      "label": "Ciboule",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "botte",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ciboulette",
+      "label": "Ciboulette",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "coriandre-fraiche",
+      "label": "Coriandre fraiche",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "botte",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "menthe",
+      "label": "Menthe",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "origan",
+      "label": "Origan",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "persil",
+      "label": "Persil",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "romarin",
+      "label": "Romarin",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "sauge",
+      "label": "Sauge",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "thym",
+      "label": "Thym",
+      "aliases": [],
+      "category": "Herbes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "apres-rasage",
+      "label": "Apres-rasage",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "brosse-a-dents",
+      "label": "Brosse a dents",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "cire-epilation",
+      "label": "Cire epilation",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "cotons",
+      "label": "Cotons",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "cotons-tiges",
+      "label": "Cotons-tiges",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "demelant",
+      "label": "Demelant",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "dentifrice",
+      "label": "Dentifrice",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "dissolvant",
+      "label": "Dissolvant",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "gel-coiffant",
+      "label": "Gel coiffant",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "gel-douche",
+      "label": "Gel douche",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "mousse-a-raser",
+      "label": "Mousse a raser",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "rasoirs",
+      "label": "Rasoirs",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "savon-a-main",
+      "label": "Savon a main",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "serviettes-hygieniques",
+      "label": "Serviettes hygieniques",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "shampoing",
+      "label": "Shampoing",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "hygiene"
+    },
+    {
+      "id": "stick-levres",
+      "label": "Stick levres",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "tampons",
+      "label": "Tampons",
+      "aliases": [],
+      "category": "Hygiene",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "hygiene"
+    },
+    {
+      "id": "ail",
+      "label": "Ail",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "asperge",
+      "label": "Asperge",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "aubergine",
+      "label": "Aubergine",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "betterave",
+      "label": "Betterave",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "brocoli",
+      "label": "Brocoli",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "carotte",
+      "label": "Carotte",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "celeri",
+      "label": "Celeri",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-celeri"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "champignon",
+      "label": "Champignon",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "chou",
+      "label": "Chou",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "chou-fleur",
+      "label": "Chou-fleur",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "concombre",
+      "label": "Concombre",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "courge",
+      "label": "Courge",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "courgette",
+      "label": "Courgette",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "echalote",
+      "label": "Echalote",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "endive",
+      "label": "Endive",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "epinard",
+      "label": "Epinard",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gingembre-frais",
+      "label": "Gingembre frais",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "haricot",
+      "label": "Haricot",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "oignon",
+      "label": "Oignon",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "oignon-jaune",
+      "label": "Oignon jaune",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "oignon-rouge",
+      "label": "Oignon rouge",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "petit-pois",
+      "label": "Petit pois",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "poireau",
+      "label": "Poireau",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "poivron",
+      "label": "Poivron",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pomme-de-terre",
+      "label": "Pomme de terre",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "potimarron",
+      "label": "Potimarron",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "radis",
+      "label": "Radis",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "salade",
+      "label": "Salade",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tomate",
+      "label": "Tomate",
+      "aliases": [],
+      "category": "Legumes",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ampoules",
+      "label": "Ampoules",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "cartouche-encre",
+      "label": "Cartouche encre",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "enveloppes",
+      "label": "Enveloppes",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "papier",
+      "label": "Papier",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "piles",
+      "label": "Piles",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "scotch",
+      "label": "Scotch",
+      "aliases": [],
+      "category": "Maison",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "home"
+    },
+    {
+      "id": "biscotte",
+      "label": "Biscotte",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "biscottes-completes",
+      "label": "Biscottes completes",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "biscuit",
+      "label": "Biscuit",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "brioche",
+      "label": "Brioche",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cacao",
+      "label": "Cacao",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cacao-non-sucre",
+      "label": "Cacao non sucre",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cafe",
+      "label": "Cafe",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cereales",
+      "label": "Cereales",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "chocolat",
+      "label": "Chocolat",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "confiture",
+      "label": "Confiture",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "miel",
+      "label": "Miel",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "muesli",
+      "label": "Muesli",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-fruits-a-coque"
+      ]
+    },
+    {
+      "id": "pain-complet",
+      "label": "Pain complet",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "pain-de-mie",
+      "label": "Pain de mie",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "pain-de-mie-complet",
+      "label": "Pain de mie complet",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "pain-semi-complet",
+      "label": "Pain semi-complet",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "pate-a-tartiner",
+      "label": "Pate a tartiner",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pralinoise",
+      "label": "Pralinoise",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "the",
+      "label": "The",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tisane",
+      "label": "Tisane",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "avoine-sans-gluten",
+      "label": "Avoine sans gluten",
+      "aliases": [
+        "flocons avoine sans gluten"
+      ],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "biscottes-sans-gluten",
+      "label": "Biscottes sans gluten",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "biscuits-sans-gluten",
+      "label": "Biscuits sans gluten",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cereales-sans-gluten",
+      "label": "Cereales sans gluten",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pain-de-mie-sans-gluten",
+      "label": "Pain de mie sans gluten",
+      "aliases": [],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "pain-sans-gluten",
+      "label": "Pain sans gluten",
+      "aliases": [
+        "pain sg"
+      ],
+      "category": "Petit-dejeuner et gouter",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-sesame"
+      ]
+    },
+    {
+      "id": "cabillaud",
+      "label": "Cabillaud",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "calamar",
+      "label": "Calamar",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-mollusques",
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "crevettes",
+      "label": "Crevettes",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-crustaces",
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "homard",
+      "label": "Homard",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-crustaces",
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "langoustines",
+      "label": "Langoustines",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "sardines",
+      "label": "Sardines",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "saumon",
+      "label": "Saumon",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "saumon-fume",
+      "label": "Saumon fume",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "thon",
+      "label": "Thon",
+      "aliases": [],
+      "category": "Poissonnerie",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "feuilles-de-brick",
+      "label": "Feuilles de brick",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pate-a-pizza",
+      "label": "Pate a pizza",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "pate-a-tarte",
+      "label": "Pate a tarte",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pate-feuilletee",
+      "label": "Pate feuilletee",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pate-filo",
+      "label": "Pate filo",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pates-fraiches",
+      "label": "Pates fraiches",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "quenelles",
+      "label": "Quenelles",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "ravioles",
+      "label": "Ravioles",
+      "aliases": [],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tortillas-ble-complet",
+      "label": "Tortillas ble complet",
+      "aliases": [
+        "wraps complets"
+      ],
+      "category": "Rayon frais",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-fodmap"
+      ]
+    },
+    {
+      "id": "wraps-sans-gluten",
+      "label": "Wraps sans gluten",
+      "aliases": [
+        "tortillas sans gluten"
+      ],
+      "category": "Rayon frais",
+      "subcategory": "Sans gluten",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "frites",
+      "label": "Frites",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "glaces",
+      "label": "Glaces",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "legumes",
+      "label": "Legumes",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pizza",
+      "label": "Pizza",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ]
+    },
+    {
+      "id": "plats-cuisines",
+      "label": "Plats cuisines",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-gluten",
+        "allergene-lactose",
+        "allergene-oeuf",
+        "allergene-proteines-de-lait",
+        "allergene-sesame",
+        "allergene-soja"
+      ]
+    },
+    {
+      "id": "poisson-pane",
+      "label": "Poisson pane",
+      "aliases": [],
+      "category": "Surgeles",
+      "subcategory": "",
+      "defaultUnit": "piece",
+      "type": "food",
+      "allergens": [
+        "allergene-poisson"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-raclette",
+      "label": "Fromage a raclette",
+      "aliases": [
+        "raclette"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "reblochon",
+      "label": "Reblochon",
+      "aliases": [
+        "fromage reblochon"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "parmesan",
+      "label": "Parmesan",
+      "aliases": [
+        "parmigiano"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "chevre",
+      "label": "Fromage de chevre",
+      "aliases": [
+        "chevre"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "bleu",
+      "label": "Fromage bleu",
+      "aliases": [
+        "bleu"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fromage-frais",
+      "label": "Fromage frais",
+      "aliases": [
+        "frais"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vin-rouge",
+      "label": "Vin rouge",
+      "aliases": [
+        "rouge"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-blanc",
+      "label": "Vin blanc",
+      "aliases": [
+        "blanc"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cremant",
+      "label": "Cremant",
+      "aliases": [
+        "vin cremant"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-mousseux",
+      "label": "Vin mousseux",
+      "aliases": [
+        "mousseux"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "champagne",
+      "label": "Champagne",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "prosecco",
+      "label": "Prosecco",
+      "aliases": [
+        "proseco"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "rhum",
+      "label": "Rhum",
+      "aliases": [
+        "rhum blanc",
+        "rhum ambré"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "whisky",
+      "label": "Whisky",
+      "aliases": [
+        "whiskey"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "comte",
+      "label": "Comte",
+      "aliases": [
+        "comté"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "emmental",
+      "label": "Emmental",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gruyere",
+      "label": "Gruyere",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "brie",
+      "label": "Brie",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "camembert",
+      "label": "Camembert",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "roquefort",
+      "label": "Roquefort",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "tomme",
+      "label": "Tomme",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "raclette-charcuterie-fromage",
+      "label": "Raclette (fromage + charcuterie)",
+      "aliases": [
+        "raclette complete"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "fondue-fromage",
+      "label": "Fondue fromage",
+      "aliases": [
+        "fondue savoyarde"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages a cuire",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cheddar",
+      "label": "Cheddar",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "gorgonzola",
+      "label": "Gorgonzola",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cancoillotte",
+      "label": "Cancoillotte",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "fromage-tranche",
+      "label": "Fromage en tranches",
+      "aliases": [
+        "tranches fromage"
+      ],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "burrata",
+      "label": "Burrata",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "pecorino",
+      "label": "Pecorino",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "munster",
+      "label": "Munster",
+      "aliases": [],
+      "category": "Cremerie",
+      "subcategory": "Fromages",
+      "defaultUnit": "g",
+      "type": "food",
+      "allergens": [
+        "allergene-lactose",
+        "allergene-proteines-de-lait"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-rose",
+      "label": "Vin rose",
+      "aliases": [
+        "rose"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "vin-bio",
+      "label": "Vin bio",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "petillant-naturel",
+      "label": "Petillant naturel",
+      "aliases": [
+        "pet nat"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cava",
+      "label": "Cava",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "cidre-brut",
+      "label": "Cidre brut",
+      "aliases": [
+        "cidre"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-blonde",
+      "label": "Biere blonde",
+      "aliases": [
+        "blonde"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-ipa",
+      "label": "Biere IPA",
+      "aliases": [
+        "ipa"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-gluten"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "biere-sans-gluten",
+      "label": "Biere sans gluten",
+      "aliases": [
+        "sans gluten"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "gin",
+      "label": "Gin",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "vodka",
+      "label": "Vodka",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "tequila",
+      "label": "Tequila",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "cognac",
+      "label": "Cognac",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "armagnac",
+      "label": "Armagnac",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "calvados",
+      "label": "Calvados",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "liqueur",
+      "label": "Liqueur",
+      "aliases": [
+        "creme de cassis"
+      ],
+      "category": "Boissons",
+      "subcategory": "Alcools forts",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "aperol",
+      "label": "Aperol",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "campari",
+      "label": "Campari",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "pastis",
+      "label": "Pastis",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    },
+    {
+      "id": "porto",
+      "label": "Porto",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "martini",
+      "label": "Martini",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Aperitifs",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [
+        "allergene-sulfites"
+      ],
+      "mayContainAllergens": [
+        "allergene-histamine"
+      ]
+    },
+    {
+      "id": "sake",
+      "label": "Sake",
+      "aliases": [],
+      "category": "Boissons",
+      "subcategory": "Alcools",
+      "defaultUnit": "ml",
+      "type": "food",
+      "allergens": [],
+      "mayContainAllergens": []
+    }
+  ]
+}
