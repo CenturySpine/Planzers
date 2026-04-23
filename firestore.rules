@@ -79,6 +79,16 @@ service cloud.firestore {
         : 'admin';
     }
 
+    function tripShareAccessMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.shareAccess is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.shareAccess
+        : 'participant';
+    }
+
     function canEditTripGeneralInfo(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripEditGeneralInfoMinRole(tripId));
@@ -87,6 +97,11 @@ service cloud.firestore {
     function canManageTripBanner(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripManageBannerMinRole(tripId));
+    }
+
+    function canShareTripAccess(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripShareAccessMinRole(tripId));
     }
 
     function activityLocked(data) {
@@ -143,6 +158,12 @@ service cloud.firestore {
             'bannerImageUrl',
             'bannerImagePath',
             'bannerUpdatedAt',
+          ])
+        ) ||
+        (
+          canShareTripAccess(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'inviteToken',
           ])
         ) ||
         (

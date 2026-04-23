@@ -250,7 +250,7 @@ class TripsRepository {
   }
 
   /// Invite secret shared with guests (same value as the `token` query param
-  /// in the invite link). Owner-only.
+  /// in the invite link). Controlled by trip share permission.
   Future<String> getOrCreateInviteToken({
     required String tripId,
   }) async {
@@ -266,10 +266,12 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut partager une invitation');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.shareAccessMinRole,
+    );
 
     var inviteToken = (data['inviteToken'] as String?)?.trim() ?? '';
     if (inviteToken.isEmpty) {

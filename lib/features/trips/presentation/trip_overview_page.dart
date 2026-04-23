@@ -457,6 +457,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       currentRole: currentRole,
       minRole: _trip.generalPermissions.manageBannerMinRole,
     );
+    final canShareAccess = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.shareAccessMinRole,
+    );
     final canEditGeneralInfo = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: _trip.generalPermissions.editGeneralInfoMinRole,
@@ -653,11 +657,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           unawaited(_openTripStayDialog());
                                           return;
                                         }
-                                        if (value == 'share' && canEdit) {
+                                        if (value == 'share' && canShareAccess) {
                                           _shareInviteLink();
                                           return;
                                         }
-                                        if (value == 'copyCode' && canEdit) {
+                                        if (value == 'copyCode' && canShareAccess) {
                                           _copyInviteCode();
                                           return;
                                         }
@@ -699,7 +703,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
+                                        if (canShareAccess)
                                           PopupMenuItem(
                                             value: 'share',
                                             child: Row(
@@ -710,7 +714,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
+                                        if (canShareAccess)
                                           PopupMenuItem(
                                             value: 'copyCode',
                                             child: Row(
@@ -794,11 +798,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         unawaited(_openTripStayDialog());
                                         return;
                                       }
-                                      if (value == 'share' && canEdit) {
+                                      if (value == 'share' && canShareAccess) {
                                         _shareInviteLink();
                                         return;
                                       }
-                                      if (value == 'copyCode' && canEdit) {
+                                      if (value == 'copyCode' && canShareAccess) {
                                         _copyInviteCode();
                                         return;
                                       }
@@ -837,7 +841,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
+                                      if (canShareAccess)
                                         PopupMenuItem(
                                           value: 'share',
                                           child: Row(
@@ -848,7 +852,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
+                                      if (canShareAccess)
                                         PopupMenuItem(
                                           value: 'copyCode',
                                           child: Row(
