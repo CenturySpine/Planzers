@@ -536,6 +536,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPermissionsColumnMinRole => 'Minimum role';
 
   @override
+  String get tripPermissionsExpensesTitle => 'Expense-related permissions';
+
+  @override
+  String get tripPermissionsExpensesDescription =>
+      'Minimum roles for expense posts. If a post is hidden from a member, they cannot act on it even with a sufficient role.';
+
+  @override
+  String get tripPermissionExpensesCreatePost => 'Create an expense post';
+
+  @override
+  String get tripPermissionExpensesEditPost => 'Edit an expense post';
+
+  @override
+  String get tripPermissionExpensesDeletePost => 'Delete an expense post';
+
+  @override
   String get tripSectionTrip => 'Trip';
 
   @override
@@ -2331,6 +2347,22 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionsColumnMinRole => 'Minimum role';
+
+  @override
+  String get tripPermissionsExpensesTitle => 'Expense-related permissions';
+
+  @override
+  String get tripPermissionsExpensesDescription =>
+      'Minimum roles for expense posts. If a post is hidden from a member, they cannot act on it even with a sufficient role.';
+
+  @override
+  String get tripPermissionExpensesCreatePost => 'Create an expense post';
+
+  @override
+  String get tripPermissionExpensesEditPost => 'Edit an expense post';
+
+  @override
+  String get tripPermissionExpensesDeletePost => 'Delete an expense post';
 
   @override
   String get tripSectionTrip => 'Trip';

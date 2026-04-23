@@ -157,3 +157,64 @@ class TripParticipantsPermissions {
     };
   }
 }
+
+enum TripExpensesPermissionAction {
+  createExpensePost,
+  editExpensePost,
+  deleteExpensePost,
+}
+
+/// Permissions for expense **posts** (`expenseGroups`): create / edit / delete.
+///
+/// Firestore: `trips/{id}.permissions.expenses`.
+class TripExpensesPermissions {
+  const TripExpensesPermissions({
+    required this.createExpensePostMinRole,
+    required this.editExpensePostMinRole,
+    required this.deleteExpensePostMinRole,
+  });
+
+  final TripPermissionRole createExpensePostMinRole;
+  final TripPermissionRole editExpensePostMinRole;
+  final TripPermissionRole deleteExpensePostMinRole;
+
+  /// Everyone can manage posts by default; visibility still restricts who sees a post.
+  static const defaults = TripExpensesPermissions(
+    createExpensePostMinRole: TripPermissionRole.participant,
+    editExpensePostMinRole: TripPermissionRole.participant,
+    deleteExpensePostMinRole: TripPermissionRole.participant,
+  );
+
+  factory TripExpensesPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripExpensesPermissions(
+      createExpensePostMinRole: raw['createExpensePost'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['createExpensePost']),
+      editExpensePostMinRole: raw['editExpensePost'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['editExpensePost']),
+      deleteExpensePostMinRole: raw['deleteExpensePost'] == null
+          ? TripPermissionRole.participant
+          : TripPermissionRole.fromFirestore(raw['deleteExpensePost']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'createExpensePost': createExpensePostMinRole.toFirestore(),
+      'editExpensePost': editExpensePostMinRole.toFirestore(),
+      'deleteExpensePost': deleteExpensePostMinRole.toFirestore(),
+    };
+  }
+
+  TripPermissionRole minRoleFor(TripExpensesPermissionAction action) {
+    return switch (action) {
+      TripExpensesPermissionAction.createExpensePost => createExpensePostMinRole,
+      TripExpensesPermissionAction.editExpensePost => editExpensePostMinRole,
+      TripExpensesPermissionAction.deleteExpensePost => deleteExpensePostMinRole,
+    };
+  }
+}

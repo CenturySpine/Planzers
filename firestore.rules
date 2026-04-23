@@ -104,6 +104,66 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripShareAccessMinRole(tripId));
     }
 
+    function tripManageTripSettingsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.manageTripSettings is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.manageTripSettings
+        : 'owner';
+    }
+
+    function canManageTripSettings(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripManageTripSettingsMinRole(tripId));
+    }
+
+    function tripExpenseCreatePostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.createExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.createExpensePost
+        : 'participant';
+    }
+
+    function tripExpenseEditPostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.editExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.editExpensePost
+        : 'participant';
+    }
+
+    function tripExpenseDeletePostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.deleteExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.deleteExpensePost
+        : 'participant';
+    }
+
+    function canCreateExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseCreatePostMinRole(tripId));
+    }
+
+    function canEditExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseEditPostMinRole(tripId));
+    }
+
+    function canDeleteExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseDeletePostMinRole(tripId));
+    }
+
     function tripCreateParticipantMinRole(tripId) {
       return (
           tripDoc(tripId).data.permissions is map
@@ -258,6 +318,12 @@ service cloud.firestore {
                 .hasOnly([request.auth.uid])
             )
           )
+        ) ||
+        (
+          canManageTripSettings(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'permissions',
+          ])
         )
       );
 
@@ -265,8 +331,17 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
 
       match /expenseGroups/{groupId} {
-        allow read, update, delete: if isTripMember(tripId);
-        allow create: if isTripMember(tripId) || isTripMemberAfterWrite(tripId);
+        allow read: if isTripMember(tripId);
+        allow create: if canCreateExpensePost(tripId)
+          && request.auth.uid in request.resource.data.visibleToMemberIds
+          && request.resource.data.visibleToMemberIds is list;
+        allow update: if canEditExpensePost(tripId)
+          && request.auth.uid in resource.data.visibleToMemberIds
+          && resource.data.visibleToMemberIds is list
+          && request.resource.data.visibleToMemberIds is list;
+        allow delete: if canDeleteExpensePost(tripId)
+          && request.auth.uid in resource.data.visibleToMemberIds
+          && resource.data.visibleToMemberIds is list;
       }
 
       match /expenses/{expenseId} {

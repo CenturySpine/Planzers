@@ -543,6 +543,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripPermissionsColumnMinRole => 'Rôle minimal';
 
   @override
+  String get tripPermissionsExpensesTitle => 'Permissions liées aux dépenses';
+
+  @override
+  String get tripPermissionsExpensesDescription =>
+      'Rôles minimaux pour les postes de dépense. Un poste non visible pour un membre reste inaccessible pour lui, même avec un rôle suffisant.';
+
+  @override
+  String get tripPermissionExpensesCreatePost => 'Créer un poste de dépense';
+
+  @override
+  String get tripPermissionExpensesEditPost => 'Modifier un poste de dépense';
+
+  @override
+  String get tripPermissionExpensesDeletePost =>
+      'Supprimer un poste de dépense';
+
+  @override
   String get tripSectionTrip => 'Voyage';
 
   @override
@@ -2350,6 +2367,23 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionsColumnMinRole => 'Rôle minimal';
+
+  @override
+  String get tripPermissionsExpensesTitle => 'Permissions liées aux dépenses';
+
+  @override
+  String get tripPermissionsExpensesDescription =>
+      'Rôles minimaux pour les postes de dépense. Un poste non visible pour un membre reste inaccessible pour lui, même avec un rôle suffisant.';
+
+  @override
+  String get tripPermissionExpensesCreatePost => 'Créer un poste de dépense';
+
+  @override
+  String get tripPermissionExpensesEditPost => 'Modifier un poste de dépense';
+
+  @override
+  String get tripPermissionExpensesDeletePost =>
+      'Supprimer un poste de dépense';
 
   @override
   String get tripSectionTrip => 'Voyage';

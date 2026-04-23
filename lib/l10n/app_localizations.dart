@@ -1048,6 +1048,36 @@ abstract class AppLocalizations {
   /// **'Rôle minimal'**
   String get tripPermissionsColumnMinRole;
 
+  /// No description provided for @tripPermissionsExpensesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions liées aux dépenses'**
+  String get tripPermissionsExpensesTitle;
+
+  /// No description provided for @tripPermissionsExpensesDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôles minimaux pour les postes de dépense. Un poste non visible pour un membre reste inaccessible pour lui, même avec un rôle suffisant.'**
+  String get tripPermissionsExpensesDescription;
+
+  /// No description provided for @tripPermissionExpensesCreatePost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un poste de dépense'**
+  String get tripPermissionExpensesCreatePost;
+
+  /// No description provided for @tripPermissionExpensesEditPost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier un poste de dépense'**
+  String get tripPermissionExpensesEditPost;
+
+  /// No description provided for @tripPermissionExpensesDeletePost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer un poste de dépense'**
+  String get tripPermissionExpensesDeletePost;
+
   /// No description provided for @tripSectionTrip.
   ///
   /// In fr, this message translates to:

@@ -128,6 +128,7 @@ class TripSettingsPage extends ConsumerWidget {
                 title: l10n.tripSectionExpenses,
                 icon: Icons.payments_outlined,
                 description: l10n.tripSectionExpensesDescription,
+                onTap: () => context.push('/trips/$tripId/settings/expenses'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionActivities,

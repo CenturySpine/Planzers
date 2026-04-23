@@ -12,6 +12,8 @@ import 'package:planerz/features/expenses/data/expenses_repository.dart';
 import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_sheet.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -76,8 +78,9 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         data: (groups) => expensesAsync.when(
           data: (expenses) => settledTransfersAsync.when(
             data: (settledTransfers) {
+              final viewerId = FirebaseAuth.instance.currentUser?.uid;
               return _TripExpensesBody(
-                tripId: trip.id,
+                trip: trip,
                 memberIds: trip.memberIds,
                 memberPublicLabels: trip.memberPublicLabels,
                 groups: groups,
@@ -88,14 +91,19 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                   if (_activeGroupId == groupId) return;
                   setState(() => _activeGroupId = groupId);
                 },
-                onCreateExpensePost: () => _openExpenseGroupEditor(
-                  context,
-                  ref,
-                  trip.id,
-                  trip.memberIds,
-                  trip.memberPublicLabels,
-                  existing: null,
-                ),
+                onCreateExpensePost: canCreateExpensePostForTrip(
+                  trip: trip,
+                  userId: viewerId,
+                )
+                    ? () => _openExpenseGroupEditor(
+                          context,
+                          ref,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          existing: null,
+                        )
+                    : null,
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -244,7 +252,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
 
 class _TripExpensesBody extends StatelessWidget {
   const _TripExpensesBody({
-    required this.tripId,
+    required this.trip,
     required this.memberIds,
     required this.memberPublicLabels,
     required this.groups,
@@ -255,7 +263,7 @@ class _TripExpensesBody extends StatelessWidget {
     required this.onCreateExpensePost,
   });
 
-  final String tripId;
+  final Trip trip;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
   final List<TripExpenseGroup> groups;
@@ -263,7 +271,7 @@ class _TripExpensesBody extends StatelessWidget {
   final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
-  final VoidCallback onCreateExpensePost;
+  final VoidCallback? onCreateExpensePost;
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +297,7 @@ class _TripExpensesBody extends StatelessWidget {
         visibleGroups,
         viewerId,
         memberPublicLabels,
+        trip,
         onCreateExpensePost,
       );
     }
@@ -313,6 +322,7 @@ class _TripExpensesBody extends StatelessWidget {
           visibleGroups,
           viewerId,
           memberPublicLabels,
+          trip,
           onCreateExpensePost,
         );
       },
@@ -325,7 +335,8 @@ class _TripExpensesBody extends StatelessWidget {
     List<TripExpenseGroup> visibleGroups,
     String? viewerId,
     Map<String, String> memberPublicLabels,
-    VoidCallback onCreateExpensePost,
+    Trip trip,
+    VoidCallback? onCreateExpensePost,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
@@ -352,14 +363,21 @@ class _TripExpensesBody extends StatelessWidget {
                       ),
                 ),
               ),
-              IconButton(
-                tooltip: l10n.expenseGroupNewTitle,
-                icon: Icon(
-                  Icons.create_new_folder_outlined,
-                  color: cs.onInverseSurface,
+              if (onCreateExpensePost != null)
+                IconButton(
+                  tooltip: l10n.expenseGroupNewTitle,
+                  icon: Icon(
+                    Icons.create_new_folder_outlined,
+                    color: cs.onInverseSurface,
+                  ),
+                  onPressed: onCreateExpensePost,
+                )
+              else
+                // Même emprise qu’un IconButton (hauteur du cartouche inchangée).
+                const SizedBox(
+                  width: kMinInteractiveDimension,
+                  height: kMinInteractiveDimension,
                 ),
-                onPressed: onCreateExpensePost,
-              ),
             ],
           ),
         ),
@@ -391,7 +409,7 @@ class _TripExpensesBody extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                child: _ExpensePostPanel(
-                 tripId: tripId,
+                 trip: trip,
                  group: visibleGroups.single,
                  allTripExpenses: expenses,
                  groupExpenses: expenses
@@ -410,7 +428,7 @@ class _TripExpensesBody extends StatelessWidget {
         else
           Expanded(
             child: _ExpensePostsTabbedView(
-              tripId: tripId,
+              trip: trip,
               groups: visibleGroups,
                expenses: expenses,
                settledTransfers: settledTransfers,
@@ -429,7 +447,7 @@ class _TripExpensesBody extends StatelessWidget {
 
 class _ExpensePostsTabbedView extends StatefulWidget {
   const _ExpensePostsTabbedView({
-    required this.tripId,
+    required this.trip,
     required this.groups,
     required this.expenses,
     required this.settledTransfers,
@@ -441,7 +459,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.onActiveGroupChanged,
   });
 
-  final String tripId;
+  final Trip trip;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final List<SettledTransfer> settledTransfers;
@@ -545,7 +563,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                 SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                    child: _ExpensePostPanel(
-                     tripId: widget.tripId,
+                     trip: widget.trip,
                      group: group,
                       allTripExpenses: widget.expenses,
                       groupExpenses:
@@ -569,7 +587,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
 
 class _ExpensePostPanel extends ConsumerStatefulWidget {
   const _ExpensePostPanel({
-    required this.tripId,
+    required this.trip,
     required this.group,
     required this.allTripExpenses,
     required this.groupExpenses,
@@ -580,7 +598,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.viewerUserId,
   });
 
-  final String tripId;
+  final Trip trip;
   final TripExpenseGroup group;
   final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
@@ -629,7 +647,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     setState(() => _deletingPost = true);
     try {
       await ref.read(expensesRepositoryProvider).deleteExpenseGroup(
-            tripId: widget.tripId,
+            tripId: widget.trip.id,
             groupId: widget.group.id,
           );
       if (!mounted) return;
@@ -672,6 +690,17 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
       widget.memberIds,
+    );
+
+    final canEditPost = canEditExpensePostForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+    final canDeletePost = canDeleteExpensePostForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
 
     return Column(
@@ -732,63 +761,74 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   ),
                 ),
               ),
-              Positioned(
-                right: -6,
-                child: PopupMenuButton<_ExpensePostMenuAction>(
-                  tooltip: l10n.tripOverviewActions,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (action) async {
-                    if (action == _ExpensePostMenuAction.edit) {
-                      await _TripExpensesPageState._openExpenseGroupEditor(
-                        context,
-                        ref,
-                        widget.tripId,
-                        widget.memberIds,
-                        widget.memberPublicLabels,
-                        existing: widget.group,
-                      );
-                      return;
-                    }
-                    await _confirmDeletePost();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_ExpensePostMenuAction>(
-                      value: _ExpensePostMenuAction.edit,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.edit_outlined, size: 18),
-                          const SizedBox(width: 10),
-                          Text(l10n.commonEdit),
-                        ],
-                      ),
+              if (canEditPost || canDeletePost)
+                Positioned(
+                  right: -6,
+                  child: PopupMenuButton<_ExpensePostMenuAction>(
+                    tooltip: l10n.tripOverviewActions,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
                     ),
-                    PopupMenuItem<_ExpensePostMenuAction>(
-                      value: _ExpensePostMenuAction.delete,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            l10n.commonDelete,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (action) async {
+                      if (action == _ExpensePostMenuAction.edit) {
+                        await _TripExpensesPageState._openExpenseGroupEditor(
+                          context,
+                          ref,
+                          widget.trip.id,
+                          widget.memberIds,
+                          widget.memberPublicLabels,
+                          existing: widget.group,
+                        );
+                        return;
+                      }
+                      await _confirmDeletePost();
+                    },
+                    itemBuilder: (context) {
+                      final items = <PopupMenuEntry<_ExpensePostMenuAction>>[];
+                      if (canEditPost) {
+                        items.add(
+                          PopupMenuItem<_ExpensePostMenuAction>(
+                            value: _ExpensePostMenuAction.edit,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.edit_outlined, size: 18),
+                                const SizedBox(width: 10),
+                                Text(l10n.commonEdit),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        );
+                      }
+                      if (canDeletePost) {
+                        items.add(
+                          PopupMenuItem<_ExpensePostMenuAction>(
+                            value: _ExpensePostMenuAction.delete,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  l10n.commonDelete,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return items;
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -809,7 +849,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               setState(() => _savingSettledTransfer = true);
               try {
                 await ref.read(expensesRepositoryProvider).markTransferAsSettled(
-                      tripId: widget.tripId,
+                      tripId: widget.trip.id,
                       groupId: widget.group.id,
                       transfer: transfer,
                     );
@@ -835,7 +875,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               setState(() => _savingSettledTransfer = true);
               try {
                 await ref.read(expensesRepositoryProvider).deleteSettledTransfer(
-                      tripId: widget.tripId,
+                      tripId: widget.trip.id,
                       settledTransferId: settled.id,
                     );
               } catch (e) {
@@ -895,7 +935,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                 ..._buildExpensesGroupedByDate(
                   context,
                   widget.groupExpenses,
-                  widget.tripId,
+                  widget.trip.id,
                   scope,
                   widget.memberLabels,
                 ),

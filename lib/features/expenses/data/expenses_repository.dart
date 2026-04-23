@@ -5,6 +5,9 @@ import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
   return ExpensesRepository(
@@ -59,6 +62,34 @@ class ExpensesRepository {
         .collection('trips')
         .doc(tripId)
         .collection('expenseSettledTransfers');
+  }
+
+  Future<Trip> _requireTrip(String tripId) async {
+    final snap = await firestore.collection('trips').doc(tripId).get();
+    if (!snap.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snap.data();
+    if (data == null) {
+      throw StateError('Voyage introuvable');
+    }
+    return Trip.fromMap(snap.id, data);
+  }
+
+  void _ensureTripMemberExpenseRole({
+    required Trip trip,
+    required String userId,
+    required TripPermissionRole minRole,
+  }) {
+    final callerRole = resolveTripPermissionRole(
+      trip: trip,
+      userId: userId,
+    );
+    final isMember = trip.memberIds.contains(userId);
+    if (!isMember ||
+        !isTripRoleAllowed(currentRole: callerRole, minRole: minRole)) {
+      throw StateError('Droits insuffisants pour cette action');
+    }
   }
 
   Stream<List<TripExpenseGroup>> watchTripExpenseGroups(String tripId) {
@@ -124,6 +155,13 @@ class ExpensesRepository {
       throw StateError('Au moins une personne doit voir le poste');
     }
 
+    final trip = await _requireTrip(cleanTripId);
+    _ensureTripMemberExpenseRole(
+      trip: trip,
+      userId: user.uid,
+      minRole: trip.expensesPermissions.createExpensePostMinRole,
+    );
+
     await _expenseGroupsCol(cleanTripId).add({
       'title': cleanTitle,
       'visibleToMemberIds': visibleTo,
@@ -162,6 +200,21 @@ class ExpensesRepository {
       throw StateError('Au moins une personne doit voir le poste');
     }
 
+    final trip = await _requireTrip(cleanTripId);
+    final groupSnap = await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).get();
+    if (!groupSnap.exists) {
+      throw StateError('Poste introuvable');
+    }
+    final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
+    if (!existingGroup.isVisibleTo(user.uid)) {
+      throw StateError('Poste introuvable ou non visible');
+    }
+    _ensureTripMemberExpenseRole(
+      trip: trip,
+      userId: user.uid,
+      minRole: trip.expensesPermissions.editExpensePostMinRole,
+    );
+
     await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).update({
       'title': cleanTitle,
       'visibleToMemberIds': visibleTo,
@@ -184,6 +237,21 @@ class ExpensesRepository {
     if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
       throw StateError('Parametres invalides');
     }
+
+    final trip = await _requireTrip(cleanTripId);
+    final groupSnap = await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).get();
+    if (!groupSnap.exists) {
+      throw StateError('Poste introuvable');
+    }
+    final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
+    if (!existingGroup.isVisibleTo(user.uid)) {
+      throw StateError('Poste introuvable ou non visible');
+    }
+    _ensureTripMemberExpenseRole(
+      trip: trip,
+      userId: user.uid,
+      minRole: trip.expensesPermissions.deleteExpensePostMinRole,
+    );
 
     final groupRef = _expenseGroupsCol(cleanTripId).doc(cleanGroupId);
     final expensesSnap = await _expensesCol(cleanTripId)

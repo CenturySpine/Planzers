@@ -19,6 +19,7 @@ class Trip {
     this.adminMemberIds = const [],
     this.generalPermissions = TripGeneralPermissions.defaults,
     this.participantsPermissions = TripParticipantsPermissions.defaults,
+    this.expensesPermissions = TripExpensesPermissions.defaults,
   });
 
   final String id;
@@ -33,6 +34,7 @@ class Trip {
   final List<String> adminMemberIds;
   final TripGeneralPermissions generalPermissions;
   final TripParticipantsPermissions participantsPermissions;
+  final TripExpensesPermissions expensesPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -117,6 +119,9 @@ class Trip {
       participantsPermissions: TripParticipantsPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['participants'],
       ),
+      expensesPermissions: TripExpensesPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['expenses'],
+      ),
     );
   }
 
@@ -140,6 +145,7 @@ class Trip {
       'permissions': <String, dynamic>{
         'tripGeneral': generalPermissions.toFirestore(),
         'participants': participantsPermissions.toFirestore(),
+        'expenses': expensesPermissions.toFirestore(),
       },
     };
   }
