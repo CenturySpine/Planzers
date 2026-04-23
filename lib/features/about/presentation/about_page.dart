@@ -60,36 +60,44 @@ class _AboutPageState extends State<AboutPage> {
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_1.png',
         caption: l10n.aboutCarouselCaption1,
+        focalAlignment: const Alignment(0.15, -0.05),
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_2.png',
         caption: l10n.aboutCarouselCaption2,
+        focalAlignment: const Alignment(-0.35, -0.1),
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_3.png',
         caption: l10n.aboutCarouselCaption3,
+        focalAlignment: const Alignment(0.35, -0.1),
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_4.png',
         caption: l10n.aboutCarouselCaption4,
+        focalAlignment: Alignment.center,
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_5.png',
         caption: l10n.aboutCarouselCaption5,
+        focalAlignment: Alignment.center,
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_6.png',
         caption: l10n.aboutCarouselCaption6,
+        focalAlignment: const Alignment(-0.35, -0.05),
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_7.png',
         caption: l10n.aboutCarouselCaption7,
         linkLabel: l10n.aboutCarouselCaption7LinkLabel,
         linkUrl: 'https://www.etablicyclette.fr/',
+        focalAlignment: Alignment.center,
       ),
       _AboutCarouselSlide(
         assetPath: 'assets/images/about_8.png',
         caption: l10n.aboutCarouselCaption8,
+        focalAlignment: const Alignment(0.45, -0.1),
       ),
     ];
     final currentSlide = carouselSlides[_currentCarouselIndex];
@@ -166,6 +174,7 @@ class _AboutPageState extends State<AboutPage> {
                                   child: Image.asset(
                                     slide.assetPath,
                                     fit: BoxFit.cover,
+                                    alignment: slide.focalAlignment,
                                   ),
                                 );
                               },
@@ -459,12 +468,14 @@ class _AboutCarouselSlide {
     required this.caption,
     this.linkLabel,
     this.linkUrl,
+    this.focalAlignment = Alignment.center,
   });
 
   final String assetPath;
   final String caption;
   final String? linkLabel;
   final String? linkUrl;
+  final Alignment focalAlignment;
 }
 
 class _AboutPhotoViewer extends StatefulWidget {
