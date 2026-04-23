@@ -129,6 +129,52 @@ function isTripAdminUser(data, uid) {
   return tripAdminMemberIdSet(data).has(u);
 }
 
+function roleRank(roleName) {
+  const role = normalizeString(roleName);
+  if (role === 'owner') return 2;
+  if (role === 'admin') return 1;
+  return 0;
+}
+
+function tripCallerRoleRank(data, uid) {
+  const cleanUid = normalizeString(uid);
+  if (!cleanUid) return -1;
+  if (normalizeString(data.ownerId) === cleanUid) return 2;
+  return tripAdminMemberIdSet(data).has(cleanUid) ? 1 : 0;
+}
+
+function tripParticipantPermissionMinRole(data, key, fallbackRole) {
+  const perms =
+    data && typeof data.permissions === 'object' ? data.permissions : {};
+  const participantPerms =
+    perms && typeof perms.participants === 'object' ? perms.participants : {};
+  const configured = normalizeString(participantPerms[key]);
+  return configured || fallbackRole;
+}
+
+function assertTripParticipantPermission({
+  tripData,
+  uid,
+  permissionKey,
+  fallbackRole,
+  deniedMessage,
+}) {
+  const memberIds = Array.isArray(tripData.memberIds)
+    ? tripData.memberIds.map((v) => String(v))
+    : [];
+  if (!memberIds.includes(uid)) {
+    throw new HttpsError('permission-denied', deniedMessage);
+  }
+  const minRole = tripParticipantPermissionMinRole(
+    tripData,
+    permissionKey,
+    fallbackRole
+  );
+  if (tripCallerRoleRank(tripData, uid) < roleRank(minRole)) {
+    throw new HttpsError('permission-denied', deniedMessage);
+  }
+}
+
 /**
  * When a placeholder row becomes a real uid in memberIds, carry co-admin from
  * ph_* to uid in adminMemberIds. Returns null if the field needs no update.
@@ -1764,12 +1810,13 @@ exports.removeTripPlaceholderMember = onCall(
     }
 
     const data = tripSnap.data() || {};
-    if (normalizeString(data.ownerId) !== uid) {
-      throw new HttpsError(
-        'permission-denied',
-        'Seul le créateur du voyage peut retirer un voyageur prévu.'
-      );
-    }
+    assertTripParticipantPermission({
+      tripData: data,
+      uid,
+      permissionKey: 'deletePlaceholderParticipant',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour retirer ce voyageur prévu.',
+    });
 
     const memberIds = Array.isArray(data.memberIds)
       ? data.memberIds.map((v) => String(v))
@@ -2018,12 +2065,13 @@ exports.cycleTripMemberAdminRole = onCall(
     }
 
     const data = tripSnap.data() || {};
-    if (!isTripAdminUser(data, uid)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Seuls les administrateurs peuvent modifier ce rôle'
-      );
-    }
+    assertTripParticipantPermission({
+      tripData: data,
+      uid,
+      permissionKey: 'toggleAdminRole',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour modifier ce rôle',
+    });
 
     const ownerId = normalizeString(data.ownerId);
     if (memberId === ownerId) {

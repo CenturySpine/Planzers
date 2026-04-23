@@ -8,6 +8,7 @@ import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
@@ -19,11 +20,9 @@ class TripParticipantsPage extends ConsumerStatefulWidget {
   const TripParticipantsPage({
     super.key,
     required this.tripId,
-    this.readOnly = false,
   });
 
   final String tripId;
-  final bool readOnly;
 
   @override
   ConsumerState<TripParticipantsPage> createState() =>
@@ -367,8 +366,38 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
               enabledCupidonMemberIds: enabledCupidonMemberIds,
               likedByMe: likedByMe,
             );
-            final iamAdmin = trip.isTripAdmin(myUid);
-            final canManageParticipants = iamAdmin && !widget.readOnly;
+            final myUidTrim = (myUid ?? '').trim();
+            final currentRole = resolveTripPermissionRole(
+              trip: trip,
+              userId: myUid,
+            );
+            final canCreateParticipant = isTripRoleAllowed(
+              currentRole: currentRole,
+              minRole: trip.participantsPermissions.createParticipantMinRole,
+            );
+            final canDeletePlaceholderParticipant = isTripRoleAllowed(
+              currentRole: currentRole,
+              minRole:
+                  trip.participantsPermissions.deletePlaceholderParticipantMinRole,
+            );
+            final canEditPlaceholderParticipant = isTripRoleAllowed(
+              currentRole: currentRole,
+              minRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
+            );
+            final canDeleteRegisteredParticipant = isTripRoleAllowed(
+              currentRole: currentRole,
+              minRole:
+                  trip.participantsPermissions.deleteRegisteredParticipantMinRole,
+            );
+            final canToggleAdminRole = isTripRoleAllowed(
+              currentRole: currentRole,
+              minRole: trip.participantsPermissions.toggleAdminRoleMinRole,
+            );
+            final canManageParticipants = canCreateParticipant ||
+                canEditPlaceholderParticipant ||
+                canDeletePlaceholderParticipant ||
+                canDeleteRegisteredParticipant ||
+                canToggleAdminRole;
             final myCupidonEnabled =
                 enabledCupidonMemberIds.contains((myUid ?? '').trim());
             final searchQuery = _participantSearchController.text;
@@ -451,11 +480,10 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                     final isOwnerRow = row.memberId.trim() ==
                                         trip.ownerId.trim();
                                     final canRemoveMember =
-                                        canManageParticipants &&
+                                        canDeleteRegisteredParticipant &&
                                             !row.isPlaceholder &&
                                             !isOwnerRow &&
-                                            row.memberId.trim() !=
-                                                (myUid ?? '').trim();
+                                            row.memberId.trim() != myUidTrim;
 
                                     final isRemoving = _removingMemberIds
                                         .contains(row.memberId.trim());
@@ -464,7 +492,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                     final scheme =
                                         Theme.of(context).colorScheme;
                                     final canCycleRole =
-                                        canManageParticipants && !isOwnerRow;
+                                        canToggleAdminRole && !isOwnerRow;
 
                                     return Card(
                                       child: ListTile(
@@ -487,33 +515,37 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                         ),
                                         title: Text(row.displayLabel),
                                         trailing: row.isPlaceholder &&
-                                                canManageParticipants
+                                                (canCreateParticipant ||
+                                                    canEditPlaceholderParticipant ||
+                                                    canDeletePlaceholderParticipant)
                                             ? Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  IconButton(
-                                                    tooltip: l10n.commonEdit,
-                                                    icon: const Icon(
-                                                        Icons.edit_outlined),
-                                                    onPressed: () =>
-                                                        _openEditPlaceholderDialog(
-                                                      placeholderId:
-                                                          row.memberId,
-                                                      currentName:
-                                                          row.displayLabel,
+                                                  if (canEditPlaceholderParticipant)
+                                                    IconButton(
+                                                      tooltip: l10n.commonEdit,
+                                                      icon: const Icon(
+                                                          Icons.edit_outlined),
+                                                      onPressed: () =>
+                                                          _openEditPlaceholderDialog(
+                                                        placeholderId:
+                                                            row.memberId,
+                                                        currentName:
+                                                            row.displayLabel,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  IconButton(
-                                                    tooltip: l10n.tripParticipantsRemoveAction,
-                                                    icon: const Icon(
-                                                        Icons.delete_outline),
-                                                    onPressed: () =>
-                                                        _confirmRemovePlaceholder(
-                                                      placeholderId:
-                                                          row.memberId,
-                                                      label: row.displayLabel,
+                                                  if (canDeletePlaceholderParticipant)
+                                                    IconButton(
+                                                      tooltip: l10n.tripParticipantsRemoveAction,
+                                                      icon: const Icon(
+                                                          Icons.delete_outline),
+                                                      onPressed: () =>
+                                                          _confirmRemovePlaceholder(
+                                                        placeholderId:
+                                                            row.memberId,
+                                                        label: row.displayLabel,
+                                                      ),
                                                     ),
-                                                  ),
                                                 ],
                                               )
                                             : Row(
@@ -521,8 +553,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                 children: [
                                                   if (!row.isPlaceholder &&
                                                       row.memberId.trim() !=
-                                                          (myUid ?? '')
-                                                              .trim() &&
+                                                          myUidTrim &&
                                                       myCupidonEnabled)
                                                     IconButton(
                                                       tooltip: row.likedByMe
@@ -597,7 +628,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                         ),
                       ],
                     ),
-              floatingActionButton: canManageParticipants
+              floatingActionButton: canCreateParticipant
                   ? FloatingActionButton(
                       onPressed: _openAddDialog,
                       tooltip: l10n.tripParticipantsAddPlannedTravelerTitle,

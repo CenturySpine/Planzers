@@ -208,6 +208,14 @@
   "tripPermissionDeleteTrip": "Supprimer le voyage",
   "tripPermissionsResetDefaultsAction": "Réinitialiser (valeurs par défaut)",
   "tripPermissionsResetDone": "Valeurs par défaut réappliquées",
+  "tripPermissionsParticipantsTitle": "Permissions liées aux participants",
+  "tripPermissionsParticipantsDescription": "Prépare la gestion des permissions liées aux participants du voyage.",
+  "tripPermissionsParticipantsResetPending": "Réinitialisation prête (liste des permissions à venir)",
+  "tripPermissionParticipantsCreate": "Créer un participant temporaire",
+  "tripPermissionParticipantsEditPlaceholder": "Modifier un participant temporaire",
+  "tripPermissionParticipantsDeletePlaceholder": "Supprimer un participant temporaire",
+  "tripPermissionParticipantsDeleteRegistered": "Supprimer un participant inscrit",
+  "tripPermissionParticipantsToggleAdmin": "Passer un utilisateur en admin / participant",
   "tripPermissionMinRole": "Rôle minimal : {role}",
   "@tripPermissionMinRole": {
     "placeholders": {

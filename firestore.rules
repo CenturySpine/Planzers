@@ -104,6 +104,51 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripShareAccessMinRole(tripId));
     }
 
+    function tripCreateParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.createParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.createParticipant
+        : 'owner';
+    }
+
+    function canCreateTripParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripCreateParticipantMinRole(tripId));
+    }
+
+    function tripEditPlaceholderParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.editPlaceholderParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.editPlaceholderParticipant
+        : 'owner';
+    }
+
+    function canEditTripPlaceholderParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditPlaceholderParticipantMinRole(tripId));
+    }
+
+    function tripDeleteRegisteredParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.deleteRegisteredParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.deleteRegisteredParticipant
+        : 'owner';
+    }
+
+    function canDeleteTripRegisteredParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteRegisteredParticipantMinRole(tripId));
+    }
+
     function activityLocked(data) {
       return data.keys().hasAny(['isLocked']) && data.isLocked == true;
     }
@@ -175,6 +220,27 @@ service cloud.firestore {
             'linkUrl',
             'startDate',
             'endDate',
+          ])
+        ) ||
+        (
+          canCreateTripParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberIds',
+            'memberPublicLabels',
+          ])
+        ) ||
+        (
+          canEditTripPlaceholderParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberPublicLabels',
+          ])
+        ) ||
+        (
+          canDeleteTripRegisteredParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberIds',
+            'memberPublicLabels',
+            'adminMemberIds',
           ])
         ) ||
         (

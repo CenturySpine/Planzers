@@ -214,10 +214,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  void _openParticipantsPage({required bool readOnly}) {
-    context.push(
-      '/trips/${_trip.id}/participants?readOnly=${readOnly ? '1' : '0'}',
-    );
+  void _openParticipantsPage() {
+    context.push('/trips/${_trip.id}/participants');
   }
 
   Future<void> _openTripStayDialog() async {
@@ -652,9 +650,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       tooltip: l10n.tripOverviewActions,
                                       onSelected: (value) {
                                         if (value == 'participants') {
-                                          _openParticipantsPage(
-                                            readOnly: !canEdit,
-                                          );
+                                          _openParticipantsPage();
                                           return;
                                         }
                                         if (value == 'stay' && isTripMember) {
@@ -793,9 +789,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     tooltip: l10n.tripOverviewActions,
                                     onSelected: (value) {
                                       if (value == 'participants') {
-                                        _openParticipantsPage(
-                                          readOnly: !canEdit,
-                                        );
+                                        _openParticipantsPage();
                                         return;
                                       }
                                       if (value == 'stay' && isTripMember) {
@@ -1230,7 +1224,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   iconColor: cs.primary,
                                   previewParticipants: participantsPreview,
                                   onTap: () =>
-                                      _openParticipantsPage(readOnly: !canEdit),
+                                      _openParticipantsPage(),
                                 ),
                               ),
                               const SizedBox(width: 10),

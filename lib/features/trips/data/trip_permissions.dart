@@ -91,3 +91,69 @@ class TripGeneralPermissions {
     };
   }
 }
+
+enum TripParticipantsPermissionAction {
+  createParticipant,
+  editPlaceholderParticipant,
+  deletePlaceholderParticipant,
+  deleteRegisteredParticipant,
+  toggleAdminRole;
+}
+
+class TripParticipantsPermissions {
+  const TripParticipantsPermissions({
+    required this.createParticipantMinRole,
+    required this.editPlaceholderParticipantMinRole,
+    required this.deletePlaceholderParticipantMinRole,
+    required this.deleteRegisteredParticipantMinRole,
+    required this.toggleAdminRoleMinRole,
+  });
+
+  final TripPermissionRole createParticipantMinRole;
+  final TripPermissionRole editPlaceholderParticipantMinRole;
+  final TripPermissionRole deletePlaceholderParticipantMinRole;
+  final TripPermissionRole deleteRegisteredParticipantMinRole;
+  final TripPermissionRole toggleAdminRoleMinRole;
+
+  static const defaults = TripParticipantsPermissions(
+    createParticipantMinRole: TripPermissionRole.owner,
+    editPlaceholderParticipantMinRole: TripPermissionRole.owner,
+    deletePlaceholderParticipantMinRole: TripPermissionRole.owner,
+    deleteRegisteredParticipantMinRole: TripPermissionRole.owner,
+    toggleAdminRoleMinRole: TripPermissionRole.owner,
+  );
+
+  factory TripParticipantsPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripParticipantsPermissions(
+      createParticipantMinRole: raw['createParticipant'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['createParticipant']),
+      editPlaceholderParticipantMinRole: raw['editPlaceholderParticipant'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['editPlaceholderParticipant']),
+      deletePlaceholderParticipantMinRole: raw['deletePlaceholderParticipant'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['deletePlaceholderParticipant']),
+      deleteRegisteredParticipantMinRole:
+          raw['deleteRegisteredParticipant'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['deleteRegisteredParticipant']),
+      toggleAdminRoleMinRole: raw['toggleAdminRole'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['toggleAdminRole']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'createParticipant': createParticipantMinRole.toFirestore(),
+      'editPlaceholderParticipant': editPlaceholderParticipantMinRole.toFirestore(),
+      'deletePlaceholderParticipant': deletePlaceholderParticipantMinRole.toFirestore(),
+      'deleteRegisteredParticipant': deleteRegisteredParticipantMinRole.toFirestore(),
+      'toggleAdminRole': toggleAdminRoleMinRole.toFirestore(),
+    };
+  }
+}

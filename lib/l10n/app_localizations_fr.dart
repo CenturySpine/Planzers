@@ -505,6 +505,38 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripPermissionsResetDone => 'Valeurs par défaut réappliquées';
 
   @override
+  String get tripPermissionsParticipantsTitle =>
+      'Permissions liées aux participants';
+
+  @override
+  String get tripPermissionsParticipantsDescription =>
+      'Prépare la gestion des permissions liées aux participants du voyage.';
+
+  @override
+  String get tripPermissionsParticipantsResetPending =>
+      'Réinitialisation prête (liste des permissions à venir)';
+
+  @override
+  String get tripPermissionParticipantsCreate =>
+      'Créer un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsEditPlaceholder =>
+      'Modifier un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsDeletePlaceholder =>
+      'Supprimer un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsDeleteRegistered =>
+      'Supprimer un participant inscrit';
+
+  @override
+  String get tripPermissionParticipantsToggleAdmin =>
+      'Passer un utilisateur en admin / participant';
+
+  @override
   String tripPermissionMinRole(Object role) {
     return 'Rôle minimal : $role';
   }
@@ -2279,6 +2311,38 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionsResetDone => 'Valeurs par défaut réappliquées';
+
+  @override
+  String get tripPermissionsParticipantsTitle =>
+      'Permissions liées aux participants';
+
+  @override
+  String get tripPermissionsParticipantsDescription =>
+      'Prépare la gestion des permissions liées aux participants du voyage.';
+
+  @override
+  String get tripPermissionsParticipantsResetPending =>
+      'Réinitialisation prête (liste des permissions à venir)';
+
+  @override
+  String get tripPermissionParticipantsCreate =>
+      'Créer un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsEditPlaceholder =>
+      'Modifier un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsDeletePlaceholder =>
+      'Supprimer un participant temporaire';
+
+  @override
+  String get tripPermissionParticipantsDeleteRegistered =>
+      'Supprimer un participant inscrit';
+
+  @override
+  String get tripPermissionParticipantsToggleAdmin =>
+      'Passer un utilisateur en admin / participant';
 
   @override
   String tripPermissionMinRole(Object role) {

@@ -15,6 +15,7 @@ import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
 import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
+import 'package:planerz/features/trips/presentation/trip_participants_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_general_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
@@ -97,19 +98,19 @@ final GoRouter appRouter = GoRouter(
                 tripId: state.pathParameters['tripId']!,
               ),
             ),
+            GoRoute(
+              path: 'participants',
+              builder: (context, state) => TripParticipantsPermissionsPage(
+                tripId: state.pathParameters['tripId']!,
+              ),
+            ),
           ],
         ),
         GoRoute(
           path: 'participants',
-          builder: (context, state) {
-            final readOnlyParam =
-                (state.uri.queryParameters['readOnly'] ?? '').trim();
-            final readOnly = readOnlyParam == '1' || readOnlyParam == 'true';
-            return TripParticipantsPage(
-              tripId: state.pathParameters['tripId']!,
-              readOnly: readOnly,
-            );
-          },
+          builder: (context, state) => TripParticipantsPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
         ),
         GoRoute(
           path: 'activities/:activityId',

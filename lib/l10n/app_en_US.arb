@@ -208,6 +208,14 @@
   "tripPermissionDeleteTrip": "Delete trip",
   "tripPermissionsResetDefaultsAction": "Reset (default values)",
   "tripPermissionsResetDone": "Default values restored",
+  "tripPermissionsParticipantsTitle": "Participant-related permissions",
+  "tripPermissionsParticipantsDescription": "Prepare permission management related to trip participants.",
+  "tripPermissionsParticipantsResetPending": "Reset is ready (permissions list coming soon)",
+  "tripPermissionParticipantsCreate": "Create a temporary participant",
+  "tripPermissionParticipantsEditPlaceholder": "Edit a temporary participant",
+  "tripPermissionParticipantsDeletePlaceholder": "Delete a temporary participant",
+  "tripPermissionParticipantsDeleteRegistered": "Delete a registered participant",
+  "tripPermissionParticipantsToggleAdmin": "Toggle user role between admin and participant",
   "tripPermissionMinRole": "Minimum role: {role}",
   "@tripPermissionMinRole": {
     "placeholders": {

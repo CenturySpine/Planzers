@@ -435,8 +435,8 @@ class TripsRepository {
     return tripId.trim();
   }
 
-  /// Adds a placeholder traveler (owner only). Visible in [memberIds] and
-  /// expense groups until someone joins and claims this row.
+  /// Adds a placeholder traveler. Permission is controlled by
+  /// `permissions.participants.createParticipant`.
   Future<void> addTripPlaceholderMember({
     required String tripId,
     required String displayName,
@@ -463,10 +463,12 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut ajouter un voyageur prevu');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
+    );
 
     final phId = generateTripPlaceholderMemberId();
     final groupsSnap =
@@ -527,10 +529,12 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut modifier un voyageur prevu');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.participantsPermissions.createParticipantMinRole,
+    );
 
     final memberIds = ((data['memberIds'] as List<dynamic>?) ?? const [])
         .map((e) => e.toString())
@@ -556,6 +560,23 @@ class TripsRepository {
     if (cleanTripId.isEmpty || cleanPh.isEmpty) {
       throw StateError('Parametres invalides');
     }
+    if (!isTripPlaceholderMemberId(cleanPh)) {
+      throw StateError('Membre invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole:
+          trip.participantsPermissions.deletePlaceholderParticipantMinRole,
+    );
 
     final regionFunctions =
         FirebaseFunctions.instanceFor(region: 'europe-west1');
@@ -617,10 +638,12 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut retirer un membre');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.participantsPermissions.deleteRegisteredParticipantMinRole,
+    );
 
     await docRef.update({
       'memberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
@@ -629,8 +652,8 @@ class TripsRepository {
     });
   }
 
-  /// Toggles co-admin for a real member (creator stays admin). Enforced by the
-  /// `cycleTripMemberAdminRole` callable.
+  /// Toggles co-admin for a real member (creator stays admin). Permission is
+  /// controlled by `permissions.participants.toggleAdminRole`.
   Future<void> cycleTripMemberAdminRole({
     required String tripId,
     required String memberId,
@@ -645,6 +668,22 @@ class TripsRepository {
     if (cleanTripId.isEmpty || cleanMemberId.isEmpty) {
       throw StateError('Parametres invalides');
     }
+    if (isTripPlaceholderMemberId(cleanMemberId)) {
+      throw StateError('Membre invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.participantsPermissions.toggleAdminRoleMinRole,
+    );
 
     final regionFunctions =
         FirebaseFunctions.instanceFor(region: 'europe-west1');
@@ -851,6 +890,83 @@ class TripsRepository {
 
     await tripRef.update(<String, dynamic>{
       'permissions.tripGeneral': TripGeneralPermissions.defaults.toFirestore(),
+    });
+  }
+
+  Future<void> updateTripParticipantsPermission({
+    required String tripId,
+    required TripParticipantsPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    final fieldName = switch (action) {
+      TripParticipantsPermissionAction.createParticipant => 'createParticipant',
+      TripParticipantsPermissionAction.editPlaceholderParticipant =>
+        'editPlaceholderParticipant',
+      TripParticipantsPermissionAction.deletePlaceholderParticipant =>
+        'deletePlaceholderParticipant',
+      TripParticipantsPermissionAction.deleteRegisteredParticipant =>
+        'deleteRegisteredParticipant',
+      TripParticipantsPermissionAction.toggleAdminRole => 'toggleAdminRole',
+    };
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.participants.$fieldName': minRole.toFirestore(),
+    });
+  }
+
+  Future<void> resetTripParticipantsPermissionsToDefaults({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.participants': TripParticipantsPermissions.defaults.toFirestore(),
     });
   }
 }

@@ -119,6 +119,12 @@ class TripSettingsPage extends ConsumerWidget {
                 onTap: () => context.push('/trips/$tripId/settings/trip'),
               ),
               _SettingsSectionCard(
+                title: l10n.tripSectionParticipants,
+                icon: Icons.group_outlined,
+                description: l10n.tripSectionParticipantsDescription,
+                onTap: () => context.push('/trips/$tripId/settings/participants'),
+              ),
+              _SettingsSectionCard(
                 title: l10n.tripSectionExpenses,
                 icon: Icons.payments_outlined,
                 description: l10n.tripSectionExpensesDescription,
@@ -137,11 +143,6 @@ class TripSettingsPage extends ConsumerWidget {
                 title: l10n.tripSectionShopping,
                 icon: Icons.shopping_cart_outlined,
                 description: l10n.tripSectionShoppingDescription,
-              ),
-              _SettingsSectionCard(
-                title: l10n.tripSectionParticipants,
-                icon: Icons.group_outlined,
-                description: l10n.tripSectionParticipantsDescription,
               ),
             ],
           ),

@@ -988,6 +988,54 @@ abstract class AppLocalizations {
   /// **'Valeurs par défaut réappliquées'**
   String get tripPermissionsResetDone;
 
+  /// No description provided for @tripPermissionsParticipantsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions liées aux participants'**
+  String get tripPermissionsParticipantsTitle;
+
+  /// No description provided for @tripPermissionsParticipantsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prépare la gestion des permissions liées aux participants du voyage.'**
+  String get tripPermissionsParticipantsDescription;
+
+  /// No description provided for @tripPermissionsParticipantsResetPending.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réinitialisation prête (liste des permissions à venir)'**
+  String get tripPermissionsParticipantsResetPending;
+
+  /// No description provided for @tripPermissionParticipantsCreate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un participant temporaire'**
+  String get tripPermissionParticipantsCreate;
+
+  /// No description provided for @tripPermissionParticipantsEditPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier un participant temporaire'**
+  String get tripPermissionParticipantsEditPlaceholder;
+
+  /// No description provided for @tripPermissionParticipantsDeletePlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer un participant temporaire'**
+  String get tripPermissionParticipantsDeletePlaceholder;
+
+  /// No description provided for @tripPermissionParticipantsDeleteRegistered.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer un participant inscrit'**
+  String get tripPermissionParticipantsDeleteRegistered;
+
+  /// No description provided for @tripPermissionParticipantsToggleAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Passer un utilisateur en admin / participant'**
+  String get tripPermissionParticipantsToggleAdmin;
+
   /// No description provided for @tripPermissionMinRole.
   ///
   /// In fr, this message translates to:

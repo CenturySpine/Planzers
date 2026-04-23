@@ -18,6 +18,7 @@ class Trip {
     this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
     this.generalPermissions = TripGeneralPermissions.defaults,
+    this.participantsPermissions = TripParticipantsPermissions.defaults,
   });
 
   final String id;
@@ -31,6 +32,7 @@ class Trip {
   /// Co-admins (trip creator is always admin via [ownerId]).
   final List<String> adminMemberIds;
   final TripGeneralPermissions generalPermissions;
+  final TripParticipantsPermissions participantsPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -112,6 +114,9 @@ class Trip {
       generalPermissions: TripGeneralPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
       ),
+      participantsPermissions: TripParticipantsPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['participants'],
+      ),
     );
   }
 
@@ -134,6 +139,7 @@ class Trip {
       if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
       'permissions': <String, dynamic>{
         'tripGeneral': generalPermissions.toFirestore(),
+        'participants': participantsPermissions.toFirestore(),
       },
     };
   }
