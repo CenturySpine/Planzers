@@ -216,12 +216,6 @@
   "tripPermissionParticipantsDeletePlaceholder": "Delete a temporary participant",
   "tripPermissionParticipantsDeleteRegistered": "Delete a registered participant",
   "tripPermissionParticipantsToggleAdmin": "Toggle user role between admin and participant",
-  "tripPermissionMinRole": "Minimum role: {role}",
-  "@tripPermissionMinRole": {
-    "placeholders": {
-      "role": {}
-    }
-  },
   "tripSectionTrip": "Trip",
   "tripSectionTripDescription": "Rules related to general trip information.",
   "tripSectionExpenses": "Expenses",

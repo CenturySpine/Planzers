@@ -537,11 +537,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Passer un utilisateur en admin / participant';
 
   @override
-  String tripPermissionMinRole(Object role) {
-    return 'Rôle minimal : $role';
-  }
-
-  @override
   String get tripSectionTrip => 'Voyage';
 
   @override
@@ -2343,11 +2338,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPermissionParticipantsToggleAdmin =>
       'Passer un utilisateur en admin / participant';
-
-  @override
-  String tripPermissionMinRole(Object role) {
-    return 'Rôle minimal : $role';
-  }
 
   @override
   String get tripSectionTrip => 'Voyage';

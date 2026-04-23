@@ -216,12 +216,6 @@
   "tripPermissionParticipantsDeletePlaceholder": "Supprimer un participant temporaire",
   "tripPermissionParticipantsDeleteRegistered": "Supprimer un participant inscrit",
   "tripPermissionParticipantsToggleAdmin": "Passer un utilisateur en admin / participant",
-  "tripPermissionMinRole": "Rôle minimal : {role}",
-  "@tripPermissionMinRole": {
-    "placeholders": {
-      "role": {}
-    }
-  },
   "tripSectionTrip": "Voyage",
   "tripSectionTripDescription": "Règles liées aux informations générales du voyage.",
   "tripSectionExpenses": "Dépenses",

@@ -295,15 +295,11 @@ class _ParticipantsPermissionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       dense: true,
       leading: Icon(icon),
       title: Text(title),
-      subtitle: Text(
-        l10n.tripPermissionMinRole(permissionRoleLabel(context, minRole)),
-      ),
       trailing: PermissionMinRoleSelector(
         value: minRole,
         busy: busy,
