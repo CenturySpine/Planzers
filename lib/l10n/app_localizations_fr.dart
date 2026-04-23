@@ -491,6 +491,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripPermissionShareAccess => 'Partager l\'accès du voyage';
 
   @override
+  String get tripPermissionManageTripSettings =>
+      'Modifier les paramètres du voyage';
+
+  @override
   String get tripPermissionDeleteTrip => 'Supprimer le voyage';
 
   @override
@@ -2261,6 +2265,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionShareAccess => 'Partager l\'accès du voyage';
+
+  @override
+  String get tripPermissionManageTripSettings =>
+      'Modifier les paramètres du voyage';
 
   @override
   String get tripPermissionDeleteTrip => 'Supprimer le voyage';

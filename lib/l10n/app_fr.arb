@@ -204,6 +204,7 @@
   "tripPermissionEditGeneralInfo": "Modifier les infos générales",
   "tripPermissionManageBanner": "Gérer la photo de bannière",
   "tripPermissionShareAccess": "Partager l'accès du voyage",
+  "tripPermissionManageTripSettings": "Modifier les paramètres du voyage",
   "tripPermissionDeleteTrip": "Supprimer le voyage",
   "tripPermissionsResetDefaultsAction": "Réinitialiser (valeurs par défaut)",
   "tripPermissionsResetDone": "Valeurs par défaut réappliquées",

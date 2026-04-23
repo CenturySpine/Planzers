@@ -964,6 +964,12 @@ abstract class AppLocalizations {
   /// **'Partager l\'accès du voyage'**
   String get tripPermissionShareAccess;
 
+  /// No description provided for @tripPermissionManageTripSettings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier les paramètres du voyage'**
+  String get tripPermissionManageTripSettings;
+
   /// No description provided for @tripPermissionDeleteTrip.
   ///
   /// In fr, this message translates to:

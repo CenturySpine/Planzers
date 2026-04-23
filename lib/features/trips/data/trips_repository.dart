@@ -802,21 +802,18 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
-    final adminIds = ((data['adminMemberIds'] as List<dynamic>?) ?? const [])
-        .map((id) => id.toString().trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
-    final isOwner = ownerId == user.uid;
-    final isAdmin = adminIds.contains(user.uid);
-    if (!isOwner && !isAdmin) {
-      throw StateError('Seuls les admins peuvent modifier ces permissions');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
 
     final fieldName = switch (action) {
       TripGeneralPermissionAction.editGeneralInfo => 'editGeneralInfo',
       TripGeneralPermissionAction.manageBanner => 'manageBanner',
       TripGeneralPermissionAction.shareAccess => 'shareAccess',
+      TripGeneralPermissionAction.manageTripSettings => 'manageTripSettings',
       TripGeneralPermissionAction.deleteTrip => 'deleteTrip',
     };
 
@@ -845,16 +842,12 @@ class TripsRepository {
     }
 
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?)?.trim() ?? '';
-    final adminIds = ((data['adminMemberIds'] as List<dynamic>?) ?? const [])
-        .map((id) => id.toString().trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
-    final isOwner = ownerId == user.uid;
-    final isAdmin = adminIds.contains(user.uid);
-    if (!isOwner && !isAdmin) {
-      throw StateError('Seuls les admins peuvent modifier ces permissions');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
 
     await tripRef.update(<String, dynamic>{
       'permissions.tripGeneral': TripGeneralPermissions.defaults.toFirestore(),

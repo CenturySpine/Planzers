@@ -461,6 +461,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       currentRole: currentRole,
       minRole: _trip.generalPermissions.shareAccessMinRole,
     );
+    final canManageTripSettings = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.manageTripSettingsMinRole,
+    );
     final canEditGeneralInfo = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: _trip.generalPermissions.editGeneralInfoMinRole,
@@ -670,7 +674,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           return;
                                         }
                                         if (value == 'settings' &&
-                                            canViewParticipants) {
+                                            canManageTripSettings) {
                                           context.go('/trips/${_trip.id}/settings');
                                           return;
                                         }
@@ -736,7 +740,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
-                                        if (canViewParticipants)
+                                        if (canManageTripSettings)
                                           PopupMenuItem(
                                             value: 'settings',
                                             child: Row(
@@ -811,7 +815,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         return;
                                       }
                                       if (value == 'settings' &&
-                                          canViewParticipants) {
+                                          canManageTripSettings) {
                                         context.go('/trips/${_trip.id}/settings');
                                         return;
                                       }
@@ -874,7 +878,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             ],
                                           ),
                                         ),
-                                      if (canViewParticipants)
+                                      if (canManageTripSettings)
                                         PopupMenuItem(
                                           value: 'settings',
                                           child: Row(

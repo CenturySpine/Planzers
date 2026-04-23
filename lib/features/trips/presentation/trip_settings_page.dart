@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 
@@ -44,7 +45,37 @@ class TripSettingsPage extends ConsumerWidget {
           ownerId: trip.ownerId,
           adminMemberIds: trip.adminMemberIds,
         );
+        final currentRole = resolveTripPermissionRole(
+          trip: trip,
+          userId: myUid,
+        );
+        final canAccessTripSettings = isTripRoleAllowed(
+          currentRole: currentRole,
+          minRole: trip.generalPermissions.manageTripSettingsMinRole,
+        );
         final title = trip.title.trim().isEmpty ? l10n.tripLabelGeneric : trip.title.trim();
+
+        if (!canAccessTripSettings) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(l10n.tripSettingsTitle),
+              leading: IconButton(
+                onPressed: () => context.go('/trips/$tripId/overview'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: l10n.tripBackToTrip,
+              ),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  l10n.tripNotFoundOrNoAccess,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(

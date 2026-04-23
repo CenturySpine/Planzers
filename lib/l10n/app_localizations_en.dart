@@ -486,6 +486,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPermissionShareAccess => 'Share trip access';
 
   @override
+  String get tripPermissionManageTripSettings => 'Manage trip settings';
+
+  @override
   String get tripPermissionDeleteTrip => 'Delete trip';
 
   @override
@@ -2245,6 +2248,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionShareAccess => 'Share trip access';
+
+  @override
+  String get tripPermissionManageTripSettings => 'Manage trip settings';
 
   @override
   String get tripPermissionDeleteTrip => 'Delete trip';

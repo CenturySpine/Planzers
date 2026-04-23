@@ -204,6 +204,7 @@
   "tripPermissionEditGeneralInfo": "Edit general information",
   "tripPermissionManageBanner": "Manage banner photo",
   "tripPermissionShareAccess": "Share trip access",
+  "tripPermissionManageTripSettings": "Manage trip settings",
   "tripPermissionDeleteTrip": "Delete trip",
   "tripPermissionsResetDefaultsAction": "Reset (default values)",
   "tripPermissionsResetDone": "Default values restored",

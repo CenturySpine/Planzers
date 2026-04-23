@@ -100,13 +100,35 @@ class _TripGeneralPermissionsPageState
         }
 
         final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+        final currentRole = resolveTripPermissionRole(
+          trip: trip,
+          userId: myUid,
+        );
         final myRole = _roleLabelFor(
           l10n: l10n,
-          role: resolveTripPermissionRole(
-            trip: trip,
-            userId: myUid,
-          ),
+          role: currentRole,
         );
+        final canAccessTripSettings = isTripRoleAllowed(
+          currentRole: currentRole,
+          minRole: trip.generalPermissions.manageTripSettingsMinRole,
+        );
+
+        if (!canAccessTripSettings) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(l10n.tripSectionTrip),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  l10n.tripNotFoundOrNoAccess,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -211,6 +233,19 @@ class _TripGeneralPermissionsPageState
                         ),
                         onChanged: (role) => _updatePermission(
                           action: TripGeneralPermissionAction.shareAccess,
+                          minRole: role,
+                        ),
+                        enabled: !_isResettingDefaults,
+                      ),
+                      _GeneralPermissionItem(
+                        title: l10n.tripPermissionManageTripSettings,
+                        minRole: trip.generalPermissions.manageTripSettingsMinRole,
+                        icon: Icons.settings_outlined,
+                        busy: _savingActions.contains(
+                          TripGeneralPermissionAction.manageTripSettings,
+                        ),
+                        onChanged: (role) => _updatePermission(
+                          action: TripGeneralPermissionAction.manageTripSettings,
                           minRole: role,
                         ),
                         enabled: !_isResettingDefaults,

@@ -29,6 +29,7 @@ enum TripGeneralPermissionAction {
   editGeneralInfo,
   manageBanner,
   shareAccess,
+  manageTripSettings,
   deleteTrip;
 }
 
@@ -37,18 +38,21 @@ class TripGeneralPermissions {
     required this.editGeneralInfoMinRole,
     required this.manageBannerMinRole,
     required this.shareAccessMinRole,
+    required this.manageTripSettingsMinRole,
     required this.deleteTripMinRole,
   });
 
   final TripPermissionRole editGeneralInfoMinRole;
   final TripPermissionRole manageBannerMinRole;
   final TripPermissionRole shareAccessMinRole;
+  final TripPermissionRole manageTripSettingsMinRole;
   final TripPermissionRole deleteTripMinRole;
 
   static const defaults = TripGeneralPermissions(
     editGeneralInfoMinRole: TripPermissionRole.admin,
     manageBannerMinRole: TripPermissionRole.admin,
     shareAccessMinRole: TripPermissionRole.participant,
+    manageTripSettingsMinRole: TripPermissionRole.owner,
     deleteTripMinRole: TripPermissionRole.owner,
   );
 
@@ -60,6 +64,9 @@ class TripGeneralPermissions {
       editGeneralInfoMinRole: TripPermissionRole.fromFirestore(raw['editGeneralInfo']),
       manageBannerMinRole: TripPermissionRole.fromFirestore(raw['manageBanner']),
       shareAccessMinRole: TripPermissionRole.fromFirestore(raw['shareAccess']),
+      manageTripSettingsMinRole: raw['manageTripSettings'] == null
+          ? TripPermissionRole.owner
+          : TripPermissionRole.fromFirestore(raw['manageTripSettings']),
       deleteTripMinRole: TripPermissionRole.fromFirestore(raw['deleteTrip']),
     );
   }
@@ -69,6 +76,7 @@ class TripGeneralPermissions {
       'editGeneralInfo': editGeneralInfoMinRole.toFirestore(),
       'manageBanner': manageBannerMinRole.toFirestore(),
       'shareAccess': shareAccessMinRole.toFirestore(),
+      'manageTripSettings': manageTripSettingsMinRole.toFirestore(),
       'deleteTrip': deleteTripMinRole.toFirestore(),
     };
   }
@@ -78,6 +86,7 @@ class TripGeneralPermissions {
       TripGeneralPermissionAction.editGeneralInfo => editGeneralInfoMinRole,
       TripGeneralPermissionAction.manageBanner => manageBannerMinRole,
       TripGeneralPermissionAction.shareAccess => shareAccessMinRole,
+      TripGeneralPermissionAction.manageTripSettings => manageTripSettingsMinRole,
       TripGeneralPermissionAction.deleteTrip => deleteTripMinRole,
     };
   }
