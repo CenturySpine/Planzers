@@ -69,7 +69,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutIntroText =>
-      'Developer and travel enthusiast, I build Planerz to make organizing trips with friends easier.';
+      'Developer, passionate about hiking and mountains, I created Planerz because every time we organize a weekend or trip with friends, we end up juggling multiple tools (messaging, shared expense tracking, spreadsheets for rooms, cars, meals, and activities). My goal: centralize the whole organization in one place.';
 
   @override
   String get aboutPassionsTitle => 'Passions and activities';
@@ -1800,7 +1800,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get aboutIntroText =>
-      'Developer and travel enthusiast, I build Planerz to make organizing trips with friends easier.';
+      'Developer, passionate about hiking and mountains, I created Planerz because every time we organize a weekend or trip with friends, we end up juggling multiple tools (messaging, shared expense tracking, spreadsheets for rooms, cars, meals, and activities). My goal: centralize the whole organization in one place.';
 
   @override
   String get aboutPassionsTitle => 'Passions and activities';
