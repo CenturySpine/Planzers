@@ -60,6 +60,22 @@ class TripsRepository {
   /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
   final Uri mobileInviteBaseUri;
 
+  void _ensureTripGeneralPermissionForAction({
+    required Trip trip,
+    required String userId,
+    required TripPermissionRole requiredRole,
+  }) {
+    final callerRole = resolveTripPermissionRole(
+      trip: trip,
+      userId: userId,
+    );
+    final isMember = trip.memberIds.contains(userId);
+    if (!isMember ||
+        !isTripRoleAllowed(currentRole: callerRole, minRole: requiredRole)) {
+      throw StateError('Droits insuffisants pour cette action');
+    }
+  }
+
   String _generateInviteToken() {
     final now = DateTime.now().microsecondsSinceEpoch.toString();
     final uid = auth.currentUser?.uid ?? 'anon';
@@ -681,10 +697,12 @@ class TripsRepository {
       throw StateError('Voyage introuvable');
     }
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut modifier la photo');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageBannerMinRole,
+    );
 
     final previousPath = (data['bannerImagePath'] as String?)?.trim() ?? '';
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
@@ -733,10 +751,12 @@ class TripsRepository {
       throw StateError('Voyage introuvable');
     }
     final data = snapshot.data() ?? const <String, dynamic>{};
-    final ownerId = (data['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut modifier la photo');
-    }
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageBannerMinRole,
+    );
 
     final path = (data['bannerImagePath'] as String?)?.trim() ?? '';
     if (path.isNotEmpty) {

@@ -69,9 +69,24 @@ service cloud.firestore {
         : 'admin';
     }
 
+    function tripManageBannerMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.manageBanner is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.manageBanner
+        : 'admin';
+    }
+
     function canEditTripGeneralInfo(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripEditGeneralInfoMinRole(tripId));
+    }
+
+    function canManageTripBanner(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripManageBannerMinRole(tripId));
     }
 
     function activityLocked(data) {
@@ -122,6 +137,14 @@ service cloud.firestore {
 
       allow update: if signedIn() && (
         resource.data.ownerId == request.auth.uid ||
+        (
+          canManageTripBanner(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'bannerImageUrl',
+            'bannerImagePath',
+            'bannerUpdatedAt',
+          ])
+        ) ||
         (
           canEditTripGeneralInfo(tripId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([

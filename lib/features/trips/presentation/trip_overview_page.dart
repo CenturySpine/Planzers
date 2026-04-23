@@ -453,6 +453,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       userId: myUid,
     );
     final canEdit = (myUid != null && myUid == _trip.ownerId);
+    final canManageBanner = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.manageBannerMinRole,
+    );
     final canEditGeneralInfo = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: _trip.generalPermissions.editGeneralInfoMinRole,
@@ -571,7 +575,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 _TripBanner(
                   imageUrl: liveBannerImageUrl,
                   busy: _isBannerBusy,
-                  onPick: canEdit && liveBannerImageUrl.isEmpty
+                  onPick: canManageBanner && liveBannerImageUrl.isEmpty
                       ? _pickAndUploadBannerImage
                       : null,
                 ),
@@ -916,7 +920,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   ),
-                if (canEdit)
+                if (canManageBanner)
                   Positioned(
                     right: 12,
                     top: 12,
