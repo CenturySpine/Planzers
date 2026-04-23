@@ -1,0 +1,59 @@
+VIE PRIVEE / RGPD
+Derniere mise a jour : 23/04/2026
+
+1) Responsable du traitement
+- Bruno Chappe
+- Contact : century.spine@gmail.com
+- Domaine officiel : centuryspine.org
+
+2) Donnees traitees
+Donnees personnelles directes :
+- Adresse e-mail du compte utilisateur
+
+Autres donnees fonctionnelles du service :
+- Pseudo libre renseigne par l'utilisateur
+- Contenus collaboratifs (voyages, participants, messages, depenses, activites,
+  courses, repas, informations pratiques)
+- Pieces jointes et photos partagees
+- Donnees techniques necessaires au fonctionnement et a la securite
+
+3) Finalites et base legale
+- Execution du service : authentification, gestion du compte, fonctionnalites
+  collaboratives de l'application
+- Interet legitime : securite, prevention des abus, maintien operationnel
+- Consentement : notifications selon les autorisations accordees par
+  l'utilisateur sur son appareil/navigateur
+
+4) Localisation et sous-traitants
+Les donnees sont hebergees en Europe (region europe-west9) et soumises au droit
+europeen.
+Le site web est diffuse via l'infrastructure CDN mondiale de Vercel (pas de
+region d'hebergement statique unique).
+
+Sous-traitants techniques :
+- Vercel (hebergement web)
+- Google Firebase : Authentication, Firestore, Storage, Functions, FCM
+
+5) Duree de conservation
+- Donnees de compte et contenus : conservation tant que le compte est actif
+- Suppression/anonymisation apres demande validee : sous 30 jours
+- Sauvegardes techniques : purge sous 90 jours maximum
+- Donnees de securite/anti-abus : conservation limitee et proportionnee
+  (12 mois maximum)
+
+6) Exercice des droits
+Conformement au RGPD, vous pouvez demander l'acces, la rectification,
+l'effacement ou la limitation de vos donnees.
+
+Pour demander la suppression d'un compte :
+- Ecrire a century.spine@gmail.com
+- Indiquer l'adresse e-mail du compte a supprimer
+
+7) Cookies et traceurs
+L'application n'utilise pas de cookies publicitaires ni de mesure d'audience
+marketing tierce. Seuls les traceurs techniques strictement necessaires au
+fonctionnement (session, authentification, securite) peuvent etre utilises.
+
+8) Droit applicable
+La presente politique est regie par le droit europeen applicable a la
+protection des donnees personnelles.

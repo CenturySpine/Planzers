@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
@@ -21,6 +22,7 @@ enum _TripTimelineCategory { past, ongoing, upcoming }
 
 class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
+  static const double _legalLinkFontSize = 12;
   late final TabController _tabController;
   bool _didHandleAutoOpenCurrentTrip = false;
 
@@ -38,6 +40,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
   @override
   Widget build(BuildContext context) {
+    final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
     final autoOpenCurrentTripOnLaunchAsync = ref.watch(
@@ -71,45 +74,47 @@ class _TripsPageState extends ConsumerState<TripsPage>
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.explore_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Mes voyages',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.explore_outlined,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mes voyages',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: tripsAsync.when(
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: tripsAsync.when(
                 data: (trips) {
                   if (trips.isEmpty) {
                     return const Center(
@@ -249,12 +254,61 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     ],
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stackTrace) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('Erreur Firestore: $error'),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, stackTrace) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text('Erreur Firestore: $error'),
+                      ),
+                    ),
                   ),
+                ),
+              ),
+            ],
+          ),
+          SafeArea(
+            top: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push(LegalInformationPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Informations legales'),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '|',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '© 2026 Bruno Chappe',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -231,3 +231,8 @@ Voir le dossier `docs/`:
 3. Liste de courses collaborative
 4. Planning des repas
 5. Suivi des depenses et repartition
+
+## Licence
+
+Ce projet est distribue sous licence GNU AGPL v3 (ou version ulterieure).
+Voir le fichier `LICENSE`.

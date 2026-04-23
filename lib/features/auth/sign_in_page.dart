@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
+import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
 const Color _googleSignInText = Color(0xFF3C4043);
@@ -22,6 +25,8 @@ class SignInPage extends ConsumerStatefulWidget {
 
 class _SignInPageState extends ConsumerState<SignInPage> {
   bool _isLoading = false;
+  static const double _legalLinkFontSize = 12;
+  static const double _footerReservedHeight = 32;
 
   Future<void> _signInWithGoogle() async {
     setState(() {
@@ -53,17 +58,27 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
   @override
   Widget build(BuildContext context) {
+    final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
+                child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: math.max(
+                        0,
+                        constraints.maxHeight - _footerReservedHeight,
+                      ),
+                    ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                     Image.asset(
                       'assets/images/app_icon.png',
                       width: 120,
@@ -168,12 +183,62 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                         ),
                       ),
                     ),
+                      ],
+                    ),
+                  ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push(LegalInformationPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Informations legales'),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '|',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '© 2026 Bruno Chappe',
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

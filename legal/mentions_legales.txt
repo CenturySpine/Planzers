@@ -1,0 +1,36 @@
+MENTIONS LEGALES
+Derniere mise a jour : 23/04/2026
+
+Editeur
+- Bruno Chappe (personne physique)
+- Domaine officiel : centuryspine.org
+- Contact : century.spine@gmail.com
+- Adresse postale : communiquee sur demande legitime
+
+Directeur de publication
+- Bruno Chappe
+
+Hebergement et sous-traitants techniques
+- Vercel (hebergement web)
+- Google Firebase :
+  - Firebase Authentication
+  - Cloud Firestore
+  - Cloud Storage
+  - Cloud Functions
+  - Firebase Cloud Messaging
+
+Code source open source
+- GitHub (sources du projet Planerz)
+- Licence du code source : GNU AGPL v3 (ou version ulterieure)
+- Copyright (c) 2026 Bruno Chappe
+
+Propriete intellectuelle
+L'application Planerz, ses contenus, sa structure et ses elements visuels sont
+proteges par les dispositions applicables en matiere de propriete intellectuelle.
+Sauf autorisation prealable, toute reproduction, adaptation ou reutilisation est
+interdite, sous reserve des droits accordes pour le code source par la licence
+GNU AGPL v3 (ou version ulterieure).
+
+Contact
+Pour toute question ou reclamation relative au service, ecrire a :
+century.spine@gmail.com

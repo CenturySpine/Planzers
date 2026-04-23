@@ -47,6 +47,8 @@ flutter:
     - liste_courses_compilee.json
     - assets/images/app_icon.png
     - assets/images/google_g.svg
+    - legal/mentions_legales.txt
+    - legal/vie_privee_rgpd.txt
 
 flutter_launcher_icons:
   android: true
