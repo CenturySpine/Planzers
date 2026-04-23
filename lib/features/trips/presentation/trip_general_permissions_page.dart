@@ -217,7 +217,7 @@ class _TripGeneralPermissionsPageState
                       ),
                       _GeneralPermissionItem(
                         title: l10n.tripPermissionDeleteTrip,
-                        minRole: trip.generalPermissions.deleteTripMinRole,
+                        minRole: TripPermissionRole.owner,
                         icon: Icons.delete_outline,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.deleteTrip,
@@ -226,7 +226,7 @@ class _TripGeneralPermissionsPageState
                           action: TripGeneralPermissionAction.deleteTrip,
                           minRole: role,
                         ),
-                        enabled: !_isResettingDefaults,
+                        enabled: false,
                       ),
                     ],
                   ),

@@ -779,6 +779,12 @@ class TripsRepository {
     required TripGeneralPermissionAction action,
     required TripPermissionRole minRole,
   }) async {
+    if (action == TripGeneralPermissionAction.deleteTrip) {
+      throw StateError(
+        'La permission de suppression du voyage est verrouillee au role proprietaire',
+      );
+    }
+
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
