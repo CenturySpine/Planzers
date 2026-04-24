@@ -58,6 +58,7 @@ flutter:
     - assets/images/about_7.png
     - assets/images/about_8.png
     - assets/images/google_g.svg
+    - assets/images/chef_hat.svg
     - legal/mentions_legales.txt
     - legal/vie_privee_rgpd.txt
     - legal/mentions_legales_en.txt

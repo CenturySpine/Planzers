@@ -135,6 +135,7 @@ class MealsRepository {
     required String mealDateKey,
     required String mealDayPart, // 'morning', 'midday', 'evening'
     required List<String> participantIds,
+    String? chefParticipantId,
     required String notes,
     List<MealComponent> components = const [],
   }) async {
@@ -157,6 +158,9 @@ class MealsRepository {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': mealDayPart.trim(),
       'participantIds': participantIds,
+      'chefParticipantId': chefParticipantId?.trim().isEmpty ?? true
+          ? null
+          : chefParticipantId!.trim(),
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'createdBy': user.uid,
@@ -173,6 +177,7 @@ class MealsRepository {
     required String mealDateKey,
     required String mealDayPart,
     required List<String> participantIds,
+    String? chefParticipantId,
     required String notes,
     List<MealComponent> components = const [],
   }) async {
@@ -202,6 +207,9 @@ class MealsRepository {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': mealDayPart.trim(),
       'participantIds': participantIds,
+      'chefParticipantId': chefParticipantId?.trim().isEmpty ?? true
+          ? null
+          : chefParticipantId!.trim(),
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),

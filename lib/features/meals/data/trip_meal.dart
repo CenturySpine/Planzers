@@ -156,6 +156,7 @@ class TripMeal {
     required this.mealDateKey,
     required this.mealDayPart,
     required this.participantIds,
+    this.chefParticipantId,
     required this.createdBy,
     required this.createdAt,
     this.updatedAt,
@@ -173,6 +174,7 @@ class TripMeal {
   /// List of participant user IDs. Auto-calculated from [TripMemberStay]
   /// but can be manually overridden.
   final List<String> participantIds;
+  final String? chefParticipantId;
   final String createdBy;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -229,6 +231,10 @@ class TripMeal {
           .map((e) => e.toString().trim())
           .where((id) => id.isNotEmpty)
           .toList(),
+      chefParticipantId: (data['chefParticipantId'] as String?)?.trim().isEmpty ??
+              true
+          ? null
+          : (data['chefParticipantId'] as String).trim(),
       notes: (data['notes'] as String?)?.trim() ?? '',
       components: ((data['components'] as List<dynamic>?) ?? const [])
           .whereType<Map>()
@@ -265,6 +271,7 @@ class TripMeal {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
+      'chefParticipantId': chefParticipantId,
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'createdBy': createdBy.trim(),
@@ -279,6 +286,7 @@ class TripMeal {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
+      'chefParticipantId': chefParticipantId,
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -291,6 +299,7 @@ class TripMeal {
     String? mealDateKey,
     TripDayPart? mealDayPart,
     List<String>? participantIds,
+    Object? chefParticipantId = _noChefParticipantIdChange,
     String? createdBy,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -303,6 +312,9 @@ class TripMeal {
       mealDateKey: mealDateKey ?? this.mealDateKey,
       mealDayPart: mealDayPart ?? this.mealDayPart,
       participantIds: participantIds ?? this.participantIds,
+      chefParticipantId: identical(chefParticipantId, _noChefParticipantIdChange)
+          ? this.chefParticipantId
+          : chefParticipantId as String?,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -313,5 +325,7 @@ class TripMeal {
 
   @override
   String toString() => 'TripMeal(id=$id, name=$name, date=$mealDateKey, '
-      'part=$mealDayPart, participants=${participantIds.length})';
+      'part=$mealDayPart, participants=${participantIds.length}, chef=$chefParticipantId)';
 }
+
+const Object _noChefParticipantIdChange = Object();
