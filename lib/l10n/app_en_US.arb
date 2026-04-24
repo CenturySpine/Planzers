@@ -597,6 +597,8 @@
   "mealParticipantsCount": "Participants ({count})",
   "@mealParticipantsCount": {"placeholders": {"count": {}}},
   "commonAuto": "Auto",
+  "commonAll": "All",
+  "commonNone": "None",
   "commonSelectAll": "Select all",
   "mealChefLongPressHint": "Long press a selected participant to assign or remove the chef.",
   "mealComponentsTitle": "Meal components",

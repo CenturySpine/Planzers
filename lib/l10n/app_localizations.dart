@@ -2681,6 +2681,18 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get commonAuto;
 
+  /// No description provided for @commonAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tous'**
+  String get commonAll;
+
+  /// No description provided for @commonNone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun'**
+  String get commonNone;
+
   /// No description provided for @commonSelectAll.
   ///
   /// In fr, this message translates to:

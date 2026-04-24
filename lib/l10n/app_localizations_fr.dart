@@ -1463,6 +1463,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonAuto => 'Auto';
 
   @override
+  String get commonAll => 'Tous';
+
+  @override
+  String get commonNone => 'Aucun';
+
+  @override
   String get commonSelectAll => 'Tout sélectionner';
 
   @override
@@ -3354,6 +3360,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonAll => 'Tous';
+
+  @override
+  String get commonNone => 'Aucun';
 
   @override
   String get commonSelectAll => 'Tout sélectionner';

@@ -70,8 +70,7 @@ class _MealsList extends StatelessWidget {
       createdBy: '',
       createdAt: DateTime.now(),
     ).mealDateAsDateTime;
-    final formatter = DateFormat(
-      'EEEE d MMMM yyyy',
+    final formatter = DateFormat.yMMMMEEEEd(
       Localizations.localeOf(context).toString(),
     );
     return formatter.format(dt);

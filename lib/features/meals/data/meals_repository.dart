@@ -228,6 +228,219 @@ class MealsRepository {
     });
   }
 
+  Future<void> updateMealName({
+    required String tripId,
+    required String mealId,
+    required String name,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'name': name.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealDate({
+    required String tripId,
+    required String mealId,
+    required String mealDateKey,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'mealDateKey': mealDateKey.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealDayPart({
+    required String tripId,
+    required String mealId,
+    required String mealDayPart,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'mealDayPart': mealDayPart.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealParticipants({
+    required String tripId,
+    required String mealId,
+    required List<String> participantIds,
+    String? chefParticipantId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    final normalizedParticipantIds = participantIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false)
+      ..sort();
+
+    final normalizedChef = (chefParticipantId ?? '').trim();
+
+    await docRef.update({
+      'participantIds': normalizedParticipantIds,
+      'chefParticipantId': normalizedChef.isEmpty ||
+              !normalizedParticipantIds.contains(normalizedChef)
+          ? null
+          : normalizedChef,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealMode({
+    required String tripId,
+    required String mealId,
+    required MealMode mealMode,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'mealMode': mealMode.firestoreValue,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealPotluckItems({
+    required String tripId,
+    required String mealId,
+    required List<MealPotluckItem> potluckItems,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'potluckItems': potluckItems
+          .map((item) => item.toMap())
+          .where((item) => (item['label'] as String).isNotEmpty)
+          .toList(growable: false),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealRestaurantUrl({
+    required String tripId,
+    required String mealId,
+    required String restaurantUrl,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'restaurantUrl': restaurantUrl.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> deleteMeal({
     required String tripId,
     required String mealId,

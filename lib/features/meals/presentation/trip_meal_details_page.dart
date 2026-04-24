@@ -39,6 +39,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   late final TextEditingController _nameController;
   late final TextEditingController _restaurantUrlController;
   bool _isSaving = false;
+  bool _isSavingName = false;
+  bool _isSavingDate = false;
+  bool _isSavingMealDayPart = false;
+  bool _isSavingMealMode = false;
+  bool _isSavingParticipants = false;
+  bool _isSavingPotluckItems = false;
+  bool _isSavingRestaurantUrl = false;
   bool _isDeleting = false;
   bool _isHydrated = false;
   DateTime _mealDate = DateUtils.dateOnly(DateTime.now());
@@ -46,9 +53,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   Set<String> _participantIds = <String>{};
   String? _chefParticipantId;
   List<MealComponent> _components = const [];
-  String? _initialMealSignature;
-  Map<String, String> _initialComponentSignatures = const {};
-  bool _allowNextPop = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
   bool _isRestaurantLinkEditing = true;
@@ -126,16 +130,18 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final trimmed = (value ?? '').trim();
     if (trimmed.isEmpty) return;
     final uid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
-    setState(
-      () => _potluckItems = [
+    final previousItems = _potluckItems;
+    setState(() {
+      _potluckItems = [
         ..._potluckItems,
         MealPotluckItem(
           id: 'potluck_${DateTime.now().microsecondsSinceEpoch}_${_potluckItems.length}',
           label: trimmed,
           addedBy: uid,
         ),
-      ],
-    );
+      ];
+    });
+    await _savePotluckItems(previousItems: previousItems);
   }
 
   Future<void> _editPotluckItem(int index) async {
@@ -148,19 +154,55 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     if (!mounted) return;
     final trimmed = (value ?? '').trim();
     if (trimmed.isEmpty) return;
+    final previousItems = _potluckItems;
     setState(() {
       final next = _potluckItems.toList(growable: true);
       next[index] = next[index].copyWith(label: trimmed);
       _potluckItems = next;
     });
+    await _savePotluckItems(previousItems: previousItems);
   }
 
-  void _deletePotluckItem(int index) {
+  Future<void> _deletePotluckItem(int index) async {
+    final previousItems = _potluckItems;
     setState(() {
       final next = _potluckItems.toList(growable: true);
       next.removeAt(index);
       _potluckItems = next;
     });
+    await _savePotluckItems(previousItems: previousItems);
+  }
+
+  Future<void> _savePotluckItems({
+    required List<MealPotluckItem> previousItems,
+  }) async {
+    if (widget.isCreate || _isSavingPotluckItems || _isSaving) return;
+    setState(() => _isSavingPotluckItems = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealPotluckItems(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            potluckItems: _potluckItems,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _potluckItems = previousItems;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingPotluckItems = false);
+      }
+    }
   }
 
   String _mealModeDisplayLabel(AppLocalizations l10n) {
@@ -171,8 +213,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
-  void _saveRestaurantUrl() {
+  Future<void> _saveRestaurantUrl() async {
     final l10n = AppLocalizations.of(context)!;
+    if (_isSavingRestaurantUrl) return;
     final trimmed = _restaurantUrlController.text.trim();
     if (trimmed.isEmpty) return;
     final parsed = Uri.tryParse(trimmed);
@@ -182,11 +225,44 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       );
       return;
     }
+    final previousUrl = _restaurantUrl;
+    final previousEditing = _isRestaurantLinkEditing;
     setState(() {
       _restaurantUrl = trimmed;
       _restaurantUrlController.text = trimmed;
       _isRestaurantLinkEditing = false;
+      _isSavingRestaurantUrl = true;
     });
+    if (widget.isCreate || _isSaving) {
+      if (!mounted) return;
+      setState(() => _isSavingRestaurantUrl = false);
+      return;
+    }
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealRestaurantUrl(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            restaurantUrl: _restaurantUrl,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _restaurantUrl = previousUrl;
+        _restaurantUrlController.text = previousUrl;
+        _isRestaurantLinkEditing = previousEditing;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingRestaurantUrl = false);
+      }
+    }
   }
 
   void _startEditRestaurantUrl() {
@@ -197,7 +273,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   }
 
   void _hydrateFromMeal(TripMeal meal) {
-    if (_isHydrated) return;
+    if (widget.isCreate && _isHydrated) return;
     _nameController.text = meal.name;
     _mealDate = meal.mealDateAsDateTime;
     _mealDayPart = meal.mealDayPart;
@@ -211,10 +287,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
     _restaurantUrl = meal.restaurantUrl.trim();
     _restaurantUrlController.text = _restaurantUrl;
-    _isRestaurantLinkEditing = _restaurantUrl.isEmpty;
+    // Keep explicit local edit mode active; stream refresh should not force-close it.
+    _isRestaurantLinkEditing = _isRestaurantLinkEditing || _restaurantUrl.isEmpty;
     _potluckItems = meal.potluckItems.toList(growable: false);
-    _saveCurrentAsBaseline();
-    _isHydrated = true;
+    if (widget.isCreate) {
+      _isHydrated = true;
+    }
   }
 
   MealMode _dataModeFromMealView(_MealDetailsView view) {
@@ -231,89 +309,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       MealMode.restaurant => _MealDetailsView.restaurant,
       MealMode.potluck => _MealDetailsView.potluck,
     };
-  }
-
-  String _componentSignature(MealComponent component) {
-    final ingredients = component.ingredients
-        .map(
-          (ingredient) =>
-              '${ingredient.catalogItemId.trim()}|${ingredient.label.trim()}|'
-              '${ingredient.quantityValue}|${ingredient.quantityUnit.trim()}',
-        )
-        .join('~');
-    return '${component.order}|${component.kind.firestoreValue}|'
-        '${component.title.trim()}|$ingredients';
-  }
-
-  Map<String, String> _componentSignaturesById(List<MealComponent> components) {
-    return {
-      for (final component in components)
-        component.id: _componentSignature(component),
-    };
-  }
-
-  String _currentMealSignature() {
-    final sortedParticipants = _participantIds.toList()..sort();
-    final componentsSignature = _components
-        .map((component) => '${component.id}:${_componentSignature(component)}')
-        .join('||');
-    return '${_nameController.text.trim()}|$_mealDateKey|'
-        '${tripDayPartToFirestore(_mealDayPart)}|'
-        '${sortedParticipants.join(",")}|${_chefParticipantId ?? ""}|'
-        '$componentsSignature|${_activeMealView.name}|'
-        '${_restaurantUrl.trim()}|'
-        '${_potluckItems.map((item) => "${item.id}:${item.label}:${item.addedBy}").join("~")}';
-  }
-
-  void _saveCurrentAsBaseline() {
-    _initialMealSignature = _currentMealSignature();
-    _initialComponentSignatures = _componentSignaturesById(_components);
-  }
-
-  bool get _hasUnsavedChanges {
-    final baseline = _initialMealSignature;
-    if (baseline == null) return false;
-    return baseline != _currentMealSignature();
-  }
-
-  Set<String> get _changedComponentIds {
-    final current = _componentSignaturesById(_components);
-    final changed = <String>{};
-    for (final entry in current.entries) {
-      if (_initialComponentSignatures[entry.key] != entry.value) {
-        changed.add(entry.key);
-      }
-    }
-    for (final initialId in _initialComponentSignatures.keys) {
-      if (!current.containsKey(initialId)) {
-        changed.add(initialId);
-      }
-    }
-    return changed;
-  }
-
-  Future<bool> _confirmDiscardIfNeeded() async {
-    if (!_hasUnsavedChanges) return true;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.commonUnsavedChangesTitle),
-        content: Text(
-          AppLocalizations.of(context)!.mealUnsavedChangesBody,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(AppLocalizations.of(context)!.commonStay),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(AppLocalizations.of(context)!.tripOverviewLeaveAction),
-          ),
-        ],
-      ),
-    );
-    return confirm == true;
   }
 
   void _addComponent(MealComponentKind kind) {
@@ -383,6 +378,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   }
 
   Future<void> _autoRecalculateParticipants(List<String> memberIds) async {
+    if (_isSavingParticipants) return;
+    final previousParticipantIds = _participantIds.toSet();
+    final previousChefParticipantId = _chefParticipantId;
     try {
       final ids =
           await ref.read(mealsRepositoryProvider).calculateMealParticipants(
@@ -399,6 +397,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           _chefParticipantId = null;
         }
       });
+      await _saveMealParticipants(
+        previousParticipantIds: previousParticipantIds,
+        previousChefParticipantId: previousChefParticipantId,
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -414,19 +416,66 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  void _selectAllParticipants(List<String> memberIds) {
+  Future<void> _toggleAllParticipants(List<String> memberIds) async {
+    if (_isSavingParticipants) return;
+    final previousParticipantIds = _participantIds.toSet();
+    final previousChefParticipantId = _chefParticipantId;
+    final allSelected =
+        memberIds.isNotEmpty && memberIds.every(_participantIds.contains);
     setState(() {
-      _participantIds = memberIds.toSet();
+      _participantIds = allSelected ? <String>{} : memberIds.toSet();
       if (_chefParticipantId != null &&
           !_participantIds.contains(_chefParticipantId)) {
         _chefParticipantId = null;
       }
     });
+    await _saveMealParticipants(
+      previousParticipantIds: previousParticipantIds,
+      previousChefParticipantId: previousChefParticipantId,
+    );
   }
 
-  void _toggleChefParticipant(String participantId) {
+  Future<void> _saveMealParticipants({
+    required Set<String> previousParticipantIds,
+    required String? previousChefParticipantId,
+  }) async {
+    if (widget.isCreate || _isSavingParticipants || _isSaving) return;
+    setState(() => _isSavingParticipants = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealParticipants(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            participantIds: _participantIds.toList(growable: false),
+            chefParticipantId: _chefParticipantId,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _participantIds = previousParticipantIds;
+        _chefParticipantId = previousChefParticipantId;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingParticipants = false);
+      }
+    }
+  }
+
+  Future<void> _toggleChefParticipant(String participantId) async {
+    if (_isSavingParticipants) return;
     if (_activeMealView != _MealDetailsView.cooked) return;
     if (!_participantIds.contains(participantId)) return;
+    final previousParticipantIds = _participantIds.toSet();
+    final previousChefParticipantId = _chefParticipantId;
     setState(() {
       if (_chefParticipantId == participantId) {
         _chefParticipantId = null;
@@ -434,6 +483,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         _chefParticipantId = participantId;
       }
     });
+    await _saveMealParticipants(
+      previousParticipantIds: previousParticipantIds,
+      previousChefParticipantId: previousChefParticipantId,
+    );
   }
 
   Future<void> _pickDate() async {
@@ -446,12 +499,121 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       helpText: AppLocalizations.of(context)!.mealDateHelp,
     );
     if (picked == null || !mounted) return;
+    final previousDate = _mealDate;
     setState(() {
       _mealDate = DateUtils.dateOnly(picked);
     });
+    await _saveMealDate(previousDate: previousDate);
+  }
+
+  Future<void> _saveMealDayPart({
+    required TripDayPart previousDayPart,
+  }) async {
+    if (widget.isCreate || _isSavingMealDayPart || _isSaving) return;
+    setState(() => _isSavingMealDayPart = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealDayPart(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            mealDayPart: tripDayPartToFirestore(_mealDayPart),
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _mealDayPart = previousDayPart;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingMealDayPart = false);
+      }
+    }
+  }
+
+  Future<void> _saveMealDate({required DateTime previousDate}) async {
+    if (widget.isCreate || _isSavingDate || _isSaving) return;
+    setState(() => _isSavingDate = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealDate(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            mealDateKey: _mealDateKey,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _mealDate = DateUtils.dateOnly(previousDate);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingDate = false);
+      }
+    }
+  }
+
+  Future<void> _saveMealMode({
+    required _MealDetailsView previousMealView,
+  }) async {
+    if (widget.isCreate || _isSavingMealMode || _isSaving) return;
+    setState(() => _isSavingMealMode = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealMode(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            mealMode: _dataModeFromMealView(_activeMealView),
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _activeMealView = previousMealView;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingMealMode = false);
+      }
+    }
   }
 
   Future<void> _save() async {
+    if (!widget.isCreate) return;
     if (_isSaving) return;
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
@@ -468,48 +630,25 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final potluckItems = mealMode == MealMode.potluck
           ? _potluckItems
           : const <MealPotluckItem>[];
-      if (widget.isCreate) {
-        await repo.addMeal(
-          tripId: widget.tripId,
-          name: _nameController.text,
-          mealDateKey: _mealDateKey,
-          mealDayPart: mealDayPart,
-          participantIds: participantIds,
-          chefParticipantId: _chefParticipantId,
-          notes: '',
-          components: _components,
-          mealMode: mealMode,
-          restaurantUrl: restaurantUrl,
-          potluckItems: potluckItems,
-        );
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context)
-            .showSnackBar(
-              SnackBar(content: Text(AppLocalizations.of(context)!.mealCreated)),
-            );
-      } else {
-        await repo.updateMeal(
-          tripId: widget.tripId,
-          mealId: widget.mealId!,
-          name: _nameController.text,
-          mealDateKey: _mealDateKey,
-          mealDayPart: mealDayPart,
-          participantIds: participantIds,
-          chefParticipantId: _chefParticipantId,
-          notes: '',
-          components: _components,
-          mealMode: mealMode,
-          restaurantUrl: restaurantUrl,
-          potluckItems: potluckItems,
-        );
-        if (!mounted) return;
-        setState(_saveCurrentAsBaseline);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(
-              SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
-            );
-      }
+      await repo.addMeal(
+        tripId: widget.tripId,
+        name: _nameController.text,
+        mealDateKey: _mealDateKey,
+        mealDayPart: mealDayPart,
+        participantIds: participantIds,
+        chefParticipantId: _chefParticipantId,
+        notes: '',
+        components: _components,
+        mealMode: mealMode,
+        restaurantUrl: restaurantUrl,
+        potluckItems: potluckItems,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context)!.mealCreated)),
+          );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -524,6 +663,38 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _saveMealName() async {
+    if (widget.isCreate || _isSavingName || _isSaving) return;
+    final name = _nameController.text.trim();
+    setState(() => _isSavingName = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealName(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            name: name,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingName = false);
+      }
     }
   }
 
@@ -640,10 +811,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               if (tripStart != null) {
                 _mealDate = DateUtils.dateOnly(tripStart);
               }
-              _saveCurrentAsBaseline();
             }
-
-            final changedComponentIds = _changedComponentIds;
+            final areAllParticipantsSelected =
+                memberIds.isNotEmpty &&
+                memberIds.every(_participantIds.contains);
             final participantIdsForRisk = _participantIds.toList()..sort();
             final participantIdsRiskKey = participantIdsForRisk.join('|');
             final potluckAddedByIds = _potluckItems
@@ -660,20 +831,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               usersDataByIdsProvider(potluckAddedByRiskKey),
             );
 
-            return PopScope(
-                canPop: _allowNextPop || !_hasUnsavedChanges,
-                onPopInvokedWithResult: (didPop, _) async {
-                  if (didPop) return;
-                  final allow = await _confirmDiscardIfNeeded();
-                  if (!allow || !context.mounted) return;
-                  setState(() => _allowNextPop = true);
-                  Navigator.of(context).pop();
-                },
-                child: Scaffold(
+            return Scaffold(
                   appBar: AppBar(
                     title: Text(
-                      '${widget.isCreate ? l10n.mealNew : l10n.mealEdit}'
-                      '${_hasUnsavedChanges ? ' • ${l10n.commonUnsaved}' : ''}',
+                      widget.isCreate ? l10n.mealNew : l10n.mealEdit,
                     ),
                     actions: [
                       if (!widget.isCreate)
@@ -699,31 +860,56 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         TextFormField(
                           controller: _nameController,
                           textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _saveMealName(),
                           decoration: InputDecoration(
                             labelText: l10n.mealNameLabel,
                             border: OutlineInputBorder(),
+                            suffixIcon: widget.isCreate
+                                ? null
+                                : IconButton(
+                                    tooltip: l10n.commonSave,
+                                    onPressed: _isSavingName
+                                        ? null
+                                        : _saveMealName,
+                                    icon: _isSavingName
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.check),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(l10n.commonDate),
-                          subtitle: Text(
-                            DateFormat(
-                              'EEEE d MMMM yyyy',
-                              Localizations.localeOf(context).toString(),
-                            ).format(_mealDate),
-                          ),
-                          trailing: TextButton.icon(
-                            onPressed: _pickDate,
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            label: Text(l10n.commonChoose),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.mealMomentLabel,
-                          style: Theme.of(context).textTheme.labelLarge,
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: l10n.commonDate,
+                              onPressed: _isSavingDate ? null : _pickDate,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: _isSavingDate
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.calendar_today_outlined),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                DateFormat.yMMMMEEEEd(
+                                  Localizations.localeOf(context).toString(),
+                                ).format(_mealDate),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -731,11 +917,32 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           children: [
                             for (final part in TripDayPart.values)
                               ChoiceChip(
-                                label: Text(_dayPartLabel(context, part)),
+                                showCheckmark: false,
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SvgPicture.asset(
+                                      _dayPartIconAsset(part),
+                                      width: 16,
+                                      height: 16,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(_dayPartLabel(context, part)),
+                                  ],
+                                ),
                                 selected: _mealDayPart == part,
-                                onSelected: (_) => setState(() {
-                                  _mealDayPart = part;
-                                }),
+                                onSelected: _isSavingMealDayPart
+                                    ? null
+                                    : (_) async {
+                                        if (_mealDayPart == part) return;
+                                        final previousDayPart = _mealDayPart;
+                                        setState(() {
+                                          _mealDayPart = part;
+                                        });
+                                        await _saveMealDayPart(
+                                          previousDayPart: previousDayPart,
+                                        );
+                                      },
                               ),
                           ],
                         ),
@@ -749,15 +956,23 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               ),
                             ),
                             TextButton.icon(
-                              onPressed: () =>
+                              onPressed: _isSavingParticipants
+                                  ? null
+                                  : () =>
                                   _autoRecalculateParticipants(memberIds),
                               icon: const Icon(Icons.auto_fix_high_outlined),
                               label: Text(l10n.commonAuto),
                             ),
                             TextButton.icon(
-                              onPressed: () => _selectAllParticipants(memberIds),
+                              onPressed: _isSavingParticipants
+                                  ? null
+                                  : () => _toggleAllParticipants(memberIds),
                               icon: const Icon(Icons.done_all_outlined),
-                              label: Text(l10n.commonSelectAll),
+                              label: Text(
+                                areAllParticipantsSelected
+                                    ? l10n.commonNone
+                                    : l10n.commonAll,
+                              ),
                             ),
                           ],
                         ),
@@ -791,7 +1006,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             _MealDetailsView.cooked &&
                                         _chefParticipantId == memberId;
                                     return FilterChip(
-                                      showCheckmark: !isChef,
+                                      showCheckmark: false,
                                       label: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
@@ -828,6 +1043,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             )
                                           : null,
                                       onSelected: (selected) {
+                                        if (_isSavingParticipants) return;
+                                        final previousParticipantIds =
+                                            _participantIds.toSet();
+                                        final previousChefParticipantId =
+                                            _chefParticipantId;
                                         setState(() {
                                           if (selected) {
                                             _participantIds.add(memberId);
@@ -838,6 +1058,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             }
                                           }
                                         });
+                                        _saveMealParticipants(
+                                          previousParticipantIds:
+                                              previousParticipantIds,
+                                          previousChefParticipantId:
+                                              previousChefParticipantId,
+                                        );
                                       },
                                     );
                                   },
@@ -883,15 +1109,18 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   ),
                                 ],
                                 selected: {_activeMealView},
-                                onSelectionChanged: (selection) {
+                                onSelectionChanged: _isSavingMealMode
+                                    ? null
+                                    : (selection) async {
                                   if (selection.isEmpty) return;
+                                  if (_activeMealView == selection.first) return;
+                                  final previousMealView = _activeMealView;
                                   setState(() {
                                     _activeMealView = selection.first;
-                                    if (_activeMealView !=
-                                        _MealDetailsView.cooked) {
-                                      _chefParticipantId = null;
-                                    }
                                   });
+                                  await _saveMealMode(
+                                    previousMealView: previousMealView,
+                                  );
                                 },
                               ),
                             ],
@@ -1010,13 +1239,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        if (changedComponentIds
-                                            .contains(component.id))
-                                          Tooltip(
-                                            message:
-                                                l10n.mealComponentChangedUnsaved,
-                                            child: Icon(Icons.edit_note, size: 20),
-                                          ),
                                         if (risk != null &&
                                             (risk.containsAllergenIds
                                                     .isNotEmpty ||
@@ -1063,6 +1285,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   child: TextFormField(
                                     controller: _restaurantUrlController,
                                     textInputAction: TextInputAction.done,
+                                    enabled: !_isSavingRestaurantUrl,
                                     onFieldSubmitted: (_) => _saveRestaurantUrl(),
                                     decoration: InputDecoration(
                                       labelText: l10n.mealRestaurantLinkLabel,
@@ -1073,8 +1296,18 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 const SizedBox(width: 8),
                                 IconButton(
                                   tooltip: l10n.commonSave,
-                                  onPressed: _saveRestaurantUrl,
-                                  icon: const Icon(Icons.check),
+                                  onPressed: _isSavingRestaurantUrl
+                                      ? null
+                                      : _saveRestaurantUrl,
+                                  icon: _isSavingRestaurantUrl
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.check),
                                 ),
                               ],
                             ),
@@ -1085,20 +1318,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                             ),
                           ]
                           else
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: IconButton(
-                                    tooltip: l10n.commonEdit,
-                                    onPressed: _startEditRestaurantUrl,
-                                    icon: const Icon(Icons.edit_outlined),
+                                Expanded(
+                                  child: LinkPreviewCardFromFirestore(
+                                    url: _restaurantUrl,
+                                    preview: const {},
                                   ),
                                 ),
-                                LinkPreviewCardFromFirestore(
-                                  url: _restaurantUrl,
-                                  preview: const {},
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: l10n.commonEdit,
+                                  onPressed: _startEditRestaurantUrl,
+                                  icon: const Icon(Icons.edit_outlined),
                                 ),
                               ],
                             ),
@@ -1113,7 +1346,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               ),
                               IconButton(
                                 tooltip: l10n.commonAdd,
-                                onPressed: _addPotluckItem,
+                                onPressed: _isSavingPotluckItems
+                                    ? null
+                                    : _addPotluckItem,
                                 icon: const Icon(Icons.add_circle_outline),
                               ),
                             ],
@@ -1166,12 +1401,16 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     children: [
                                       IconButton(
                                         tooltip: l10n.commonEdit,
-                                        onPressed: () => _editPotluckItem(index),
+                                        onPressed: _isSavingPotluckItems
+                                            ? null
+                                            : () => _editPotluckItem(index),
                                         icon: const Icon(Icons.edit_outlined),
                                       ),
                                       IconButton(
                                         tooltip: l10n.commonDelete,
-                                        onPressed: () => _deletePotluckItem(index),
+                                        onPressed: _isSavingPotluckItems
+                                            ? null
+                                            : () => _deletePotluckItem(index),
                                         icon: const Icon(Icons.delete_outline),
                                       ),
                                     ],
@@ -1183,27 +1422,30 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                       ],
                     ),
                   ),
-                  bottomNavigationBar: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: FilledButton.icon(
-                        onPressed: _isSaving ? null : _save,
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(
-                          _isSaving ? l10n.commonSaving : l10n.commonSave,
-                        ),
-                      ),
-                    ),
-                  ),
-                ));
+                  bottomNavigationBar: widget.isCreate
+                      ? SafeArea(
+                          top: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                            child: FilledButton.icon(
+                              onPressed: _isSaving ? null : _save,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save_outlined),
+                              label: Text(
+                                _isSaving ? l10n.commonSaving : l10n.commonSave,
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
+                );
           },
         );
       },
@@ -1223,5 +1465,13 @@ String _dayPartLabel(BuildContext context, TripDayPart dayPart) {
     TripDayPart.morning => l10n.dayPartMorning,
     TripDayPart.midday => l10n.dayPartMidday,
     TripDayPart.evening => l10n.dayPartEvening,
+  };
+}
+
+String _dayPartIconAsset(TripDayPart dayPart) {
+  return switch (dayPart) {
+    TripDayPart.morning => 'assets/images/meal_breakfast.svg',
+    TripDayPart.midday => 'assets/images/meal_lunch.svg',
+    TripDayPart.evening => 'assets/images/meal_dinner.svg',
   };
 }

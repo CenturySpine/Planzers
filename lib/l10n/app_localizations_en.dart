@@ -1451,6 +1451,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonAuto => 'Auto';
 
   @override
+  String get commonAll => 'All';
+
+  @override
+  String get commonNone => 'None';
+
+  @override
   String get commonSelectAll => 'Select all';
 
   @override
@@ -3328,6 +3334,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonAll => 'All';
+
+  @override
+  String get commonNone => 'None';
 
   @override
   String get commonSelectAll => 'Select all';
