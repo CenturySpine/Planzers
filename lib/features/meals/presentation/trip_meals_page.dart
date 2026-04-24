@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
@@ -17,7 +21,11 @@ class TripMealsPage extends ConsumerWidget {
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
     return mealsAsync.when(
-      data: (meals) => _MealsList(tripId: trip.id, meals: meals),
+      data: (meals) => _MealsList(
+        tripId: trip.id,
+        meals: meals,
+        memberPublicLabels: trip.memberPublicLabels,
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Padding(
@@ -36,10 +44,12 @@ class _MealsList extends StatelessWidget {
   const _MealsList({
     required this.tripId,
     required this.meals,
+    required this.memberPublicLabels,
   });
 
   final String tripId;
   final List<TripMeal> meals;
+  final Map<String, String> memberPublicLabels;
 
   /// Group meals by date key.
   Map<String, List<TripMeal>> _groupMealsByDate() {
@@ -113,6 +123,7 @@ class _MealsList extends StatelessWidget {
                     dateLabel: _dateKeyToLabel(context, dateKey),
                     meals: mealsForDate,
                     tripId: tripId,
+                    memberPublicLabels: memberPublicLabels,
                   );
                 },
               );
@@ -141,12 +152,14 @@ class _MealDateSection extends StatelessWidget {
     required this.dateLabel,
     required this.meals,
     required this.tripId,
+    required this.memberPublicLabels,
   });
 
   final String dateKey;
   final String dateLabel;
   final List<TripMeal> meals;
   final String tripId;
+  final Map<String, String> memberPublicLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +182,7 @@ class _MealDateSection extends StatelessWidget {
           ...meals.map((meal) => _MealCard(
                 tripId: tripId,
                 meal: meal,
+                memberPublicLabels: memberPublicLabels,
               )),
         ],
       ),
@@ -176,17 +190,35 @@ class _MealDateSection extends StatelessWidget {
   }
 }
 
-class _MealCard extends StatelessWidget {
+class _MealCard extends ConsumerWidget {
   const _MealCard({
     required this.tripId,
     required this.meal,
+    required this.memberPublicLabels,
   });
 
   final String tripId;
   final TripMeal meal;
+  final Map<String, String> memberPublicLabels;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final chefId = meal.chefParticipantId?.trim();
+    final hasChef = chefId != null && chefId.isNotEmpty;
+    final chefUsersAsync = hasChef
+        ? ref.watch(usersDataByIdsProvider(chefId))
+        : const AsyncValue<Map<String, Map<String, dynamic>>>.data({});
+    final chefUserData = hasChef ? chefUsersAsync.asData?.value[chefId] : null;
+    final chefLabel = hasChef
+        ? resolveTripMemberDisplayLabel(
+            memberId: chefId,
+            userData: chefUserData,
+            tripMemberPublicLabels: memberPublicLabels,
+            emptyFallback: l10n.roleParticipant,
+          )
+        : '';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
@@ -221,6 +253,42 @@ class _MealCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (hasChef) ...[
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      buildProfileBadge(
+                        context: context,
+                        displayLabel: chefLabel,
+                        userData: chefUserData,
+                        size: 24,
+                      ),
+                      Positioned(
+                        top: -3,
+                        right: -3,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          padding: const EdgeInsets.all(1),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SvgPicture.asset(
+                            'assets/images/chef_hat.svg',
+                            width: 10,
+                            height: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Badge(
                 label: Text(meal.participantCount.toString()),
                 child: const Icon(Icons.people_outline),
