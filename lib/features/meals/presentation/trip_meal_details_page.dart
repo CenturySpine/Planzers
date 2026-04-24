@@ -446,9 +446,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
-    final participantIdsForRisk = _participantIds.toList()..sort();
-    final participantIdsRiskKey = participantIdsForRisk.join('|');
-    final usersAsync = ref.watch(usersDataByIdsProvider(participantIdsRiskKey));
     final catalogAsync = ref.watch(ingredientCatalogProvider);
     final mealAsync = widget.isCreate
         ? const AsyncValue<TripMeal?>.data(null)
@@ -513,6 +510,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             }
 
             final changedComponentIds = _changedComponentIds;
+            final participantIdsForRisk = _participantIds.toList()..sort();
+            final participantIdsRiskKey = participantIdsForRisk.join('|');
+            final usersAsync = ref.watch(
+              usersDataByIdsProvider(participantIdsRiskKey),
+            );
 
             return PopScope(
                 canPop: _allowNextPop || !_hasUnsavedChanges,
