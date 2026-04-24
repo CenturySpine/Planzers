@@ -108,6 +108,9 @@ class TripShellPage extends ConsumerStatefulWidget {
 
 class _TripShellPageState extends ConsumerState<TripShellPage> {
   String? _lastPrecachingBannerUrl;
+  void _goToOverview() {
+    widget.navigationShell.goBranch(0);
+  }
 
   void _precacheTripBannerIfNeeded(String? rawUrl) {
     final cleanUrl = (rawUrl ?? '').trim();
@@ -226,14 +229,21 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
               return Scaffold(
                 appBar: AppBar(
                   automaticallyImplyLeading: false,
-                  title: Text(titleForAppBar),
+                  title: GestureDetector(
+                    onTap: isOnTripOverview ? null : _goToOverview,
+                    behavior: HitTestBehavior.opaque,
+                    child: Text(titleForAppBar),
+                  ),
                   leading: isOnTripOverview
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back),
                           onPressed: () => context.go('/trips'),
                           tooltip: l10n.tripsMyTrips,
                         )
-                      : _TripAppBarPhotoLeading(imageUrl: trip.bannerImageUrl),
+                      : _TripAppBarPhotoLeading(
+                          imageUrl: trip.bannerImageUrl,
+                          onTap: _goToOverview,
+                        ),
                   actions: const [
                     AccountAppBarActions(),
                   ],
@@ -316,33 +326,44 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 }
 
 class _TripAppBarPhotoLeading extends StatelessWidget {
-  const _TripAppBarPhotoLeading({required this.imageUrl});
+  const _TripAppBarPhotoLeading({
+    required this.imageUrl,
+    required this.onTap,
+  });
 
   final String? imageUrl;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cleanUrl = (imageUrl ?? '').trim();
     final backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-      child: ClipRRect(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: backgroundColor),
-            child: cleanUrl.isNotEmpty
-                ? Image.network(
-                    cleanUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.landscape_outlined, size: 18);
-                    },
-                  )
-                : const Icon(Icons.landscape_outlined, size: 18),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 36,
+              height: 36,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: backgroundColor),
+                child: cleanUrl.isNotEmpty
+                    ? Image.network(
+                        cleanUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.landscape_outlined, size: 18);
+                        },
+                      )
+                    : const Icon(Icons.landscape_outlined, size: 18),
+              ),
+            ),
           ),
         ),
       ),
