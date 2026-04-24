@@ -2753,17 +2753,23 @@ abstract class AppLocalizations {
   /// **'Auberge espagnole'**
   String get mealModePotluck;
 
-  /// No description provided for @mealModesTitle.
+  /// No description provided for @mealModeCookedLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Types de repas'**
-  String get mealModesTitle;
+  /// **'On cuisine !'**
+  String get mealModeCookedLabel;
 
-  /// No description provided for @mealModeHelpTooltip.
+  /// No description provided for @mealModeRestaurantLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Légende des types de repas'**
-  String get mealModeHelpTooltip;
+  /// **'On va au restaurant !'**
+  String get mealModeRestaurantLabel;
+
+  /// No description provided for @mealModePotluckLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chacun ramène un truc !'**
+  String get mealModePotluckLabel;
 
   /// No description provided for @mealRestaurantLinkLabel.
   ///

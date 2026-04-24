@@ -1493,10 +1493,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealModePotluck => 'Potluck';
 
   @override
-  String get mealModesTitle => 'Meal types';
+  String get mealModeCookedLabel => 'Let\'s cook!';
 
   @override
-  String get mealModeHelpTooltip => 'Meal type legend';
+  String get mealModeRestaurantLabel => 'Let\'s go to the restaurant!';
+
+  @override
+  String get mealModePotluckLabel => 'Everyone brings something!';
 
   @override
   String get mealRestaurantLinkLabel => 'Restaurant link';
@@ -3369,10 +3372,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealModePotluck => 'Potluck';
 
   @override
-  String get mealModesTitle => 'Meal types';
+  String get mealModeCookedLabel => 'Let\'s cook!';
 
   @override
-  String get mealModeHelpTooltip => 'Meal type legend';
+  String get mealModeRestaurantLabel => 'Let\'s go to the restaurant!';
+
+  @override
+  String get mealModePotluckLabel => 'Everyone brings something!';
 
   @override
   String get mealRestaurantLinkLabel => 'Restaurant link';
