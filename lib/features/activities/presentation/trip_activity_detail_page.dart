@@ -57,7 +57,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
-  bool _isLocked = false;
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
@@ -88,7 +87,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         prev.address == next.address &&
         prev.freeComments == next.freeComments &&
         prev.category == next.category &&
-        prev.isLocked == next.isLocked &&
         prev.done == next.done;
   }
 
@@ -101,7 +99,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
-    _isLocked = activity.isLocked;
   }
 
   void _applyActivity(TripActivity activity) {
@@ -110,7 +107,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
-    _isLocked = activity.isLocked;
     _lastSyncedActivity = activity;
   }
 
@@ -143,7 +139,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
-            isLocked: _isLocked,
           );
       if (!mounted) return;
       setState(() => _editing = false);
@@ -341,9 +336,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   onCategoryChanged: _saving
                       ? null
                       : (c) => setState(() => _category = c),
-                  isLocked: _isLocked,
-                  onLockChanged:
-                      _saving ? null : (v) => setState(() => _isLocked = v),
                   activity: activity,
                   validateOptionalUrl: _validateOptionalUrl,
                 )
@@ -597,8 +589,6 @@ class _EditBody extends StatefulWidget {
     required this.commentsController,
     required this.category,
     required this.onCategoryChanged,
-    required this.isLocked,
-    required this.onLockChanged,
     required this.activity,
     required this.validateOptionalUrl,
   });
@@ -610,8 +600,6 @@ class _EditBody extends StatefulWidget {
   final TextEditingController commentsController;
   final TripActivityCategory category;
   final void Function(TripActivityCategory)? onCategoryChanged;
-  final bool isLocked;
-  final void Function(bool)? onLockChanged;
   final TripActivity activity;
   final String? Function(String?) validateOptionalUrl;
 
@@ -720,16 +708,6 @@ class _EditBodyState extends State<_EditBody> {
             ),
             minLines: 1,
             maxLines: 3,
-          ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            value: widget.isLocked,
-            onChanged: widget.onLockChanged,
-            title: Text(AppLocalizations.of(context)!.activitiesLocked),
-            subtitle: Text(
-              AppLocalizations.of(context)!.activitiesLockedHint,
-            ),
-            contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 12),
           TextFormField(

@@ -2231,18 +2231,6 @@ abstract class AppLocalizations {
   /// **'Pour calculer distance et durée en voiture'**
   String get activitiesAddressHint;
 
-  /// No description provided for @activitiesLocked.
-  ///
-  /// In fr, this message translates to:
-  /// **'Activité verrouillée'**
-  String get activitiesLocked;
-
-  /// No description provided for @activitiesLockedHint.
-  ///
-  /// In fr, this message translates to:
-  /// **'Si activée, seuls les admins peuvent modifier cette activité.'**
-  String get activitiesLockedHint;
-
   /// No description provided for @activitiesComments.
   ///
   /// In fr, this message translates to:

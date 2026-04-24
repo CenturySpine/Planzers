@@ -511,8 +511,6 @@
   "activitiesLink": "Lien (site, billetterie, ...)",
   "activitiesAddress": "Adresse du lieu (trajet depuis le voyage)",
   "activitiesAddressHint": "Pour calculer distance et durée en voiture",
-  "activitiesLocked": "Activité verrouillée",
-  "activitiesLockedHint": "Si activée, seuls les admins peuvent modifier cette activité.",
   "activitiesComments": "Commentaires",
   "linkInvalidExample": "Lien invalide (ex: https://...)",
   "shoppingDeleteCheckedTitle": "Supprimer les éléments cochés ?",

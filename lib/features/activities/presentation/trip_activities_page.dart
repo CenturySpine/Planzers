@@ -819,7 +819,6 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
-  bool _isLocked = false;
   bool _saving = false;
 
   @override
@@ -867,7 +866,6 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
-            isLocked: _isLocked,
           );
       if (!mounted) return;
       widget.onSaved();
@@ -959,17 +957,6 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
               maxLines: 3,
             ),
             const SizedBox(height: 12),
-            SwitchListTile(
-              value: _isLocked,
-              onChanged:
-                  _saving ? null : (value) => setState(() => _isLocked = value),
-              title: Text(AppLocalizations.of(context)!.activitiesLocked),
-              subtitle: Text(
-                AppLocalizations.of(context)!.activitiesLockedHint,
-              ),
-              contentPadding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: 8),
             TextFormField(
               controller: _commentsController,
               textInputAction: TextInputAction.done,
