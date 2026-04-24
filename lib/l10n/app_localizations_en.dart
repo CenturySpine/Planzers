@@ -1454,6 +1454,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonSelectAll => 'Select all';
 
   @override
+  String get mealChefLongPressHint =>
+      'Long press a selected participant to assign or remove the chef.';
+
+  @override
   String get mealComponentsTitle => 'Meal components';
 
   @override
@@ -3289,6 +3293,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonSelectAll => 'Select all';
+
+  @override
+  String get mealChefLongPressHint =>
+      'Long press a selected participant to assign or remove the chef.';
 
   @override
   String get mealComponentsTitle => 'Meal components';

@@ -598,6 +598,7 @@
   "@mealParticipantsCount": {"placeholders": {"count": {}}},
   "commonAuto": "Auto",
   "commonSelectAll": "Select all",
+  "mealChefLongPressHint": "Long press a selected participant to assign or remove the chef.",
   "mealComponentsTitle": "Meal components",
   "mealAddComponent": "Add component",
   "mealAddComponentWithKind": "Add {kind}",

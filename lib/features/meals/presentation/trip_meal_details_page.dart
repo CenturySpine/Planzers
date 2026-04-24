@@ -625,6 +625,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           ],
                         ),
                         const SizedBox(height: 8),
+                        Text(
+                          l10n.mealChefLongPressHint,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,

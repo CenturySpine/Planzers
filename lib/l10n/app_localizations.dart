@@ -2687,6 +2687,12 @@ abstract class AppLocalizations {
   /// **'Tout sélectionner'**
   String get commonSelectAll;
 
+  /// No description provided for @mealChefLongPressHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui long sur un participant sélectionné pour définir ou retirer le chef.'**
+  String get mealChefLongPressHint;
+
   /// No description provided for @mealComponentsTitle.
   ///
   /// In fr, this message translates to:
