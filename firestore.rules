@@ -168,6 +168,21 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripSuggestActivityMinRole(tripId));
     }
 
+    function tripPlanActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.planActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.planActivity
+        : 'admin';
+    }
+
+    function canPlanActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripPlanActivityMinRole(tripId));
+    }
+
     function tripCreateParticipantMinRole(tripId) {
       return (
           tripDoc(tripId).data.permissions is map
@@ -359,7 +374,16 @@ service cloud.firestore {
       match /activities/{activityId} {
         allow read: if isTripMember(tripId);
         allow create: if canSuggestActivity(tripId);
-        allow update, delete: if isTripMember(tripId);
+        allow update: if (
+          canPlanActivity(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['plannedAt', 'updatedAt'])
+        ) || (
+          isTripMember(tripId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['plannedAt'])
+        );
+        allow delete: if isTripMember(tripId);
       }
 
       match /shoppingItems/{itemId} {

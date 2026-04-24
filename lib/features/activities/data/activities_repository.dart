@@ -144,6 +144,19 @@ class ActivitiesRepository {
       throw StateError('Activite introuvable');
     }
 
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canPlan = canPlanActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canPlan) {
+      throw StateError('Droits insuffisants pour planifier une activite');
+    }
+
     await docRef.update({
       'plannedAt':
           plannedAt != null ? Timestamp.fromDate(plannedAt) : FieldValue.delete(),

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -421,6 +423,18 @@ class _ReadBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tripAsync = ref.watch(tripStreamProvider(tripId));
+    final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canPlanActivity = tripAsync.maybeWhen(
+      data: (trip) => trip != null
+          ? canPlanActivityForTrip(
+              trip: trip,
+              userId: myUid,
+            )
+          : false,
+      orElse: () => false,
+    );
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -546,12 +560,14 @@ class _ReadBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 TextButton.icon(
-                  onPressed: () async {
-                    final pickedDate = await _pickPlannedDate(context);
-                    if (pickedDate == null) return;
-                    if (!context.mounted) return;
-                    await _setPlannedDate(ref, context, pickedDate);
-                  },
+                  onPressed: canPlanActivity
+                      ? () async {
+                          final pickedDate = await _pickPlannedDate(context);
+                          if (pickedDate == null) return;
+                          if (!context.mounted) return;
+                          await _setPlannedDate(ref, context, pickedDate);
+                        }
+                      : null,
                   icon: const Icon(Icons.calendar_month_outlined),
                   label: Text(
                     activity.plannedAt == null
@@ -566,7 +582,9 @@ class _ReadBody extends ConsumerWidget {
                 ),
                 if (activity.plannedAt != null)
                   TextButton(
-                    onPressed: () => _setPlannedDate(ref, context, null),
+                    onPressed: canPlanActivity
+                        ? () => _setPlannedDate(ref, context, null)
+                        : null,
                     child: Text(
                       AppLocalizations.of(context)!.activitiesRemovePlannedDate,
                     ),

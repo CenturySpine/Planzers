@@ -170,3 +170,17 @@ bool canSuggestActivityForTrip({
     minRole: trip.activitiesPermissions.suggestActivityMinRole,
   );
 }
+
+bool canPlanActivityForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.activitiesPermissions.planActivityMinRole,
+  );
+}

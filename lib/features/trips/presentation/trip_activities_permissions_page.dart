@@ -24,6 +24,7 @@ class TripActivitiesPermissionsPage extends ConsumerStatefulWidget {
 class _TripActivitiesPermissionsPageState
     extends ConsumerState<TripActivitiesPermissionsPage> {
   bool _isSavingSuggestPermission = false;
+  bool _isSavingPlanPermission = false;
 
   Future<void> _updateSuggestPermission({
     required TripPermissionRole minRole,
@@ -45,6 +46,30 @@ class _TripActivitiesPermissionsPageState
     } finally {
       if (mounted) {
         setState(() => _isSavingSuggestPermission = false);
+      }
+    }
+  }
+
+  Future<void> _updatePlanPermission({
+    required TripPermissionRole minRole,
+  }) async {
+    if (_isSavingPlanPermission) return;
+    setState(() => _isSavingPlanPermission = true);
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
+            tripId: widget.tripId,
+            action: TripActivitiesPermissionAction.planActivity,
+            minRole: minRole,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingPlanPermission = false);
       }
     }
   }
@@ -147,9 +172,9 @@ class _TripActivitiesPermissionsPageState
                         title: l10n.tripPermissionActivitiesPlan,
                         minRole: trip.activitiesPermissions.planActivityMinRole,
                         icon: Icons.event_available_outlined,
-                        busy: false,
-                        enabled: false,
-                        onChanged: (_) {},
+                        busy: _isSavingPlanPermission,
+                        enabled: true,
+                        onChanged: (role) => _updatePlanPermission(minRole: role),
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesEdit,
