@@ -20,6 +20,7 @@ class Trip {
     this.generalPermissions = TripGeneralPermissions.defaults,
     this.participantsPermissions = TripParticipantsPermissions.defaults,
     this.expensesPermissions = TripExpensesPermissions.defaults,
+    this.activitiesPermissions = TripActivitiesPermissions.defaults,
   });
 
   final String id;
@@ -35,6 +36,7 @@ class Trip {
   final TripGeneralPermissions generalPermissions;
   final TripParticipantsPermissions participantsPermissions;
   final TripExpensesPermissions expensesPermissions;
+  final TripActivitiesPermissions activitiesPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -122,6 +124,9 @@ class Trip {
       expensesPermissions: TripExpensesPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['expenses'],
       ),
+      activitiesPermissions: TripActivitiesPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['activities'],
+      ),
     );
   }
 
@@ -146,6 +151,7 @@ class Trip {
         'tripGeneral': generalPermissions.toFirestore(),
         'participants': participantsPermissions.toFirestore(),
         'expenses': expensesPermissions.toFirestore(),
+        'activities': activitiesPermissions.toFirestore(),
       },
     };
   }

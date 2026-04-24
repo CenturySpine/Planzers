@@ -1044,4 +1044,77 @@ class TripsRepository {
       'permissions.expenses': TripExpensesPermissions.defaults.toFirestore(),
     });
   }
+
+  Future<void> updateTripActivitiesPermission({
+    required String tripId,
+    required TripActivitiesPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    final fieldName = switch (action) {
+      TripActivitiesPermissionAction.suggestActivity => 'suggestActivity',
+      TripActivitiesPermissionAction.planActivity => 'planActivity',
+      TripActivitiesPermissionAction.editActivity => 'editActivity',
+      TripActivitiesPermissionAction.deleteActivity => 'deleteActivity',
+    };
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.activities.$fieldName': minRole.toFirestore(),
+    });
+  }
+
+  Future<void> resetTripActivitiesPermissionsToDefaults({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.activities': TripActivitiesPermissions.defaults.toFirestore(),
+    });
+  }
 }

@@ -23,10 +23,31 @@ class TripActivitiesPermissionsPage extends ConsumerStatefulWidget {
 
 class _TripActivitiesPermissionsPageState
     extends ConsumerState<TripActivitiesPermissionsPage> {
-  TripPermissionRole _suggestActivityMinRole = TripPermissionRole.participant;
-  TripPermissionRole _planActivityMinRole = TripPermissionRole.admin;
-  TripPermissionRole _editActivityMinRole = TripPermissionRole.participant;
-  TripPermissionRole _deleteActivityMinRole = TripPermissionRole.participant;
+  bool _isSavingSuggestPermission = false;
+
+  Future<void> _updateSuggestPermission({
+    required TripPermissionRole minRole,
+  }) async {
+    if (_isSavingSuggestPermission) return;
+    setState(() => _isSavingSuggestPermission = true);
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
+            tripId: widget.tripId,
+            action: TripActivitiesPermissionAction.suggestActivity,
+            minRole: minRole,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingSuggestPermission = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,35 +137,35 @@ class _TripActivitiesPermissionsPageState
                       const SizedBox(height: 4),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesSuggest,
-                        minRole: _suggestActivityMinRole,
+                        minRole: trip.activitiesPermissions.suggestActivityMinRole,
                         icon: Icons.lightbulb_outline,
-                        busy: false,
+                        busy: _isSavingSuggestPermission,
                         enabled: true,
-                        onChanged: (role) => setState(() => _suggestActivityMinRole = role),
+                        onChanged: (role) => _updateSuggestPermission(minRole: role),
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesPlan,
-                        minRole: _planActivityMinRole,
+                        minRole: trip.activitiesPermissions.planActivityMinRole,
                         icon: Icons.event_available_outlined,
                         busy: false,
-                        enabled: true,
-                        onChanged: (role) => setState(() => _planActivityMinRole = role),
+                        enabled: false,
+                        onChanged: (_) {},
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesEdit,
-                        minRole: _editActivityMinRole,
+                        minRole: trip.activitiesPermissions.editActivityMinRole,
                         icon: Icons.edit_outlined,
                         busy: false,
-                        enabled: true,
-                        onChanged: (role) => setState(() => _editActivityMinRole = role),
+                        enabled: false,
+                        onChanged: (_) {},
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesDelete,
-                        minRole: _deleteActivityMinRole,
+                        minRole: trip.activitiesPermissions.deleteActivityMinRole,
                         icon: Icons.delete_outline,
                         busy: false,
-                        enabled: true,
-                        onChanged: (role) => setState(() => _deleteActivityMinRole = role),
+                        enabled: false,
+                        onChanged: (_) {},
                       ),
                     ],
                   ),

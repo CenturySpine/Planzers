@@ -153,6 +153,21 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripExpenseDeletePostMinRole(tripId));
     }
 
+    function tripSuggestActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.suggestActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.suggestActivity
+        : 'participant';
+    }
+
+    function canSuggestActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripSuggestActivityMinRole(tripId));
+    }
+
     function tripCreateParticipantMinRole(tripId) {
       return (
           tripDoc(tripId).data.permissions is map
@@ -343,7 +358,7 @@ service cloud.firestore {
 
       match /activities/{activityId} {
         allow read: if isTripMember(tripId);
-        allow create: if isTripMember(tripId);
+        allow create: if canSuggestActivity(tripId);
         allow update, delete: if isTripMember(tripId);
       }
 

@@ -245,3 +245,63 @@ class TripExpensesPermissions {
     };
   }
 }
+
+enum TripActivitiesPermissionAction {
+  suggestActivity,
+  planActivity,
+  editActivity,
+  deleteActivity,
+}
+
+/// Permissions for trip activities.
+///
+/// Firestore: `trips/{id}.permissions.activities`.
+class TripActivitiesPermissions {
+  const TripActivitiesPermissions({
+    required this.suggestActivityMinRole,
+    required this.planActivityMinRole,
+    required this.editActivityMinRole,
+    required this.deleteActivityMinRole,
+  });
+
+  final TripPermissionRole suggestActivityMinRole;
+  final TripPermissionRole planActivityMinRole;
+  final TripPermissionRole editActivityMinRole;
+  final TripPermissionRole deleteActivityMinRole;
+
+  static const defaults = TripActivitiesPermissions(
+    suggestActivityMinRole: TripPermissionRole.participant,
+    planActivityMinRole: TripPermissionRole.admin,
+    editActivityMinRole: TripPermissionRole.participant,
+    deleteActivityMinRole: TripPermissionRole.participant,
+  );
+
+  factory TripActivitiesPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripActivitiesPermissions(
+      suggestActivityMinRole: raw['suggestActivity'] == null
+          ? defaults.suggestActivityMinRole
+          : TripPermissionRole.fromFirestore(raw['suggestActivity']),
+      planActivityMinRole: raw['planActivity'] == null
+          ? defaults.planActivityMinRole
+          : TripPermissionRole.fromFirestore(raw['planActivity']),
+      editActivityMinRole: raw['editActivity'] == null
+          ? defaults.editActivityMinRole
+          : TripPermissionRole.fromFirestore(raw['editActivity']),
+      deleteActivityMinRole: raw['deleteActivity'] == null
+          ? defaults.deleteActivityMinRole
+          : TripPermissionRole.fromFirestore(raw['deleteActivity']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'suggestActivity': suggestActivityMinRole.toFirestore(),
+      'planActivity': planActivityMinRole.toFirestore(),
+      'editActivity': editActivityMinRole.toFirestore(),
+      'deleteActivity': deleteActivityMinRole.toFirestore(),
+    };
+  }
+}

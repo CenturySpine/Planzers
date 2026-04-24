@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -145,6 +147,11 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
+    final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canSuggestActivity = canSuggestActivityForTrip(
+      trip: trip,
+      userId: myUid,
+    );
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
 
@@ -252,12 +259,14 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'trip_activities_add',
-        tooltip: l10n.activitiesSuggestAction,
-        onPressed: () => _openAddActivitySheet(context, ref, trip.id),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canSuggestActivity
+          ? FloatingActionButton(
+              heroTag: 'trip_activities_add',
+              tooltip: l10n.activitiesSuggestAction,
+              onPressed: () => _openAddActivitySheet(context, ref, trip.id),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

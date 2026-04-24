@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
 final activitiesRepositoryProvider = Provider<ActivitiesRepository>((ref) {
   return ActivitiesRepository(
@@ -63,6 +65,19 @@ class ActivitiesRepository {
     final cleanLabel = label.trim();
     if (cleanLabel.isEmpty) {
       throw StateError('Libelle obligatoire');
+    }
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canSuggest = canSuggestActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canSuggest) {
+      throw StateError('Droits insuffisants pour suggerer une activite');
     }
 
     await _activitiesCol(cleanTripId).add({
