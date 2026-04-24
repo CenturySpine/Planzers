@@ -31,7 +31,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), 2025';
+      'Saint-Gervais-les-Bains (Haute-Savoie), May 2025';
 
   @override
   String get aboutCarouselCaption2 =>
@@ -1865,7 +1865,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), 2025';
+      'Saint-Gervais-les-Bains (Haute-Savoie), May 2025';
 
   @override
   String get aboutCarouselCaption2 =>

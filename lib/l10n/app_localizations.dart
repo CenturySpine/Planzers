@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutCarouselCaption1.
   ///
   /// In fr, this message translates to:
-  /// **'Saint-Gervais-les-Bains (Haute-Savoie), 2025'**
+  /// **'Saint-Gervais-les-Bains (Haute-Savoie), mai 2025'**
   String get aboutCarouselCaption1;
 
   /// No description provided for @aboutCarouselCaption2.
