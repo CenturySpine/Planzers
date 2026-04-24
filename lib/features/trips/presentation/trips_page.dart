@@ -281,8 +281,10 @@ class _TripsPageState extends ConsumerState<TripsPage>
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
                   children: [
                     TextButton(
                       onPressed: () => context.push(LegalInformationPage.routePath),
@@ -299,16 +301,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       ),
                       child: Text(l10n.legalInfoTitle),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '|',
-                      style: TextStyle(
-                        fontSize: _legalLinkFontSize,
-                        fontWeight: FontWeight.w400,
-                        color: legalLinkColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                    _FooterSeparator(color: legalLinkColor),
                     TextButton(
                       onPressed: () => context.push(AboutPage.routePath),
                       style: TextButton.styleFrom(
@@ -324,16 +317,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       ),
                       child: Text(l10n.aboutTitle),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '|',
-                      style: TextStyle(
-                        fontSize: _legalLinkFontSize,
-                        fontWeight: FontWeight.w400,
-                        color: legalLinkColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+                    _FooterSeparator(color: legalLinkColor),
                     Text(
                       l10n.appCopyright,
                       style: TextStyle(
@@ -718,6 +702,24 @@ class _TripsPageState extends ConsumerState<TripsPage>
         SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
       );
     }
+  }
+}
+
+class _FooterSeparator extends StatelessWidget {
+  const _FooterSeparator({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '|',
+      style: TextStyle(
+        fontSize: _TripsPageState._legalLinkFontSize,
+        fontWeight: FontWeight.w400,
+        color: color,
+      ),
+    );
   }
 }
 

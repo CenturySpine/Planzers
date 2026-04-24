@@ -146,6 +146,20 @@ class _AboutPageState extends State<AboutPage> {
                     child: Text(l10n.aboutFullNameAndAge, style: titleStyle),
                   ),
                   const SizedBox(height: 8),
+                  Center(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(6),
+                      onTap: () =>
+                          _openExternalUrl(context, 'https://ko-fi.com/G2G31YCXGK'),
+                      child: Image.network(
+                        'https://storage.ko-fi.com/cdn/kofi6.png?v=6',
+                        height: 36,
+                        fit: BoxFit.contain,
+                        semanticLabel: 'Buy Me a Coffee at ko-fi.com',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final maxAvailable = constraints.maxWidth;
@@ -342,6 +356,13 @@ class _AboutPageState extends State<AboutPage> {
                       context,
                       'https://github.com/CenturySpine',
                     ),
+                  ),
+                  _NetworkTile(
+                    icon: FontAwesomeIcons.mugHot,
+                    label: 'Ko-fi',
+                    value: 'https://ko-fi.com/brunochappe',
+                    onTap: () =>
+                        _openExternalUrl(context, 'https://ko-fi.com/brunochappe'),
                   ),
                   const SizedBox(height: 18),
                   Text(l10n.aboutContactTitle, style: sectionTitleStyle),
