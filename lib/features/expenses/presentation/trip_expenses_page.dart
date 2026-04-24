@@ -72,13 +72,28 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final settledTransfersAsync =
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
+    final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final canCreateExpense = groupsAsync.maybeWhen(
+      data: (groups) {
+        final visibleGroups = groups
+            .where((group) => group.isVisibleTo(viewerId))
+            .toList();
+        return visibleGroups.any(
+          (group) => canCreateExpenseForTrip(
+            trip: trip,
+            userId: viewerId,
+            expensePostVisibleToMemberIds: group.visibleToMemberIds,
+          ),
+        );
+      },
+      orElse: () => false,
+    );
 
     return Scaffold(
       body: groupsAsync.when(
         data: (groups) => expensesAsync.when(
           data: (expenses) => settledTransfersAsync.when(
             data: (settledTransfers) {
-              final viewerId = FirebaseAuth.instance.currentUser?.uid;
               return _TripExpensesBody(
                 trip: trip,
                 memberIds: trip.memberIds,
@@ -139,19 +154,21 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'trip_expenses_add',
-        tooltip: AppLocalizations.of(context)!.expensesAddExpenseTooltip,
-        onPressed: () => _openAddExpenseSheetFromFab(
-          context,
-          ref,
-          trip.id,
-          trip.memberIds,
-          trip.memberPublicLabels,
-          _activeGroupId,
-        ),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canCreateExpense
+          ? FloatingActionButton(
+              heroTag: 'trip_expenses_add',
+              tooltip: AppLocalizations.of(context)!.expensesAddExpenseTooltip,
+              onPressed: () => _openAddExpenseSheetFromFab(
+                context,
+                ref,
+                trip.id,
+                trip.memberIds,
+                trip.memberPublicLabels,
+                _activeGroupId,
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -702,6 +719,16 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       userId: viewerUserId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
+    final canEditExpense = canEditExpenseForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+    final canDeleteExpense = canDeleteExpenseForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -938,6 +965,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   widget.trip.id,
                   scope,
                   widget.memberLabels,
+                  canEditExpense: canEditExpense,
+                  canDeleteExpense: canDeleteExpense,
                 ),
             ],
           ),
@@ -1349,6 +1378,7 @@ List<Widget> _buildExpensesGroupedByDate(
   String tripId,
   List<String> participantScopeMemberIds,
   Map<String, String> memberLabels,
+  {required bool canEditExpense, required bool canDeleteExpense}
 ) {
   if (expenses.isEmpty) return const [];
 
@@ -1410,6 +1440,8 @@ List<Widget> _buildExpensesGroupedByDate(
             expense: e,
             participantScopeMemberIds: participantScopeMemberIds,
             memberLabels: memberLabels,
+            canEditExpense: canEditExpense,
+            canDeleteExpense: canDeleteExpense,
           ),
         ),
       );
@@ -1425,12 +1457,16 @@ class _ExpenseCard extends StatelessWidget {
     required this.expense,
     required this.participantScopeMemberIds,
     required this.memberLabels,
+    required this.canEditExpense,
+    required this.canDeleteExpense,
   });
 
   final String tripId;
   final TripExpense expense;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
+  final bool canEditExpense;
+  final bool canDeleteExpense;
 
   Future<void> _openDetails(BuildContext context) async {
     await Navigator.of(context).push(
@@ -1440,6 +1476,8 @@ class _ExpenseCard extends StatelessWidget {
           expense: expense,
           participantScopeMemberIds: participantScopeMemberIds,
           memberLabels: memberLabels,
+          canEditExpense: canEditExpense,
+          canDeleteExpense: canDeleteExpense,
         ),
       ),
     );
@@ -1535,12 +1573,16 @@ class _ExpenseDetailsPage extends ConsumerStatefulWidget {
     required this.expense,
     required this.participantScopeMemberIds,
     required this.memberLabels,
+    required this.canEditExpense,
+    required this.canDeleteExpense,
   });
 
   final String tripId;
   final TripExpense expense;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
+  final bool canEditExpense;
+  final bool canDeleteExpense;
 
   @override
   ConsumerState<_ExpenseDetailsPage> createState() =>
@@ -1898,6 +1940,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final canShowActions = widget.canEditExpense || widget.canDeleteExpense;
     final members = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
@@ -1908,26 +1951,31 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       appBar: AppBar(
         title: Text(l10n.expensesExpenseDetailTitle),
         actions: [
-          PopupMenuButton<_ExpenseDetailsMenuAction>(
-            enabled: !_saving && !_deleting,
-            onSelected: (action) async {
-              if (action == _ExpenseDetailsMenuAction.edit) {
-                setState(() => _editing = true);
-                return;
-              }
-              await _confirmDelete();
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem<_ExpenseDetailsMenuAction>(
-                value: _ExpenseDetailsMenuAction.edit,
-                child: Text(l10n.commonEdit),
-              ),
-              PopupMenuItem<_ExpenseDetailsMenuAction>(
-                value: _ExpenseDetailsMenuAction.delete,
-                child: Text(l10n.commonDelete),
-              ),
-            ],
-          ),
+          if (canShowActions)
+            PopupMenuButton<_ExpenseDetailsMenuAction>(
+              enabled: !_saving && !_deleting,
+              onSelected: (action) async {
+                if (action == _ExpenseDetailsMenuAction.edit) {
+                  if (!widget.canEditExpense) return;
+                  setState(() => _editing = true);
+                  return;
+                }
+                if (!widget.canDeleteExpense) return;
+                await _confirmDelete();
+              },
+              itemBuilder: (context) => [
+                if (widget.canEditExpense)
+                  PopupMenuItem<_ExpenseDetailsMenuAction>(
+                    value: _ExpenseDetailsMenuAction.edit,
+                    child: Text(l10n.commonEdit),
+                  ),
+                if (widget.canDeleteExpense)
+                  PopupMenuItem<_ExpenseDetailsMenuAction>(
+                    value: _ExpenseDetailsMenuAction.delete,
+                    child: Text(l10n.commonDelete),
+                  ),
+              ],
+            ),
         ],
       ),
       body: SingleChildScrollView(

@@ -90,3 +90,69 @@ bool canDeleteExpensePostForTrip({
     minRole: trip.expensesPermissions.deleteExpensePostMinRole,
   );
 }
+
+/// Create an expense line in a post: role + must see this post.
+bool canCreateExpenseForTrip({
+  required Trip trip,
+  required String? userId,
+  required List<String> expensePostVisibleToMemberIds,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty ||
+      !_expensePostVisibleToMember(
+        visibleToMemberIds: expensePostVisibleToMemberIds,
+        userId: uid,
+      )) {
+    return false;
+  }
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.expensesPermissions.createExpenseMinRole,
+  );
+}
+
+/// Edit an expense line: role + must see this post.
+bool canEditExpenseForTrip({
+  required Trip trip,
+  required String? userId,
+  required List<String> expensePostVisibleToMemberIds,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty ||
+      !_expensePostVisibleToMember(
+        visibleToMemberIds: expensePostVisibleToMemberIds,
+        userId: uid,
+      )) {
+    return false;
+  }
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.expensesPermissions.editExpenseMinRole,
+  );
+}
+
+/// Delete an expense line: role + must see this post.
+bool canDeleteExpenseForTrip({
+  required Trip trip,
+  required String? userId,
+  required List<String> expensePostVisibleToMemberIds,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty ||
+      !_expensePostVisibleToMember(
+        visibleToMemberIds: expensePostVisibleToMemberIds,
+        userId: uid,
+      )) {
+    return false;
+  }
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.expensesPermissions.deleteExpenseMinRole,
+  );
+}
