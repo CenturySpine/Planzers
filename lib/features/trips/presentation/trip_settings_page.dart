@@ -145,6 +145,7 @@ class TripSettingsPage extends ConsumerWidget {
                 title: l10n.tripSectionShopping,
                 icon: Icons.shopping_cart_outlined,
                 description: l10n.tripSectionShoppingDescription,
+                onTap: () => context.push('/trips/$tripId/settings/shopping'),
               ),
             ],
           ),

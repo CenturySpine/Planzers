@@ -6,6 +6,8 @@ import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -19,7 +21,11 @@ class TripShoppingPage extends ConsumerWidget {
     final itemsAsync = ref.watch(tripShoppingItemsStreamProvider(trip.id));
 
     return itemsAsync.when(
-      data: (items) => _ShoppingList(tripId: trip.id, items: items),
+      data: (items) => _ShoppingList(
+        tripId: trip.id,
+        items: items,
+        trip: trip,
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Padding(
@@ -35,10 +41,12 @@ class _ShoppingList extends ConsumerStatefulWidget {
   const _ShoppingList({
     required this.tripId,
     required this.items,
+    required this.trip,
   });
 
   final String tripId;
   final List<ShoppingItem> items;
+  final Trip trip;
 
   @override
   ConsumerState<_ShoppingList> createState() => _ShoppingListState();
@@ -124,6 +132,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final l10n = AppLocalizations.of(context)!;
     final currentUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final checkedCount = widget.items.where((item) => item.checked).length;
+    final currentRole = resolveTripPermissionRole(
+      trip: widget.trip,
+      userId: currentUid,
+    );
+    final canDeleteCheckedItems = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
+    );
     final searchQuery = _searchController.text;
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
@@ -303,16 +319,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                     onPressed: _addItem,
                     child: const Icon(Icons.add),
                   ),
-                  const SizedBox(height: 12),
-                  FloatingActionButton(
-                    heroTag: 'delete_checked_shopping_items',
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Theme.of(context).colorScheme.onError,
-                    onPressed: checkedCount == 0
-                        ? null
-                        : () => _confirmAndDeleteChecked(context),
-                    child: const Icon(Icons.delete_sweep_outlined),
-                  ),
+                  if (canDeleteCheckedItems) ...[
+                    const SizedBox(height: 12),
+                    FloatingActionButton(
+                      heroTag: 'delete_checked_shopping_items',
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                      foregroundColor: Theme.of(context).colorScheme.onError,
+                      onPressed: checkedCount == 0
+                          ? null
+                          : () => _confirmAndDeleteChecked(context),
+                      child: const Icon(Icons.delete_sweep_outlined),
+                    ),
+                  ],
                 ],
               ),
             ),

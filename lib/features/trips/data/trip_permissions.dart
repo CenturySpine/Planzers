@@ -305,3 +305,39 @@ class TripActivitiesPermissions {
     };
   }
 }
+
+enum TripShoppingPermissionAction {
+  deleteCheckedItems,
+}
+
+/// Permissions for trip shopping list.
+///
+/// Firestore: `trips/{id}.permissions.shopping`.
+class TripShoppingPermissions {
+  const TripShoppingPermissions({
+    required this.deleteCheckedItemsMinRole,
+  });
+
+  final TripPermissionRole deleteCheckedItemsMinRole;
+
+  static const defaults = TripShoppingPermissions(
+    deleteCheckedItemsMinRole: TripPermissionRole.admin,
+  );
+
+  factory TripShoppingPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripShoppingPermissions(
+      deleteCheckedItemsMinRole: raw['deleteCheckedItems'] == null
+          ? defaults.deleteCheckedItemsMinRole
+          : TripPermissionRole.fromFirestore(raw['deleteCheckedItems']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'deleteCheckedItems': deleteCheckedItemsMinRole.toFirestore(),
+    };
+  }
+}

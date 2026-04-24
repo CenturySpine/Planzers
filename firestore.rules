@@ -201,6 +201,21 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripDeleteActivityMinRole(tripId));
     }
 
+    function tripDeleteCheckedShoppingItemsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.shopping is map
+          && tripDoc(tripId).data.permissions.shopping.deleteCheckedItems is string
+        )
+        ? tripDoc(tripId).data.permissions.shopping.deleteCheckedItems
+        : 'admin';
+    }
+
+    function canDeleteCheckedShoppingItems(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteCheckedShoppingItemsMinRole(tripId));
+    }
+
     function tripCreateParticipantMinRole(tripId) {
       return (
           tripDoc(tripId).data.permissions is map
@@ -405,7 +420,12 @@ service cloud.firestore {
       }
 
       match /shoppingItems/{itemId} {
-        allow read, write: if isTripMember(tripId);
+        allow read, create, update: if isTripMember(tripId);
+        allow delete: if isTripMember(tripId)
+          && (
+            !(resource.data.checked is bool && resource.data.checked)
+            || canDeleteCheckedShoppingItems(tripId)
+          );
       }
 
       match /meals/{mealId} {

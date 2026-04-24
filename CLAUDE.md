@@ -16,6 +16,11 @@ These rules apply to everyone working on the repository, including automated cod
 - **Localization source of truth (GUI):** Never hardcode user-facing labels/messages in widgets, dialogs, SnackBars, tooltips, placeholders, or empty states. Always use an l10n key and add/update values in the reference ARB files (`app_fr`, `app_fr_FR`, `app_en`, `app_en_US`).
 - **Localization cleanup on deletion:** When deleting a UI component/flow, remove its now-unused translation keys and values from all reference ARB files. Do not keep obsolete keys, do not recreate equivalent aliases, and do not move/rename old keys just to preserve them.
 
+## Permissions management (product rules)
+
+- **Permission-driven UI controls:** When applying permissions in the UI, hide controls for unauthorized actions instead of showing disabled controls.
+- **New business actions require permission check-in:** When adding new actions on domain objects, explicitly ask the product owner whether a dedicated permission should be added for those actions.
+
 ## Engineering
 
 - Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
