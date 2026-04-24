@@ -1484,6 +1484,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mealComponentLockedByMe => 'You locked this component.';
+
+  @override
+  String mealComponentLockedByUser(Object user) {
+    return '$user is currently editing the recipe.';
+  }
+
+  @override
   String get mealComponentChangedUnsaved => 'Modified component not saved';
 
   @override
@@ -3366,6 +3374,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String mealIngredientsCount(Object count) {
     return '$count ingredient(s)';
+  }
+
+  @override
+  String get mealComponentLockedByMe => 'You locked this component.';
+
+  @override
+  String mealComponentLockedByUser(Object user) {
+    return '$user is currently editing the recipe.';
   }
 
   @override

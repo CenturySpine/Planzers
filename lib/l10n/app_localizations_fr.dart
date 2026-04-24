@@ -1496,6 +1496,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get mealComponentLockedByMe => 'Vous avez verrouillé ce composant.';
+
+  @override
+  String mealComponentLockedByUser(Object user) {
+    return '$user est en train de modifier la recette.';
+  }
+
+  @override
   String get mealComponentChangedUnsaved => 'Composant modifié non enregistré';
 
   @override
@@ -3392,6 +3400,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String mealIngredientsCount(Object count) {
     return '$count ingrédient(s)';
+  }
+
+  @override
+  String get mealComponentLockedByMe => 'Vous avez verrouillé ce composant.';
+
+  @override
+  String mealComponentLockedByUser(Object user) {
+    return '$user est en train de modifier la recette.';
   }
 
   @override

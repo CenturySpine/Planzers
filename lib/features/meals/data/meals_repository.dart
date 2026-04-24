@@ -441,6 +441,129 @@ class MealsRepository {
     });
   }
 
+  Future<void> updateMealComponents({
+    required String tripId,
+    required String mealId,
+    required List<MealComponent> components,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'components': components.map((c) => c.toMap()).toList(growable: false),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<String?> lockMealComponent({
+    required String tripId,
+    required String mealId,
+    required String componentId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    final cleanComponentId = componentId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty || cleanComponentId.isEmpty) {
+      throw StateError('Composant invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    return firestore.runTransaction<String?>((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) {
+        throw StateError('Repas introuvable');
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final components = ((data['components'] as List<dynamic>?) ?? const [])
+          .whereType<Map>()
+          .map((raw) => Map<String, dynamic>.from(raw))
+          .toList(growable: true);
+      final index = components.indexWhere(
+        (component) => (component['id'] as String? ?? '').trim() == cleanComponentId,
+      );
+      if (index < 0) {
+        throw StateError('Composant introuvable');
+      }
+
+      final currentLockOwner = (components[index]['lockedBy'] as String? ?? '').trim();
+      if (currentLockOwner.isNotEmpty && currentLockOwner != user.uid) {
+        return currentLockOwner;
+      }
+
+      components[index]['lockedBy'] = user.uid;
+      tx.update(docRef, {
+        'components': components,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return null;
+    });
+  }
+
+  Future<void> unlockMealComponent({
+    required String tripId,
+    required String mealId,
+    required String componentId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    final cleanComponentId = componentId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty || cleanComponentId.isEmpty) {
+      throw StateError('Composant invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    await firestore.runTransaction<void>((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) {
+        return;
+      }
+      final data = snap.data() ?? const <String, dynamic>{};
+      final components = ((data['components'] as List<dynamic>?) ?? const [])
+          .whereType<Map>()
+          .map((raw) => Map<String, dynamic>.from(raw))
+          .toList(growable: true);
+      final index = components.indexWhere(
+        (component) => (component['id'] as String? ?? '').trim() == cleanComponentId,
+      );
+      if (index < 0) return;
+
+      final currentLockOwner = (components[index]['lockedBy'] as String? ?? '').trim();
+      if (currentLockOwner.isEmpty || currentLockOwner != user.uid) {
+        return;
+      }
+
+      components[index]['lockedBy'] = null;
+      tx.update(docRef, {
+        'components': components,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   Future<void> deleteMeal({
     required String tripId,
     required String mealId,

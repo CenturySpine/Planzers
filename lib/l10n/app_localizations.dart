@@ -2735,6 +2735,18 @@ abstract class AppLocalizations {
   /// **'{count} ingrédient(s)'**
   String mealIngredientsCount(Object count);
 
+  /// No description provided for @mealComponentLockedByMe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous avez verrouillé ce composant.'**
+  String get mealComponentLockedByMe;
+
+  /// No description provided for @mealComponentLockedByUser.
+  ///
+  /// In fr, this message translates to:
+  /// **'{user} est en train de modifier la recette.'**
+  String mealComponentLockedByUser(Object user);
+
   /// No description provided for @mealComponentChangedUnsaved.
   ///
   /// In fr, this message translates to:

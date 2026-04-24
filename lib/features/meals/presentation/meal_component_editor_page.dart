@@ -12,11 +12,13 @@ class MealComponentEditorPage extends StatefulWidget {
     required this.component,
     required this.catalogItems,
     required this.participantAllergenIds,
+    this.showLockIndicator = false,
   });
 
   final MealComponent component;
   final List<IngredientCatalogItem> catalogItems;
   final Set<String> participantAllergenIds;
+  final bool showLockIndicator;
 
   @override
   State<MealComponentEditorPage> createState() =>
@@ -117,9 +119,16 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
       appBar: AppBar(
         title: Text(title),
         actions: [
-          TextButton(
+          if (widget.showLockIndicator)
+            IconButton(
+              tooltip: l10n.mealComponentLockedByMe,
+              onPressed: null,
+              icon: const Icon(Icons.lock_outline),
+            ),
+          IconButton(
+            tooltip: l10n.commonDone,
             onPressed: () => Navigator.of(context).pop(_component),
-            child: Text(l10n.commonDone),
+            icon: const Icon(Icons.check),
           ),
         ],
       ),

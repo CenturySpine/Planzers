@@ -46,6 +46,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _isSavingParticipants = false;
   bool _isSavingPotluckItems = false;
   bool _isSavingRestaurantUrl = false;
+  bool _isSavingComponents = false;
   bool _isDeleting = false;
   bool _isHydrated = false;
   DateTime _mealDate = DateUtils.dateOnly(DateTime.now());
@@ -57,6 +58,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   List<MealPotluckItem> _potluckItems = const [];
   bool _isRestaurantLinkEditing = true;
   String _restaurantUrl = '';
+
+  String get _currentUserId => FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+
+  bool _isComponentLockedByOther(MealComponent component) {
+    final lockOwner = (component.lockedBy ?? '').trim();
+    return lockOwner.isNotEmpty && lockOwner != _currentUserId;
+  }
 
   @override
   void initState() {
@@ -311,7 +319,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
-  void _addComponent(MealComponentKind kind) {
+  Future<void> _addComponent(MealComponentKind kind) async {
+    final previousComponents = _components;
     setState(() {
       _components = [
         ..._components,
@@ -323,24 +332,104 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         ),
       ];
     });
+    await _saveMealComponents(previousComponents: previousComponents);
   }
 
   Future<void> _openComponentEditor({
     required MealComponent component,
     required List<IngredientCatalogItem> catalogItems,
     required Set<String> participantAllergenIds,
+    required Map<String, String> tripMemberPublicLabels,
   }) async {
-    final updated = await Navigator.of(context).push<MealComponent>(
-      MaterialPageRoute(
-        builder: (_) => MealComponentEditorPage(
-          component: component,
-          catalogItems: catalogItems,
-          participantAllergenIds: participantAllergenIds,
+    if (_isComponentLockedByOther(component)) {
+      final lockOwnerId = (component.lockedBy ?? '').trim();
+      var lockOwnerData = <String, dynamic>{};
+      if (lockOwnerId.isNotEmpty) {
+        try {
+          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
+        } catch (_) {
+          lockOwnerData = const <String, dynamic>{};
+        }
+      }
+      if (!mounted) return;
+      final label = resolveTripMemberDisplayLabel(
+        memberId: lockOwnerId,
+        userData: lockOwnerData,
+        tripMemberPublicLabels: tripMemberPublicLabels,
+        currentUserId: _currentUserId,
+        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.mealComponentLockedByUser(label),
+          ),
         ),
-      ),
+      );
+      return;
+    }
+
+    final repo = ref.read(mealsRepositoryProvider);
+    final lockOwner = await repo.lockMealComponent(
+      tripId: widget.tripId,
+      mealId: widget.mealId!,
+      componentId: component.id,
     );
-    if (!mounted || updated == null) return;
-    _updateComponent(updated.copyWith(order: component.order));
+    if (!mounted) return;
+    if (lockOwner != null && lockOwner.trim().isNotEmpty) {
+      var lockOwnerData = <String, dynamic>{};
+      try {
+        final users = await ref.read(usersDataByIdsProvider(lockOwner).future);
+        lockOwnerData = users[lockOwner] ?? const <String, dynamic>{};
+      } catch (_) {
+        lockOwnerData = const <String, dynamic>{};
+      }
+      if (!mounted) return;
+      final label = resolveTripMemberDisplayLabel(
+        memberId: lockOwner,
+        userData: lockOwnerData,
+        tripMemberPublicLabels: tripMemberPublicLabels,
+        currentUserId: _currentUserId,
+        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.mealComponentLockedByUser(label),
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final updated = await Navigator.of(context).push<MealComponent>(
+        MaterialPageRoute(
+          builder: (_) => MealComponentEditorPage(
+            component: component,
+            catalogItems: catalogItems,
+            participantAllergenIds: participantAllergenIds,
+            showLockIndicator: true,
+          ),
+        ),
+      );
+      if (!mounted || updated == null) return;
+      final previousComponents = _components;
+      _updateComponent(
+        updated.copyWith(
+          order: component.order,
+          lockedBy: _currentUserId,
+        ),
+      );
+      await _saveMealComponents(previousComponents: previousComponents);
+    } finally {
+      await repo.unlockMealComponent(
+        tripId: widget.tripId,
+        mealId: widget.mealId!,
+        componentId: component.id,
+      );
+    }
   }
 
   void _updateComponent(MealComponent next) {
@@ -351,7 +440,43 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     });
   }
 
-  void _deleteComponent(String componentId) {
+  Future<void> _deleteComponent(String componentId) async {
+    final previousComponents = _components;
+    MealComponent? component;
+    for (final it in previousComponents) {
+      if (it.id == componentId) {
+        component = it;
+        break;
+      }
+    }
+    if (component != null && _isComponentLockedByOther(component)) {
+      var lockOwnerData = <String, dynamic>{};
+      final lockOwnerId = (component.lockedBy ?? '').trim();
+      if (lockOwnerId.isNotEmpty) {
+        try {
+          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
+        } catch (_) {
+          lockOwnerData = const <String, dynamic>{};
+        }
+      }
+      if (!mounted) return;
+      final label = resolveTripMemberDisplayLabel(
+        memberId: lockOwnerId,
+        userData: lockOwnerData,
+        tripMemberPublicLabels: const {},
+        currentUserId: _currentUserId,
+        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.mealComponentLockedByUser(label),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       final filtered = _components
           .where((component) => component.id != componentId)
@@ -361,9 +486,40 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           filtered[i].copyWith(order: i),
       ];
     });
+    await _saveMealComponents(previousComponents: previousComponents);
   }
 
-  void _reorderComponents(int oldIndex, int newIndex) {
+  Future<void> _reorderComponents(int oldIndex, int newIndex) async {
+    final previousComponents = _components;
+    final movingComponent = previousComponents[oldIndex];
+    if (_isComponentLockedByOther(movingComponent)) {
+      final lockOwnerId = (movingComponent.lockedBy ?? '').trim();
+      var lockOwnerData = <String, dynamic>{};
+      if (lockOwnerId.isNotEmpty) {
+        try {
+          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
+        } catch (_) {
+          lockOwnerData = const <String, dynamic>{};
+        }
+      }
+      if (!mounted) return;
+      final label = resolveTripMemberDisplayLabel(
+        memberId: lockOwnerId,
+        userData: lockOwnerData,
+        tripMemberPublicLabels: const {},
+        currentUserId: _currentUserId,
+        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.mealComponentLockedByUser(label),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       final next = _components.toList(growable: true);
       if (newIndex > oldIndex) {
@@ -375,6 +531,39 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
       ];
     });
+    await _saveMealComponents(previousComponents: previousComponents);
+  }
+
+  Future<void> _saveMealComponents({
+    required List<MealComponent> previousComponents,
+  }) async {
+    if (widget.isCreate || _isSavingComponents || _isSaving) return;
+    setState(() => _isSavingComponents = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealComponents(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            components: _components,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _components = previousComponents;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingComponents = false);
+      }
+    }
   }
 
   Future<void> _autoRecalculateParticipants(List<String> memberIds) async {
@@ -817,6 +1006,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 memberIds.every(_participantIds.contains);
             final participantIdsForRisk = _participantIds.toList()..sort();
             final participantIdsRiskKey = participantIdsForRisk.join('|');
+            final componentLockOwnerIds = _components
+                .map((component) => (component.lockedBy ?? '').trim())
+                .where((id) => id.isNotEmpty)
+                .toSet()
+                .toList(growable: false)
+              ..sort();
+            final componentLockOwnerRiskKey = componentLockOwnerIds.join('|');
             final potluckAddedByIds = _potluckItems
                 .map((item) => item.addedBy.trim())
                 .where((id) => id.isNotEmpty)
@@ -829,6 +1025,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             );
             final potluckUsersAsync = ref.watch(
               usersDataByIdsProvider(potluckAddedByRiskKey),
+            );
+            final lockOwnersAsync = ref.watch(
+              usersDataByIdsProvider(componentLockOwnerRiskKey),
             );
 
             return Scaffold(
@@ -1146,7 +1345,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               ),
                               PopupMenuButton<MealComponentKind>(
                                 tooltip: l10n.mealAddComponent,
-                                onSelected: _addComponent,
+                                onSelected: _isSavingComponents
+                                    ? null
+                                    : (kind) => _addComponent(kind),
                                 itemBuilder: (context) => [
                                   for (final kind in MealComponentKind.values)
                                     PopupMenuItem(
@@ -1177,9 +1378,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               physics: const NeverScrollableScrollPhysics(),
                               buildDefaultDragHandles: false,
                               itemCount: _components.length,
-                              onReorder: _reorderComponents,
+                                onReorder: _isSavingComponents
+                                    ? (_, __) {}
+                                    : _reorderComponents,
                               itemBuilder: (context, index) {
                                 final component = _components[index];
+                                final isLocked =
+                                    (component.lockedBy ?? '').trim().isNotEmpty;
                                 final usersData = usersAsync.asData?.value;
                                 final catalogItems = catalogAsync.asData?.value;
                                 final participantAllergenIds = usersData == null
@@ -1214,15 +1419,25 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                               catalogItems: catalogItems,
                                               participantAllergenIds:
                                                   participantAllergenIds,
+                                              tripMemberPublicLabels:
+                                                  trip.memberPublicLabels,
                                             ),
-                                    leading: ReorderableDragStartListener(
-                                      index: index,
-                                      child: const Padding(
-                                        padding:
-                                            EdgeInsets.symmetric(horizontal: 4),
-                                        child: Icon(Icons.drag_indicator),
-                                      ),
-                                    ),
+                                    leading: _isComponentLockedByOther(component)
+                                        ? const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
+                                            child: Icon(Icons.lock_outline),
+                                          )
+                                        : ReorderableDragStartListener(
+                                            index: index,
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 4,
+                                              ),
+                                              child: Icon(Icons.drag_indicator),
+                                            ),
+                                          ),
                                     title: Text(
                                       component.title.trim().isEmpty
                                           ? _componentKindLabel(
@@ -1239,7 +1454,48 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        if (risk != null &&
+                                        if ((component.lockedBy ?? '')
+                                                .trim()
+                                                .isNotEmpty)
+                                          Builder(
+                                            builder: (context) {
+                                              final lockOwnerId =
+                                                  (component.lockedBy ?? '')
+                                                      .trim();
+                                              final lockOwnersData = lockOwnersAsync
+                                                  .asData
+                                                  ?.value;
+                                              final lockOwnerData =
+                                                  lockOwnersData?[lockOwnerId];
+                                              final lockOwnerLabel =
+                                                  resolveTripMemberDisplayLabel(
+                                                memberId: lockOwnerId,
+                                                userData: lockOwnerData,
+                                                tripMemberPublicLabels:
+                                                    trip.memberPublicLabels,
+                                                currentUserId: _currentUserId,
+                                                emptyFallback:
+                                                    l10n.roleParticipant,
+                                              );
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  right: 4,
+                                                ),
+                                                child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child: buildProfileBadge(
+                                                    context: context,
+                                                    displayLabel: lockOwnerLabel,
+                                                    userData: lockOwnerData,
+                                                    size: 22,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        if (!isLocked &&
+                                            risk != null &&
                                             (risk.containsAllergenIds
                                                     .isNotEmpty ||
                                                 risk.mayContainAllergenIds
@@ -1264,13 +1520,22 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                               color: Colors.orange,
                                             ),
                                           ),
-                                        IconButton(
-                                          tooltip: l10n.mealDeleteComponent,
-                                          onPressed: () =>
-                                              _deleteComponent(component.id),
-                                          icon: const Icon(Icons.delete_outline),
-                                        ),
-                                        const Icon(Icons.chevron_right),
+                                        if (!isLocked) ...[
+                                          IconButton(
+                                            tooltip: l10n.mealDeleteComponent,
+                                            onPressed: _isSavingComponents
+                                                ? null
+                                                : _isComponentLockedByOther(
+                                                    component,
+                                                  )
+                                                ? null
+                                                : () => _deleteComponent(
+                                                      component.id,
+                                                    ),
+                                            icon: const Icon(Icons.delete_outline),
+                                          ),
+                                          const Icon(Icons.chevron_right),
+                                        ],
                                       ],
                                     ),
                                   ),

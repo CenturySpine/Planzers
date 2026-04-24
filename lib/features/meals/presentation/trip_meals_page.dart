@@ -256,6 +256,7 @@ class _MealCard extends ConsumerWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 16),
               if (hasChef) ...[
                 SizedBox(
                   width: 24,
@@ -290,11 +291,11 @@ class _MealCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
               ],
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               _MealModeBadge(mealMode: meal.mealMode),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Badge(
                 label: Text(meal.participantCount.toString()),
                 child: const Icon(Icons.people_outline),

@@ -166,6 +166,7 @@ class MealComponent {
     required this.order,
     required this.ingredients,
     this.title = '',
+    this.lockedBy,
   });
 
   final String id;
@@ -173,6 +174,7 @@ class MealComponent {
   final String title;
   final int order;
   final List<MealComponentIngredient> ingredients;
+  final String? lockedBy;
 
   factory MealComponent.fromMap(Map<String, dynamic> map) {
     final orderRaw = map['order'];
@@ -193,6 +195,9 @@ class MealComponent {
               ))
           .where((i) => i.label.isNotEmpty)
           .toList(growable: false),
+      lockedBy: (map['lockedBy'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : (map['lockedBy'] as String).trim(),
     );
   }
 
@@ -203,6 +208,7 @@ class MealComponent {
       'title': title.trim(),
       'order': order,
       'ingredients': ingredients.map((i) => i.toMap()).toList(growable: false),
+      'lockedBy': lockedBy?.trim(),
     };
   }
 
@@ -212,6 +218,7 @@ class MealComponent {
     String? title,
     int? order,
     List<MealComponentIngredient>? ingredients,
+    Object? lockedBy = _noLockedByChange,
   }) {
     return MealComponent(
       id: id ?? this.id,
@@ -219,6 +226,9 @@ class MealComponent {
       title: title ?? this.title,
       order: order ?? this.order,
       ingredients: ingredients ?? this.ingredients,
+      lockedBy: identical(lockedBy, _noLockedByChange)
+          ? this.lockedBy
+          : lockedBy as String?,
     );
   }
 }
@@ -434,3 +444,4 @@ class TripMeal {
 }
 
 const Object _noChefParticipantIdChange = Object();
+const Object _noLockedByChange = Object();
