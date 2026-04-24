@@ -205,7 +205,8 @@ class _MealCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final chefId = meal.chefParticipantId?.trim();
-    final hasChef = chefId != null && chefId.isNotEmpty;
+    final hasChef =
+        meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
     final chefUsersAsync = hasChef
         ? ref.watch(usersDataByIdsProvider(chefId))
         : const AsyncValue<Map<String, Map<String, dynamic>>>.data({});
@@ -289,6 +290,9 @@ class _MealCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
               ],
+              const SizedBox(width: 10),
+              _MealModeBadge(mealMode: meal.mealMode),
+              const SizedBox(width: 10),
               Badge(
                 label: Text(meal.participantCount.toString()),
                 child: const Icon(Icons.people_outline),
@@ -296,6 +300,30 @@ class _MealCard extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MealModeBadge extends StatelessWidget {
+  const _MealModeBadge({required this.mealMode});
+
+  final MealMode mealMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = switch (mealMode) {
+      MealMode.cooked => 'assets/images/chef_hat.svg',
+      MealMode.restaurant => 'assets/images/hand_meal.svg',
+      MealMode.potluck => 'assets/images/tapas.svg',
+    };
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: SvgPicture.asset(
+        asset,
+        width: 18,
+        height: 18,
       ),
     );
   }

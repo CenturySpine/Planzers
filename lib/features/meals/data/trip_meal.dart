@@ -33,6 +33,27 @@ enum MealComponentKind {
   }
 }
 
+enum MealMode {
+  cooked,
+  restaurant,
+  potluck;
+
+  String get firestoreValue => switch (this) {
+        MealMode.cooked => 'cooked',
+        MealMode.restaurant => 'restaurant',
+        MealMode.potluck => 'potluck',
+      };
+
+  static MealMode fromFirestore(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    return switch (normalized) {
+      'restaurant' => MealMode.restaurant,
+      'potluck' => MealMode.potluck,
+      _ => MealMode.cooked,
+    };
+  }
+}
+
 class MealComponentIngredient {
   const MealComponentIngredient({
     required this.catalogItemId,
@@ -162,6 +183,9 @@ class TripMeal {
     this.updatedAt,
     this.notes = '',
     this.components = const [],
+    this.mealMode = MealMode.cooked,
+    this.restaurantUrl = '',
+    this.potluckItems = const [],
   });
 
   final String id;
@@ -180,6 +204,9 @@ class TripMeal {
   final DateTime? updatedAt;
   final String notes;
   final List<MealComponent> components;
+  final MealMode mealMode;
+  final String restaurantUrl;
+  final List<String> potluckItems;
 
   /// Convenience accessor for participant count.
   int get participantCount => participantIds.length;
@@ -241,6 +268,12 @@ class TripMeal {
           .map((raw) => MealComponent.fromMap(Map<String, dynamic>.from(raw)))
           .toList(growable: false)
         ..sort((a, b) => a.order.compareTo(b.order)),
+      mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
+      restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
+      potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList(growable: false),
       createdBy: (data['createdBy'] as String?)?.trim() ?? '',
       createdAt: _parseDateOrNow(data['createdAt']),
       updatedAt: _parseOptionalDate(data['updatedAt']),
@@ -274,6 +307,12 @@ class TripMeal {
       'chefParticipantId': chefParticipantId,
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
+      'mealMode': mealMode.firestoreValue,
+      'restaurantUrl': restaurantUrl.trim(),
+      'potluckItems': potluckItems
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
       'createdBy': createdBy.trim(),
       'createdAt': FieldValue.serverTimestamp(),
     };
@@ -289,6 +328,12 @@ class TripMeal {
       'chefParticipantId': chefParticipantId,
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
+      'mealMode': mealMode.firestoreValue,
+      'restaurantUrl': restaurantUrl.trim(),
+      'potluckItems': potluckItems
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -305,6 +350,9 @@ class TripMeal {
     DateTime? updatedAt,
     String? notes,
     List<MealComponent>? components,
+    MealMode? mealMode,
+    String? restaurantUrl,
+    List<String>? potluckItems,
   }) {
     return TripMeal(
       id: id ?? this.id,
@@ -320,6 +368,9 @@ class TripMeal {
       updatedAt: updatedAt ?? this.updatedAt,
       notes: notes ?? this.notes,
       components: components ?? this.components,
+      mealMode: mealMode ?? this.mealMode,
+      restaurantUrl: restaurantUrl ?? this.restaurantUrl,
+      potluckItems: potluckItems ?? this.potluckItems,
     );
   }
 

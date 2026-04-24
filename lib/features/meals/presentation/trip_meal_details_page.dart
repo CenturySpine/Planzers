@@ -224,8 +224,29 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         : null;
     _components = meal.components.toList(growable: true)
       ..sort((a, b) => a.order.compareTo(b.order));
+    _activeMealView = _mealViewFromDataMode(meal.mealMode);
+    _restaurantUrl = meal.restaurantUrl.trim();
+    _restaurantUrlController.text = _restaurantUrl;
+    _isRestaurantLinkEditing = _restaurantUrl.isEmpty;
+    _potluckItems = meal.potluckItems.toList(growable: false);
     _saveCurrentAsBaseline();
     _isHydrated = true;
+  }
+
+  MealMode _dataModeFromMealView(_MealDetailsView view) {
+    return switch (view) {
+      _MealDetailsView.cooked => MealMode.cooked,
+      _MealDetailsView.restaurant => MealMode.restaurant,
+      _MealDetailsView.potluck => MealMode.potluck,
+    };
+  }
+
+  _MealDetailsView _mealViewFromDataMode(MealMode mode) {
+    return switch (mode) {
+      MealMode.cooked => _MealDetailsView.cooked,
+      MealMode.restaurant => _MealDetailsView.restaurant,
+      MealMode.potluck => _MealDetailsView.potluck,
+    };
   }
 
   String _componentSignature(MealComponent component) {
@@ -255,7 +276,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     return '${_nameController.text.trim()}|$_mealDateKey|'
         '${tripDayPartToFirestore(_mealDayPart)}|'
         '${sortedParticipants.join(",")}|${_chefParticipantId ?? ""}|'
-        '$componentsSignature';
+        '$componentsSignature|${_activeMealView.name}|'
+        '${_restaurantUrl.trim()}|${_potluckItems.join("~")}';
   }
 
   void _saveCurrentAsBaseline() {
@@ -455,6 +477,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final repo = ref.read(mealsRepositoryProvider);
       final mealDayPart = tripDayPartToFirestore(_mealDayPart);
       final participantIds = _participantIds.toList()..sort();
+      final mealMode = _dataModeFromMealView(_activeMealView);
+      final restaurantUrl = mealMode == MealMode.restaurant
+          ? _restaurantUrl.trim()
+          : '';
+      final potluckItems = mealMode == MealMode.potluck
+          ? _potluckItems
+          : const <String>[];
       if (widget.isCreate) {
         await repo.addMeal(
           tripId: widget.tripId,
@@ -465,6 +494,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           chefParticipantId: _chefParticipantId,
           notes: '',
           components: _components,
+          mealMode: mealMode,
+          restaurantUrl: restaurantUrl,
+          potluckItems: potluckItems,
         );
         if (!mounted) return;
         Navigator.of(context).pop();
@@ -483,6 +515,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           chefParticipantId: _chefParticipantId,
           notes: '',
           components: _components,
+          mealMode: mealMode,
+          restaurantUrl: restaurantUrl,
+          potluckItems: potluckItems,
         );
         if (!mounted) return;
         setState(_saveCurrentAsBaseline);

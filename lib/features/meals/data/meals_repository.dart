@@ -138,6 +138,9 @@ class MealsRepository {
     String? chefParticipantId,
     required String notes,
     List<MealComponent> components = const [],
+    MealMode mealMode = MealMode.cooked,
+    String restaurantUrl = '',
+    List<String> potluckItems = const [],
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -163,6 +166,12 @@ class MealsRepository {
           : chefParticipantId!.trim(),
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
+      'mealMode': mealMode.firestoreValue,
+      'restaurantUrl': restaurantUrl.trim(),
+      'potluckItems': potluckItems
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -180,6 +189,9 @@ class MealsRepository {
     String? chefParticipantId,
     required String notes,
     List<MealComponent> components = const [],
+    MealMode mealMode = MealMode.cooked,
+    String restaurantUrl = '',
+    List<String> potluckItems = const [],
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -212,6 +224,12 @@ class MealsRepository {
           : chefParticipantId!.trim(),
       'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
+      'mealMode': mealMode.firestoreValue,
+      'restaurantUrl': restaurantUrl.trim(),
+      'potluckItems': potluckItems
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
