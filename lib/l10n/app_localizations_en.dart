@@ -561,6 +561,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPermissionExpensesDeleteExpense => 'Delete an expense';
 
   @override
+  String get tripPermissionsActivitiesTitle => 'Activity-related permissions';
+
+  @override
+  String get tripPermissionsActivitiesDescription =>
+      'Minimum roles to suggest, plan, edit, and delete an activity.';
+
+  @override
+  String get tripPermissionActivitiesSuggest => 'Suggest an activity';
+
+  @override
+  String get tripPermissionActivitiesPlan => 'Plan an activity';
+
+  @override
+  String get tripPermissionActivitiesEdit => 'Edit an activity';
+
+  @override
+  String get tripPermissionActivitiesDelete => 'Delete an activity';
+
+  @override
   String get tripSectionTrip => 'Trip';
 
   @override
@@ -2381,6 +2400,25 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionExpensesDeleteExpense => 'Delete an expense';
+
+  @override
+  String get tripPermissionsActivitiesTitle => 'Activity-related permissions';
+
+  @override
+  String get tripPermissionsActivitiesDescription =>
+      'Minimum roles to suggest, plan, edit, and delete an activity.';
+
+  @override
+  String get tripPermissionActivitiesSuggest => 'Suggest an activity';
+
+  @override
+  String get tripPermissionActivitiesPlan => 'Plan an activity';
+
+  @override
+  String get tripPermissionActivitiesEdit => 'Edit an activity';
+
+  @override
+  String get tripPermissionActivitiesDelete => 'Delete an activity';
 
   @override
   String get tripSectionTrip => 'Trip';

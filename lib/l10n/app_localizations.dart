@@ -1096,6 +1096,42 @@ abstract class AppLocalizations {
   /// **'Supprimer une dépense'**
   String get tripPermissionExpensesDeleteExpense;
 
+  /// No description provided for @tripPermissionsActivitiesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions liées aux activités'**
+  String get tripPermissionsActivitiesTitle;
+
+  /// No description provided for @tripPermissionsActivitiesDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôles minimaux pour suggérer, planifier, modifier et supprimer une activité.'**
+  String get tripPermissionsActivitiesDescription;
+
+  /// No description provided for @tripPermissionActivitiesSuggest.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suggérer une activité'**
+  String get tripPermissionActivitiesSuggest;
+
+  /// No description provided for @tripPermissionActivitiesPlan.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planifier une activité'**
+  String get tripPermissionActivitiesPlan;
+
+  /// No description provided for @tripPermissionActivitiesEdit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier une activité'**
+  String get tripPermissionActivitiesEdit;
+
+  /// No description provided for @tripPermissionActivitiesDelete.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer une activité'**
+  String get tripPermissionActivitiesDelete;
+
   /// No description provided for @tripSectionTrip.
   ///
   /// In fr, this message translates to:
