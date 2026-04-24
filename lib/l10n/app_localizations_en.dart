@@ -1370,13 +1370,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealsPressPlusToPlan => 'Press + to plan a meal.';
 
   @override
-  String get dayPartMorning => 'Morning';
+  String get dayPartMorning => 'Breakfast';
 
   @override
-  String get dayPartMidday => 'Midday';
+  String get dayPartMidday => 'Lunch';
 
   @override
-  String get dayPartEvening => 'Evening';
+  String get dayPartEvening => 'Dinner';
 
   @override
   String get mealMomentBreakfast => 'Breakfast';
@@ -1449,6 +1449,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonSelectAll => 'Select all';
 
   @override
   String get mealComponentsTitle => 'Meal components';
@@ -3204,13 +3207,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealsPressPlusToPlan => 'Press + to plan a meal.';
 
   @override
-  String get dayPartMorning => 'Morning';
+  String get dayPartMorning => 'Breakfast';
 
   @override
-  String get dayPartMidday => 'Midday';
+  String get dayPartMidday => 'Lunch';
 
   @override
-  String get dayPartEvening => 'Evening';
+  String get dayPartEvening => 'Dinner';
 
   @override
   String get mealMomentBreakfast => 'Breakfast';
@@ -3283,6 +3286,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonSelectAll => 'Select all';
 
   @override
   String get mealComponentsTitle => 'Meal components';

@@ -1382,13 +1382,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealsPressPlusToPlan => 'Appuyez sur + pour planifier un repas.';
 
   @override
-  String get dayPartMorning => 'Matin';
+  String get dayPartMorning => 'Petit-déjeuner';
 
   @override
-  String get dayPartMidday => 'Midi';
+  String get dayPartMidday => 'Déjeuner';
 
   @override
-  String get dayPartEvening => 'Soir';
+  String get dayPartEvening => 'Dîner';
 
   @override
   String get mealMomentBreakfast => 'Petit-déjeuner';
@@ -1461,6 +1461,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonSelectAll => 'Tout sélectionner';
 
   @override
   String get mealComponentsTitle => 'Composants du repas';
@@ -3230,13 +3233,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get mealsPressPlusToPlan => 'Appuyez sur + pour planifier un repas.';
 
   @override
-  String get dayPartMorning => 'Matin';
+  String get dayPartMorning => 'Petit-déjeuner';
 
   @override
-  String get dayPartMidday => 'Midi';
+  String get dayPartMidday => 'Déjeuner';
 
   @override
-  String get dayPartEvening => 'Soir';
+  String get dayPartEvening => 'Dîner';
 
   @override
   String get mealMomentBreakfast => 'Petit-déjeuner';
@@ -3309,6 +3312,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get commonAuto => 'Auto';
+
+  @override
+  String get commonSelectAll => 'Tout sélectionner';
 
   @override
   String get mealComponentsTitle => 'Composants du repas';

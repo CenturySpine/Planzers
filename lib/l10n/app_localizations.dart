@@ -2528,19 +2528,19 @@ abstract class AppLocalizations {
   /// No description provided for @dayPartMorning.
   ///
   /// In fr, this message translates to:
-  /// **'Matin'**
+  /// **'Petit-déjeuner'**
   String get dayPartMorning;
 
   /// No description provided for @dayPartMidday.
   ///
   /// In fr, this message translates to:
-  /// **'Midi'**
+  /// **'Déjeuner'**
   String get dayPartMidday;
 
   /// No description provided for @dayPartEvening.
   ///
   /// In fr, this message translates to:
-  /// **'Soir'**
+  /// **'Dîner'**
   String get dayPartEvening;
 
   /// No description provided for @mealMomentBreakfast.
@@ -2680,6 +2680,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Auto'**
   String get commonAuto;
+
+  /// No description provided for @commonSelectAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout sélectionner'**
+  String get commonSelectAll;
 
   /// No description provided for @mealComponentsTitle.
   ///

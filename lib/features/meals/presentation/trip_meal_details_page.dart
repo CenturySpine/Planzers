@@ -279,6 +279,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
+  void _selectAllParticipants(List<String> memberIds) {
+    setState(() => _participantIds = memberIds.toSet());
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -578,6 +582,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   _autoRecalculateParticipants(memberIds),
                               icon: const Icon(Icons.auto_fix_high_outlined),
                               label: Text(l10n.commonAuto),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => _selectAllParticipants(memberIds),
+                              icon: const Icon(Icons.done_all_outlined),
+                              label: Text(l10n.commonSelectAll),
                             ),
                           ],
                         ),
