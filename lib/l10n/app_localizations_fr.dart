@@ -1211,13 +1211,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pour calculer distance et durée en voiture';
 
   @override
-  String get activitiesLocked => 'Activité verrouillée';
-
-  @override
-  String get activitiesLockedHint =>
-      'Si activée, seuls les admins peuvent modifier cette activité.';
-
-  @override
   String get activitiesComments => 'Commentaires';
 
   @override
@@ -3064,13 +3057,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get activitiesAddressHint =>
       'Pour calculer distance et durée en voiture';
-
-  @override
-  String get activitiesLocked => 'Activité verrouillée';
-
-  @override
-  String get activitiesLockedHint =>
-      'Si activée, seuls les admins peuvent modifier cette activité.';
 
   @override
   String get activitiesComments => 'Commentaires';

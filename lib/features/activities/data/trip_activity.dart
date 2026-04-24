@@ -14,7 +14,6 @@ class TripActivity {
     required this.createdBy,
     required this.createdAt,
     this.done = false,
-    this.isLocked = false,
     this.plannedAt,
     this.doneAt,
     this.linkPreview = const {},
@@ -34,7 +33,6 @@ class TripActivity {
 
   /// Whether participants consider this outing done.
   final bool done;
-  final bool isLocked;
   final DateTime? plannedAt;
   final DateTime? doneAt;
 
@@ -64,12 +62,6 @@ class TripActivity {
         : doneRaw is String
             ? doneRaw.toLowerCase() == 'true'
             : false;
-    final lockedRaw = data['isLocked'];
-    final isLocked = lockedRaw is bool
-        ? lockedRaw
-        : lockedRaw is String
-            ? lockedRaw.toLowerCase() == 'true'
-            : false;
     final doneAtRaw = data['doneAt'];
     final doneAt = switch (doneAtRaw) {
       Timestamp ts => ts.toDate(),
@@ -93,7 +85,6 @@ class TripActivity {
       createdBy: (data['createdBy'] as String?) ?? '',
       createdAt: createdAt,
       done: done,
-      isLocked: isLocked,
       plannedAt: plannedAt,
       doneAt: done ? doneAt : null,
       linkPreview: _previewFromFirestore(data['linkPreview']),

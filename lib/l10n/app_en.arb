@@ -511,8 +511,6 @@
   "activitiesLink": "Link (website, tickets, ...)",
   "activitiesAddress": "Location address (route from trip)",
   "activitiesAddressHint": "Used to calculate driving distance and duration",
-  "activitiesLocked": "Locked activity",
-  "activitiesLockedHint": "If enabled, only admins can edit this activity.",
   "activitiesComments": "Comments",
   "linkInvalidExample": "Invalid link (example: https://...)",
   "shoppingDeleteCheckedTitle": "Delete checked items?",
