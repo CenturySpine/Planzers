@@ -17,18 +17,6 @@ service cloud.firestore {
         && request.auth.uid in tripDoc(tripId).data.memberIds;
     }
 
-    function isTripMemberAfterWrite(tripId) {
-      return signedIn()
-        && existsAfter(/databases/$(database)/documents/trips/$(tripId))
-        && getAfter(/databases/$(database)/documents/trips/$(tripId))
-          .data.keys().hasAll(['memberIds'])
-        && getAfter(/databases/$(database)/documents/trips/$(tripId))
-          .data.memberIds is list
-        && request.auth.uid in getAfter(
-          /databases/$(database)/documents/trips/$(tripId)
-        ).data.memberIds;
-    }
-
     function tripCallerRoleRank(tripId) {
       return tripDoc(tripId).data.ownerId == request.auth.uid
         ? 2
@@ -181,6 +169,36 @@ service cloud.firestore {
     function canPlanActivity(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripPlanActivityMinRole(tripId));
+    }
+
+    function tripEditActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.editActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.editActivity
+        : 'participant';
+    }
+
+    function canEditActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditActivityMinRole(tripId));
+    }
+
+    function tripDeleteActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.deleteActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.deleteActivity
+        : 'participant';
+    }
+
+    function canDeleteActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteActivityMinRole(tripId));
     }
 
     function tripCreateParticipantMinRole(tripId) {
@@ -379,11 +397,11 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['plannedAt', 'updatedAt'])
         ) || (
-          isTripMember(tripId)
+          canEditActivity(tripId)
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['plannedAt'])
         );
-        allow delete: if isTripMember(tripId);
+        allow delete: if canDeleteActivity(tripId);
       }
 
       match /shoppingItems/{itemId} {

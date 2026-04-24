@@ -115,6 +115,19 @@ class ActivitiesRepository {
       throw StateError('Activite introuvable');
     }
 
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canEdit = canEditActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canEdit) {
+      throw StateError('Droits insuffisants pour modifier une activite');
+    }
+
     await docRef.update({
       'done': done,
       'doneAt': done ? FieldValue.serverTimestamp() : FieldValue.delete(),
@@ -195,6 +208,19 @@ class ActivitiesRepository {
       throw StateError('Activite introuvable');
     }
 
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canEdit = canEditActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canEdit) {
+      throw StateError('Droits insuffisants pour modifier une activite');
+    }
+
     await docRef.update({
       'label': cleanLabel,
       'category': category.firestoreValue,
@@ -225,6 +251,19 @@ class ActivitiesRepository {
     final snap = await docRef.get();
     if (!snap.exists) {
       throw StateError('Activite introuvable');
+    }
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canDelete = canDeleteActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canDelete) {
+      throw StateError('Droits insuffisants pour supprimer une activite');
     }
 
     await docRef.delete();

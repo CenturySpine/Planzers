@@ -25,11 +25,20 @@ class _TripActivitiesPermissionsPageState
     extends ConsumerState<TripActivitiesPermissionsPage> {
   bool _isSavingSuggestPermission = false;
   bool _isSavingPlanPermission = false;
+  bool _isSavingEditPermission = false;
+  bool _isSavingDeletePermission = false;
+  bool _isResettingDefaults = false;
+
+  bool get _isAnySaving =>
+      _isSavingSuggestPermission ||
+      _isSavingPlanPermission ||
+      _isSavingEditPermission ||
+      _isSavingDeletePermission;
 
   Future<void> _updateSuggestPermission({
     required TripPermissionRole minRole,
   }) async {
-    if (_isSavingSuggestPermission) return;
+    if (_isSavingSuggestPermission || _isResettingDefaults) return;
     setState(() => _isSavingSuggestPermission = true);
     try {
       await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
@@ -53,7 +62,7 @@ class _TripActivitiesPermissionsPageState
   Future<void> _updatePlanPermission({
     required TripPermissionRole minRole,
   }) async {
-    if (_isSavingPlanPermission) return;
+    if (_isSavingPlanPermission || _isResettingDefaults) return;
     setState(() => _isSavingPlanPermission = true);
     try {
       await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
@@ -70,6 +79,79 @@ class _TripActivitiesPermissionsPageState
     } finally {
       if (mounted) {
         setState(() => _isSavingPlanPermission = false);
+      }
+    }
+  }
+
+  Future<void> _updateEditPermission({
+    required TripPermissionRole minRole,
+  }) async {
+    if (_isSavingEditPermission || _isResettingDefaults) return;
+    setState(() => _isSavingEditPermission = true);
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
+            tripId: widget.tripId,
+            action: TripActivitiesPermissionAction.editActivity,
+            minRole: minRole,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingEditPermission = false);
+      }
+    }
+  }
+
+  Future<void> _updateDeletePermission({
+    required TripPermissionRole minRole,
+  }) async {
+    if (_isSavingDeletePermission || _isResettingDefaults) return;
+    setState(() => _isSavingDeletePermission = true);
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripActivitiesPermission(
+            tripId: widget.tripId,
+            action: TripActivitiesPermissionAction.deleteActivity,
+            minRole: minRole,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingDeletePermission = false);
+      }
+    }
+  }
+
+  Future<void> _resetDefaults() async {
+    if (_isResettingDefaults || _isAnySaving) return;
+    setState(() => _isResettingDefaults = true);
+    try {
+      await ref
+          .read(tripsRepositoryProvider)
+          .resetTripActivitiesPermissionsToDefaults(tripId: widget.tripId);
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripPermissionsResetDone)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isResettingDefaults = false);
       }
     }
   }
@@ -165,7 +247,7 @@ class _TripActivitiesPermissionsPageState
                         minRole: trip.activitiesPermissions.suggestActivityMinRole,
                         icon: Icons.lightbulb_outline,
                         busy: _isSavingSuggestPermission,
-                        enabled: true,
+                        enabled: !_isResettingDefaults,
                         onChanged: (role) => _updateSuggestPermission(minRole: role),
                       ),
                       TripPermissionItemRow(
@@ -173,28 +255,47 @@ class _TripActivitiesPermissionsPageState
                         minRole: trip.activitiesPermissions.planActivityMinRole,
                         icon: Icons.event_available_outlined,
                         busy: _isSavingPlanPermission,
-                        enabled: true,
+                        enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePlanPermission(minRole: role),
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesEdit,
                         minRole: trip.activitiesPermissions.editActivityMinRole,
                         icon: Icons.edit_outlined,
-                        busy: false,
-                        enabled: false,
-                        onChanged: (_) {},
+                        busy: _isSavingEditPermission,
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updateEditPermission(minRole: role),
                       ),
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesDelete,
                         minRole: trip.activitiesPermissions.deleteActivityMinRole,
                         icon: Icons.delete_outline,
-                        busy: false,
-                        enabled: false,
-                        onChanged: (_) {},
+                        busy: _isSavingDeletePermission,
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) =>
+                            _updateDeletePermission(minRole: role),
                       ),
                     ],
                   ),
                 ),
+              ),
+              Row(
+                children: [
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: (_isResettingDefaults || _isAnySaving)
+                        ? null
+                        : _resetDefaults,
+                    icon: _isResettingDefaults
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: Text(l10n.tripPermissionsResetDefaultsAction),
+                  ),
+                ],
               ),
             ],
           ),

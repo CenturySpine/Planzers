@@ -255,8 +255,25 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
 
         final activity = TripActivity.fromDoc(doc);
         _syncControllersWhenIdle(activity);
-
-        final canEdit = myUid != null && myUid.isNotEmpty;
+        final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
+        final canEdit = tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canEditActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
+        final canDelete = tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canDeleteActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
 
         return Scaffold(
           appBar: AppBar(
@@ -285,27 +302,29 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
-              if (canEdit && !_editing) ...[
-                IconButton(
-                  tooltip: l10n.commonEdit,
-                  onPressed: _deleting
-                      ? null
-                      : () => setState(() => _editing = true),
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                IconButton(
-                  tooltip: l10n.commonDelete,
-                  onPressed: _deleting
-                      ? null
-                      : () => _confirmAndDelete(activity),
-                  icon: _deleting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.delete_outline),
-                ),
+              if (!_editing) ...[
+                if (canEdit)
+                  IconButton(
+                    tooltip: l10n.commonEdit,
+                    onPressed: _deleting
+                        ? null
+                        : () => setState(() => _editing = true),
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+                if (canDelete)
+                  IconButton(
+                    tooltip: l10n.commonDelete,
+                    onPressed: _deleting
+                        ? null
+                        : () => _confirmAndDelete(activity),
+                    icon: _deleting
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_outline),
+                  ),
               ],
               if (canEdit && _editing) ...[
                 IconButton(
@@ -344,6 +363,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
               : _ReadBody(
                   tripId: widget.tripId,
                   activity: activity,
+                  canEditActivity: canEdit,
                 ),
         );
       },
@@ -355,10 +375,12 @@ class _ReadBody extends ConsumerWidget {
   const _ReadBody({
     required this.tripId,
     required this.activity,
+    required this.canEditActivity,
   });
 
   final String tripId;
   final TripActivity activity;
+  final bool canEditActivity;
 
   Future<void> _toggleDone(
     WidgetRef ref,
@@ -550,10 +572,10 @@ class _ReadBody extends ConsumerWidget {
               children: [
                 CheckboxListTile(
                   value: activity.done,
-                  onChanged: (v) async {
+                  onChanged: canEditActivity ? (v) async {
                     if (v == null) return;
                     await _toggleDone(ref, context, v);
-                  },
+                  } : null,
                   title: Text(AppLocalizations.of(context)!.activitiesDone),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,

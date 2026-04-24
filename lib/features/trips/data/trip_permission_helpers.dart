@@ -184,3 +184,31 @@ bool canPlanActivityForTrip({
     minRole: trip.activitiesPermissions.planActivityMinRole,
   );
 }
+
+bool canEditActivityForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.activitiesPermissions.editActivityMinRole,
+  );
+}
+
+bool canDeleteActivityForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.activitiesPermissions.deleteActivityMinRole,
+  );
+}

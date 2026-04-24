@@ -273,7 +273,7 @@ class TripActivitiesPermissions {
     suggestActivityMinRole: TripPermissionRole.participant,
     planActivityMinRole: TripPermissionRole.admin,
     editActivityMinRole: TripPermissionRole.participant,
-    deleteActivityMinRole: TripPermissionRole.participant,
+    deleteActivityMinRole: TripPermissionRole.admin,
   );
 
   factory TripActivitiesPermissions.fromFirestore(dynamic raw) {
