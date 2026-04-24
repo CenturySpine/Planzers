@@ -204,6 +204,9 @@ class _MealCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final dayPartLabel = _dayPartLabel(context, meal.mealDayPart);
+    final displayTitle = meal.name.trim().isEmpty ? dayPartLabel : meal.name;
+    final showSubtitle = meal.name.trim().isNotEmpty;
     final chefId = meal.chefParticipantId?.trim();
     final hasChef =
         meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
@@ -236,21 +239,21 @@ class _MealCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      meal.name.isEmpty
-                          ? AppLocalizations.of(context)!.activitiesUntitled
-                          : meal.name,
+                      displayTitle,
                       style: Theme.of(context).textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _dayPartLabel(context, meal.mealDayPart),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
+                    if (showSubtitle) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        dayPartLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
                   ],
                 ),
               ),

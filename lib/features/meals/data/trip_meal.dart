@@ -54,6 +54,60 @@ enum MealMode {
   }
 }
 
+class MealPotluckItem {
+  const MealPotluckItem({
+    required this.id,
+    required this.label,
+    required this.addedBy,
+  });
+
+  final String id;
+  final String label;
+  final String addedBy;
+
+  factory MealPotluckItem.fromDynamic(dynamic raw) {
+    if (raw is String) {
+      return MealPotluckItem(
+        id: 'legacy_${raw.hashCode}',
+        label: raw.trim(),
+        addedBy: '',
+      );
+    }
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      final label = (map['label'] as String? ?? '').trim();
+      final id = (map['id'] as String? ?? '').trim();
+      final addedBy = (map['addedBy'] as String? ?? '').trim();
+      return MealPotluckItem(
+        id: id.isEmpty ? 'potluck_${label.hashCode}' : id,
+        label: label,
+        addedBy: addedBy,
+      );
+    }
+    return const MealPotluckItem(id: '', label: '', addedBy: '');
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id.trim(),
+      'label': label.trim(),
+      'addedBy': addedBy.trim(),
+    };
+  }
+
+  MealPotluckItem copyWith({
+    String? id,
+    String? label,
+    String? addedBy,
+  }) {
+    return MealPotluckItem(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      addedBy: addedBy ?? this.addedBy,
+    );
+  }
+}
+
 class MealComponentIngredient {
   const MealComponentIngredient({
     required this.catalogItemId,
@@ -206,7 +260,7 @@ class TripMeal {
   final List<MealComponent> components;
   final MealMode mealMode;
   final String restaurantUrl;
-  final List<String> potluckItems;
+  final List<MealPotluckItem> potluckItems;
 
   /// Convenience accessor for participant count.
   int get participantCount => participantIds.length;
@@ -271,8 +325,8 @@ class TripMeal {
       mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
       restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
       potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
+          .map(MealPotluckItem.fromDynamic)
+          .where((item) => item.label.isNotEmpty)
           .toList(growable: false),
       createdBy: (data['createdBy'] as String?)?.trim() ?? '',
       createdAt: _parseDateOrNow(data['createdAt']),
@@ -310,8 +364,8 @@ class TripMeal {
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
       'potluckItems': potluckItems
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
+          .map((item) => item.toMap())
+          .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
       'createdBy': createdBy.trim(),
       'createdAt': FieldValue.serverTimestamp(),
@@ -331,8 +385,8 @@ class TripMeal {
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
       'potluckItems': potluckItems
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
+          .map((item) => item.toMap())
+          .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -352,7 +406,7 @@ class TripMeal {
     List<MealComponent>? components,
     MealMode? mealMode,
     String? restaurantUrl,
-    List<String>? potluckItems,
+    List<MealPotluckItem>? potluckItems,
   }) {
     return TripMeal(
       id: id ?? this.id,

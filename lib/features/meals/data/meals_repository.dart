@@ -140,7 +140,7 @@ class MealsRepository {
     List<MealComponent> components = const [],
     MealMode mealMode = MealMode.cooked,
     String restaurantUrl = '',
-    List<String> potluckItems = const [],
+    List<MealPotluckItem> potluckItems = const [],
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -151,9 +151,6 @@ class MealsRepository {
     final cleanName = name.trim();
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
-    }
-    if (cleanName.isEmpty) {
-      throw StateError('Nom du repas obligatoire');
     }
 
     final docRef = await _mealsCol(cleanTripId).add({
@@ -169,8 +166,8 @@ class MealsRepository {
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
       'potluckItems': potluckItems
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
+          .map((item) => item.toMap())
+          .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
@@ -191,7 +188,7 @@ class MealsRepository {
     List<MealComponent> components = const [],
     MealMode mealMode = MealMode.cooked,
     String restaurantUrl = '',
-    List<String> potluckItems = const [],
+    List<MealPotluckItem> potluckItems = const [],
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -203,9 +200,6 @@ class MealsRepository {
     final cleanName = name.trim();
     if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
       throw StateError('Repas invalide');
-    }
-    if (cleanName.isEmpty) {
-      throw StateError('Nom du repas obligatoire');
     }
 
     final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
@@ -227,8 +221,8 @@ class MealsRepository {
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
       'potluckItems': potluckItems
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
+          .map((item) => item.toMap())
+          .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
     });
