@@ -25,6 +25,7 @@ enum _TripTimelineCategory { past, ongoing, upcoming }
 class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
   static const double _legalLinkFontSize = 12;
+  static const double _floatingActionButtonsBottomOffset = 34;
   late final TabController _tabController;
   bool _didHandleAutoOpenCurrentTrip = false;
 
@@ -58,24 +59,29 @@ class _TripsPageState extends ConsumerState<TripsPage>
           AccountAppBarActions(),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'trips_join_invite',
-            tooltip: l10n.tripsJoinWithInviteTooltip,
-            onPressed: () => _openJoinByInviteCodeDialog(context),
-            child: const Icon(Icons.vpn_key_outlined),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'trips_create',
-            tooltip: l10n.tripsNewTripTooltip,
-            onPressed: () => _openCreateTripDialog(context, ref),
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(
+          bottom: _floatingActionButtonsBottomOffset,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              heroTag: 'trips_join_invite',
+              tooltip: l10n.tripsJoinWithInviteTooltip,
+              onPressed: () => _openJoinByInviteCodeDialog(context),
+              child: const Icon(Icons.vpn_key_outlined),
+            ),
+            const SizedBox(height: 16),
+            FloatingActionButton(
+              heroTag: 'trips_create',
+              tooltip: l10n.tripsNewTripTooltip,
+              onPressed: () => _openCreateTripDialog(context, ref),
+              child: const Icon(Icons.add),
+            ),
+          ],
+        ),
       ),
       body: Stack(
         children: [
