@@ -1484,6 +1484,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealDeleteComponent => 'Delete this component';
 
   @override
+  String get mealModeCooked => 'Home-cooked meal';
+
+  @override
+  String get mealModeRestaurant => 'Restaurant';
+
+  @override
+  String get mealModePotluck => 'Potluck';
+
+  @override
+  String get mealModesTitle => 'Meal types';
+
+  @override
+  String get mealModeHelpTooltip => 'Meal type legend';
+
+  @override
+  String get mealRestaurantLinkLabel => 'Restaurant link';
+
+  @override
+  String get mealRestaurantLinkHint =>
+      'Add a link to show the restaurant preview.';
+
+  @override
+  String get mealPotluckTitle => 'Shared contributions';
+
+  @override
+  String get mealPotluckEmptyHint =>
+      'Add items (drinks, starter, main, dessert, etc.).';
+
+  @override
+  String get mealPotluckAddItemTitle => 'Add item';
+
+  @override
+  String get mealPotluckItemLabel => 'Item';
+
+  @override
   String get commonSaving => 'Saving...';
 
   @override
@@ -3323,6 +3358,41 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealDeleteComponent => 'Delete this component';
+
+  @override
+  String get mealModeCooked => 'Home-cooked meal';
+
+  @override
+  String get mealModeRestaurant => 'Restaurant';
+
+  @override
+  String get mealModePotluck => 'Potluck';
+
+  @override
+  String get mealModesTitle => 'Meal types';
+
+  @override
+  String get mealModeHelpTooltip => 'Meal type legend';
+
+  @override
+  String get mealRestaurantLinkLabel => 'Restaurant link';
+
+  @override
+  String get mealRestaurantLinkHint =>
+      'Add a link to show the restaurant preview.';
+
+  @override
+  String get mealPotluckTitle => 'Shared contributions';
+
+  @override
+  String get mealPotluckEmptyHint =>
+      'Add items (drinks, starter, main, dessert, etc.).';
+
+  @override
+  String get mealPotluckAddItemTitle => 'Add item';
+
+  @override
+  String get mealPotluckItemLabel => 'Item';
 
   @override
   String get commonSaving => 'Saving...';

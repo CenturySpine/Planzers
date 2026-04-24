@@ -1496,6 +1496,41 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealDeleteComponent => 'Supprimer ce composant';
 
   @override
+  String get mealModeCooked => 'Repas cuisiné';
+
+  @override
+  String get mealModeRestaurant => 'Restaurant';
+
+  @override
+  String get mealModePotluck => 'Auberge espagnole';
+
+  @override
+  String get mealModesTitle => 'Types de repas';
+
+  @override
+  String get mealModeHelpTooltip => 'Légende des types de repas';
+
+  @override
+  String get mealRestaurantLinkLabel => 'Lien du restaurant';
+
+  @override
+  String get mealRestaurantLinkHint =>
+      'Ajoute un lien pour afficher l\'aperçu du restaurant.';
+
+  @override
+  String get mealPotluckTitle => 'Liste des apports';
+
+  @override
+  String get mealPotluckEmptyHint =>
+      'Ajoute des éléments (boisson, entrée, plat, dessert, etc.).';
+
+  @override
+  String get mealPotluckAddItemTitle => 'Ajouter un élément';
+
+  @override
+  String get mealPotluckItemLabel => 'Élément';
+
+  @override
   String get commonSaving => 'Enregistrement...';
 
   @override
@@ -3349,6 +3384,41 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealDeleteComponent => 'Supprimer ce composant';
+
+  @override
+  String get mealModeCooked => 'Repas cuisiné';
+
+  @override
+  String get mealModeRestaurant => 'Restaurant';
+
+  @override
+  String get mealModePotluck => 'Auberge espagnole';
+
+  @override
+  String get mealModesTitle => 'Types de repas';
+
+  @override
+  String get mealModeHelpTooltip => 'Légende des types de repas';
+
+  @override
+  String get mealRestaurantLinkLabel => 'Lien du restaurant';
+
+  @override
+  String get mealRestaurantLinkHint =>
+      'Ajoute un lien pour afficher l\'aperçu du restaurant.';
+
+  @override
+  String get mealPotluckTitle => 'Liste des apports';
+
+  @override
+  String get mealPotluckEmptyHint =>
+      'Ajoute des éléments (boisson, entrée, plat, dessert, etc.).';
+
+  @override
+  String get mealPotluckAddItemTitle => 'Ajouter un élément';
+
+  @override
+  String get mealPotluckItemLabel => 'Élément';
 
   @override
   String get commonSaving => 'Enregistrement...';

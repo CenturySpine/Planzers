@@ -2735,6 +2735,72 @@ abstract class AppLocalizations {
   /// **'Supprimer ce composant'**
   String get mealDeleteComponent;
 
+  /// No description provided for @mealModeCooked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas cuisiné'**
+  String get mealModeCooked;
+
+  /// No description provided for @mealModeRestaurant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restaurant'**
+  String get mealModeRestaurant;
+
+  /// No description provided for @mealModePotluck.
+  ///
+  /// In fr, this message translates to:
+  /// **'Auberge espagnole'**
+  String get mealModePotluck;
+
+  /// No description provided for @mealModesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Types de repas'**
+  String get mealModesTitle;
+
+  /// No description provided for @mealModeHelpTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Légende des types de repas'**
+  String get mealModeHelpTooltip;
+
+  /// No description provided for @mealRestaurantLinkLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien du restaurant'**
+  String get mealRestaurantLinkLabel;
+
+  /// No description provided for @mealRestaurantLinkHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute un lien pour afficher l\'aperçu du restaurant.'**
+  String get mealRestaurantLinkHint;
+
+  /// No description provided for @mealPotluckTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste des apports'**
+  String get mealPotluckTitle;
+
+  /// No description provided for @mealPotluckEmptyHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute des éléments (boisson, entrée, plat, dessert, etc.).'**
+  String get mealPotluckEmptyHint;
+
+  /// No description provided for @mealPotluckAddItemTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un élément'**
+  String get mealPotluckAddItemTitle;
+
+  /// No description provided for @mealPotluckItemLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Élément'**
+  String get mealPotluckItemLabel;
+
   /// No description provided for @commonSaving.
   ///
   /// In fr, this message translates to:
