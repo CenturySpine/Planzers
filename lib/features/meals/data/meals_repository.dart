@@ -131,7 +131,6 @@ class MealsRepository {
 
   Future<String> addMeal({
     required String tripId,
-    required String name,
     required String mealDateKey,
     required String mealDayPart, // 'morning', 'midday', 'evening'
     required List<String> participantIds,
@@ -148,13 +147,11 @@ class MealsRepository {
     }
 
     final cleanTripId = tripId.trim();
-    final cleanName = name.trim();
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
     }
 
     final docRef = await _mealsCol(cleanTripId).add({
-      'name': cleanName,
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': mealDayPart.trim(),
       'participantIds': participantIds,
@@ -179,7 +176,6 @@ class MealsRepository {
   Future<void> updateMeal({
     required String tripId,
     required String mealId,
-    required String name,
     required String mealDateKey,
     required String mealDayPart,
     required List<String> participantIds,
@@ -197,7 +193,6 @@ class MealsRepository {
 
     final cleanTripId = tripId.trim();
     final cleanMealId = mealId.trim();
-    final cleanName = name.trim();
     if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
       throw StateError('Repas invalide');
     }
@@ -209,7 +204,6 @@ class MealsRepository {
     }
 
     await docRef.update({
-      'name': cleanName,
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': mealDayPart.trim(),
       'participantIds': participantIds,
@@ -224,34 +218,6 @@ class MealsRepository {
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  Future<void> updateMealName({
-    required String tripId,
-    required String mealId,
-    required String name,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanMealId = mealId.trim();
-    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
-      throw StateError('Repas invalide');
-    }
-
-    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
-    final snap = await docRef.get();
-    if (!snap.exists) {
-      throw StateError('Repas introuvable');
-    }
-
-    await docRef.update({
-      'name': name.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

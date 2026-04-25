@@ -2639,18 +2639,6 @@ abstract class AppLocalizations {
   /// **'non enregistré'**
   String get commonUnsaved;
 
-  /// No description provided for @mealNameLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Nom du repas'**
-  String get mealNameLabel;
-
-  /// No description provided for @mealNameRequired.
-  ///
-  /// In fr, this message translates to:
-  /// **'Nom obligatoire'**
-  String get mealNameRequired;
-
   /// No description provided for @commonDate.
   ///
   /// In fr, this message translates to:

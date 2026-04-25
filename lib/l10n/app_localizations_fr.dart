@@ -1440,12 +1440,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonUnsaved => 'non enregistré';
 
   @override
-  String get mealNameLabel => 'Nom du repas';
-
-  @override
-  String get mealNameRequired => 'Nom obligatoire';
-
-  @override
   String get commonDate => 'Date';
 
   @override
@@ -3345,12 +3339,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get commonUnsaved => 'non enregistré';
-
-  @override
-  String get mealNameLabel => 'Nom du repas';
-
-  @override
-  String get mealNameRequired => 'Nom obligatoire';
 
   @override
   String get commonDate => 'Date';

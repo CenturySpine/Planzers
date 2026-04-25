@@ -589,8 +589,6 @@
   "mealNew": "New meal",
   "mealEdit": "Edit meal",
   "commonUnsaved": "unsaved",
-  "mealNameLabel": "Meal name",
-  "mealNameRequired": "Name is required",
   "commonDate": "Date",
   "commonChoose": "Choose",
   "mealMomentLabel": "Time",

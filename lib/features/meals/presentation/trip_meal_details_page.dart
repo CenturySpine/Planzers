@@ -36,10 +36,8 @@ class TripMealDetailsPage extends ConsumerStatefulWidget {
 
 class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
   late final TextEditingController _restaurantUrlController;
   bool _isSaving = false;
-  bool _isSavingName = false;
   bool _isSavingDate = false;
   bool _isSavingMealDayPart = false;
   bool _isSavingMealMode = false;
@@ -69,13 +67,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
     _restaurantUrlController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _restaurantUrlController.dispose();
     super.dispose();
   }
@@ -282,7 +278,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
-    _nameController.text = meal.name;
     _mealDate = meal.mealDateAsDateTime;
     _mealDayPart = meal.mealDayPart;
     _participantIds = meal.participantIds.toSet();
@@ -821,7 +816,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           : const <MealPotluckItem>[];
       await repo.addMeal(
         tripId: widget.tripId,
-        name: _nameController.text,
         mealDateKey: _mealDateKey,
         mealDayPart: mealDayPart,
         participantIds: participantIds,
@@ -852,38 +846,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           );
     } finally {
       if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  Future<void> _saveMealName() async {
-    if (widget.isCreate || _isSavingName || _isSaving) return;
-    final name = _nameController.text.trim();
-    setState(() => _isSavingName = true);
-    try {
-      await ref.read(mealsRepositoryProvider).updateMealName(
-            tripId: widget.tripId,
-            mealId: widget.mealId!,
-            name: name,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.commonErrorWithDetails(
-              e.toString(),
-            ),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingName = false);
-      }
     }
   }
 
@@ -1056,61 +1018,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        TextFormField(
-                          controller: _nameController,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) => _saveMealName(),
-                          decoration: InputDecoration(
-                            labelText: l10n.mealNameLabel,
-                            border: OutlineInputBorder(),
-                            suffixIcon: widget.isCreate
-                                ? null
-                                : IconButton(
-                                    tooltip: l10n.commonSave,
-                                    onPressed: _isSavingName
-                                        ? null
-                                        : _saveMealName,
-                                    icon: _isSavingName
-                                        ? const SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          )
-                                        : const Icon(Icons.check),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            IconButton(
-                              tooltip: l10n.commonDate,
-                              onPressed: _isSavingDate ? null : _pickDate,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: _isSavingDate
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.calendar_today_outlined),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                DateFormat.yMMMMEEEEd(
-                                  Localizations.localeOf(context).toString(),
-                                ).format(_mealDate),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           children: [
@@ -1143,6 +1050,34 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         );
                                       },
                               ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            IconButton(
+                              tooltip: l10n.commonDate,
+                              onPressed: _isSavingDate ? null : _pickDate,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: _isSavingDate
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.calendar_today_outlined),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                DateFormat.yMMMMEEEEd(
+                                  Localizations.localeOf(context).toString(),
+                                ).format(_mealDate),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),

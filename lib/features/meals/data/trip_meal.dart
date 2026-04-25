@@ -364,7 +364,6 @@ class TripMeal {
   /// Map for creating a new meal in Firestore.
   Map<String, dynamic> toCreateMap() {
     return {
-      'name': name.trim(),
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
@@ -385,7 +384,6 @@ class TripMeal {
   /// Map for updating an existing meal in Firestore.
   Map<String, dynamic> toUpdateMap() {
     return {
-      'name': name.trim(),
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,

@@ -589,8 +589,6 @@
   "mealNew": "Nouveau repas",
   "mealEdit": "Modifier le repas",
   "commonUnsaved": "non enregistré",
-  "mealNameLabel": "Nom du repas",
-  "mealNameRequired": "Nom obligatoire",
   "commonDate": "Date",
   "commonChoose": "Choisir",
   "mealMomentLabel": "Moment",
