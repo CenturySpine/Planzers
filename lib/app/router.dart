@@ -23,6 +23,7 @@ import 'package:planerz/features/trips/presentation/trip_general_permissions_pag
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
+import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 
@@ -131,6 +132,12 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'participants',
           builder: (context, state) => TripParticipantsPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'preferences',
+          builder: (context, state) => TripMemberPreferencesPage(
             tripId: state.pathParameters['tripId']!,
           ),
         ),

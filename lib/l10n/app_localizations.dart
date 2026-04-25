@@ -964,6 +964,18 @@ abstract class AppLocalizations {
   /// **'Paramètres du voyage'**
   String get tripSettingsTitle;
 
+  /// No description provided for @tripUserPreferencesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes préférences du voyage'**
+  String get tripUserPreferencesTitle;
+
+  /// No description provided for @tripUserPreferencesMenuAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes préférences'**
+  String get tripUserPreferencesMenuAction;
+
   /// No description provided for @tripMyRole.
   ///
   /// In fr, this message translates to:

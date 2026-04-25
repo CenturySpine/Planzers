@@ -484,6 +484,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripSettingsTitle => 'Trip settings';
 
   @override
+  String get tripUserPreferencesTitle => 'My trip preferences';
+
+  @override
+  String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
   String tripMyRole(Object role) {
     return 'My role: $role';
   }
@@ -2422,6 +2428,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripSettingsTitle => 'Trip settings';
+
+  @override
+  String get tripUserPreferencesTitle => 'My trip preferences';
+
+  @override
+  String get tripUserPreferencesMenuAction => 'My preferences';
 
   @override
   String tripMyRole(Object role) {

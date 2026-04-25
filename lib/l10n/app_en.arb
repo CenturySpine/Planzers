@@ -199,6 +199,8 @@
   "tripNotFoundOrNoAccess": "Trip not found or access denied.",
   "tripBackToTrip": "Back to trip",
   "tripSettingsTitle": "Trip settings",
+  "tripUserPreferencesTitle": "My trip preferences",
+  "tripUserPreferencesMenuAction": "My preferences",
   "tripMyRole": "My role: {role}",
   "@tripMyRole": {
     "placeholders": {

@@ -17,7 +17,6 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
-import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -29,7 +28,6 @@ import 'package:planerz/features/trips/presentation/link_preview_from_firestore.
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_edit_dialog.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -227,31 +225,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     context.push('/trips/${_trip.id}/expenses');
   }
 
-  Future<void> _openTripStayDialog() async {
-    await showTripStayEditDialog(context: context, trip: _trip);
-  }
-
-  Future<void> _toggleMyCupidonMode(bool enabled) async {
-    final l10n = AppLocalizations.of(context)!;
-    try {
-      await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
-            tripId: _trip.id,
-            enabled: enabled,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            enabled ? l10n.cupidonEnabled : l10n.cupidonDisabled,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewCupidonToggleError(e.toString()))),
-      );
-    }
+  void _openTripUserPreferencesPage() {
+    context.push('/trips/${_trip.id}/preferences');
   }
 
   Future<void> _pickAndUploadBannerImage() async {
@@ -483,9 +458,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       currentRole: currentRole,
       minRole: _trip.generalPermissions.editGeneralInfoMinRole,
     );
-    final myCupidonEnabledAsync =
-        ref.watch(myTripCupidonEnabledProvider(_trip.id));
-    final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
         .doc(_trip.id)
@@ -687,8 +659,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           _openParticipantsPage();
                                           return;
                                         }
-                                        if (value == 'stay' && isTripMember) {
-                                          unawaited(_openTripStayDialog());
+                                        if (value == 'preferences' &&
+                                            isTripMember) {
+                                          _openTripUserPreferencesPage();
                                           return;
                                         }
                                         if (value == 'share' && canShareAccess) {
@@ -708,11 +681,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           context.go('/trips/${_trip.id}/settings');
                                           return;
                                         }
-                                        if (value == 'cupidon' &&
-                                            isTripMember) {
-                                          _toggleMyCupidonMode(
-                                              !myCupidonEnabled);
-                                        }
                                       },
                                       itemBuilder: (context) => [
                                         PopupMenuItem(
@@ -728,12 +696,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         ),
                                         if (isTripMember)
                                           PopupMenuItem(
-                                            value: 'stay',
+                                            value: 'preferences',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.date_range_outlined),
-                                                SizedBox(width: 10),
-                                                Text(l10n.tripStayDialogTitle),
+                                                const Icon(Icons.tune_outlined),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  l10n.tripUserPreferencesMenuAction,
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -781,25 +751,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               ],
                                             ),
                                           ),
-                                        if (isTripMember)
-                                          PopupMenuItem(
-                                            value: 'cupidon',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  myCupidonEnabled
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  myCupidonEnabled
-                                                      ? l10n.cupidonDisableAction
-                                                      : l10n.cupidonEnableAction,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
                                       ],
                                       icon: canEdit && _inviteClipboardBusy
                                           ? const SizedBox(
@@ -826,8 +777,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         _openParticipantsPage();
                                         return;
                                       }
-                                      if (value == 'stay' && isTripMember) {
-                                        unawaited(_openTripStayDialog());
+                                      if (value == 'preferences' &&
+                                          isTripMember) {
+                                        _openTripUserPreferencesPage();
                                         return;
                                       }
                                       if (value == 'share' && canShareAccess) {
@@ -847,9 +799,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         context.go('/trips/${_trip.id}/settings');
                                         return;
                                       }
-                                      if (value == 'cupidon' && isTripMember) {
-                                        _toggleMyCupidonMode(!myCupidonEnabled);
-                                      }
                                     },
                                     itemBuilder: (context) => [
                                       PopupMenuItem(
@@ -864,12 +813,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       ),
                                       if (isTripMember)
                                         PopupMenuItem(
-                                          value: 'stay',
+                                          value: 'preferences',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.date_range_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripStayDialogTitle),
+                                              const Icon(Icons.tune_outlined),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                l10n.tripUserPreferencesMenuAction,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -914,25 +865,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               Icon(Icons.settings_outlined),
                                               SizedBox(width: 10),
                                               Text(l10n.tripSettingsTitle),
-                                            ],
-                                          ),
-                                        ),
-                                      if (isTripMember)
-                                        PopupMenuItem(
-                                          value: 'cupidon',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                myCupidonEnabled
-                                                    ? Icons.favorite
-                                                    : Icons.favorite_border,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                myCupidonEnabled
-                                                    ? l10n.cupidonDisableAction
-                                                    : l10n.cupidonEnableAction,
-                                              ),
                                             ],
                                           ),
                                         ),

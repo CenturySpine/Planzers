@@ -199,6 +199,8 @@
   "tripNotFoundOrNoAccess": "Voyage introuvable ou accès refusé.",
   "tripBackToTrip": "Retour au voyage",
   "tripSettingsTitle": "Paramètres du voyage",
+  "tripUserPreferencesTitle": "Mes préférences du voyage",
+  "tripUserPreferencesMenuAction": "Mes préférences",
   "tripMyRole": "Mon rôle : {role}",
   "@tripMyRole": {
     "placeholders": {
