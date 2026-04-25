@@ -219,11 +219,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   void _openAnnouncementsPage() {
-    context.go('/trips/${_trip.id}/announcements');
+    context.push('/trips/${_trip.id}/announcements');
   }
 
   void _openExpensesPage() {
-    context.go('/trips/${_trip.id}/expenses');
+    context.push('/trips/${_trip.id}/expenses');
   }
 
   Future<void> _openTripStayDialog() async {
