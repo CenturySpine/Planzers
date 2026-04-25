@@ -23,6 +23,12 @@ final tripMemberPhoneVisibilityStreamProvider =
   return ref.watch(tripMemberProfileRepositoryProvider).watchMyPhoneVisibility(tripId);
 });
 
+/// Phone visibility settings for all members of a trip (`trips/{tripId}/members/*`).
+final tripMembersPhoneVisibilityStreamProvider =
+    StreamProvider.autoDispose.family<Map<String, TripMemberPhoneVisibility>, String>((ref, tripId) {
+  return ref.watch(tripMemberProfileRepositoryProvider).watchAllMembersPhoneVisibility(tripId);
+});
+
 class TripMemberProfileRepository {
   TripMemberProfileRepository({
     required this.firestore,
@@ -56,6 +62,29 @@ class TripMemberProfileRepository {
       final data = snap.data();
       if (data == null) return null;
       return TripMemberStay.tryFromFirestore(data);
+    });
+  }
+
+  Stream<Map<String, TripMemberPhoneVisibility>> watchAllMembersPhoneVisibility(String tripId) {
+    final cleanTrip = tripId.trim();
+    if (cleanTrip.isEmpty) {
+      return Stream.value(const {});
+    }
+    return firestore
+        .collection('trips')
+        .doc(cleanTrip)
+        .collection('members')
+        .snapshots()
+        .map((snap) {
+      final result = <String, TripMemberPhoneVisibility>{};
+      for (final doc in snap.docs) {
+        final raw = doc.data()['phoneVisibility'] as String?;
+        final visibility = TripMemberPhoneVisibility.fromString(raw);
+        if (visibility != null) {
+          result[doc.id] = visibility;
+        }
+      }
+      return result;
     });
   }
 

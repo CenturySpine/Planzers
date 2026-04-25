@@ -853,6 +853,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsChangeRole => 'Change role';
 
   @override
+  String get tripParticipantsOpenDialer => 'Open dialer';
+
+  @override
   String get tripNotFound => 'Trip not found';
 
   @override
@@ -2820,6 +2823,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsChangeRole => 'Change role';
+
+  @override
+  String get tripParticipantsOpenDialer => 'Open dialer';
 
   @override
   String get tripNotFound => 'Trip not found';

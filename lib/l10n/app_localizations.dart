@@ -1618,6 +1618,12 @@ abstract class AppLocalizations {
   /// **'Changer le rôle'**
   String get tripParticipantsChangeRole;
 
+  /// No description provided for @tripParticipantsOpenDialer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le composeur'**
+  String get tripParticipantsOpenDialer;
+
   /// No description provided for @tripNotFound.
   ///
   /// In fr, this message translates to:

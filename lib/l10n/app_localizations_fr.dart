@@ -862,6 +862,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsChangeRole => 'Changer le rôle';
 
   @override
+  String get tripParticipantsOpenDialer => 'Ouvrir le composeur';
+
+  @override
   String get tripNotFound => 'Voyage introuvable';
 
   @override
@@ -2843,6 +2846,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsChangeRole => 'Changer le rôle';
+
+  @override
+  String get tripParticipantsOpenDialer => 'Ouvrir le composeur';
 
   @override
   String get tripNotFound => 'Voyage introuvable';

@@ -8,10 +8,14 @@ import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Trip member list: placeholders (voyageurs prévus) and participants who have
 /// already joined (profile labels). Invite flow still lists only `ph_*` rows
@@ -350,6 +354,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
             body: Center(child: Text(l10n.tripNotFound)),
           );
         }
+        final membersPhoneVisibilityAsync =
+            ref.watch(tripMembersPhoneVisibilityStreamProvider(widget.tripId));
         final usersStream = _usersDataStreamFor(trip);
         return StreamBuilder<Map<String, Map<String, dynamic>>>(
           stream: usersStream,
@@ -358,6 +364,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
             final enabledCupidonMemberIds =
                 cupidonEnabledAsync.asData?.value ?? const <String>{};
             final likedByMe = myLikesAsync.asData?.value ?? const <String>{};
+            final membersPhoneVisibility =
+                membersPhoneVisibilityAsync.asData?.value ?? const {};
+            final currentUserRole = resolveTripPermissionRole(
+              trip: trip,
+              userId: myUid,
+            );
             final rows = _participantRowsForTrip(
               trip,
               userDataById,
@@ -365,6 +377,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
               l10n: l10n,
               enabledCupidonMemberIds: enabledCupidonMemberIds,
               likedByMe: likedByMe,
+              membersPhoneVisibility: membersPhoneVisibility,
+              currentUserRole: currentUserRole,
             );
             final myUidTrim = (myUid ?? '').trim();
             final currentRole = resolveTripPermissionRole(
@@ -551,6 +565,14 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                             : Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
+                                                  if (row.phoneUri != null)
+                                                    IconButton(
+                                                      tooltip: l10n.tripParticipantsOpenDialer,
+                                                      icon: const Icon(Icons.phone_outlined),
+                                                      onPressed: () => launchUrl(
+                                                        Uri.parse(row.phoneUri!),
+                                                      ),
+                                                    ),
                                                   if (!row.isPlaceholder &&
                                                       row.memberId.trim() !=
                                                           myUidTrim &&
@@ -651,6 +673,32 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
   }
 }
 
+TripPermissionRole? _minRoleForPhoneVisibility(TripMemberPhoneVisibility vis) {
+  return switch (vis) {
+    TripMemberPhoneVisibility.nobody => null,
+    TripMemberPhoneVisibility.owner => TripPermissionRole.owner,
+    TripMemberPhoneVisibility.admin => TripPermissionRole.admin,
+    TripMemberPhoneVisibility.participant => TripPermissionRole.participant,
+  };
+}
+
+String? _phoneUriForMember({
+  required Map<String, dynamic>? profileData,
+  required TripMemberPhoneVisibility? visibility,
+  required TripPermissionRole currentUserRole,
+}) {
+  if (visibility == null) return null;
+  final minRole = _minRoleForPhoneVisibility(visibility);
+  if (minRole == null) return null;
+  if (!currentUserRole.allows(minRole)) return null;
+  if (profileData == null) return null;
+  final account = (profileData['account'] as Map<String, dynamic>?) ?? const {};
+  final code = (account['phoneCountryCode'] as String?)?.trim() ?? '';
+  final number = (account['phoneNumber'] as String?)?.trim() ?? '';
+  if (number.isEmpty) return null;
+  return 'tel:$code${number.replaceAll(' ', '')}';
+}
+
 List<_ParticipantRow> _participantRowsForTrip(
   Trip trip,
   Map<String, Map<String, dynamic>> userDataById,
@@ -658,6 +706,8 @@ List<_ParticipantRow> _participantRowsForTrip(
   required AppLocalizations l10n,
   required Set<String> enabledCupidonMemberIds,
   required Set<String> likedByMe,
+  required Map<String, TripMemberPhoneVisibility> membersPhoneVisibility,
+  required TripPermissionRole currentUserRole,
 }) {
   final labels = trip.memberPublicLabels;
   final rows = trip.memberIds
@@ -676,20 +726,29 @@ List<_ParticipantRow> _participantRowsForTrip(
         likedByMe: false,
       );
     }
+    final profileData = userDataById[id];
     final label = resolveTripMemberDisplayLabel(
       memberId: id,
-      userData: userDataById[id],
+      userData: profileData,
       tripMemberPublicLabels: labels,
       currentUserId: myUid,
       emptyFallback: l10n.tripParticipantsUser,
     );
+    final phoneUri = id == (myUid ?? '').trim()
+        ? null
+        : _phoneUriForMember(
+            profileData: profileData,
+            visibility: membersPhoneVisibility[id],
+            currentUserRole: currentUserRole,
+          );
     return _ParticipantRow(
       memberId: id,
       isPlaceholder: false,
       displayLabel: label,
       isAdmin: trip.memberHasAdminRole(id),
       likedByMe: likedByMe.contains(id),
-      profileData: userDataById[id],
+      profileData: profileData,
+      phoneUri: phoneUri,
     );
   }).toList();
   rows.sort(
@@ -806,6 +865,7 @@ class _ParticipantRow {
     required this.isAdmin,
     required this.likedByMe,
     this.profileData,
+    this.phoneUri,
   });
 
   final String memberId;
@@ -814,4 +874,5 @@ class _ParticipantRow {
   final bool isAdmin;
   final bool likedByMe;
   final Map<String, dynamic>? profileData;
+  final String? phoneUri;
 }

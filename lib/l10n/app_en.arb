@@ -345,6 +345,7 @@
   "tripParticipantsUnlike": "Remove like",
   "tripParticipantsLike": "Like",
   "tripParticipantsChangeRole": "Change role",
+  "tripParticipantsOpenDialer": "Open dialer",
   "tripNotFound": "Trip not found",
   "commonName": "Name",
   "commonAdd": "Add",
