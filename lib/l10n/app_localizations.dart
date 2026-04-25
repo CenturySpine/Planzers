@@ -3419,6 +3419,30 @@ abstract class AppLocalizations {
   /// **'Annonces'**
   String get tripOverviewTopTabAnnouncements;
 
+  /// No description provided for @tripAnnouncementsPageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annonces des organisateurs'**
+  String get tripAnnouncementsPageTitle;
+
+  /// No description provided for @tripAnnouncementsEmptyState.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune annonce pour le moment.'**
+  String get tripAnnouncementsEmptyState;
+
+  /// No description provided for @tripAnnouncementsInputHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Écrire une annonce...'**
+  String get tripAnnouncementsInputHint;
+
+  /// No description provided for @tripAnnouncementsDeleteConfirmBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cette annonce ?'**
+  String get tripAnnouncementsDeleteConfirmBody;
+
   /// No description provided for @tripOverviewTopTabExpenses.
   ///
   /// In fr, this message translates to:

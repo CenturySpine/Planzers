@@ -1886,6 +1886,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTopTabAnnouncements => 'Annonces';
 
   @override
+  String get tripAnnouncementsPageTitle => 'Annonces des organisateurs';
+
+  @override
+  String get tripAnnouncementsEmptyState => 'Aucune annonce pour le moment.';
+
+  @override
+  String get tripAnnouncementsInputHint => 'Écrire une annonce...';
+
+  @override
+  String get tripAnnouncementsDeleteConfirmBody => 'Supprimer cette annonce ?';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Dépenses';
 
   @override
@@ -3794,6 +3806,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
+
+  @override
+  String get tripAnnouncementsPageTitle => 'Annonces des organisateurs';
+
+  @override
+  String get tripAnnouncementsEmptyState => 'Aucune annonce pour le moment.';
+
+  @override
+  String get tripAnnouncementsInputHint => 'Écrire une annonce...';
+
+  @override
+  String get tripAnnouncementsDeleteConfirmBody => 'Supprimer cette annonce ?';
 
   @override
   String get tripOverviewTopTabExpenses => 'Dépenses';

@@ -21,6 +21,7 @@ import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -427,8 +428,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final l10n = AppLocalizations.of(context)!;
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
+    final announcementsAsync =
+        ref.watch(tripAnnouncementsStreamProvider(_trip.id));
     final activitiesCountersAsync =
         ref.watch(tripNotificationCountersProvider(_trip.id));
+    final announcementsLastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: _trip.id, channel: TripNotificationChannel.announcements),
+      ),
+    );
     final activitiesLastReadAtAsync = ref.watch(
       tripChannelLastReadAtProvider(
         (tripId: _trip.id, channel: TripNotificationChannel.activities),
@@ -545,6 +553,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 .toList();
             final activitiesCounters = activitiesCountersAsync.asData?.value;
             var unreadActivities = 0;
+            var unreadAnnouncements = 0;
             if (activitiesCounters != null &&
                 activitiesCounters
                     .hasChannel(TripNotificationChannel.activities)) {
@@ -559,6 +568,23 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   if (activity.createdBy == myUid) return false;
                   if (lastReadAt == null) return true;
                   return activity.createdAt.toUtc().isAfter(lastReadAt);
+                }).length;
+              }
+            }
+            if (activitiesCounters != null &&
+                activitiesCounters
+                    .hasChannel(TripNotificationChannel.announcements)) {
+              unreadAnnouncements = activitiesCounters
+                  .unreadFor(TripNotificationChannel.announcements);
+            } else if (myUid != null && myUid.isNotEmpty) {
+              final allAnnouncements = announcementsAsync.asData?.value;
+              final lastReadAt =
+                  announcementsLastReadAtAsync.asData?.value?.toUtc();
+              if (allAnnouncements != null) {
+                unreadAnnouncements = allAnnouncements.where((announcement) {
+                  if (announcement.authorId == myUid) return false;
+                  if (lastReadAt == null) return true;
+                  return announcement.createdAt.toUtc().isAfter(lastReadAt);
                 }).length;
               }
             }
@@ -981,6 +1007,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               child: _TripOverviewTopSwitch(
                 leftLabel: l10n.tripOverviewTopTabAnnouncements,
                 rightLabel: l10n.tripOverviewTopTabExpenses,
+                leftAlertCount: unreadAnnouncements,
                 onLeftTap: _openAnnouncementsPage,
                 onRightTap: _openExpensesPage,
               ),
@@ -1571,12 +1598,14 @@ class _TripOverviewTopSwitch extends StatelessWidget {
   const _TripOverviewTopSwitch({
     required this.leftLabel,
     required this.rightLabel,
+    this.leftAlertCount = 0,
     required this.onLeftTap,
     required this.onRightTap,
   });
 
   final String leftLabel;
   final String rightLabel;
+  final int leftAlertCount;
   final VoidCallback onLeftTap;
   final VoidCallback onRightTap;
 
@@ -1594,6 +1623,7 @@ class _TripOverviewTopSwitch extends StatelessWidget {
             child: _TripOverviewTopSwitchItem(
               label: leftLabel,
               icon: Icons.campaign_outlined,
+              alertCount: leftAlertCount,
               color: cs.primaryContainer,
               foregroundColor: cs.onPrimaryContainer,
               borderColor: cs.outlineVariant,
@@ -1623,6 +1653,7 @@ class _TripOverviewTopSwitchItem extends StatelessWidget {
   const _TripOverviewTopSwitchItem({
     required this.label,
     required this.icon,
+    this.alertCount = 0,
     required this.color,
     required this.foregroundColor,
     required this.borderColor,
@@ -1632,6 +1663,7 @@ class _TripOverviewTopSwitchItem extends StatelessWidget {
 
   final String label;
   final IconData icon;
+  final int alertCount;
   final Color color;
   final Color foregroundColor;
   final Color borderColor;
@@ -1666,6 +1698,13 @@ class _TripOverviewTopSwitchItem extends StatelessWidget {
                   style: textStyle?.copyWith(color: foregroundColor),
                 ),
               ),
+              if (alertCount > 0) ...[
+                const SizedBox(width: 6),
+                Badge.count(
+                  count: alertCount,
+                  child: const SizedBox(width: 10, height: 10),
+                ),
+              ],
             ],
           ),
         ),

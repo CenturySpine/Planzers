@@ -1873,6 +1873,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTopTabAnnouncements => 'Announcements';
 
   @override
+  String get tripAnnouncementsPageTitle => 'Organizers announcements';
+
+  @override
+  String get tripAnnouncementsEmptyState => 'No announcements yet.';
+
+  @override
+  String get tripAnnouncementsInputHint => 'Write an announcement...';
+
+  @override
+  String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Expenses';
 
   @override
@@ -3767,6 +3779,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
+
+  @override
+  String get tripAnnouncementsPageTitle => 'Organizers announcements';
+
+  @override
+  String get tripAnnouncementsEmptyState => 'No announcements yet.';
+
+  @override
+  String get tripAnnouncementsInputHint => 'Write an announcement...';
+
+  @override
+  String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
 
   @override
   String get tripOverviewTopTabExpenses => 'Expenses';

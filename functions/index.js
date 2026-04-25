@@ -473,12 +473,14 @@ const FCM_INVALID_TOKEN_CODES = new Set([
 const TRIP_NOTIFICATION_CHANNELS = Object.freeze({
   MESSAGES: 'messages',
   ACTIVITIES: 'activities',
+  ANNOUNCEMENTS: 'announcements',
   CUPIDON: 'cupidon',
 });
 
 const ANDROID_CHANNEL_IDS = Object.freeze({
   messages: 'planerz_messages',
   activities: 'planerz_activities',
+  announcements: 'planerz_announcements',
   cupidon: 'planerz_cupidon',
 });
 
@@ -670,11 +672,16 @@ function tripNotificationShellTotalFromChannels(channels) {
   }
   const msgsRaw = channels[TRIP_NOTIFICATION_CHANNELS.MESSAGES];
   const actsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ACTIVITIES];
+  const announcementsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS];
   const msgs =
     typeof msgsRaw === 'number' ? msgsRaw : Number(msgsRaw) || 0;
   const acts =
     typeof actsRaw === 'number' ? actsRaw : Number(actsRaw) || 0;
-  return msgs + acts;
+  const announcements =
+    typeof announcementsRaw === 'number'
+      ? announcementsRaw
+      : Number(announcementsRaw) || 0;
+  return msgs + acts + announcements;
 }
 
 function channelReadTimestamp(data, channel) {
@@ -688,9 +695,13 @@ function channelReadTimestamp(data, channel) {
 
 async function countUnreadForChannel({ tripId, uid, channel, readAfter }) {
   const channelCollection =
-    channel === TRIP_NOTIFICATION_CHANNELS.MESSAGES ? 'messages' : 'activities';
+    channel === TRIP_NOTIFICATION_CHANNELS.MESSAGES
+      ? 'messages'
+      : channel === TRIP_NOTIFICATION_CHANNELS.ACTIVITIES
+      ? 'activities'
+      : 'announcements';
   const actorField =
-    channel === TRIP_NOTIFICATION_CHANNELS.MESSAGES ? 'authorId' : 'createdBy';
+    channel === TRIP_NOTIFICATION_CHANNELS.ACTIVITIES ? 'createdBy' : 'authorId';
   const tripRef = admin.firestore().collection('trips').doc(tripId);
 
   const totalSnap = await tripRef
@@ -1198,6 +1209,61 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
   }
 );
 
+exports.notifyTripAnnouncementRecipients = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/announcements/{announcementId}',
+    region: 'europe-west1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  async (event) => {
+    const proceed = await markFunctionEventProcessedOnce(
+      'notifyTripAnnouncementRecipients',
+      event.id
+    );
+    if (!proceed) return;
+
+    const snap = event.data;
+    if (!snap) return;
+
+    const tripId = event.params.tripId;
+    const announcement = snap.data() || {};
+    const actorId = normalizeString(announcement.authorId);
+    const text = normalizeString(announcement.text).slice(0, 180);
+    if (!actorId || !text) return;
+
+    const db = admin.firestore();
+    const tripSnap = await db.collection('trips').doc(tripId).get();
+    if (!tripSnap.exists) return;
+
+    const trip = tripSnap.data() || {};
+    const memberIds = Array.isArray(trip.memberIds)
+      ? trip.memberIds.map((v) => String(v))
+      : [];
+    const candidateRecipients = memberIds.filter((id) => id && id !== actorId);
+    if (candidateRecipients.length === 0) return;
+
+    const tripTitle = normalizeString(trip.title) || 'Voyage';
+    let actorLabel = await resolveTripMemberLabel(trip, actorId);
+    if (!actorLabel) actorLabel = "Quelqu'un";
+
+    await db.collection('notificationQueue').add({
+      channel: TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
+      type: 'trip_announcement',
+      tripId,
+      actorId,
+      targetPath: `/trips/${tripId}/announcements`,
+      title: `Annonces · ${tripTitle}`,
+      body: `${actorLabel} : ${text}`,
+      candidateRecipients,
+      skipPresenceCheck: false,
+      androidChannelId: ANDROID_CHANNEL_IDS.announcements,
+      payload: {},
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+);
+
 exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
   {
     document: 'trips/{tripId}/notificationReads/{userId}',
@@ -1217,6 +1283,7 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
     const watchedChannels = [
       TRIP_NOTIFICATION_CHANNELS.MESSAGES,
       TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
+      TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
     ];
     for (const channel of watchedChannels) {
       const beforeTs = beforeSnap.exists
@@ -1272,6 +1339,7 @@ exports.resyncMyTripUnreadCounters = onCall(
     const watchedChannels = [
       TRIP_NOTIFICATION_CHANNELS.MESSAGES,
       TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
+      TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
     ];
     const memberTripIds = new Set(memberTripsSnap.docs.map((doc) => doc.id));
 

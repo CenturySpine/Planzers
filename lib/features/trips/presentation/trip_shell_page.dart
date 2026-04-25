@@ -218,7 +218,8 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
               );
               final displayedSelectedIndex =
                   selectedDestinationIndex >= 0 ? selectedDestinationIndex : 0;
-              final isOnTripOverview = navigationShell.currentIndex == 0;
+              final currentPath = GoRouterState.of(context).uri.path;
+              final isOnTripOverview = currentPath.endsWith('/overview');
 
               return Scaffold(
                 appBar: AppBar(
@@ -228,16 +229,15 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                     behavior: HitTestBehavior.opaque,
                     child: Text(titleForAppBar),
                   ),
-                  leading: isOnTripOverview
-                      ? IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => context.go('/trips'),
-                          tooltip: l10n.tripsMyTrips,
-                        )
-                      : _TripAppBarPhotoLeading(
-                          imageUrl: trip.bannerImageUrl,
-                          onTap: _goToOverview,
-                        ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => isOnTripOverview
+                        ? context.go('/trips')
+                        : context.go('/trips/$tripId/overview'),
+                    tooltip: isOnTripOverview
+                        ? l10n.tripsMyTrips
+                        : l10n.tripTabOverview,
+                  ),
                   actions: const [
                     AccountAppBarActions(),
                   ],
@@ -311,52 +311,6 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
             child: Text(
               l10n.commonErrorWithDetails(error.toString()),
               textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TripAppBarPhotoLeading extends StatelessWidget {
-  const _TripAppBarPhotoLeading({
-    required this.imageUrl,
-    required this.onTap,
-  });
-
-  final String? imageUrl;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cleanUrl = (imageUrl ?? '').trim();
-    final backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              width: 36,
-              height: 36,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: backgroundColor),
-                child: cleanUrl.isNotEmpty
-                    ? Image.network(
-                        cleanUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.landscape_outlined, size: 18);
-                        },
-                      )
-                    : const Icon(Icons.landscape_outlined, size: 18),
-              ),
             ),
           ),
         ),

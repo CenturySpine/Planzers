@@ -66,6 +66,16 @@ service cloud.firestore {
         : 'participant';
     }
 
+    function tripPublishAnnouncementsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.publishAnnouncements is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.publishAnnouncements
+        : 'admin';
+    }
+
     function canEditTripGeneralInfo(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripEditGeneralInfoMinRole(tripId));
@@ -79,6 +89,11 @@ service cloud.firestore {
     function canShareTripAccess(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripShareAccessMinRole(tripId));
+    }
+
+    function canPublishTripAnnouncements(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripPublishAnnouncementsMinRole(tripId));
     }
 
     function tripManageTripSettingsMinRole(tripId) {
@@ -479,6 +494,12 @@ service cloud.firestore {
           allow delete: if isTripMember(tripId)
             && userId == request.auth.uid;
         }
+      }
+
+      match /announcements/{announcementId} {
+        allow read: if isTripMember(tripId);
+        allow create: if canPublishTripAnnouncements(tripId);
+        allow update, delete: if canPublishTripAnnouncements(tripId);
       }
 
       match /notificationReads/{userId} {

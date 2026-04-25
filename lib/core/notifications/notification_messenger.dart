@@ -4,6 +4,7 @@ import 'package:planerz/app/router.dart';
 IconData iconForNotificationChannel(String? channel) => switch (channel) {
       'messages' => Icons.chat_bubble,
       'activities' => Icons.event_note,
+      'announcements' => Icons.campaign,
       _ => Icons.notifications,
     };
 
