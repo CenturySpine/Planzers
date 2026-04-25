@@ -11,6 +11,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
@@ -62,9 +63,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     if (_agendaDayFromRouteApplied) return;
     _agendaDayFromRouteApplied = true;
     final routeDay = _agendaDayFromRoute();
-    if (routeDay == null) return;
-    _agendaCenterDay = routeDay;
-    _agendaSelectedDay = routeDay;
+    final trip = TripScope.of(context);
+    final defaultDay = routeDay ?? _defaultAgendaDayForTrip(trip);
+    _agendaCenterDay = defaultDay;
+    _agendaSelectedDay = defaultDay;
   }
 
   DateTime? _agendaDayFromRoute() {
@@ -802,6 +804,20 @@ DateTime _activityDateForGrouping(TripActivity activity) {
 DateTime _dateOnly(DateTime value) {
   final local = value.toLocal();
   return DateTime(local.year, local.month, local.day);
+}
+
+DateTime _defaultAgendaDayForTrip(Trip trip) {
+  final today = _dateOnly(DateTime.now());
+  final start = trip.startDate == null ? null : _dateOnly(trip.startDate!);
+  final end = trip.endDate == null ? null : _dateOnly(trip.endDate!);
+
+  if (start != null && today.isBefore(start)) {
+    return start;
+  }
+  if (end != null && today.isAfter(end)) {
+    return end;
+  }
+  return today;
 }
 
 DateTime _startOfAtomicWeek(DateTime day, Locale locale) {
