@@ -27,6 +27,39 @@ final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
   return ref.watch(tripMessagesRepositoryProvider).watchReactionsByMessage(tripId);
 });
 
+final tripChatDataStreamProvider =
+    StreamProvider.autoDispose.family<TripChatData, String>((ref, tripId) {
+  return ref
+      .watch(tripMessagesRepositoryProvider)
+      .watchRecentChatData(tripId, pageSize: 50);
+});
+
+class TripChatData {
+  const TripChatData({
+    required this.messages,
+    required this.reactionsByMessage,
+    this.oldestLoadedDoc,
+    this.hasPotentialOlder = false,
+  });
+
+  final List<TripMessage> messages;
+  final Map<String, List<TripMessageReaction>> reactionsByMessage;
+  final QueryDocumentSnapshot<Map<String, dynamic>>? oldestLoadedDoc;
+  final bool hasPotentialOlder;
+}
+
+class TripChatPage {
+  const TripChatPage({
+    required this.data,
+    required this.nextCursor,
+    required this.hasMore,
+  });
+
+  final TripChatData data;
+  final QueryDocumentSnapshot<Map<String, dynamic>>? nextCursor;
+  final bool hasMore;
+}
+
 class TripMessagesRepository {
   TripMessagesRepository({
     required this.firestore,
@@ -226,6 +259,106 @@ class TripMessagesRepository {
       }
       return result;
     });
+  }
+
+  Stream<TripChatData> watchRecentChatData(
+    String tripId, {
+    required int pageSize,
+  }) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(
+        const TripChatData(
+          messages: <TripMessage>[],
+          reactionsByMessage: <String, List<TripMessageReaction>>{},
+        ),
+      );
+    }
+
+    return _messagesCol(cleanId)
+        .orderBy('createdAt', descending: true)
+        .limit(pageSize)
+        .snapshots()
+        .map((snap) => _chatDataFromDocs(
+              docsDescByCreatedAt: snap.docs,
+              pageSize: pageSize,
+            ));
+  }
+
+  Future<TripChatPage> fetchOlderChatPage({
+    required String tripId,
+    required int pageSize,
+    required QueryDocumentSnapshot<Map<String, dynamic>> startAfterDoc,
+  }) async {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return const TripChatPage(
+        data: TripChatData(
+          messages: <TripMessage>[],
+          reactionsByMessage: <String, List<TripMessageReaction>>{},
+        ),
+        nextCursor: null,
+        hasMore: false,
+      );
+    }
+
+    final snap = await _messagesCol(cleanId)
+        .orderBy('createdAt', descending: true)
+        .startAfterDocument(startAfterDoc)
+        .limit(pageSize)
+        .get();
+    final pageData = _chatDataFromDocs(
+      docsDescByCreatedAt: snap.docs,
+      pageSize: pageSize,
+    );
+    return TripChatPage(
+      data: pageData,
+      nextCursor: pageData.oldestLoadedDoc,
+      hasMore: pageData.hasPotentialOlder,
+    );
+  }
+
+  TripChatData _chatDataFromDocs({
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> docsDescByCreatedAt,
+    required int pageSize,
+  }) {
+    final docsAscByCreatedAt = docsDescByCreatedAt.reversed.toList(growable: false);
+    final messages = <TripMessage>[];
+    final reactionsByMessage = <String, List<TripMessageReaction>>{};
+
+    for (final doc in docsAscByCreatedAt) {
+      messages.add(TripMessage.fromDoc(doc));
+      reactionsByMessage[doc.id] = _parseReactionsByUser(doc.data());
+    }
+
+    return TripChatData(
+      messages: messages,
+      reactionsByMessage: reactionsByMessage,
+      oldestLoadedDoc:
+          docsDescByCreatedAt.isEmpty ? null : docsDescByCreatedAt.last,
+      hasPotentialOlder: docsDescByCreatedAt.length >= pageSize,
+    );
+  }
+
+  List<TripMessageReaction> _parseReactionsByUser(Map<String, dynamic> data) {
+    final reactionsRaw = data['reactionsByUser'];
+    if (reactionsRaw is! Map<String, dynamic> || reactionsRaw.isEmpty) {
+      return const <TripMessageReaction>[];
+    }
+    final reactions = <TripMessageReaction>[];
+    reactionsRaw.forEach((uid, rawValue) {
+      final cleanUid = uid.trim();
+      final emoji = rawValue is String ? rawValue.trim() : '';
+      if (cleanUid.isEmpty || emoji.isEmpty) return;
+      reactions.add(
+        TripMessageReaction(
+          userId: cleanUid,
+          emoji: emoji,
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      );
+    });
+    return reactions;
   }
 
   Future<void> setMyReaction({

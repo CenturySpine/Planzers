@@ -8,6 +8,32 @@ final usersRepositoryProvider = Provider<UsersRepository>((ref) {
   return UsersRepository(firestore: FirebaseFirestore.instance);
 });
 
+final usersDataByIdsKeyStreamProvider = StreamProvider.autoDispose
+    .family<Map<String, Map<String, dynamic>>, String>((ref, idsKey) {
+  final ids = _idsFromStableKey(idsKey);
+  return ref.watch(usersRepositoryProvider).watchUsersDataByIds(ids);
+});
+
+String stableUsersIdsKey(Iterable<String> ids) {
+  final unique = <String>{};
+  for (final id in ids) {
+    final trimmed = id.trim();
+    if (trimmed.isNotEmpty) unique.add(trimmed);
+  }
+  if (unique.isEmpty) return '';
+  final sorted = unique.toList()..sort();
+  return sorted.join('|');
+}
+
+List<String> _idsFromStableKey(String idsKey) {
+  if (idsKey.trim().isEmpty) return const <String>[];
+  return idsKey
+      .split('|')
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList(growable: false);
+}
+
 class UsersRepository {
   UsersRepository({required this.firestore});
 

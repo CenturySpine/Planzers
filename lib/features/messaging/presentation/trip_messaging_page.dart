@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
+import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/messaging/presentation/chat_widget.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -26,10 +28,20 @@ class TripMessagingPage extends ConsumerStatefulWidget {
 }
 
 class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
+  static const int _olderPageSize = 50;
+
   late final NotificationCenterRepository _notificationCenter;
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
   String? _presenceTripId;
+  String? _activeTripId;
+
+  QueryDocumentSnapshot<Map<String, dynamic>>? _olderCursor;
+  bool _hasMoreOlder = true;
+  bool _loadingOlder = false;
+  final Map<String, TripMessage> _olderMessagesById = <String, TripMessage>{};
+  final Map<String, List<TripMessageReaction>> _olderReactionsByMessage =
+      <String, List<TripMessageReaction>>{};
 
   @override
   void initState() {
@@ -94,6 +106,46 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
     }
   }
 
+  void _resetPaginationForTrip(String tripId) {
+    _activeTripId = tripId;
+    _olderCursor = null;
+    _hasMoreOlder = true;
+    _loadingOlder = false;
+    _olderMessagesById.clear();
+    _olderReactionsByMessage.clear();
+  }
+
+  Future<void> _loadOlderMessages({
+    required String tripId,
+    required TripMessagesRepository repo,
+  }) async {
+    if (_loadingOlder || !_hasMoreOlder) return;
+    final startAfterDoc = _olderCursor;
+    if (startAfterDoc == null) return;
+
+    setState(() => _loadingOlder = true);
+    try {
+      final page = await repo.fetchOlderChatPage(
+        tripId: tripId,
+        pageSize: _olderPageSize,
+        startAfterDoc: startAfterDoc,
+      );
+      if (!mounted) return;
+      setState(() {
+        for (final message in page.data.messages) {
+          _olderMessagesById[message.id] = message;
+        }
+        _olderReactionsByMessage.addAll(page.data.reactionsByMessage);
+        _olderCursor = page.nextCursor;
+        _hasMoreOlder = page.hasMore && page.nextCursor != null;
+        _loadingOlder = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingOlder = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
@@ -101,76 +153,94 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
 
     final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
         FirebaseAuth.instance.currentUser?.uid;
-    final messagesAsync = ref.watch(tripMessagesStreamProvider(trip.id));
-    final reactionsAsync = ref.watch(tripMessageReactionsStreamProvider(trip.id));
+    final chatDataAsync = ref.watch(tripChatDataStreamProvider(trip.id));
     final repo = ref.read(tripMessagesRepositoryProvider);
+    if (_activeTripId != trip.id) {
+      _resetPaginationForTrip(trip.id);
+    }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: messagesAsync.when(
-        data: (messages) {
-          _markMessagesAsReadIfNeeded(tripId: trip.id, messages: messages);
+      body: chatDataAsync.when(
+        data: (chatData) {
+          if (_olderCursor == null) {
+            _olderCursor = chatData.oldestLoadedDoc;
+            _hasMoreOlder = chatData.hasPotentialOlder && _olderCursor != null;
+          }
+
+          final mergedMessagesById = <String, TripMessage>{
+            ..._olderMessagesById,
+            for (final m in chatData.messages) m.id: m,
+          };
+          final mergedMessages = mergedMessagesById.values.toList()
+            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          final mergedReactions = <String, List<TripMessageReaction>>{
+            ..._olderReactionsByMessage,
+            ...chatData.reactionsByMessage,
+          };
+
+          _markMessagesAsReadIfNeeded(tripId: trip.id, messages: mergedMessages);
 
           final labelUserIds = <String>{
             for (final id in trip.memberIds)
               if (id.trim().isNotEmpty) id.trim(),
-            for (final m in messages)
+            for (final m in mergedMessages)
               if (m.authorId.trim().isNotEmpty) m.authorId.trim(),
           }.toList();
+          final usersIdsKey = stableUsersIdsKey(labelUserIds);
 
-          return reactionsAsync.when(
-            data: (reactions) => StreamBuilder<Map<String, Map<String, dynamic>>>(
-              stream: ref
-                  .read(usersRepositoryProvider)
-                  .watchUsersDataByIds(labelUserIds),
-              builder: (context, userSnap) {
-                final userDocs =
-                    userSnap.data ?? const <String, Map<String, dynamic>>{};
-                final authorLabels = tripMemberLabelsFromUserDocsById(
-                  userDocs,
-                  labelUserIds,
-                  tripMemberPublicLabels: trip.memberPublicLabels,
-                  currentUserId: myUid,
-                  emptyFallback: 'Participant',
-                );
-                return ChatWidget(
-                  currentUserId: myUid,
-                  messages: messages,
-                  reactions: reactions,
-                  userDocs: userDocs,
-                  authorLabels: authorLabels,
-                  showUserBadges: true,
-                  onSend: (text) => repo.sendMessage(
-                    tripId: trip.id,
-                    text: text,
-                  ),
-                  onUpdate: (id, text) => repo.updateMessage(
-                    tripId: trip.id,
-                    messageId: id,
-                    text: text,
-                  ),
-                  onDelete: (id) => repo.deleteMessage(
-                    tripId: trip.id,
-                    messageId: id,
-                  ),
-                  onSetReaction: (id, emoji) => repo.setMyReaction(
-                    tripId: trip.id,
-                    messageId: id,
-                    emoji: emoji,
-                  ),
-                  onRemoveReaction: (id) => repo.removeMyReaction(
-                    tripId: trip.id,
-                    messageId: id,
-                  ),
-                );
-              },
-            ),
+          final usersAsync = ref.watch(
+            usersDataByIdsKeyStreamProvider(usersIdsKey),
+          );
+          return usersAsync.when(
+            data: (userDocs) {
+              final authorLabels = tripMemberLabelsFromUserDocsById(
+                userDocs,
+                labelUserIds,
+                tripMemberPublicLabels: trip.memberPublicLabels,
+                currentUserId: myUid,
+                emptyFallback: 'Participant',
+              );
+              return ChatWidget(
+                currentUserId: myUid,
+                messages: mergedMessages,
+                reactions: mergedReactions,
+                userDocs: userDocs,
+                authorLabels: authorLabels,
+                showUserBadges: true,
+                hasMoreOlder: _hasMoreOlder,
+                loadingOlder: _loadingOlder,
+                onLoadOlder: () => _loadOlderMessages(tripId: trip.id, repo: repo),
+                onSend: (text) => repo.sendMessage(
+                  tripId: trip.id,
+                  text: text,
+                ),
+                onUpdate: (id, text) => repo.updateMessage(
+                  tripId: trip.id,
+                  messageId: id,
+                  text: text,
+                ),
+                onDelete: (id) => repo.deleteMessage(
+                  tripId: trip.id,
+                  messageId: id,
+                ),
+                onSetReaction: (id, emoji) => repo.setMyReaction(
+                  tripId: trip.id,
+                  messageId: id,
+                  emoji: emoji,
+                ),
+                onRemoveReaction: (id) => repo.removeMyReaction(
+                  tripId: trip.id,
+                  messageId: id,
+                ),
+              );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Erreur reactions : $e',
+                  'Erreur utilisateurs : $e',
                   textAlign: TextAlign.center,
                 ),
               ),

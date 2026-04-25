@@ -31,6 +31,9 @@ class ChatWidget extends StatefulWidget {
     required this.onSetReaction,
     required this.onRemoveReaction,
     this.showUserBadges = true,
+    this.onLoadOlder,
+    this.hasMoreOlder = false,
+    this.loadingOlder = false,
   });
 
   final String? currentUserId;
@@ -53,6 +56,9 @@ class ChatWidget extends StatefulWidget {
 
   /// When false (e.g. 2-person DM), author badges are hidden.
   final bool showUserBadges;
+  final Future<void> Function()? onLoadOlder;
+  final bool hasMoreOlder;
+  final bool loadingOlder;
 
   @override
   State<ChatWidget> createState() => _ChatWidgetState();
@@ -73,6 +79,7 @@ class _ChatWidgetState extends State<ChatWidget> {
   String? _selectedMessageId;
   bool _hasInitiallyScrolled = false;
   bool _showScrollToBottom = false;
+  bool _requestingOlderMessages = false;
 
   @override
   void initState() {
@@ -84,6 +91,9 @@ class _ChatWidgetState extends State<ChatWidget> {
   @override
   void didUpdateWidget(ChatWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!widget.loadingOlder) {
+      _requestingOlderMessages = false;
+    }
     if (!identical(widget.messages, oldWidget.messages)) {
       if (!_hasInitiallyScrolled) {
         _scrollToBottom();
@@ -106,12 +116,38 @@ class _ChatWidgetState extends State<ChatWidget> {
     if (shouldShow != _showScrollToBottom) {
       setState(() => _showScrollToBottom = shouldShow);
     }
+    if (_isNearTop()) {
+      unawaited(_maybeLoadOlderMessages());
+    }
   }
 
   bool _isNearBottom() {
     if (!_scrollController.hasClients) return true;
     final pos = _scrollController.position;
     return pos.maxScrollExtent - pos.pixels <= 100.0;
+  }
+
+  bool _isNearTop() {
+    if (!_scrollController.hasClients) return false;
+    return _scrollController.position.pixels <= 120.0;
+  }
+
+  Future<void> _maybeLoadOlderMessages() async {
+    final onLoadOlder = widget.onLoadOlder;
+    if (onLoadOlder == null ||
+        !widget.hasMoreOlder ||
+        widget.loadingOlder ||
+        _requestingOlderMessages) {
+      return;
+    }
+    _requestingOlderMessages = true;
+    try {
+      await onLoadOlder();
+    } finally {
+      if (!widget.loadingOlder) {
+        _requestingOlderMessages = false;
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -135,14 +171,6 @@ class _ChatWidgetState extends State<ChatWidget> {
     if (_selectedMessageId != null) {
       setState(() => _selectedMessageId = null);
     }
-  }
-
-  TripMessage? _messageById(String? id) {
-    if (id == null) return null;
-    for (final m in widget.messages) {
-      if (m.id == id) return m;
-    }
-    return null;
   }
 
   Future<void> _send() async {
@@ -397,8 +425,22 @@ class _ChatWidgetState extends State<ChatWidget> {
     final dateFmt = DateFormat('d MMMM yyyy', localeTag);
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final maxBubbleWidth = math.min(viewportWidth * 0.85, 560.0);
+    final maxBubbleWidthWithBadge = math.min(maxBubbleWidth - 38.0, 560.0);
+    final messageById = <String, TripMessage>{
+      for (final message in messages) message.id: message,
+    };
+    final groupedReactionsByMessage = <String, List<_ReactionGroup>>{
+      for (final message in messages)
+        message.id: _groupReactions(
+          reactionsByMessage[message.id] ?? const <TripMessageReaction>[],
+          myUid: myUid,
+        ),
+    };
 
-    final selected = _messageById(_selectedMessageId);
+    final selected =
+        _selectedMessageId == null ? null : messageById[_selectedMessageId!];
     if (_selectedMessageId != null && selected == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _clearSelection();
@@ -455,9 +497,22 @@ class _ChatWidgetState extends State<ChatWidget> {
                       horizontal: 12,
                       vertical: 8,
                     ),
-                    itemCount: chatEntries.length,
+                    itemCount: chatEntries.length + (widget.loadingOlder ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final entry = chatEntries[index];
+                      if (widget.loadingOlder && index == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: Center(
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+                      final effectiveIndex = index - (widget.loadingOlder ? 1 : 0);
+                      final entry = chatEntries[effectiveIndex];
                       if (entry.dayLabel != null) {
                         return _MessageDayPill(label: entry.dayLabel!);
                       }
@@ -469,9 +524,12 @@ class _ChatWidgetState extends State<ChatWidget> {
                       final reactions = reactionsByMessage[m.id] ??
                           const <TripMessageReaction>[];
                       final groupedReactions =
-                          _groupReactions(reactions, myUid: myUid);
-                      final previousMessage =
-                          index > 0 ? chatEntries[index - 1].message : null;
+                          groupedReactionsByMessage[m.id] ??
+                              const <_ReactionGroup>[];
+                      final previousEntry = effectiveIndex > 0
+                          ? chatEntries[effectiveIndex - 1]
+                          : null;
+                      final previousMessage = previousEntry?.message;
                       final isPreviousMessageSameDay =
                           previousMessage != null &&
                               DateUtils.isSameDay(
@@ -682,12 +740,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                                 child: IntrinsicWidth(
                                   child: ConstrainedBox(
                                     constraints: BoxConstraints(
-                                      maxWidth: math.min(
-                                        MediaQuery.sizeOf(context).width *
-                                                0.85 -
-                                            38,
-                                        560,
-                                      ),
+                                      maxWidth: maxBubbleWidthWithBadge,
                                     ),
                                     child: bubble,
                                   ),
@@ -704,12 +757,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                             : Alignment.centerLeft,
                         child: IntrinsicWidth(
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: math.min(
-                                MediaQuery.sizeOf(context).width * 0.85,
-                                560,
-                              ),
-                            ),
+                            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                             child: bubble,
                           ),
                         ),
