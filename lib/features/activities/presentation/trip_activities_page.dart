@@ -363,9 +363,11 @@ class _ActivitiesAgendaTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+    final weekStart = _startOfAtomicWeek(centerDay, locale);
     final weekDays = List<DateTime>.generate(
       7,
-      (index) => centerDay.add(Duration(days: index - 3)),
+      (index) => weekStart.add(Duration(days: index)),
     );
     final monthSpans = _agendaMonthSpans(
       weekDays,
@@ -800,6 +802,19 @@ DateTime _activityDateForGrouping(TripActivity activity) {
 DateTime _dateOnly(DateTime value) {
   final local = value.toLocal();
   return DateTime(local.year, local.month, local.day);
+}
+
+DateTime _startOfAtomicWeek(DateTime day, Locale locale) {
+  final date = _dateOnly(day);
+  final firstWeekday = _firstWeekdayForLocale(locale);
+  final delta = (date.weekday - firstWeekday + DateTime.daysPerWeek) %
+      DateTime.daysPerWeek;
+  return date.subtract(Duration(days: delta));
+}
+
+int _firstWeekdayForLocale(Locale locale) {
+  final countryCode = (locale.countryCode ?? '').toUpperCase();
+  return countryCode == 'US' ? DateTime.sunday : DateTime.monday;
 }
 
 bool _isSameDay(DateTime a, DateTime b) {
