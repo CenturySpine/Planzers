@@ -379,8 +379,7 @@ class _TripNavDestination {
   final IconData selectedIcon;
 }
 
-/// Material 3–style bottom destinations in a horizontal scroll view so many
-/// tabs stay usable on narrow phones.
+/// Material 3–style bottom destinations equally distributed across width.
 class _TripMobileScrollableNavBar extends StatelessWidget {
   const _TripMobileScrollableNavBar({
     required this.selectedIndex,
@@ -395,9 +394,6 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
   final Map<String, int> unreadByTabLabel;
 
   static const double _barHeight = 80;
-  static const double _minItemWidth = 80;
-  static const double _horizontalListPadding = 7;
-  static const double _itemSpacing = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -414,71 +410,72 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: _barHeight,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding:
-                const EdgeInsets.symmetric(horizontal: _horizontalListPadding),
-            itemCount: destinations.length,
-            separatorBuilder: (_, __) => const SizedBox(width: _itemSpacing),
-            itemBuilder: (context, index) {
-              final d = destinations[index];
-              final selected = selectedIndex == index;
-              return SizedBox(
-                width: _minItemWidth,
-                child: InkWell(
-                  onTap: () => onDestinationSelected(index),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? colorScheme.secondaryContainer
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: _buildNavIcon(
-                          icon: selected ? d.selectedIcon : d.icon,
-                          unreadCount: unreadByTabLabel[d.label] ?? 0,
-                          showBadge:
-                              d.label == 'Messagerie' || d.label == 'Activités',
-                          color: selected
-                              ? colorScheme.onSecondaryContainer
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        switch (d.label) {
-                          'Aperçu' => l10n.tripTabOverview,
-                          'Messagerie' => l10n.tripTabMessages,
-                          'Activités' => l10n.tripTabActivities,
-                          'Dépenses' => l10n.tripTabExpenses,
-                          'Repas' => l10n.tripTabMeals,
-                          'Courses' => l10n.tripTabShopping,
-                          _ => d.label,
-                        },
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: selected
-                                  ? colorScheme.onSurface
-                                  : colorScheme.onSurfaceVariant,
+          child: Row(
+            children: [
+              for (var index = 0; index < destinations.length; index++)
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      final d = destinations[index];
+                      final selected = selectedIndex == index;
+                      return InkWell(
+                        onTap: () => onDestinationSelected(index),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? colorScheme.secondaryContainer
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: _buildNavIcon(
+                                icon: selected ? d.selectedIcon : d.icon,
+                                unreadCount: unreadByTabLabel[d.label] ?? 0,
+                                showBadge: d.label == 'Messagerie' ||
+                                    d.label == 'Activités',
+                                color: selected
+                                    ? colorScheme.onSecondaryContainer
+                                    : colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                      ),
-                    ],
+                            const SizedBox(height: 4),
+                            Text(
+                              switch (d.label) {
+                                'Aperçu' => l10n.tripTabOverview,
+                                'Messagerie' => l10n.tripTabMessages,
+                                'Activités' => l10n.tripTabActivities,
+                                'Dépenses' => l10n.tripTabExpenses,
+                                'Repas' => l10n.tripTabMeals,
+                                'Courses' => l10n.tripTabShopping,
+                                _ => d.label,
+                              },
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                    color: selected
+                                        ? colorScheme.onSurface
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-              );
-            },
+            ],
           ),
         ),
       ),
