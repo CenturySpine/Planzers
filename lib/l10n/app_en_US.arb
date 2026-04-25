@@ -736,6 +736,8 @@
   "tripOverviewTileActivities": "Activities",
   "tripOverviewTileRooms": "Rooms",
   "tripOverviewTileCars": "Cars",
+  "tripOverviewTopTabAnnouncements": "Announcements",
+  "tripOverviewTopTabExpenses": "Expenses",
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
   "tripOverviewTileComingSoon": "[Coming soon]",

@@ -3407,6 +3407,18 @@ abstract class AppLocalizations {
   /// **'Voitures'**
   String get tripOverviewTileCars;
 
+  /// No description provided for @tripOverviewTopTabAnnouncements.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annonces'**
+  String get tripOverviewTopTabAnnouncements;
+
+  /// No description provided for @tripOverviewTopTabExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépenses'**
+  String get tripOverviewTopTabExpenses;
+
   /// No description provided for @tripOverviewTileNoActivitiesToday.
   ///
   /// In fr, this message translates to:

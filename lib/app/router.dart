@@ -14,6 +14,7 @@ import 'package:planerz/features/meals/presentation/trip_meals_page.dart';
 import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
 import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
+import 'package:planerz/features/trips/presentation/trip_announcements_page.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_expenses_permissions_page.dart';
@@ -210,6 +211,14 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'shopping',
                   builder: (context, state) => const TripShoppingPage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'announcements',
+                  builder: (context, state) => const TripAnnouncementsPage(),
                 ),
               ],
             ),

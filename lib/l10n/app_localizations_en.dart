@@ -1867,6 +1867,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTileCars => 'Cars';
 
   @override
+  String get tripOverviewTopTabAnnouncements => 'Announcements';
+
+  @override
+  String get tripOverviewTopTabExpenses => 'Expenses';
+
+  @override
   String get tripOverviewTileNoActivitiesToday => 'No activities planned today';
 
   @override
@@ -3752,6 +3758,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTileCars => 'Cars';
+
+  @override
+  String get tripOverviewTopTabAnnouncements => 'Announcements';
+
+  @override
+  String get tripOverviewTopTabExpenses => 'Expenses';
 
   @override
   String get tripOverviewTileNoActivitiesToday => 'No activities planned today';

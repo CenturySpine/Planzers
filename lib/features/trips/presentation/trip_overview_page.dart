@@ -218,6 +218,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     context.push('/trips/${_trip.id}/participants');
   }
 
+  void _openAnnouncementsPage() {
+    context.go('/trips/${_trip.id}/announcements');
+  }
+
+  void _openExpensesPage() {
+    context.go('/trips/${_trip.id}/expenses');
+  }
+
   Future<void> _openTripStayDialog() async {
     await showTripStayEditDialog(context: context, trip: _trip);
   }
@@ -969,7 +977,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: _TripOverviewTopSwitch(
+                leftLabel: l10n.tripOverviewTopTabAnnouncements,
+                rightLabel: l10n.tripOverviewTopTabExpenses,
+                onLeftTap: _openAnnouncementsPage,
+                onRightTap: _openExpensesPage,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 children: [
                   if (_isEditing) ...[
@@ -1141,9 +1158,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ] else ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ],
                   if (canEditGeneralInfo && _isEditing)
                     Padding(
@@ -1546,6 +1563,113 @@ class _InfoRow extends StatelessWidget {
             splashRadius: 18,
           ),
       ],
+    );
+  }
+}
+
+class _TripOverviewTopSwitch extends StatelessWidget {
+  const _TripOverviewTopSwitch({
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.onLeftTap,
+    required this.onRightTap,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final VoidCallback onLeftTap;
+  final VoidCallback onRightTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        );
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          Expanded(
+            child: _TripOverviewTopSwitchItem(
+              label: leftLabel,
+              icon: Icons.campaign_outlined,
+              color: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
+              borderColor: cs.outlineVariant,
+              textStyle: labelStyle,
+              onTap: onLeftTap,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _TripOverviewTopSwitchItem(
+              label: rightLabel,
+              icon: Icons.payments_outlined,
+              color: cs.secondaryContainer,
+              foregroundColor: cs.onSecondaryContainer,
+              borderColor: cs.outlineVariant,
+              textStyle: labelStyle,
+              onTap: onRightTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripOverviewTopSwitchItem extends StatelessWidget {
+  const _TripOverviewTopSwitchItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.foregroundColor,
+    required this.borderColor,
+    required this.textStyle,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final Color foregroundColor;
+  final Color borderColor;
+  final TextStyle? textStyle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      elevation: 0.8,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borderColor.withValues(alpha: 0.75)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: foregroundColor),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyle?.copyWith(color: foregroundColor),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

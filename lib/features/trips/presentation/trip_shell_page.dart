@@ -83,12 +83,6 @@ class TripShellPage extends ConsumerStatefulWidget {
       selectedIcon: Icons.event_available,
     ),
     _TripNavDestination(
-      branchIndex: 2,
-      label: 'Dépenses',
-      icon: Icons.payments_outlined,
-      selectedIcon: Icons.payments,
-    ),
-    _TripNavDestination(
       branchIndex: 5,
       label: 'Repas',
       icon: Icons.restaurant_outlined,
