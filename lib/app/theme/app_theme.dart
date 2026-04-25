@@ -51,6 +51,16 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         toolbarHeight: 52,
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          // Keep a clear rounded-rectangle shape (not fully pill/circular).
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
       cardTheme: const CardThemeData(
         color: Colors.white,
         elevation: 1,

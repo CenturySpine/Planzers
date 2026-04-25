@@ -758,35 +758,6 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   if (selection.isEmpty) return;
                   setState(() => _activeView = selection.first);
                 },
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  side: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return BorderSide(color: colorScheme.secondary, width: 1.2);
-                    }
-                    return BorderSide(color: colorScheme.outlineVariant);
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return colorScheme.onSecondaryContainer;
-                    }
-                    return colorScheme.onSurfaceVariant;
-                  }),
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return colorScheme.secondaryContainer;
-                    }
-                    return Colors.transparent;
-                  }),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
               ),
               if (canEditPost || canDeletePost)
                 Positioned(
