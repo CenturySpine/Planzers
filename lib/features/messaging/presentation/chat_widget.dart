@@ -555,7 +555,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                                   color: bubbleColor,
                                   child: Padding(
                                     padding:
-                                        const EdgeInsets.fromLTRB(10, 8, 10, 6),
+                                        const EdgeInsets.fromLTRB(10, 6, 10, 5),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.stretch,
@@ -571,39 +571,52 @@ class _ChatWidgetState extends State<ChatWidget> {
                                               color: scheme.secondary,
                                             ),
                                           ),
-                                          const SizedBox(height: 3),
+                                          const SizedBox(height: 1),
                                         ],
-                                        _ChatLinkedText(
-                                          text: m.text,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: isMine
-                                                ? Colors.black
-                                                : null,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
                                         Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
                                           children: [
-                                            if (m.wasEdited) ...[
-                                              Icon(
-                                                Icons.edit_rounded,
-                                                size: 10,
-                                                color: timeColor,
+                                            Flexible(
+                                              child: _ChatLinkedText(
+                                                text: m.text,
+                                                style: theme.textTheme.bodyMedium
+                                                    ?.copyWith(
+                                                  color: isMine
+                                                      ? Colors.black
+                                                      : null,
+                                                ),
                                               ),
-                                              const SizedBox(width: 2),
-                                            ],
-                                            Text(
-                                              timeFmt.format(
-                                                (m.wasEdited
-                                                        ? m.updatedAt!
-                                                        : m.createdAt)
-                                                    .toLocal(),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Transform.translate(
+                                              offset: const Offset(0, 2),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (m.wasEdited) ...[
+                                                    Icon(
+                                                      Icons.edit_rounded,
+                                                      size: 10,
+                                                      color: timeColor,
+                                                    ),
+                                                    const SizedBox(width: 2),
+                                                  ],
+                                                  Text(
+                                                    timeFmt.format(
+                                                      (m.wasEdited
+                                                              ? m.updatedAt!
+                                                              : m.createdAt)
+                                                          .toLocal(),
+                                                    ),
+                                                    style: theme
+                                                        .textTheme.labelSmall
+                                                        ?.copyWith(
+                                                      color: timeColor,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              style: theme.textTheme.labelSmall
-                                                  ?.copyWith(color: timeColor),
                                             ),
                                           ],
                                         ),
