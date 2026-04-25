@@ -367,44 +367,22 @@ class _ActivitiesAgendaTab extends StatelessWidget {
       7,
       (index) => centerDay.add(Duration(days: index - 3)),
     );
+    final monthSpans = _agendaMonthSpans(
+      weekDays,
+      localeTag: Localizations.localeOf(context).toString(),
+    );
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: onMoveBackward,
-                icon: const Icon(Icons.chevron_left),
-                tooltip: AppLocalizations.of(context)!.activitiesPreviousWeek,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                visualDensity: VisualDensity.compact,
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    for (final day in weekDays)
-                      Expanded(
-                        child: _AgendaDayCell(
-                          day: day,
-                          isSelected: _isSameDay(day, selectedDay),
-                          hasPlannedActivities: plannedDays.contains(day),
-                          onTap: () => onSelectDay(day),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: onMoveForward,
-                icon: const Icon(Icons.chevron_right),
-                tooltip: AppLocalizations.of(context)!.activitiesNextWeek,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+          child: _AgendaWeekGrid(
+            weekDays: weekDays,
+            monthSpans: monthSpans,
+            selectedDay: selectedDay,
+            plannedDays: plannedDays,
+            onSelectDay: onSelectDay,
+            onMoveBackward: onMoveBackward,
+            onMoveForward: onMoveForward,
           ),
         ),
         Expanded(
@@ -516,6 +494,137 @@ class _AgendaDayCell extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AgendaWeekGrid extends StatelessWidget {
+  const _AgendaWeekGrid({
+    required this.weekDays,
+    required this.monthSpans,
+    required this.selectedDay,
+    required this.plannedDays,
+    required this.onSelectDay,
+    required this.onMoveBackward,
+    required this.onMoveForward,
+  });
+
+  final List<DateTime> weekDays;
+  final List<_AgendaMonthSpan> monthSpans;
+  final DateTime selectedDay;
+  final Set<DateTime> plannedDays;
+  final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback onMoveBackward;
+  final VoidCallback onMoveForward;
+  static const _chevronSlotWidth = 36.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+        );
+    return Column(
+      children: [
+        Row(
+          children: [
+            const SizedBox(width: _chevronSlotWidth),
+            Expanded(
+              child: SizedBox(
+                height: 16,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < monthSpans.length; i++)
+                      Expanded(
+                        flex: monthSpans[i].dayCount,
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: i < monthSpans.length - 1
+                                ? Border(
+                                    right: BorderSide(
+                                      color: scheme.outlineVariant,
+                                      width: 1,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Text(
+                            monthSpans[i].monthLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textStyle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: _chevronSlotWidth),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            SizedBox(
+              width: _chevronSlotWidth,
+              child: Center(
+                child: IconButton(
+                  onPressed: onMoveBackward,
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: AppLocalizations.of(context)!.activitiesPreviousWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: _chevronSlotWidth,
+                    height: _chevronSlotWidth,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  for (final day in weekDays)
+                    Expanded(
+                      child: _AgendaDayCell(
+                        day: day,
+                        isSelected: _isSameDay(day, selectedDay),
+                        hasPlannedActivities: plannedDays.contains(day),
+                        onTap: () => onSelectDay(day),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: _chevronSlotWidth,
+              child: Center(
+                child: IconButton(
+                  onPressed: onMoveForward,
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: AppLocalizations.of(context)!.activitiesNextWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: _chevronSlotWidth,
+                    height: _chevronSlotWidth,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AgendaMonthSpan {
+  const _AgendaMonthSpan({required this.monthLabel, required this.dayCount});
+
+  final String monthLabel;
+  final int dayCount;
 }
 
 class _ActivityListTile extends StatelessWidget {
@@ -720,6 +829,36 @@ bool _activityMatchesQuery(
     ...previewValues,
   ].join(' ').toLowerCase();
   return haystack.contains(query);
+}
+
+List<_AgendaMonthSpan> _agendaMonthSpans(
+  List<DateTime> weekDays, {
+  required String localeTag,
+}) {
+  final spans = <_AgendaMonthSpan>[];
+  for (final day in weekDays) {
+    if (spans.isEmpty || spans.last.monthLabel != _agendaMonthLabel(day, localeTag)) {
+      spans.add(
+        _AgendaMonthSpan(
+          monthLabel: _agendaMonthLabel(day, localeTag),
+          dayCount: 1,
+        ),
+      );
+    } else {
+      final previous = spans.removeLast();
+      spans.add(
+        _AgendaMonthSpan(
+          monthLabel: previous.monthLabel,
+          dayCount: previous.dayCount + 1,
+        ),
+      );
+    }
+  }
+  return spans;
+}
+
+String _agendaMonthLabel(DateTime day, String localeTag) {
+  return DateFormat('MMMM', localeTag).format(day);
 }
 
 String creatorLabelForActivity(
