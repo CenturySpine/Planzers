@@ -199,6 +199,37 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountNameMaxLength => 'Maximum 60 caractères';
 
   @override
+  String get accountPhoneCountryCodeLabel => 'Indicatif';
+
+  @override
+  String get accountPhoneCountryCodeHint => '+33';
+
+  @override
+  String get accountPhoneCountryCodeRequired => 'Indicatif requis';
+
+  @override
+  String get accountPhoneCountryCodeInvalid => 'Indicatif invalide (ex : +33)';
+
+  @override
+  String get accountPhoneNumberLabel => 'Téléphone';
+
+  @override
+  String get accountPhoneNumberHint => '6 12 34 56 78';
+
+  @override
+  String get accountPhoneNumberRequired => 'Numéro requis';
+
+  @override
+  String get accountPhoneNumberInvalid => 'Numéro invalide';
+
+  @override
+  String get accountSavePhoneTooltip => 'Enregistrer le téléphone';
+
+  @override
+  String get accountPhonePrivacyHelp =>
+      'Ce numéro ne sera jamais visible, sauf réglages particuliers pour les voyages.';
+
+  @override
   String get accountSaveNameTooltip => 'Enregistrer le nom';
 
   @override
@@ -2119,6 +2150,37 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get accountNameMaxLength => 'Maximum 60 caractères';
+
+  @override
+  String get accountPhoneCountryCodeLabel => 'Indicatif';
+
+  @override
+  String get accountPhoneCountryCodeHint => '+33';
+
+  @override
+  String get accountPhoneCountryCodeRequired => 'Indicatif requis';
+
+  @override
+  String get accountPhoneCountryCodeInvalid => 'Indicatif invalide (ex : +33)';
+
+  @override
+  String get accountPhoneNumberLabel => 'Téléphone';
+
+  @override
+  String get accountPhoneNumberHint => '6 12 34 56 78';
+
+  @override
+  String get accountPhoneNumberRequired => 'Numéro requis';
+
+  @override
+  String get accountPhoneNumberInvalid => 'Numéro invalide';
+
+  @override
+  String get accountSavePhoneTooltip => 'Enregistrer le téléphone';
+
+  @override
+  String get accountPhonePrivacyHelp =>
+      'Ce numéro ne sera jamais visible, sauf réglages particuliers pour les voyages.';
 
   @override
   String get accountSaveNameTooltip => 'Enregistrer le nom';

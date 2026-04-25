@@ -460,6 +460,66 @@ abstract class AppLocalizations {
   /// **'Maximum 60 caractères'**
   String get accountNameMaxLength;
 
+  /// No description provided for @accountPhoneCountryCodeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indicatif'**
+  String get accountPhoneCountryCodeLabel;
+
+  /// No description provided for @accountPhoneCountryCodeHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'+33'**
+  String get accountPhoneCountryCodeHint;
+
+  /// No description provided for @accountPhoneCountryCodeRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indicatif requis'**
+  String get accountPhoneCountryCodeRequired;
+
+  /// No description provided for @accountPhoneCountryCodeInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indicatif invalide (ex : +33)'**
+  String get accountPhoneCountryCodeInvalid;
+
+  /// No description provided for @accountPhoneNumberLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone'**
+  String get accountPhoneNumberLabel;
+
+  /// No description provided for @accountPhoneNumberHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'6 12 34 56 78'**
+  String get accountPhoneNumberHint;
+
+  /// No description provided for @accountPhoneNumberRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro requis'**
+  String get accountPhoneNumberRequired;
+
+  /// No description provided for @accountPhoneNumberInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro invalide'**
+  String get accountPhoneNumberInvalid;
+
+  /// No description provided for @accountSavePhoneTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer le téléphone'**
+  String get accountSavePhoneTooltip;
+
+  /// No description provided for @accountPhonePrivacyHelp.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce numéro ne sera jamais visible, sauf réglages particuliers pour les voyages.'**
+  String get accountPhonePrivacyHelp;
+
   /// No description provided for @accountSaveNameTooltip.
   ///
   /// In fr, this message translates to:

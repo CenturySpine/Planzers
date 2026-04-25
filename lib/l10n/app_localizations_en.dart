@@ -200,6 +200,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountNameMaxLength => 'Maximum 60 characters';
 
   @override
+  String get accountPhoneCountryCodeLabel => 'Country code';
+
+  @override
+  String get accountPhoneCountryCodeHint => '+33';
+
+  @override
+  String get accountPhoneCountryCodeRequired => 'Country code required';
+
+  @override
+  String get accountPhoneCountryCodeInvalid =>
+      'Invalid country code (e.g. +33)';
+
+  @override
+  String get accountPhoneNumberLabel => 'Phone number';
+
+  @override
+  String get accountPhoneNumberHint => '6 12 34 56 78';
+
+  @override
+  String get accountPhoneNumberRequired => 'Phone number required';
+
+  @override
+  String get accountPhoneNumberInvalid => 'Invalid phone number';
+
+  @override
+  String get accountSavePhoneTooltip => 'Save phone number';
+
+  @override
+  String get accountPhonePrivacyHelp =>
+      'This phone number is never visible, except with specific trip settings.';
+
+  @override
   String get accountSaveNameTooltip => 'Save name';
 
   @override
@@ -2106,6 +2138,38 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountNameMaxLength => 'Maximum 60 characters';
+
+  @override
+  String get accountPhoneCountryCodeLabel => 'Country code';
+
+  @override
+  String get accountPhoneCountryCodeHint => '+33';
+
+  @override
+  String get accountPhoneCountryCodeRequired => 'Country code required';
+
+  @override
+  String get accountPhoneCountryCodeInvalid =>
+      'Invalid country code (e.g. +33)';
+
+  @override
+  String get accountPhoneNumberLabel => 'Phone number';
+
+  @override
+  String get accountPhoneNumberHint => '6 12 34 56 78';
+
+  @override
+  String get accountPhoneNumberRequired => 'Phone number required';
+
+  @override
+  String get accountPhoneNumberInvalid => 'Invalid phone number';
+
+  @override
+  String get accountSavePhoneTooltip => 'Save phone number';
+
+  @override
+  String get accountPhonePrivacyHelp =>
+      'This phone number is never visible, except with specific trip settings.';
 
   @override
   String get accountSaveNameTooltip => 'Save name';

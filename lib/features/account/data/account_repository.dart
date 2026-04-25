@@ -236,10 +236,10 @@ class AccountRepository {
     }
 
     final userRef = firestore.collection('users').doc(uid);
-    final trimmed = accountName.trim();
+    final trimmedName = accountName.trim();
     await userRef.set({
       'account': {
-        'name': trimmed,
+        'name': trimmedName,
         'updatedAt': FieldValue.serverTimestamp(),
       },
       'updatedAt': FieldValue.serverTimestamp(),
@@ -257,13 +257,13 @@ class AccountRepository {
       var batch = firestore.batch();
       var opCount = 0;
       for (final doc in tripsSnap.docs) {
-        if (trimmed.isEmpty) {
+        if (trimmedName.isEmpty) {
           batch.update(doc.reference, {
             'memberPublicLabels.$uid': FieldValue.delete(),
           });
         } else {
           batch.update(doc.reference, {
-            'memberPublicLabels.$uid': trimmed,
+            'memberPublicLabels.$uid': trimmedName,
           });
         }
         opCount++;
@@ -282,6 +282,28 @@ class AccountRepository {
       }
       // Best effort sync for trip member labels: account update already succeeded.
     }
+  }
+
+  Future<void> updateAccountPhone({
+    required String phoneCountryCode,
+    required String phoneNumber,
+  }) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final userRef = firestore.collection('users').doc(uid);
+    final trimmedPhoneCountryCode = phoneCountryCode.trim();
+    final trimmedPhoneNumber = phoneNumber.trim();
+    await userRef.set({
+      'account': {
+        'phoneCountryCode': trimmedPhoneCountryCode,
+        'phoneNumber': trimmedPhoneNumber,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   /// On sign-in/profile refresh, copy Google-hosted avatar to Firebase Storage

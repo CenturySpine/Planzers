@@ -25,9 +25,12 @@ class AccountPage extends ConsumerStatefulWidget {
 class _AccountPageState extends ConsumerState<AccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _accountNameController = TextEditingController();
+  final _phoneCountryCodeController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
   bool _didInitFromFirestore = false;
   bool _didRequestPhotoSync = false;
-  bool _isSaving = false;
+  bool _isSavingName = false;
+  bool _isSavingPhone = false;
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
   bool _isUpdatingAutoOpenCurrentTrip = false;
@@ -195,20 +198,23 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   @override
   void dispose() {
     _accountNameController.dispose();
+    _phoneCountryCodeController.dispose();
+    _phoneNumberController.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  Future<void> _saveName() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_isSaving) return;
+    if (_isSavingName) return;
     final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
+    if (form == null) return;
+    if (!form.validate()) return;
 
-    setState(() => _isSaving = true);
+    setState(() => _isSavingName = true);
     try {
-      await ref
-          .read(accountRepositoryProvider)
-          .updateAccountName(_accountNameController.text);
+      await ref.read(accountRepositoryProvider).updateAccountName(
+            _accountNameController.text,
+          );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.accountUpdated)),
@@ -220,7 +226,36 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() => _isSavingName = false);
+      }
+    }
+  }
+
+  Future<void> _savePhone() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_isSavingPhone) return;
+    final form = _formKey.currentState;
+    if (form == null) return;
+    if (!form.validate()) return;
+
+    setState(() => _isSavingPhone = true);
+    try {
+      await ref.read(accountRepositoryProvider).updateAccountPhone(
+            phoneCountryCode: _phoneCountryCodeController.text,
+            phoneNumber: _phoneNumberController.text,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accountUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accountUpdateError(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingPhone = false);
       }
     }
   }
@@ -362,6 +397,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       ? (data['photoUrl'] as String).trim()
                       : '';
           final accountName = (account['name'] as String?)?.trim() ?? '';
+          final phoneCountryCode =
+              (account['phoneCountryCode'] as String?)?.trim() ?? '';
+          final phoneNumber = (account['phoneNumber'] as String?)?.trim() ?? '';
           final displayLabel = accountName.isNotEmpty
               ? accountName
               : (authUser.displayName ?? '').trim().isNotEmpty
@@ -372,6 +410,8 @@ class _AccountPageState extends ConsumerState<AccountPage> {
 
           if (!_didInitFromFirestore) {
             _accountNameController.text = accountName;
+            _phoneCountryCodeController.text = phoneCountryCode;
+            _phoneNumberController.text = phoneNumber;
             _didInitFromFirestore = true;
           }
 
@@ -485,9 +525,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: IconButton.filled(
-                            onPressed: _isSaving ? null : _save,
+                            onPressed: _isSavingName ? null : _saveName,
                             tooltip: l10n.accountSaveNameTooltip,
-                            icon: _isSaving
+                            icon: _isSavingName
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
@@ -503,6 +543,98 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                     const SizedBox(height: 8),
                     Text(
                       l10n.accountNameFallbackHelp,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 108,
+                          child: TextFormField(
+                            controller: _phoneCountryCodeController,
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(
+                              labelText: l10n.accountPhoneCountryCodeLabel,
+                              hintText: l10n.accountPhoneCountryCodeHint,
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (_) {
+                              final countryCode =
+                                  _phoneCountryCodeController.text.trim();
+                              final phoneNumber =
+                                  _phoneNumberController.text.trim();
+                              final hasAnyPhonePart =
+                                  countryCode.isNotEmpty ||
+                                  phoneNumber.isNotEmpty;
+                              if (!hasAnyPhonePart) {
+                                return null;
+                              }
+                              if (countryCode.isEmpty) {
+                                return l10n.accountPhoneCountryCodeRequired;
+                              }
+                              if (!RegExp(r'^\+[0-9]{1,4}$')
+                                  .hasMatch(countryCode)) {
+                                return l10n.accountPhoneCountryCodeInvalid;
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneNumberController,
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(
+                              labelText: l10n.accountPhoneNumberLabel,
+                              hintText: l10n.accountPhoneNumberHint,
+                              border: const OutlineInputBorder(),
+                            ),
+                            validator: (_) {
+                              final countryCode =
+                                  _phoneCountryCodeController.text.trim();
+                              final phoneNumber =
+                                  _phoneNumberController.text.trim();
+                              final hasAnyPhonePart =
+                                  countryCode.isNotEmpty ||
+                                  phoneNumber.isNotEmpty;
+                              if (!hasAnyPhonePart) {
+                                return null;
+                              }
+                              if (phoneNumber.isEmpty) {
+                                return l10n.accountPhoneNumberRequired;
+                              }
+                              if (!RegExp(r'^[0-9 ]{4,20}$')
+                                  .hasMatch(phoneNumber)) {
+                                return l10n.accountPhoneNumberInvalid;
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: IconButton.filled(
+                            onPressed: _isSavingPhone ? null : _savePhone,
+                            tooltip: l10n.accountSavePhoneTooltip,
+                            icon: _isSavingPhone
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.accountPhonePrivacyHelp,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
