@@ -490,6 +490,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripUserPreferencesMenuAction => 'My preferences';
 
   @override
+  String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
+
+  @override
+  String get tripPhoneVisibilityPersonne => 'Nobody';
+
+  @override
+  String get tripPhoneVisibilityCreateur => 'Owner';
+
+  @override
+  String get tripPhoneVisibilityAdmin => 'Admin';
+
+  @override
+  String get tripPhoneVisibilityParticipant => 'Participant';
+
+  @override
+  String get tripPhoneVisibilityUpdated => 'Phone visibility updated';
+
+  @override
+  String tripPhoneVisibilityUpdateError(Object error) {
+    return 'Error updating phone visibility: $error';
+  }
+
+  @override
   String tripMyRole(Object role) {
     return 'My role: $role';
   }
@@ -2434,6 +2457,29 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
+  String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
+
+  @override
+  String get tripPhoneVisibilityPersonne => 'Nobody';
+
+  @override
+  String get tripPhoneVisibilityCreateur => 'Owner';
+
+  @override
+  String get tripPhoneVisibilityAdmin => 'Admin';
+
+  @override
+  String get tripPhoneVisibilityParticipant => 'Participant';
+
+  @override
+  String get tripPhoneVisibilityUpdated => 'Phone visibility updated';
+
+  @override
+  String tripPhoneVisibilityUpdateError(Object error) {
+    return 'Error updating phone visibility: $error';
+  }
 
   @override
   String tripMyRole(Object role) {

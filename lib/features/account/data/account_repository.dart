@@ -70,6 +70,15 @@ bool cupidonEnabledByDefaultFromUserData(Map<String, dynamic> data) {
   return false;
 }
 
+String? phoneNumberFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final phoneNumber = account['phoneNumber'] as String?;
+  if (phoneNumber != null && phoneNumber.trim().isNotEmpty) {
+    return phoneNumber.trim();
+  }
+  return null;
+}
+
 final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
@@ -80,6 +89,10 @@ final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
       .watchCupidonEnabledByDefaultPreference();
+});
+
+final myPhoneNumberProvider = StreamProvider<String?>((ref) {
+  return ref.watch(accountRepositoryProvider).watchMyPhoneNumber();
 });
 
 class AccountRepository {
@@ -151,6 +164,13 @@ class AccountRepository {
     return watchMyUserDocument().map((snapshot) {
       final data = snapshot.data() ?? const <String, dynamic>{};
       return cupidonEnabledByDefaultFromUserData(data);
+    });
+  }
+
+  Stream<String?> watchMyPhoneNumber() {
+    return watchMyUserDocument().map((snapshot) {
+      final data = snapshot.data() ?? const <String, dynamic>{};
+      return phoneNumberFromUserData(data);
     });
   }
 

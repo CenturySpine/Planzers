@@ -493,6 +493,30 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripUserPreferencesMenuAction => 'Mes préférences';
 
   @override
+  String get tripPhoneVisibilityTitle =>
+      'Rôle minimum pour voir mon numéro de téléphone';
+
+  @override
+  String get tripPhoneVisibilityPersonne => 'Personne';
+
+  @override
+  String get tripPhoneVisibilityCreateur => 'Créateur';
+
+  @override
+  String get tripPhoneVisibilityAdmin => 'Admin';
+
+  @override
+  String get tripPhoneVisibilityParticipant => 'Participant';
+
+  @override
+  String get tripPhoneVisibilityUpdated => 'Visibilité du numéro mise à jour';
+
+  @override
+  String tripPhoneVisibilityUpdateError(Object error) {
+    return 'Erreur lors de la mise à jour de la visibilité du numéro : $error';
+  }
+
+  @override
   String tripMyRole(Object role) {
     return 'Mon rôle : $role';
   }
@@ -2450,6 +2474,30 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripUserPreferencesMenuAction => 'Mes préférences';
+
+  @override
+  String get tripPhoneVisibilityTitle =>
+      'Rôle minimum pour voir mon numéro de téléphone';
+
+  @override
+  String get tripPhoneVisibilityPersonne => 'Personne';
+
+  @override
+  String get tripPhoneVisibilityCreateur => 'Créateur';
+
+  @override
+  String get tripPhoneVisibilityAdmin => 'Admin';
+
+  @override
+  String get tripPhoneVisibilityParticipant => 'Participant';
+
+  @override
+  String get tripPhoneVisibilityUpdated => 'Visibilité du numéro mise à jour';
+
+  @override
+  String tripPhoneVisibilityUpdateError(Object error) {
+    return 'Erreur lors de la mise à jour de la visibilité du numéro : $error';
+  }
 
   @override
   String tripMyRole(Object role) {

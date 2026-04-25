@@ -201,6 +201,18 @@
   "tripSettingsTitle": "Paramètres du voyage",
   "tripUserPreferencesTitle": "Mes préférences du voyage",
   "tripUserPreferencesMenuAction": "Mes préférences",
+  "tripPhoneVisibilityTitle": "Rôle minimum pour voir mon numéro de téléphone",
+  "tripPhoneVisibilityPersonne": "Personne",
+  "tripPhoneVisibilityCreateur": "Créateur",
+  "tripPhoneVisibilityAdmin": "Admin",
+  "tripPhoneVisibilityParticipant": "Participant",
+  "tripPhoneVisibilityUpdated": "Visibilité du numéro mise à jour",
+  "tripPhoneVisibilityUpdateError": "Erreur lors de la mise à jour de la visibilité du numéro : {error}",
+  "@tripPhoneVisibilityUpdateError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "tripMyRole": "Mon rôle : {role}",
   "@tripMyRole": {
     "placeholders": {

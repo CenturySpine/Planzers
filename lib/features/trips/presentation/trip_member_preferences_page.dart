@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
@@ -28,6 +29,8 @@ class _TripMemberPreferencesPageState
   TripMemberStay? _stayDraft;
   bool _isSavingStay = false;
   bool _isSavingCupidon = false;
+  TripMemberPhoneVisibility? _phoneVisibilityDraft;
+  bool _isSavingPhoneVisibility = false;
 
   Future<void> _saveStay({
     required TripMemberStay stay,
@@ -98,6 +101,33 @@ class _TripMemberPreferencesPageState
     }
   }
 
+  Future<void> _savePhoneVisibility({
+    required TripMemberPhoneVisibility visibility,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_isSavingPhoneVisibility) return;
+    setState(() => _isSavingPhoneVisibility = true);
+    try {
+      await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
+            tripId: widget.tripId,
+            visibility: visibility,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripPhoneVisibilityUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripPhoneVisibilityUpdateError(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingPhoneVisibility = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -105,6 +135,8 @@ class _TripMemberPreferencesPageState
     final stayAsync = ref.watch(tripMemberStayStreamProvider(widget.tripId));
     final myCupidonEnabledAsync =
         ref.watch(myTripCupidonEnabledProvider(widget.tripId));
+    final myPhoneNumberAsync = ref.watch(myPhoneNumberProvider);
+    final myPhoneVisibilityAsync = ref.watch(tripMemberPhoneVisibilityStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
 
     return tripAsync.when(
@@ -146,6 +178,9 @@ class _TripMemberPreferencesPageState
         final initialStay = stayAsync.asData?.value ?? TripMemberStay.defaultForTrip(trip);
         final currentStay = _stayDraft ?? initialStay;
         final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
+        final myPhoneNumber = myPhoneNumberAsync.asData?.value;
+        final initialPhoneVisibility = myPhoneVisibilityAsync.asData?.value ?? TripMemberPhoneVisibility.nobody;
+        final currentPhoneVisibility = _phoneVisibilityDraft ?? initialPhoneVisibility;
 
         return Scaffold(
           appBar: AppBar(
@@ -212,6 +247,72 @@ class _TripMemberPreferencesPageState
                   title: Text(myCupidonEnabled ? l10n.cupidonDisableAction : l10n.cupidonEnableAction),
                 ),
               ),
+              if (myPhoneNumber != null)
+                const SizedBox(height: 12),
+              if (myPhoneNumber != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.tripPhoneVisibilityTitle,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<TripMemberPhoneVisibility>(
+                          initialValue: currentPhoneVisibility,
+                          onChanged: _isSavingPhoneVisibility
+                              ? null
+                              : (value) {
+                                  if (value != null) {
+                                    setState(() => _phoneVisibilityDraft = value);
+                                  }
+                                },
+                          items: TripMemberPhoneVisibility.values.map((visibility) {
+                            String label;
+                            switch (visibility) {
+                              case TripMemberPhoneVisibility.nobody:
+                                label = l10n.tripPhoneVisibilityPersonne;
+                              case TripMemberPhoneVisibility.owner:
+                                label = l10n.tripPhoneVisibilityCreateur;
+                              case TripMemberPhoneVisibility.admin:
+                                label = l10n.tripPhoneVisibilityAdmin;
+                              case TripMemberPhoneVisibility.participant:
+                                label = l10n.tripPhoneVisibilityParticipant;
+                            }
+                            return DropdownMenuItem(
+                              value: visibility,
+                              child: Text(label),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: FilledButton.icon(
+                            onPressed: _isSavingPhoneVisibility
+                                ? null
+                                : () => _savePhoneVisibility(
+                                      visibility: currentPhoneVisibility,
+                                    ),
+                            icon: _isSavingPhoneVisibility
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check),
+                            label: Text(l10n.commonSave),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         );

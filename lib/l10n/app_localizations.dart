@@ -976,6 +976,48 @@ abstract class AppLocalizations {
   /// **'Mes préférences'**
   String get tripUserPreferencesMenuAction;
 
+  /// No description provided for @tripPhoneVisibilityTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôle minimum pour voir mon numéro de téléphone'**
+  String get tripPhoneVisibilityTitle;
+
+  /// No description provided for @tripPhoneVisibilityPersonne.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personne'**
+  String get tripPhoneVisibilityPersonne;
+
+  /// No description provided for @tripPhoneVisibilityCreateur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créateur'**
+  String get tripPhoneVisibilityCreateur;
+
+  /// No description provided for @tripPhoneVisibilityAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Admin'**
+  String get tripPhoneVisibilityAdmin;
+
+  /// No description provided for @tripPhoneVisibilityParticipant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participant'**
+  String get tripPhoneVisibilityParticipant;
+
+  /// No description provided for @tripPhoneVisibilityUpdated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Visibilité du numéro mise à jour'**
+  String get tripPhoneVisibilityUpdated;
+
+  /// No description provided for @tripPhoneVisibilityUpdateError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur lors de la mise à jour de la visibilité du numéro : {error}'**
+  String tripPhoneVisibilityUpdateError(Object error);
+
   /// No description provided for @tripMyRole.
   ///
   /// In fr, this message translates to:

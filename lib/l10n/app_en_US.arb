@@ -201,6 +201,18 @@
   "tripSettingsTitle": "Trip settings",
   "tripUserPreferencesTitle": "My trip preferences",
   "tripUserPreferencesMenuAction": "My preferences",
+  "tripPhoneVisibilityTitle": "Minimum role to see my phone number",
+  "tripPhoneVisibilityPersonne": "Nobody",
+  "tripPhoneVisibilityCreateur": "Owner",
+  "tripPhoneVisibilityAdmin": "Admin",
+  "tripPhoneVisibilityParticipant": "Participant",
+  "tripPhoneVisibilityUpdated": "Phone visibility updated",
+  "tripPhoneVisibilityUpdateError": "Error updating phone visibility: {error}",
+  "@tripPhoneVisibilityUpdateError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "tripMyRole": "My role: {role}",
   "@tripMyRole": {
     "placeholders": {
