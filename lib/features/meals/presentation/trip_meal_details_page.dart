@@ -57,7 +57,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _isRestaurantLinkEditing = true;
   String _restaurantUrl = '';
 
-  String get _currentUserId => FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+  String get _currentUserId =>
+      FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
 
   bool _isComponentLockedByOther(MealComponent component) {
     final lockOwner = (component.lockedBy ?? '').trim();
@@ -291,7 +292,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     _restaurantUrl = meal.restaurantUrl.trim();
     _restaurantUrlController.text = _restaurantUrl;
     // Keep explicit local edit mode active; stream refresh should not force-close it.
-    _isRestaurantLinkEditing = _isRestaurantLinkEditing || _restaurantUrl.isEmpty;
+    _isRestaurantLinkEditing =
+        _isRestaurantLinkEditing || _restaurantUrl.isEmpty;
     _potluckItems = meal.potluckItems.toList(growable: false);
     if (widget.isCreate) {
       _isHydrated = true;
@@ -341,7 +343,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       var lockOwnerData = <String, dynamic>{};
       if (lockOwnerId.isNotEmpty) {
         try {
-          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          final users =
+              await ref.read(usersDataByIdsProvider(lockOwnerId).future);
           lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
         } catch (_) {
           lockOwnerData = const <String, dynamic>{};
@@ -449,7 +452,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final lockOwnerId = (component.lockedBy ?? '').trim();
       if (lockOwnerId.isNotEmpty) {
         try {
-          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          final users =
+              await ref.read(usersDataByIdsProvider(lockOwnerId).future);
           lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
         } catch (_) {
           lockOwnerData = const <String, dynamic>{};
@@ -492,7 +496,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       var lockOwnerData = <String, dynamic>{};
       if (lockOwnerId.isNotEmpty) {
         try {
-          final users = await ref.read(usersDataByIdsProvider(lockOwnerId).future);
+          final users =
+              await ref.read(usersDataByIdsProvider(lockOwnerId).future);
           lockOwnerData = users[lockOwnerId] ?? const <String, dynamic>{};
         } catch (_) {
           lockOwnerData = const <String, dynamic>{};
@@ -587,16 +592,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.commonErrorWithDetails(
-                  e.toString(),
-                ),
-              ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
             ),
-          );
+          ),
+        ),
+      );
     }
   }
 
@@ -808,9 +812,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final mealDayPart = tripDayPartToFirestore(_mealDayPart);
       final participantIds = _participantIds.toList()..sort();
       final mealMode = _dataModeFromMealView(_activeMealView);
-      final restaurantUrl = mealMode == MealMode.restaurant
-          ? _restaurantUrl.trim()
-          : '';
+      final restaurantUrl =
+          mealMode == MealMode.restaurant ? _restaurantUrl.trim() : '';
       final potluckItems = mealMode == MealMode.potluck
           ? _potluckItems
           : const <MealPotluckItem>[];
@@ -828,22 +831,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.mealCreated)),
-          );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealCreated)),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.commonErrorWithDetails(
-                  e.toString(),
-                ),
-              ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
             ),
-          );
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -878,22 +879,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.mealDeleted)),
-          );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealDeleted)),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.commonErrorWithDetails(
-                  e.toString(),
-                ),
-              ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(
+              e.toString(),
             ),
-          );
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isDeleting = false);
     }
@@ -945,7 +944,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (e, _) => Scaffold(
             appBar: AppBar(),
-            body: Center(child: Text(l10n.commonErrorWithDetails(e.toString()))),
+            body:
+                Center(child: Text(l10n.commonErrorWithDetails(e.toString()))),
           ),
           data: (meal) {
             if (!widget.isCreate && meal == null) {
@@ -963,8 +963,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 _mealDate = DateUtils.dateOnly(tripStart);
               }
             }
-            final areAllParticipantsSelected =
-                memberIds.isNotEmpty &&
+            final areAllParticipantsSelected = memberIds.isNotEmpty &&
                 memberIds.every(_participantIds.contains);
             final participantIdsForRisk = _participantIds.toList()..sort();
             final participantIdsRiskKey = participantIdsForRisk.join('|');
@@ -991,515 +990,97 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final lockOwnersAsync = ref.watch(
               usersDataByIdsProvider(componentLockOwnerRiskKey),
             );
+            final colorScheme = Theme.of(context).colorScheme;
+            final textTheme = Theme.of(context).textTheme;
 
             return Scaffold(
-                  appBar: AppBar(
-                    title: Text(
-                      widget.isCreate ? l10n.mealNew : l10n.mealEdit,
-                    ),
-                    actions: [
-                      if (!widget.isCreate)
-                        IconButton(
-                          tooltip: l10n.commonDelete,
-                          onPressed: _isDeleting ? null : _confirmAndDelete,
-                          icon: _isDeleting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.delete_outline),
-                        ),
-                    ],
-                  ),
-                  body: Form(
-                    key: _formKey,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            for (final part in TripDayPart.values)
-                              ChoiceChip(
-                                showCheckmark: false,
-                                label: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SvgPicture.asset(
-                                      _dayPartIconAsset(part),
-                                      width: 16,
-                                      height: 16,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(_dayPartLabel(context, part)),
-                                  ],
-                                ),
-                                selected: _mealDayPart == part,
-                                onSelected: _isSavingMealDayPart
-                                    ? null
-                                    : (_) async {
-                                        if (_mealDayPart == part) return;
-                                        final previousDayPart = _mealDayPart;
-                                        setState(() {
-                                          _mealDayPart = part;
-                                        });
-                                        await _saveMealDayPart(
-                                          previousDayPart: previousDayPart,
-                                        );
-                                      },
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            IconButton(
-                              tooltip: l10n.commonDate,
-                              onPressed: _isSavingDate ? null : _pickDate,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: _isSavingDate
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.calendar_today_outlined),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                DateFormat.yMMMMEEEEd(
-                                  Localizations.localeOf(context).toString(),
-                                ).format(_mealDate),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                l10n.mealParticipantsCount(_participantIds.length),
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: _isSavingParticipants
-                                  ? null
-                                  : () =>
-                                  _autoRecalculateParticipants(memberIds),
-                              icon: const Icon(Icons.auto_fix_high_outlined),
-                              label: Text(l10n.commonAuto),
-                            ),
-                            TextButton.icon(
-                              onPressed: _isSavingParticipants
-                                  ? null
-                                  : () => _toggleAllParticipants(memberIds),
-                              icon: const Icon(Icons.done_all_outlined),
-                              label: Text(
-                                areAllParticipantsSelected
-                                    ? l10n.commonNone
-                                    : l10n.commonAll,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (_activeMealView == _MealDetailsView.cooked) ...[
-                          Text(
-                            l10n.mealChefLongPressHint,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final memberId in memberIds)
-                              GestureDetector(
-                                onLongPress: _activeMealView ==
-                                        _MealDetailsView.cooked
-                                    ? () => _toggleChefParticipant(memberId)
-                                    : null,
-                                child: Builder(
-                                  builder: (context) {
-                                    final isSelected =
-                                        _participantIds.contains(memberId);
-                                    final isChef = _activeMealView ==
-                                            _MealDetailsView.cooked &&
-                                        _chefParticipantId == memberId;
-                                    return FilterChip(
-                                      showCheckmark: false,
-                                      label: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (isChef) ...[
-                                            SvgPicture.asset(
-                                              'assets/images/chef_hat.svg',
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                            const SizedBox(width: 6),
-                                          ],
-                                          Text(
-                                            labels[memberId] ??
-                                                l10n.roleParticipant,
-                                          ),
-                                        ],
-                                      ),
-                                      labelStyle: isChef
-                                          ? const TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                            )
-                                          : null,
-                                      selected: isSelected,
-                                      selectedColor: isChef
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primaryContainer
-                                          : null,
-                                      side: isChef
-                                          ? BorderSide(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.primary,
-                                            )
-                                          : null,
-                                      onSelected: (selected) {
-                                        if (_isSavingParticipants) return;
-                                        final previousParticipantIds =
-                                            _participantIds.toSet();
-                                        final previousChefParticipantId =
-                                            _chefParticipantId;
-                                        setState(() {
-                                          if (selected) {
-                                            _participantIds.add(memberId);
-                                          } else {
-                                            _participantIds.remove(memberId);
-                                            if (_chefParticipantId == memberId) {
-                                              _chefParticipantId = null;
-                                            }
-                                          }
-                                        });
-                                        _saveMealParticipants(
-                                          previousParticipantIds:
-                                              previousParticipantIds,
-                                          previousChefParticipantId:
-                                              previousChefParticipantId,
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SegmentedButton<_MealDetailsView>(
-                                showSelectedIcon: false,
-                                segments: [
-                                  ButtonSegment<_MealDetailsView>(
-                                    value: _MealDetailsView.cooked,
-                                    icon: SvgPicture.asset(
-                                      'assets/images/chef_hat.svg',
-                                      width: 18,
-                                      height: 18,
-                                    ),
-                                    tooltip: l10n.mealModeCooked,
-                                  ),
-                                  ButtonSegment<_MealDetailsView>(
-                                    value: _MealDetailsView.restaurant,
-                                    icon: SvgPicture.asset(
-                                      'assets/images/hand_meal.svg',
-                                      width: 18,
-                                      height: 18,
-                                    ),
-                                    tooltip: l10n.mealModeRestaurant,
-                                  ),
-                                  ButtonSegment<_MealDetailsView>(
-                                    value: _MealDetailsView.potluck,
-                                    icon: SvgPicture.asset(
-                                      'assets/images/tapas.svg',
-                                      width: 18,
-                                      height: 18,
-                                    ),
-                                    tooltip: l10n.mealModePotluck,
-                                  ),
-                                ],
-                                selected: {_activeMealView},
-                                onSelectionChanged: _isSavingMealMode
-                                    ? null
-                                    : (selection) async {
-                                  if (selection.isEmpty) return;
-                                  if (_activeMealView == selection.first) return;
-                                  final previousMealView = _activeMealView;
-                                  setState(() {
-                                    _activeMealView = selection.first;
-                                  });
-                                  await _saveMealMode(
-                                    previousMealView: previousMealView,
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _mealModeDisplayLabel(l10n),
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontStyle: FontStyle.italic,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_activeMealView == _MealDetailsView.cooked) ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.mealComponentsTitle,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              PopupMenuButton<MealComponentKind>(
-                                tooltip: l10n.mealAddComponent,
-                                onSelected: _isSavingComponents
-                                    ? null
-                                    : (kind) => _addComponent(kind),
-                                itemBuilder: (context) => [
-                                  for (final kind in MealComponentKind.values)
-                                    PopupMenuItem(
-                                      value: kind,
-                                      child: Text(
-                                        l10n.mealAddComponentWithKind(
-                                          _componentKindLabel(l10n, kind),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8),
-                                  child: Icon(Icons.add_circle_outline),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (_components.isEmpty)
-                            Text(
-                              l10n.mealAddComponentHint,
-                              style: Theme.of(context).textTheme.bodyMedium,
+              appBar: AppBar(
+                title: Text(
+                  widget.isCreate ? l10n.mealNew : l10n.mealEdit,
+                ),
+                actions: [
+                  if (!widget.isCreate)
+                    IconButton(
+                      tooltip: l10n.commonDelete,
+                      onPressed: _isDeleting ? null : _confirmAndDelete,
+                      icon: _isDeleting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          else
-                            ReorderableListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              buildDefaultDragHandles: false,
-                              itemCount: _components.length,
-                                onReorder: _isSavingComponents
-                                    ? (_, __) {}
-                                    : _reorderComponents,
-                              itemBuilder: (context, index) {
-                                final component = _components[index];
-                                final isLocked =
-                                    (component.lockedBy ?? '').trim().isNotEmpty;
-                                final usersData = usersAsync.asData?.value;
-                                final catalogItems = catalogAsync.asData?.value;
-                                final participantAllergenIds = usersData == null
-                                    ? <String>{}
-                                    : participantAllergenIdsFromUsersData(
-                                        usersData,
-                                        _participantIds,
-                                      );
-                                final risk = catalogItems == null
-                                    ? null
-                                    : buildMealComponentRisks(
-                                        components: [component],
-                                        catalogItems: catalogItems,
-                                        participantAllergenIds:
-                                            participantAllergenIds,
-                                      )[component.id];
-                                final allergenLabelById = <String, String>{
-                                  if (catalogItems != null)
-                                    for (final item in catalogItems
-                                        .where((it) => it.type == 'allergen'))
-                                      item.id: item.label,
-                                };
-
-                                return Card(
-                                  key: ValueKey(component.id),
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  child: ListTile(
-                                    onTap: catalogItems == null
-                                        ? null
-                                        : () => _openComponentEditor(
-                                              component: component,
-                                              catalogItems: catalogItems,
-                                              participantAllergenIds:
-                                                  participantAllergenIds,
-                                              tripMemberPublicLabels:
-                                                  trip.memberPublicLabels,
-                                            ),
-                                    leading: _isComponentLockedByOther(component)
-                                        ? const Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                            ),
-                                            child: Icon(Icons.lock_outline),
-                                          )
-                                        : ReorderableDragStartListener(
-                                            index: index,
-                                            child: const Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 4,
-                                              ),
-                                              child: Icon(Icons.drag_indicator),
-                                            ),
-                                          ),
-                                    title: Text(
-                                      component.title.trim().isEmpty
-                                          ? _componentKindLabel(
-                                              l10n,
-                                              component.kind,
-                                            )
-                                          : component.title.trim(),
-                                    ),
-                                    subtitle: Text(
-                                      l10n.mealIngredientsCount(
-                                        component.ingredients.length,
-                                      ),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if ((component.lockedBy ?? '')
-                                                .trim()
-                                                .isNotEmpty)
-                                          Builder(
-                                            builder: (context) {
-                                              final lockOwnerId =
-                                                  (component.lockedBy ?? '')
-                                                      .trim();
-                                              final lockOwnersData = lockOwnersAsync
-                                                  .asData
-                                                  ?.value;
-                                              final lockOwnerData =
-                                                  lockOwnersData?[lockOwnerId];
-                                              final lockOwnerLabel =
-                                                  resolveTripMemberDisplayLabel(
-                                                memberId: lockOwnerId,
-                                                userData: lockOwnerData,
-                                                tripMemberPublicLabels:
-                                                    trip.memberPublicLabels,
-                                                currentUserId: _currentUserId,
-                                                emptyFallback:
-                                                    l10n.roleParticipant,
-                                              );
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                  right: 4,
-                                                ),
-                                                child: SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child: buildProfileBadge(
-                                                    context: context,
-                                                    displayLabel: lockOwnerLabel,
-                                                    userData: lockOwnerData,
-                                                    size: 22,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        if (!isLocked &&
-                                            risk != null &&
-                                            (risk.containsAllergenIds
-                                                    .isNotEmpty ||
-                                                risk.mayContainAllergenIds
-                                                    .isNotEmpty))
-                                          Tooltip(
-                                            message: [
-                                              ...risk.containsAllergenIds.map(
-                                                (id) =>
-                                                    l10n.mealContainsAllergen(
-                                                  allergenLabelById[id] ?? id,
-                                                ),
-                                              ),
-                                              ...risk.mayContainAllergenIds.map(
-                                                (id) =>
-                                                    l10n.mealMayContainAllergen(
-                                                  allergenLabelById[id] ?? id,
-                                                ),
-                                              ),
-                                            ].join('\n'),
-                                            child: const Icon(
-                                              Icons.warning_amber_rounded,
-                                              color: Colors.orange,
-                                            ),
-                                          ),
-                                        if (!isLocked) ...[
-                                          IconButton(
-                                            tooltip: l10n.mealDeleteComponent,
-                                            onPressed: _isSavingComponents
-                                                ? null
-                                                : _isComponentLockedByOther(
-                                                    component,
-                                                  )
-                                                ? null
-                                                : () => _deleteComponent(
-                                                      component.id,
-                                                    ),
-                                            icon: const Icon(Icons.delete_outline),
-                                          ),
-                                          const Icon(Icons.chevron_right),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                        ] else if (_activeMealView == _MealDetailsView.restaurant) ...[
-                          if (_isRestaurantLinkEditing) ...[
+                          : const Icon(Icons.delete_outline),
+                    ),
+                ],
+              ),
+              body: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  children: [
+                    Card.outlined(
+                      color: colorScheme.surfaceContainerLow,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Row(
                               children: [
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    for (final part in TripDayPart.values)
+                                      ChoiceChip(
+                                        showCheckmark: false,
+                                        label: SvgPicture.asset(
+                                          _dayPartIconAsset(part),
+                                          width: 16,
+                                          height: 16,
+                                        ),
+                                        tooltip: _dayPartLabel(context, part),
+                                        selected: _mealDayPart == part,
+                                        onSelected: _isSavingMealDayPart
+                                            ? null
+                                            : (_) async {
+                                                if (_mealDayPart == part) {
+                                                  return;
+                                                }
+                                                final previousDayPart =
+                                                    _mealDayPart;
+                                                setState(() {
+                                                  _mealDayPart = part;
+                                                });
+                                                await _saveMealDayPart(
+                                                  previousDayPart:
+                                                      previousDayPart,
+                                                );
+                                              },
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: TextFormField(
-                                    controller: _restaurantUrlController,
-                                    textInputAction: TextInputAction.done,
-                                    enabled: !_isSavingRestaurantUrl,
-                                    onFieldSubmitted: (_) => _saveRestaurantUrl(),
-                                    decoration: InputDecoration(
-                                      labelText: l10n.mealRestaurantLinkLabel,
-                                      border: const OutlineInputBorder(),
+                                  child: Text(
+                                    _dayPartLabel(context, _mealDayPart),
+                                    style: textTheme.bodyLarge?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
                                 IconButton(
-                                  tooltip: l10n.commonSave,
-                                  onPressed: _isSavingRestaurantUrl
-                                      ? null
-                                      : _saveRestaurantUrl,
-                                  icon: _isSavingRestaurantUrl
+                                  tooltip: l10n.commonDate,
+                                  onPressed: _isSavingDate ? null : _pickDate,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: _isSavingDate
                                       ? const SizedBox(
                                           width: 18,
                                           height: 18,
@@ -1507,145 +1088,679 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : const Icon(Icons.check),
+                                      : const Icon(
+                                          Icons.calendar_today_outlined),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    DateFormat.yMMMMEEEEd(
+                                      Localizations.localeOf(context)
+                                          .toString(),
+                                    ).format(_mealDate),
+                                    style: textTheme.bodyLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Card.outlined(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    l10n.mealParticipantsCount(
+                                        _participantIds.length),
+                                    style: textTheme.labelLarge,
+                                  ),
+                                ),
+                                TextButton.icon(
+                                  onPressed: _isSavingParticipants
+                                      ? null
+                                      : () => _autoRecalculateParticipants(
+                                          memberIds),
+                                  icon:
+                                      const Icon(Icons.auto_fix_high_outlined),
+                                  label: Text(l10n.commonAuto),
+                                ),
+                                TextButton.icon(
+                                  onPressed: _isSavingParticipants
+                                      ? null
+                                      : () => _toggleAllParticipants(memberIds),
+                                  icon: const Icon(Icons.done_all_outlined),
+                                  label: Text(
+                                    areAllParticipantsSelected
+                                        ? l10n.commonNone
+                                        : l10n.commonAll,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              l10n.mealRestaurantLinkHint,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ]
-                          else
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                            if (_activeMealView == _MealDetailsView.cooked) ...[
+                              Text(
+                                l10n.mealChefLongPressHint,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
-                                Expanded(
-                                  child: LinkPreviewCardFromFirestore(
-                                    url: _restaurantUrl,
-                                    preview: const {},
+                                for (final memberId in memberIds)
+                                  GestureDetector(
+                                    onLongPress: _activeMealView ==
+                                            _MealDetailsView.cooked
+                                        ? () => _toggleChefParticipant(memberId)
+                                        : null,
+                                    child: Builder(
+                                      builder: (context) {
+                                        final isSelected =
+                                            _participantIds.contains(memberId);
+                                        final isChef = _activeMealView ==
+                                                _MealDetailsView.cooked &&
+                                            _chefParticipantId == memberId;
+                                        return FilterChip(
+                                          showCheckmark: false,
+                                          label: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (isChef) ...[
+                                                SvgPicture.asset(
+                                                  'assets/images/chef_hat.svg',
+                                                  width: 16,
+                                                  height: 16,
+                                                ),
+                                                const SizedBox(width: 6),
+                                              ],
+                                              Text(
+                                                labels[memberId] ??
+                                                    l10n.roleParticipant,
+                                              ),
+                                            ],
+                                          ),
+                                          labelStyle: isChef
+                                              ? const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                )
+                                              : null,
+                                          selected: isSelected,
+                                          selectedColor: isChef
+                                              ? colorScheme.primaryContainer
+                                              : null,
+                                          side: isChef
+                                              ? BorderSide(
+                                                  color: colorScheme.primary,
+                                                )
+                                              : null,
+                                          onSelected: (selected) {
+                                            if (_isSavingParticipants) return;
+                                            final previousParticipantIds =
+                                                _participantIds.toSet();
+                                            final previousChefParticipantId =
+                                                _chefParticipantId;
+                                            setState(() {
+                                              if (selected) {
+                                                _participantIds.add(memberId);
+                                              } else {
+                                                _participantIds
+                                                    .remove(memberId);
+                                                if (_chefParticipantId ==
+                                                    memberId) {
+                                                  _chefParticipantId = null;
+                                                }
+                                              }
+                                            });
+                                            _saveMealParticipants(
+                                              previousParticipantIds:
+                                                  previousParticipantIds,
+                                              previousChefParticipantId:
+                                                  previousChefParticipantId,
+                                            );
+                                          },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  tooltip: l10n.commonEdit,
-                                  onPressed: _startEditRestaurantUrl,
-                                  icon: const Icon(Icons.edit_outlined),
-                                ),
                               ],
                             ),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.mealPotluckTitle,
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: l10n.commonAdd,
-                                onPressed: _isSavingPotluckItems
-                                    ? null
-                                    : _addPotluckItem,
-                                icon: const Icon(Icons.add_circle_outline),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (_potluckItems.isEmpty)
-                            Text(
-                              l10n.mealPotluckEmptyHint,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            )
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _potluckItems.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: Builder(
-                                    builder: (context) {
-                                      final item = _potluckItems[index];
-                                      final addedBy = item.addedBy.trim();
-                                      final usersData = potluckUsersAsync
-                                          .asData
-                                          ?.value;
-                                      final userData = addedBy.isEmpty
-                                          ? null
-                                          : usersData?[addedBy];
-                                      final label = resolveTripMemberDisplayLabel(
-                                        memberId: addedBy,
-                                        userData: userData,
-                                        tripMemberPublicLabels:
-                                            trip.memberPublicLabels,
-                                        currentUserId:
-                                            FirebaseAuth.instance.currentUser?.uid,
-                                        emptyFallback: l10n.roleParticipant,
-                                      );
-                                      return buildProfileBadge(
-                                        context: context,
-                                        displayLabel: label,
-                                        userData: userData,
-                                        size: 26,
-                                      );
-                                    },
-                                  ),
-                                  title: Text(_potluckItems[index].label),
-                                  trailing: Wrap(
-                                    spacing: 4,
-                                    children: [
-                                      IconButton(
-                                        tooltip: l10n.commonEdit,
-                                        onPressed: _isSavingPotluckItems
-                                            ? null
-                                            : () => _editPotluckItem(index),
-                                        icon: const Icon(Icons.edit_outlined),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Card.outlined(
+                      color:
+                          colorScheme.primaryContainer.withValues(alpha: 0.35),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SegmentedButton<_MealDetailsView>(
+                                    showSelectedIcon: false,
+                                    segments: [
+                                      ButtonSegment<_MealDetailsView>(
+                                        value: _MealDetailsView.cooked,
+                                        icon: SvgPicture.asset(
+                                          'assets/images/chef_hat.svg',
+                                          width: 18,
+                                          height: 18,
+                                        ),
+                                        tooltip: l10n.mealModeCooked,
                                       ),
-                                      IconButton(
-                                        tooltip: l10n.commonDelete,
-                                        onPressed: _isSavingPotluckItems
-                                            ? null
-                                            : () => _deletePotluckItem(index),
-                                        icon: const Icon(Icons.delete_outline),
+                                      ButtonSegment<_MealDetailsView>(
+                                        value: _MealDetailsView.restaurant,
+                                        icon: SvgPicture.asset(
+                                          'assets/images/hand_meal.svg',
+                                          width: 18,
+                                          height: 18,
+                                        ),
+                                        tooltip: l10n.mealModeRestaurant,
+                                      ),
+                                      ButtonSegment<_MealDetailsView>(
+                                        value: _MealDetailsView.potluck,
+                                        icon: SvgPicture.asset(
+                                          'assets/images/tapas.svg',
+                                          width: 18,
+                                          height: 18,
+                                        ),
+                                        tooltip: l10n.mealModePotluck,
                                       ),
                                     ],
+                                    selected: {_activeMealView},
+                                    onSelectionChanged: _isSavingMealMode
+                                        ? null
+                                        : (selection) async {
+                                            if (selection.isEmpty) {
+                                              return;
+                                            }
+                                            if (_activeMealView ==
+                                                selection.first) {
+                                              return;
+                                            }
+                                            final previousMealView =
+                                                _activeMealView;
+                                            setState(() {
+                                              _activeMealView = selection.first;
+                                            });
+                                            await _saveMealMode(
+                                              previousMealView:
+                                                  previousMealView,
+                                            );
+                                          },
                                   ),
-                                );
-                              },
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  bottomNavigationBar: widget.isCreate
-                      ? SafeArea(
-                          top: false,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: FilledButton.icon(
-                              onPressed: _isSaving ? null : _save,
-                              icon: _isSaving
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.save_outlined),
-                              label: Text(
-                                _isSaving ? l10n.commonSaving : l10n.commonSave,
+                                ],
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _mealModeDisplayLabel(l10n),
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontStyle: FontStyle.italic,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_activeMealView == _MealDetailsView.cooked) ...[
+                      Card.outlined(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l10n.mealComponentsTitle,
+                                      style: textTheme.titleMedium,
+                                    ),
+                                  ),
+                                  PopupMenuButton<MealComponentKind>(
+                                    tooltip: l10n.mealAddComponent,
+                                    onSelected: _isSavingComponents
+                                        ? null
+                                        : (kind) => _addComponent(kind),
+                                    itemBuilder: (context) => [
+                                      for (final kind
+                                          in MealComponentKind.values)
+                                        PopupMenuItem(
+                                          value: kind,
+                                          child: Text(
+                                            l10n.mealAddComponentWithKind(
+                                              _componentKindLabel(l10n, kind),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                    child: const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(horizontal: 8),
+                                      child: Icon(Icons.add_circle_outline),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (_components.isEmpty)
+                                Text(
+                                  l10n.mealAddComponentHint,
+                                  style: textTheme.bodyMedium,
+                                )
+                              else
+                                ReorderableListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  buildDefaultDragHandles: false,
+                                  itemCount: _components.length,
+                                  onReorder: _isSavingComponents
+                                      ? (_, __) {}
+                                      : _reorderComponents,
+                                  itemBuilder: (context, index) {
+                                    final component = _components[index];
+                                    final isLocked = (component.lockedBy ?? '')
+                                        .trim()
+                                        .isNotEmpty;
+                                    final usersData = usersAsync.asData?.value;
+                                    final catalogItems =
+                                        catalogAsync.asData?.value;
+                                    final participantAllergenIds = usersData ==
+                                            null
+                                        ? <String>{}
+                                        : participantAllergenIdsFromUsersData(
+                                            usersData,
+                                            _participantIds,
+                                          );
+                                    final risk = catalogItems == null
+                                        ? null
+                                        : buildMealComponentRisks(
+                                            components: [component],
+                                            catalogItems: catalogItems,
+                                            participantAllergenIds:
+                                                participantAllergenIds,
+                                          )[component.id];
+                                    final allergenLabelById = <String, String>{
+                                      if (catalogItems != null)
+                                        for (final item in catalogItems.where(
+                                            (it) => it.type == 'allergen'))
+                                          item.id: item.label,
+                                    };
+
+                                    return Card(
+                                      key: ValueKey(component.id),
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      child: ListTile(
+                                        onTap: catalogItems == null
+                                            ? null
+                                            : () => _openComponentEditor(
+                                                  component: component,
+                                                  catalogItems: catalogItems,
+                                                  participantAllergenIds:
+                                                      participantAllergenIds,
+                                                  tripMemberPublicLabels:
+                                                      trip.memberPublicLabels,
+                                                ),
+                                        leading: _isComponentLockedByOther(
+                                                component)
+                                            ? const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 4,
+                                                ),
+                                                child: Icon(Icons.lock_outline),
+                                              )
+                                            : ReorderableDragStartListener(
+                                                index: index,
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                  ),
+                                                  child: Icon(
+                                                      Icons.drag_indicator),
+                                                ),
+                                              ),
+                                        title: Text(
+                                          component.title.trim().isEmpty
+                                              ? _componentKindLabel(
+                                                  l10n,
+                                                  component.kind,
+                                                )
+                                              : component.title.trim(),
+                                        ),
+                                        subtitle: Text(
+                                          l10n.mealIngredientsCount(
+                                            component.ingredients.length,
+                                          ),
+                                        ),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if ((component.lockedBy ?? '')
+                                                .trim()
+                                                .isNotEmpty)
+                                              Builder(
+                                                builder: (context) {
+                                                  final lockOwnerId =
+                                                      (component.lockedBy ?? '')
+                                                          .trim();
+                                                  final lockOwnersData =
+                                                      lockOwnersAsync
+                                                          .asData?.value;
+                                                  final lockOwnerData =
+                                                      lockOwnersData?[
+                                                          lockOwnerId];
+                                                  final lockOwnerLabel =
+                                                      resolveTripMemberDisplayLabel(
+                                                    memberId: lockOwnerId,
+                                                    userData: lockOwnerData,
+                                                    tripMemberPublicLabels:
+                                                        trip.memberPublicLabels,
+                                                    currentUserId:
+                                                        _currentUserId,
+                                                    emptyFallback:
+                                                        l10n.roleParticipant,
+                                                  );
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                      right: 4,
+                                                    ),
+                                                    child: SizedBox(
+                                                      width: 24,
+                                                      height: 24,
+                                                      child: buildProfileBadge(
+                                                        context: context,
+                                                        displayLabel:
+                                                            lockOwnerLabel,
+                                                        userData: lockOwnerData,
+                                                        size: 22,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            if (!isLocked &&
+                                                risk != null &&
+                                                (risk.containsAllergenIds
+                                                        .isNotEmpty ||
+                                                    risk.mayContainAllergenIds
+                                                        .isNotEmpty))
+                                              Tooltip(
+                                                message: [
+                                                  ...risk.containsAllergenIds
+                                                      .map(
+                                                    (id) => l10n
+                                                        .mealContainsAllergen(
+                                                      allergenLabelById[id] ??
+                                                          id,
+                                                    ),
+                                                  ),
+                                                  ...risk.mayContainAllergenIds
+                                                      .map(
+                                                    (id) => l10n
+                                                        .mealMayContainAllergen(
+                                                      allergenLabelById[id] ??
+                                                          id,
+                                                    ),
+                                                  ),
+                                                ].join('\n'),
+                                                child: const Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  color: Colors.orange,
+                                                ),
+                                              ),
+                                            if (!isLocked) ...[
+                                              IconButton(
+                                                tooltip:
+                                                    l10n.mealDeleteComponent,
+                                                onPressed: _isSavingComponents
+                                                    ? null
+                                                    : _isComponentLockedByOther(
+                                                        component,
+                                                      )
+                                                        ? null
+                                                        : () =>
+                                                            _deleteComponent(
+                                                              component.id,
+                                                            ),
+                                                icon: const Icon(
+                                                    Icons.delete_outline),
+                                              ),
+                                              const Icon(Icons.chevron_right),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
-                        )
-                      : null,
-                );
+                        ),
+                      ),
+                    ] else if (_activeMealView ==
+                        _MealDetailsView.restaurant) ...[
+                      Card.outlined(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                          child: _isRestaurantLinkEditing
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextFormField(
+                                            controller:
+                                                _restaurantUrlController,
+                                            textInputAction:
+                                                TextInputAction.done,
+                                            enabled: !_isSavingRestaurantUrl,
+                                            onFieldSubmitted: (_) =>
+                                                _saveRestaurantUrl(),
+                                            decoration: InputDecoration(
+                                              labelText:
+                                                  l10n.mealRestaurantLinkLabel,
+                                              border:
+                                                  const OutlineInputBorder(),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: l10n.commonSave,
+                                          onPressed: _isSavingRestaurantUrl
+                                              ? null
+                                              : _saveRestaurantUrl,
+                                          icon: _isSavingRestaurantUrl
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.check),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      l10n.mealRestaurantLinkHint,
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: LinkPreviewCardFromFirestore(
+                                        url: _restaurantUrl,
+                                        preview: const {},
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      tooltip: l10n.commonEdit,
+                                      onPressed: _startEditRestaurantUrl,
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ] else ...[
+                      Card.outlined(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l10n.mealPotluckTitle,
+                                      style: textTheme.titleMedium,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: l10n.commonAdd,
+                                    onPressed: _isSavingPotluckItems
+                                        ? null
+                                        : _addPotluckItem,
+                                    icon: const Icon(Icons.add_circle_outline),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (_potluckItems.isEmpty)
+                                Text(
+                                  l10n.mealPotluckEmptyHint,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                )
+                              else
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _potluckItems.length,
+                                  separatorBuilder: (_, __) =>
+                                      const Divider(height: 1),
+                                  itemBuilder: (context, index) {
+                                    return ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      leading: Builder(
+                                        builder: (context) {
+                                          final item = _potluckItems[index];
+                                          final addedBy = item.addedBy.trim();
+                                          final usersData =
+                                              potluckUsersAsync.asData?.value;
+                                          final userData = addedBy.isEmpty
+                                              ? null
+                                              : usersData?[addedBy];
+                                          final label =
+                                              resolveTripMemberDisplayLabel(
+                                            memberId: addedBy,
+                                            userData: userData,
+                                            tripMemberPublicLabels:
+                                                trip.memberPublicLabels,
+                                            currentUserId: FirebaseAuth
+                                                .instance.currentUser?.uid,
+                                            emptyFallback: l10n.roleParticipant,
+                                          );
+                                          return buildProfileBadge(
+                                            context: context,
+                                            displayLabel: label,
+                                            userData: userData,
+                                            size: 26,
+                                          );
+                                        },
+                                      ),
+                                      title: Text(_potluckItems[index].label),
+                                      trailing: Wrap(
+                                        spacing: 4,
+                                        children: [
+                                          IconButton(
+                                            tooltip: l10n.commonEdit,
+                                            onPressed: _isSavingPotluckItems
+                                                ? null
+                                                : () => _editPotluckItem(index),
+                                            icon:
+                                                const Icon(Icons.edit_outlined),
+                                          ),
+                                          IconButton(
+                                            tooltip: l10n.commonDelete,
+                                            onPressed: _isSavingPotluckItems
+                                                ? null
+                                                : () =>
+                                                    _deletePotluckItem(index),
+                                            icon: const Icon(
+                                                Icons.delete_outline),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              bottomNavigationBar: widget.isCreate
+                  ? SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: FilledButton.icon(
+                          onPressed: _isSaving ? null : _save,
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.save_outlined),
+                          label: Text(
+                            _isSaving ? l10n.commonSaving : l10n.commonSave,
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
+            );
           },
         );
       },
