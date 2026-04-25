@@ -152,6 +152,79 @@ function tripParticipantPermissionMinRole(data, key, fallbackRole) {
   return configured || fallbackRole;
 }
 
+function defaultTripPermissions() {
+  return {
+    tripGeneral: {
+      editGeneralInfo: 'admin',
+      manageBanner: 'admin',
+      publishAnnouncements: 'admin',
+      shareAccess: 'participant',
+      manageTripSettings: 'owner',
+      deleteTrip: 'owner',
+    },
+    participants: {
+      createParticipant: 'owner',
+      editPlaceholderParticipant: 'owner',
+      deletePlaceholderParticipant: 'owner',
+      deleteRegisteredParticipant: 'owner',
+      toggleAdminRole: 'owner',
+    },
+    expenses: {
+      createExpensePost: 'participant',
+      editExpensePost: 'participant',
+      deleteExpensePost: 'participant',
+      createExpense: 'participant',
+      editExpense: 'participant',
+      deleteExpense: 'participant',
+    },
+    activities: {
+      suggestActivity: 'participant',
+      planActivity: 'admin',
+      editActivity: 'participant',
+      deleteActivity: 'admin',
+    },
+    shopping: {
+      deleteCheckedItems: 'admin',
+    },
+  };
+}
+
+function mergedTripPermissionsWithDefaults(existingPermissions) {
+  const defaults = defaultTripPermissions();
+  const base =
+    existingPermissions &&
+    typeof existingPermissions === 'object' &&
+    !Array.isArray(existingPermissions)
+      ? existingPermissions
+      : {};
+
+  /** @type {Record<string, unknown>} */
+  const next = {};
+
+  for (const [sectionKey, sectionDefaults] of Object.entries(defaults)) {
+    const existingSection =
+      base[sectionKey] &&
+      typeof base[sectionKey] === 'object' &&
+      !Array.isArray(base[sectionKey])
+        ? base[sectionKey]
+        : {};
+
+    /** @type {Record<string, string>} */
+    const mergedSection = {};
+    for (const [actionKey, defaultRole] of Object.entries(sectionDefaults)) {
+      const configured = normalizeString(existingSection[actionKey]);
+      mergedSection[actionKey] = configured || defaultRole;
+    }
+    next[sectionKey] = mergedSection;
+  }
+
+  return next;
+}
+
+function tripPermissionsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 function assertTripParticipantPermission({
   tripData,
   uid,
@@ -650,6 +723,37 @@ async function cleanupInvalidFcmTokens(db, sendResult, tokenEntries) {
   if (batchOps > 0) {
     await batch.commit();
   }
+}
+
+/**
+ * Deletes every object stored under `trips/{tripId}/` in default bucket.
+ * Idempotent: ignores "not found" errors and continues best-effort.
+ * @param {string} tripId
+ */
+async function deleteTripStorageObjects(tripId) {
+  const cleanTripId = normalizeString(tripId);
+  if (!cleanTripId) return;
+  const bucket = admin.storage().bucket();
+  const [files] = await bucket.getFiles({
+    prefix: `trips/${cleanTripId}/`,
+    autoPaginate: true,
+  });
+  if (!Array.isArray(files) || files.length === 0) {
+    return;
+  }
+  await Promise.all(
+    files.map(async (file) => {
+      try {
+        await file.delete();
+      } catch (e) {
+        const code = normalizeString(e?.code);
+        if (code === '404' || code === 'not-found') {
+          return;
+        }
+        throw e;
+      }
+    })
+  );
 }
 
 function channelsMap(data) {
@@ -2219,6 +2323,113 @@ exports.registerMyTripMemberLabel = onCall(
       [`memberPublicLabels.${uid}`]: emailLocal,
     });
     return { ok: true };
+  }
+);
+
+exports.deleteTripCascade = onCall(
+  {
+    region: 'europe-west1',
+    timeoutSeconds: 540,
+    memory: '1GiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      return { ok: true, tripId, deleted: false, reason: 'not-found' };
+    }
+
+    const tripData = tripSnap.data() || {};
+    const ownerId = normalizeString(tripData.ownerId);
+    if (ownerId !== uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Seul le proprietaire peut supprimer ce voyage'
+      );
+    }
+
+    // Remove Storage assets first so no orphan blobs remain if recursive
+    // deletion succeeds.
+    await deleteTripStorageObjects(tripId);
+
+    // Deletes the trip document and all nested subcollections recursively.
+    await db.recursiveDelete(tripRef);
+
+    return { ok: true, tripId, deleted: true };
+  }
+);
+
+exports.backfillLegacyTripPermissions = onCall(
+  {
+    region: 'europe-west1',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+
+    const result = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(tripRef);
+      if (!snap.exists) {
+        throw new HttpsError('not-found', 'Voyage introuvable');
+      }
+      const data = snap.data() || {};
+      const memberIds = Array.isArray(data.memberIds)
+        ? data.memberIds.map((v) => normalizeString(v)).filter(Boolean)
+        : [];
+      if (!memberIds.includes(uid)) {
+        throw new HttpsError(
+          'permission-denied',
+          'Tu ne fais pas partie de ce voyage'
+        );
+      }
+
+      const currentPermissions =
+        data.permissions &&
+        typeof data.permissions === 'object' &&
+        !Array.isArray(data.permissions)
+          ? data.permissions
+          : {};
+      const mergedPermissions =
+        mergedTripPermissionsWithDefaults(currentPermissions);
+      if (tripPermissionsEqual(currentPermissions, mergedPermissions)) {
+        return { changed: false, reason: 'already-up-to-date' };
+      }
+
+      tx.update(tripRef, {
+        permissions: mergedPermissions,
+        permissionsBackfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+        permissionsBackfilledBy: uid,
+      });
+      return { changed: true, reason: 'backfilled' };
+    });
+
+    return {
+      ok: true,
+      tripId,
+      changed: result.changed,
+      reason: result.reason,
+    };
   }
 );
 

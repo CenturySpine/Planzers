@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:crypto/crypto.dart';
@@ -55,10 +57,59 @@ class TripsRepository {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FirebaseStorage storage;
+  final Set<String> _permissionsBackfillInFlight = <String>{};
 
   /// Used for invite links from iOS/Android/desktop native. Web uses
   /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
   final Uri mobileInviteBaseUri;
+
+  Map<String, dynamic> _defaultPermissionsFirestoreMap() {
+    return <String, dynamic>{
+      'tripGeneral': TripGeneralPermissions.defaults.toFirestore(),
+      'participants': TripParticipantsPermissions.defaults.toFirestore(),
+      'expenses': TripExpensesPermissions.defaults.toFirestore(),
+      'activities': TripActivitiesPermissions.defaults.toFirestore(),
+      'shopping': TripShoppingPermissions.defaults.toFirestore(),
+    };
+  }
+
+  bool _hasPermissionsBlock(Map<String, dynamic> data) {
+    final raw = data['permissions'];
+    if (raw is! Map) return false;
+    return raw.containsKey('tripGeneral') &&
+        raw.containsKey('participants') &&
+        raw.containsKey('expenses') &&
+        raw.containsKey('activities') &&
+        raw.containsKey('shopping');
+  }
+
+  void _ensurePermissionsBlockOnFirstLoad({
+    required String tripId,
+    required Map<String, dynamic> data,
+  }) {
+    if (_hasPermissionsBlock(data)) {
+      return;
+    }
+    if (_permissionsBackfillInFlight.contains(tripId)) {
+      return;
+    }
+    _permissionsBackfillInFlight.add(tripId);
+    unawaited(() async {
+      try {
+        final regionFunctions =
+            FirebaseFunctions.instanceFor(region: 'europe-west1');
+        final callable =
+            regionFunctions.httpsCallable('backfillLegacyTripPermissions');
+        await callable.call(<String, dynamic>{
+          'tripId': tripId,
+        });
+      } catch (_) {
+        // Best-effort migration from legacy trips; keep read flow resilient.
+      } finally {
+        _permissionsBackfillInFlight.remove(tripId);
+      }
+    }());
+  }
 
   void _ensureTripGeneralPermissionForAction({
     required Trip trip,
@@ -96,6 +147,7 @@ class TripsRepository {
       if (data == null) {
         return null;
       }
+      _ensurePermissionsBlockOnFirstLoad(tripId: snap.id, data: data);
       return Trip.fromMap(snap.id, data);
     });
   }
@@ -111,8 +163,11 @@ class TripsRepository {
         .where('memberIds', arrayContains: user.uid)
         .snapshots()
         .map((snapshot) {
-      final trips =
-          snapshot.docs.map((doc) => Trip.fromMap(doc.id, doc.data())).toList();
+      final trips = snapshot.docs.map((doc) {
+        final data = doc.data();
+        _ensurePermissionsBlockOnFirstLoad(tripId: doc.id, data: data);
+        return Trip.fromMap(doc.id, data);
+      }).toList();
       trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return trips;
     });
@@ -141,6 +196,7 @@ class TripsRepository {
       'linkUrl': linkUrl.trim(),
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
+      'permissions': _defaultPermissionsFirestoreMap(),
       'createdAt': FieldValue.serverTimestamp(),
     };
     if (ownerLabel.isNotEmpty) {
@@ -154,17 +210,18 @@ class TripsRepository {
     }
 
     final doc = firestore.collection('trips').doc();
+    await doc.set(data);
+
+    // Firestore rules for expense groups read the parent trip document.
+    // Create the parent trip first, then create the default group.
     final defaultGroupRef = doc.collection('expenseGroups').doc();
-    final batch = firestore.batch();
-    batch.set(doc, data);
-    batch.set(defaultGroupRef, {
+    await defaultGroupRef.set({
       'title': 'Commun',
       'visibleToMemberIds': <String>[user.uid],
       'isDefault': true,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
     });
-    await batch.commit();
   }
 
   Future<void> deleteTrip({
@@ -175,26 +232,13 @@ class TripsRepository {
       throw StateError('Utilisateur non connecte');
     }
 
-    final docRef = firestore.collection('trips').doc(tripId);
-    final snapshot = await docRef.get();
-    if (!snapshot.exists) {
-      return;
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
     }
-
-    final data = snapshot.data();
-    final ownerId = (data?['ownerId'] as String?) ?? '';
-    if (ownerId != user.uid) {
-      throw StateError('Seul le proprietaire peut supprimer ce voyage');
-    }
-
-    final bannerPath = (data?['bannerImagePath'] as String?)?.trim() ?? '';
-    if (bannerPath.isNotEmpty) {
-      try {
-        await storage.ref(bannerPath).delete();
-      } catch (_) {}
-    }
-
-    await docRef.delete();
+    final regionFunctions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final callable = regionFunctions.httpsCallable('deleteTripCascade');
+    await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }
 
   Future<void> updateTrip({
