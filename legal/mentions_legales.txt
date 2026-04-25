@@ -1,5 +1,5 @@
 MENTIONS LÉGALES
-Dernière mise à jour : 23/04/2026
+Dernière mise à jour : 25/04/2026
 
 Éditeur
 - Bruno Chappe (personne physique)
@@ -34,3 +34,9 @@ GNU AGPL v3 (ou version ultérieure).
 Contact
 Pour toute question ou réclamation relative au service, écrire à :
 century.spine@gmail.com
+
+Confidentialité du numéro de téléphone
+Lorsque l'utilisateur choisit d'enregistrer un numéro de téléphone dans son
+profil, cette donnée n'est jamais affichée par défaut à d'autres utilisateurs.
+Elle ne peut être visible que si l'utilisateur active explicitement un réglage
+de partage spécifique lié à un voyage.

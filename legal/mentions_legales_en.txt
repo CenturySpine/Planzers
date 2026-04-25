@@ -1,5 +1,5 @@
 LEGAL NOTICE
-Last update: 23/04/2026
+Last update: 25/04/2026
 
 Publisher
 - Bruno Chappe (individual)
@@ -33,3 +33,8 @@ the rights granted for source code under the GNU AGPL v3 (or later version).
 Contact
 For any question or complaint related to the service, write to:
 century.spine@gmail.com
+
+Phone number privacy
+When a user chooses to save a phone number in their profile, this data is never
+displayed to other users by default. It can only become visible if the user
+explicitly enables a dedicated sharing setting for a trip.

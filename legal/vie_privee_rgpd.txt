@@ -1,5 +1,5 @@
 VIE PRIVÉE / RGPD
-Dernière mise à jour : 23/04/2026
+Dernière mise à jour : 25/04/2026
 
 1) Responsable du traitement
 - Bruno Chappe
@@ -9,6 +9,8 @@ Dernière mise à jour : 23/04/2026
 2) Données traitées
 Données personnelles directes :
 - Adresse e-mail du compte utilisateur
+- Numéro de téléphone (indicatif international + numéro) si renseigné par
+  l'utilisateur
 
 Autres données fonctionnelles du service :
 - Pseudo libre renseigné par l'utilisateur
@@ -20,9 +22,17 @@ Autres données fonctionnelles du service :
 3) Finalités et base légale
 - Exécution du service : authentification, gestion du compte, fonctionnalités
   collaboratives de l'application
+- Paramètre de contact du profil : enregistrement du numéro de téléphone pour
+  permettre son usage uniquement selon les préférences de partage configurées
+  par l'utilisateur
 - Intérêt légitime : sécurité, prévention des abus, maintien opérationnel
 - Consentement : notifications selon les autorisations accordées par
   l'utilisateur sur son appareil/navigateur
+
+Visibilité du numéro de téléphone :
+- Par défaut, le numéro de téléphone n'est visible par aucun autre utilisateur
+- Le numéro n'est affiché qu'en cas d'activation explicite d'un réglage de
+  partage par l'utilisateur, pour un contexte de voyage
 
 4) Localisation et sous-traitants
 Les données sont hébergées en Europe (région europe-west9) et soumises au droit
