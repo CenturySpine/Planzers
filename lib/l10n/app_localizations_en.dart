@@ -483,6 +483,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPermissionManageBanner => 'Manage banner photo';
 
   @override
+  String get tripPermissionPublishAnnouncements => 'Publish announcements';
+
+  @override
   String get tripPermissionShareAccess => 'Share trip access';
 
   @override
@@ -2374,6 +2377,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionManageBanner => 'Manage banner photo';
+
+  @override
+  String get tripPermissionPublishAnnouncements => 'Publish announcements';
 
   @override
   String get tripPermissionShareAccess => 'Share trip access';

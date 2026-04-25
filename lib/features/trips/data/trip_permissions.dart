@@ -28,6 +28,7 @@ enum TripPermissionRole {
 enum TripGeneralPermissionAction {
   editGeneralInfo,
   manageBanner,
+  publishAnnouncements,
   shareAccess,
   manageTripSettings,
   deleteTrip;
@@ -37,6 +38,7 @@ class TripGeneralPermissions {
   const TripGeneralPermissions({
     required this.editGeneralInfoMinRole,
     required this.manageBannerMinRole,
+    required this.publishAnnouncementsMinRole,
     required this.shareAccessMinRole,
     required this.manageTripSettingsMinRole,
     required this.deleteTripMinRole,
@@ -44,6 +46,7 @@ class TripGeneralPermissions {
 
   final TripPermissionRole editGeneralInfoMinRole;
   final TripPermissionRole manageBannerMinRole;
+  final TripPermissionRole publishAnnouncementsMinRole;
   final TripPermissionRole shareAccessMinRole;
   final TripPermissionRole manageTripSettingsMinRole;
   final TripPermissionRole deleteTripMinRole;
@@ -51,6 +54,7 @@ class TripGeneralPermissions {
   static const defaults = TripGeneralPermissions(
     editGeneralInfoMinRole: TripPermissionRole.admin,
     manageBannerMinRole: TripPermissionRole.admin,
+    publishAnnouncementsMinRole: TripPermissionRole.admin,
     shareAccessMinRole: TripPermissionRole.participant,
     manageTripSettingsMinRole: TripPermissionRole.owner,
     deleteTripMinRole: TripPermissionRole.owner,
@@ -63,6 +67,9 @@ class TripGeneralPermissions {
     return TripGeneralPermissions(
       editGeneralInfoMinRole: TripPermissionRole.fromFirestore(raw['editGeneralInfo']),
       manageBannerMinRole: TripPermissionRole.fromFirestore(raw['manageBanner']),
+      publishAnnouncementsMinRole: raw['publishAnnouncements'] == null
+          ? defaults.publishAnnouncementsMinRole
+          : TripPermissionRole.fromFirestore(raw['publishAnnouncements']),
       shareAccessMinRole: TripPermissionRole.fromFirestore(raw['shareAccess']),
       manageTripSettingsMinRole: raw['manageTripSettings'] == null
           ? TripPermissionRole.owner
@@ -75,6 +82,7 @@ class TripGeneralPermissions {
     return <String, dynamic>{
       'editGeneralInfo': editGeneralInfoMinRole.toFirestore(),
       'manageBanner': manageBannerMinRole.toFirestore(),
+      'publishAnnouncements': publishAnnouncementsMinRole.toFirestore(),
       'shareAccess': shareAccessMinRole.toFirestore(),
       'manageTripSettings': manageTripSettingsMinRole.toFirestore(),
       'deleteTrip': deleteTripMinRole.toFirestore(),
@@ -85,6 +93,7 @@ class TripGeneralPermissions {
     return switch (action) {
       TripGeneralPermissionAction.editGeneralInfo => editGeneralInfoMinRole,
       TripGeneralPermissionAction.manageBanner => manageBannerMinRole,
+      TripGeneralPermissionAction.publishAnnouncements => publishAnnouncementsMinRole,
       TripGeneralPermissionAction.shareAccess => shareAccessMinRole,
       TripGeneralPermissionAction.manageTripSettings => manageTripSettingsMinRole,
       TripGeneralPermissionAction.deleteTrip => deleteTripMinRole,

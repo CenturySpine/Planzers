@@ -851,6 +851,7 @@ class TripsRepository {
     final fieldName = switch (action) {
       TripGeneralPermissionAction.editGeneralInfo => 'editGeneralInfo',
       TripGeneralPermissionAction.manageBanner => 'manageBanner',
+      TripGeneralPermissionAction.publishAnnouncements => 'publishAnnouncements',
       TripGeneralPermissionAction.shareAccess => 'shareAccess',
       TripGeneralPermissionAction.manageTripSettings => 'manageTripSettings',
       TripGeneralPermissionAction.deleteTrip => 'deleteTrip',

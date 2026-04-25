@@ -188,6 +188,19 @@ class _TripGeneralPermissionsPageState
                         enabled: !_isResettingDefaults,
                       ),
                       TripPermissionItemRow(
+                        title: l10n.tripPermissionPublishAnnouncements,
+                        minRole: trip.generalPermissions.publishAnnouncementsMinRole,
+                        icon: Icons.campaign_outlined,
+                        busy: _savingActions.contains(
+                          TripGeneralPermissionAction.publishAnnouncements,
+                        ),
+                        onChanged: (role) => _updatePermission(
+                          action: TripGeneralPermissionAction.publishAnnouncements,
+                          minRole: role,
+                        ),
+                        enabled: !_isResettingDefaults,
+                      ),
+                      TripPermissionItemRow(
                         title: l10n.tripPermissionShareAccess,
                         minRole: trip.generalPermissions.shareAccessMinRole,
                         icon: Icons.share_outlined,

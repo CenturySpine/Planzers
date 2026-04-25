@@ -203,6 +203,7 @@
   "tripGeneralPermissionsDescription": "Permissions minimales par défaut pour les actions globales du voyage.",
   "tripPermissionEditGeneralInfo": "Modifier les infos générales",
   "tripPermissionManageBanner": "Gérer la photo de bannière",
+  "tripPermissionPublishAnnouncements": "Publier des annonces",
   "tripPermissionShareAccess": "Partager l'accès du voyage",
   "tripPermissionManageTripSettings": "Modifier les paramètres du voyage",
   "tripPermissionDeleteTrip": "Supprimer le voyage",

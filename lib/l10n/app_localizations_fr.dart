@@ -488,6 +488,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripPermissionManageBanner => 'Gérer la photo de bannière';
 
   @override
+  String get tripPermissionPublishAnnouncements => 'Publier des annonces';
+
+  @override
   String get tripPermissionShareAccess => 'Partager l\'accès du voyage';
 
   @override
@@ -2393,6 +2396,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionManageBanner => 'Gérer la photo de bannière';
+
+  @override
+  String get tripPermissionPublishAnnouncements => 'Publier des annonces';
 
   @override
   String get tripPermissionShareAccess => 'Partager l\'accès du voyage';

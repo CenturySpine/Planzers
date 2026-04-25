@@ -958,6 +958,12 @@ abstract class AppLocalizations {
   /// **'Gérer la photo de bannière'**
   String get tripPermissionManageBanner;
 
+  /// No description provided for @tripPermissionPublishAnnouncements.
+  ///
+  /// In fr, this message translates to:
+  /// **'Publier des annonces'**
+  String get tripPermissionPublishAnnouncements;
+
   /// No description provided for @tripPermissionShareAccess.
   ///
   /// In fr, this message translates to:

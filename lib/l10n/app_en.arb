@@ -203,6 +203,7 @@
   "tripGeneralPermissionsDescription": "Default minimum permissions for trip-wide actions.",
   "tripPermissionEditGeneralInfo": "Edit general information",
   "tripPermissionManageBanner": "Manage banner photo",
+  "tripPermissionPublishAnnouncements": "Publish announcements",
   "tripPermissionShareAccess": "Share trip access",
   "tripPermissionManageTripSettings": "Manage trip settings",
   "tripPermissionDeleteTrip": "Delete trip",
