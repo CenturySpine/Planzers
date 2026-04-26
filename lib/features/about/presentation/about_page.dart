@@ -229,7 +229,7 @@ class _AboutPageState extends State<AboutPage> {
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Theme.of(context).colorScheme.tertiary,
                                         decoration: TextDecoration.underline,
                                       ),
                                 ),
@@ -279,7 +279,7 @@ class _AboutPageState extends State<AboutPage> {
                           margin: const EdgeInsets.symmetric(horizontal: 3),
                           decoration: BoxDecoration(
                             color: index == _currentCarouselIndex
-                                ? Theme.of(context).colorScheme.primary
+                                ? Theme.of(context).colorScheme.tertiary
                                 : Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant
@@ -384,7 +384,7 @@ class _AboutPageState extends State<AboutPage> {
                             style: Theme.of(
                               context,
                             ).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: Theme.of(context).colorScheme.tertiary,
                                   decoration: TextDecoration.underline,
                                 ),
                           ),

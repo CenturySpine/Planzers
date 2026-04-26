@@ -219,15 +219,15 @@ class _ChatWidgetState extends State<ChatWidget> {
               ),
               categoryViewConfig: CategoryViewConfig(
                 iconColor: scheme.onSurfaceVariant,
-                iconColorSelected: scheme.primary,
-                indicatorColor: scheme.primary,
+                iconColorSelected: scheme.tertiary,
+                indicatorColor: scheme.tertiary,
               ),
               bottomActionBarConfig: const BottomActionBarConfig(
                 showBackspaceButton: false,
                 showSearchViewButton: true,
               ),
               searchViewConfig: SearchViewConfig(
-                buttonIconColor: scheme.primary,
+                buttonIconColor: scheme.tertiary,
               ),
             ),
           ),

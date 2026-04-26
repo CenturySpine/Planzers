@@ -70,6 +70,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
             FloatingActionButton(
               heroTag: 'trips_join_invite',
               tooltip: l10n.tripsJoinWithInviteTooltip,
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
+              foregroundColor: Theme.of(context).colorScheme.onTertiary,
               onPressed: () => _openJoinByInviteCodeDialog(context),
               child: const Icon(Icons.vpn_key_outlined),
             ),

@@ -79,7 +79,7 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
                   child: Text(
                     url,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).colorScheme.tertiary,
                           decoration: TextDecoration.underline,
                         ),
                   ),
@@ -88,7 +88,7 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
                 Icon(
                   Icons.open_in_new,
                   size: 18,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.tertiary,
                 ),
               ],
             ),

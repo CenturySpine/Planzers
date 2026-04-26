@@ -683,7 +683,7 @@ class _ActivityListTile extends StatelessWidget {
                     Icon(
                       activity.category.categoryIcon,
                       size: 20,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Theme.of(context).colorScheme.tertiary,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
