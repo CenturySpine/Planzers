@@ -429,7 +429,12 @@ service cloud.firestore {
         ) || (
           canEditActivity(tripId)
           && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['plannedAt'])
+            .hasAny(['plannedAt', 'votes'])
+        ) || (
+          canSuggestActivity(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['votes'])
+          && request.resource.data.votes is list
         );
         allow delete: if canDeleteActivity(tripId);
       }
