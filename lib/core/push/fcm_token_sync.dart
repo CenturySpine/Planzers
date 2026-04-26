@@ -156,6 +156,13 @@ Future<void> deleteFcmTokenOnSignOut(String uid) async {
 
   try {
     final messaging = FirebaseMessaging.instance;
+    if (kIsWeb) {
+      final settings = await messaging.getNotificationSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        return;
+      }
+    }
     final token = await messaging.getToken(
       vapidKey: kIsWeb && _kFcmWebVapidKey.isNotEmpty ? _kFcmWebVapidKey : null,
     );

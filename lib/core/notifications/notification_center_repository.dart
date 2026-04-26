@@ -203,9 +203,9 @@ class NotificationCenterRepository {
     required String tripId,
   }) async {
     final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      return;
-    }
+    if (cleanTripId.isEmpty) return;
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) return;
     await _myTripPresenceDoc(cleanTripId).delete();
   }
 
