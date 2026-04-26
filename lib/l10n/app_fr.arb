@@ -519,6 +519,8 @@
   "activitiesTabSuggestions": "Suggestions",
   "activitiesTabPlanned": "Planifiées",
   "activitiesTabAgenda": "Agenda",
+  "activitiesVote": "Voter",
+  "activitiesUnvote": "Retirer mon vote",
   "activitiesNoSuggestion": "Aucune suggestion.",
   "activitiesNoPlanned": "Aucune activité planifiée.",
   "activitiesSuggestAction": "Proposer",

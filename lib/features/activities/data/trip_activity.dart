@@ -18,6 +18,7 @@ class TripActivity {
     this.doneAt,
     this.linkPreview = const {},
     this.tripDrivingRoute,
+    this.votes = const [],
   });
 
   final String id;
@@ -41,6 +42,9 @@ class TripActivity {
 
   /// Driving distance/duration from trip `address` (Cloud Function).
   final ActivityTripDrivingRoute? tripDrivingRoute;
+
+  /// UIDs of members who upvoted this suggestion.
+  final List<String> votes;
 
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
@@ -90,7 +94,13 @@ class TripActivity {
       linkPreview: _previewFromFirestore(data['linkPreview']),
       tripDrivingRoute:
           ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),
+      votes: _votesFromFirestore(data['votes']),
     );
+  }
+
+  static List<String> _votesFromFirestore(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.whereType<String>().toList();
   }
 }
 

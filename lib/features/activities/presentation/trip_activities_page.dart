@@ -213,6 +213,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
                         emptyMessage: l10n.activitiesNoSuggestion,
+                        showVoteButton: true,
+                        myUid: myUid,
                       ),
                       _ActivitiesTabList(
                         searchController: _plannedSearchController,
@@ -281,6 +283,8 @@ class _ActivitiesTabList extends StatelessWidget {
     required this.tripId,
     required this.tripMemberPublicLabels,
     required this.emptyMessage,
+    this.showVoteButton = false,
+    this.myUid,
   });
 
   final TextEditingController searchController;
@@ -289,6 +293,8 @@ class _ActivitiesTabList extends StatelessWidget {
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
   final String emptyMessage;
+  final bool showVoteButton;
+  final String? myUid;
 
   @override
   Widget build(BuildContext context) {
@@ -331,6 +337,8 @@ class _ActivitiesTabList extends StatelessWidget {
                       tripId: tripId,
                       activity: entry.activity!,
                       tripMemberPublicLabels: tripMemberPublicLabels,
+                      showVoteButton: showVoteButton,
+                      myUid: myUid,
                     );
                   },
                 ),
@@ -636,11 +644,15 @@ class _ActivityListTile extends StatelessWidget {
     required this.tripId,
     required this.activity,
     required this.tripMemberPublicLabels,
+    this.showVoteButton = false,
+    this.myUid,
   });
 
   final String tripId;
   final TripActivity activity;
   final Map<String, String> tripMemberPublicLabels;
+  final bool showVoteButton;
+  final String? myUid;
 
   void _openDetail(BuildContext context) {
     context.push('/trips/$tripId/activities/${activity.id}');
@@ -652,55 +664,75 @@ class _ActivityListTile extends StatelessWidget {
         ? AppLocalizations.of(context)!.activitiesUntitled
         : activity.label.trim();
 
-    return Card(
-      color: activity.done ? context.planerzColors.successContainer : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDetail(context),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                activity.category.categoryIcon,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Card(
+            color:
+                activity.done ? context.planerzColors.successContainer : null,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openDetail(context),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
+                    Icon(
+                      activity.category.categoryIcon,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppLocalizations.of(
-                        context,
-                      )!.activitiesProposedBy(_creatorLabel(context, activity)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
+                          const SizedBox(height: 2),
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.activitiesProposedBy(
+                                _creatorLabel(context, activity)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontStyle: FontStyle.italic,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    LinkPreviewThumbnail(preview: activity.linkPreview),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              LinkPreviewThumbnail(preview: activity.linkPreview),
-            ],
+            ),
           ),
         ),
-      ),
+        if (showVoteButton) ...[
+          const SizedBox(width: 4),
+          _VoteButton(
+            tripId: tripId,
+            activityId: activity.id,
+            votes: activity.votes,
+            myUid: myUid ?? '',
+          ),
+        ],
+      ],
     );
   }
 
@@ -902,6 +934,95 @@ String creatorLabelForActivity(
   return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
       ? tripMemberPublicLabels[id]!.trim()
       : id;
+}
+
+class _VoteButton extends ConsumerStatefulWidget {
+  const _VoteButton({
+    required this.tripId,
+    required this.activityId,
+    required this.votes,
+    required this.myUid,
+  });
+
+  final String tripId;
+  final String activityId;
+  final List<String> votes;
+  final String myUid;
+
+  @override
+  ConsumerState<_VoteButton> createState() => _VoteButtonState();
+}
+
+class _VoteButtonState extends ConsumerState<_VoteButton> {
+  bool _loading = false;
+
+  Future<void> _toggle() async {
+    if (_loading || widget.myUid.isEmpty) return;
+    final hasVoted = widget.votes.contains(widget.myUid);
+    setState(() => _loading = true);
+    try {
+      await ref.read(activitiesRepositoryProvider).voteForActivity(
+            tripId: widget.tripId,
+            activityId: widget.activityId,
+            vote: !hasVoted,
+          );
+    } catch (_) {
+      // stream will revert the optimistic state automatically
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasVoted =
+        widget.myUid.isNotEmpty && widget.votes.contains(widget.myUid);
+    final count = widget.votes.length;
+    final scheme = Theme.of(context).colorScheme;
+    final color = hasVoted ? scheme.primary : scheme.onSurfaceVariant;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Tooltip(
+      message: hasVoted ? l10n.activitiesUnvote : l10n.activitiesVote,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _loading ? null : _toggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: _loading
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: color,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                      size: 16,
+                      color: color,
+                    ),
+                    if (count > 0) ...[
+                      const SizedBox(width: 3),
+                      Text(
+                        '$count',
+                        style:
+                            Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ActivityDayPill extends StatelessWidget {

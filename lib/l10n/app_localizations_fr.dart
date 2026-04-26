@@ -1223,6 +1223,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesTabAgenda => 'Agenda';
 
   @override
+  String get activitiesVote => 'Voter';
+
+  @override
+  String get activitiesUnvote => 'Retirer mon vote';
+
+  @override
   String get activitiesNoSuggestion => 'Aucune suggestion.';
 
   @override
@@ -3207,6 +3213,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activitiesTabAgenda => 'Agenda';
+
+  @override
+  String get activitiesVote => 'Voter';
+
+  @override
+  String get activitiesUnvote => 'Retirer mon vote';
 
   @override
   String get activitiesNoSuggestion => 'Aucune suggestion.';

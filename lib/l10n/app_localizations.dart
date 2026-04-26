@@ -2255,6 +2255,18 @@ abstract class AppLocalizations {
   /// **'Agenda'**
   String get activitiesTabAgenda;
 
+  /// No description provided for @activitiesVote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voter'**
+  String get activitiesVote;
+
+  /// No description provided for @activitiesUnvote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer mon vote'**
+  String get activitiesUnvote;
+
   /// No description provided for @activitiesNoSuggestion.
   ///
   /// In fr, this message translates to:

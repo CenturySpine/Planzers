@@ -232,6 +232,43 @@ class ActivitiesRepository {
     });
   }
 
+  Future<void> voteForActivity({
+    required String tripId,
+    required String activityId,
+    required bool vote,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canVote = canSuggestActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canVote) {
+      throw StateError('Droits insuffisants pour voter');
+    }
+
+    final docRef = _activitiesCol(cleanTripId).doc(cleanActivityId);
+    await docRef.update({
+      'votes': vote
+          ? FieldValue.arrayUnion([user.uid])
+          : FieldValue.arrayRemove([user.uid]),
+    });
+  }
+
   Future<void> deleteActivity({
     required String tripId,
     required String activityId,
