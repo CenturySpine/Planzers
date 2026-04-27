@@ -304,6 +304,24 @@ class AccountRepository {
     }
   }
 
+  Future<void> updateAccountEmail(String email) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final userRef = firestore.collection('users').doc(uid);
+    final trimmedEmail = email.trim();
+    await userRef.set({
+      'email': trimmedEmail,
+      'account': {
+        'email': trimmedEmail,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> updateAccountPhone({
     required String phoneCountryCode,
     required String phoneNumber,
@@ -343,10 +361,10 @@ class AccountRepository {
 
     final data = snapshot.data() ?? const <String, dynamic>{};
     final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-    final canonicalUrl = (account['photoUrl'] as String?)?.trim().isNotEmpty ==
-            true
-        ? (account['photoUrl'] as String).trim()
-        : (data['photoUrl'] as String?)?.trim() ?? '';
+    final canonicalUrl =
+        (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+            ? (account['photoUrl'] as String).trim()
+            : (data['photoUrl'] as String?)?.trim() ?? '';
 
     final googlePhotoUrl =
         (account['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true

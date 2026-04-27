@@ -395,7 +395,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsMyTrips => 'My trips';
 
   @override
-  String get tripsEmptyState => 'No trips yet.\\nCreate your first trip.';
+  String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';
 
   @override
   String get tripsTimelinePast => 'Past';
@@ -2449,7 +2449,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripsMyTrips => 'My trips';
 
   @override
-  String get tripsEmptyState => 'No trips yet.\\nCreate your first trip.';
+  String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';
 
   @override
   String get tripsTimelinePast => 'Past';

@@ -397,7 +397,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripsEmptyState =>
-      'Aucun voyage pour le moment.\\nCrée ton premier voyage.';
+      'Aucun voyage pour le moment.\nCrée ton premier voyage.';
 
   @override
   String get tripsTimelinePast => 'Passés';
@@ -2466,7 +2466,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsEmptyState =>
-      'Aucun voyage pour le moment.\\nCrée ton premier voyage.';
+      'Aucun voyage pour le moment.\nCrée ton premier voyage.';
 
   @override
   String get tripsTimelinePast => 'Passés';

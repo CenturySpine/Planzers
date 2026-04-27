@@ -811,7 +811,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsEmptyState.
   ///
   /// In fr, this message translates to:
-  /// **'Aucun voyage pour le moment.\\nCrée ton premier voyage.'**
+  /// **'Aucun voyage pour le moment.\nCrée ton premier voyage.'**
   String get tripsEmptyState;
 
   /// No description provided for @tripsTimelinePast.

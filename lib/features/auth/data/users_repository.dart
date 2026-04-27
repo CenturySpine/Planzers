@@ -39,6 +39,32 @@ class UsersRepository {
 
   final FirebaseFirestore firestore;
 
+  String _bestAuthPhoneNumber(User user) {
+    final direct = (user.phoneNumber ?? '').trim();
+    if (direct.isNotEmpty) return direct;
+    for (final info in user.providerData) {
+      final candidate = (info.phoneNumber ?? '').trim();
+      if (candidate.isNotEmpty) return candidate;
+    }
+    return '';
+  }
+
+  ({String countryCode, String number}) _splitPhoneNumber(String rawPhone) {
+    final normalized = rawPhone.trim();
+    if (normalized.isEmpty) {
+      return (countryCode: '', number: '');
+    }
+    final match =
+        RegExp(r'^(\+[0-9]{1,4})\s+([0-9 ]+)$').firstMatch(normalized);
+    if (match == null) {
+      return (countryCode: '', number: normalized);
+    }
+    return (
+      countryCode: match.group(1)?.trim() ?? '',
+      number: match.group(2)?.trim() ?? normalized,
+    );
+  }
+
   Future<void> ensureUserDocument(User user) async {
     final userRef = firestore.collection('users').doc(user.uid);
 
@@ -46,15 +72,29 @@ class UsersRepository {
       final snapshot = await transaction.get(userRef);
       final now = FieldValue.serverTimestamp();
       final googlePhotoUrl = (user.photoURL ?? '').trim();
+      final authPhoneNumber = _bestAuthPhoneNumber(user);
+      final splitPhone = _splitPhoneNumber(authPhoneNumber);
+      final hasAuthPhone = authPhoneNumber.isNotEmpty;
+      final authDisplayName = (user.displayName ?? '').trim();
+      final fallbackDisplayName =
+          authDisplayName.isNotEmpty ? authDisplayName : authPhoneNumber;
       final baseData = <String, dynamic>{
         'uid': user.uid,
         'email': user.email,
-        'displayName': user.displayName,
         'account': {
           'email': user.email,
+          if (hasAuthPhone) 'phoneNumber': splitPhone.number,
+          if (hasAuthPhone) 'phoneCountryCode': splitPhone.countryCode,
         },
         'lastSignInAt': now,
       };
+      if (fallbackDisplayName.isNotEmpty) {
+        baseData['displayName'] = fallbackDisplayName;
+      }
+      if (fallbackDisplayName.isNotEmpty) {
+        (baseData['account'] as Map<String, dynamic>)['name'] =
+            fallbackDisplayName;
+      }
       if (googlePhotoUrl.isNotEmpty) {
         baseData['googlePhotoUrl'] = googlePhotoUrl;
         (baseData['account'] as Map<String, dynamic>)['googlePhotoUrl'] =
@@ -67,15 +107,30 @@ class UsersRepository {
             (existing['account'] as Map<String, dynamic>?) ?? const {};
         final existingAccountPhoto =
             (existingAccount['photoUrl'] as String?)?.trim() ?? '';
-        final existingRootPhoto = (existing['photoUrl'] as String?)?.trim() ?? '';
+        final existingRootPhoto =
+            (existing['photoUrl'] as String?)?.trim() ?? '';
+        final existingName = (existingAccount['name'] as String?)?.trim() ?? '';
+        final existingPhoneNumber =
+            (existingAccount['phoneNumber'] as String?)?.trim() ?? '';
+        final existingPhoneCountryCode =
+            (existingAccount['phoneCountryCode'] as String?)?.trim() ?? '';
         final hasCustomPhoto =
             existingAccountPhoto.isNotEmpty || existingRootPhoto.isNotEmpty;
 
         final patch = <String, dynamic>{...baseData};
+        final patchAccount = (patch['account'] as Map<String, dynamic>);
+        if (existingName.isNotEmpty) {
+          patchAccount.remove('name');
+        }
+        if (existingPhoneNumber.isNotEmpty) {
+          patchAccount.remove('phoneNumber');
+        }
+        if (existingPhoneCountryCode.isNotEmpty) {
+          patchAccount.remove('phoneCountryCode');
+        }
         if (!hasCustomPhoto && googlePhotoUrl.isNotEmpty) {
           patch['photoUrl'] = googlePhotoUrl;
-          (patch['account'] as Map<String, dynamic>)['photoUrl'] =
-              googlePhotoUrl;
+          patchAccount['photoUrl'] = googlePhotoUrl;
         }
         transaction.set(userRef, patch, SetOptions(merge: true));
       } else {

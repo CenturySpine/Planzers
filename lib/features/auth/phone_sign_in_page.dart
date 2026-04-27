@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class PhoneSignInPage extends ConsumerStatefulWidget {
@@ -85,52 +87,52 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
     unawaited(
       auth
           .verifyPhoneNumber(
-            phoneNumber: phone,
-            forceResendingToken: _resendToken,
-            verificationCompleted: (credential) async {
-              // Auto sign-in via Android Play Integrity or silent SMS retrieval
-              try {
-                await auth.signInWithCredential(credential);
-                if (mounted) _navigateAfterSignIn();
-              } catch (e) {
-                debugPrint('Auto phone sign-in error: $e');
-                if (mounted) {
-                  setState(() => _isLoading = false);
-                  _showSnackBar(l10n.signInPhoneConfirmFailed);
-                }
-              }
-            },
-            verificationFailed: (e) {
-              debugPrint(
-                'Phone verification failed: ${e.code} - ${e.message}',
-              );
-              if (mounted) {
-                setState(() => _isLoading = false);
-                _showSnackBar(_phoneSendErrorMessage(l10n, e));
-              }
-            },
-            codeSent: (verificationId, resendToken) {
-              if (mounted) {
-                setState(() {
-                  _verificationId = verificationId;
-                  _resendToken = resendToken;
-                  _codeSent = true;
-                  _isLoading = false;
-                });
-                _showSnackBar(l10n.signInPhoneCodeSent);
-              }
-            },
-            codeAutoRetrievalTimeout: (verificationId) {
-              if (mounted) setState(() => _verificationId = verificationId);
-            },
-          )
-          .catchError((Object e) {
-            debugPrint('verifyPhoneNumber error: $e');
+        phoneNumber: phone,
+        forceResendingToken: _resendToken,
+        verificationCompleted: (credential) async {
+          // Auto sign-in via Android Play Integrity or silent SMS retrieval
+          try {
+            await auth.signInWithCredential(credential);
+            if (mounted) _navigateAfterSignIn();
+          } catch (e) {
+            debugPrint('Auto phone sign-in error: $e');
             if (mounted) {
               setState(() => _isLoading = false);
-              _showSnackBar(_phoneSendErrorMessage(l10n, e));
+              _showSnackBar(l10n.signInPhoneConfirmFailed);
             }
-          }),
+          }
+        },
+        verificationFailed: (e) {
+          debugPrint(
+            'Phone verification failed: ${e.code} - ${e.message}',
+          );
+          if (mounted) {
+            setState(() => _isLoading = false);
+            _showSnackBar(_phoneSendErrorMessage(l10n, e));
+          }
+        },
+        codeSent: (verificationId, resendToken) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verificationId;
+              _resendToken = resendToken;
+              _codeSent = true;
+              _isLoading = false;
+            });
+            _showSnackBar(l10n.signInPhoneCodeSent);
+          }
+        },
+        codeAutoRetrievalTimeout: (verificationId) {
+          if (mounted) setState(() => _verificationId = verificationId);
+        },
+      )
+          .catchError((Object e) {
+        debugPrint('verifyPhoneNumber error: $e');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showSnackBar(_phoneSendErrorMessage(l10n, e));
+        }
+      }),
     );
   }
 
@@ -144,16 +146,18 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
     setState(() => _isLoading = true);
     try {
       if (kIsWeb) {
-        await _webConfirm!(code);
+        final credential = await _webConfirm!(code);
+        await _seedPhoneProfileAfterSignIn(credential.user);
       } else {
         final credential = PhoneAuthProvider.credential(
           verificationId: _verificationId!,
           smsCode: code,
         );
-        await ref
+        final result = await ref
             .read(authRepositoryProvider)
             .auth
             .signInWithCredential(credential);
+        await _seedPhoneProfileAfterSignIn(result.user);
       }
       if (mounted) _navigateAfterSignIn();
     } on FirebaseAuthException catch (e) {
@@ -179,6 +183,37 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
       context.go(redirect);
     } else {
       context.go('/trips');
+    }
+  }
+
+  Future<void> _seedPhoneProfileAfterSignIn(User? signedUser) async {
+    final user = signedUser;
+    if (user == null) return;
+    final enteredPhone = _phoneNumber;
+    if (enteredPhone.isEmpty) return;
+
+    try {
+      await ref.read(usersRepositoryProvider).ensureUserDocument(user);
+    } catch (e) {
+      debugPrint('ensureUserDocument after phone sign-in failed: $e');
+    }
+
+    try {
+      final userRef = ref
+          .read(usersRepositoryProvider)
+          .firestore
+          .collection('users')
+          .doc(user.uid);
+      await userRef.set({
+        'displayName': enteredPhone,
+        'account': {
+          'name': enteredPhone,
+          'phoneNumber': enteredPhone,
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('phone profile seed failed: $e');
     }
   }
 
