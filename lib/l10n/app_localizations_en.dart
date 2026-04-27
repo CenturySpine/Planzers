@@ -173,6 +173,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter your email here and request a new link.';
 
   @override
+  String get signInContinueWithPhone => 'Continue with phone number';
+
+  @override
+  String get signInPhoneTitle => 'Sign in with SMS';
+
+  @override
+  String get signInPhoneFieldLabel => 'Phone number';
+
+  @override
+  String get signInPhoneSendCodeCta => 'Send SMS code';
+
+  @override
+  String get signInPhoneCodeTitle => 'Verify your number';
+
+  @override
+  String get signInPhoneCodeFieldLabel => '6-digit code';
+
+  @override
+  String get signInPhoneConfirmCta => 'Verify';
+
+  @override
+  String get signInPhoneCodeSent => 'SMS code sent.';
+
+  @override
+  String get signInPhoneSendFailed => 'Could not send the SMS code.';
+
+  @override
+  String get signInPhoneTooManyRequests =>
+      'Too many attempts from this device. Please wait a few minutes and try again.';
+
+  @override
+  String get signInPhoneInvalidNumber =>
+      'Invalid number. Must start with + followed by the country code.';
+
+  @override
+  String get signInPhoneInvalidCode => 'Invalid code.';
+
+  @override
+  String get signInPhoneConfirmFailed => 'Could not verify the code.';
+
+  @override
+  String get signInPhoneChangeNumber => 'Change number';
+
+  @override
+  String get signInPhoneResendCode => 'Resend code';
+
+  @override
+  String get signInAuthBetaPill => 'BETA';
+
+  @override
   String get accountTitle => 'My account';
 
   @override
@@ -2175,6 +2225,56 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get signInEmailLinkMissingEmail =>
       'Enter your email here and request a new link.';
+
+  @override
+  String get signInContinueWithPhone => 'Continue with phone number';
+
+  @override
+  String get signInPhoneTitle => 'Sign in with SMS';
+
+  @override
+  String get signInPhoneFieldLabel => 'Phone number';
+
+  @override
+  String get signInPhoneSendCodeCta => 'Send SMS code';
+
+  @override
+  String get signInPhoneCodeTitle => 'Verify your number';
+
+  @override
+  String get signInPhoneCodeFieldLabel => '6-digit code';
+
+  @override
+  String get signInPhoneConfirmCta => 'Verify';
+
+  @override
+  String get signInPhoneCodeSent => 'SMS code sent.';
+
+  @override
+  String get signInPhoneSendFailed => 'Could not send the SMS code.';
+
+  @override
+  String get signInPhoneTooManyRequests =>
+      'Too many attempts from this device. Please wait a few minutes and try again.';
+
+  @override
+  String get signInPhoneInvalidNumber =>
+      'Invalid number. Must start with + followed by the country code.';
+
+  @override
+  String get signInPhoneInvalidCode => 'Invalid code.';
+
+  @override
+  String get signInPhoneConfirmFailed => 'Could not verify the code.';
+
+  @override
+  String get signInPhoneChangeNumber => 'Change number';
+
+  @override
+  String get signInPhoneResendCode => 'Resend code';
+
+  @override
+  String get signInAuthBetaPill => 'BETA';
 
   @override
   String get accountTitle => 'My account';

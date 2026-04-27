@@ -174,6 +174,56 @@ class AppLocalizationsFr extends AppLocalizations {
       'Renseigne ton e-mail ici puis redemande un nouveau lien.';
 
   @override
+  String get signInContinueWithPhone => 'Continuer avec mon numéro';
+
+  @override
+  String get signInPhoneTitle => 'Connexion par SMS';
+
+  @override
+  String get signInPhoneFieldLabel => 'Numéro de téléphone';
+
+  @override
+  String get signInPhoneSendCodeCta => 'Envoyer le code SMS';
+
+  @override
+  String get signInPhoneCodeTitle => 'Vérification';
+
+  @override
+  String get signInPhoneCodeFieldLabel => 'Code à 6 chiffres';
+
+  @override
+  String get signInPhoneConfirmCta => 'Vérifier';
+
+  @override
+  String get signInPhoneCodeSent => 'Code SMS envoyé.';
+
+  @override
+  String get signInPhoneSendFailed => 'Impossible d\'envoyer le code SMS.';
+
+  @override
+  String get signInPhoneTooManyRequests =>
+      'Trop de tentatives depuis cet appareil. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInPhoneInvalidNumber =>
+      'Numéro invalide. Commence par + suivi de l\'indicatif pays.';
+
+  @override
+  String get signInPhoneInvalidCode => 'Code invalide.';
+
+  @override
+  String get signInPhoneConfirmFailed => 'Impossible de vérifier le code.';
+
+  @override
+  String get signInPhoneChangeNumber => 'Changer de numéro';
+
+  @override
+  String get signInPhoneResendCode => 'Renvoyer le code';
+
+  @override
+  String get signInAuthBetaPill => 'BETA';
+
+  @override
   String get accountTitle => 'Mon compte';
 
   @override
@@ -2191,6 +2241,56 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get signInEmailLinkMissingEmail =>
       'Renseigne ton e-mail ici puis redemande un nouveau lien.';
+
+  @override
+  String get signInContinueWithPhone => 'Continuer avec mon numéro';
+
+  @override
+  String get signInPhoneTitle => 'Connexion par SMS';
+
+  @override
+  String get signInPhoneFieldLabel => 'Numéro de téléphone';
+
+  @override
+  String get signInPhoneSendCodeCta => 'Envoyer le code SMS';
+
+  @override
+  String get signInPhoneCodeTitle => 'Vérification';
+
+  @override
+  String get signInPhoneCodeFieldLabel => 'Code à 6 chiffres';
+
+  @override
+  String get signInPhoneConfirmCta => 'Vérifier';
+
+  @override
+  String get signInPhoneCodeSent => 'Code SMS envoyé.';
+
+  @override
+  String get signInPhoneSendFailed => 'Impossible d\'envoyer le code SMS.';
+
+  @override
+  String get signInPhoneTooManyRequests =>
+      'Trop de tentatives depuis cet appareil. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInPhoneInvalidNumber =>
+      'Numéro invalide. Commence par + suivi de l\'indicatif pays.';
+
+  @override
+  String get signInPhoneInvalidCode => 'Code invalide.';
+
+  @override
+  String get signInPhoneConfirmFailed => 'Impossible de vérifier le code.';
+
+  @override
+  String get signInPhoneChangeNumber => 'Changer de numéro';
+
+  @override
+  String get signInPhoneResendCode => 'Renvoyer le code';
+
+  @override
+  String get signInAuthBetaPill => 'BETA';
 
   @override
   String get accountTitle => 'Mon compte';

@@ -406,6 +406,102 @@ abstract class AppLocalizations {
   /// **'Renseigne ton e-mail ici puis redemande un nouveau lien.'**
   String get signInEmailLinkMissingEmail;
 
+  /// No description provided for @signInContinueWithPhone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Continuer avec mon numéro'**
+  String get signInContinueWithPhone;
+
+  /// No description provided for @signInPhoneTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion par SMS'**
+  String get signInPhoneTitle;
+
+  /// No description provided for @signInPhoneFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro de téléphone'**
+  String get signInPhoneFieldLabel;
+
+  /// No description provided for @signInPhoneSendCodeCta.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer le code SMS'**
+  String get signInPhoneSendCodeCta;
+
+  /// No description provided for @signInPhoneCodeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vérification'**
+  String get signInPhoneCodeTitle;
+
+  /// No description provided for @signInPhoneCodeFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code à 6 chiffres'**
+  String get signInPhoneCodeFieldLabel;
+
+  /// No description provided for @signInPhoneConfirmCta.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vérifier'**
+  String get signInPhoneConfirmCta;
+
+  /// No description provided for @signInPhoneCodeSent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code SMS envoyé.'**
+  String get signInPhoneCodeSent;
+
+  /// No description provided for @signInPhoneSendFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'envoyer le code SMS.'**
+  String get signInPhoneSendFailed;
+
+  /// No description provided for @signInPhoneTooManyRequests.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trop de tentatives depuis cet appareil. Patiente quelques minutes puis réessaie.'**
+  String get signInPhoneTooManyRequests;
+
+  /// No description provided for @signInPhoneInvalidNumber.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro invalide. Commence par + suivi de l\'indicatif pays.'**
+  String get signInPhoneInvalidNumber;
+
+  /// No description provided for @signInPhoneInvalidCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code invalide.'**
+  String get signInPhoneInvalidCode;
+
+  /// No description provided for @signInPhoneConfirmFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de vérifier le code.'**
+  String get signInPhoneConfirmFailed;
+
+  /// No description provided for @signInPhoneChangeNumber.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer de numéro'**
+  String get signInPhoneChangeNumber;
+
+  /// No description provided for @signInPhoneResendCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renvoyer le code'**
+  String get signInPhoneResendCode;
+
+  /// No description provided for @signInAuthBetaPill.
+  ///
+  /// In fr, this message translates to:
+  /// **'BETA'**
+  String get signInAuthBetaPill;
+
   /// No description provided for @accountTitle.
   ///
   /// In fr, this message translates to:
