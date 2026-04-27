@@ -1,11 +1,11 @@
 ﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/external_links.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -70,6 +70,7 @@ class AccountMenuButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final showDownloadApkAction = isAndroidPwaMode();
     final user = FirebaseAuth.instance.currentUser;
     final email = (user?.email ?? '').trim();
     final displayLabel = (user?.displayName ?? '').trim().isNotEmpty
@@ -133,7 +134,7 @@ class AccountMenuButton extends ConsumerWidget {
           value: 'account',
           child: Text(l10n.accountTitle),
         ),
-        if (kIsWeb)
+        if (showDownloadApkAction)
           PopupMenuItem<String>(
             value: 'download_apk',
             child: Text(l10n.accountDownloadApk),
