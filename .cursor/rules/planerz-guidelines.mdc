@@ -31,7 +31,7 @@ These rules apply to everyone working on the repository, including automated cod
 - Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
 - Match existing patterns in the codebase (structure, naming, state management, routing).
 - After non-trivial edits, run `flutter analyze` and fix new issues.
-- **Shell/commit commands on this workspace (PowerShell):** do not use Bash-specific syntax such as `&&` chaining or HEREDOC forms like `cat <<'EOF'` in commit commands. Use PowerShell-compatible sequencing (`;`) and multiline strings (here-strings) when building commit messages.
+- **Shell — PowerShell only:** This workspace runs on Windows. Always use PowerShell for every shell command, path, and example. Never use bash, sh, zsh, or any Unix-only syntax (no `&&` chaining, no `cat <<'EOF'` heredocs, no `/tmp/` paths, etc.). Use PowerShell-compatible sequencing (`;`), here-strings (`@'...'@`) for multiline strings, and Windows paths (e.g. `$env:TEMP`) everywhere.
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
 - **Palette changes:** Any modification to `BrandPaletteData` or `PlanerzColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](../../PALETTES.md).
 
