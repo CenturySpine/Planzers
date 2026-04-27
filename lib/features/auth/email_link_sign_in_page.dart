@@ -41,9 +41,11 @@ class _EmailLinkSignInPageState extends ConsumerState<EmailLinkSignInPage> {
       }
       _showInfoSnackBar(l10n.signInEmailLinkSent);
     } on FirebaseAuthException catch (e) {
-      debugPrint('Email link sign-in send error: ${e.message ?? e.code}');
+      debugPrint(
+        'Email link sign-in send error: ${e.code} - ${e.message ?? 'no message'}',
+      );
       if (mounted) {
-        _showInfoSnackBar(l10n.signInEmailLinkSendFailed);
+        _showInfoSnackBar(_buildSendFailureMessage(l10n, code: e.code));
       }
     } catch (e) {
       debugPrint('Email link sign-in send error: $e');
@@ -68,6 +70,14 @@ class _EmailLinkSignInPageState extends ConsumerState<EmailLinkSignInPage> {
     final messenger = ScaffoldMessenger.maybeOf(context);
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _buildSendFailureMessage(AppLocalizations l10n, {String? code}) {
+    final normalizedCode = code?.trim();
+    if (normalizedCode == null || normalizedCode.isEmpty) {
+      return l10n.signInEmailLinkSendFailed;
+    }
+    return '${l10n.signInEmailLinkSendFailed} ($normalizedCode)';
   }
 
   @override

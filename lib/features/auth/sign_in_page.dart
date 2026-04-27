@@ -171,9 +171,13 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         }
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('Email link sign-in completion error: ${e.message ?? e.code}');
+      debugPrint(
+        'Email link sign-in completion error: ${e.code} - ${e.message ?? 'no message'}',
+      );
       if (mounted) {
-        _showInfoSnackBar(l10n.signInEmailLinkConfirmFailed);
+        _showInfoSnackBar(
+          '${l10n.signInEmailLinkConfirmFailed} (${e.code})',
+        );
       }
     } catch (e) {
       debugPrint('Email link sign-in completion error: $e');

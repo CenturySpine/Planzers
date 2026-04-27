@@ -70,15 +70,23 @@ class AuthRepository {
 
   Future<void> sendSignInLinkToEmail(String email) async {
     final linkDomain = _emailLinkDomain();
-    final actionCodeSettings = ActionCodeSettings(
-      url: _signInEmailLinkUri().toString(),
-      handleCodeInApp: true,
-      linkDomain: linkDomain,
-    );
-    await auth.sendSignInLinkToEmail(
-      email: email,
-      actionCodeSettings: actionCodeSettings,
-    );
+    final actionCodeSettings = _buildEmailLinkSettings(linkDomain: linkDomain);
+    try {
+      await auth.sendSignInLinkToEmail(
+        email: email,
+        actionCodeSettings: actionCodeSettings,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!_shouldRetryWithoutLinkDomain(e) || linkDomain == null) {
+        rethrow;
+      }
+      // Preview/custom hosts can be valid continue URLs but invalid as
+      // Firebase link domains. Retry without linkDomain as a safe fallback.
+      await auth.sendSignInLinkToEmail(
+        email: email,
+        actionCodeSettings: _buildEmailLinkSettings(),
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_pendingEmailLinkEmailKey, email);
   }
@@ -126,5 +134,25 @@ class AuthRepository {
       return null;
     }
     return host;
+  }
+
+  ActionCodeSettings _buildEmailLinkSettings({String? linkDomain}) {
+    return ActionCodeSettings(
+      url: _signInEmailLinkUri().toString(),
+      handleCodeInApp: true,
+      linkDomain: linkDomain,
+    );
+  }
+
+  bool _shouldRetryWithoutLinkDomain(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-dynamic-link-domain':
+      case 'dynamic-link-not-activated':
+      case 'invalid-hosting-link-domain':
+      case 'argument-error':
+        return true;
+      default:
+        return false;
+    }
   }
 }
