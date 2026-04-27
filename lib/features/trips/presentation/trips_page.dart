@@ -26,18 +26,17 @@ class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
   static const double _legalLinkFontSize = 12;
   static const double _floatingActionButtonsBottomOffset = 34;
-  late final TabController _tabController;
+  TabController? _tabController;
   bool _didHandleAutoOpenCurrentTrip = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -140,6 +139,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   }
 
                   final grouped = _groupTripsByTimeline(trips);
+                  _ensureTimelineTabController(grouped);
+                  final tabController = _tabController!;
                   _maybeAutoOpenCurrentTrip(
                     context,
                     ongoingTrips: grouped[_TripTimelineCategory.ongoing] ?? const [],
@@ -178,7 +179,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   return Column(
                     children: [
                       TabBar(
-                        controller: _tabController,
+                        controller: tabController,
                         tabs: [
                           _buildTimelineTab(
                             context,
@@ -205,7 +206,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       ),
                       Expanded(
                         child: TabBarView(
-                          controller: _tabController,
+                          controller: tabController,
                           children: [
                             _TripsTimelineList(
                               trips: grouped[_TripTimelineCategory.past] ?? const [],
@@ -354,6 +355,14 @@ class _TripsPageState extends ConsumerState<TripsPage>
       if (!mounted) return;
       context.push('/trips/$tripId/overview');
     });
+  }
+
+  void _ensureTimelineTabController(Map<_TripTimelineCategory, List<Trip>> grouped) {
+    if (_tabController != null) return;
+
+    final ongoingTrips = grouped[_TripTimelineCategory.ongoing] ?? const [];
+    final initialIndex = ongoingTrips.isEmpty ? 2 : 1;
+    _tabController = TabController(length: 3, vsync: this, initialIndex: initialIndex);
   }
 
   Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(List<Trip> trips) {
