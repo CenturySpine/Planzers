@@ -365,68 +365,130 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  OutlinedButton(
-                                    onPressed:
-                                        _isLoading ? null : _signInWithGoogle,
-                                    style: OutlinedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: _googleSignInText,
-                                      disabledForegroundColor: _googleSignInText
-                                          .withValues(alpha: 0.55),
-                                      side: const BorderSide(
-                                        color: _googleSignInBorder,
-                                        width: 1,
+                                  if (_showAndroidPwaInstallOverlay)
+                                    _buildAndroidPwaInstallGate(l10n)
+                                  else ...[
+                                    OutlinedButton(
+                                      onPressed:
+                                          _isLoading ? null : _signInWithGoogle,
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: _googleSignInText,
+                                        disabledForegroundColor:
+                                            _googleSignInText.withValues(
+                                              alpha: 0.55,
+                                            ),
+                                        side: const BorderSide(
+                                          color: _googleSignInBorder,
+                                          width: 1,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 28,
+                                          vertical: 14,
+                                        ),
+                                        minimumSize: const Size.fromHeight(50),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
                                       ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 28,
-                                        vertical: 14,
-                                      ),
-                                      minimumSize: const Size.fromHeight(50),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
+                                      child: _isLoading
+                                          ? Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: _googleSignInText
+                                                        .withValues(alpha: 0.7),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  l10n.signInLoading,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: _googleSignInText
+                                                        .withValues(alpha: 0.7),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                SvgPicture.asset(
+                                                  'assets/images/google_g.svg',
+                                                  width: 20,
+                                                  height: 20,
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Text(
+                                                  l10n.signInContinueWithGoogle,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: _googleSignInText,
+                                                    letterSpacing: 0.15,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                     ),
-                                    child: _isLoading
-                                        ? Row(
+                                    const SizedBox(height: 10),
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: _isLoading
+                                              ? null
+                                              : () => context.push(
+                                                    EmailLinkSignInPage
+                                                        .routePath,
+                                                  ),
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: _googleSignInText,
+                                            disabledForegroundColor:
+                                                _googleSignInText.withValues(
+                                                  alpha: 0.55,
+                                                ),
+                                            side: const BorderSide(
+                                              color: _googleSignInBorder,
+                                              width: 1,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 28,
+                                              vertical: 14,
+                                            ),
+                                            minimumSize:
+                                                const Size.fromHeight(50),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: _googleSignInText
-                                                      .withValues(alpha: 0.7),
-                                                ),
+                                              Icon(
+                                                Icons.mail_outline,
+                                                size: 20,
+                                                color: _googleSignInText,
                                               ),
                                               const SizedBox(width: 12),
                                               Text(
-                                                l10n.signInLoading,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: _googleSignInText
-                                                      .withValues(alpha: 0.7),
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SvgPicture.asset(
-                                                'assets/images/google_g.svg',
-                                                width: 20,
-                                                height: 20,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                l10n.signInContinueWithGoogle,
+                                                l10n
+                                                    .signInContinueWithEmailLink,
                                                 style: TextStyle(
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w500,
@@ -436,146 +498,93 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                               ),
                                             ],
                                           ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      OutlinedButton(
-                                        onPressed: _isLoading
-                                            ? null
-                                            : () => context.push(
-                                                  EmailLinkSignInPage.routePath,
+                                        ),
+                                        Positioned(
+                                          top: -6,
+                                          right: -6,
+                                          child: _buildAuthBetaPill(l10n),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: _isLoading
+                                              ? null
+                                              : () {
+                                                  final redirect =
+                                                      widget.redirectAfterSignIn;
+                                                  final route = (redirect !=
+                                                              null &&
+                                                          redirect
+                                                              .trim()
+                                                              .isNotEmpty)
+                                                      ? Uri(
+                                                          path: PhoneSignInPage
+                                                              .routePath,
+                                                          queryParameters: {
+                                                            'redirect': redirect,
+                                                          },
+                                                        ).toString()
+                                                      : PhoneSignInPage
+                                                          .routePath;
+                                                  context.push(route);
+                                                },
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: _googleSignInText,
+                                            disabledForegroundColor:
+                                                _googleSignInText.withValues(
+                                                  alpha: 0.55,
                                                 ),
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          foregroundColor: _googleSignInText,
-                                          disabledForegroundColor:
-                                              _googleSignInText.withValues(
-                                                alpha: 0.55,
-                                              ),
-                                          side: const BorderSide(
-                                            color: _googleSignInBorder,
-                                            width: 1,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 28,
-                                            vertical: 14,
-                                          ),
-                                          minimumSize:
-                                              const Size.fromHeight(50),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.mail_outline,
-                                              size: 20,
-                                              color: _googleSignInText,
+                                            side: const BorderSide(
+                                              color: _googleSignInBorder,
+                                              width: 1,
                                             ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              l10n.signInContinueWithEmailLink,
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 28,
+                                              vertical: 14,
+                                            ),
+                                            minimumSize:
+                                                const Size.fromHeight(50),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.phone_outlined,
+                                                size: 20,
                                                 color: _googleSignInText,
-                                                letterSpacing: 0.15,
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: -6,
-                                        right: -6,
-                                        child: _buildAuthBetaPill(l10n),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      OutlinedButton(
-                                        onPressed: _isLoading
-                                            ? null
-                                            : () {
-                                                final redirect =
-                                                    widget.redirectAfterSignIn;
-                                                final route = (redirect !=
-                                                            null &&
-                                                        redirect
-                                                            .trim()
-                                                            .isNotEmpty)
-                                                    ? Uri(
-                                                        path: PhoneSignInPage
-                                                            .routePath,
-                                                        queryParameters: {
-                                                          'redirect': redirect,
-                                                        },
-                                                      ).toString()
-                                                    : PhoneSignInPage.routePath;
-                                                context.push(route);
-                                              },
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          foregroundColor: _googleSignInText,
-                                          disabledForegroundColor:
-                                              _googleSignInText.withValues(
-                                                alpha: 0.55,
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                l10n.signInContinueWithPhone,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: _googleSignInText,
+                                                  letterSpacing: 0.15,
+                                                ),
                                               ),
-                                          side: const BorderSide(
-                                            color: _googleSignInBorder,
-                                            width: 1,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 28,
-                                            vertical: 14,
-                                          ),
-                                          minimumSize:
-                                              const Size.fromHeight(50),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                            ],
                                           ),
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.phone_outlined,
-                                              size: 20,
-                                              color: _googleSignInText,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              l10n.signInContinueWithPhone,
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
-                                                color: _googleSignInText,
-                                                letterSpacing: 0.15,
-                                              ),
-                                            ),
-                                          ],
+                                        Positioned(
+                                          top: -6,
+                                          right: -6,
+                                          child: _buildAuthBetaPill(l10n),
                                         ),
-                                      ),
-                                      Positioned(
-                                        top: -6,
-                                        right: -6,
-                                        child: _buildAuthBetaPill(l10n),
-                                      ),
-                                    ],
-                                  ),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -716,72 +725,58 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               ),
             ),
           ),
-          if (_showAndroidPwaInstallOverlay)
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 460),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              blurRadius: 12,
-                              offset: Offset(0, 4),
-                              color: Color(0x22000000),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
-                          child: Row(
-                            children: [
-                              FaIcon(
-                                FontAwesomeIcons.github,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  l10n.signInAndroidPwaInstallOverlayMessage,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: _openAndroidApkDownload,
-                                tooltip: l10n.accountDownloadApk,
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.download_outlined),
-                              ),
-                              IconButton(
-                                onPressed: _dismissAndroidPwaInstallOverlay,
-                                tooltip: l10n.commonClose,
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(Icons.close),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAndroidPwaInstallGate(AppLocalizations l10n) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 12,
+            offset: Offset(0, 4),
+            color: Color(0x22000000),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+        child: Row(
+          children: [
+            FaIcon(
+              FontAwesomeIcons.github,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                l10n.signInAndroidPwaInstallOverlayMessage,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
-        ],
+            IconButton(
+              onPressed: _openAndroidApkDownload,
+              tooltip: l10n.accountDownloadApk,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.download_outlined),
+            ),
+            IconButton(
+              onPressed: _dismissAndroidPwaInstallOverlay,
+              tooltip: l10n.commonClose,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
       ),
     );
   }
