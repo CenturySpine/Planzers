@@ -502,6 +502,12 @@ abstract class AppLocalizations {
   /// **'BETA'**
   String get signInAuthBetaPill;
 
+  /// No description provided for @signInAndroidPwaInstallOverlayMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour une meilleure expérience sur Android, installe l\'application depuis GitHub.'**
+  String get signInAndroidPwaInstallOverlayMessage;
+
   /// No description provided for @accountTitle.
   ///
   /// In fr, this message translates to:
