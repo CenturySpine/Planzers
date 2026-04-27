@@ -1,0 +1,24 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "fr.centuryspine.planerz",
+      "sha256_cert_fingerprints": [
+        "10:70:8F:F5:14:7A:EB:EB:E8:9D:EF:9B:33:8E:58:A3:A1:27:71:87:FC:11:66:A6:E3:8B:EB:A4:C0:AD:4E:0E",
+        "44:30:81:F9:D9:80:1B:B8:4E:EB:DB:D7:CC:97:1F:09:A8:A0:92:D0:13:0D:6F:94:49:8E:ED:3C:DB:76:7C:D4"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "fr.centuryspine.planerz.preview",
+      "sha256_cert_fingerprints": [
+        "10:70:8F:F5:14:7A:EB:EB:E8:9D:EF:9B:33:8E:58:A3:A1:27:71:87:FC:11:66:A6:E3:8B:EB:A4:C0:AD:4E:0E",
+        "44:30:81:F9:D9:80:1B:B8:4E:EB:DB:D7:CC:97:1F:09:A8:A0:92:D0:13:0D:6F:94:49:8E:ED:3C:DB:76:7C:D4"
+      ]
+    }
+  }
+]
