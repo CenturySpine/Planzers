@@ -37,8 +37,31 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/sign-in',
       builder: (context, state) {
-        final redirect = state.uri.queryParameters['redirect'];
-        return SignInPage(redirectAfterSignIn: redirect);
+        final params = state.uri.queryParameters;
+        final redirect = params['redirect'];
+        // When the route carries Firebase auth params (oobCode), reconstruct a
+        // full URL so Firebase SDK can complete the sign-in on native too.
+        // Uri.base.resolve gives the correct scheme+host on both web and native.
+        final emailLink = params.containsKey('oobCode')
+            ? Uri.base.resolve(state.uri.toString()).toString()
+            : null;
+        return SignInPage(redirectAfterSignIn: redirect, emailLink: emailLink);
+      },
+    ),
+    GoRoute(
+      // Firebase Hosting serves /__/auth/action for email-link sign-in on web
+      // and redirects to the continueUrl. On native, Android App Links deliver
+      // this URL directly to the app, so we mirror that redirect ourselves.
+      path: '/__/auth/action',
+      redirect: (context, state) {
+        final params = state.uri.queryParameters;
+        final continueUrl = params['continueUrl'];
+        final targetPath =
+            continueUrl != null ? Uri.parse(continueUrl).path : '/sign-in';
+        final authParams = Map<String, String>.from(params)
+          ..remove('continueUrl');
+        if (authParams.isEmpty) return targetPath;
+        return Uri(path: targetPath, queryParameters: authParams).toString();
       },
     ),
     GoRoute(

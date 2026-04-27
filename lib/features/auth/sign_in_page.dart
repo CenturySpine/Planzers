@@ -21,9 +21,11 @@ class SignInPage extends ConsumerStatefulWidget {
   const SignInPage({
     super.key,
     this.redirectAfterSignIn,
+    this.emailLink,
   });
 
   final String? redirectAfterSignIn;
+  final String? emailLink;
 
   @override
   ConsumerState<SignInPage> createState() => _SignInPageState();
@@ -142,7 +144,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
   Future<void> _completeEmailLinkSignInIfNeeded() async {
     final repo = ref.read(authRepositoryProvider);
-    final emailLink = Uri.base.toString();
+    final emailLink = widget.emailLink ?? Uri.base.toString();
     if (!repo.isSignInWithEmailLink(emailLink)) {
       return;
     }
