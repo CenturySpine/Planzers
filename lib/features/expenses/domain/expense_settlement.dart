@@ -82,14 +82,13 @@ void applySettledTransfersToBalances({
     bucket[fromUserId] = _roundMoney(fromBalance);
     bucket[toUserId] = _roundMoney(toBalance);
 
+    // Keep zeroed entries so callers can still read explicit settled balances
+    // for participants/currencies after applying settled transfers.
     if (bucket[fromUserId]!.abs() <= _kBalanceEpsilon) {
-      bucket.remove(fromUserId);
+      bucket[fromUserId] = 0;
     }
     if (bucket[toUserId]!.abs() <= _kBalanceEpsilon) {
-      bucket.remove(toUserId);
-    }
-    if (bucket.isEmpty) {
-      balances.remove(currency);
+      bucket[toUserId] = 0;
     }
   }
 }
