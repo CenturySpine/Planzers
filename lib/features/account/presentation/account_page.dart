@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -42,7 +43,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     if (!_didRequestPhotoSync) {
       _didRequestPhotoSync = true;
       Future<void>.microtask(() async {
-        await ref.read(accountRepositoryProvider).syncMyGoogleProfilePhotoToStorage();
+        await ref
+            .read(accountRepositoryProvider)
+            .syncMyGoogleProfilePhotoToStorage();
       });
     }
   }
@@ -291,7 +294,9 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     final l10n = AppLocalizations.of(context)!;
     setState(() => _isUpdatingLanguage = true);
     try {
-      await ref.read(appLocalePreferenceProvider.notifier).setLanguage(language);
+      await ref
+          .read(appLocalePreferenceProvider.notifier)
+          .setLanguage(language);
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -564,8 +569,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                                   _phoneCountryCodeController.text.trim();
                               final phoneNumber =
                                   _phoneNumberController.text.trim();
-                              final hasAnyPhonePart =
-                                  countryCode.isNotEmpty ||
+                              final hasAnyPhonePart = countryCode.isNotEmpty ||
                                   phoneNumber.isNotEmpty;
                               if (!hasAnyPhonePart) {
                                 return null;
@@ -596,8 +600,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                                   _phoneCountryCodeController.text.trim();
                               final phoneNumber =
                                   _phoneNumberController.text.trim();
-                              final hasAnyPhonePart =
-                                  countryCode.isNotEmpty ||
+                              final hasAnyPhonePart = countryCode.isNotEmpty ||
                                   phoneNumber.isNotEmpty;
                               if (!hasAnyPhonePart) {
                                 return null;
@@ -676,7 +679,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       color: currentLanguage == AppLanguage.frFr
                           ? Theme.of(
                               context,
-                            ).colorScheme.primaryContainer.withValues(alpha: 0.75)
+                            )
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.75)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(999),
                       child: InkWell(
@@ -686,14 +692,15 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                             : () => _updatePreferredLanguage(AppLanguage.frFr),
                         child: Tooltip(
                           message: l10n.languageFrench,
-                          child: const Padding(
+                          child: Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: 5,
                               vertical: 2,
                             ),
-                            child: Text(
-                              '🇫🇷',
-                              style: TextStyle(fontSize: 14),
+                            child: SvgPicture.asset(
+                              'assets/images/flag_fr.svg',
+                              width: 18,
+                              height: 18,
                             ),
                           ),
                         ),
@@ -704,7 +711,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       color: currentLanguage == AppLanguage.enUs
                           ? Theme.of(
                               context,
-                            ).colorScheme.primaryContainer.withValues(alpha: 0.75)
+                            )
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.75)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(999),
                       child: InkWell(
@@ -714,14 +724,15 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                             : () => _updatePreferredLanguage(AppLanguage.enUs),
                         child: Tooltip(
                           message: l10n.languageEnglishUs,
-                          child: const Padding(
+                          child: Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: 5,
                               vertical: 2,
                             ),
-                            child: Text(
-                              '🇺🇸',
-                              style: TextStyle(fontSize: 14),
+                            child: SvgPicture.asset(
+                              'assets/images/flag_us.svg',
+                              width: 18,
+                              height: 18,
                             ),
                           ),
                         ),

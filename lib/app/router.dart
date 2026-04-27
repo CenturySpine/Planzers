@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/account/presentation/account_page.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
+import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/auth/sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
@@ -39,6 +40,10 @@ final GoRouter appRouter = GoRouter(
         final redirect = state.uri.queryParameters['redirect'];
         return SignInPage(redirectAfterSignIn: redirect);
       },
+    ),
+    GoRoute(
+      path: EmailLinkSignInPage.routePath,
+      builder: (context, state) => const EmailLinkSignInPage(),
     ),
     GoRoute(
       path: '/invite',

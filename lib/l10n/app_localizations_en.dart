@@ -147,6 +147,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInContinueWithGoogle => 'Continue with Google';
 
   @override
+  String get signInContinueWithEmailLink => 'Continue with email';
+
+  @override
+  String get signInEmailFieldLabel => 'Email';
+
+  @override
+  String get signInSendEmailLinkCta => 'Send sign-in link';
+
+  @override
+  String get signInEmailLinkSent => 'Sign-in link sent by email.';
+
+  @override
+  String get signInEmailLinkSendFailed => 'Unable to send sign-in link.';
+
+  @override
+  String get signInEmailLinkConfirmFailed =>
+      'Unable to complete sign-in from the link.';
+
+  @override
+  String get signInEmailLinkInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailLinkMissingEmail =>
+      'Enter your email here and request a new link.';
+
+  @override
   String get accountTitle => 'My account';
 
   @override
@@ -2123,6 +2149,32 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get signInContinueWithGoogle => 'Continue with Google';
+
+  @override
+  String get signInContinueWithEmailLink => 'Continue with email';
+
+  @override
+  String get signInEmailFieldLabel => 'Email';
+
+  @override
+  String get signInSendEmailLinkCta => 'Send sign-in link';
+
+  @override
+  String get signInEmailLinkSent => 'Sign-in link sent by email.';
+
+  @override
+  String get signInEmailLinkSendFailed => 'Unable to send sign-in link.';
+
+  @override
+  String get signInEmailLinkConfirmFailed =>
+      'Unable to complete sign-in from the link.';
+
+  @override
+  String get signInEmailLinkInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailLinkMissingEmail =>
+      'Enter your email here and request a new link.';
 
   @override
   String get accountTitle => 'My account';

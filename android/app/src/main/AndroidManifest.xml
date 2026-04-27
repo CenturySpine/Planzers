@@ -40,12 +40,24 @@
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
+                    android:host="planerz.web.app"
+                    android:pathPrefix="/sign-in"/>
+                <data
+                    android:scheme="https"
                     android:host="planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
+                    android:host="planerz.centuryspine.org"
+                    android:pathPrefix="/sign-in"/>
+                <data
+                    android:scheme="https"
                     android:host="preview.planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
+                <data
+                    android:scheme="https"
+                    android:host="preview.planerz.centuryspine.org"
+                    android:pathPrefix="/sign-in"/>
             </intent-filter>
         </activity>
         <activity

@@ -10,6 +10,7 @@ import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
+import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -43,6 +44,9 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   void initState() {
     super.initState();
     _scheduleSubtitleStep();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_completeEmailLinkSignInIfNeeded());
+    });
   }
 
   @override
@@ -134,6 +138,61 @@ class _SignInPageState extends ConsumerState<SignInPage> {
         });
       }
     }
+  }
+
+  Future<void> _completeEmailLinkSignInIfNeeded() async {
+    final repo = ref.read(authRepositoryProvider);
+    final emailLink = Uri.base.toString();
+    if (!repo.isSignInWithEmailLink(emailLink)) {
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final email = await repo.consumePendingEmailLinkEmail();
+      if (email == null || email.trim().isEmpty) {
+        if (mounted) {
+          _showInfoSnackBar(l10n.signInEmailLinkMissingEmail);
+        }
+        return;
+      }
+      await repo.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+      if (mounted) {
+        final redirect = widget.redirectAfterSignIn;
+        if (redirect != null && redirect.trim().isNotEmpty) {
+          context.go(redirect);
+        } else {
+          context.go('/trips');
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Email link sign-in completion error: ${e.message ?? e.code}');
+      if (mounted) {
+        _showInfoSnackBar(l10n.signInEmailLinkConfirmFailed);
+      }
+    } catch (e) {
+      debugPrint('Email link sign-in completion error: $e');
+      if (mounted) {
+        _showInfoSnackBar(l10n.signInEmailLinkConfirmFailed);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showInfoSnackBar(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _setLanguage(AppLanguage language) async {
@@ -273,79 +332,130 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                             constraints: const BoxConstraints(maxWidth: 400),
                             child: SizedBox(
                               width: double.infinity,
-                              child: OutlinedButton(
-                                onPressed:
-                                    _isLoading ? null : _signInWithGoogle,
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: _googleSignInText,
-                                  disabledForegroundColor:
-                                      _googleSignInText.withValues(alpha: 0.55),
-                                  side: const BorderSide(
-                                    color: _googleSignInBorder,
-                                    width: 1,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 28,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color:
-                                                  _googleSignInText.withValues(
-                                                alpha: 0.7,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            l10n.signInLoading,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                              color:
-                                                  _googleSignInText.withValues(
-                                                alpha: 0.7,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          SvgPicture.asset(
-                                            'assets/images/google_g.svg',
-                                            width: 20,
-                                            height: 20,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            l10n.signInContinueWithGoogle,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                              color: _googleSignInText,
-                                              letterSpacing: 0.15,
-                                            ),
-                                          ),
-                                        ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  OutlinedButton(
+                                    onPressed:
+                                        _isLoading ? null : _signInWithGoogle,
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: _googleSignInText,
+                                      disabledForegroundColor: _googleSignInText
+                                          .withValues(alpha: 0.55),
+                                      side: const BorderSide(
+                                        color: _googleSignInBorder,
+                                        width: 1,
                                       ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                        vertical: 14,
+                                      ),
+                                      minimumSize: const Size.fromHeight(50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: _isLoading
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: _googleSignInText
+                                                      .withValues(alpha: 0.7),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                l10n.signInLoading,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: _googleSignInText
+                                                      .withValues(alpha: 0.7),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SvgPicture.asset(
+                                                'assets/images/google_g.svg',
+                                                width: 20,
+                                                height: 20,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Text(
+                                                l10n.signInContinueWithGoogle,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: _googleSignInText,
+                                                  letterSpacing: 0.15,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  OutlinedButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () => context.push(
+                                              EmailLinkSignInPage.routePath,
+                                            ),
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: _googleSignInText,
+                                      disabledForegroundColor: _googleSignInText
+                                          .withValues(alpha: 0.55),
+                                      side: const BorderSide(
+                                        color: _googleSignInBorder,
+                                        width: 1,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                        vertical: 14,
+                                      ),
+                                      minimumSize: const Size.fromHeight(50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.mail_outline,
+                                          size: 20,
+                                          color: _googleSignInText,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          l10n.signInContinueWithEmailLink,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            color: _googleSignInText,
+                                            letterSpacing: 0.15,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -364,14 +474,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(999),
                                   onTap: () => _setLanguage(AppLanguage.frFr),
-                                  child: const Padding(
+                                  child: Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 5,
                                       vertical: 2,
                                     ),
-                                    child: Text(
-                                      '🇫🇷',
-                                      style: TextStyle(fontSize: 14),
+                                    child: SvgPicture.asset(
+                                      'assets/images/flag_fr.svg',
+                                      width: 18,
+                                      height: 18,
                                     ),
                                   ),
                                 ),
@@ -388,14 +499,15 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(999),
                                   onTap: () => _setLanguage(AppLanguage.enUs),
-                                  child: const Padding(
+                                  child: Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: 5,
                                       vertical: 2,
                                     ),
-                                    child: Text(
-                                      '🇺🇸',
-                                      style: TextStyle(fontSize: 14),
+                                    child: SvgPicture.asset(
+                                      'assets/images/flag_us.svg',
+                                      width: 18,
+                                      height: 18,
                                     ),
                                   ),
                                 ),

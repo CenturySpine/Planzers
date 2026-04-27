@@ -147,6 +147,33 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signInContinueWithGoogle => 'Continuer avec Google';
 
   @override
+  String get signInContinueWithEmailLink => 'Recevoir lien de connexion';
+
+  @override
+  String get signInEmailFieldLabel => 'E-mail';
+
+  @override
+  String get signInSendEmailLinkCta => 'Recevoir un lien de connexion';
+
+  @override
+  String get signInEmailLinkSent => 'Lien de connexion envoyé par e-mail.';
+
+  @override
+  String get signInEmailLinkSendFailed =>
+      'Impossible d envoyer le lien de connexion.';
+
+  @override
+  String get signInEmailLinkConfirmFailed =>
+      'Impossible de confirmer la connexion avec le lien.';
+
+  @override
+  String get signInEmailLinkInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailLinkMissingEmail =>
+      'Renseigne ton e-mail ici puis redemande un nouveau lien.';
+
+  @override
   String get accountTitle => 'Mon compte';
 
   @override
@@ -2137,6 +2164,33 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get signInContinueWithGoogle => 'Continuer avec Google';
+
+  @override
+  String get signInContinueWithEmailLink => 'Recevoir lien de connexion';
+
+  @override
+  String get signInEmailFieldLabel => 'E-mail';
+
+  @override
+  String get signInSendEmailLinkCta => 'Recevoir un lien de connexion';
+
+  @override
+  String get signInEmailLinkSent => 'Lien de connexion envoyé par e-mail.';
+
+  @override
+  String get signInEmailLinkSendFailed =>
+      'Impossible d envoyer le lien de connexion.';
+
+  @override
+  String get signInEmailLinkConfirmFailed =>
+      'Impossible de confirmer la connexion avec le lien.';
+
+  @override
+  String get signInEmailLinkInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailLinkMissingEmail =>
+      'Renseigne ton e-mail ici puis redemande un nouveau lien.';
 
   @override
   String get accountTitle => 'Mon compte';

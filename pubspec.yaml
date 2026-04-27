@@ -58,6 +58,8 @@ flutter:
     - assets/images/about_7.png
     - assets/images/about_8.png
     - assets/images/google_g.svg
+    - assets/images/flag_fr.svg
+    - assets/images/flag_us.svg
     - assets/images/chef_hat.svg
     - assets/images/hand_meal.svg
     - assets/images/tapas.svg

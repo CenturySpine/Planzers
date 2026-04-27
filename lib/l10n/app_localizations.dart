@@ -358,6 +358,54 @@ abstract class AppLocalizations {
   /// **'Continuer avec Google'**
   String get signInContinueWithGoogle;
 
+  /// No description provided for @signInContinueWithEmailLink.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recevoir lien de connexion'**
+  String get signInContinueWithEmailLink;
+
+  /// No description provided for @signInEmailFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'E-mail'**
+  String get signInEmailFieldLabel;
+
+  /// No description provided for @signInSendEmailLinkCta.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recevoir un lien de connexion'**
+  String get signInSendEmailLinkCta;
+
+  /// No description provided for @signInEmailLinkSent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien de connexion envoyé par e-mail.'**
+  String get signInEmailLinkSent;
+
+  /// No description provided for @signInEmailLinkSendFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d envoyer le lien de connexion.'**
+  String get signInEmailLinkSendFailed;
+
+  /// No description provided for @signInEmailLinkConfirmFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de confirmer la connexion avec le lien.'**
+  String get signInEmailLinkConfirmFailed;
+
+  /// No description provided for @signInEmailLinkInvalidEmail.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse e-mail invalide.'**
+  String get signInEmailLinkInvalidEmail;
+
+  /// No description provided for @signInEmailLinkMissingEmail.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renseigne ton e-mail ici puis redemande un nouveau lien.'**
+  String get signInEmailLinkMissingEmail;
+
   /// No description provided for @accountTitle.
   ///
   /// In fr, this message translates to:
