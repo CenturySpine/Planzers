@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
@@ -28,11 +29,13 @@ Future<void> showTripStayEditDialog({
               ),
             ),
             error: (e, _) => AlertDialog(
-              content: Text('$e'),
+              content: Text(
+                AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('Fermer'),
+                  child: Text(AppLocalizations.of(context)!.commonClose),
                 ),
               ],
             ),
@@ -69,11 +72,10 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!TripMemberStay.isChronological(_value)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La plage de dates est invalide.'),
-        ),
+        SnackBar(content: Text(l10n.tripStayInvalidRange)),
       );
       return;
     }
@@ -82,9 +84,7 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
       trip: widget.trip,
     )) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Les dates doivent rester dans les dates du voyage.'),
-        ),
+        SnackBar(content: Text(l10n.tripStayOutOfTripBounds)),
       );
       return;
     }
@@ -97,12 +97,12 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dates mises à jour')),
+        SnackBar(content: Text(l10n.tripStayUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -113,8 +113,9 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Mes dates sur le voyage'),
+      title: Text(l10n.tripStayDialogTitle),
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
@@ -129,7 +130,7 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
@@ -139,7 +140,7 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Enregistrer'),
+              : Text(l10n.commonSave),
         ),
       ],
     );

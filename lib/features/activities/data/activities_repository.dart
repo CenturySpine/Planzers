@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
 final activitiesRepositoryProvider = Provider<ActivitiesRepository>((ref) {
   return ActivitiesRepository(
@@ -30,30 +32,6 @@ class ActivitiesRepository {
     return firestore.collection('trips').doc(tripId).collection('activities');
   }
 
-  Future<bool> _isTripAdmin(String tripId, String userId) async {
-    final tripSnap = await firestore.collection('trips').doc(tripId).get();
-    final tripData = tripSnap.data() ?? const <String, dynamic>{};
-    final ownerId = (tripData['ownerId'] as String?)?.trim() ?? '';
-    if (ownerId.isNotEmpty && ownerId == userId) return true;
-    final admins = (tripData['adminMemberIds'] as List<dynamic>? ?? const [])
-        .map((e) => e.toString().trim())
-        .where((id) => id.isNotEmpty);
-    return admins.contains(userId);
-  }
-
-  Future<void> _assertCanModifyActivity({
-    required String tripId,
-    required String userId,
-    required Map<String, dynamic> activityData,
-  }) async {
-    final isLocked = activityData['isLocked'] == true;
-    if (!isLocked) return;
-    final isAdmin = await _isTripAdmin(tripId, userId);
-    if (!isAdmin) {
-      throw StateError('Activite verrouillee: modification reservee aux admins');
-    }
-  }
-
   Stream<List<TripActivity>> watchTripActivities(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -73,7 +51,6 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
-    required bool isLocked,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -90,6 +67,19 @@ class ActivitiesRepository {
       throw StateError('Libelle obligatoire');
     }
 
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canSuggest = canSuggestActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canSuggest) {
+      throw StateError('Droits insuffisants pour suggerer une activite');
+    }
+
     await _activitiesCol(cleanTripId).add({
       'label': cleanLabel,
       'category': category.firestoreValue,
@@ -97,7 +87,6 @@ class ActivitiesRepository {
       'address': address.trim(),
       'freeComments': freeComments.trim(),
       'done': false,
-      'isLocked': isLocked,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -125,11 +114,19 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    await _assertCanModifyActivity(
-      tripId: cleanTripId,
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canEdit = canEditActivityForTrip(
+      trip: trip,
       userId: user.uid,
-      activityData: snap.data() ?? const <String, dynamic>{},
     );
+    if (!canEdit) {
+      throw StateError('Droits insuffisants pour modifier une activite');
+    }
 
     await docRef.update({
       'done': done,
@@ -159,11 +156,19 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    await _assertCanModifyActivity(
-      tripId: cleanTripId,
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canPlan = canPlanActivityForTrip(
+      trip: trip,
       userId: user.uid,
-      activityData: snap.data() ?? const <String, dynamic>{},
     );
+    if (!canPlan) {
+      throw StateError('Droits insuffisants pour planifier une activite');
+    }
 
     await docRef.update({
       'plannedAt':
@@ -180,7 +185,6 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
-    required bool isLocked,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -203,11 +207,19 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    await _assertCanModifyActivity(
-      tripId: cleanTripId,
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canEdit = canEditActivityForTrip(
+      trip: trip,
       userId: user.uid,
-      activityData: snap.data() ?? const <String, dynamic>{},
     );
+    if (!canEdit) {
+      throw StateError('Droits insuffisants pour modifier une activite');
+    }
 
     await docRef.update({
       'label': cleanLabel,
@@ -215,9 +227,45 @@ class ActivitiesRepository {
       'linkUrl': linkUrl.trim(),
       'address': address.trim(),
       'freeComments': freeComments.trim(),
-      'isLocked': isLocked,
       'itinerary': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> voteForActivity({
+    required String tripId,
+    required String activityId,
+    required bool vote,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canVote = canSuggestActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canVote) {
+      throw StateError('Droits insuffisants pour voter');
+    }
+
+    final docRef = _activitiesCol(cleanTripId).doc(cleanActivityId);
+    await docRef.update({
+      'votes': vote
+          ? FieldValue.arrayUnion([user.uid])
+          : FieldValue.arrayRemove([user.uid]),
     });
   }
 
@@ -241,11 +289,19 @@ class ActivitiesRepository {
     if (!snap.exists) {
       throw StateError('Activite introuvable');
     }
-    await _assertCanModifyActivity(
-      tripId: cleanTripId,
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canDelete = canDeleteActivityForTrip(
+      trip: trip,
       userId: user.uid,
-      activityData: snap.data() ?? const <String, dynamic>{},
     );
+    if (!canDelete) {
+      throw StateError('Droits insuffisants pour supprimer une activite');
+    }
 
     await docRef.delete();
   }

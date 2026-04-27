@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMealsPage extends ConsumerWidget {
   const TripMealsPage({super.key});
@@ -16,12 +21,19 @@ class TripMealsPage extends ConsumerWidget {
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
     return mealsAsync.when(
-      data: (meals) => _MealsList(tripId: trip.id, meals: meals),
+      data: (meals) => _MealsList(
+        tripId: trip.id,
+        meals: meals,
+        memberPublicLabels: trip.memberPublicLabels,
+      ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Erreur: $e', textAlign: TextAlign.center),
+          child: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -32,10 +44,12 @@ class _MealsList extends StatelessWidget {
   const _MealsList({
     required this.tripId,
     required this.meals,
+    required this.memberPublicLabels,
   });
 
   final String tripId;
   final List<TripMeal> meals;
+  final Map<String, String> memberPublicLabels;
 
   /// Group meals by date key.
   Map<String, List<TripMeal>> _groupMealsByDate() {
@@ -46,7 +60,7 @@ class _MealsList extends StatelessWidget {
     return grouped;
   }
 
-  String _dateKeyToFrenchLabel(String dateKey) {
+  String _dateKeyToLabel(BuildContext context, String dateKey) {
     final dt = TripMeal(
       id: '',
       name: '',
@@ -56,7 +70,9 @@ class _MealsList extends StatelessWidget {
       createdBy: '',
       createdAt: DateTime.now(),
     ).mealDateAsDateTime;
-    final formatter = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
+    final formatter = DateFormat.yMMMMEEEEd(
+      Localizations.localeOf(context).toString(),
+    );
     return formatter.format(dt);
   }
 
@@ -76,12 +92,12 @@ class _MealsList extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Aucun repas',
+                  AppLocalizations.of(context)!.mealsNoMeal,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Appuyez sur + pour planifier un repas.',
+                  AppLocalizations.of(context)!.mealsPressPlusToPlan,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -103,9 +119,10 @@ class _MealsList extends StatelessWidget {
                   final mealsForDate = grouped[dateKey] ?? [];
                   return _MealDateSection(
                     dateKey: dateKey,
-                    dateLabel: _dateKeyToFrenchLabel(dateKey),
+                    dateLabel: _dateKeyToLabel(context, dateKey),
                     meals: mealsForDate,
                     tripId: tripId,
+                    memberPublicLabels: memberPublicLabels,
                   );
                 },
               );
@@ -134,12 +151,14 @@ class _MealDateSection extends StatelessWidget {
     required this.dateLabel,
     required this.meals,
     required this.tripId,
+    required this.memberPublicLabels,
   });
 
   final String dateKey;
   final String dateLabel;
   final List<TripMeal> meals;
   final String tripId;
+  final Map<String, String> memberPublicLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -162,6 +181,7 @@ class _MealDateSection extends StatelessWidget {
           ...meals.map((meal) => _MealCard(
                 tripId: tripId,
                 meal: meal,
+                memberPublicLabels: memberPublicLabels,
               )),
         ],
       ),
@@ -169,17 +189,37 @@ class _MealDateSection extends StatelessWidget {
   }
 }
 
-class _MealCard extends StatelessWidget {
+class _MealCard extends ConsumerWidget {
   const _MealCard({
     required this.tripId,
     required this.meal,
+    required this.memberPublicLabels,
   });
 
   final String tripId;
   final TripMeal meal;
+  final Map<String, String> memberPublicLabels;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final dayPartLabel = _dayPartLabel(context, meal.mealDayPart);
+    final chefId = meal.chefParticipantId?.trim();
+    final hasChef =
+        meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
+    final chefUsersAsync = hasChef
+        ? ref.watch(usersDataByIdsProvider(chefId))
+        : const AsyncValue<Map<String, Map<String, dynamic>>>.data({});
+    final chefUserData = hasChef ? chefUsersAsync.asData?.value[chefId] : null;
+    final chefLabel = hasChef
+        ? resolveTripMemberDisplayLabel(
+            memberId: chefId,
+            userData: chefUserData,
+            tripMemberPublicLabels: memberPublicLabels,
+            emptyFallback: l10n.roleParticipant,
+          )
+        : '';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: InkWell(
@@ -196,22 +236,54 @@ class _MealCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      meal.name.isEmpty ? 'Sans titre' : meal.name,
+                      dayPartLabel,
                       style: Theme.of(context).textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      meal.dayPartLabelFr,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
                   ],
                 ),
               ),
+              const SizedBox(width: 16),
+              if (hasChef) ...[
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      buildProfileBadge(
+                        context: context,
+                        displayLabel: chefLabel,
+                        userData: chefUserData,
+                        size: 24,
+                      ),
+                      Positioned(
+                        top: -3,
+                        right: -3,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          padding: const EdgeInsets.all(1),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: SvgPicture.asset(
+                            'assets/images/chef_hat.svg',
+                            width: 10,
+                            height: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              const SizedBox(width: 12),
+              _MealModeBadge(mealMode: meal.mealMode),
+              const SizedBox(width: 12),
               Badge(
                 label: Text(meal.participantCount.toString()),
                 child: const Icon(Icons.people_outline),
@@ -222,4 +294,37 @@ class _MealCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MealModeBadge extends StatelessWidget {
+  const _MealModeBadge({required this.mealMode});
+
+  final MealMode mealMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = switch (mealMode) {
+      MealMode.cooked => 'assets/images/chef_hat.svg',
+      MealMode.restaurant => 'assets/images/hand_meal.svg',
+      MealMode.potluck => 'assets/images/tapas.svg',
+    };
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: SvgPicture.asset(
+        asset,
+        width: 18,
+        height: 18,
+      ),
+    );
+  }
+}
+
+String _dayPartLabel(BuildContext context, TripDayPart dayPart) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (dayPart) {
+    TripDayPart.morning => l10n.dayPartMorning,
+    TripDayPart.midday => l10n.dayPartMidday,
+    TripDayPart.evening => l10n.dayPartEvening,
+  };
 }

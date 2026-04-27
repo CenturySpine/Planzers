@@ -10,6 +10,7 @@ import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
 /// avant le déploiement des fonctions). Au plus un appel par voyage et par
@@ -82,12 +83,6 @@ class TripShellPage extends ConsumerStatefulWidget {
       selectedIcon: Icons.event_available,
     ),
     _TripNavDestination(
-      branchIndex: 2,
-      label: 'Dépenses',
-      icon: Icons.payments_outlined,
-      selectedIcon: Icons.payments,
-    ),
-    _TripNavDestination(
       branchIndex: 5,
       label: 'Repas',
       icon: Icons.restaurant_outlined,
@@ -107,6 +102,9 @@ class TripShellPage extends ConsumerStatefulWidget {
 
 class _TripShellPageState extends ConsumerState<TripShellPage> {
   String? _lastPrecachingBannerUrl;
+  void _goToOverview() {
+    widget.navigationShell.goBranch(0);
+  }
 
   void _precacheTripBannerIfNeeded(String? rawUrl) {
     final cleanUrl = (rawUrl ?? '').trim();
@@ -121,6 +119,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final tripId = widget.tripId;
     final navigationShell = widget.navigationShell;
     final tripAsync = ref.watch(tripStreamProvider(tripId));
@@ -174,16 +173,26 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           _ => 0,
         };
 
+    String localizedNavLabel(String label) => switch (label) {
+          'Aperçu' => l10n.tripTabOverview,
+          'Messagerie' => l10n.tripTabMessages,
+          'Activités' => l10n.tripTabActivities,
+          'Dépenses' => l10n.tripTabExpenses,
+          'Repas' => l10n.tripTabMeals,
+          'Courses' => l10n.tripTabShopping,
+          _ => label,
+        };
+
     return tripAsync.when(
       data: (trip) {
         if (trip == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Voyage')),
-            body: const Center(
+            appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
+            body: Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Voyage introuvable ou acces refuse.',
+                  l10n.tripNotFoundOrNoAccess,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -191,7 +200,8 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
           );
         }
 
-        final titleForAppBar = trip.title.isEmpty ? 'Voyage' : trip.title;
+        final titleForAppBar =
+            trip.title.isEmpty ? l10n.tripLabelGeneric : trip.title;
         _precacheTripBannerIfNeeded(trip.bannerImageUrl);
 
         _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
@@ -208,19 +218,26 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
               );
               final displayedSelectedIndex =
                   selectedDestinationIndex >= 0 ? selectedDestinationIndex : 0;
-              final isOnTripOverview = navigationShell.currentIndex == 0;
+              final currentPath = GoRouterState.of(context).uri.path;
+              final isOnTripOverview = currentPath.endsWith('/overview');
 
               return Scaffold(
                 appBar: AppBar(
                   automaticallyImplyLeading: false,
-                  title: Text(titleForAppBar),
-                  leading: isOnTripOverview
-                      ? IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () => context.go('/trips'),
-                          tooltip: 'Mes voyages',
-                        )
-                      : _TripAppBarPhotoLeading(imageUrl: trip.bannerImageUrl),
+                  title: GestureDetector(
+                    onTap: isOnTripOverview ? null : _goToOverview,
+                    behavior: HitTestBehavior.opaque,
+                    child: Text(titleForAppBar),
+                  ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => isOnTripOverview
+                        ? context.go('/trips')
+                        : context.go('/trips/$tripId/overview'),
+                    tooltip: isOnTripOverview
+                        ? l10n.tripsMyTrips
+                        : l10n.tripTabOverview,
+                  ),
                   actions: const [
                     AccountAppBarActions(),
                   ],
@@ -256,7 +273,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                                 showBadge: d.label == 'Messagerie' ||
                                     d.label == 'Activités',
                               ),
-                              label: Text(d.label),
+                              label: Text(localizedNavLabel(d.label)),
                             ),
                         ],
                       ),
@@ -287,49 +304,14 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('Voyage')),
+        appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Erreur: $error',
+              l10n.commonErrorWithDetails(error.toString()),
               textAlign: TextAlign.center,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TripAppBarPhotoLeading extends StatelessWidget {
-  const _TripAppBarPhotoLeading({required this.imageUrl});
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final cleanUrl = (imageUrl ?? '').trim();
-    final backgroundColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: backgroundColor),
-            child: cleanUrl.isNotEmpty
-                ? Image.network(
-                    cleanUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.landscape_outlined, size: 18);
-                    },
-                  )
-                : const Icon(Icons.landscape_outlined, size: 18),
           ),
         ),
       ),
@@ -351,8 +333,7 @@ class _TripNavDestination {
   final IconData selectedIcon;
 }
 
-/// Material 3–style bottom destinations in a horizontal scroll view so many
-/// tabs stay usable on narrow phones.
+/// Material 3–style bottom destinations equally distributed across width.
 class _TripMobileScrollableNavBar extends StatelessWidget {
   const _TripMobileScrollableNavBar({
     required this.selectedIndex,
@@ -367,12 +348,10 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
   final Map<String, int> unreadByTabLabel;
 
   static const double _barHeight = 80;
-  static const double _minItemWidth = 80;
-  static const double _horizontalListPadding = 7;
-  static const double _itemSpacing = 3;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final bg = NavigationBarTheme.of(context).backgroundColor ??
         colorScheme.surfaceContainer;
@@ -385,63 +364,72 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
         top: false,
         child: SizedBox(
           height: _barHeight,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding:
-                const EdgeInsets.symmetric(horizontal: _horizontalListPadding),
-            itemCount: destinations.length,
-            separatorBuilder: (_, __) => const SizedBox(width: _itemSpacing),
-            itemBuilder: (context, index) {
-              final d = destinations[index];
-              final selected = selectedIndex == index;
-              return SizedBox(
-                width: _minItemWidth,
-                child: InkWell(
-                  onTap: () => onDestinationSelected(index),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? colorScheme.secondaryContainer
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: _buildNavIcon(
-                          icon: selected ? d.selectedIcon : d.icon,
-                          unreadCount: unreadByTabLabel[d.label] ?? 0,
-                          showBadge:
-                              d.label == 'Messagerie' || d.label == 'Activités',
-                          color: selected
-                              ? colorScheme.onSecondaryContainer
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        d.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: selected
-                                  ? colorScheme.onSurface
-                                  : colorScheme.onSurfaceVariant,
+          child: Row(
+            children: [
+              for (var index = 0; index < destinations.length; index++)
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      final d = destinations[index];
+                      final selected = selectedIndex == index;
+                      return InkWell(
+                        onTap: () => onDestinationSelected(index),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOutCubic,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? colorScheme.secondaryContainer
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: _buildNavIcon(
+                                icon: selected ? d.selectedIcon : d.icon,
+                                unreadCount: unreadByTabLabel[d.label] ?? 0,
+                                showBadge: d.label == 'Messagerie' ||
+                                    d.label == 'Activités',
+                                color: selected
+                                    ? colorScheme.onSecondaryContainer
+                                    : colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                      ),
-                    ],
+                            const SizedBox(height: 4),
+                            Text(
+                              switch (d.label) {
+                                'Aperçu' => l10n.tripTabOverview,
+                                'Messagerie' => l10n.tripTabMessages,
+                                'Activités' => l10n.tripTabActivities,
+                                'Dépenses' => l10n.tripTabExpenses,
+                                'Repas' => l10n.tripTabMeals,
+                                'Courses' => l10n.tripTabShopping,
+                                _ => d.label,
+                              },
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                    color: selected
+                                        ? colorScheme.onSurface
+                                        : colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
-              );
-            },
+            ],
           ),
         ),
       ),
@@ -454,10 +442,11 @@ class TripCarsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
-      title: 'Voitures',
+      title: l10n.tripCarsTitle,
       icon: Icons.directions_car_outlined,
-      message: 'Covoiturage et véhicules. Contenu à venir.',
+      message: l10n.tripCarsComingSoon,
     );
   }
 }
@@ -467,10 +456,11 @@ class TripMealsPlaceholderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
-      title: 'Repas',
+      title: l10n.tripTabMeals,
       icon: Icons.restaurant_outlined,
-      message: 'Planning des repas. Contenu à venir.',
+      message: l10n.tripMealsComingSoon,
     );
   }
 }
@@ -488,8 +478,9 @@ class _TripSectionPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
-    final tripLabel = trip.title.isEmpty ? 'Ce voyage' : trip.title;
+    final tripLabel = trip.title.isEmpty ? l10n.tripThisTrip : trip.title;
 
     return ListView(
       padding: const EdgeInsets.all(24),

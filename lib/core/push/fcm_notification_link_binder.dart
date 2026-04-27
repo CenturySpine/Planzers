@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
 import 'package:planerz/core/notifications/notification_messenger.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Handles foreground FCM messages and deep-link navigation from notifications.
 ///
@@ -103,21 +104,23 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
   Future<void> _showCupidonDialog(RemoteMessage message) async {
     final navContext = appRouter.routerDelegate.navigatorKey.currentContext;
     if (navContext == null) return;
+    final l10n = AppLocalizations.of(navContext)!;
 
-    final tripTitle = _payloadValue(message.data, 'tripTitle') ?? 'Voyage';
+    final tripTitle =
+        _payloadValue(message.data, 'tripTitle') ?? l10n.tripLabelGeneric;
     final otherLabel =
-        _payloadValue(message.data, 'otherLabel') ?? "Quelqu'un";
+        _payloadValue(message.data, 'otherLabel') ?? l10n.cupidonPopupUnknownMember;
     final otherPhotoUrl = _payloadValue(message.data, 'otherPhotoUrl') ?? '';
 
     await showDialog<void>(
       context: navContext,
       useRootNavigator: true,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.favorite, color: Colors.pink),
-            SizedBox(width: 8),
-            Text('Tu as un match'),
+            const Icon(Icons.favorite, color: Colors.pink),
+            const SizedBox(width: 8),
+            Text(l10n.cupidonPopupTitle),
           ],
         ),
         content: Row(
@@ -140,14 +143,14 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Fermer'),
+            child: Text(l10n.commonClose),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               appRouter.push('/account/cupidon');
             },
-            child: const Text('Voir mes matchs'),
+            child: Text(l10n.cupidonPopupViewMatchesAction),
           ),
         ],
       ),

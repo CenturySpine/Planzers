@@ -10,24 +10,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
-import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
-import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_edit_dialog.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -110,15 +110,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isSaving) return;
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
     if (isEndBeforeStart(_editStartDate, _editEndDate)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'La date de fin doit être le même jour ou après la date de début',
+            l10n.tripsCreateValidationDateOrder,
           ),
         ),
       );
@@ -146,12 +147,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       setState(() => _isEditing = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyage mis a jour')),
+        SnackBar(content: Text(l10n.tripOverviewUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur modification: $e')),
+        SnackBar(content: Text(l10n.tripOverviewUpdateError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -161,6 +162,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _shareInviteLink() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_inviteClipboardBusy) return;
     setState(() => _inviteClipboardBusy = true);
     try {
@@ -171,13 +173,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Lien d invitation copie dans le presse-papiers')),
+        SnackBar(content: Text(l10n.tripOverviewInviteLinkCopied)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur partage invitation: $e')),
+        SnackBar(content: Text(l10n.tripOverviewInviteShareError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -187,6 +188,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _copyInviteCode() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_inviteClipboardBusy) return;
     setState(() => _inviteClipboardBusy = true);
     try {
@@ -197,14 +199,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       await Clipboard.setData(ClipboardData(text: token));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Code d invitation copie dans le presse-papiers'),
-        ),
+        SnackBar(content: Text(l10n.tripOverviewInviteCodeCopied)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur copie du code: $e')),
+        SnackBar(content: Text(l10n.tripOverviewInviteCodeCopyError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -213,44 +213,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  void _openParticipantsPage({required bool readOnly}) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TripParticipantsPage(
-          tripId: _trip.id,
-          readOnly: readOnly,
-        ),
-      ),
-    );
+  void _openParticipantsPage() {
+    context.push('/trips/${_trip.id}/participants');
   }
 
-  Future<void> _openTripStayDialog() async {
-    await showTripStayEditDialog(context: context, trip: _trip);
+  void _openAnnouncementsPage() {
+    context.push('/trips/${_trip.id}/announcements');
   }
 
-  Future<void> _toggleMyCupidonMode(bool enabled) async {
-    try {
-      await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
-            tripId: _trip.id,
-            enabled: enabled,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            enabled ? 'Mode Cupidon activé' : 'Mode Cupidon désactivé',
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mode Cupidon: $e')),
-      );
-    }
+  void _openExpensesPage() {
+    context.push('/trips/${_trip.id}/expenses');
+  }
+
+  void _openTripUserPreferencesPage() {
+    context.push('/trips/${_trip.id}/preferences');
   }
 
   Future<void> _pickAndUploadBannerImage() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isBannerBusy) return;
     final colorScheme = Theme.of(context).colorScheme;
     setState(() => _isBannerBusy = true);
@@ -277,7 +257,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         sourcePath: picked.path,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Recadrer la bannière',
+            toolbarTitle: l10n.tripOverviewCropBanner,
             toolbarColor: colorScheme.primary,
             toolbarWidgetColor: Colors.white,
             activeControlsWidgetColor: colorScheme.primary,
@@ -286,7 +266,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             initAspectRatio: CropAspectRatioPreset.ratio16x9,
           ),
           IOSUiSettings(
-            title: 'Recadrer la bannière',
+            title: l10n.tripOverviewCropBanner,
             aspectRatioLockEnabled: false,
             resetAspectRatioEnabled: true,
           ),
@@ -316,12 +296,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo de bannière mise à jour')),
+        SnackBar(content: Text(l10n.tripOverviewBannerUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur photo: $e')),
+        SnackBar(content: Text(l10n.accountPhotoError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -331,20 +311,21 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   }
 
   Future<void> _removeBannerImage() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isBannerBusy) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la photo ?'),
-        content: const Text('La bannière sera retirée du voyage.'),
+        title: Text(l10n.accountRemovePhotoDialogTitle),
+        content: Text(l10n.tripOverviewBannerRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -358,12 +339,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           .removeTripBannerImage(tripId: _trip.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo supprimée')),
+        SnackBar(content: Text(l10n.accountPhotoDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression photo: $e')),
+        SnackBar(content: Text(l10n.accountPhotoDeleteError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -419,10 +400,18 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
+    final announcementsAsync =
+        ref.watch(tripAnnouncementsStreamProvider(_trip.id));
     final activitiesCountersAsync =
         ref.watch(tripNotificationCountersProvider(_trip.id));
+    final announcementsLastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: _trip.id, channel: TripNotificationChannel.announcements),
+      ),
+    );
     final activitiesLastReadAtAsync = ref.watch(
       tripChannelLastReadAtProvider(
         (tripId: _trip.id, channel: TripNotificationChannel.activities),
@@ -435,18 +424,40 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         ? const <String>[]
         : rooms
             .where((room) => room.assignedMemberIds.contains(myUid))
-            .map((room) => room.name.trim().isEmpty ? 'Chambre sans nom' : room.name.trim())
+            .map(
+              (room) =>
+                  room.name.trim().isEmpty ? l10n.roomsUnnamedRoom : room.name.trim(),
+            )
             .toList();
     final roomsDetailLines = myAssignedRoomNames.isEmpty
         ? const <String>[]
         : [
-            myAssignedRoomNames.length == 1 ? 'Ma chambre' : 'Mes chambres',
+            myAssignedRoomNames.length == 1
+                ? l10n.tripOverviewMyRoom
+                : l10n.tripOverviewMyRooms,
             myAssignedRoomNames.join(', '),
           ];
+    final currentRole = resolveTripPermissionRole(
+      trip: _trip,
+      userId: myUid,
+    );
     final canEdit = (myUid != null && myUid == _trip.ownerId);
-    final myCupidonEnabledAsync =
-        ref.watch(myTripCupidonEnabledProvider(_trip.id));
-    final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
+    final canManageBanner = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.manageBannerMinRole,
+    );
+    final canShareAccess = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.shareAccessMinRole,
+    );
+    final canManageTripSettings = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.manageTripSettingsMinRole,
+    );
+    final canEditGeneralInfo = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: _trip.generalPermissions.editGeneralInfoMinRole,
+    );
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
         .doc(_trip.id)
@@ -472,7 +483,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
         final tripDateLabel =
-            formatTripDateRange(_trip.startDate, _trip.endDate);
+            formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
             liveMemberIds
                 .map((id) => id.trim())
@@ -514,6 +525,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 .toList();
             final activitiesCounters = activitiesCountersAsync.asData?.value;
             var unreadActivities = 0;
+            var unreadAnnouncements = 0;
             if (activitiesCounters != null &&
                 activitiesCounters
                     .hasChannel(TripNotificationChannel.activities)) {
@@ -528,6 +540,23 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   if (activity.createdBy == myUid) return false;
                   if (lastReadAt == null) return true;
                   return activity.createdAt.toUtc().isAfter(lastReadAt);
+                }).length;
+              }
+            }
+            if (activitiesCounters != null &&
+                activitiesCounters
+                    .hasChannel(TripNotificationChannel.announcements)) {
+              unreadAnnouncements = activitiesCounters
+                  .unreadFor(TripNotificationChannel.announcements);
+            } else if (myUid != null && myUid.isNotEmpty) {
+              final allAnnouncements = announcementsAsync.asData?.value;
+              final lastReadAt =
+                  announcementsLastReadAtAsync.asData?.value?.toUtc();
+              if (allAnnouncements != null) {
+                unreadAnnouncements = allAnnouncements.where((announcement) {
+                  if (announcement.authorId == myUid) return false;
+                  if (lastReadAt == null) return true;
+                  return announcement.createdAt.toUtc().isAfter(lastReadAt);
                 }).length;
               }
             }
@@ -558,7 +587,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 _TripBanner(
                   imageUrl: liveBannerImageUrl,
                   busy: _isBannerBusy,
-                  onPick: canEdit && liveBannerImageUrl.isEmpty
+                  onPick: canManageBanner && liveBannerImageUrl.isEmpty
                       ? _pickAndUploadBannerImage
                       : null,
                 ),
@@ -585,7 +614,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _trip.title.isEmpty ? 'Sans titre' : _trip.title,
+                              _trip.title.isEmpty
+                                  ? l10n.tripOverviewUntitled
+                                  : _trip.title,
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineSmall
@@ -594,7 +625,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 6),
                             Text(
                               _trip.destination.isEmpty
-                                  ? 'Destination inconnue'
+                                  ? l10n.tripOverviewUnknownDestination
                                   : _trip.destination,
                               style: Theme.of(context)
                                   .textTheme
@@ -622,39 +653,33 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   ),
                                   if (canViewParticipants)
                                     PopupMenuButton<String>(
-                                      tooltip: 'Actions voyage',
+                                      tooltip: l10n.tripOverviewActions,
                                       onSelected: (value) {
                                         if (value == 'participants') {
-                                          _openParticipantsPage(
-                                            readOnly: !canEdit,
-                                          );
+                                          _openParticipantsPage();
                                           return;
                                         }
-                                        if (value == 'stay' && isTripMember) {
-                                          unawaited(_openTripStayDialog());
+                                        if (value == 'preferences' &&
+                                            isTripMember) {
+                                          _openTripUserPreferencesPage();
                                           return;
                                         }
-                                        if (value == 'share' && canEdit) {
+                                        if (value == 'share' && canShareAccess) {
                                           _shareInviteLink();
                                           return;
                                         }
-                                        if (value == 'copyCode' && canEdit) {
+                                        if (value == 'copyCode' && canShareAccess) {
                                           _copyInviteCode();
                                           return;
                                         }
-                                        if (value == 'edit' && canEdit) {
+                                        if (value == 'edit' && canEditGeneralInfo) {
                                           _startEditing();
                                           return;
                                         }
                                         if (value == 'settings' &&
-                                            canViewParticipants) {
+                                            canManageTripSettings) {
                                           context.go('/trips/${_trip.id}/settings');
                                           return;
-                                        }
-                                        if (value == 'cupidon' &&
-                                            isTripMember) {
-                                          _toggleMyCupidonMode(
-                                              !myCupidonEnabled);
                                         }
                                       },
                                       itemBuilder: (context) => [
@@ -665,81 +690,64 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               Icon(Icons
                                                   .assignment_ind_outlined),
                                               SizedBox(width: 10),
-                                              Text('Participants'),
+                                              Text(l10n.tripParticipantsTitle),
                                             ],
                                           ),
                                         ),
                                         if (isTripMember)
-                                          const PopupMenuItem(
-                                            value: 'stay',
+                                          PopupMenuItem(
+                                            value: 'preferences',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.date_range_outlined),
-                                                SizedBox(width: 10),
-                                                Text('Mes dates sur le voyage'),
+                                                const Icon(Icons.tune_outlined),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  l10n.tripUserPreferencesMenuAction,
+                                                ),
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
-                                          const PopupMenuItem(
+                                        if (canShareAccess)
+                                          PopupMenuItem(
                                             value: 'share',
                                             child: Row(
                                               children: [
                                                 Icon(Icons.group_add_outlined),
                                                 SizedBox(width: 10),
-                                                Text('Partager invitation'),
+                                                Text(l10n.tripOverviewShareInvite),
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
-                                          const PopupMenuItem(
+                                        if (canShareAccess)
+                                          PopupMenuItem(
                                             value: 'copyCode',
                                             child: Row(
                                               children: [
                                                 Icon(Icons.vpn_key_outlined),
                                                 SizedBox(width: 10),
-                                                Text('Copier le code'),
+                                                Text(l10n.tripOverviewCopyCode),
                                               ],
                                             ),
                                           ),
-                                        if (canEdit)
-                                          const PopupMenuItem(
+                                        if (canEditGeneralInfo)
+                                          PopupMenuItem(
                                             value: 'edit',
                                             child: Row(
                                               children: [
                                                 Icon(Icons.edit_outlined),
                                                 SizedBox(width: 10),
-                                                Text('Modifier le voyage'),
+                                                Text(l10n.tripOverviewEditTrip),
                                               ],
                                             ),
                                           ),
-                                        if (canViewParticipants)
-                                          const PopupMenuItem(
+                                        if (canManageTripSettings)
+                                          PopupMenuItem(
                                             value: 'settings',
                                             child: Row(
                                               children: [
                                                 Icon(Icons.settings_outlined),
                                                 SizedBox(width: 10),
-                                                Text('Paramètres du voyage'),
-                                              ],
-                                            ),
-                                          ),
-                                        if (isTripMember)
-                                          PopupMenuItem(
-                                            value: 'cupidon',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  myCupidonEnabled
-                                                      ? Icons.favorite
-                                                      : Icons.favorite_border,
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  myCupidonEnabled
-                                                      ? 'Désactiver Cupidon'
-                                                      : 'Activer Cupidon',
-                                                ),
+                                                Text(l10n.tripSettingsTitle),
                                               ],
                                             ),
                                           ),
@@ -763,37 +771,33 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                 children: [
                                   const Spacer(),
                                   PopupMenuButton<String>(
-                                    tooltip: 'Actions voyage',
+                                    tooltip: l10n.tripOverviewActions,
                                     onSelected: (value) {
                                       if (value == 'participants') {
-                                        _openParticipantsPage(
-                                          readOnly: !canEdit,
-                                        );
+                                        _openParticipantsPage();
                                         return;
                                       }
-                                      if (value == 'stay' && isTripMember) {
-                                        unawaited(_openTripStayDialog());
+                                      if (value == 'preferences' &&
+                                          isTripMember) {
+                                        _openTripUserPreferencesPage();
                                         return;
                                       }
-                                      if (value == 'share' && canEdit) {
+                                      if (value == 'share' && canShareAccess) {
                                         _shareInviteLink();
                                         return;
                                       }
-                                      if (value == 'copyCode' && canEdit) {
+                                      if (value == 'copyCode' && canShareAccess) {
                                         _copyInviteCode();
                                         return;
                                       }
-                                      if (value == 'edit' && canEdit) {
+                                      if (value == 'edit' && canEditGeneralInfo) {
                                         _startEditing();
                                         return;
                                       }
                                       if (value == 'settings' &&
-                                          canViewParticipants) {
+                                          canManageTripSettings) {
                                         context.go('/trips/${_trip.id}/settings');
                                         return;
-                                      }
-                                      if (value == 'cupidon' && isTripMember) {
-                                        _toggleMyCupidonMode(!myCupidonEnabled);
                                       }
                                     },
                                     itemBuilder: (context) => [
@@ -803,81 +807,64 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           children: [
                                             Icon(Icons.assignment_ind_outlined),
                                             SizedBox(width: 10),
-                                            Text('Participants'),
+                                            Text(l10n.tripParticipantsTitle),
                                           ],
                                         ),
                                       ),
                                       if (isTripMember)
-                                        const PopupMenuItem(
-                                          value: 'stay',
+                                        PopupMenuItem(
+                                          value: 'preferences',
                                           child: Row(
                                             children: [
-                                              Icon(Icons.date_range_outlined),
-                                              SizedBox(width: 10),
-                                              Text('Mes dates sur le voyage'),
+                                              const Icon(Icons.tune_outlined),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                l10n.tripUserPreferencesMenuAction,
+                                              ),
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
-                                        const PopupMenuItem(
+                                      if (canShareAccess)
+                                        PopupMenuItem(
                                           value: 'share',
                                           child: Row(
                                             children: [
                                               Icon(Icons.group_add_outlined),
                                               SizedBox(width: 10),
-                                              Text('Partager invitation'),
+                                              Text(l10n.tripOverviewShareInvite),
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
-                                        const PopupMenuItem(
+                                      if (canShareAccess)
+                                        PopupMenuItem(
                                           value: 'copyCode',
                                           child: Row(
                                             children: [
                                               Icon(Icons.vpn_key_outlined),
                                               SizedBox(width: 10),
-                                              Text('Copier le code'),
+                                              Text(l10n.tripOverviewCopyCode),
                                             ],
                                           ),
                                         ),
-                                      if (canEdit)
-                                        const PopupMenuItem(
+                                      if (canEditGeneralInfo)
+                                        PopupMenuItem(
                                           value: 'edit',
                                           child: Row(
                                             children: [
                                               Icon(Icons.edit_outlined),
                                               SizedBox(width: 10),
-                                              Text('Modifier le voyage'),
+                                              Text(l10n.tripOverviewEditTrip),
                                             ],
                                           ),
                                         ),
-                                      if (canViewParticipants)
-                                        const PopupMenuItem(
+                                      if (canManageTripSettings)
+                                        PopupMenuItem(
                                           value: 'settings',
                                           child: Row(
                                             children: [
                                               Icon(Icons.settings_outlined),
                                               SizedBox(width: 10),
-                                              Text('Paramètres du voyage'),
-                                            ],
-                                          ),
-                                        ),
-                                      if (isTripMember)
-                                        PopupMenuItem(
-                                          value: 'cupidon',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                myCupidonEnabled
-                                                    ? Icons.favorite
-                                                    : Icons.favorite_border,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                myCupidonEnabled
-                                                    ? 'Désactiver Cupidon'
-                                                    : 'Activer Cupidon',
-                                              ),
+                                              Text(l10n.tripSettingsTitle),
                                             ],
                                           ),
                                         ),
@@ -901,7 +888,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   ),
-                if (canEdit)
+                if (canManageBanner)
                   Positioned(
                     right: 12,
                     top: 12,
@@ -909,7 +896,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(999),
                       child: PopupMenuButton<String>(
-                        tooltip: 'Actions photo',
+                        tooltip: l10n.tripOverviewPhotoActions,
                         enabled: !_isBannerBusy,
                         onSelected: (value) {
                           if (value == 'change') {
@@ -921,14 +908,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           }
                         },
                         itemBuilder: (context) => [
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'change',
-                            child: Text('Changer de photo'),
+                            child: Text(l10n.tripOverviewChangePhoto),
                           ),
                           if (liveBannerImageUrl.isNotEmpty)
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'remove',
-                              child: Text('Supprimer'),
+                              child: Text(l10n.commonDelete),
                             ),
                         ],
                         icon: _isBannerBusy
@@ -948,7 +935,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: _TripOverviewTopSwitch(
+                leftLabel: l10n.tripOverviewTopTabAnnouncements,
+                rightLabel: l10n.tripOverviewTopTabExpenses,
+                leftAlertCount: unreadAnnouncements,
+                onLeftTap: _openAnnouncementsPage,
+                onRightTap: _openExpensesPage,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
                 children: [
                   if (_isEditing) ...[
@@ -959,13 +956,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           TextFormField(
                             controller: _titleController,
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Titre',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.tripsTitleLabel,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Titre obligatoire';
+                                return l10n.tripOverviewTitleRequired;
                               }
                               return null;
                             },
@@ -974,13 +971,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           TextFormField(
                             controller: _destinationController,
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Destination',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.tripsDestinationLabel,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Destination obligatoire';
+                                return l10n.tripOverviewDestinationRequired;
                               }
                               return null;
                             },
@@ -988,9 +985,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           const SizedBox(height: 8),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Date de début'),
+                            title: Text(l10n.tripsStartDateLabel),
                             subtitle:
-                                Text(formatOptionalTripDate(_editStartDate)),
+                                Text(
+                                  formatOptionalTripDate(context, _editStartDate),
+                                ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -1032,9 +1031,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           ),
                           ListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Date de fin'),
+                            title: Text(l10n.tripsEndDateLabel),
                             subtitle:
-                                Text(formatOptionalTripDate(_editEndDate)),
+                                Text(
+                                  formatOptionalTripDate(context, _editEndDate),
+                                ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -1082,20 +1083,20 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           TextFormField(
                             controller: _addressController,
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Adresse',
-                              hintText: '10 Rue de Rivoli, 75001 Paris',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.tripOverviewAddressLabel,
+                              hintText: l10n.tripOverviewAddressHint,
+                              border: const OutlineInputBorder(),
                             ),
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _linkController,
                             textInputAction: TextInputAction.done,
-                            decoration: const InputDecoration(
-                              labelText: 'Lien (Airbnb, Booking, site, ...)',
-                              hintText: 'https://...',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.tripOverviewLinkLabel,
+                              hintText: l10n.tripOverviewLinkHint,
+                              border: const OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.url,
                             validator: (value) {
@@ -1103,11 +1104,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               if (v.isEmpty) return null;
                               final uri = Uri.tryParse(v);
                               if (uri == null || !uri.isAbsolute) {
-                                return 'Lien invalide (ex: https://...)';
+                                return l10n.tripOverviewLinkInvalid;
                               }
                               if (uri.scheme != 'http' &&
                                   uri.scheme != 'https') {
-                                return 'Le lien doit commencer par http(s)://';
+                                return l10n.tripOverviewLinkMustStartWithHttp;
                               }
                               return null;
                             },
@@ -1116,11 +1117,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ] else ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                   ],
-                  if (canEdit && _isEditing)
+                  if (canEditGeneralInfo && _isEditing)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Wrap(
@@ -1130,12 +1131,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         children: [
                           if (_isEditing) ...[
                             IconButton(
-                              tooltip: 'Annuler',
+                              tooltip: l10n.commonCancel,
                               onPressed: _isSaving ? null : _cancelEditing,
                               icon: const Icon(Icons.close),
                             ),
                             IconButton(
-                              tooltip: 'Enregistrer',
+                              tooltip: l10n.commonSave,
                               onPressed: _isSaving ? null : _save,
                               icon: _isSaving
                                   ? const SizedBox(
@@ -1166,7 +1167,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 12),
                           ],
                           _InfoRow(
-                            label: 'Adresse',
+                            label: l10n.tripOverviewAddressLabel,
                             value: _trip.address,
                             actionIcon: Icons.location_on_outlined,
                             onActionPressed: _trip.address.trim().isEmpty
@@ -1175,7 +1176,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       context,
                                       _trip.address,
                                     ),
-                            actionTooltip: 'Ouvrir la localisation',
+                            actionTooltip: l10n.tripOverviewOpenLocation,
                           ),
                         ],
                       ),
@@ -1192,20 +1193,20 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             children: [
                               Expanded(
                                 child: _TripAccessTile(
-                                  label: 'Participants',
+                                  label: l10n.tripOverviewTileParticipants,
                                   icon: Icons.assignment_ind_outlined,
                                   countLabel: '$participantsCount',
                                   backgroundColor: cs.tertiaryContainer,
                                   iconColor: cs.primary,
                                   previewParticipants: participantsPreview,
                                   onTap: () =>
-                                      _openParticipantsPage(readOnly: !canEdit),
+                                      _openParticipantsPage(),
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _TripAccessTile(
-                                  label: 'Activités',
+                                  label: l10n.tripOverviewTileActivities,
                                   icon: Icons.event_note_outlined,
                                   countLabel: '$plannedActivitiesCount',
                                   alertCount: unreadActivities,
@@ -1215,7 +1216,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
                                   emptyStateMessage:
-                                      'Pas d activités prévues aujourd hui',
+                                      l10n.tripOverviewTileNoActivitiesToday,
                                   onTap: () => context.go(
                                     '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
                                   ),
@@ -1228,7 +1229,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             children: [
                               Expanded(
                                 child: _TripAccessTile(
-                                  label: 'Chambres',
+                                  label: l10n.tripOverviewTileRooms,
                                   icon: Icons.bed_outlined,
                                   countLabel: '$roomsCount',
                                   backgroundColor: pz.successContainer,
@@ -1237,7 +1238,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
                                   emphasizedDetailLineIndex: 1,
-                                  emptyStateMessage: 'Aucune chambre attribuée',
+                                  emptyStateMessage:
+                                      l10n.tripOverviewTileNoAssignedRoom,
                                   onTap: () =>
                                       context.go('/trips/${_trip.id}/rooms'),
                                 ),
@@ -1245,14 +1247,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _TripAccessTile(
-                                  label: 'Voitures',
+                                  label: l10n.tripOverviewTileCars,
                                   icon: Icons.directions_car_outlined,
                                   countLabel: '0',
                                   backgroundColor: cs.secondaryContainer,
                                   iconColor: cs.secondary,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
-                                  emptyStateMessage: '[A venir]',
+                                  emptyStateMessage:
+                                      l10n.tripOverviewTileComingSoon,
                                   onTap: () =>
                                       context.go('/trips/${_trip.id}/cars'),
                                 ),
@@ -1386,26 +1389,22 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
   }
 
   Future<void> _confirmAndLeave() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_busy) return;
 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Quitter ce voyage ?'),
-        content: const Text(
-          'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée '
-          'où tu participes, tu seras enlevé des participants : le partage sera '
-          'recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci '
-          'sera supprimée.',
-        ),
+        title: Text(l10n.tripOverviewLeaveTripTitle),
+        content: Text(l10n.tripOverviewLeaveTripDialogBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Quitter'),
+            child: Text(l10n.tripOverviewLeaveAction),
           ),
         ],
       ),
@@ -1435,6 +1434,7 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Card(
@@ -1444,14 +1444,12 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Quitter le voyage',
+              l10n.tripOverviewLeaveTripCardTitle,
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Tu pourras quitter même si les comptes ne sont pas à zéro. '
-              'Tu seras alors retiré automatiquement de toutes les dépenses '
-              'où tu es inclus (les autres voyageurs verront les parts mises à jour).',
+              l10n.tripOverviewLeaveTripCardBody,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1468,7 +1466,7 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Quitter le voyage'),
+                  : Text(l10n.tripOverviewLeaveTripCardTitle),
             ),
           ],
         ),
@@ -1524,6 +1522,125 @@ class _InfoRow extends StatelessWidget {
             splashRadius: 18,
           ),
       ],
+    );
+  }
+}
+
+class _TripOverviewTopSwitch extends StatelessWidget {
+  const _TripOverviewTopSwitch({
+    required this.leftLabel,
+    required this.rightLabel,
+    this.leftAlertCount = 0,
+    required this.onLeftTap,
+    required this.onRightTap,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final int leftAlertCount;
+  final VoidCallback onLeftTap;
+  final VoidCallback onRightTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        );
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          Expanded(
+            child: _TripOverviewTopSwitchItem(
+              label: leftLabel,
+              icon: Icons.campaign_outlined,
+              alertCount: leftAlertCount,
+              color: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
+              borderColor: cs.outlineVariant,
+              textStyle: labelStyle,
+              onTap: onLeftTap,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _TripOverviewTopSwitchItem(
+              label: rightLabel,
+              icon: Icons.payments_outlined,
+              color: cs.secondaryContainer,
+              foregroundColor: cs.onSecondaryContainer,
+              borderColor: cs.outlineVariant,
+              textStyle: labelStyle,
+              onTap: onRightTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripOverviewTopSwitchItem extends StatelessWidget {
+  const _TripOverviewTopSwitchItem({
+    required this.label,
+    required this.icon,
+    this.alertCount = 0,
+    required this.color,
+    required this.foregroundColor,
+    required this.borderColor,
+    required this.textStyle,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final int alertCount;
+  final Color color;
+  final Color foregroundColor;
+  final Color borderColor;
+  final TextStyle? textStyle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      elevation: 0.8,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: borderColor.withValues(alpha: 0.75)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: foregroundColor),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyle?.copyWith(color: foregroundColor),
+                ),
+              ),
+              if (alertCount > 0) ...[
+                const SizedBox(width: 6),
+                Badge.count(
+                  count: alertCount,
+                  child: const SizedBox(width: 10, height: 10),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

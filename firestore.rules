@@ -17,31 +17,263 @@ service cloud.firestore {
         && request.auth.uid in tripDoc(tripId).data.memberIds;
     }
 
-    function isTripMemberAfterWrite(tripId) {
-      return signedIn()
-        && existsAfter(/databases/$(database)/documents/trips/$(tripId))
-        && getAfter(/databases/$(database)/documents/trips/$(tripId))
-          .data.keys().hasAll(['memberIds'])
-        && getAfter(/databases/$(database)/documents/trips/$(tripId))
-          .data.memberIds is list
-        && request.auth.uid in getAfter(
-          /databases/$(database)/documents/trips/$(tripId)
-        ).data.memberIds;
-    }
-
-    function isTripAdmin(tripId) {
-      return isTripMember(tripId)
-        && (
-          tripDoc(tripId).data.ownerId == request.auth.uid
-          || (
+    function tripCallerRoleRank(tripId) {
+      return tripDoc(tripId).data.ownerId == request.auth.uid
+        ? 2
+        : (
             tripDoc(tripId).data.adminMemberIds is list
             && request.auth.uid in tripDoc(tripId).data.adminMemberIds
           )
-        );
+          ? 1
+          : 0;
     }
 
-    function activityLocked(data) {
-      return data.keys().hasAny(['isLocked']) && data.isLocked == true;
+    function roleRank(roleName) {
+      return roleName == 'owner'
+        ? 2
+        : roleName == 'admin'
+          ? 1
+          : 0;
+    }
+
+    function tripEditGeneralInfoMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.editGeneralInfo is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.editGeneralInfo
+        : 'admin';
+    }
+
+    function tripManageBannerMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.manageBanner is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.manageBanner
+        : 'admin';
+    }
+
+    function tripShareAccessMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.shareAccess is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.shareAccess
+        : 'participant';
+    }
+
+    function tripPublishAnnouncementsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.publishAnnouncements is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.publishAnnouncements
+        : 'admin';
+    }
+
+    function canEditTripGeneralInfo(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditGeneralInfoMinRole(tripId));
+    }
+
+    function canManageTripBanner(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripManageBannerMinRole(tripId));
+    }
+
+    function canShareTripAccess(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripShareAccessMinRole(tripId));
+    }
+
+    function canPublishTripAnnouncements(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripPublishAnnouncementsMinRole(tripId));
+    }
+
+    function tripManageTripSettingsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.tripGeneral is map
+          && tripDoc(tripId).data.permissions.tripGeneral.manageTripSettings is string
+        )
+        ? tripDoc(tripId).data.permissions.tripGeneral.manageTripSettings
+        : 'owner';
+    }
+
+    function canManageTripSettings(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripManageTripSettingsMinRole(tripId));
+    }
+
+    function tripExpenseCreatePostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.createExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.createExpensePost
+        : 'participant';
+    }
+
+    function tripExpenseEditPostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.editExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.editExpensePost
+        : 'participant';
+    }
+
+    function tripExpenseDeletePostMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.expenses is map
+          && tripDoc(tripId).data.permissions.expenses.deleteExpensePost is string
+        )
+        ? tripDoc(tripId).data.permissions.expenses.deleteExpensePost
+        : 'participant';
+    }
+
+    function canCreateExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseCreatePostMinRole(tripId));
+    }
+
+    function canEditExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseEditPostMinRole(tripId));
+    }
+
+    function canDeleteExpensePost(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripExpenseDeletePostMinRole(tripId));
+    }
+
+    function tripSuggestActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.suggestActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.suggestActivity
+        : 'participant';
+    }
+
+    function canSuggestActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripSuggestActivityMinRole(tripId));
+    }
+
+    function tripPlanActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.planActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.planActivity
+        : 'admin';
+    }
+
+    function canPlanActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripPlanActivityMinRole(tripId));
+    }
+
+    function tripEditActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.editActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.editActivity
+        : 'participant';
+    }
+
+    function canEditActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditActivityMinRole(tripId));
+    }
+
+    function tripDeleteActivityMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.activities is map
+          && tripDoc(tripId).data.permissions.activities.deleteActivity is string
+        )
+        ? tripDoc(tripId).data.permissions.activities.deleteActivity
+        : 'participant';
+    }
+
+    function canDeleteActivity(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteActivityMinRole(tripId));
+    }
+
+    function tripDeleteCheckedShoppingItemsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.shopping is map
+          && tripDoc(tripId).data.permissions.shopping.deleteCheckedItems is string
+        )
+        ? tripDoc(tripId).data.permissions.shopping.deleteCheckedItems
+        : 'admin';
+    }
+
+    function canDeleteCheckedShoppingItems(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteCheckedShoppingItemsMinRole(tripId));
+    }
+
+    function tripCreateParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.createParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.createParticipant
+        : 'owner';
+    }
+
+    function canCreateTripParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripCreateParticipantMinRole(tripId));
+    }
+
+    function tripEditPlaceholderParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.editPlaceholderParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.editPlaceholderParticipant
+        : 'owner';
+    }
+
+    function canEditTripPlaceholderParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripEditPlaceholderParticipantMinRole(tripId));
+    }
+
+    function tripDeleteRegisteredParticipantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.participants is map
+          && tripDoc(tripId).data.permissions.participants.deleteRegisteredParticipant is string
+        )
+        ? tripDoc(tripId).data.permissions.participants.deleteRegisteredParticipant
+        : 'owner';
+    }
+
+    function canDeleteTripRegisteredParticipant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripDeleteRegisteredParticipantMinRole(tripId));
     }
 
     function canReadTrip(data) {
@@ -89,6 +321,52 @@ service cloud.firestore {
       allow update: if signedIn() && (
         resource.data.ownerId == request.auth.uid ||
         (
+          canManageTripBanner(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'bannerImageUrl',
+            'bannerImagePath',
+            'bannerUpdatedAt',
+          ])
+        ) ||
+        (
+          canShareTripAccess(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'inviteToken',
+          ])
+        ) ||
+        (
+          canEditTripGeneralInfo(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title',
+            'destination',
+            'address',
+            'linkUrl',
+            'startDate',
+            'endDate',
+          ])
+        ) ||
+        (
+          canCreateTripParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberIds',
+            'memberPublicLabels',
+          ])
+        ) ||
+        (
+          canEditTripPlaceholderParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberPublicLabels',
+          ])
+        ) ||
+        (
+          canDeleteTripRegisteredParticipant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'memberIds',
+            'memberPublicLabels',
+            'adminMemberIds',
+          ])
+        ) ||
+        (
           request.auth.uid in resource.data.memberIds &&
           (
             request.resource.data.diff(resource.data).affectedKeys()
@@ -103,6 +381,12 @@ service cloud.firestore {
                 .hasOnly([request.auth.uid])
             )
           )
+        ) ||
+        (
+          canManageTripSettings(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'permissions',
+          ])
         )
       );
 
@@ -110,8 +394,17 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
 
       match /expenseGroups/{groupId} {
-        allow read, update, delete: if isTripMember(tripId);
-        allow create: if isTripMember(tripId) || isTripMemberAfterWrite(tripId);
+        allow read: if isTripMember(tripId);
+        allow create: if canCreateExpensePost(tripId)
+          && request.auth.uid in request.resource.data.visibleToMemberIds
+          && request.resource.data.visibleToMemberIds is list;
+        allow update: if canEditExpensePost(tripId)
+          && request.auth.uid in resource.data.visibleToMemberIds
+          && resource.data.visibleToMemberIds is list
+          && request.resource.data.visibleToMemberIds is list;
+        allow delete: if canDeleteExpensePost(tripId)
+          && request.auth.uid in resource.data.visibleToMemberIds
+          && resource.data.visibleToMemberIds is list;
       }
 
       match /expenses/{expenseId} {
@@ -128,16 +421,31 @@ service cloud.firestore {
 
       match /activities/{activityId} {
         allow read: if isTripMember(tripId);
-        allow create: if isTripMember(tripId);
-        allow update, delete: if isTripMember(tripId)
-          && (
-            !activityLocked(resource.data)
-            || isTripAdmin(tripId)
-          );
+        allow create: if canSuggestActivity(tripId);
+        allow update: if (
+          canPlanActivity(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['plannedAt', 'updatedAt'])
+        ) || (
+          canEditActivity(tripId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['plannedAt', 'votes'])
+        ) || (
+          canSuggestActivity(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['votes'])
+          && request.resource.data.votes is list
+        );
+        allow delete: if canDeleteActivity(tripId);
       }
 
       match /shoppingItems/{itemId} {
-        allow read, write: if isTripMember(tripId);
+        allow read, create, update: if isTripMember(tripId);
+        allow delete: if isTripMember(tripId)
+          && (
+            !(resource.data.checked is bool && resource.data.checked)
+            || canDeleteCheckedShoppingItems(tripId)
+          );
       }
 
       match /meals/{mealId} {
@@ -191,6 +499,12 @@ service cloud.firestore {
           allow delete: if isTripMember(tripId)
             && userId == request.auth.uid;
         }
+      }
+
+      match /announcements/{announcementId} {
+        allow read: if isTripMember(tripId);
+        allow create: if canPublishTripAnnouncements(tripId);
+        allow update, delete: if canPublishTripAnnouncements(tripId);
       }
 
       match /notificationReads/{userId} {

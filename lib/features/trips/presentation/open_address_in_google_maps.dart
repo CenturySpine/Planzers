@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Opens [address] in Google Maps search (same behaviour as trip overview).
@@ -25,7 +26,7 @@ Future<void> openAddressInGoogleMaps(
 
   if (!didLaunch && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Impossible d\'ouvrir la localisation')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.locationOpenImpossible)),
     );
   }
 }

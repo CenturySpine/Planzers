@@ -40,12 +40,40 @@
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
+                    android:host="planerz.web.app"
+                    android:pathPrefix="/sign-in"/>
+                <data
+                    android:scheme="https"
                     android:host="planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
                 <data
                     android:scheme="https"
+                    android:host="planerz.centuryspine.org"
+                    android:pathPrefix="/sign-in"/>
+                <data
+                    android:scheme="https"
+                    android:host="planerz.centuryspine.org"
+                    android:pathPrefix="/__/auth/action"/>
+                <data
+                    android:scheme="https"
                     android:host="preview.planerz.centuryspine.org"
                     android:pathPrefix="/invite"/>
+                <data
+                    android:scheme="https"
+                    android:host="preview.planerz.centuryspine.org"
+                    android:pathPrefix="/sign-in"/>
+                <data
+                    android:scheme="https"
+                    android:host="preview.planerz.centuryspine.org"
+                    android:pathPrefix="/__/auth/action"/>
+                <data
+                    android:scheme="https"
+                    android:host="planerz-preview.firebaseapp.com"
+                    android:pathPrefix="/__/auth/action"/>
+                <data
+                    android:scheme="https"
+                    android:host="planerz-preview.web.app"
+                    android:pathPrefix="/__/auth/action"/>
             </intent-filter>
         </activity>
         <activity

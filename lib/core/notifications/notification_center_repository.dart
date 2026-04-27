@@ -71,7 +71,8 @@ class TripNotificationCounters {
   /// Cupidon is profile-only; [total] may still include legacy cupidon values.
   int get tripShellUnreadTotal =>
       unreadFor(TripNotificationChannel.messages) +
-      unreadFor(TripNotificationChannel.activities);
+      unreadFor(TripNotificationChannel.activities) +
+      unreadFor(TripNotificationChannel.announcements);
 
   bool hasChannel(TripNotificationChannel channel) => channels.containsKey(channel);
 
@@ -202,9 +203,9 @@ class NotificationCenterRepository {
     required String tripId,
   }) async {
     final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      return;
-    }
+    if (cleanTripId.isEmpty) return;
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) return;
     await _myTripPresenceDoc(cleanTripId).delete();
   }
 
@@ -352,12 +353,14 @@ class NotificationCenterRepository {
     final channelCollection = switch (channel) {
       TripNotificationChannel.messages => 'messages',
       TripNotificationChannel.activities => 'activities',
+      TripNotificationChannel.announcements => 'announcements',
       TripNotificationChannel.cupidon =>
         throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
     };
     final actorField = switch (channel) {
       TripNotificationChannel.messages => 'authorId',
       TripNotificationChannel.activities => 'createdBy',
+      TripNotificationChannel.announcements => 'authorId',
       TripNotificationChannel.cupidon =>
         throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
     };

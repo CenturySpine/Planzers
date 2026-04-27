@@ -6,6 +6,7 @@ import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class CupidonSpacePage extends ConsumerStatefulWidget {
   const CupidonSpacePage({super.key});
@@ -37,6 +38,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
   }
 
   Future<void> _updateDefaultCupidonEnabled(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_updatingDefault) return;
     setState(() => _updatingDefault = true);
     try {
@@ -50,8 +52,8 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
           SnackBar(
             content: Text(
               enabled
-                  ? 'Mode Cupidon activé par défaut'
-                  : 'Mode Cupidon désactivé par défaut',
+                  ? l10n.cupidonDefaultEnabled
+                  : l10n.cupidonDefaultDisabled,
             ),
             duration: const Duration(milliseconds: 1100),
           ),
@@ -59,7 +61,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur mise à jour préférence: $e')),
+        SnackBar(content: Text(l10n.accountPreferenceUpdateError(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _updatingDefault = false);
@@ -67,23 +69,24 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
   }
 
   Future<void> _confirmAndDeleteMatch(CupidonMatchEntry match) async {
+    final l10n = AppLocalizations.of(context)!;
     final cleanId = match.matchId.trim();
     if (cleanId.isEmpty || _deletingMatchIds.contains(cleanId)) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer ce match ?'),
+        title: Text(l10n.cupidonDeleteMatchTitle),
         content: Text(
-          'Ce match avec ${match.otherMemberLabel} (voyage "${match.tripTitle}") sera retiré de ton historique.',
+          l10n.cupidonDeleteMatchBody(match.otherMemberLabel, match.tripTitle),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -97,7 +100,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression: $e')),
+        SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _deletingMatchIds.remove(cleanId));
@@ -106,11 +109,12 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final defaultCupidonAsync = ref.watch(cupidonEnabledByDefaultProvider);
     final matchesAsync = ref.watch(myCupidonMatchesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Espace Cupidon')),
+      appBar: AppBar(title: Text(l10n.accountCupidonSpace)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -123,32 +127,33 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
                   value: enabled,
                   onChanged:
                       _updatingDefault ? null : _updateDefaultCupidonEnabled,
-                  title: const Text('Activer Cupidon par défaut'),
-                  subtitle: const Text(
-                    'Quand tu rejoins un nouveau voyage, cette valeur est préremplie.',
+                  title: Text(l10n.cupidonEnableByDefaultTitle),
+                  subtitle: Text(
+                    l10n.cupidonEnableByDefaultSubtitle,
                   ),
                 ),
                 loading: () => const SizedBox(
                   height: 70,
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (e, _) => Text('Erreur chargement préférence: $e'),
+                error: (e, _) =>
+                    Text(l10n.cupidonPreferenceLoadError(e.toString())),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Mes matchs',
+            l10n.cupidonMyMatches,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           matchesAsync.when(
             data: (matches) {
               if (matches.isEmpty) {
-                return const Card(
+                return Card(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Aucun match enregistré pour le moment.'),
+                    padding: const EdgeInsets.all(16),
+                    child: Text(l10n.cupidonNoMatches),
                   ),
                 );
               }
@@ -168,7 +173,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
                           '${match.tripTitle} · ${_formatMatchDate(match.createdAt)}',
                         ),
                         trailing: IconButton(
-                          tooltip: 'Supprimer ce match',
+                          tooltip: l10n.cupidonDeleteMatchTooltip,
                           onPressed: isDeleting
                               ? null
                               : () => _confirmAndDeleteMatch(match),
@@ -194,7 +199,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
             error: (e, _) => Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Erreur chargement matchs: $e'),
+                child: Text(l10n.cupidonMatchesLoadError(e.toString())),
               ),
             ),
           ),

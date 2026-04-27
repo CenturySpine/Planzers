@@ -12,7 +12,10 @@ import 'package:planerz/features/expenses/data/expenses_repository.dart';
 import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_sheet.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Trip members who may appear as payers/participants for this expense post.
 List<String> participantScopeMemberIdsForGroup(
@@ -69,6 +72,22 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final settledTransfersAsync =
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
+    final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final canCreateExpense = groupsAsync.maybeWhen(
+      data: (groups) {
+        final visibleGroups = groups
+            .where((group) => group.isVisibleTo(viewerId))
+            .toList();
+        return visibleGroups.any(
+          (group) => canCreateExpenseForTrip(
+            trip: trip,
+            userId: viewerId,
+            expensePostVisibleToMemberIds: group.visibleToMemberIds,
+          ),
+        );
+      },
+      orElse: () => false,
+    );
 
     return Scaffold(
       body: groupsAsync.when(
@@ -76,7 +95,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           data: (expenses) => settledTransfersAsync.when(
             data: (settledTransfers) {
               return _TripExpensesBody(
-                tripId: trip.id,
+                trip: trip,
                 memberIds: trip.memberIds,
                 memberPublicLabels: trip.memberPublicLabels,
                 groups: groups,
@@ -87,21 +106,29 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                   if (_activeGroupId == groupId) return;
                   setState(() => _activeGroupId = groupId);
                 },
-                onCreateExpensePost: () => _openExpenseGroupEditor(
-                  context,
-                  ref,
-                  trip.id,
-                  trip.memberIds,
-                  trip.memberPublicLabels,
-                  existing: null,
-                ),
+                onCreateExpensePost: canCreateExpensePostForTrip(
+                  trip: trip,
+                  userId: viewerId,
+                )
+                    ? () => _openExpenseGroupEditor(
+                          context,
+                          ref,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          existing: null,
+                        )
+                    : null,
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Erreur: $e', textAlign: TextAlign.center),
+                child: Text(
+                  AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ),
@@ -109,7 +136,10 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           error: (e, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text('Erreur: $e', textAlign: TextAlign.center),
+              child: Text(
+                AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -117,23 +147,28 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Erreur: $e', textAlign: TextAlign.center),
+            child: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'trip_expenses_add',
-        tooltip: 'Ajouter une dépense',
-        onPressed: () => _openAddExpenseSheetFromFab(
-          context,
-          ref,
-          trip.id,
-          trip.memberIds,
-          trip.memberPublicLabels,
-          _activeGroupId,
-        ),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canCreateExpense
+          ? FloatingActionButton(
+              heroTag: 'trip_expenses_add',
+              tooltip: AppLocalizations.of(context)!.expensesAddExpenseTooltip,
+              onPressed: () => _openAddExpenseSheetFromFab(
+                context,
+                ref,
+                trip.id,
+                trip.memberIds,
+                trip.memberPublicLabels,
+                _activeGroupId,
+              ),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
@@ -174,9 +209,9 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     if (!context.mounted) return;
     if (visible.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            "Crée d'abord un poste de dépenses (icône dossier dans l'en-tête).",
+            AppLocalizations.of(context)!.expensesCreatePostFirst,
           ),
         ),
       );
@@ -234,7 +269,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
 
 class _TripExpensesBody extends StatelessWidget {
   const _TripExpensesBody({
-    required this.tripId,
+    required this.trip,
     required this.memberIds,
     required this.memberPublicLabels,
     required this.groups,
@@ -245,7 +280,7 @@ class _TripExpensesBody extends StatelessWidget {
     required this.onCreateExpensePost,
   });
 
-  final String tripId;
+  final Trip trip;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
   final List<TripExpenseGroup> groups;
@@ -253,7 +288,7 @@ class _TripExpensesBody extends StatelessWidget {
   final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
-  final VoidCallback onCreateExpensePost;
+  final VoidCallback? onCreateExpensePost;
 
   @override
   Widget build(BuildContext context) {
@@ -279,6 +314,7 @@ class _TripExpensesBody extends StatelessWidget {
         visibleGroups,
         viewerId,
         memberPublicLabels,
+        trip,
         onCreateExpensePost,
       );
     }
@@ -294,7 +330,7 @@ class _TripExpensesBody extends StatelessWidget {
           cleanMemberIds,
           tripMemberPublicLabels: memberPublicLabels,
           currentUserId: FirebaseAuth.instance.currentUser?.uid,
-          emptyFallback: 'Voyageur',
+          emptyFallback: AppLocalizations.of(context)!.tripParticipantsTraveler,
         );
 
         return _buildScrollView(
@@ -303,6 +339,7 @@ class _TripExpensesBody extends StatelessWidget {
           visibleGroups,
           viewerId,
           memberPublicLabels,
+          trip,
           onCreateExpensePost,
         );
       },
@@ -315,9 +352,11 @@ class _TripExpensesBody extends StatelessWidget {
     List<TripExpenseGroup> visibleGroups,
     String? viewerId,
     Map<String, String> memberPublicLabels,
-    VoidCallback onCreateExpensePost,
+    Trip trip,
+    VoidCallback? onCreateExpensePost,
   ) {
     final cs = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Container(
@@ -335,20 +374,27 @@ class _TripExpensesBody extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  'Postes de dépenses',
+                  l10n.expensesPostsTitle,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: cs.onInverseSurface,
                       ),
                 ),
               ),
-              IconButton(
-                tooltip: 'Nouveau poste',
-                icon: Icon(
-                  Icons.create_new_folder_outlined,
-                  color: cs.onInverseSurface,
+              if (onCreateExpensePost != null)
+                IconButton(
+                  tooltip: l10n.expenseGroupNewTitle,
+                  icon: Icon(
+                    Icons.create_new_folder_outlined,
+                    color: cs.onInverseSurface,
+                  ),
+                  onPressed: onCreateExpensePost,
+                )
+              else
+                // Même emprise qu’un IconButton (hauteur du cartouche inchangée).
+                const SizedBox(
+                  width: kMinInteractiveDimension,
+                  height: kMinInteractiveDimension,
                 ),
-                onPressed: onCreateExpensePost,
-              ),
             ],
           ),
         ),
@@ -365,7 +411,7 @@ class _TripExpensesBody extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Aucun poste de dépenses pour l'instant. Utilise l'icône dossier en haut pour en créer un.",
+                    l10n.expensesNoPostYet,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: cs.onSurfaceVariant,
@@ -380,7 +426,7 @@ class _TripExpensesBody extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                child: _ExpensePostPanel(
-                 tripId: tripId,
+                 trip: trip,
                  group: visibleGroups.single,
                  allTripExpenses: expenses,
                  groupExpenses: expenses
@@ -399,7 +445,7 @@ class _TripExpensesBody extends StatelessWidget {
         else
           Expanded(
             child: _ExpensePostsTabbedView(
-              tripId: tripId,
+              trip: trip,
               groups: visibleGroups,
                expenses: expenses,
                settledTransfers: settledTransfers,
@@ -418,7 +464,7 @@ class _TripExpensesBody extends StatelessWidget {
 
 class _ExpensePostsTabbedView extends StatefulWidget {
   const _ExpensePostsTabbedView({
-    required this.tripId,
+    required this.trip,
     required this.groups,
     required this.expenses,
     required this.settledTransfers,
@@ -430,7 +476,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.onActiveGroupChanged,
   });
 
-  final String tripId;
+  final Trip trip;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final List<SettledTransfer> settledTransfers;
@@ -519,7 +565,11 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
           isScrollable: true,
           tabs: [
             for (final group in widget.groups)
-              Tab(text: group.title.isEmpty ? 'Sans titre' : group.title),
+              Tab(
+                text: group.title.isEmpty
+                    ? AppLocalizations.of(context)!.activitiesUntitled
+                    : group.title,
+              ),
           ],
         ),
         Expanded(
@@ -530,7 +580,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                 SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                    child: _ExpensePostPanel(
-                     tripId: widget.tripId,
+                     trip: widget.trip,
                      group: group,
                       allTripExpenses: widget.expenses,
                       groupExpenses:
@@ -554,7 +604,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
 
 class _ExpensePostPanel extends ConsumerStatefulWidget {
   const _ExpensePostPanel({
-    required this.tripId,
+    required this.trip,
     required this.group,
     required this.allTripExpenses,
     required this.groupExpenses,
@@ -565,7 +615,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.viewerUserId,
   });
 
-  final String tripId;
+  final Trip trip;
   final TripExpenseGroup group;
   final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
@@ -589,19 +639,22 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer ce poste ?'),
+        title: Text(AppLocalizations.of(context)!.expensesDeletePostTitle),
         content: Text(
-          'Le poste « ${widget.group.title.isEmpty ? 'Sans titre' : widget.group.title} » '
-          'et toutes ses opérations seront supprimés.',
+          AppLocalizations.of(context)!.expensesDeletePostBody(
+            widget.group.title.isEmpty
+                ? AppLocalizations.of(context)!.activitiesUntitled
+                : widget.group.title,
+          ),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.commonDelete),
           ),
         ],
       ),
@@ -611,17 +664,21 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     setState(() => _deletingPost = true);
     try {
       await ref.read(expensesRepositoryProvider).deleteExpenseGroup(
-            tripId: widget.tripId,
+            tripId: widget.trip.id,
             groupId: widget.group.id,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Poste supprimé')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesPostDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _deletingPost = false);
@@ -630,6 +687,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final viewerUserId = widget.viewerUserId?.trim();
     final settlement = computeViewerSettlement(
       widget.groupExpenses,
@@ -651,6 +709,27 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       widget.memberIds,
     );
 
+    final canEditPost = canEditExpensePostForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+    final canDeletePost = canDeleteExpensePostForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+    final canEditExpense = canEditExpenseForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+    final canDeleteExpense = canDeleteExpenseForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -662,16 +741,16 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             alignment: Alignment.center,
             children: [
               SegmentedButton<_ExpensePostView>(
-                segments: const [
+                segments: [
                   ButtonSegment<_ExpensePostView>(
                     value: _ExpensePostView.operations,
-                    label: Text('Dépenses'),
-                    icon: Icon(Icons.receipt_long_outlined),
+                    label: Text(l10n.tripSectionExpenses),
+                    icon: const Icon(Icons.receipt_long_outlined),
                   ),
                   ButtonSegment<_ExpensePostView>(
                     value: _ExpensePostView.settlement,
-                    label: Text('Équilibres'),
-                    icon: Icon(Icons.balance_outlined),
+                    label: Text(l10n.expensesBalancesTab),
+                    icon: const Icon(Icons.balance_outlined),
                   ),
                 ],
                 selected: {_activeView},
@@ -679,93 +758,75 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   if (selection.isEmpty) return;
                   setState(() => _activeView = selection.first);
                 },
-                style: ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  side: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return BorderSide(color: colorScheme.secondary, width: 1.2);
-                    }
-                    return BorderSide(color: colorScheme.outlineVariant);
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return colorScheme.onSecondaryContainer;
-                    }
-                    return colorScheme.onSurfaceVariant;
-                  }),
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    final colorScheme = Theme.of(context).colorScheme;
-                    if (states.contains(WidgetState.selected)) {
-                      return colorScheme.secondaryContainer;
-                    }
-                    return Colors.transparent;
-                  }),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
               ),
-              Positioned(
-                right: -6,
-                child: PopupMenuButton<_ExpensePostMenuAction>(
-                  tooltip: 'Actions du poste',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
-                  ),
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (action) async {
-                    if (action == _ExpensePostMenuAction.edit) {
-                      await _TripExpensesPageState._openExpenseGroupEditor(
-                        context,
-                        ref,
-                        widget.tripId,
-                        widget.memberIds,
-                        widget.memberPublicLabels,
-                        existing: widget.group,
-                      );
-                      return;
-                    }
-                    await _confirmDeletePost();
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem<_ExpensePostMenuAction>(
-                      value: _ExpensePostMenuAction.edit,
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 10),
-                          Text('Modifier'),
-                        ],
-                      ),
+              if (canEditPost || canDeletePost)
+                Positioned(
+                  right: -6,
+                  child: PopupMenuButton<_ExpensePostMenuAction>(
+                    tooltip: l10n.tripOverviewActions,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
                     ),
-                    PopupMenuItem<_ExpensePostMenuAction>(
-                      value: _ExpensePostMenuAction.delete,
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Supprimer',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (action) async {
+                      if (action == _ExpensePostMenuAction.edit) {
+                        await _TripExpensesPageState._openExpenseGroupEditor(
+                          context,
+                          ref,
+                          widget.trip.id,
+                          widget.memberIds,
+                          widget.memberPublicLabels,
+                          existing: widget.group,
+                        );
+                        return;
+                      }
+                      await _confirmDeletePost();
+                    },
+                    itemBuilder: (context) {
+                      final items = <PopupMenuEntry<_ExpensePostMenuAction>>[];
+                      if (canEditPost) {
+                        items.add(
+                          PopupMenuItem<_ExpensePostMenuAction>(
+                            value: _ExpensePostMenuAction.edit,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.edit_outlined, size: 18),
+                                const SizedBox(width: 10),
+                                Text(l10n.commonEdit),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        );
+                      }
+                      if (canDeletePost) {
+                        items.add(
+                          PopupMenuItem<_ExpensePostMenuAction>(
+                            value: _ExpensePostMenuAction.delete,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  l10n.commonDelete,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return items;
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -786,14 +847,20 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               setState(() => _savingSettledTransfer = true);
               try {
                 await ref.read(expensesRepositoryProvider).markTransferAsSettled(
-                      tripId: widget.tripId,
+                      tripId: widget.trip.id,
                       groupId: widget.group.id,
                       transfer: transfer,
                     );
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: $e')),
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context)!.commonErrorWithDetails(
+                        e.toString(),
+                      ),
+                    ),
+                  ),
                 );
               } finally {
                 if (mounted) {
@@ -806,13 +873,19 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               setState(() => _savingSettledTransfer = true);
               try {
                 await ref.read(expensesRepositoryProvider).deleteSettledTransfer(
-                      tripId: widget.tripId,
+                      tripId: widget.trip.id,
                       settledTransferId: settled.id,
                     );
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: $e')),
+                  SnackBar(
+                    content: Text(
+                      AppLocalizations.of(context)!.commonErrorWithDetails(
+                        e.toString(),
+                      ),
+                    ),
+                  ),
                 );
               } finally {
                 if (mounted) {
@@ -845,7 +918,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Aucune opération dans ce poste.',
+                        l10n.expensesNoOperationInPost,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context)
@@ -860,9 +933,11 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                 ..._buildExpensesGroupedByDate(
                   context,
                   widget.groupExpenses,
-                  widget.tripId,
+                  widget.trip.id,
                   scope,
                   widget.memberLabels,
+                  canEditExpense: canEditExpense,
+                  canDeleteExpense: canDeleteExpense,
                 ),
             ],
           ),
@@ -921,23 +996,24 @@ String _formatSuggestedTransferLine({
   required SuggestedTransfer transfer,
   required Map<String, String> memberLabels,
   required String? viewerUserId,
+  required AppLocalizations l10n,
 }) {
   final v = viewerUserId?.trim();
   final fromId = transfer.fromUserId.trim();
   final toId = transfer.toUserId.trim();
-  final fromL = memberLabels[fromId] ?? 'Voyageur';
-  final toL = memberLabels[toId] ?? 'Voyageur';
+  final fromL = memberLabels[fromId] ?? l10n.tripParticipantsTraveler;
+  final toL = memberLabels[toId] ?? l10n.tripParticipantsTraveler;
   final amt = _formatMoney(transfer.currency, transfer.amount);
 
   if (v != null && v.isNotEmpty) {
     if (fromId == v) {
-      return 'Tu dois $amt à $toL';
+      return l10n.expensesYouOwe(amt, toL);
     }
     if (toId == v) {
-      return '$fromL te doit $amt';
+      return l10n.expensesOwesYou(fromL, amt);
     }
   }
-  return '$fromL donne $amt à $toL';
+  return l10n.expensesGivesTo(fromL, amt, toL);
 }
 
 enum _ExpenseDetailsMenuAction { edit, delete }
@@ -954,6 +1030,7 @@ class _ExpenseTotalsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: cs.onSurfaceVariant,
@@ -974,7 +1051,7 @@ class _ExpenseTotalsHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Mes dépenses totales', style: labelStyle),
+                Text(l10n.expensesMyTotalSpend, style: labelStyle),
                 const SizedBox(height: 3),
                 Text(
                   _formatTotalsByCurrency(myTotalsByCurrency),
@@ -993,7 +1070,7 @@ class _ExpenseTotalsHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Coût total du séjour', style: labelStyle),
+                Text(l10n.expensesTripTotalCost, style: labelStyle),
                 const SizedBox(height: 3),
                 Text(
                   _formatTotalsByCurrency(tripTotalsByCurrency),
@@ -1032,6 +1109,7 @@ class _SettlementSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final pz = context.planerzColors;
 
@@ -1040,7 +1118,7 @@ class _SettlementSection extends StatelessWidget {
       children: [
         _SectionHeader(
           icon: Icons.balance_outlined,
-          label: 'Soldes (par devise)',
+          label: l10n.expensesBalancesByCurrency,
           iconColor: cs.secondary,
         ),
         const SizedBox(height: 8),
@@ -1048,7 +1126,7 @@ class _SettlementSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'Ajoute des dépenses pour voir la répartition.',
+              l10n.expensesAddToSeeBreakdown,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -1083,7 +1161,8 @@ class _SettlementSection extends StatelessWidget {
                     const SizedBox(height: 6),
                     ...sortedIds.map((uid) {
                       final bal = perUser[uid] ?? 0;
-                      final label = memberLabels[uid] ?? 'Voyageur';
+                      final label =
+                          memberLabels[uid] ?? l10n.tripParticipantsTraveler;
                       final isCreditor = bal > 0.009;
                       final isDebtor = bal < -0.009;
 
@@ -1098,10 +1177,10 @@ class _SettlementSection extends StatelessWidget {
                               ? cs.error
                               : cs.onSurfaceVariant;
                       final prefix = isCreditor
-                          ? 'À recevoir'
+                          ? l10n.expensesToReceive
                           : isDebtor
-                              ? 'À payer'
-                              : 'Équilibré';
+                              ? l10n.expensesToPay
+                              : l10n.expensesBalanced;
 
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
@@ -1145,12 +1224,12 @@ class _SettlementSection extends StatelessWidget {
         const SizedBox(height: 4),
         _SectionHeader(
           icon: Icons.sync_alt,
-          label: 'Remboursements suggérés',
+          label: l10n.expensesSuggestedReimbursements,
           iconColor: cs.primary,
         ),
         const SizedBox(height: 4),
         Text(
-          'Nombre minimal de virements pour équilibrer les comptes (par devise).',
+          l10n.expensesSuggestedReimbursementsHint,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: cs.onSurfaceVariant,
               ),
@@ -1159,8 +1238,8 @@ class _SettlementSection extends StatelessWidget {
         if (pendingTransfers.isEmpty && settledTransfers.isEmpty)
           Text(
             balancesByCurrency.isEmpty
-                ? 'Pas encore de calcul.'
-                : 'Tu ne dois rien à personne 😎',
+                ? l10n.expensesNoCalculationYet
+                : l10n.expensesYouOweNothing,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -1170,7 +1249,7 @@ class _SettlementSection extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Semantics(
-                label: 'Marquer ce remboursement comme effectué',
+                label: l10n.expensesMarkReimbursementDoneSemantics,
                 child: CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
@@ -1188,6 +1267,7 @@ class _SettlementSection extends StatelessWidget {
                       transfer: t,
                       memberLabels: memberLabels,
                       viewerUserId: viewerUserId,
+                      l10n: l10n,
                     ),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -1200,7 +1280,7 @@ class _SettlementSection extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Semantics(
-                label: 'Annuler le marquage de ce remboursement',
+                label: l10n.expensesUnmarkReimbursementSemantics,
                 child: CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
@@ -1218,6 +1298,7 @@ class _SettlementSection extends StatelessWidget {
                       transfer: t,
                       memberLabels: memberLabels,
                       viewerUserId: viewerUserId,
+                      l10n: l10n,
                     ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
@@ -1268,6 +1349,7 @@ List<Widget> _buildExpensesGroupedByDate(
   String tripId,
   List<String> participantScopeMemberIds,
   Map<String, String> memberLabels,
+  {required bool canEditExpense, required bool canDeleteExpense}
 ) {
   if (expenses.isEmpty) return const [];
 
@@ -1307,7 +1389,9 @@ List<Widget> _buildExpensesGroupedByDate(
             ),
             const SizedBox(width: 7),
             Text(
-              DateFormat.yMMMEd('fr_FR').format(day),
+              DateFormat.yMMMEd(
+                Localizations.localeOf(context).toString(),
+              ).format(day),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: cs.inverseSurface,
                     fontWeight: FontWeight.w600,
@@ -1327,6 +1411,8 @@ List<Widget> _buildExpensesGroupedByDate(
             expense: e,
             participantScopeMemberIds: participantScopeMemberIds,
             memberLabels: memberLabels,
+            canEditExpense: canEditExpense,
+            canDeleteExpense: canDeleteExpense,
           ),
         ),
       );
@@ -1342,12 +1428,16 @@ class _ExpenseCard extends StatelessWidget {
     required this.expense,
     required this.participantScopeMemberIds,
     required this.memberLabels,
+    required this.canEditExpense,
+    required this.canDeleteExpense,
   });
 
   final String tripId;
   final TripExpense expense;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
+  final bool canEditExpense;
+  final bool canDeleteExpense;
 
   Future<void> _openDetails(BuildContext context) async {
     await Navigator.of(context).push(
@@ -1357,6 +1447,8 @@ class _ExpenseCard extends StatelessWidget {
           expense: expense,
           participantScopeMemberIds: participantScopeMemberIds,
           memberLabels: memberLabels,
+          canEditExpense: canEditExpense,
+          canDeleteExpense: canDeleteExpense,
         ),
       ),
     );
@@ -1366,7 +1458,8 @@ class _ExpenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = expense;
     final cs = Theme.of(context).colorScheme;
-    final paidByLabel = memberLabels[e.paidBy] ?? 'Voyageur';
+    final paidByLabel =
+        memberLabels[e.paidBy] ?? AppLocalizations.of(context)!.tripParticipantsTraveler;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -1398,14 +1491,18 @@ class _ExpenseCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        e.title.isEmpty ? 'Sans titre' : e.title,
+                        e.title.isEmpty
+                            ? AppLocalizations.of(context)!.activitiesUntitled
+                            : e.title,
                         style: Theme.of(context).textTheme.bodyLarge,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Payé par $paidByLabel',
+                        AppLocalizations.of(context)!.expensesPaidByWithLabel(
+                          paidByLabel,
+                        ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -1447,12 +1544,16 @@ class _ExpenseDetailsPage extends ConsumerStatefulWidget {
     required this.expense,
     required this.participantScopeMemberIds,
     required this.memberLabels,
+    required this.canEditExpense,
+    required this.canDeleteExpense,
   });
 
   final String tripId;
   final TripExpense expense;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
+  final bool canEditExpense;
+  final bool canDeleteExpense;
 
   @override
   ConsumerState<_ExpenseDetailsPage> createState() =>
@@ -1537,7 +1638,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   String _formatShareMoney(double value) {
     final symbol = _currency == 'USD' ? r'$' : '€';
     return NumberFormat.currency(
-      locale: 'fr_FR',
+      locale: Localizations.localeOf(context).toString(),
       symbol: symbol,
       decimalDigits: 2,
     ).format(value);
@@ -1593,7 +1694,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   Widget? _shareAmountTrailing(String memberId) {
     if (!_participantIds.contains(memberId)) {
       return Text(
-        '—',
+        AppLocalizations.of(context)!.commonDash,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -1643,7 +1744,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   Future<void> _pickExpenseDate() async {
     final picked = await showDatePicker(
       context: context,
-      locale: const Locale('fr', 'FR'),
+      locale: Localizations.localeOf(context),
       initialDate: _expenseDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
@@ -1659,16 +1760,22 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer cette dépense ?'),
-        content: Text('« ${widget.expense.title} » sera supprimée.'),
+        title: Text(AppLocalizations.of(context)!.expensesDeleteExpenseTitle),
+        content: Text(
+          AppLocalizations.of(context)!.expensesDeleteExpenseBody(
+            widget.expense.title.trim().isEmpty
+                ? AppLocalizations.of(context)!.activitiesUntitled
+                : widget.expense.title,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.commonDelete),
           ),
         ],
       ),
@@ -1683,13 +1790,19 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dépense supprimée')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.expensesExpenseDeleted),
+        ),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _deleting = false);
@@ -1704,7 +1817,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
     final paidBy = _paidBy;
     if (paidBy == null || paidBy.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisis qui a payé')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesChoosePayer)),
       );
       return;
     }
@@ -1714,27 +1827,25 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
         .toSet();
     if (scopeSet.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aucun voyageur autorisé dans ce poste.'),
-        ),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesNoAllowedTraveler)),
       );
       return;
     }
     if (!scopeSet.contains(paidBy.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payeur invalide pour ce poste')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesInvalidPayerForPost)),
       );
       return;
     }
     if (_participantIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coche au moins un participant')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesSelectAtLeastOneParticipant)),
       );
       return;
     }
     if (_participantIds.any((id) => !scopeSet.contains(id))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Participant hors périmètre du poste')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesParticipantOutOfScope)),
       );
       return;
     }
@@ -1744,7 +1855,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
     );
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Montant invalide')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesInvalidAmount)),
       );
       return;
     }
@@ -1754,9 +1865,9 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       customShares = _parseCustomSharesForSave();
       if (customShares == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Pour « Montants », chaque part doit être valide et la somme doit égaler le total.',
+              AppLocalizations.of(context)!.expensesCustomAmountValidation,
             ),
           ),
         );
@@ -1780,13 +1891,17 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dépense mise à jour')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesExpenseUpdated)),
       );
       setState(() => _editing = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -1795,6 +1910,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final canShowActions = widget.canEditExpense || widget.canDeleteExpense;
     final members = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
@@ -1803,28 +1920,33 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Détail de la dépense'),
+        title: Text(l10n.expensesExpenseDetailTitle),
         actions: [
-          PopupMenuButton<_ExpenseDetailsMenuAction>(
-            enabled: !_saving && !_deleting,
-            onSelected: (action) async {
-              if (action == _ExpenseDetailsMenuAction.edit) {
-                setState(() => _editing = true);
-                return;
-              }
-              await _confirmDelete();
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem<_ExpenseDetailsMenuAction>(
-                value: _ExpenseDetailsMenuAction.edit,
-                child: Text('Modifier'),
-              ),
-              PopupMenuItem<_ExpenseDetailsMenuAction>(
-                value: _ExpenseDetailsMenuAction.delete,
-                child: Text('Supprimer'),
-              ),
-            ],
-          ),
+          if (canShowActions)
+            PopupMenuButton<_ExpenseDetailsMenuAction>(
+              enabled: !_saving && !_deleting,
+              onSelected: (action) async {
+                if (action == _ExpenseDetailsMenuAction.edit) {
+                  if (!widget.canEditExpense) return;
+                  setState(() => _editing = true);
+                  return;
+                }
+                if (!widget.canDeleteExpense) return;
+                await _confirmDelete();
+              },
+              itemBuilder: (context) => [
+                if (widget.canEditExpense)
+                  PopupMenuItem<_ExpenseDetailsMenuAction>(
+                    value: _ExpenseDetailsMenuAction.edit,
+                    child: Text(l10n.commonEdit),
+                  ),
+                if (widget.canDeleteExpense)
+                  PopupMenuItem<_ExpenseDetailsMenuAction>(
+                    value: _ExpenseDetailsMenuAction.delete,
+                    child: Text(l10n.commonDelete),
+                  ),
+              ],
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -1851,7 +1973,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                     Expanded(
                       child: Text(
                         widget.expense.title.isEmpty
-                            ? 'Sans titre'
+                            ? l10n.activitiesUntitled
                             : widget.expense.title,
                         style: Theme.of(context)
                             .textTheme
@@ -1882,7 +2004,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    "Aucun voyageur n'est autorisé dans ce poste : modifie le poste ou le voyage pour pouvoir ajuster le partage.",
+                    l10n.expensesNoAllowedTravelerInPostHint,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: cs.error,
                         ),
@@ -1892,12 +2014,12 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
                 readOnly: !_editing,
-                decoration: const InputDecoration(
-                  labelText: 'Libellé',
+                decoration: InputDecoration(
+                  labelText: l10n.activitiesLabel,
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obligatoire' : null,
+                    (v == null || v.trim().isEmpty) ? l10n.commonRequired : null,
               ),
               const SizedBox(height: 12),
               Row(
@@ -1916,14 +2038,14 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Montant',
+                      decoration: InputDecoration(
+                        labelText: l10n.expensesAmountLabel,
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
                         final t = (v ?? '').trim().replaceAll(',', '.');
                         final n = double.tryParse(t);
-                        if (n == null || n <= 0) return 'Montant invalide';
+                        if (n == null || n <= 0) return l10n.expensesInvalidAmount;
                         return null;
                       },
                     ),
@@ -1933,18 +2055,18 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                     child: DropdownButtonFormField<String>(
                       key: ValueKey<String>(_currency),
                       initialValue: _currency,
-                      decoration: const InputDecoration(
-                        labelText: 'Devise',
+                      decoration: InputDecoration(
+                        labelText: l10n.expensesCurrencyLabel,
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'EUR',
-                          child: Text('Euro (EUR)'),
+                          child: Text(l10n.expensesCurrencyEuro),
                         ),
                         DropdownMenuItem(
                           value: 'USD',
-                          child: Text('Dollar (USD)'),
+                          child: Text(l10n.expensesCurrencyDollar),
                         ),
                       ],
                       onChanged: !_editing
@@ -1965,8 +2087,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                       initialValue: _paidBy != null && members.contains(_paidBy)
                           ? _paidBy
                           : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Payé par',
+                      decoration: InputDecoration(
+                        labelText: l10n.expensesPaidByLabel,
                         border: OutlineInputBorder(),
                       ),
                       items: [
@@ -1989,8 +2111,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                       onTap: _editing ? _pickExpenseDate : null,
                       borderRadius: BorderRadius.circular(12),
                       child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Date de la dépense',
+                        decoration: InputDecoration(
+                          labelText: l10n.expensesDateLabel,
                           border: OutlineInputBorder(),
                           suffixIcon: Icon(Icons.calendar_today_outlined),
                         ),
@@ -2006,7 +2128,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Partage du montant',
+                      l10n.expensesAmountSplit,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
@@ -2015,14 +2137,14 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                       value: _splitMode,
                       underline: const SizedBox.shrink(),
                       alignment: AlignmentDirectional.centerEnd,
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: ExpenseSplitMode.equal,
-                          child: Text('Équitablement'),
+                          child: Text(l10n.expensesSplitEqual),
                         ),
                         DropdownMenuItem(
                           value: ExpenseSplitMode.customAmounts,
-                          child: Text('Montants'),
+                          child: Text(l10n.expensesSplitCustomAmounts),
                         ),
                       ],
                       onChanged: (mode) {
@@ -2032,8 +2154,8 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                   else
                     Text(
                       _splitMode == ExpenseSplitMode.equal
-                          ? 'Équitablement'
-                          : 'Montants',
+                          ? l10n.expensesSplitEqual
+                          : l10n.expensesSplitCustomAmounts,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
@@ -2105,7 +2227,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Enregistrer les modifications'),
+                      : Text(l10n.expensesSaveChanges),
                 ),
             ],
           ),
@@ -2170,7 +2292,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
   Future<void> _pickExpenseDate() async {
     final picked = await showDatePicker(
       context: context,
-      locale: const Locale('fr', 'FR'),
+      locale: Localizations.localeOf(context),
       initialDate: _expenseDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 3650)),
@@ -2189,14 +2311,14 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     final paidBy = _paidBy;
     if (paidBy == null || paidBy.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisis qui a payé')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesChoosePayer)),
       );
       return;
     }
 
     if (_participantIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coche au moins un participant')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesSelectAtLeastOneParticipant)),
       );
       return;
     }
@@ -2205,7 +2327,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Montant invalide')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesInvalidAmount)),
       );
       return;
     }
@@ -2224,13 +2346,17 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dépense enregistrée')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.expensesExpenseSaved)),
       );
       widget.onSubmit();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -2240,6 +2366,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final members = _scopeMemberIds;
     final cs = Theme.of(context).colorScheme;
 
@@ -2267,7 +2394,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Nouvelle dépense',
+                  l10n.expensesNewExpenseTitle,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ],
@@ -2275,7 +2402,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             if (members.isEmpty) ...[
               const SizedBox(height: 12),
               Text(
-                'Aucun voyageur autorisé dans ce poste pour partager une dépense.',
+                l10n.expensesNoAllowedTravelerInPostForShare,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: cs.error,
                     ),
@@ -2286,12 +2413,12 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Libellé',
+                decoration: InputDecoration(
+                  labelText: l10n.activitiesLabel,
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Obligatoire';
+                  if (v == null || v.trim().isEmpty) return l10n.commonRequired;
                   return null;
                 },
               ),
@@ -2307,14 +2434,14 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Montant',
+                      decoration: InputDecoration(
+                        labelText: l10n.expensesAmountLabel,
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
                         final t = (v ?? '').trim().replaceAll(',', '.');
                         final n = double.tryParse(t);
-                        if (n == null || n <= 0) return 'Montant invalide';
+                        if (n == null || n <= 0) return l10n.expensesInvalidAmount;
                         return null;
                       },
                     ),
@@ -2324,16 +2451,18 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                     child: DropdownButtonFormField<String>(
                       key: ValueKey<String>(_currency),
                       initialValue: _currency,
-                      decoration: const InputDecoration(
-                        labelText: 'Devise',
+                      decoration: InputDecoration(
+                        labelText: l10n.expensesCurrencyLabel,
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
+                      items: [
                         DropdownMenuItem(
-                            value: 'EUR', child: Text('Euro (EUR)')),
+                          value: 'EUR',
+                          child: Text(l10n.expensesCurrencyEuro),
+                        ),
                         DropdownMenuItem(
                           value: 'USD',
-                          child: Text('Dollar (USD)'),
+                          child: Text(l10n.expensesCurrencyDollar),
                         ),
                       ],
                       onChanged: (v) {
@@ -2355,7 +2484,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                     members,
                     tripMemberPublicLabels: widget.memberPublicLabels,
                     currentUserId: FirebaseAuth.instance.currentUser?.uid,
-                    emptyFallback: 'Voyageur',
+                    emptyFallback: l10n.tripParticipantsTraveler,
                   );
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2369,8 +2498,8 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                                   _paidBy != null && members.contains(_paidBy)
                                       ? _paidBy
                                       : null,
-                              decoration: const InputDecoration(
-                                labelText: 'Payé par',
+                              decoration: InputDecoration(
+                                labelText: l10n.expensesPaidByLabel,
                                 border: OutlineInputBorder(),
                               ),
                               items: [
@@ -2392,8 +2521,8 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                               onTap: _pickExpenseDate,
                               borderRadius: BorderRadius.circular(12),
                               child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  labelText: 'Date de la dépense',
+                                decoration: InputDecoration(
+                                  labelText: l10n.expensesDateLabel,
                                   border: OutlineInputBorder(),
                                   suffixIcon:
                                       Icon(Icons.calendar_today_outlined),
@@ -2406,7 +2535,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Partage du montant',
+                        l10n.expensesAmountSplit,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       const SizedBox(height: 8),
@@ -2458,7 +2587,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Enregistrer'),
+                  : Text(l10n.commonSave),
             ),
           ],
         ),

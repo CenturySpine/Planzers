@@ -15,7 +15,14 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
     FirebaseTarget.preview => 'planerz-preview.firebasestorage.app',
     FirebaseTarget.prod => 'planerz.firebasestorage.app',
   };
-  final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  // On Web, reading Firebase.app() too early can throw an interop error
+  // during startup; fallback to target-configured bucket in that case.
+  String rawBucket = '';
+  try {
+    rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  } catch (_) {
+    rawBucket = '';
+  }
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
   final bucketUri = effectiveBucket.startsWith('gs://')
       ? effectiveBucket
@@ -63,6 +70,15 @@ bool cupidonEnabledByDefaultFromUserData(Map<String, dynamic> data) {
   return false;
 }
 
+String? phoneNumberFromUserData(Map<String, dynamic> data) {
+  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+  final phoneNumber = account['phoneNumber'] as String?;
+  if (phoneNumber != null && phoneNumber.trim().isNotEmpty) {
+    return phoneNumber.trim();
+  }
+  return null;
+}
+
 final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
@@ -73,6 +89,10 @@ final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
       .watchCupidonEnabledByDefaultPreference();
+});
+
+final myPhoneNumberProvider = StreamProvider<String?>((ref) {
+  return ref.watch(accountRepositoryProvider).watchMyPhoneNumber();
 });
 
 class AccountRepository {
@@ -144,6 +164,13 @@ class AccountRepository {
     return watchMyUserDocument().map((snapshot) {
       final data = snapshot.data() ?? const <String, dynamic>{};
       return cupidonEnabledByDefaultFromUserData(data);
+    });
+  }
+
+  Stream<String?> watchMyPhoneNumber() {
+    return watchMyUserDocument().map((snapshot) {
+      final data = snapshot.data() ?? const <String, dynamic>{};
+      return phoneNumberFromUserData(data);
     });
   }
 
@@ -229,10 +256,10 @@ class AccountRepository {
     }
 
     final userRef = firestore.collection('users').doc(uid);
-    final trimmed = accountName.trim();
+    final trimmedName = accountName.trim();
     await userRef.set({
       'account': {
-        'name': trimmed,
+        'name': trimmedName,
         'updatedAt': FieldValue.serverTimestamp(),
       },
       'updatedAt': FieldValue.serverTimestamp(),
@@ -250,13 +277,13 @@ class AccountRepository {
       var batch = firestore.batch();
       var opCount = 0;
       for (final doc in tripsSnap.docs) {
-        if (trimmed.isEmpty) {
+        if (trimmedName.isEmpty) {
           batch.update(doc.reference, {
             'memberPublicLabels.$uid': FieldValue.delete(),
           });
         } else {
           batch.update(doc.reference, {
-            'memberPublicLabels.$uid': trimmed,
+            'memberPublicLabels.$uid': trimmedName,
           });
         }
         opCount++;
@@ -277,6 +304,46 @@ class AccountRepository {
     }
   }
 
+  Future<void> updateAccountEmail(String email) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final userRef = firestore.collection('users').doc(uid);
+    final trimmedEmail = email.trim();
+    await userRef.set({
+      'email': trimmedEmail,
+      'account': {
+        'email': trimmedEmail,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updateAccountPhone({
+    required String phoneCountryCode,
+    required String phoneNumber,
+  }) async {
+    final uid = auth.currentUser?.uid;
+    if (uid == null || uid.trim().isEmpty) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final userRef = firestore.collection('users').doc(uid);
+    final trimmedPhoneCountryCode = phoneCountryCode.trim();
+    final trimmedPhoneNumber = phoneNumber.trim();
+    await userRef.set({
+      'account': {
+        'phoneCountryCode': trimmedPhoneCountryCode,
+        'phoneNumber': trimmedPhoneNumber,
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   /// On sign-in/profile refresh, copy Google-hosted avatar to Firebase Storage
   /// and promote the Storage URL as canonical profile image.
   Future<void> syncMyGoogleProfilePhotoToStorage() async {
@@ -294,10 +361,10 @@ class AccountRepository {
 
     final data = snapshot.data() ?? const <String, dynamic>{};
     final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-    final canonicalUrl = (account['photoUrl'] as String?)?.trim().isNotEmpty ==
-            true
-        ? (account['photoUrl'] as String).trim()
-        : (data['photoUrl'] as String?)?.trim() ?? '';
+    final canonicalUrl =
+        (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+            ? (account['photoUrl'] as String).trim()
+            : (data['photoUrl'] as String?)?.trim() ?? '';
 
     final googlePhotoUrl =
         (account['googlePhotoUrl'] as String?)?.trim().isNotEmpty == true

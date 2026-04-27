@@ -6,9 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/about/presentation/about_page.dart';
+import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
@@ -21,23 +24,26 @@ enum _TripTimelineCategory { past, ongoing, upcoming }
 
 class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+  static const double _legalLinkFontSize = 12;
+  static const double _floatingActionButtonsBottomOffset = 34;
+  TabController? _tabController;
   bool _didHandleAutoOpenCurrentTrip = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
     final autoOpenCurrentTripOnLaunchAsync = ref.watch(
@@ -52,209 +58,285 @@ class _TripsPageState extends ConsumerState<TripsPage>
           AccountAppBarActions(),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'trips_join_invite',
-            tooltip: 'Rejoindre avec un code d\'invitation',
-            onPressed: () => _openJoinByInviteCodeDialog(context),
-            child: const Icon(Icons.vpn_key_outlined),
-          ),
-          const SizedBox(height: 16),
-          FloatingActionButton(
-            heroTag: 'trips_create',
-            tooltip: 'Nouveau voyage',
-            onPressed: () => _openCreateTripDialog(context, ref),
-            child: const Icon(Icons.add),
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.explore_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Mes voyages',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(
+          bottom: _floatingActionButtonsBottomOffset,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              heroTag: 'trips_join_invite',
+              tooltip: l10n.tripsJoinWithInviteTooltip,
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
+              foregroundColor: Theme.of(context).colorScheme.onTertiary,
+              onPressed: () => _openJoinByInviteCodeDialog(context),
+              child: const Icon(Icons.vpn_key_outlined),
             ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: tripsAsync.when(
-                data: (trips) {
-                  if (trips.isEmpty) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'Aucun voyage pour le moment.\nCree ton premier voyage.',
-                          textAlign: TextAlign.center,
+            const SizedBox(height: 16),
+            FloatingActionButton(
+              heroTag: 'trips_create',
+              tooltip: l10n.tripsNewTripTooltip,
+              onPressed: () => _openCreateTripDialog(context, ref),
+              child: const Icon(Icons.add),
+            ),
+          ],
+        ),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.explore_outlined,
+                          size: 20,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
-                      ),
-                    );
-                  }
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.tripsMyTrips,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: tripsAsync.when(
+                    data: (trips) {
+                      final grouped = _groupTripsByTimeline(trips);
+                      _ensureTimelineTabController(grouped);
+                      final tabController = _tabController!;
+                      _maybeAutoOpenCurrentTrip(
+                        context,
+                        ongoingTrips:
+                            grouped[_TripTimelineCategory.ongoing] ?? const [],
+                        autoOpenCurrentTripOnLaunch:
+                            autoOpenCurrentTripOnLaunchAsync.asData?.value,
+                      );
+                      final unreadByTrip = unreadByTripAsync.asData?.value ??
+                          const <String, int>{};
+                      final pastUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.past] ?? const [],
+                        unreadByTrip,
+                      );
+                      final ongoingUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.ongoing] ?? const [],
+                        unreadByTrip,
+                      );
+                      final upcomingUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.upcoming] ?? const [],
+                        unreadByTrip,
+                      );
+                      final colorScheme = Theme.of(context).colorScheme;
 
-                  final grouped = _groupTripsByTimeline(trips);
-                  _maybeAutoOpenCurrentTrip(
-                    context,
-                    ongoingTrips: grouped[_TripTimelineCategory.ongoing] ?? const [],
-                    autoOpenCurrentTripOnLaunch:
-                        autoOpenCurrentTripOnLaunchAsync.asData?.value,
-                  );
-                  final unreadByTrip =
-                      unreadByTripAsync.asData?.value ?? const <String, int>{};
-                  final pastUnread = _sumUnreadForTrips(
-                    grouped[_TripTimelineCategory.past] ?? const [],
-                    unreadByTrip,
-                  );
-                  final ongoingUnread = _sumUnreadForTrips(
-                    grouped[_TripTimelineCategory.ongoing] ?? const [],
-                    unreadByTrip,
-                  );
-                  final upcomingUnread = _sumUnreadForTrips(
-                    grouped[_TripTimelineCategory.upcoming] ?? const [],
-                    unreadByTrip,
-                  );
-                  final colorScheme = Theme.of(context).colorScheme;
+                      final timelineContainerColors =
+                          <_TripTimelineCategory, Color>{
+                        _TripTimelineCategory.past:
+                            Theme.of(context).scaffoldBackgroundColor,
+                        _TripTimelineCategory.ongoing:
+                            colorScheme.surfaceContainerHighest,
+                        _TripTimelineCategory.upcoming:
+                            colorScheme.tertiaryContainer,
+                      };
+                      final timelineTitleColors =
+                          <_TripTimelineCategory, Color>{
+                        _TripTimelineCategory.past: colorScheme.primary,
+                        _TripTimelineCategory.ongoing: colorScheme.primary,
+                        _TripTimelineCategory.upcoming: colorScheme.primary,
+                      };
 
-                  final timelineContainerColors = <_TripTimelineCategory, Color>{
-                    _TripTimelineCategory.past:
-                        Theme.of(context).scaffoldBackgroundColor,
-                    _TripTimelineCategory.ongoing:
-                        colorScheme.surfaceContainerHighest,
-                    _TripTimelineCategory.upcoming: colorScheme.tertiaryContainer,
-                  };
-                  final timelineTitleColors = <_TripTimelineCategory, Color>{
-                    _TripTimelineCategory.past: colorScheme.primary,
-                    _TripTimelineCategory.ongoing: colorScheme.primary,
-                    _TripTimelineCategory.upcoming: colorScheme.primary,
-                  };
-
-                  return Column(
-                    children: [
-                      TabBar(
-                        controller: _tabController,
-                        tabs: [
-                          _buildTimelineTab(
-                            context,
-                            label: 'Passés',
-                            tripCount:
-                                grouped[_TripTimelineCategory.past]?.length ?? 0,
-                            unreadCount: pastUnread,
+                      return Column(
+                        children: [
+                          TabBar(
+                            controller: tabController,
+                            tabs: [
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelinePast,
+                                tripCount: grouped[_TripTimelineCategory.past]
+                                        ?.length ??
+                                    0,
+                                unreadCount: pastUnread,
+                              ),
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelineOngoing,
+                                tripCount:
+                                    grouped[_TripTimelineCategory.ongoing]
+                                            ?.length ??
+                                        0,
+                                unreadCount: ongoingUnread,
+                              ),
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelineUpcoming,
+                                tripCount:
+                                    grouped[_TripTimelineCategory.upcoming]
+                                            ?.length ??
+                                        0,
+                                unreadCount: upcomingUnread,
+                              ),
+                            ],
                           ),
-                          _buildTimelineTab(
-                            context,
-                            label: 'En cours',
-                            tripCount:
-                                grouped[_TripTimelineCategory.ongoing]?.length ?? 0,
-                            unreadCount: ongoingUnread,
-                          ),
-                          _buildTimelineTab(
-                            context,
-                            label: 'À venir',
-                            tripCount:
-                                grouped[_TripTimelineCategory.upcoming]?.length ?? 0,
-                            unreadCount: upcomingUnread,
+                          Expanded(
+                            child: TabBarView(
+                              controller: tabController,
+                              children: [
+                                _TripsTimelineList(
+                                  trips: grouped[_TripTimelineCategory.past] ??
+                                      const [],
+                                  containerColor: timelineContainerColors[
+                                      _TripTimelineCategory.past]!,
+                                  titleColor: timelineTitleColors[
+                                      _TripTimelineCategory.past]!,
+                                  emptyMessage: l10n.tripsEmptyPast,
+                                  myUid: myUid,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
+                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                    context,
+                                    ref,
+                                    tripId: trip.id,
+                                    tripTitle: trip.title,
+                                  ),
+                                ),
+                                _TripsTimelineList(
+                                  trips:
+                                      grouped[_TripTimelineCategory.ongoing] ??
+                                          const [],
+                                  containerColor: timelineContainerColors[
+                                      _TripTimelineCategory.ongoing]!,
+                                  titleColor: timelineTitleColors[
+                                      _TripTimelineCategory.ongoing]!,
+                                  emptyMessage: l10n.tripsEmptyOngoing,
+                                  myUid: myUid,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
+                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                    context,
+                                    ref,
+                                    tripId: trip.id,
+                                    tripTitle: trip.title,
+                                  ),
+                                ),
+                                _TripsTimelineList(
+                                  trips:
+                                      grouped[_TripTimelineCategory.upcoming] ??
+                                          const [],
+                                  containerColor: timelineContainerColors[
+                                      _TripTimelineCategory.upcoming]!,
+                                  titleColor: timelineTitleColors[
+                                      _TripTimelineCategory.upcoming]!,
+                                  emptyMessage: l10n.tripsEmptyUpcoming,
+                                  myUid: myUid,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
+                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
+                                    context,
+                                    ref,
+                                    tripId: trip.id,
+                                    tripTitle: trip.title,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stackTrace) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(l10n.tripsFirestoreError(error.toString())),
                       ),
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _TripsTimelineList(
-                              trips: grouped[_TripTimelineCategory.past] ?? const [],
-                              containerColor:
-                                  timelineContainerColors[_TripTimelineCategory.past]!,
-                              titleColor:
-                                  timelineTitleColors[_TripTimelineCategory.past]!,
-                              emptyMessage: 'Aucun voyage passé.',
-                              myUid: myUid,
-                              onOpenTrip: (tripId) =>
-                                  context.push('/trips/$tripId/overview'),
-                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                context,
-                                ref,
-                                tripId: trip.id,
-                                tripTitle: trip.title,
-                              ),
-                            ),
-                            _TripsTimelineList(
-                              trips: grouped[_TripTimelineCategory.ongoing] ?? const [],
-                              containerColor:
-                                  timelineContainerColors[_TripTimelineCategory.ongoing]!,
-                              titleColor:
-                                  timelineTitleColors[_TripTimelineCategory.ongoing]!,
-                              emptyMessage: 'Aucun voyage en cours.',
-                              myUid: myUid,
-                              onOpenTrip: (tripId) =>
-                                  context.push('/trips/$tripId/overview'),
-                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                context,
-                                ref,
-                                tripId: trip.id,
-                                tripTitle: trip.title,
-                              ),
-                            ),
-                            _TripsTimelineList(
-                              trips:
-                                  grouped[_TripTimelineCategory.upcoming] ?? const [],
-                              containerColor:
-                                  timelineContainerColors[_TripTimelineCategory.upcoming]!,
-                              titleColor:
-                                  timelineTitleColors[_TripTimelineCategory.upcoming]!,
-                              emptyMessage: 'Aucun voyage à venir.',
-                              myUid: myUid,
-                              onOpenTrip: (tripId) =>
-                                  context.push('/trips/$tripId/overview'),
-                              onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                context,
-                                ref,
-                                tripId: trip.id,
-                                tripTitle: trip.title,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stackTrace) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text('Erreur Firestore: $error'),
+                    ),
                   ),
+                ),
+              ),
+            ],
+          ),
+          SafeArea(
+            top: false,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  children: [
+                    TextButton(
+                      onPressed: () =>
+                          context.push(LegalInformationPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(l10n.legalInfoTitle),
+                    ),
+                    _FooterSeparator(color: legalLinkColor),
+                    TextButton(
+                      onPressed: () => context.push(AboutPage.routePath),
+                      style: TextButton.styleFrom(
+                        foregroundColor: legalLinkColor,
+                        textStyle: const TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overlayColor: Colors.transparent,
+                        minimumSize: Size.zero,
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(l10n.aboutTitle),
+                    ),
+                    _FooterSeparator(color: legalLinkColor),
+                    Text(
+                      l10n.appCopyright,
+                      style: TextStyle(
+                        fontSize: _legalLinkFontSize,
+                        fontWeight: FontWeight.w400,
+                        color: legalLinkColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -282,7 +364,18 @@ class _TripsPageState extends ConsumerState<TripsPage>
     });
   }
 
-  Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(List<Trip> trips) {
+  void _ensureTimelineTabController(
+      Map<_TripTimelineCategory, List<Trip>> grouped) {
+    if (_tabController != null) return;
+
+    final ongoingTrips = grouped[_TripTimelineCategory.ongoing] ?? const [];
+    final initialIndex = ongoingTrips.isEmpty ? 2 : 1;
+    _tabController =
+        TabController(length: 3, vsync: this, initialIndex: initialIndex);
+  }
+
+  Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(
+      List<Trip> trips) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final grouped = <_TripTimelineCategory, List<Trip>>{
@@ -304,7 +397,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
   _TripTimelineCategory _timelineCategoryForTrip(Trip trip, DateTime today) {
     final start = trip.startDate != null
-        ? DateTime(trip.startDate!.year, trip.startDate!.month, trip.startDate!.day)
+        ? DateTime(
+            trip.startDate!.year, trip.startDate!.month, trip.startDate!.day)
         : null;
     final end = trip.endDate != null
         ? DateTime(trip.endDate!.year, trip.endDate!.month, trip.endDate!.day)
@@ -386,6 +480,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final titleController = TextEditingController();
     final destinationController = TextEditingController();
     String? error;
@@ -422,7 +517,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
             }
 
             return AlertDialog(
-              title: const Text('Creer un voyage'),
+              title: Text(l10n.tripsCreateDialogTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -430,19 +525,22 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   children: [
                     TextField(
                       controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Titre'),
+                      decoration:
+                          InputDecoration(labelText: l10n.tripsTitleLabel),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: destinationController,
-                      decoration:
-                          const InputDecoration(labelText: 'Destination'),
+                      decoration: InputDecoration(
+                        labelText: l10n.tripsDestinationLabel,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de début'),
-                      subtitle: Text(formatOptionalTripDate(startDate)),
+                      title: Text(l10n.tripsStartDateLabel),
+                      subtitle:
+                          Text(formatOptionalTripDate(context, startDate)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -462,8 +560,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date de fin'),
-                      subtitle: Text(formatOptionalTripDate(endDate)),
+                      title: Text(l10n.tripsEndDateLabel),
+                      subtitle: Text(formatOptionalTripDate(context, endDate)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -496,7 +594,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Annuler'),
+                  child: Text(l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: () async {
@@ -505,15 +603,14 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
                     if (title.isEmpty || destination.isEmpty) {
                       setDialogState(() {
-                        error = 'Titre et destination obligatoires';
+                        error = l10n.tripsCreateValidationRequired;
                       });
                       return;
                     }
 
                     if (isEndBeforeStart(startDate, endDate)) {
                       setDialogState(() {
-                        error =
-                            'La date de fin doit être le même jour ou après la date de début';
+                        error = l10n.tripsCreateValidationDateOrder;
                       });
                       return;
                     }
@@ -534,7 +631,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       });
                     }
                   },
-                  child: const Text('Creer'),
+                  child: Text(l10n.tripsCreateAction),
                 ),
               ],
             );
@@ -563,17 +660,18 @@ class _TripsPageState extends ConsumerState<TripsPage>
     );
   }
 
-  static String _messageForJoinByCodeError(Object e) {
+  static String _messageForJoinByCodeError(BuildContext context, Object e) {
+    final l10n = AppLocalizations.of(context)!;
     if (e is FirebaseFunctionsException) {
       switch (e.code) {
         case 'not-found':
-          return 'Ce code d\'invitation est introuvable.';
+          return l10n.tripsJoinCodeNotFound;
         case 'permission-denied':
-          return 'Ce code d\'invitation n\'est plus valide.';
+          return l10n.tripsJoinCodeNotValid;
         case 'invalid-argument':
-          return 'Code d\'invitation invalide.';
+          return l10n.tripsJoinCodeInvalid;
         case 'unauthenticated':
-          return 'Connecte-toi pour rejoindre un voyage.';
+          return l10n.tripsJoinCodeUnauthenticated;
         default:
           break;
       }
@@ -591,22 +689,23 @@ class _TripsPageState extends ConsumerState<TripsPage>
     required String tripId,
     required String tripTitle,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Supprimer ce voyage ?'),
+          title: Text(l10n.tripsDeleteDialogTitle),
           content: Text(
-            'Cette action est definitive.\n\nVoyage: $tripTitle',
+            l10n.tripsDeleteDialogBody(tripTitle),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Annuler'),
-            ),
             FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            OutlinedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Supprimer'),
+              child: Text(l10n.commonDelete),
             ),
           ],
         );
@@ -619,14 +718,32 @@ class _TripsPageState extends ConsumerState<TripsPage>
       await ref.read(tripsRepositoryProvider).deleteTrip(tripId: tripId);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Voyage supprime')),
+        SnackBar(content: Text(l10n.tripsDeleted)),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur suppression: $e')),
+        SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
       );
     }
+  }
+}
+
+class _FooterSeparator extends StatelessWidget {
+  const _FooterSeparator({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '|',
+      style: TextStyle(
+        fontSize: _TripsPageState._legalLinkFontSize,
+        fontWeight: FontWeight.w400,
+        color: color,
+      ),
+    );
   }
 }
 
@@ -703,7 +820,11 @@ class _TripsTimelineList extends StatelessWidget {
       itemBuilder: (context, index) {
         final trip = trips[index];
         final canDelete = myUid != null && trip.ownerId == myUid;
-        final dateLine = formatTripDateRange(trip.startDate, trip.endDate);
+        final dateLine = formatTripDateRange(
+          context,
+          trip.startDate,
+          trip.endDate,
+        );
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: _TripCard(
@@ -743,8 +864,7 @@ class _TripCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final countersAsync = ref.watch(tripNotificationCountersProvider(trip.id));
-    final unreadCount =
-        countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
+    final unreadCount = countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
     return Card(
       margin: EdgeInsets.zero,
       color: containerColor,
@@ -780,15 +900,20 @@ class _TripCard extends ConsumerWidget {
                       Text(
                         trip.destination,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                       ),
                     ],
                     const SizedBox(height: 6),
                     Text(
-                      '${trip.memberIds.length} membre(s)',
+                      AppLocalizations.of(context)!.tripsMemberCount(
+                        trip.memberIds.length,
+                      ),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ],
@@ -807,7 +932,7 @@ class _TripCard extends ConsumerWidget {
                     ),
                   if (canDelete)
                     IconButton(
-                      tooltip: 'Supprimer',
+                      tooltip: AppLocalizations.of(context)!.commonDelete,
                       onPressed: onDelete,
                       icon: const Icon(Icons.delete_outline),
                     ),
@@ -903,9 +1028,10 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
   }
 
   Future<void> _submitEnterCode() async {
+    final l10n = AppLocalizations.of(context)!;
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _error = 'Saisis le code d\'invitation.');
+      setState(() => _error = l10n.tripsJoinCodeRequired);
       return;
     }
     setState(() {
@@ -922,30 +1048,30 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
-        _error = _TripsPageState._messageForJoinByCodeError(e);
+        _error = _TripsPageState._messageForJoinByCodeError(context, e);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: const Text('Code d\'invitation'),
+      title: Text(l10n.tripsJoinCodeDialogTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Colle le code envoye par l\'organisateur du voyage '
-              '(pas le lien, uniquement le code).',
+            Text(
+              l10n.tripsJoinCodeDialogHelp,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _codeController,
-              decoration: const InputDecoration(
-                labelText: 'Code',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.tripsJoinCodeLabel,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
               autocorrect: false,
@@ -969,19 +1095,17 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
           onPressed: _isSubmitting
               ? null
               : () => Navigator.of(widget.navigatorContext).pop(),
-          child: const Text('Annuler'),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
-          onPressed: _isSubmitting
-              ? null
-              : _submitEnterCode,
+          onPressed: _isSubmitting ? null : _submitEnterCode,
           child: _isSubmitting
               ? const SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Rejoindre'),
+              : Text(l10n.tripsJoinCodeAction),
         ),
       ],
     );

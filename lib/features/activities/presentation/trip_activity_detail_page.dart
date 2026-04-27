@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 extension TripActivityCategoryPresentation on TripActivityCategory {
   IconData get categoryIcon => switch (this) {
@@ -23,6 +26,14 @@ extension TripActivityCategoryPresentation on TripActivityCategory {
         TripActivityCategory.shopping => 'Shopping',
         TripActivityCategory.visit => 'Visite',
         TripActivityCategory.restaurant => 'Restaurant',
+      };
+
+  String label(AppLocalizations l10n) => switch (this) {
+        TripActivityCategory.sport => l10n.activityCategorySport,
+        TripActivityCategory.hiking => l10n.activityCategoryHiking,
+        TripActivityCategory.shopping => l10n.activityCategoryShopping,
+        TripActivityCategory.visit => l10n.activityCategoryVisit,
+        TripActivityCategory.restaurant => l10n.activityCategoryRestaurant,
       };
 }
 
@@ -48,7 +59,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
-  bool _isLocked = false;
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
@@ -79,7 +89,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         prev.address == next.address &&
         prev.freeComments == next.freeComments &&
         prev.category == next.category &&
-        prev.isLocked == next.isLocked &&
         prev.done == next.done;
   }
 
@@ -92,7 +101,6 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
-    _isLocked = activity.isLocked;
   }
 
   void _applyActivity(TripActivity activity) {
@@ -101,19 +109,19 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _addressController.text = activity.address;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
-    _isLocked = activity.isLocked;
     _lastSyncedActivity = activity;
   }
 
   String? _validateOptionalUrl(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     final v = (value ?? '').trim();
     if (v.isEmpty) return null;
     final uri = Uri.tryParse(v);
     if (uri == null || !uri.isAbsolute) {
-      return 'Lien invalide (ex: https://...)';
+      return l10n.linkInvalidExample;
     }
     if (uri.scheme != 'http' && uri.scheme != 'https') {
-      return 'Le lien doit commencer par http(s)://';
+      return l10n.activitiesLinkMustStartHttp;
     }
     return null;
   }
@@ -133,17 +141,20 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
-            isLocked: _isLocked,
           );
       if (!mounted) return;
       setState(() => _editing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Activite mise a jour')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.activitiesUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -158,20 +169,22 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   Future<void> _confirmAndDelete(TripActivity activity) async {
     if (_deleting) return;
     final label =
-        activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
+        activity.label.trim().isEmpty
+            ? AppLocalizations.of(context)!.activitiesUntitled
+            : activity.label.trim();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer cette activite ?'),
-        content: Text('« $label » sera supprimee.'),
+        title: Text(AppLocalizations.of(context)!.activitiesDeleteTitle),
+        content: Text(AppLocalizations.of(context)!.activitiesDeleteBody(label)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.commonDelete),
           ),
         ],
       ),
@@ -188,12 +201,16 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
       if (!mounted) return;
       Navigator.of(context).pop();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Activite supprimee')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.activitiesDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _deleting = false);
@@ -202,6 +219,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
     final docRef = FirebaseFirestore.instance
         .collection('trips')
@@ -223,11 +241,11 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         if (doc == null || !doc.exists) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(
+            body: Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'Activite introuvable.',
+                  l10n.activitiesNotFound,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -237,8 +255,25 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
 
         final activity = TripActivity.fromDoc(doc);
         _syncControllersWhenIdle(activity);
-
-        final canEdit = myUid != null && myUid.isNotEmpty;
+        final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
+        final canEdit = tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canEditActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
+        final canDelete = tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canDeleteActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
 
         return Scaffold(
           appBar: AppBar(
@@ -252,13 +287,13 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                       child: Icon(
                         activity.category.categoryIcon,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.tertiary,
                       ),
                     ),
                   ),
                   TextSpan(
                     text: activity.label.trim().isEmpty
-                        ? 'Sans titre'
+                        ? l10n.activitiesUntitled
                         : activity.label.trim(),
                   ),
                 ],
@@ -267,36 +302,38 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
-              if (canEdit && !_editing) ...[
-                IconButton(
-                  tooltip: 'Modifier',
-                  onPressed: _deleting
-                      ? null
-                      : () => setState(() => _editing = true),
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                IconButton(
-                  tooltip: 'Supprimer',
-                  onPressed: _deleting
-                      ? null
-                      : () => _confirmAndDelete(activity),
-                  icon: _deleting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.delete_outline),
-                ),
+              if (!_editing) ...[
+                if (canEdit)
+                  IconButton(
+                    tooltip: l10n.commonEdit,
+                    onPressed: _deleting
+                        ? null
+                        : () => setState(() => _editing = true),
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+                if (canDelete)
+                  IconButton(
+                    tooltip: l10n.commonDelete,
+                    onPressed: _deleting
+                        ? null
+                        : () => _confirmAndDelete(activity),
+                    icon: _deleting
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_outline),
+                  ),
               ],
               if (canEdit && _editing) ...[
                 IconButton(
-                  tooltip: 'Annuler',
+                  tooltip: l10n.commonCancel,
                   onPressed: _saving ? null : () => _cancelEdit(activity),
                   icon: const Icon(Icons.close),
                 ),
                 IconButton(
-                  tooltip: 'Enregistrer',
+                  tooltip: l10n.commonSave,
                   onPressed: _saving ? null : _save,
                   icon: _saving
                       ? const SizedBox(
@@ -320,15 +357,13 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   onCategoryChanged: _saving
                       ? null
                       : (c) => setState(() => _category = c),
-                  isLocked: _isLocked,
-                  onLockChanged:
-                      _saving ? null : (v) => setState(() => _isLocked = v),
                   activity: activity,
                   validateOptionalUrl: _validateOptionalUrl,
                 )
               : _ReadBody(
                   tripId: widget.tripId,
                   activity: activity,
+                  canEditActivity: canEdit,
                 ),
         );
       },
@@ -340,10 +375,12 @@ class _ReadBody extends ConsumerWidget {
   const _ReadBody({
     required this.tripId,
     required this.activity,
+    required this.canEditActivity,
   });
 
   final String tripId;
   final TripActivity activity;
+  final bool canEditActivity;
 
   Future<void> _toggleDone(
     WidgetRef ref,
@@ -359,7 +396,11 @@ class _ReadBody extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -370,11 +411,11 @@ class _ReadBody extends ConsumerWidget {
     final initial = DateUtils.dateOnly(activity.plannedAt?.toLocal() ?? now);
     return showDatePicker(
       context: context,
-      locale: const Locale('fr', 'FR'),
+      locale: Localizations.localeOf(context),
       initialDate: initial,
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 5),
-      helpText: 'Date prevue',
+      helpText: AppLocalizations.of(context)!.activitiesPlannedDateHelp,
     );
   }
 
@@ -392,7 +433,11 @@ class _ReadBody extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -400,6 +445,18 @@ class _ReadBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tripAsync = ref.watch(tripStreamProvider(tripId));
+    final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canPlanActivity = tripAsync.maybeWhen(
+      data: (trip) => trip != null
+          ? canPlanActivityForTrip(
+              trip: trip,
+              userId: myUid,
+            )
+          : false,
+      orElse: () => false,
+    );
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -418,7 +475,7 @@ class _ReadBody extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Adresse du lieu',
+                    AppLocalizations.of(context)!.activitiesAddressCardTitle,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -432,7 +489,7 @@ class _ReadBody extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Ouvrir la localisation',
+                        tooltip: AppLocalizations.of(context)!.tripOverviewOpenLocation,
                         onPressed: () => openAddressInGoogleMaps(
                               context,
                               activity.address,
@@ -455,7 +512,7 @@ class _ReadBody extends ConsumerWidget {
                       Icon(
                         Icons.directions_car_outlined,
                         size: 22,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.tertiary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -463,12 +520,15 @@ class _ReadBody extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Depuis le logement (voiture)',
+                              AppLocalizations.of(context)!.activitiesFromLodgingByCar,
                               style: Theme.of(context).textTheme.labelLarge,
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              _activityDrivingRouteBodyText(activity),
+                              _activityDrivingRouteBodyText(
+                                activity,
+                                AppLocalizations.of(context)!,
+                              ),
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
@@ -489,13 +549,13 @@ class _ReadBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Commentaires',
+                  AppLocalizations.of(context)!.activitiesComments,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   activity.freeComments.trim().isEmpty
-                      ? '—'
+                      ? AppLocalizations.of(context)!.commonDash
                       : activity.freeComments.trim(),
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
@@ -512,33 +572,44 @@ class _ReadBody extends ConsumerWidget {
               children: [
                 CheckboxListTile(
                   value: activity.done,
-                  onChanged: (v) async {
+                  onChanged: canEditActivity ? (v) async {
                     if (v == null) return;
                     await _toggleDone(ref, context, v);
-                  },
-                  title: const Text('Activite faite'),
+                  } : null,
+                  title: Text(AppLocalizations.of(context)!.activitiesDone),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                 ),
                 const SizedBox(height: 4),
                 TextButton.icon(
-                  onPressed: () async {
-                    final pickedDate = await _pickPlannedDate(context);
-                    if (pickedDate == null) return;
-                    if (!context.mounted) return;
-                    await _setPlannedDate(ref, context, pickedDate);
-                  },
+                  onPressed: canPlanActivity
+                      ? () async {
+                          final pickedDate = await _pickPlannedDate(context);
+                          if (pickedDate == null) return;
+                          if (!context.mounted) return;
+                          await _setPlannedDate(ref, context, pickedDate);
+                        }
+                      : null,
                   icon: const Icon(Icons.calendar_month_outlined),
                   label: Text(
                     activity.plannedAt == null
-                        ? 'Prevue le : non renseignee'
-                        : 'Prevue le ${DateFormat('d MMMM yyyy', 'fr_FR').format(activity.plannedAt!.toLocal())}',
+                        ? AppLocalizations.of(context)!.activitiesPlannedUnset
+                        : AppLocalizations.of(context)!.activitiesPlannedOn(
+                            DateFormat(
+                              'd MMMM yyyy',
+                              Localizations.localeOf(context).toString(),
+                            ).format(activity.plannedAt!.toLocal()),
+                          ),
                   ),
                 ),
                 if (activity.plannedAt != null)
                   TextButton(
-                    onPressed: () => _setPlannedDate(ref, context, null),
-                    child: const Text('Retirer la date prevue'),
+                    onPressed: canPlanActivity
+                        ? () => _setPlannedDate(ref, context, null)
+                        : null,
+                    child: Text(
+                      AppLocalizations.of(context)!.activitiesRemovePlannedDate,
+                    ),
                   ),
               ],
             ),
@@ -558,8 +629,6 @@ class _EditBody extends StatefulWidget {
     required this.commentsController,
     required this.category,
     required this.onCategoryChanged,
-    required this.isLocked,
-    required this.onLockChanged,
     required this.activity,
     required this.validateOptionalUrl,
   });
@@ -571,8 +640,6 @@ class _EditBody extends StatefulWidget {
   final TextEditingController commentsController;
   final TripActivityCategory category;
   final void Function(TripActivityCategory)? onCategoryChanged;
-  final bool isLocked;
-  final void Function(bool)? onLockChanged;
   final TripActivity activity;
   final String? Function(String?) validateOptionalUrl;
 
@@ -608,7 +675,7 @@ class _EditBodyState extends State<_EditBody> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Categorie',
+            AppLocalizations.of(context)!.activitiesCategory,
             style: Theme.of(context).textTheme.labelLarge,
           ),
           const SizedBox(height: 8),
@@ -619,7 +686,7 @@ class _EditBodyState extends State<_EditBody> {
               for (final c in TripActivityCategory.values)
                 FilterChip(
                   avatar: Icon(c.categoryIcon, size: 18),
-                  label: Text(c.categoryLabelFr),
+                  label: Text(c.label(AppLocalizations.of(context)!)),
                   selected: widget.category == c,
                   onSelected: widget.onCategoryChanged == null
                       ? null
@@ -631,13 +698,13 @@ class _EditBodyState extends State<_EditBody> {
           TextFormField(
             controller: widget.labelController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Libelle',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.activitiesLabel,
               border: OutlineInputBorder(),
             ),
             validator: (value) {
               if ((value ?? '').trim().isEmpty) {
-                return 'Libelle obligatoire';
+                return AppLocalizations.of(context)!.activitiesLabelRequired;
               }
               return null;
             },
@@ -646,8 +713,8 @@ class _EditBodyState extends State<_EditBody> {
           TextFormField(
             controller: widget.linkController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Lien (site, billetterie, ...)',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.activitiesLink,
               hintText: 'https://...',
               border: OutlineInputBorder(),
             ),
@@ -657,7 +724,7 @@ class _EditBodyState extends State<_EditBody> {
           if (linkTrimmed.isNotEmpty && !showLivePreview) ...[
             const SizedBox(height: 8),
             Text(
-              'L\'apercu du lien sera mis a jour apres enregistrement.',
+              AppLocalizations.of(context)!.activitiesLinkPreviewAfterSave,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -674,30 +741,20 @@ class _EditBodyState extends State<_EditBody> {
           TextFormField(
             controller: widget.addressController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Adresse du lieu (trajet depuis le voyage)',
-              hintText: 'Pour calculer distance et duree en voiture',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.activitiesAddress,
+              hintText: AppLocalizations.of(context)!.activitiesAddressHint,
               border: OutlineInputBorder(),
             ),
             minLines: 1,
             maxLines: 3,
           ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            value: widget.isLocked,
-            onChanged: widget.onLockChanged,
-            title: const Text('Activite verrouillee'),
-            subtitle: const Text(
-              'Si activee, seuls les admins peuvent modifier cette activite.',
-            ),
-            contentPadding: EdgeInsets.zero,
-          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: widget.commentsController,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Commentaires',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.activitiesComments,
               border: OutlineInputBorder(),
               alignLabelWithHint: true,
             ),
@@ -710,11 +767,14 @@ class _EditBodyState extends State<_EditBody> {
   }
 }
 
-String _activityDrivingRouteBodyText(TripActivity activity) {
+String _activityDrivingRouteBodyText(
+  TripActivity activity,
+  AppLocalizations l10n,
+) {
   final route = activity.tripDrivingRoute;
 
   if (route == null) {
-    return 'Calcul en cours depuis l\'adresse du voyage.';
+    return l10n.activitiesRouteCalculating;
   }
   switch (route.status) {
     case 'ok':
@@ -723,18 +783,24 @@ String _activityDrivingRouteBodyText(TripActivity activity) {
       if ((dist != null && dist.isNotEmpty) ||
           (dur != null && dur.isNotEmpty)) {
         return [
-          if (dist != null && dist.isNotEmpty) 'Distance : $dist',
-          if (dur != null && dur.isNotEmpty) 'Duree : $dur',
+          if (dist != null && dist.isNotEmpty)
+            l10n.activitiesRouteDistance(dist),
+          if (dur != null && dur.isNotEmpty)
+            l10n.activitiesRouteDuration(dur),
         ].join('\n');
       }
-      return 'Trajet calcule.';
+      return l10n.activitiesRouteCalculated;
     case 'missing_trip_address':
-      return 'Adresse du voyage manquante : renseignez-la dans l\'apercu du voyage.';
+      return l10n.activitiesRouteMissingTripAddress;
     case 'no_result':
-      return 'Aucun trajet trouve${route.detail != null && route.detail!.isNotEmpty ? ' (${route.detail})' : ''}.';
+      final detail = route.detail?.trim() ?? '';
+      if (detail.isEmpty) return l10n.activitiesRouteNoResult;
+      return l10n.activitiesRouteNoResultWithDetail(detail);
     case 'error':
-      return 'Impossible de calculer le trajet${route.errorMessage != null && route.errorMessage!.isNotEmpty ? ' : ${route.errorMessage}' : ''}.';
+      final msg = route.errorMessage?.trim() ?? '';
+      if (msg.isEmpty) return l10n.activitiesRouteError;
+      return l10n.activitiesRouteErrorWithMessage(msg);
     default:
-      return 'Statut : ${route.status}';
+      return l10n.activitiesRouteStatus(route.status);
   }
 }

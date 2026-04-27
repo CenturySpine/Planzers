@@ -1,0 +1,8 @@
+- Use const constructors wherever possible to optimize widget rebuilds
+- Prefer StatelessWidget with external state management over StatefulWidget
+- Use Riverpod or Bloc for app-level state; setState only for ephemeral local state
+- Extract complex widget subtrees into separate widget classes for reuse
+- Use ListView.builder and GridView.builder for long lists; never ListView with children
+- Add semantic labels to all tappable widgets for accessibility
+- Use ThemeExtension for custom design tokens beyond the default ThemeData
+- Profile with Flutter DevTools before optimizing; measure jank with frame timing

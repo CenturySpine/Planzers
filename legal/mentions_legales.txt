@@ -1,0 +1,42 @@
+MENTIONS LÉGALES
+Dernière mise à jour : 25/04/2026
+
+Éditeur
+- Bruno Chappe (personne physique)
+- Domaine officiel : centuryspine.org
+- Contact : century.spine@gmail.com
+- Adresse postale : communiquée sur demande légitime
+
+Directeur de publication
+- Bruno Chappe
+
+Hébergement et sous-traitants techniques
+- Vercel (hébergement web)
+- Google Firebase :
+  - Firebase Authentication
+  - Cloud Firestore
+  - Cloud Storage
+  - Cloud Functions
+  - Firebase Cloud Messaging
+
+Code source open source
+- GitHub (sources du projet Planerz)
+- Licence du code source : GNU AGPL v3 (ou version ultérieure)
+- Copyright (c) 2026 Bruno Chappe
+
+Propriété intellectuelle
+L'application Planerz, ses contenus, sa structure et ses éléments visuels sont
+protégés par les dispositions applicables en matière de propriété intellectuelle.
+Sauf autorisation préalable, toute reproduction, adaptation ou réutilisation est
+interdite, sous réserve des droits accordés pour le code source par la licence
+GNU AGPL v3 (ou version ultérieure).
+
+Contact
+Pour toute question ou réclamation relative au service, écrire à :
+century.spine@gmail.com
+
+Confidentialité du numéro de téléphone
+Lorsque l'utilisateur choisit d'enregistrer un numéro de téléphone dans son
+profil, cette donnée n'est jamais affichée par défaut à d'autres utilisateurs.
+Elle ne peut être visible que si l'utilisateur active explicitement un réglage
+de partage spécifique lié à un voyage.

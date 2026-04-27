@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
 final shoppingRepositoryProvider = Provider<ShoppingRepository>((ref) {
   return ShoppingRepository(
@@ -30,6 +32,14 @@ class ShoppingRepository {
 
   CollectionReference<Map<String, dynamic>> _col(String tripId) =>
       firestore.collection('trips').doc(tripId).collection('shoppingItems');
+
+  Future<Trip> _loadTrip(String tripId) async {
+    final snap = await firestore.collection('trips').doc(tripId).get();
+    if (!snap.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    return Trip.fromMap(snap.id, snap.data() ?? const <String, dynamic>{});
+  }
 
   Stream<List<ShoppingItem>> watchShoppingItems(String tripId) {
     final cleanId = tripId.trim();
@@ -163,6 +173,19 @@ class ShoppingRepository {
 
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    final trip = await _loadTrip(cleanTripId);
+    final callerRole = resolveTripPermissionRole(
+      trip: trip,
+      userId: user.uid,
+    );
+    final canDeleteChecked = isTripRoleAllowed(
+      currentRole: callerRole,
+      minRole: trip.shoppingPermissions.deleteCheckedItemsMinRole,
+    );
+    if (!canDeleteChecked) {
+      throw StateError('Droits insuffisants pour supprimer les éléments cochés');
+    }
 
     final checkedSnapshot = await _col(cleanTripId)
         .where('checked', isEqualTo: true)

@@ -34,6 +34,7 @@ dependencies:
   url_launcher: ^6.3.2
   emoji_picker_flutter: ^4.4.0
   http: ^1.6.0
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
@@ -42,11 +43,33 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - liste_courses_compilee.json
     - assets/images/app_icon.png
+    - assets/images/about_bruno.jpg
+    - assets/images/about_1.png
+    - assets/images/about_2.png
+    - assets/images/about_3.png
+    - assets/images/about_4.png
+    - assets/images/about_5.png
+    - assets/images/about_6.png
+    - assets/images/about_7.png
+    - assets/images/about_8.png
     - assets/images/google_g.svg
+    - assets/images/flag_fr.svg
+    - assets/images/flag_us.svg
+    - assets/images/chef_hat.svg
+    - assets/images/hand_meal.svg
+    - assets/images/tapas.svg
+    - assets/images/meal_breakfast.svg
+    - assets/images/meal_lunch.svg
+    - assets/images/meal_dinner.svg
+    - legal/mentions_legales.txt
+    - legal/vie_privee_rgpd.txt
+    - legal/mentions_legales_en.txt
+    - legal/vie_privee_rgpd_en.txt
 
 flutter_launcher_icons:
   android: true

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/preview_environment_chrome.dart';
 import 'package:planerz/app/router.dart';
@@ -9,6 +9,8 @@ import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/core/firebase/bootstrap.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
+import 'package:planerz/core/intl/app_language.dart';
+import 'package:planerz/core/intl/app_locale_provider.dart';
 
 class PlanerzApp extends StatelessWidget {
   const PlanerzApp({required this.firebaseTarget, super.key});
@@ -34,6 +36,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final paletteAsync = ref.watch(appPaletteProvider);
+    final localeAsync = ref.watch(appLocalePreferenceProvider);
     final AppPaletteId paletteId = switch (paletteAsync) {
       AsyncData(:final value) => value,
       _ => AppPaletteId.cupidon,
@@ -44,13 +47,9 @@ class _PlanerzThemedApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(paletteId.data),
       themeMode: ThemeMode.light,
-      // Required for [showDatePicker] with fr_FR: default delegates only
-      // support English ([DefaultMaterialLocalizations]).
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [
-        Locale('fr', 'FR'),
-        Locale('en', 'US'),
-      ],
+      locale: localeAsync.asData?.value ?? AppLanguage.frFr.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: appRouter,
       builder: (context, child) {
         return FirebaseBootstrap(

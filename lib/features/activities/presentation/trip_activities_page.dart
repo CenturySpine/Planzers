@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,9 +11,12 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripActivitiesPage extends ConsumerStatefulWidget {
   const TripActivitiesPage({super.key});
@@ -22,6 +26,16 @@ class TripActivitiesPage extends ConsumerStatefulWidget {
 }
 
 class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
+  String _dayLabelFor(DateTime day, AppLocalizations l10n) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (day == today) return l10n.commonToday;
+    if (day == yesterday) return l10n.commonYesterday;
+    final localeTag = Localizations.localeOf(context).toString();
+    return DateFormat('d MMM yyyy', localeTag).format(day);
+  }
+
   late final NotificationCenterRepository _notificationCenter;
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
@@ -49,9 +63,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     if (_agendaDayFromRouteApplied) return;
     _agendaDayFromRouteApplied = true;
     final routeDay = _agendaDayFromRoute();
-    if (routeDay == null) return;
-    _agendaCenterDay = routeDay;
-    _agendaSelectedDay = routeDay;
+    final trip = TripScope.of(context);
+    final defaultDay = routeDay ?? _defaultAgendaDayForTrip(trip);
+    _agendaCenterDay = defaultDay;
+    _agendaSelectedDay = defaultDay;
   }
 
   DateTime? _agendaDayFromRoute() {
@@ -132,7 +147,13 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
+    final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canSuggestActivity = canSuggestActivityForTrip(
+      trip: trip,
+      userId: myUid,
+    );
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
 
@@ -146,13 +167,22 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             items,
             query: suggestionsQuery,
             creatorLabelFor: (activity) =>
-                creatorLabelForActivity(activity, trip.memberPublicLabels),
+                creatorLabelForActivity(
+                  activity,
+                  trip.memberPublicLabels,
+                  unknownLabel: l10n.roleParticipant,
+                ),
           );
           final plannedEntries = _buildPlannedEntries(
             items,
             query: plannedQuery,
             creatorLabelFor: (activity) =>
-                creatorLabelForActivity(activity, trip.memberPublicLabels),
+                creatorLabelForActivity(
+                  activity,
+                  trip.memberPublicLabels,
+                  unknownLabel: l10n.roleParticipant,
+                ),
+            dayLabelFor: (day) => _dayLabelFor(day, l10n),
           );
           final agendaItems = _buildAgendaItemsForDay(
             items,
@@ -166,11 +196,11 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             child: Column(
               children: [
                 const SizedBox(height: 8),
-                const TabBar(
+                TabBar(
                   tabs: [
-                    Tab(text: 'Suggestions'),
-                    Tab(text: 'Planifiées'),
-                    Tab(text: 'Agenda'),
+                    Tab(text: l10n.activitiesTabSuggestions),
+                    Tab(text: l10n.activitiesTabPlanned),
+                    Tab(text: l10n.activitiesTabAgenda),
                   ],
                 ),
                 Expanded(
@@ -182,7 +212,9 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: suggestionsEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
-                        emptyMessage: 'Aucune suggestion.',
+                        emptyMessage: l10n.activitiesNoSuggestion,
+                        showVoteButton: true,
+                        myUid: myUid,
                       ),
                       _ActivitiesTabList(
                         searchController: _plannedSearchController,
@@ -190,7 +222,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: plannedEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
-                        emptyMessage: 'Aucune activité planifiée.',
+                        emptyMessage: l10n.activitiesNoPlanned,
                       ),
                       _ActivitiesAgendaTab(
                         centerDay: _agendaCenterDay,
@@ -225,18 +257,20 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'Erreur: $e',
+              l10n.commonErrorWithDetails(e.toString()),
               textAlign: TextAlign.center,
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'trip_activities_add',
-        tooltip: 'Proposer',
-        onPressed: () => _openAddActivitySheet(context, ref, trip.id),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: canSuggestActivity
+          ? FloatingActionButton(
+              heroTag: 'trip_activities_add',
+              tooltip: l10n.activitiesSuggestAction,
+              onPressed: () => _openAddActivitySheet(context, ref, trip.id),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
@@ -249,6 +283,8 @@ class _ActivitiesTabList extends StatelessWidget {
     required this.tripId,
     required this.tripMemberPublicLabels,
     required this.emptyMessage,
+    this.showVoteButton = false,
+    this.myUid,
   });
 
   final TextEditingController searchController;
@@ -257,6 +293,8 @@ class _ActivitiesTabList extends StatelessWidget {
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
   final String emptyMessage;
+  final bool showVoteButton;
+  final String? myUid;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +315,7 @@ class _ActivitiesTabList extends StatelessWidget {
                     child: Text(
                       searchController.text.trim().isEmpty
                           ? emptyMessage
-                          : kNameListSearchEmptyMessage,
+                          : nameListSearchEmptyMessage(context),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color:
@@ -299,6 +337,8 @@ class _ActivitiesTabList extends StatelessWidget {
                       tripId: tripId,
                       activity: entry.activity!,
                       tripMemberPublicLabels: tripMemberPublicLabels,
+                      showVoteButton: showVoteButton,
+                      myUid: myUid,
                     );
                   },
                 ),
@@ -333,48 +373,28 @@ class _ActivitiesAgendaTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+    final weekStart = _startOfAtomicWeek(centerDay, locale);
     final weekDays = List<DateTime>.generate(
       7,
-      (index) => centerDay.add(Duration(days: index - 3)),
+      (index) => weekStart.add(Duration(days: index)),
+    );
+    final monthSpans = _agendaMonthSpans(
+      weekDays,
+      localeTag: Localizations.localeOf(context).toString(),
     );
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: onMoveBackward,
-                icon: const Icon(Icons.chevron_left),
-                tooltip: 'Semaine précédente',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                visualDensity: VisualDensity.compact,
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    for (final day in weekDays)
-                      Expanded(
-                        child: _AgendaDayCell(
-                          day: day,
-                          isSelected: _isSameDay(day, selectedDay),
-                          hasPlannedActivities: plannedDays.contains(day),
-                          onTap: () => onSelectDay(day),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: onMoveForward,
-                icon: const Icon(Icons.chevron_right),
-                tooltip: 'Semaine suivante',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+          child: _AgendaWeekGrid(
+            weekDays: weekDays,
+            monthSpans: monthSpans,
+            selectedDay: selectedDay,
+            plannedDays: plannedDays,
+            onSelectDay: onSelectDay,
+            onMoveBackward: onMoveBackward,
+            onMoveForward: onMoveForward,
           ),
         ),
         Expanded(
@@ -383,7 +403,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'Aucune activité planifiée ce jour.',
+                      AppLocalizations.of(context)!.activitiesNoPlannedThisDay,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color:
@@ -446,7 +466,10 @@ class _AgendaDayCell extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                DateFormat('E', 'fr_FR').format(day),
+                DateFormat(
+                  'E',
+                  Localizations.localeOf(context).toString(),
+                ).format(day),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -485,85 +508,240 @@ class _AgendaDayCell extends StatelessWidget {
   }
 }
 
+class _AgendaWeekGrid extends StatelessWidget {
+  const _AgendaWeekGrid({
+    required this.weekDays,
+    required this.monthSpans,
+    required this.selectedDay,
+    required this.plannedDays,
+    required this.onSelectDay,
+    required this.onMoveBackward,
+    required this.onMoveForward,
+  });
+
+  final List<DateTime> weekDays;
+  final List<_AgendaMonthSpan> monthSpans;
+  final DateTime selectedDay;
+  final Set<DateTime> plannedDays;
+  final ValueChanged<DateTime> onSelectDay;
+  final VoidCallback onMoveBackward;
+  final VoidCallback onMoveForward;
+  static const _chevronSlotWidth = 36.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+        );
+    return Column(
+      children: [
+        Row(
+          children: [
+            const SizedBox(width: _chevronSlotWidth),
+            Expanded(
+              child: SizedBox(
+                height: 16,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < monthSpans.length; i++)
+                      Expanded(
+                        flex: monthSpans[i].dayCount,
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: i < monthSpans.length - 1
+                                ? Border(
+                                    right: BorderSide(
+                                      color: scheme.outlineVariant,
+                                      width: 1,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Text(
+                            monthSpans[i].monthLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textStyle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: _chevronSlotWidth),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            SizedBox(
+              width: _chevronSlotWidth,
+              child: Center(
+                child: IconButton(
+                  onPressed: onMoveBackward,
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: AppLocalizations.of(context)!.activitiesPreviousWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: _chevronSlotWidth,
+                    height: _chevronSlotWidth,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  for (final day in weekDays)
+                    Expanded(
+                      child: _AgendaDayCell(
+                        day: day,
+                        isSelected: _isSameDay(day, selectedDay),
+                        hasPlannedActivities: plannedDays.contains(day),
+                        onTap: () => onSelectDay(day),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: _chevronSlotWidth,
+              child: Center(
+                child: IconButton(
+                  onPressed: onMoveForward,
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: AppLocalizations.of(context)!.activitiesNextWeek,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: _chevronSlotWidth,
+                    height: _chevronSlotWidth,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AgendaMonthSpan {
+  const _AgendaMonthSpan({required this.monthLabel, required this.dayCount});
+
+  final String monthLabel;
+  final int dayCount;
+}
+
 class _ActivityListTile extends StatelessWidget {
   const _ActivityListTile({
     required this.tripId,
     required this.activity,
     required this.tripMemberPublicLabels,
+    this.showVoteButton = false,
+    this.myUid,
   });
 
   final String tripId;
   final TripActivity activity;
   final Map<String, String> tripMemberPublicLabels;
+  final bool showVoteButton;
+  final String? myUid;
 
-  Future<void> _openDetail(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => TripActivityDetailPage(
-          tripId: tripId,
-          activityId: activity.id,
-        ),
-      ),
-    );
+  void _openDetail(BuildContext context) {
+    context.push('/trips/$tripId/activities/${activity.id}');
   }
 
   @override
   Widget build(BuildContext context) {
-    final label =
-        activity.label.trim().isEmpty ? 'Sans titre' : activity.label.trim();
+    final label = activity.label.trim().isEmpty
+        ? AppLocalizations.of(context)!.activitiesUntitled
+        : activity.label.trim();
 
-    return Card(
-      color: activity.done ? context.planerzColors.successContainer : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDetail(context),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                activity.category.categoryIcon,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Card(
+            color:
+                activity.done ? context.planerzColors.successContainer : null,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openDetail(context),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
+                    Icon(
+                      activity.category.categoryIcon,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.tertiary,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Proposé par ${_creatorLabel(activity)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            label,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall,
                           ),
+                          const SizedBox(height: 2),
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.activitiesProposedBy(
+                                _creatorLabel(context, activity)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontStyle: FontStyle.italic,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    LinkPreviewThumbnail(preview: activity.linkPreview),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              LinkPreviewThumbnail(preview: activity.linkPreview),
-            ],
+            ),
           ),
         ),
-      ),
+        if (showVoteButton) ...[
+          const SizedBox(width: 4),
+          _VoteButton(
+            tripId: tripId,
+            activityId: activity.id,
+            votes: activity.votes,
+            myUid: myUid ?? '',
+          ),
+        ],
+      ],
     );
   }
 
-  String _creatorLabel(TripActivity activity) {
-    return creatorLabelForActivity(activity, tripMemberPublicLabels);
+  String _creatorLabel(BuildContext context, TripActivity activity) {
+    return creatorLabelForActivity(
+      activity,
+      tripMemberPublicLabels,
+      unknownLabel: AppLocalizations.of(context)!.roleParticipant,
+    );
   }
 }
 
@@ -590,6 +768,7 @@ List<_ActivitiesListEntry> _buildPlannedEntries(
   List<TripActivity> items, {
   required String query,
   required String Function(TripActivity activity) creatorLabelFor,
+  required String Function(DateTime day) dayLabelFor,
 }) {
   final dated = items
       .where((a) => a.plannedAt != null)
@@ -616,7 +795,7 @@ List<_ActivitiesListEntry> _buildPlannedEntries(
     final date = _activityDateForGrouping(activity).toLocal();
     final day = DateTime(date.year, date.month, date.day);
     if (previousDay == null || previousDay != day) {
-      entries.add(_ActivitiesListEntry.separator(_dayLabelFor(day)));
+      entries.add(_ActivitiesListEntry.separator(dayLabelFor(day)));
       previousDay = day;
     }
     entries.add(_ActivitiesListEntry.activity(activity));
@@ -659,6 +838,33 @@ DateTime _dateOnly(DateTime value) {
   return DateTime(local.year, local.month, local.day);
 }
 
+DateTime _defaultAgendaDayForTrip(Trip trip) {
+  final today = _dateOnly(DateTime.now());
+  final start = trip.startDate == null ? null : _dateOnly(trip.startDate!);
+  final end = trip.endDate == null ? null : _dateOnly(trip.endDate!);
+
+  if (start != null && today.isBefore(start)) {
+    return start;
+  }
+  if (end != null && today.isAfter(end)) {
+    return end;
+  }
+  return today;
+}
+
+DateTime _startOfAtomicWeek(DateTime day, Locale locale) {
+  final date = _dateOnly(day);
+  final firstWeekday = _firstWeekdayForLocale(locale);
+  final delta = (date.weekday - firstWeekday + DateTime.daysPerWeek) %
+      DateTime.daysPerWeek;
+  return date.subtract(Duration(days: delta));
+}
+
+int _firstWeekdayForLocale(Locale locale) {
+  final countryCode = (locale.countryCode ?? '').toUpperCase();
+  return countryCode == 'US' ? DateTime.sunday : DateTime.monday;
+}
+
 bool _isSameDay(DateTime a, DateTime b) {
   return a.year == b.year && a.month == b.month && a.day == b.day;
 }
@@ -688,24 +894,135 @@ bool _activityMatchesQuery(
   return haystack.contains(query);
 }
 
+List<_AgendaMonthSpan> _agendaMonthSpans(
+  List<DateTime> weekDays, {
+  required String localeTag,
+}) {
+  final spans = <_AgendaMonthSpan>[];
+  for (final day in weekDays) {
+    if (spans.isEmpty || spans.last.monthLabel != _agendaMonthLabel(day, localeTag)) {
+      spans.add(
+        _AgendaMonthSpan(
+          monthLabel: _agendaMonthLabel(day, localeTag),
+          dayCount: 1,
+        ),
+      );
+    } else {
+      final previous = spans.removeLast();
+      spans.add(
+        _AgendaMonthSpan(
+          monthLabel: previous.monthLabel,
+          dayCount: previous.dayCount + 1,
+        ),
+      );
+    }
+  }
+  return spans;
+}
+
+String _agendaMonthLabel(DateTime day, String localeTag) {
+  return DateFormat('MMMM', localeTag).format(day);
+}
+
 String creatorLabelForActivity(
   TripActivity activity,
   Map<String, String> tripMemberPublicLabels,
+  {required String unknownLabel}
 ) {
   final id = activity.createdBy.trim();
-  if (id.isEmpty) return 'inconnu';
+  if (id.isEmpty) return unknownLabel;
   return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
       ? tripMemberPublicLabels[id]!.trim()
       : id;
 }
 
-String _dayLabelFor(DateTime day) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final yesterday = today.subtract(const Duration(days: 1));
-  if (day == today) return "Aujourd'hui";
-  if (day == yesterday) return 'Hier';
-  return DateFormat('d MMM yyyy', 'fr_FR').format(day);
+class _VoteButton extends ConsumerStatefulWidget {
+  const _VoteButton({
+    required this.tripId,
+    required this.activityId,
+    required this.votes,
+    required this.myUid,
+  });
+
+  final String tripId;
+  final String activityId;
+  final List<String> votes;
+  final String myUid;
+
+  @override
+  ConsumerState<_VoteButton> createState() => _VoteButtonState();
+}
+
+class _VoteButtonState extends ConsumerState<_VoteButton> {
+  bool _loading = false;
+
+  Future<void> _toggle() async {
+    if (_loading || widget.myUid.isEmpty) return;
+    final hasVoted = widget.votes.contains(widget.myUid);
+    setState(() => _loading = true);
+    try {
+      await ref.read(activitiesRepositoryProvider).voteForActivity(
+            tripId: widget.tripId,
+            activityId: widget.activityId,
+            vote: !hasVoted,
+          );
+    } catch (_) {
+      // stream will revert the optimistic state automatically
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasVoted =
+        widget.myUid.isNotEmpty && widget.votes.contains(widget.myUid);
+    final count = widget.votes.length;
+    final scheme = Theme.of(context).colorScheme;
+    final color = hasVoted ? scheme.primary : scheme.onSurfaceVariant;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Tooltip(
+      message: hasVoted ? l10n.activitiesUnvote : l10n.activitiesVote,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _loading ? null : _toggle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: _loading
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: color,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                      size: 16,
+                      color: color,
+                    ),
+                    if (count > 0) ...[
+                      const SizedBox(width: 3),
+                      Text(
+                        '$count',
+                        style:
+                            Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ActivityDayPill extends StatelessWidget {
@@ -768,7 +1085,11 @@ Future<void> _openAddActivitySheet(
             Navigator.of(sheetContext).pop();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Activite ajoutee')),
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.activitiesAdded,
+                  ),
+                ),
               );
             }
           },
@@ -798,7 +1119,6 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
-  bool _isLocked = false;
   bool _saving = false;
 
   @override
@@ -824,10 +1144,10 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
     if (v.isEmpty) return null;
     final uri = Uri.tryParse(v);
     if (uri == null || !uri.isAbsolute) {
-      return 'Lien invalide (ex: https://...)';
+      return AppLocalizations.of(context)!.linkInvalidExample;
     }
     if (uri.scheme != 'http' && uri.scheme != 'https') {
-      return 'Le lien doit commencer par http(s)://';
+      return AppLocalizations.of(context)!.activitiesLinkMustStartHttp;
     }
     return null;
   }
@@ -846,14 +1166,17 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
-            isLocked: _isLocked,
           );
       if (!mounted) return;
       widget.onSaved();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -871,12 +1194,12 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Nouvelle activite',
+              AppLocalizations.of(context)!.activitiesNewActivity,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             Text(
-              'Categorie',
+              AppLocalizations.of(context)!.activitiesCategory,
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 8),
@@ -887,7 +1210,7 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
                 for (final c in TripActivityCategory.values)
                   FilterChip(
                     avatar: Icon(c.categoryIcon, size: 18),
-                    label: Text(c.categoryLabelFr),
+                    label: Text(_activityCategoryLabel(context, c)),
                     selected: _category == c,
                     onSelected:
                         _saving ? null : (_) => setState(() => _category = c),
@@ -898,13 +1221,13 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             TextFormField(
               controller: _labelController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Libelle',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.activitiesLabel,
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if ((value ?? '').trim().isEmpty) {
-                  return 'Libelle obligatoire';
+                  return AppLocalizations.of(context)!.activitiesLabelRequired;
                 }
                 return null;
               },
@@ -913,8 +1236,8 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             TextFormField(
               controller: _linkController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Lien (site, billetterie, ...)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.activitiesLink,
                 hintText: 'https://...',
                 border: OutlineInputBorder(),
               ),
@@ -925,31 +1248,20 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
             TextFormField(
               controller: _addressController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Adresse du lieu (trajet depuis le voyage)',
-                hintText: 'Pour calculer distance et duree en voiture',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.activitiesAddress,
+                hintText: AppLocalizations.of(context)!.activitiesAddressHint,
                 border: OutlineInputBorder(),
               ),
               minLines: 1,
               maxLines: 3,
             ),
             const SizedBox(height: 12),
-            SwitchListTile(
-              value: _isLocked,
-              onChanged:
-                  _saving ? null : (value) => setState(() => _isLocked = value),
-              title: const Text('Activite verrouillee'),
-              subtitle: const Text(
-                'Si activee, seuls les admins peuvent modifier cette activite.',
-              ),
-              contentPadding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: 8),
             TextFormField(
               controller: _commentsController,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                labelText: 'Commentaires',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.activitiesComments,
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
@@ -966,11 +1278,22 @@ class _AddActivitySheetState extends ConsumerState<_AddActivitySheet> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Enregistrer'),
+                  : Text(AppLocalizations.of(context)!.commonSave),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+String _activityCategoryLabel(BuildContext context, TripActivityCategory category) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (category) {
+    TripActivityCategory.sport => l10n.activityCategorySport,
+    TripActivityCategory.hiking => l10n.activityCategoryHiking,
+    TripActivityCategory.shopping => l10n.activityCategoryShopping,
+    TripActivityCategory.visit => l10n.activityCategoryVisit,
+    TripActivityCategory.restaurant => l10n.activityCategoryRestaurant,
+  };
 }

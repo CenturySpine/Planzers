@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/ingredients/presentation/food_allergens_list_editor.dart';
@@ -29,6 +30,7 @@ class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
   }
 
   Future<void> _saveNow(List<String> ids) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_saving) return;
     setState(() => _saving = true);
     var target = ids;
@@ -41,9 +43,9 @@ class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
-            const SnackBar(
-              content: Text('Allergènes enregistrés'),
-              duration: Duration(milliseconds: 1100),
+            SnackBar(
+              content: Text(l10n.accountAllergensSaved),
+              duration: const Duration(milliseconds: 1100),
             ),
           );
 
@@ -59,7 +61,7 @@ class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text('Erreur enregistrement allergènes: $e')),
+          SnackBar(content: Text(l10n.accountAllergensSaveError(e.toString()))),
         );
     } finally {
       if (mounted) {
@@ -79,8 +81,9 @@ class _AccountAllergensPageState extends ConsumerState<AccountAllergensPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Allergènes alimentaires')),
+      appBar: AppBar(title: Text(l10n.accountFoodAllergens)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

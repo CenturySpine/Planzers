@@ -14,11 +14,11 @@ class TripActivity {
     required this.createdBy,
     required this.createdAt,
     this.done = false,
-    this.isLocked = false,
     this.plannedAt,
     this.doneAt,
     this.linkPreview = const {},
     this.tripDrivingRoute,
+    this.votes = const [],
   });
 
   final String id;
@@ -34,7 +34,6 @@ class TripActivity {
 
   /// Whether participants consider this outing done.
   final bool done;
-  final bool isLocked;
   final DateTime? plannedAt;
   final DateTime? doneAt;
 
@@ -43,6 +42,9 @@ class TripActivity {
 
   /// Driving distance/duration from trip `address` (Cloud Function).
   final ActivityTripDrivingRoute? tripDrivingRoute;
+
+  /// UIDs of members who upvoted this suggestion.
+  final List<String> votes;
 
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
@@ -63,12 +65,6 @@ class TripActivity {
         ? doneRaw
         : doneRaw is String
             ? doneRaw.toLowerCase() == 'true'
-            : false;
-    final lockedRaw = data['isLocked'];
-    final isLocked = lockedRaw is bool
-        ? lockedRaw
-        : lockedRaw is String
-            ? lockedRaw.toLowerCase() == 'true'
             : false;
     final doneAtRaw = data['doneAt'];
     final doneAt = switch (doneAtRaw) {
@@ -93,13 +89,18 @@ class TripActivity {
       createdBy: (data['createdBy'] as String?) ?? '',
       createdAt: createdAt,
       done: done,
-      isLocked: isLocked,
       plannedAt: plannedAt,
       doneAt: done ? doneAt : null,
       linkPreview: _previewFromFirestore(data['linkPreview']),
       tripDrivingRoute:
           ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),
+      votes: _votesFromFirestore(data['votes']),
     );
+  }
+
+  static List<String> _votesFromFirestore(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.whereType<String>().toList();
   }
 }
 

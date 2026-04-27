@@ -3,6 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 
+/// Phone number visibility for a trip member.
+enum TripMemberPhoneVisibility {
+  nobody('nobody'),
+  owner('owner'),
+  admin('admin'),
+  participant('participant');
+
+  const TripMemberPhoneVisibility(this.value);
+
+  final String value;
+
+  static TripMemberPhoneVisibility? fromString(String? s) {
+    if (s == null) return null;
+    for (final v in values) {
+      if (v.value == s) return v;
+    }
+    return null;
+  }
+
+  String toFirestore() => value;
+}
+
 /// Inclusive stay bounds for a traveler on a trip (calendar days + day part).
 class TripMemberStay {
   const TripMemberStay({

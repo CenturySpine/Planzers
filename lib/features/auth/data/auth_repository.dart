@@ -2,11 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:planerz/core/firebase/app_public_hosts.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     auth: FirebaseAuth.instance,
     googleSignIn: GoogleSignIn.instance,
+    firebaseTarget: ref.watch(firebaseTargetProvider),
   );
 });
 
@@ -14,11 +19,15 @@ class AuthRepository {
   AuthRepository({
     required this.auth,
     required this.googleSignIn,
+    required this.firebaseTarget,
   });
 
   final FirebaseAuth auth;
   final GoogleSignIn googleSignIn;
+  final FirebaseTarget firebaseTarget;
   bool _googleSignInInitialized = false;
+  static const String _pendingEmailLinkEmailKey =
+      'auth_pending_email_link_email';
 
   Future<UserCredential> signInWithGoogle() async {
     final provider = GoogleAuthProvider()
@@ -53,5 +62,53 @@ class AuthRepository {
       idToken: googleAuth.idToken,
     );
     return auth.signInWithCredential(credential);
+  }
+
+  bool isSignInWithEmailLink(String emailLink) {
+    return auth.isSignInWithEmailLink(emailLink);
+  }
+
+  Future<void> sendSignInLinkToEmail(String email) async {
+    await auth.sendSignInLinkToEmail(
+      email: email,
+      actionCodeSettings: _buildEmailLinkSettings(),
+    );
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingEmailLinkEmailKey, email);
+  }
+
+  Future<String?> consumePendingEmailLinkEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(_pendingEmailLinkEmailKey);
+    if (email == null || email.trim().isEmpty) {
+      return null;
+    }
+    await prefs.remove(_pendingEmailLinkEmailKey);
+    return email;
+  }
+
+  Future<UserCredential> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  }) {
+    return auth.signInWithEmailLink(
+      email: email,
+      emailLink: emailLink,
+    );
+  }
+
+  Uri _signInEmailLinkUri() {
+    if (kIsWeb) {
+      return Uri.parse(Uri.base.origin).replace(path: '/sign-in');
+    }
+    final inviteBaseUri = mobileInviteBaseUriForTarget(firebaseTarget);
+    return inviteBaseUri.replace(path: '/sign-in');
+  }
+
+  ActionCodeSettings _buildEmailLinkSettings() {
+    return ActionCodeSettings(
+      url: _signInEmailLinkUri().toString(),
+      handleCodeInApp: true,
+    );
   }
 }

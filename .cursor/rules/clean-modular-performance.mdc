@@ -1,0 +1,27 @@
+---
+description: Clean code, modular architecture, reusable design, performance-first
+alwaysApply: true
+---
+
+# Engineering Standards: Clean, Modular, Fast
+
+## Clean Code
+- Prefer simple, readable implementations over clever shortcuts.
+- Keep functions focused (single responsibility) and small enough to scan quickly.
+- Use explicit, domain-oriented naming for files, symbols, and variables.
+- Remove dead code and avoid TODO drift: either implement, ticket, or delete.
+- Add concise comments only for non-obvious decisions and trade-offs.
+
+## Modular & Reusable Architecture
+- Design features as composable modules with clear boundaries and public APIs.
+- Separate concerns (UI, domain, data/infrastructure) to reduce coupling.
+- Extract reusable logic into shared components/services/utils only after a real second use.
+- Depend on interfaces/contracts, not concrete implementations, when feasible.
+- Keep modules testable in isolation and avoid hidden side effects.
+
+## Performance-First Delivery
+- Prioritize algorithmic efficiency and avoid unnecessary work in hot paths.
+- Measure before and after significant optimizations; avoid blind micro-optimizations.
+- Reduce allocations, rerenders, I/O calls, and repeated computations.
+- Favor lazy loading, caching, batching, and pagination when appropriate.
+- Treat performance regressions as bugs: identify root cause and fix with evidence.

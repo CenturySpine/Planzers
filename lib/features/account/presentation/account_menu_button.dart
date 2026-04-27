@@ -1,21 +1,19 @@
 ﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/core/external_links.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccountMenuButton extends ConsumerWidget {
   const AccountMenuButton({super.key});
-
-  static final Uri _apkDownloadUri = Uri.parse(
-    'https://github.com/CenturySpine/Planzers/releases/latest/download/planerz-preview.apk',
-  );
 
   Future<void> _goToAccount(BuildContext context) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -23,11 +21,12 @@ class AccountMenuButton extends ConsumerWidget {
   }
 
   Future<void> _downloadApk(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    final ok = await launchUrl(_apkDownloadUri);
+    final ok = await launchUrl(appPreviewApkDownloadUri);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Impossible d'ouvrir le lien")),
+        SnackBar(content: Text(l10n.linkOpenImpossible)),
       );
     }
   }
@@ -70,6 +69,8 @@ class AccountMenuButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final showDownloadApkAction = isAndroidPwaMode();
     final user = FirebaseAuth.instance.currentUser;
     final email = (user?.email ?? '').trim();
     final displayLabel = (user?.displayName ?? '').trim().isNotEmpty
@@ -114,7 +115,7 @@ class AccountMenuButton extends ConsumerWidget {
         : avatar;
 
     return PopupMenuButton<String>(
-      tooltip: 'Mon compte',
+      tooltip: l10n.accountTitle,
       onSelected: (value) async {
         if (value == 'account') {
           await _goToAccount(context);
@@ -129,18 +130,18 @@ class AccountMenuButton extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'account',
-          child: Text('Mon compte'),
+          child: Text(l10n.accountTitle),
         ),
-        if (kIsWeb)
-          const PopupMenuItem<String>(
+        if (showDownloadApkAction)
+          PopupMenuItem<String>(
             value: 'download_apk',
-            child: Text("Télécharger l'APK"),
+            child: Text(l10n.accountDownloadApk),
           ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'logout',
-          child: Text('Se deconnecter'),
+          child: Text(l10n.accountSignOut),
         ),
       ],
       child: Padding(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
-/// Message when a non-empty search yields no rows (invite + participants).
-const String kNameListSearchEmptyMessage = 'Aucun nom ne correspond.';
+String nameListSearchEmptyMessage(BuildContext context) {
+  return AppLocalizations.of(context)!.nameSearchEmpty;
+}
 
 /// Same normalization as the invite “pick your name” flow: trim + lowercase.
 String normalizeNameSearchInput(String raw) => raw.trim().toLowerCase();
@@ -30,17 +32,18 @@ class NameListSearchTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return TextField(
       controller: controller,
       decoration: InputDecoration(
-        labelText: 'Rechercher',
-        hintText: 'Filtrer par nom',
+        labelText: l10n.nameSearchLabel,
+        hintText: l10n.nameSearchHint,
         border: const OutlineInputBorder(),
         prefixIcon: const Icon(Icons.search),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear),
-                tooltip: 'Effacer',
+                tooltip: l10n.nameSearchClear,
                 onPressed: () {
                   controller.clear();
                   onChanged('');

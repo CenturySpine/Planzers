@@ -6,12 +6,14 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/features/rooms/data/trip_room.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class TripRoomsPage extends ConsumerWidget {
   const TripRoomsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final roomsAsync = ref.watch(tripRoomsStreamProvider(trip.id));
 
@@ -27,13 +29,16 @@ class TripRoomsPage extends ConsumerWidget {
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Erreur: $error', textAlign: TextAlign.center),
+            child: Text(
+              l10n.commonErrorWithDetails(error.toString()),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'trip_rooms_add',
-        tooltip: 'Créer',
+        tooltip: l10n.roomsCreate,
         onPressed: () => _openCreateRoomSheet(
           context,
           ref,
@@ -62,6 +67,7 @@ class _TripRoomsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (rooms.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -81,7 +87,7 @@ class _TripRoomsBody extends StatelessWidget {
           cleanMemberIds,
           tripMemberPublicLabels: memberPublicLabels,
           currentUserId: FirebaseAuth.instance.currentUser?.uid,
-          emptyFallback: 'Voyageur',
+          emptyFallback: l10n.tripParticipantsTraveler,
         );
 
         return ListView.separated(
@@ -91,11 +97,13 @@ class _TripRoomsBody extends StatelessWidget {
           itemBuilder: (context, index) {
             final room = rooms[index];
             final assignedNames = room.assignedMemberIds
-                .map((id) => labels[id] ?? 'Voyageur')
+                .map((id) => labels[id] ?? l10n.tripParticipantsTraveler)
                 .join(', ');
             return Card(
               child: ListTile(
-                title: Text(room.name.isEmpty ? 'Chambre sans nom' : room.name),
+                title: Text(
+                  room.name.isEmpty ? l10n.roomsUnnamedRoom : room.name,
+                ),
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(assignedNames.isEmpty ? '-' : assignedNames),
@@ -201,10 +209,11 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
   }
 
   String? _assignedOtherRoomName(String memberId) {
+    final l10n = AppLocalizations.of(context)!;
     for (final draft in _otherRoomDraftsById.values) {
       for (final bed in draft.editableBeds) {
         if (bed.assignedMemberIds.contains(memberId)) {
-          return draft.roomName.isEmpty ? 'Sans nom' : draft.roomName;
+          return draft.roomName.isEmpty ? l10n.roomsUnnamedRoom : draft.roomName;
         }
       }
     }
@@ -228,18 +237,19 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
   }
 
   Future<void> _save(TripRoom room) async {
+    final l10n = AppLocalizations.of(context)!;
     if (_saving) return;
     if (_formKey.currentState?.validate() != true) return;
     if (_beds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ajoute au moins un lit')),
+        SnackBar(content: Text(l10n.roomsAddAtLeastOneBed)),
       );
       return;
     }
     for (final bed in _beds) {
       if (bed.assignedMemberIds.length > bed.capacity) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Capacité d un lit dépassée')),
+          SnackBar(content: Text(l10n.roomsBedCapacityExceeded)),
         );
         return;
       }
@@ -281,12 +291,12 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
       if (!mounted) return;
       setState(() => _editing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chambre mise à jour')),
+        SnackBar(content: Text(l10n.roomsUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -294,19 +304,24 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
   }
 
   Future<void> _delete(TripRoom room) async {
+    final l10n = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la chambre ?'),
-        content: Text('« ${room.name.isEmpty ? 'Chambre' : room.name} » sera supprimée.'),
+        title: Text(l10n.roomsDeleteTitle),
+        content: Text(
+          l10n.roomsDeleteBody(
+            room.name.isEmpty ? l10n.roomsRoomLabel : room.name,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuler'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Supprimer'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -319,19 +334,20 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chambre supprimée')),
+        SnackBar(content: Text(l10n.roomsDeleted)),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final roomsAsync = ref.watch(tripRoomsStreamProvider(widget.tripId));
     final cleanMemberIds = widget.memberIds
         .map((id) => id.trim())
@@ -364,12 +380,14 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
               cleanMemberIds,
               tripMemberPublicLabels: widget.memberPublicLabels,
               currentUserId: FirebaseAuth.instance.currentUser?.uid,
-              emptyFallback: 'Voyageur',
+              emptyFallback: l10n.tripParticipantsTraveler,
             );
 
             return Scaffold(
               appBar: AppBar(
-                title: Text(room.name.isEmpty ? 'Chambre sans nom' : room.name),
+                title: Text(
+                  room.name.isEmpty ? l10n.roomsUnnamedRoom : room.name,
+                ),
                 actions: [
                   if (_editing) ...[
                     IconButton(
@@ -411,12 +429,12 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                         children: [
                           TextFormField(
                             controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nom',
-                              border: OutlineInputBorder(),
+                            decoration: InputDecoration(
+                              labelText: l10n.commonName,
+                              border: const OutlineInputBorder(),
                             ),
                             validator: (value) => (value == null || value.trim().isEmpty)
-                                ? 'Nom obligatoire'
+                                ? l10n.roomsNameRequired
                                 : null,
                           ),
                           const SizedBox(height: 12),
@@ -433,7 +451,15 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                 childrenPadding:
                                     const EdgeInsets.fromLTRB(12, 0, 12, 8),
                                 title: Text(
-                                  'Lit ${i + 1} · ${_beds[i].type == TripBedType.double ? 'Double' : 'Simple'} · ${_beds[i].kind == TripBedKind.extra ? 'Appoint' : 'Normal'}',
+                                  l10n.roomsBedSummary(
+                                    i + 1,
+                                    _beds[i].type == TripBedType.double
+                                        ? l10n.roomsBedTypeDouble
+                                        : l10n.roomsBedTypeSingle,
+                                    _beds[i].kind == TripBedKind.extra
+                                        ? l10n.roomsBedKindExtra
+                                        : l10n.roomsBedKindRegular,
+                                  ),
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -459,14 +485,14 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                           decoration: const InputDecoration(
                                             border: OutlineInputBorder(),
                                           ),
-                                          items: const [
+                                          items: [
                                             DropdownMenuItem(
                                               value: TripBedType.single,
-                                              child: Text('Simple'),
+                                              child: Text(l10n.roomsBedTypeSingle),
                                             ),
                                             DropdownMenuItem(
                                               value: TripBedType.double,
-                                              child: Text('Double'),
+                                              child: Text(l10n.roomsBedTypeDouble),
                                             ),
                                           ],
                                           onChanged: (value) {
@@ -493,14 +519,14 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                           decoration: const InputDecoration(
                                             border: OutlineInputBorder(),
                                           ),
-                                          items: const [
+                                          items: [
                                             DropdownMenuItem(
                                               value: TripBedKind.regular,
-                                              child: Text('Normal'),
+                                              child: Text(l10n.roomsBedKindRegular),
                                             ),
                                             DropdownMenuItem(
                                               value: TripBedKind.extra,
-                                              child: Text('Appoint'),
+                                              child: Text(l10n.roomsBedKindExtra),
                                             ),
                                           ],
                                           onChanged: (value) {
@@ -521,11 +547,14 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                             const VisualDensity(horizontal: -4, vertical: -4),
                                         contentPadding: EdgeInsets.zero,
                                         controlAffinity: ListTileControlAffinity.leading,
-                                        title: Text(labels[memberId] ?? 'Voyageur'),
+                                        title: Text(
+                                          labels[memberId] ??
+                                              l10n.tripParticipantsTraveler,
+                                        ),
                                         subtitle: otherRoom == null
                                             ? null
                                             : Text(
-                                                'deja affecté chambre $otherRoom',
+                                                l10n.roomsAlreadyAssigned(otherRoom),
                                                 style: Theme.of(context)
                                                     .textTheme
                                                     .bodySmall
@@ -541,10 +570,11 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                               if (!alreadyOnBed &&
                                                   _beds[i].assignedMemberIds.length >=
                                                       _beds[i].capacity) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
                                                     content: Text(
-                                                      'Capacité de ce lit atteinte',
+                                                      l10n.roomsThisBedCapacityReached,
                                                     ),
                                                   ),
                                                 );
@@ -580,7 +610,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                               ];
                             }),
                             icon: const Icon(Icons.add),
-                            label: const Text('Ajouter un lit'),
+                            label: Text(l10n.roomsAddBed),
                           ),
                         ],
                       ),
@@ -604,7 +634,11 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
         );
       },
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => Scaffold(body: Center(child: Text('Erreur: $error'))),
+      error: (error, _) => Scaffold(
+        body: Center(
+          child: Text(l10n.commonErrorWithDetails(error.toString())),
+        ),
+      ),
     );
   }
 }
@@ -656,7 +690,10 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'Chambre ${widget.allRooms.length + 1}');
+    final l10n = AppLocalizations.of(context)!;
+    _nameController = TextEditingController(
+      text: '${l10n.roomsRoomLabel} ${widget.allRooms.length + 1}',
+    );
   }
 
   @override
@@ -666,6 +703,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_saving) return;
     if (_formKey.currentState?.validate() != true) return;
     setState(() => _saving = true);
@@ -685,13 +723,13 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chambre créée')),
+        SnackBar(content: Text(l10n.roomsCreated)),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -700,6 +738,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -708,24 +747,33 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Créer une chambre', style: Theme.of(context).textTheme.titleLarge),
+              Text(l10n.roomsCreateTitle, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l10n.commonName,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (value) =>
-                    (value == null || value.trim().isEmpty) ? 'Nom obligatoire' : null,
+                    (value == null || value.trim().isEmpty)
+                        ? l10n.roomsNameRequired
+                        : null,
               ),
               const SizedBox(height: 12),
               for (var i = 0; i < _beds.length; i++)
                 Card(
                   child: ListTile(
-                    title: Text('Lit ${i + 1}'),
+                    title: Text(l10n.roomsBedLabel(i + 1)),
                     subtitle: Text(
-                      '${_beds[i].type == TripBedType.double ? 'Double' : 'Simple'} · ${_beds[i].kind == TripBedKind.extra ? 'Appoint' : 'Normal'}',
+                      l10n.roomsBedTypeAndKind(
+                        _beds[i].type == TripBedType.double
+                            ? l10n.roomsBedTypeDouble
+                            : l10n.roomsBedTypeSingle,
+                        _beds[i].kind == TripBedKind.extra
+                            ? l10n.roomsBedKindExtra
+                            : l10n.roomsBedKindRegular,
+                      ),
                     ),
                     trailing: IconButton(
                       onPressed: _beds.length <= 1
@@ -745,7 +793,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                   ];
                 }),
                 icon: const Icon(Icons.add),
-                label: const Text('Ajouter un lit'),
+                label: Text(l10n.roomsAddBed),
               ),
               const SizedBox(height: 18),
               FilledButton(
@@ -756,7 +804,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                         height: 22,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Créer'),
+                    : Text(l10n.roomsCreate),
               ),
             ],
           ),
@@ -814,12 +862,17 @@ class _BedLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final typeLabel = bed.type == TripBedType.double ? 'Double' : 'Simple';
-    final kindLabel = bed.kind == TripBedKind.extra ? 'Appoint' : 'Normal';
+    final l10n = AppLocalizations.of(context)!;
+    final typeLabel =
+        bed.type == TripBedType.double ? l10n.roomsBedTypeDouble : l10n.roomsBedTypeSingle;
+    final kindLabel =
+        bed.kind == TripBedKind.extra ? l10n.roomsBedKindExtra : l10n.roomsBedKindRegular;
     final assigned = bed.assignedMemberIds;
     final assignedLabel = assigned.isEmpty
         ? '-'
-        : assigned.map((id) => labels[id] ?? 'Voyageur').join(', ');
-    return Text('Lit ${index + 1} · $typeLabel · $kindLabel · $assignedLabel');
+        : assigned
+            .map((id) => labels[id] ?? l10n.tripParticipantsTraveler)
+            .join(', ');
+    return Text(l10n.roomsBedLine(index + 1, typeLabel, kindLabel, assignedLabel));
   }
 }
