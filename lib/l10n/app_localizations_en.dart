@@ -223,6 +223,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInAuthBetaPill => 'BETA';
 
   @override
+  String get signInAndroidPwaInstallOverlayMessage =>
+      'For a better Android experience, install the app from GitHub.';
+
+  @override
   String get accountTitle => 'My account';
 
   @override
@@ -2275,6 +2279,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInAndroidPwaInstallOverlayMessage =>
+      'For a better Android experience, install the app from GitHub.';
 
   @override
   String get accountTitle => 'My account';

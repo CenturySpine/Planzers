@@ -67,6 +67,7 @@
   "signInPhoneChangeNumber": "Changer de numéro",
   "signInPhoneResendCode": "Renvoyer le code",
   "signInAuthBetaPill": "BETA",
+  "signInAndroidPwaInstallOverlayMessage": "Pour une meilleure expérience sur Android, installe l'application depuis GitHub.",
   "accountTitle": "Mon compte",
   "accountCropProfilePhotoTitle": "Recadrer la photo de profil",
   "accountPhotoUpdated": "Photo de profil mise à jour",
