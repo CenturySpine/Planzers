@@ -204,6 +204,7 @@ class _MealCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final dayPartLabel = _dayPartLabel(context, meal.mealDayPart);
+    final mealPreviewLabel = _mealPreviewLabel(context, meal);
     final chefId = meal.chefParticipantId?.trim();
     final hasChef =
         meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
@@ -240,6 +241,19 @@ class _MealCard extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Text(
+                        mealPreviewLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color:
+                                  Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -294,6 +308,38 @@ class _MealCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _mealPreviewLabel(BuildContext context, TripMeal meal) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (meal.mealMode) {
+    MealMode.cooked => _cookedMealPreviewLabel(meal, l10n),
+    MealMode.potluck => l10n.mealModePotluckLabel,
+    MealMode.restaurant => _restaurantMealPreviewLabel(meal, l10n),
+  };
+}
+
+String _cookedMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
+  final componentTitles = meal.components
+      .map((component) => component.title.trim())
+      .where((title) => title.isNotEmpty)
+      .toList(growable: false);
+  if (componentTitles.isEmpty) {
+    return l10n.mealModeCookedLabel;
+  }
+  return componentTitles.join(' • ');
+}
+
+String _restaurantMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
+  final restaurantName = meal.name.trim();
+  if (restaurantName.isNotEmpty) {
+    return restaurantName;
+  }
+  final restaurantUrl = meal.restaurantUrl.trim();
+  if (restaurantUrl.isNotEmpty) {
+    return restaurantUrl;
+  }
+  return l10n.mealModeRestaurantLabel;
 }
 
 class _MealModeBadge extends StatelessWidget {
