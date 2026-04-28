@@ -15,8 +15,8 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
-import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
@@ -507,46 +507,14 @@ class TripsRepository {
       throw StateError('Nom obligatoire');
     }
 
-    final tripRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await tripRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    _ensureTripGeneralPermissionForAction(
-      trip: trip,
-      userId: user.uid,
-      requiredRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
     );
-
-    final phId = generateTripPlaceholderMemberId();
-    final groupsSnap =
-        await tripRef.collection('expenseGroups').get();
-
-    var batch = firestore.batch();
-    var n = 0;
-    batch.update(tripRef, {
-      'memberIds': FieldValue.arrayUnion(<String>[phId]),
-      'memberPublicLabels.$phId': name,
+    final callable = regionFunctions.httpsCallable('addTripPlaceholderMember');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'displayName': name,
     });
-    n++;
-
-    for (final doc in groupsSnap.docs) {
-      batch.update(doc.reference, {
-        'visibleToMemberIds': FieldValue.arrayUnion(<String>[phId]),
-      });
-      n++;
-      if (n >= 450) {
-        await batch.commit();
-        batch = firestore.batch();
-        n = 0;
-      }
-    }
-    if (n > 0) {
-      await batch.commit();
-    }
   }
 
   Future<void> updateTripPlaceholderMemberName({
