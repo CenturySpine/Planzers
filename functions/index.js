@@ -115,6 +115,10 @@ function isPlaceholderMemberId(id) {
   return s.startsWith('ph_') && s.length > 8;
 }
 
+function newTripPlaceholderMemberId() {
+  return `ph_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /** Co-admin uids on the trip document (creator is always admin via ownerId). */
 function tripAdminMemberIdSet(data) {
   const raw = data.adminMemberIds;
@@ -1945,6 +1949,80 @@ exports.getInviteJoinContext = onCall(
       tripStartDate,
       tripEndDate,
     };
+  }
+);
+
+exports.addTripPlaceholderMember = onCall(
+  {
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const displayName = normalizeString(request.data?.displayName);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+    if (!displayName) {
+      throw new HttpsError('invalid-argument', 'Nom obligatoire');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const tripData = tripSnap.data() || {};
+    assertTripParticipantPermission({
+      tripData,
+      uid,
+      permissionKey: 'createParticipant',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
+    });
+
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    const memberIdSet = new Set(memberIds);
+    let placeholderId = newTripPlaceholderMemberId();
+    while (memberIdSet.has(placeholderId)) {
+      placeholderId = newTripPlaceholderMemberId();
+    }
+
+    const groupsSnap = await tripRef.collection('expenseGroups').get();
+    const FieldValue = admin.firestore.FieldValue;
+    let batch = db.batch();
+    let n = 0;
+
+    batch.update(tripRef, {
+      memberIds: FieldValue.arrayUnion(placeholderId),
+      [`memberPublicLabels.${placeholderId}`]: displayName,
+    });
+    n++;
+
+    for (const doc of groupsSnap.docs) {
+      batch.update(doc.ref, {
+        visibleToMemberIds: FieldValue.arrayUnion(placeholderId),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        n = 0;
+      }
+    }
+
+    if (n > 0) {
+      await batch.commit();
+    }
+
+    return { ok: true, placeholderId };
   }
 );
 
