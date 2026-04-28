@@ -26,6 +26,7 @@ These rules apply to everyone working on the repository, including automated cod
 - Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
 - Match existing patterns in the codebase (structure, naming, state management, routing).
 - After non-trivial edits, run `flutter analyze` and fix new issues.
+- **Cloud Functions region:** Always use `europe-west9` for Firebase Cloud Functions (Gen2) in this repository (prod and preview). Do not introduce or reintroduce any other region in code or deploy commands unless explicitly requested by the product owner.
 - **Shell — PowerShell only:** This workspace runs on Windows. Always use PowerShell for every shell command, path, and example. Never use bash, sh, zsh, or any Unix-only syntax (no `&&` chaining, no `cat <<'EOF'` heredocs, no `/tmp/` paths, etc.). Use PowerShell-compatible sequencing (`;`), here-strings (`@'...'@`) for multiline strings, and Windows paths (e.g. `$env:TEMP`) everywhere.
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
 - **Palette changes:** Any modification to `BrandPaletteData` or `PlanerzColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](PALETTES.md).

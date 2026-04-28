@@ -1,3 +1,8 @@
+---
+description: General code quality and review behavior guidelines
+alwaysApply: true
+---
+
 1. **Verify Information**: Always verify information before presenting it. Do not make assumptions or speculate without clear evidence.
 
 2. **File-by-File Changes**: Make changes file by file and give me a chance to spot mistakes.
