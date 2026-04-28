@@ -1163,11 +1163,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     Builder(builder: (context) {
                       final cs = Theme.of(context).colorScheme;
                       final pz = context.planerzColors;
-                      return Column(
-                        children: [
-                          Row(
+                      const tileSpacing = 10.0;
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final halfTileWidth =
+                              (constraints.maxWidth - tileSpacing) / 2;
+                          return Wrap(
+                            spacing: tileSpacing,
+                            runSpacing: tileSpacing,
                             children: [
-                              Expanded(
+                              SizedBox(
+                                width: constraints.maxWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileParticipants,
                                   icon: Icons.assignment_ind_outlined,
@@ -1175,12 +1181,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   backgroundColor: cs.tertiaryContainer,
                                   iconColor: cs.primary,
                                   previewParticipants: participantsPreview,
-                                  onTap: () =>
-                                      _openParticipantsPage(),
+                                  onTap: _openParticipantsPage,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileActivities,
                                   icon: Icons.event_note_outlined,
@@ -1198,12 +1203,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileRooms,
                                   icon: Icons.bed_outlined,
@@ -1220,8 +1221,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       context.go('/trips/${_trip.id}/rooms'),
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileCars,
                                   icon: Icons.directions_car_outlined,
@@ -1236,9 +1237,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       context.go('/trips/${_trip.id}/cars'),
                                 ),
                               ),
+                              SizedBox(
+                                width: halfTileWidth,
+                                child: _TripAccessTile(
+                                  label: l10n.tripOverviewTileGames,
+                                  icon: Icons.sports_esports_outlined,
+                                  countLabel: '0',
+                                  backgroundColor: cs.primaryContainer,
+                                  iconColor: cs.primary,
+                                  showDetailBullets: false,
+                                  wrapDetailLines: true,
+                                  emptyStateMessage:
+                                      l10n.tripOverviewTileComingSoon,
+                                  onTap: () {},
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       );
                     }),
                   ],

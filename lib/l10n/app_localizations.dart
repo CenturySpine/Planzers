@@ -3749,6 +3749,12 @@ abstract class AppLocalizations {
   /// **'Voitures'**
   String get tripOverviewTileCars;
 
+  /// No description provided for @tripOverviewTileGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux'**
+  String get tripOverviewTileGames;
+
   /// No description provided for @tripOverviewTopTabAnnouncements.
   ///
   /// In fr, this message translates to:

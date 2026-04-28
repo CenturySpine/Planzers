@@ -2068,6 +2068,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileCars => 'Voitures';
 
   @override
+  String get tripOverviewTileGames => 'Jeux';
+
+  @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
 
   @override
@@ -4173,6 +4176,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTileCars => 'Voitures';
+
+  @override
+  String get tripOverviewTileGames => 'Jeux';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
