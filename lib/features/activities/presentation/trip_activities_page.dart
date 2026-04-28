@@ -762,6 +762,23 @@ class _ActivityListTile extends StatelessWidget {
                                       ).colorScheme.onSurfaceVariant,
                                     ),
                           ),
+                          if (activity.plannedAt != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              DateFormat.Hm(
+                                Localizations.localeOf(context).toString(),
+                              ).format(activity.plannedAt!.toLocal()),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -837,6 +854,10 @@ List<_ActivitiesListEntry> _buildPlannedEntries(
       final bDate = _activityDateForGrouping(b);
       final byDay = bDate.compareTo(aDate);
       if (byDay != 0) return byDay;
+      final byTime = _plannedMinutesSinceMidnight(a).compareTo(
+        _plannedMinutesSinceMidnight(b),
+      );
+      if (byTime != 0) return byTime;
       return b.createdAt.compareTo(a.createdAt);
     });
 
@@ -865,13 +886,20 @@ List<TripActivity> _buildAgendaItemsForDay(
           (activity) => _isSameDay(_dateOnly(activity.plannedAt!), selectedDay))
       .toList()
     ..sort((a, b) {
-      final aPlanned = a.plannedAt!;
-      final bPlanned = b.plannedAt!;
-      final byPlanned = aPlanned.compareTo(bPlanned);
+      final byPlanned = _plannedMinutesSinceMidnight(a).compareTo(
+        _plannedMinutesSinceMidnight(b),
+      );
       if (byPlanned != 0) return byPlanned;
       return b.createdAt.compareTo(a.createdAt);
     });
   return filtered;
+}
+
+int _plannedMinutesSinceMidnight(TripActivity activity) {
+  final plannedAt = activity.plannedAt;
+  if (plannedAt == null) return -1;
+  final local = plannedAt.toLocal();
+  return local.hour * 60 + local.minute;
 }
 
 Set<DateTime> _plannedDaysSet(List<TripActivity> items) {
