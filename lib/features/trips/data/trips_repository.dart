@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -6,16 +7,15 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/core/firebase/app_public_hosts.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
-import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
@@ -32,7 +32,6 @@ final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
     storage: FirebaseStorage.instanceFor(bucket: bucketUri),
-    mobileInviteBaseUri: mobileInviteBaseUriForTarget(target),
   );
 });
 
@@ -51,17 +50,12 @@ class TripsRepository {
     required this.firestore,
     required this.auth,
     required this.storage,
-    required this.mobileInviteBaseUri,
   });
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FirebaseStorage storage;
   final Set<String> _permissionsBackfillInFlight = <String>{};
-
-  /// Used for invite links from iOS/Android/desktop native. Web uses
-  /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
-  final Uri mobileInviteBaseUri;
 
   Map<String, dynamic> _defaultPermissionsFirestoreMap() {
     return <String, dynamic>{
@@ -96,8 +90,9 @@ class TripsRepository {
     _permissionsBackfillInFlight.add(tripId);
     unawaited(() async {
       try {
-        final regionFunctions =
-            FirebaseFunctions.instanceFor(region: 'europe-west1');
+        final regionFunctions = FirebaseFunctions.instanceFor(
+          region: kFirebaseFunctionsRegion,
+        );
         final callable =
             regionFunctions.httpsCallable('backfillLegacyTripPermissions');
         await callable.call(<String, dynamic>{
@@ -236,7 +231,9 @@ class TripsRepository {
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
     }
-    final regionFunctions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('deleteTripCascade');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }
@@ -326,25 +323,6 @@ class TripsRepository {
     return inviteToken;
   }
 
-  Future<String> getOrCreateInviteLink({
-    required String tripId,
-  }) async {
-    final inviteToken = await getOrCreateInviteToken(tripId: tripId);
-
-    final params = <String, String>{
-      'tripId': tripId,
-      'token': inviteToken,
-    };
-
-    if (kIsWeb) {
-      return Uri.parse(Uri.base.origin)
-          .replace(path: '/invite', queryParameters: params)
-          .toString();
-    }
-
-    return mobileInviteBaseUri.replace(queryParameters: params).toString();
-  }
-
   Future<InviteJoinContext> getInviteJoinContext({
     String? tripId,
     required String token,
@@ -359,8 +337,9 @@ class TripsRepository {
       throw StateError('Invitation invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('getInviteJoinContext');
     final payload = <String, dynamic>{'token': cleanToken};
     final cleanTripId = tripId?.trim() ?? '';
@@ -418,6 +397,7 @@ class TripsRepository {
     required String tripId,
     required String token,
     String? placeholderMemberId,
+    bool bypassPlaceholderChoice = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -429,8 +409,9 @@ class TripsRepository {
       throw StateError('Lien d invitation invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('joinTripWithInvite');
     final payload = <String, dynamic>{
       'tripId': tripId.trim(),
@@ -440,43 +421,10 @@ class TripsRepository {
     if (ph != null && ph.isNotEmpty) {
       payload['placeholderMemberId'] = ph;
     }
+    if (bypassPlaceholderChoice) {
+      payload['bypassPlaceholderChoice'] = true;
+    }
     await callable.call(payload);
-  }
-
-  /// Joins using only the invite token (same as opening the invite link).
-  /// Returns the trip id for navigation.
-  Future<String> joinTripWithInviteToken(
-    String token, {
-    String? placeholderMemberId,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanToken = token.trim();
-    if (cleanToken.isEmpty) {
-      throw StateError('Code d invitation invalide');
-    }
-
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
-    final callable = regionFunctions.httpsCallable('joinTripWithInviteToken');
-    final payload = <String, dynamic>{'token': cleanToken};
-    final ph = placeholderMemberId?.trim();
-    if (ph != null && ph.isNotEmpty) {
-      payload['placeholderMemberId'] = ph;
-    }
-    final result = await callable.call(payload);
-    final data = result.data;
-    if (data is! Map) {
-      throw StateError('Reponse serveur invalide');
-    }
-    final tripId = data['tripId'];
-    if (tripId is! String || tripId.trim().isEmpty) {
-      throw StateError('Reponse serveur invalide');
-    }
-    return tripId.trim();
   }
 
   /// Adds a placeholder traveler. Permission is controlled by
@@ -500,46 +448,14 @@ class TripsRepository {
       throw StateError('Nom obligatoire');
     }
 
-    final tripRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await tripRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    _ensureTripGeneralPermissionForAction(
-      trip: trip,
-      userId: user.uid,
-      requiredRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
     );
-
-    final phId = generateTripPlaceholderMemberId();
-    final groupsSnap =
-        await tripRef.collection('expenseGroups').get();
-
-    var batch = firestore.batch();
-    var n = 0;
-    batch.update(tripRef, {
-      'memberIds': FieldValue.arrayUnion(<String>[phId]),
-      'memberPublicLabels.$phId': name,
+    final callable = regionFunctions.httpsCallable('addTripPlaceholderMember');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'displayName': name,
     });
-    n++;
-
-    for (final doc in groupsSnap.docs) {
-      batch.update(doc.reference, {
-        'visibleToMemberIds': FieldValue.arrayUnion(<String>[phId]),
-      });
-      n++;
-      if (n >= 450) {
-        await batch.commit();
-        batch = firestore.batch();
-        n = 0;
-      }
-    }
-    if (n > 0) {
-      await batch.commit();
-    }
   }
 
   Future<void> updateTripPlaceholderMemberName({
@@ -622,8 +538,9 @@ class TripsRepository {
           trip.participantsPermissions.deletePlaceholderParticipantMinRole,
     );
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('removeTripPlaceholderMember');
     await callable.call(<String, dynamic>{
@@ -645,8 +562,9 @@ class TripsRepository {
       return;
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('registerMyTripMemberLabel');
     await callable.call(<String, dynamic>{'tripId': cleanId});
@@ -729,8 +647,9 @@ class TripsRepository {
       requiredRole: trip.participantsPermissions.toggleAdminRoleMinRole,
     );
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('cycleTripMemberAdminRole');
     await callable.call(<String, dynamic>{
@@ -753,8 +672,9 @@ class TripsRepository {
       throw StateError('Voyage invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('leaveTrip');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }

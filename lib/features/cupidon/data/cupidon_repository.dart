@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 
 final cupidonRepositoryProvider = Provider<CupidonRepository>((ref) {
   return CupidonRepository(
@@ -151,7 +152,9 @@ class CupidonRepository {
     final cleanTrip = tripId.trim();
     if (uid.isEmpty) throw StateError('Utilisateur non connecte');
     if (cleanTrip.isEmpty) throw StateError('Voyage invalide');
-    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    )
         .httpsCallable('setTripCupidonEnabled');
     await callable.call(<String, dynamic>{
       'tripId': cleanTrip,
@@ -171,7 +174,9 @@ class CupidonRepository {
     if (cleanTrip.isEmpty || cleanTarget.isEmpty) {
       throw StateError('Parametres invalides');
     }
-    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    )
         .httpsCallable('toggleTripCupidonLike');
     await callable.call(<String, dynamic>{
       'tripId': cleanTrip,
@@ -204,7 +209,9 @@ class CupidonRepository {
     final cleanMatchId = matchId.trim();
     if (uid.isEmpty) throw StateError('Utilisateur non connecte');
     if (cleanMatchId.isEmpty) throw StateError('Match invalide');
-    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    )
         .httpsCallable('deleteCupidonMatch');
     await callable.call(<String, dynamic>{'matchId': cleanMatchId});
   }

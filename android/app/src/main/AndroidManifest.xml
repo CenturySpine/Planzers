@@ -74,6 +74,14 @@
                     android:scheme="https"
                     android:host="planerz-preview.web.app"
                     android:pathPrefix="/__/auth/action"/>
+                <data
+                    android:scheme="https"
+                    android:host="planerz.firebaseapp.com"
+                    android:pathPrefix="/__/auth/action"/>
+                <data
+                    android:scheme="https"
+                    android:host="planerz.web.app"
+                    android:pathPrefix="/__/auth/action"/>
             </intent-filter>
         </activity>
         <activity

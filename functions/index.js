@@ -115,6 +115,10 @@ function isPlaceholderMemberId(id) {
   return s.startsWith('ph_') && s.length > 8;
 }
 
+function newTripPlaceholderMemberId() {
+  return `ph_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /** Co-admin uids on the trip document (creator is always admin via ownerId). */
 function tripAdminMemberIdSet(data) {
   const raw = data.adminMemberIds;
@@ -1113,7 +1117,6 @@ async function sendCupidonMatchPush({
 exports.dispatchNotificationQueue = onDocumentCreated(
   {
     document: 'notificationQueue/{notifId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1205,7 +1208,6 @@ exports.dispatchNotificationQueue = onDocumentCreated(
 exports.notifyTripMessageRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/messages/{messageId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1261,7 +1263,6 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
 exports.notifyTripActivityRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/activities/{activityId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1316,7 +1317,6 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
 exports.notifyTripAnnouncementRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/announcements/{announcementId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1371,7 +1371,6 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
 exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
   {
     document: 'trips/{tripId}/notificationReads/{userId}',
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1419,7 +1418,6 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
 
 exports.resyncMyTripUnreadCounters = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1509,7 +1507,6 @@ exports.resyncMyTripUnreadCounters = onCall(
  */
 exports.reconcileMyCupidonNotificationCounters = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1613,7 +1610,6 @@ exports.reconcileMyCupidonNotificationCounters = onCall(
 exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1662,7 +1658,6 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
 exports.generateTripLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
-    region: 'europe-west1',
     timeoutSeconds: 30,
     memory: '256MiB',
   },
@@ -1756,20 +1751,24 @@ exports.generateTripLinkPreview = onDocumentUpdated(
 /**
  * Adds [uid] to trip members if [token] matches the trip inviteToken.
  * When the trip still has placeholder members, [placeholderMemberId] must name
- * the placeholder row to claim (replaced by [uid]).
+ * the placeholder row to claim (replaced by [uid]), unless
+ * [bypassPlaceholderChoice] is true.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} uid
  * @param {string} token
  * @param {string} placeholderMemberId
+ * @param {boolean} bypassPlaceholderChoice
  */
 async function completeJoinTripWithInvite(
   tripRef,
   uid,
   token,
-  placeholderMemberId
+  placeholderMemberId,
+  bypassPlaceholderChoice
 ) {
   const FieldValue = admin.firestore.FieldValue;
   const placeholderArg = normalizeString(placeholderMemberId);
+  const bypassPlaceholder = bypassPlaceholderChoice === true;
   let claimedPh = null;
 
   await admin.firestore().runTransaction(async (tx) => {
@@ -1791,6 +1790,14 @@ async function completeJoinTripWithInvite(
     const phMembers = memberIds.filter(isPlaceholderMemberId);
 
     if (phMembers.length > 0) {
+      if (bypassPlaceholder) {
+        memberIds.push(uid);
+        tx.update(tripRef, {
+          memberIds,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return;
+      }
       if (!placeholderArg || !isPlaceholderMemberId(placeholderArg)) {
         throw new HttpsError(
           'invalid-argument',
@@ -1878,7 +1885,6 @@ async function completeJoinTripWithInvite(
 
 exports.getInviteJoinContext = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -1958,9 +1964,82 @@ exports.getInviteJoinContext = onCall(
   }
 );
 
+exports.addTripPlaceholderMember = onCall(
+  {
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const displayName = normalizeString(request.data?.displayName);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+    if (!displayName) {
+      throw new HttpsError('invalid-argument', 'Nom obligatoire');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const tripData = tripSnap.data() || {};
+    assertTripParticipantPermission({
+      tripData,
+      uid,
+      permissionKey: 'createParticipant',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
+    });
+
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    const memberIdSet = new Set(memberIds);
+    let placeholderId = newTripPlaceholderMemberId();
+    while (memberIdSet.has(placeholderId)) {
+      placeholderId = newTripPlaceholderMemberId();
+    }
+
+    const groupsSnap = await tripRef.collection('expenseGroups').get();
+    const FieldValue = admin.firestore.FieldValue;
+    let batch = db.batch();
+    let n = 0;
+
+    batch.update(tripRef, {
+      memberIds: FieldValue.arrayUnion(placeholderId),
+      [`memberPublicLabels.${placeholderId}`]: displayName,
+    });
+    n++;
+
+    for (const doc of groupsSnap.docs) {
+      batch.update(doc.ref, {
+        visibleToMemberIds: FieldValue.arrayUnion(placeholderId),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        n = 0;
+      }
+    }
+
+    if (n > 0) {
+      await batch.commit();
+    }
+
+    return { ok: true, placeholderId };
+  }
+);
+
 exports.removeTripPlaceholderMember = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2036,7 +2115,6 @@ exports.removeTripPlaceholderMember = onCall(
 
 exports.joinTripWithInvite = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2053,63 +2131,18 @@ exports.joinTripWithInvite = onCall(
     const placeholderMemberId = normalizeString(
       request.data?.placeholderMemberId
     );
+    const bypassPlaceholderChoice = request.data?.bypassPlaceholderChoice === true;
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
     await completeJoinTripWithInvite(
       tripRef,
       uid,
       token,
-      placeholderMemberId
+      placeholderMemberId,
+      bypassPlaceholderChoice
     );
 
     return { ok: true };
-  }
-);
-
-/** Same as joinTripWithInvite, but resolves the trip from invite token only. */
-exports.joinTripWithInviteToken = onCall(
-  {
-    region: 'europe-west1',
-  },
-  async (request) => {
-    const uid = request.auth?.uid;
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
-    }
-
-    const token = normalizeString(request.data?.token);
-    if (!token) {
-      throw new HttpsError('invalid-argument', 'Code d invitation invalide');
-    }
-
-    const placeholderMemberId = normalizeString(
-      request.data?.placeholderMemberId
-    );
-
-    const db = admin.firestore();
-    const snap = await db
-      .collection('trips')
-      .where('inviteToken', '==', token)
-      .limit(2)
-      .get();
-
-    if (snap.empty) {
-      throw new HttpsError('not-found', 'Code d invitation inconnu');
-    }
-    if (snap.size > 1) {
-      console.error('joinTripWithInviteToken duplicate token', token);
-      throw new HttpsError('internal', 'Erreur serveur');
-    }
-
-    const tripRef = snap.docs[0].ref;
-    await completeJoinTripWithInvite(
-      tripRef,
-      uid,
-      token,
-      placeholderMemberId
-    );
-
-    return { ok: true, tripId: tripRef.id };
   }
 );
 
@@ -2157,7 +2190,6 @@ function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
 
 exports.leaveTrip = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2215,7 +2247,6 @@ exports.leaveTrip = onCall(
 
 exports.cycleTripMemberAdminRole = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2278,7 +2309,6 @@ exports.cycleTripMemberAdminRole = onCall(
 
 exports.registerMyTripMemberLabel = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2328,7 +2358,6 @@ exports.registerMyTripMemberLabel = onCall(
 
 exports.deleteTripCascade = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 540,
     memory: '1GiB',
   },
@@ -2372,7 +2401,6 @@ exports.deleteTripCascade = onCall(
 
 exports.backfillLegacyTripPermissions = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2435,7 +2463,6 @@ exports.backfillLegacyTripPermissions = onCall(
 
 exports.setTripCupidonEnabled = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2484,7 +2511,6 @@ exports.setTripCupidonEnabled = onCall(
 
 exports.toggleTripCupidonLike = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2668,7 +2694,6 @@ exports.toggleTripCupidonLike = onCall(
 
 exports.deleteCupidonMatch = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;

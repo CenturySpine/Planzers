@@ -466,11 +466,6 @@
   "@tripOverviewUpdateError": {
     "placeholders": {"error": {}}
   },
-  "tripOverviewInviteLinkCopied": "Lien d'invitation copié dans le presse-papiers",
-  "tripOverviewInviteShareError": "Erreur partage invitation : {error}",
-  "@tripOverviewInviteShareError": {
-    "placeholders": {"error": {}}
-  },
   "tripOverviewInviteCodeCopied": "Code d'invitation copié dans le presse-papiers",
   "tripOverviewInviteCodeCopyError": "Erreur copie du code : {error}",
   "@tripOverviewInviteCodeCopyError": {
@@ -490,7 +485,6 @@
   "tripOverviewActions": "Actions voyage",
   "tripOverviewPhotoActions": "Actions photo",
   "tripOverviewChangePhoto": "Changer de photo",
-  "tripOverviewShareInvite": "Partager invitation",
   "tripOverviewCopyCode": "Copier le code",
   "tripOverviewEditTrip": "Modifier le voyage",
   "tripOverviewTitleRequired": "Titre obligatoire",
@@ -519,6 +513,8 @@
   "inviteWhoAreYouInTrip": "Qui es-tu dans ce voyage ?",
   "inviteCupidonSubtitle": "Tu pourras liker des participants du voyage.",
   "inviteEditTravelerChoice": "Modifier le choix du voyageur",
+  "inviteJoinWithCurrentProfileHint": "Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.",
+  "inviteJoinWithCurrentProfileAction": "Continuer avec mon profil actuel",
   "commonContinue": "Continuer",
   "commonConfirm": "Valider",
   "inviteInvalidLink": "Lien d’invitation invalide.",

@@ -1,7 +1,11 @@
+---
+description: Conventional Commit message guidelines
+alwaysApply: true
+---
+
 Use the Conventional Commit Messages specification to generate commit messages
 
 The commit message should be structured as follows:
-
 
 ```
 <type>[optional scope]: <description>
@@ -9,7 +13,7 @@ The commit message should be structured as follows:
 [optional body]
 
 [optional footer(s)]
-``` 
+```
 --------------------------------
 
 The commit contains the following structural elements, to communicate intent to the consumers of your library:

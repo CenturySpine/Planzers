@@ -26,6 +26,7 @@ These rules apply to everyone working on the repository, including automated cod
 - Prefer small, focused changes. Avoid drive-by refactors unrelated to the task.
 - Match existing patterns in the codebase (structure, naming, state management, routing).
 - After non-trivial edits, run `flutter analyze` and fix new issues.
+- **Cloud Functions region:** Always use `europe-west9` for Firebase Cloud Functions (Gen2) in this repository (prod and preview). Do not introduce or reintroduce any other region in code or deploy commands unless explicitly requested by the product owner.
 - **Shell — PowerShell only:** This workspace runs on Windows. Always use PowerShell for every shell command, path, and example. Never use bash, sh, zsh, or any Unix-only syntax (no `&&` chaining, no `cat <<'EOF'` heredocs, no `/tmp/` paths, etc.). Use PowerShell-compatible sequencing (`;`), here-strings (`@'...'@`) for multiline strings, and Windows paths (e.g. `$env:TEMP`) everywhere.
 - **Profile badges / avatars:** Never use Google-hosted profile image URLs directly in feature UIs (to avoid quota/429 issues). Use only badge/photo URLs stored in our own Firestore profile fields.
 - **Palette changes:** Any modification to `BrandPaletteData` or `PlanerzColors` (new field, value change, new palette) must be reflected in [`PALETTES.md`](PALETTES.md).
@@ -35,6 +36,8 @@ These rules apply to everyone working on the repository, including automated cod
 These rules apply to **automated coding agents and assistants** (not an expectation on every human contributor to self-enforce the same way).
 
 - **Firebase deploy:** Do **not** run `firebase deploy` on your own initiative — including **Cloud Functions**, **Firestore rules**, **Storage rules**, **indexes**, or any **combined** `firebase deploy` target. After changes that require a remote deploy, **explicitly tell the product owner** that they must run the deploy themselves, and **show the exact command(s)** for what needs updating (e.g. `firebase deploy --only functions --project <project>`, or rules/indexes/storage as in [`RELEASE.md`](RELEASE.md)). You may use [`RELEASE.md`](RELEASE.md) for project IDs and common patterns.
+
+- **Cloud Functions IAM check (mandatory):** For every **new** or **redeployed** Firebase Functions v2 HTTP/callable function, explicitly verify Cloud Run invocation IAM right after deploy. Confirm the target service has `allUsers` with `roles/run.invoker` when public invocation is expected (Flutter/Web clients). Use `gcloud run services get-iam-policy <service-lowercase-name> --region=<region> --project=<project>`. If missing, report it immediately and provide the exact `gcloud run services add-iam-policy-binding ... --member=allUsers --role=roles/run.invoker` command.
 
 - **Git commits:** Do **not** run `git commit` (or create commits) on your own initiative. The product owner **decides what to commit and when**; keep changes in the working tree until they request a commit.
 

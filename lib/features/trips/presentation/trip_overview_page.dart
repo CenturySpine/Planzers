@@ -161,32 +161,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  Future<void> _shareInviteLink() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_inviteClipboardBusy) return;
-    setState(() => _inviteClipboardBusy = true);
-    try {
-      final link =
-          await ref.read(tripsRepositoryProvider).getOrCreateInviteLink(
-                tripId: _trip.id,
-              );
-      await Clipboard.setData(ClipboardData(text: link));
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewInviteLinkCopied)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewInviteShareError(e.toString()))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _inviteClipboardBusy = false);
-      }
-    }
-  }
-
   Future<void> _copyInviteCode() async {
     final l10n = AppLocalizations.of(context)!;
     if (_inviteClipboardBusy) return;
@@ -664,10 +638,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           _openTripUserPreferencesPage();
                                           return;
                                         }
-                                        if (value == 'share' && canShareAccess) {
-                                          _shareInviteLink();
-                                          return;
-                                        }
                                         if (value == 'copyCode' && canShareAccess) {
                                           _copyInviteCode();
                                           return;
@@ -704,17 +674,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                 Text(
                                                   l10n.tripUserPreferencesMenuAction,
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                        if (canShareAccess)
-                                          PopupMenuItem(
-                                            value: 'share',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.group_add_outlined),
-                                                SizedBox(width: 10),
-                                                Text(l10n.tripOverviewShareInvite),
                                               ],
                                             ),
                                           ),
@@ -782,10 +741,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         _openTripUserPreferencesPage();
                                         return;
                                       }
-                                      if (value == 'share' && canShareAccess) {
-                                        _shareInviteLink();
-                                        return;
-                                      }
                                       if (value == 'copyCode' && canShareAccess) {
                                         _copyInviteCode();
                                         return;
@@ -821,17 +776,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               Text(
                                                 l10n.tripUserPreferencesMenuAction,
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      if (canShareAccess)
-                                        PopupMenuItem(
-                                          value: 'share',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.group_add_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripOverviewShareInvite),
                                             ],
                                           ),
                                         ),

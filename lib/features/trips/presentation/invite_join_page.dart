@@ -48,6 +48,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   bool _joined = false;
   InviteJoinContext? _context;
   String? _selectedPlaceholderId;
+  String? _suggestedPlaceholderId;
+  String? _currentUserEmailLocalPart;
   final TextEditingController _placeholderSearchController =
       TextEditingController();
 
@@ -97,7 +99,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     setState(() {
       final id = _selectedPlaceholderId;
       if (id != null && !filtered.any((p) => p.id == id)) {
-        _selectedPlaceholderId = filtered.isNotEmpty ? filtered.first.id : null;
+        _selectedPlaceholderId = null;
       }
     });
   }
@@ -105,6 +107,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   Widget _placeholderChoiceTile({
     required InviteJoinPlaceholderOption option,
     required int accentIndex,
+    required bool isSuggested,
   }) {
     final accents = _joinOptionAccentColors(context);
     final accent = accents[accentIndex % accents.length];
@@ -149,6 +152,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Icons.check_circle,
                     color: accent,
                     size: 26,
+                  )
+                else if (isSuggested)
+                  Icon(
+                    Icons.auto_awesome,
+                    color: accent,
+                    size: 26,
                   ),
               ],
             ),
@@ -174,7 +183,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       final redirect = Uri(
-        path: '/invite',
+        path: '/join-with-code',
         queryParameters: <String, String>{
           'tripId': widget.tripId,
           'token': widget.token,
@@ -187,9 +196,35 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       }
       return;
     }
+    _currentUserEmailLocalPart = _extractEmailLocalPart(user.email);
 
     await _loadCupidonDefaultFromProfile();
     await _loadContextAndMaybeJoin();
+  }
+
+  String? _extractEmailLocalPart(String? email) {
+    if (email == null) return null;
+    final trimmed = email.trim();
+    if (trimmed.isEmpty) return null;
+    final atIndex = trimmed.indexOf('@');
+    if (atIndex <= 0) return null;
+    final localPart = trimmed.substring(0, atIndex).trim();
+    if (localPart.isEmpty) return null;
+    return localPart;
+  }
+
+  String? _findSuggestedPlaceholderId(
+    List<InviteJoinPlaceholderOption> sorted,
+  ) {
+    final emailLocalPart = _currentUserEmailLocalPart;
+    if (emailLocalPart == null || emailLocalPart.trim().isEmpty) return null;
+    final match = findBestUiStringSimilarityMatch(
+      source: emailLocalPart,
+      candidates: sorted.map((option) => option.displayName).toList(),
+      minimumScore: 0.7,
+    );
+    if (match == null) return null;
+    return sorted[match.index].id;
   }
 
   Future<void> _loadCupidonDefaultFromProfile() async {
@@ -220,12 +255,14 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         _placeholderSearchController.clear();
         if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
           final sorted = _sortedPlaceholders(ctx);
-          _selectedPlaceholderId = sorted.first.id;
+          _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
+          _selectedPlaceholderId = _suggestedPlaceholderId;
           _stayDraft = TripMemberStay.defaultForInviteContext(
             tripStartDate: ctx.tripStartDate,
             tripEndDate: ctx.tripEndDate,
           );
         } else {
+          _suggestedPlaceholderId = null;
           _stayDraft = null;
         }
       });
@@ -244,7 +281,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
   }
 
-  Future<void> _join({String? placeholderMemberId}) async {
+  Future<void> _join({
+    String? placeholderMemberId,
+    bool bypassPlaceholderChoice = false,
+  }) async {
     if (_joining || _joined) return;
     setState(() {
       _joining = true;
@@ -255,6 +295,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripId: widget.tripId,
             token: widget.token,
             placeholderMemberId: placeholderMemberId,
+            bypassPlaceholderChoice: bypassPlaceholderChoice,
           );
       if (!mounted) return;
       setState(() {
@@ -311,6 +352,16 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _inviteFormStep = 1;
     });
     unawaited(_loadAllergenIdsForForm());
+  }
+
+  Future<void> _joinWithCurrentProfileDirectly() async {
+    setState(() {
+      _error = null;
+    });
+    await _join(
+      placeholderMemberId: null,
+      bypassPlaceholderChoice: true,
+    );
   }
 
   void _backToNameStep() {
@@ -478,9 +529,31 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                   option: option,
                                   accentIndex:
                                       accentIndex >= 0 ? accentIndex : index,
+                                  isSuggested:
+                                      _suggestedPlaceholderId == option.id,
                                 );
                               },
                             ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.inviteJoinWithCurrentProfileHint,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton.icon(
+                        onPressed:
+                            _joining ? null : _joinWithCurrentProfileDirectly,
+                        icon: const Icon(Icons.person_add_alt_1_outlined),
+                        label: Text(l10n.inviteJoinWithCurrentProfileAction),
+                      ),
                     ),
                   ] else ...[
                     const SizedBox(height: 16),
@@ -551,11 +624,17 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       Expanded(
                         flex: 2,
                         child: FilledButton(
-                          onPressed: _joining
-                              ? null
-                              : (_inviteFormStep == 0
-                                  ? _continueFromNameStep
-                                  : _completeInviteWithDetails),
+                          onPressed:
+                              (_joining ||
+                                      (_inviteFormStep == 0 &&
+                                          (_selectedPlaceholderId == null ||
+                                              _selectedPlaceholderId!
+                                                  .trim()
+                                                  .isEmpty)))
+                                  ? null
+                                  : (_inviteFormStep == 0
+                                      ? _continueFromNameStep
+                                      : _completeInviteWithDetails),
                           child: Text(
                             _inviteFormStep == 0
                                 ? l10n.commonContinue

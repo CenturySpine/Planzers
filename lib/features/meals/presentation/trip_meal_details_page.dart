@@ -317,6 +317,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   }
 
   Future<void> _addComponent(MealComponentKind kind) async {
+    if (widget.isCreate) return;
     final previousComponents = _components;
     setState(() {
       _components = [
@@ -338,6 +339,31 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required Set<String> participantAllergenIds,
     required Map<String, String> tripMemberPublicLabels,
   }) async {
+    Future<void> openEditor() async {
+      final updated = await Navigator.of(context).push<MealComponent>(
+        MaterialPageRoute(
+          builder: (_) => MealComponentEditorPage(
+            component: component,
+            catalogItems: catalogItems,
+            participantAllergenIds: participantAllergenIds,
+            showLockIndicator: true,
+          ),
+        ),
+      );
+      if (!mounted || updated == null) return;
+      final previousComponents = _components;
+      _updateComponent(
+        updated.copyWith(
+          order: component.order,
+          lockedBy: _currentUserId,
+        ),
+      );
+      await _saveMealComponents(previousComponents: previousComponents);
+    }
+
+    final mealId = (widget.mealId ?? '').trim();
+    if (mealId.isEmpty) return;
+
     if (_isComponentLockedByOther(component)) {
       final lockOwnerId = (component.lockedBy ?? '').trim();
       var lockOwnerData = <String, dynamic>{};
@@ -371,7 +397,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final repo = ref.read(mealsRepositoryProvider);
     final lockOwner = await repo.lockMealComponent(
       tripId: widget.tripId,
-      mealId: widget.mealId!,
+      mealId: mealId,
       componentId: component.id,
     );
     if (!mounted) return;
@@ -402,29 +428,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
 
     try {
-      final updated = await Navigator.of(context).push<MealComponent>(
-        MaterialPageRoute(
-          builder: (_) => MealComponentEditorPage(
-            component: component,
-            catalogItems: catalogItems,
-            participantAllergenIds: participantAllergenIds,
-            showLockIndicator: true,
-          ),
-        ),
-      );
-      if (!mounted || updated == null) return;
-      final previousComponents = _components;
-      _updateComponent(
-        updated.copyWith(
-          order: component.order,
-          lockedBy: _currentUserId,
-        ),
-      );
-      await _saveMealComponents(previousComponents: previousComponents);
+      await openEditor();
     } finally {
       await repo.unlockMealComponent(
         tripId: widget.tripId,
-        mealId: widget.mealId!,
+        mealId: mealId,
         componentId: component.id,
       );
     }
@@ -1338,29 +1346,30 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       style: textTheme.titleMedium,
                                     ),
                                   ),
-                                  PopupMenuButton<MealComponentKind>(
-                                    tooltip: l10n.mealAddComponent,
-                                    onSelected: _isSavingComponents
-                                        ? null
-                                        : (kind) => _addComponent(kind),
-                                    itemBuilder: (context) => [
-                                      for (final kind
-                                          in MealComponentKind.values)
-                                        PopupMenuItem(
-                                          value: kind,
-                                          child: Text(
-                                            l10n.mealAddComponentWithKind(
-                                              _componentKindLabel(l10n, kind),
+                                  if (!widget.isCreate)
+                                    PopupMenuButton<MealComponentKind>(
+                                      tooltip: l10n.mealAddComponent,
+                                      onSelected: _isSavingComponents
+                                          ? null
+                                          : (kind) => _addComponent(kind),
+                                      itemBuilder: (context) => [
+                                        for (final kind
+                                            in MealComponentKind.values)
+                                          PopupMenuItem(
+                                            value: kind,
+                                            child: Text(
+                                              l10n.mealAddComponentWithKind(
+                                                _componentKindLabel(l10n, kind),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                    ],
-                                    child: const Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 8),
-                                      child: Icon(Icons.add_circle_outline),
+                                      ],
+                                      child: const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 8),
+                                        child: Icon(Icons.add_circle_outline),
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                               const SizedBox(height: 8),
@@ -1413,6 +1422,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       margin: const EdgeInsets.only(bottom: 12),
                                       child: ListTile(
                                         onTap: catalogItems == null
+                                            || widget.isCreate
                                             ? null
                                             : () => _openComponentEditor(
                                                   component: component,

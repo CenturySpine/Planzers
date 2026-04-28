@@ -2015,18 +2015,6 @@ abstract class AppLocalizations {
   /// **'Erreur modification : {error}'**
   String tripOverviewUpdateError(Object error);
 
-  /// No description provided for @tripOverviewInviteLinkCopied.
-  ///
-  /// In fr, this message translates to:
-  /// **'Lien d\'invitation copié dans le presse-papiers'**
-  String get tripOverviewInviteLinkCopied;
-
-  /// No description provided for @tripOverviewInviteShareError.
-  ///
-  /// In fr, this message translates to:
-  /// **'Erreur partage invitation : {error}'**
-  String tripOverviewInviteShareError(Object error);
-
   /// No description provided for @tripOverviewInviteCodeCopied.
   ///
   /// In fr, this message translates to:
@@ -2104,12 +2092,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Changer de photo'**
   String get tripOverviewChangePhoto;
-
-  /// No description provided for @tripOverviewShareInvite.
-  ///
-  /// In fr, this message translates to:
-  /// **'Partager invitation'**
-  String get tripOverviewShareInvite;
 
   /// No description provided for @tripOverviewCopyCode.
   ///
@@ -2272,6 +2254,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Modifier le choix du voyageur'**
   String get inviteEditTravelerChoice;
+
+  /// No description provided for @inviteJoinWithCurrentProfileHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.'**
+  String get inviteJoinWithCurrentProfileHint;
+
+  /// No description provided for @inviteJoinWithCurrentProfileAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Continuer avec mon profil actuel'**
+  String get inviteJoinWithCurrentProfileAction;
 
   /// No description provided for @commonContinue.
   ///

@@ -1078,14 +1078,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied => 'Invite link copied to clipboard';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Invite sharing error: $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied => 'Invite code copied to clipboard';
 
   @override
@@ -1128,9 +1120,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewChangePhoto => 'Change photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Share invite';
 
   @override
   String get tripOverviewCopyCode => 'Copy code';
@@ -1217,6 +1206,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteEditTravelerChoice => 'Edit traveler choice';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Can\'t find your name or not sure? Join with your current profile. Admins can reassign your slot later if needed.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continue with my current profile';
 
   @override
   String get commonContinue => 'Continue';
@@ -3136,14 +3133,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied => 'Invite link copied to clipboard';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Invite sharing error: $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied => 'Invite code copied to clipboard';
 
   @override
@@ -3186,9 +3175,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewChangePhoto => 'Change photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Share invite';
 
   @override
   String get tripOverviewCopyCode => 'Copy code';
@@ -3275,6 +3261,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get inviteEditTravelerChoice => 'Edit traveler choice';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Can\'t find your name or not sure? Join with your current profile. Admins can reassign your slot later if needed.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continue with my current profile';
 
   @override
   String get commonContinue => 'Continue';

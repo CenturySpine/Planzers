@@ -1088,15 +1088,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied =>
-      'Lien d\'invitation copié dans le presse-papiers';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Erreur partage invitation : $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied =>
       'Code d\'invitation copié dans le presse-papiers';
 
@@ -1140,9 +1131,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewChangePhoto => 'Changer de photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Partager invitation';
 
   @override
   String get tripOverviewCopyCode => 'Copier le code';
@@ -1229,6 +1217,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continuer avec mon profil actuel';
 
   @override
   String get commonContinue => 'Continuer';
@@ -3161,15 +3157,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied =>
-      'Lien d\'invitation copié dans le presse-papiers';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Erreur partage invitation : $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied =>
       'Code d\'invitation copié dans le presse-papiers';
 
@@ -3213,9 +3200,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewChangePhoto => 'Changer de photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Partager invitation';
 
   @override
   String get tripOverviewCopyCode => 'Copier le code';
@@ -3302,6 +3286,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continuer avec mon profil actuel';
 
   @override
   String get commonContinue => 'Continuer';
