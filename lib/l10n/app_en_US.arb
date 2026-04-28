@@ -245,6 +245,12 @@
     }
   },
   "tripRoleHierarchyHint": "Privilege hierarchy: owner > admin > participant",
+  "tripSettingsPermissionsSectionTitle": "Permissions",
+  "tripSettingsPermissionsSectionDescription": "Set the minimum roles for each trip domain.",
+  "tripSettingsGeneralSectionTitle": "General settings",
+  "tripSettingsGeneralSectionDescription": "Cross-cutting trip settings (outside permissions).",
+  "tripSettingsGeneralComingSoonTitle": "General trip settings",
+  "tripSettingsGeneralComingSoonDescription": "This section is coming soon.",
   "roleOwner": "Owner",
   "roleAdmin": "Admin",
   "roleParticipant": "Participant",

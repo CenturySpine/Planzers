@@ -245,6 +245,12 @@
     }
   },
   "tripRoleHierarchyHint": "Hiérarchie des privilèges : créateur > admin > participant",
+  "tripSettingsPermissionsSectionTitle": "Permissions",
+  "tripSettingsPermissionsSectionDescription": "Définis les rôles minimaux pour chaque domaine du voyage.",
+  "tripSettingsGeneralSectionTitle": "Paramètres généraux",
+  "tripSettingsGeneralSectionDescription": "Réglages transverses du voyage (hors permissions).",
+  "tripSettingsGeneralComingSoonTitle": "Paramètres généraux du voyage",
+  "tripSettingsGeneralComingSoonDescription": "Cette section arrive bientôt.",
   "roleOwner": "Créateur",
   "roleAdmin": "Admin",
   "roleParticipant": "Participant",

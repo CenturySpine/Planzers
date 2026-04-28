@@ -602,6 +602,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Privilege hierarchy: owner > admin > participant';
 
   @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Set the minimum roles for each trip domain.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'General settings';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Cross-cutting trip settings (outside permissions).';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'This section is coming soon.';
+
+  @override
   String get roleOwner => 'Owner';
 
   @override
@@ -2652,6 +2673,27 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripRoleHierarchyHint =>
       'Privilege hierarchy: owner > admin > participant';
+
+  @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Set the minimum roles for each trip domain.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'General settings';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Cross-cutting trip settings (outside permissions).';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'This section is coming soon.';
 
   @override
   String get roleOwner => 'Owner';

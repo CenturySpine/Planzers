@@ -25,6 +25,8 @@ import 'package:planerz/features/trips/presentation/trip_activities_permissions_
 import 'package:planerz/features/trips/presentation/trip_general_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
+import 'package:planerz/features/trips/presentation/trip_settings_permissions_page.dart';
+import 'package:planerz/features/trips/presentation/trip_settings_general_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
@@ -134,34 +136,73 @@ final GoRouter appRouter = GoRouter(
           ),
           routes: <RouteBase>[
             GoRoute(
-              path: 'trip',
-              builder: (context, state) => TripGeneralPermissionsPage(
+              path: 'permissions',
+              builder: (context, state) => TripSettingsPermissionsPage(
                 tripId: state.pathParameters['tripId']!,
               ),
+              routes: <RouteBase>[
+                GoRoute(
+                  path: 'trip',
+                  builder: (context, state) => TripGeneralPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'participants',
+                  builder: (context, state) => TripParticipantsPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'expenses',
+                  builder: (context, state) => TripExpensesPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'activities',
+                  builder: (context, state) => TripActivitiesPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
+                  path: 'shopping',
+                  builder: (context, state) => TripShoppingPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: 'general',
+              builder: (context, state) => TripSettingsGeneralPage(
+                tripId: state.pathParameters['tripId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'trip',
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/trip',
             ),
             GoRoute(
               path: 'participants',
-              builder: (context, state) => TripParticipantsPermissionsPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/participants',
             ),
             GoRoute(
               path: 'expenses',
-              builder: (context, state) => TripExpensesPermissionsPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/expenses',
             ),
             GoRoute(
               path: 'activities',
-              builder: (context, state) => TripActivitiesPermissionsPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/activities',
             ),
             GoRoute(
               path: 'shopping',
-              builder: (context, state) => TripShoppingPermissionsPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/shopping',
             ),
           ],
         ),

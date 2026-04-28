@@ -1180,6 +1180,42 @@ abstract class AppLocalizations {
   /// **'Hiérarchie des privilèges : créateur > admin > participant'**
   String get tripRoleHierarchyHint;
 
+  /// No description provided for @tripSettingsPermissionsSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions'**
+  String get tripSettingsPermissionsSectionTitle;
+
+  /// No description provided for @tripSettingsPermissionsSectionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Définis les rôles minimaux pour chaque domaine du voyage.'**
+  String get tripSettingsPermissionsSectionDescription;
+
+  /// No description provided for @tripSettingsGeneralSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres généraux'**
+  String get tripSettingsGeneralSectionTitle;
+
+  /// No description provided for @tripSettingsGeneralSectionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages transverses du voyage (hors permissions).'**
+  String get tripSettingsGeneralSectionDescription;
+
+  /// No description provided for @tripSettingsGeneralComingSoonTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres généraux du voyage'**
+  String get tripSettingsGeneralComingSoonTitle;
+
+  /// No description provided for @tripSettingsGeneralComingSoonDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette section arrive bientôt.'**
+  String get tripSettingsGeneralComingSoonDescription;
+
   /// No description provided for @roleOwner.
   ///
   /// In fr, this message translates to:

@@ -607,6 +607,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Hiérarchie des privilèges : créateur > admin > participant';
 
   @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Définis les rôles minimaux pour chaque domaine du voyage.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'Paramètres généraux';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Réglages transverses du voyage (hors permissions).';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle =>
+      'Paramètres généraux du voyage';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'Cette section arrive bientôt.';
+
+  @override
   String get roleOwner => 'Créateur';
 
   @override
@@ -2671,6 +2693,28 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripRoleHierarchyHint =>
       'Hiérarchie des privilèges : créateur > admin > participant';
+
+  @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Définis les rôles minimaux pour chaque domaine du voyage.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'Paramètres généraux';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Réglages transverses du voyage (hors permissions).';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle =>
+      'Paramètres généraux du voyage';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'Cette section arrive bientôt.';
 
   @override
   String get roleOwner => 'Créateur';
