@@ -39,7 +39,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
     final localeAsync = ref.watch(appLocalePreferenceProvider);
     final AppPaletteId paletteId = switch (paletteAsync) {
       AsyncData(:final value) => value,
-      _ => AppPaletteId.cupidon,
+      _ => AppPaletteId.oligarch,
     };
 
     return MaterialApp.router(

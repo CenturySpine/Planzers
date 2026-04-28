@@ -22,14 +22,14 @@ class AppPaletteNotifier extends AsyncNotifier<AppPaletteId> {
   }
 
   static AppPaletteId _parse(String? raw) {
-    if (raw == null || raw.isEmpty) return AppPaletteId.cupidon;
+    if (raw == null || raw.isEmpty) return AppPaletteId.oligarch;
     // Legacy prefs keys (before rename).
     if (raw == 'original') return AppPaletteId.cupidon;
     if (raw == 'lagune') return AppPaletteId.oligarch;
     for (final v in AppPaletteId.values) {
       if (v.name == raw) return v;
     }
-    return AppPaletteId.cupidon;
+    return AppPaletteId.oligarch;
   }
 
   Future<void> setPalette(AppPaletteId id) async {
