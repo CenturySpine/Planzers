@@ -51,6 +51,7 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
+    DateTime? plannedAt,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -79,6 +80,15 @@ class ActivitiesRepository {
     if (!canSuggest) {
       throw StateError('Droits insuffisants pour suggerer une activite');
     }
+    if (plannedAt != null) {
+      final canPlan = canPlanActivityForTrip(
+        trip: trip,
+        userId: user.uid,
+      );
+      if (!canPlan) {
+        throw StateError('Droits insuffisants pour planifier une activite');
+      }
+    }
 
     await _activitiesCol(cleanTripId).add({
       'label': cleanLabel,
@@ -86,6 +96,7 @@ class ActivitiesRepository {
       'linkUrl': linkUrl.trim(),
       'address': address.trim(),
       'freeComments': freeComments.trim(),
+      if (plannedAt != null) 'plannedAt': Timestamp.fromDate(plannedAt),
       'done': false,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
