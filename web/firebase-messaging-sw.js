@@ -3,13 +3,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
 
 const prodConfig = {
-  apiKey: 'AIzaSyC6N9_UQcpIiXNAh9VxlwYmYoYgw5L_WqM',
-  appId: '1:968267093466:web:fe185a5604145fe3d29ce3',
-  messagingSenderId: '968267093466',
+  apiKey: 'AIzaSyDXFZrpXlQa1_FqNmbTVUsOlTcHDcs3pPU',
+  appId: '1:936277491452:web:1794a04a8c81d6f8f1e179',
+  messagingSenderId: '936277491452',
   projectId: 'planerz',
   authDomain: 'planerz.firebaseapp.com',
   storageBucket: 'planerz.firebasestorage.app',
-  measurementId: 'G-MDP337D1C0',
+  measurementId: 'G-Z68T9LKMH7',
 };
 
 const previewConfig = {
