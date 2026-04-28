@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -201,6 +202,28 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   void _openTripUserPreferencesPage() {
     context.push('/trips/${_trip.id}/preferences');
+  }
+
+  Future<void> _openPhotosStorageLink(String url) async {
+    final l10n = AppLocalizations.of(context)!;
+    final parsedUrl = Uri.tryParse(url.trim());
+    if (parsedUrl == null || !parsedUrl.isAbsolute) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkInvalid)),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(
+      parsedUrl,
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkOpenImpossible)),
+      );
+    }
   }
 
   Future<void> _pickAndUploadBannerImage() async {
@@ -457,6 +480,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+        final photosStorageLinkUrl = liveLinkUrl.trim();
         final tripDateLabel =
             formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
@@ -887,6 +911,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 leftAlertCount: unreadAnnouncements,
                 onLeftTap: _openAnnouncementsPage,
                 onRightTap: _openExpensesPage,
+                thirdLabel: photosStorageLinkUrl.isNotEmpty ? 'Photos' : null,
+                onThirdTap: photosStorageLinkUrl.isNotEmpty
+                    ? () => _openPhotosStorageLink(photosStorageLinkUrl)
+                    : null,
               ),
             ),
             Padding(
@@ -1478,6 +1506,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
     this.leftAlertCount = 0,
     required this.onLeftTap,
     required this.onRightTap,
+    this.thirdLabel,
+    this.onThirdTap,
   });
 
   final String leftLabel;
@@ -1485,6 +1515,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
   final int leftAlertCount;
   final VoidCallback onLeftTap;
   final VoidCallback onRightTap;
+  final String? thirdLabel;
+  final VoidCallback? onThirdTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1520,6 +1552,20 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               onTap: onRightTap,
             ),
           ),
+          if (thirdLabel != null && onThirdTap != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: _TripOverviewTopSwitchItem(
+                label: thirdLabel!,
+                icon: Icons.photo_library_outlined,
+                color: cs.tertiaryContainer,
+                foregroundColor: cs.onTertiaryContainer,
+                borderColor: cs.outlineVariant,
+                textStyle: labelStyle,
+                onTap: onThirdTap!,
+              ),
+            ),
+          ],
         ],
       ),
     );
