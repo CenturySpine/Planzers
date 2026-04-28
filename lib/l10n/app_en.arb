@@ -466,11 +466,6 @@
   "@tripOverviewUpdateError": {
     "placeholders": {"error": {}}
   },
-  "tripOverviewInviteLinkCopied": "Invite link copied to clipboard",
-  "tripOverviewInviteShareError": "Invite sharing error: {error}",
-  "@tripOverviewInviteShareError": {
-    "placeholders": {"error": {}}
-  },
   "tripOverviewInviteCodeCopied": "Invite code copied to clipboard",
   "tripOverviewInviteCodeCopyError": "Invite code copy error: {error}",
   "@tripOverviewInviteCodeCopyError": {
@@ -490,7 +485,6 @@
   "tripOverviewActions": "Trip actions",
   "tripOverviewPhotoActions": "Photo actions",
   "tripOverviewChangePhoto": "Change photo",
-  "tripOverviewShareInvite": "Share invite",
   "tripOverviewCopyCode": "Copy code",
   "tripOverviewEditTrip": "Edit trip",
   "tripOverviewTitleRequired": "Title required",

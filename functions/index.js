@@ -2132,52 +2132,6 @@ exports.joinTripWithInvite = onCall(
   }
 );
 
-/** Same as joinTripWithInvite, but resolves the trip from invite token only. */
-exports.joinTripWithInviteToken = onCall(
-  {
-  },
-  async (request) => {
-    const uid = request.auth?.uid;
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
-    }
-
-    const token = normalizeString(request.data?.token);
-    if (!token) {
-      throw new HttpsError('invalid-argument', 'Code d invitation invalide');
-    }
-
-    const placeholderMemberId = normalizeString(
-      request.data?.placeholderMemberId
-    );
-
-    const db = admin.firestore();
-    const snap = await db
-      .collection('trips')
-      .where('inviteToken', '==', token)
-      .limit(2)
-      .get();
-
-    if (snap.empty) {
-      throw new HttpsError('not-found', 'Code d invitation inconnu');
-    }
-    if (snap.size > 1) {
-      console.error('joinTripWithInviteToken duplicate token', token);
-      throw new HttpsError('internal', 'Erreur serveur');
-    }
-
-    const tripRef = snap.docs[0].ref;
-    await completeJoinTripWithInvite(
-      tripRef,
-      uid,
-      token,
-      placeholderMemberId
-    );
-
-    return { ok: true, tripId: tripRef.id };
-  }
-);
-
 /**
  * Removes [uid] from shared expenses for a trip: drops them from participantIds,
  * reassigns paidBy when needed, deletes docs with no participants left.

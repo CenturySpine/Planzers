@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -6,9 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/core/firebase/app_public_hosts.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
@@ -33,7 +32,6 @@ final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
     storage: FirebaseStorage.instanceFor(bucket: bucketUri),
-    mobileInviteBaseUri: mobileInviteBaseUriForTarget(target),
   );
 });
 
@@ -52,17 +50,12 @@ class TripsRepository {
     required this.firestore,
     required this.auth,
     required this.storage,
-    required this.mobileInviteBaseUri,
   });
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FirebaseStorage storage;
   final Set<String> _permissionsBackfillInFlight = <String>{};
-
-  /// Used for invite links from iOS/Android/desktop native. Web uses
-  /// [Uri.base.origin] so the deployed host (prod vs Vercel preview) matches.
-  final Uri mobileInviteBaseUri;
 
   Map<String, dynamic> _defaultPermissionsFirestoreMap() {
     return <String, dynamic>{
@@ -330,25 +323,6 @@ class TripsRepository {
     return inviteToken;
   }
 
-  Future<String> getOrCreateInviteLink({
-    required String tripId,
-  }) async {
-    final inviteToken = await getOrCreateInviteToken(tripId: tripId);
-
-    final params = <String, String>{
-      'tripId': tripId,
-      'token': inviteToken,
-    };
-
-    if (kIsWeb) {
-      return Uri.parse(Uri.base.origin)
-          .replace(path: '/invite', queryParameters: params)
-          .toString();
-    }
-
-    return mobileInviteBaseUri.replace(queryParameters: params).toString();
-  }
-
   Future<InviteJoinContext> getInviteJoinContext({
     String? tripId,
     required String token,
@@ -447,43 +421,6 @@ class TripsRepository {
       payload['placeholderMemberId'] = ph;
     }
     await callable.call(payload);
-  }
-
-  /// Joins using only the invite token (same as opening the invite link).
-  /// Returns the trip id for navigation.
-  Future<String> joinTripWithInviteToken(
-    String token, {
-    String? placeholderMemberId,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanToken = token.trim();
-    if (cleanToken.isEmpty) {
-      throw StateError('Code d invitation invalide');
-    }
-
-    final regionFunctions = FirebaseFunctions.instanceFor(
-      region: kFirebaseFunctionsRegion,
-    );
-    final callable = regionFunctions.httpsCallable('joinTripWithInviteToken');
-    final payload = <String, dynamic>{'token': cleanToken};
-    final ph = placeholderMemberId?.trim();
-    if (ph != null && ph.isNotEmpty) {
-      payload['placeholderMemberId'] = ph;
-    }
-    final result = await callable.call(payload);
-    final data = result.data;
-    if (data is! Map) {
-      throw StateError('Reponse serveur invalide');
-    }
-    final tripId = data['tripId'];
-    if (tripId is! String || tripId.trim().isEmpty) {
-      throw StateError('Reponse serveur invalide');
-    }
-    return tripId.trim();
   }
 
   /// Adds a placeholder traveler. Permission is controlled by

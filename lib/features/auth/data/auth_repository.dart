@@ -101,8 +101,8 @@ class AuthRepository {
     if (kIsWeb) {
       return Uri.parse(Uri.base.origin).replace(path: '/sign-in');
     }
-    final inviteBaseUri = mobileInviteBaseUriForTarget(firebaseTarget);
-    return inviteBaseUri.replace(path: '/sign-in');
+    final appBaseUri = publicAppBaseUriForTarget(firebaseTarget);
+    return appBaseUri.replace(path: '/sign-in');
   }
 
   ActionCodeSettings _buildEmailLinkSettings() {

@@ -174,7 +174,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       final redirect = Uri(
-        path: '/invite',
+        path: '/join-with-code',
         queryParameters: <String, String>{
           'tripId': widget.tripId,
           'token': widget.token,

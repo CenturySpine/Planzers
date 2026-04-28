@@ -76,7 +76,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/invite',
+      path: '/join-with-code',
       builder: (context, state) {
         final tripId = state.uri.queryParameters['tripId'] ?? '';
         final token = state.uri.queryParameters['token'] ?? '';

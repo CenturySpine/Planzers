@@ -1,8 +1,12 @@
 import 'package:planerz/core/firebase/firebase_target.dart';
 
-/// Optional full invite base URL (path `/invite` included or not — normalized below).
-/// When set, used for mobile invite links regardless of [FirebaseTarget].
-const String _kInviteBaseUrlOverride = String.fromEnvironment('INVITE_BASE_URL');
+/// Optional full public app base URL override.
+///
+/// Backward compatibility: keeps reading `INVITE_BASE_URL` because existing
+/// environments may still define it.
+const String _kPublicAppBaseUrlOverride = String.fromEnvironment(
+  'INVITE_BASE_URL',
+);
 
 /// Production web app origin (scheme + host, optional port). No trailing slash.
 const String _kProdPublicAppOrigin = String.fromEnvironment(
@@ -16,26 +20,16 @@ const String _kPreviewPublicAppOrigin = String.fromEnvironment(
   defaultValue: 'https://preview.planerz.centuryspine.org',
 );
 
-/// Base URI for `/invite?…` when sharing from **mobile** (iOS/Android/desktop native).
-///
-/// Web builds use [Uri.base.origin] in the repository so deploy URL matches automatically.
-Uri mobileInviteBaseUriForTarget(FirebaseTarget target) {
-  final override = _kInviteBaseUrlOverride.trim();
+/// Public web app base URI for the selected Firebase target.
+Uri publicAppBaseUriForTarget(FirebaseTarget target) {
+  final override = _kPublicAppBaseUrlOverride.trim();
   if (override.isNotEmpty) {
-    final parsed = Uri.parse(override);
-    return _asInviteBase(parsed);
+    return Uri.parse(override);
   }
 
   final origin = switch (target) {
     FirebaseTarget.prod => _kProdPublicAppOrigin,
     FirebaseTarget.preview => _kPreviewPublicAppOrigin,
   };
-  return _asInviteBase(Uri.parse(origin.trim()));
-}
-
-Uri _asInviteBase(Uri originOrFull) {
-  if (originOrFull.path == '/invite' || originOrFull.path.endsWith('/invite')) {
-    return originOrFull;
-  }
-  return originOrFull.replace(path: '/invite');
+  return Uri.parse(origin.trim());
 }

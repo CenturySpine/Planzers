@@ -1088,15 +1088,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied =>
-      'Lien d\'invitation copié dans le presse-papiers';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Erreur partage invitation : $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied =>
       'Code d\'invitation copié dans le presse-papiers';
 
@@ -1140,9 +1131,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewChangePhoto => 'Changer de photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Partager invitation';
 
   @override
   String get tripOverviewCopyCode => 'Copier le code';
@@ -3161,15 +3149,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied =>
-      'Lien d\'invitation copié dans le presse-papiers';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Erreur partage invitation : $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied =>
       'Code d\'invitation copié dans le presse-papiers';
 
@@ -3213,9 +3192,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewChangePhoto => 'Changer de photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Partager invitation';
 
   @override
   String get tripOverviewCopyCode => 'Copier le code';

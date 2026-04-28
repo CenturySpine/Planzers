@@ -1017,7 +1017,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!widget.parentContext.mounted) return;
       final route = Uri(
-        path: '/invite',
+        path: '/join-with-code',
         queryParameters: <String, String>{
           'tripId': tripId,
           'token': token,

@@ -1078,14 +1078,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied => 'Invite link copied to clipboard';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Invite sharing error: $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied => 'Invite code copied to clipboard';
 
   @override
@@ -1128,9 +1120,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewChangePhoto => 'Change photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Share invite';
 
   @override
   String get tripOverviewCopyCode => 'Copy code';
@@ -3136,14 +3125,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
-  String get tripOverviewInviteLinkCopied => 'Invite link copied to clipboard';
-
-  @override
-  String tripOverviewInviteShareError(Object error) {
-    return 'Invite sharing error: $error';
-  }
-
-  @override
   String get tripOverviewInviteCodeCopied => 'Invite code copied to clipboard';
 
   @override
@@ -3186,9 +3167,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewChangePhoto => 'Change photo';
-
-  @override
-  String get tripOverviewShareInvite => 'Share invite';
 
   @override
   String get tripOverviewCopyCode => 'Copy code';
