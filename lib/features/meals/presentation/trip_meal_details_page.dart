@@ -218,6 +218,92 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
+  Widget _buildMealModeSelector({
+    required AppLocalizations l10n,
+    required TextTheme textTheme,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.outlineVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SegmentedButton<_MealDetailsView>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.cooked,
+                      icon: SvgPicture.asset(
+                        'assets/images/chef_hat.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModeCooked,
+                    ),
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.restaurant,
+                      icon: SvgPicture.asset(
+                        'assets/images/hand_meal.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModeRestaurant,
+                    ),
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.potluck,
+                      icon: SvgPicture.asset(
+                        'assets/images/tapas.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModePotluck,
+                    ),
+                  ],
+                  selected: {_activeMealView},
+                  onSelectionChanged: _isSavingMealMode
+                      ? null
+                      : (selection) async {
+                          if (selection.isEmpty) {
+                            return;
+                          }
+                          if (_activeMealView == selection.first) {
+                            return;
+                          }
+                          final previousMealView = _activeMealView;
+                          setState(() {
+                            _activeMealView = selection.first;
+                          });
+                          await _saveMealMode(
+                            previousMealView: previousMealView,
+                          );
+                        },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _mealModeDisplayLabel(l10n),
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveRestaurantUrl() async {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingRestaurantUrl) return;
@@ -1309,96 +1395,21 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Card.outlined(
-                      color:
-                          colorScheme.primaryContainer.withValues(alpha: 0.35),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SegmentedButton<_MealDetailsView>(
-                                    showSelectedIcon: false,
-                                    segments: [
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.cooked,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/chef_hat.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModeCooked,
-                                      ),
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.restaurant,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/hand_meal.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModeRestaurant,
-                                      ),
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.potluck,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/tapas.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModePotluck,
-                                      ),
-                                    ],
-                                    selected: {_activeMealView},
-                                    onSelectionChanged: _isSavingMealMode
-                                        ? null
-                                        : (selection) async {
-                                            if (selection.isEmpty) {
-                                              return;
-                                            }
-                                            if (_activeMealView ==
-                                                selection.first) {
-                                              return;
-                                            }
-                                            final previousMealView =
-                                                _activeMealView;
-                                            setState(() {
-                                              _activeMealView = selection.first;
-                                            });
-                                            await _saveMealMode(
-                                              previousMealView:
-                                                  previousMealView,
-                                            );
-                                          },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _mealModeDisplayLabel(l10n),
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontStyle: FontStyle.italic,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     if (_activeMealView == _MealDetailsView.cooked) ...[
                       Card.outlined(
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
@@ -1645,6 +1656,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               ? Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    _buildMealModeSelector(
+                                      l10n: l10n,
+                                      textTheme: textTheme,
+                                      colorScheme: colorScheme,
+                                    ),
+                                    const SizedBox(height: 12),
                                     Row(
                                       children: [
                                         Expanded(
@@ -1692,20 +1709,32 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     ),
                                   ],
                                 )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                              : Column(
                                   children: [
-                                    Expanded(
-                                      child: LinkPreviewCardFromFirestore(
-                                        url: _restaurantUrl,
-                                        preview: const {},
-                                      ),
+                                    _buildMealModeSelector(
+                                      l10n: l10n,
+                                      textTheme: textTheme,
+                                      colorScheme: colorScheme,
                                     ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      tooltip: l10n.commonEdit,
-                                      onPressed: _startEditRestaurantUrl,
-                                      icon: const Icon(Icons.edit_outlined),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: LinkPreviewCardFromFirestore(
+                                            url: _restaurantUrl,
+                                            preview: const {},
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: l10n.commonEdit,
+                                          onPressed: _startEditRestaurantUrl,
+                                          icon:
+                                              const Icon(Icons.edit_outlined),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1718,6 +1747,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
