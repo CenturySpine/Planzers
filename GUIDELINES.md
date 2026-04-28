@@ -37,6 +37,8 @@ These rules apply to **automated coding agents and assistants** (not an expectat
 
 - **Firebase deploy:** Do **not** run `firebase deploy` on your own initiative — including **Cloud Functions**, **Firestore rules**, **Storage rules**, **indexes**, or any **combined** `firebase deploy` target. After changes that require a remote deploy, **explicitly tell the product owner** that they must run the deploy themselves, and **show the exact command(s)** for what needs updating (e.g. `firebase deploy --only functions --project <project>`, or rules/indexes/storage as in [`RELEASE.md`](RELEASE.md)). You may use [`RELEASE.md`](RELEASE.md) for project IDs and common patterns.
 
+- **Cloud Functions IAM check (mandatory):** For every **new** or **redeployed** Firebase Functions v2 HTTP/callable function, explicitly verify Cloud Run invocation IAM right after deploy. Confirm the target service has `allUsers` with `roles/run.invoker` when public invocation is expected (Flutter/Web clients). Use `gcloud run services get-iam-policy <service-lowercase-name> --region=<region> --project=<project>`. If missing, report it immediately and provide the exact `gcloud run services add-iam-policy-binding ... --member=allUsers --role=roles/run.invoker` command.
+
 - **Git commits:** Do **not** run `git commit` (or create commits) on your own initiative. The product owner **decides what to commit and when**; keep changes in the working tree until they request a commit.
 
 ## Stack (reference)
