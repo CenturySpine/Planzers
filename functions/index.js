@@ -1113,7 +1113,6 @@ async function sendCupidonMatchPush({
 exports.dispatchNotificationQueue = onDocumentCreated(
   {
     document: 'notificationQueue/{notifId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1205,7 +1204,6 @@ exports.dispatchNotificationQueue = onDocumentCreated(
 exports.notifyTripMessageRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/messages/{messageId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1261,7 +1259,6 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
 exports.notifyTripActivityRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/activities/{activityId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1316,7 +1313,6 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
 exports.notifyTripAnnouncementRecipients = onDocumentCreated(
   {
     document: 'trips/{tripId}/announcements/{announcementId}',
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1371,7 +1367,6 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
 exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
   {
     document: 'trips/{tripId}/notificationReads/{userId}',
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1419,7 +1414,6 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
 
 exports.resyncMyTripUnreadCounters = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1509,7 +1503,6 @@ exports.resyncMyTripUnreadCounters = onCall(
  */
 exports.reconcileMyCupidonNotificationCounters = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 60,
     memory: '256MiB',
   },
@@ -1613,7 +1606,6 @@ exports.reconcileMyCupidonNotificationCounters = onCall(
 exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
-    region: 'europe-west1',
     timeoutSeconds: 120,
     memory: '512MiB',
   },
@@ -1662,7 +1654,6 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
 exports.generateTripLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
-    region: 'europe-west1',
     timeoutSeconds: 30,
     memory: '256MiB',
   },
@@ -1878,7 +1869,6 @@ async function completeJoinTripWithInvite(
 
 exports.getInviteJoinContext = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -1960,7 +1950,6 @@ exports.getInviteJoinContext = onCall(
 
 exports.removeTripPlaceholderMember = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2036,7 +2025,6 @@ exports.removeTripPlaceholderMember = onCall(
 
 exports.joinTripWithInvite = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2069,7 +2057,6 @@ exports.joinTripWithInvite = onCall(
 /** Same as joinTripWithInvite, but resolves the trip from invite token only. */
 exports.joinTripWithInviteToken = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2157,7 +2144,6 @@ function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
 
 exports.leaveTrip = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2215,7 +2201,6 @@ exports.leaveTrip = onCall(
 
 exports.cycleTripMemberAdminRole = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2278,7 +2263,6 @@ exports.cycleTripMemberAdminRole = onCall(
 
 exports.registerMyTripMemberLabel = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2328,7 +2312,6 @@ exports.registerMyTripMemberLabel = onCall(
 
 exports.deleteTripCascade = onCall(
   {
-    region: 'europe-west1',
     timeoutSeconds: 540,
     memory: '1GiB',
   },
@@ -2372,7 +2355,6 @@ exports.deleteTripCascade = onCall(
 
 exports.backfillLegacyTripPermissions = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2435,7 +2417,6 @@ exports.backfillLegacyTripPermissions = onCall(
 
 exports.setTripCupidonEnabled = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2484,7 +2465,6 @@ exports.setTripCupidonEnabled = onCall(
 
 exports.toggleTripCupidonLike = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;
@@ -2668,7 +2648,6 @@ exports.toggleTripCupidonLike = onCall(
 
 exports.deleteCupidonMatch = onCall(
   {
-    region: 'europe-west1',
   },
   async (request) => {
     const uid = request.auth?.uid;

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 
 final notificationCenterRepositoryProvider =
@@ -299,7 +300,9 @@ class NotificationCenterRepository {
   Future<void> reconcileMyCupidonCountersFromServer() async {
     final uid = auth.currentUser?.uid.trim() ?? '';
     if (uid.isEmpty) return;
-    final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    )
         .httpsCallable('reconcileMyCupidonNotificationCounters');
     await callable.call();
   }

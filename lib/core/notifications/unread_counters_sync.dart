@@ -1,9 +1,10 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 
 Future<void> resyncMyUnreadCountersAfterSignIn() async {
   try {
-    await FirebaseFunctions.instanceFor(region: 'europe-west1')
+    await FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion)
         .httpsCallable('resyncMyTripUnreadCounters')
         .call();
   } catch (e, st) {

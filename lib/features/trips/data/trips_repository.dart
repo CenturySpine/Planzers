@@ -9,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/app_public_hosts.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -96,8 +97,9 @@ class TripsRepository {
     _permissionsBackfillInFlight.add(tripId);
     unawaited(() async {
       try {
-        final regionFunctions =
-            FirebaseFunctions.instanceFor(region: 'europe-west1');
+        final regionFunctions = FirebaseFunctions.instanceFor(
+          region: kFirebaseFunctionsRegion,
+        );
         final callable =
             regionFunctions.httpsCallable('backfillLegacyTripPermissions');
         await callable.call(<String, dynamic>{
@@ -236,7 +238,9 @@ class TripsRepository {
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
     }
-    final regionFunctions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('deleteTripCascade');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }
@@ -359,8 +363,9 @@ class TripsRepository {
       throw StateError('Invitation invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('getInviteJoinContext');
     final payload = <String, dynamic>{'token': cleanToken};
     final cleanTripId = tripId?.trim() ?? '';
@@ -429,8 +434,9 @@ class TripsRepository {
       throw StateError('Lien d invitation invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('joinTripWithInvite');
     final payload = <String, dynamic>{
       'tripId': tripId.trim(),
@@ -459,8 +465,9 @@ class TripsRepository {
       throw StateError('Code d invitation invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('joinTripWithInviteToken');
     final payload = <String, dynamic>{'token': cleanToken};
     final ph = placeholderMemberId?.trim();
@@ -622,8 +629,9 @@ class TripsRepository {
           trip.participantsPermissions.deletePlaceholderParticipantMinRole,
     );
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('removeTripPlaceholderMember');
     await callable.call(<String, dynamic>{
@@ -645,8 +653,9 @@ class TripsRepository {
       return;
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('registerMyTripMemberLabel');
     await callable.call(<String, dynamic>{'tripId': cleanId});
@@ -729,8 +738,9 @@ class TripsRepository {
       requiredRole: trip.participantsPermissions.toggleAdminRoleMinRole,
     );
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable =
         regionFunctions.httpsCallable('cycleTripMemberAdminRole');
     await callable.call(<String, dynamic>{
@@ -753,8 +763,9 @@ class TripsRepository {
       throw StateError('Voyage invalide');
     }
 
-    final regionFunctions =
-        FirebaseFunctions.instanceFor(region: 'europe-west1');
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    );
     final callable = regionFunctions.httpsCallable('leaveTrip');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }
