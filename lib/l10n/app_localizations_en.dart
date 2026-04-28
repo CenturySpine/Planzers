@@ -616,6 +616,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Cross-cutting trip settings (outside permissions).';
 
   @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Link to the shared folder or storage service used for trip photos.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... or https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Enable or disable Cupidon mode for all participants in this trip.';
+
+  @override
   String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
 
   @override
@@ -2687,6 +2705,24 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripSettingsGeneralSectionDescription =>
       'Cross-cutting trip settings (outside permissions).';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Link to the shared folder or storage service used for trip photos.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... or https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Enable or disable Cupidon mode for all participants in this trip.';
 
   @override
   String get tripSettingsGeneralComingSoonTitle => 'General trip settings';

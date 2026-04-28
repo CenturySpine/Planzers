@@ -441,7 +441,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       stream: tripDocStream,
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
-        final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+        final liveLinkUrl =
+            (liveData?['photosStorageUrl'] as String?) ?? _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =

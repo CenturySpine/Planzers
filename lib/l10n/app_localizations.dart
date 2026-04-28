@@ -1204,6 +1204,36 @@ abstract class AppLocalizations {
   /// **'Réglages transverses du voyage (hors permissions).'**
   String get tripSettingsGeneralSectionDescription;
 
+  /// No description provided for @tripSettingsGeneralPhotosStorageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Stockage des photos'**
+  String get tripSettingsGeneralPhotosStorageTitle;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien du dossier ou service de stockage partagé pour les photos du voyage.'**
+  String get tripSettingsGeneralPhotosStorageDescription;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien de stockage photos'**
+  String get tripSettingsGeneralPhotosStorageFieldLabel;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageFieldHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'https://drive.google.com/... ou https://photos.app.goo.gl/...'**
+  String get tripSettingsGeneralPhotosStorageFieldHint;
+
+  /// No description provided for @tripSettingsGeneralCupidonModeDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.'**
+  String get tripSettingsGeneralCupidonModeDescription;
+
   /// No description provided for @tripSettingsGeneralComingSoonTitle.
   ///
   /// In fr, this message translates to:

@@ -621,6 +621,25 @@ class AppLocalizationsFr extends AppLocalizations {
       'Réglages transverses du voyage (hors permissions).';
 
   @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Stockage des photos';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Lien du dossier ou service de stockage partagé pour les photos du voyage.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel =>
+      'Lien de stockage photos';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... ou https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.';
+
+  @override
   String get tripSettingsGeneralComingSoonTitle =>
       'Paramètres généraux du voyage';
 
@@ -2707,6 +2726,25 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripSettingsGeneralSectionDescription =>
       'Réglages transverses du voyage (hors permissions).';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Stockage des photos';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Lien du dossier ou service de stockage partagé pour les photos du voyage.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel =>
+      'Lien de stockage photos';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... ou https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.';
 
   @override
   String get tripSettingsGeneralComingSoonTitle =>
