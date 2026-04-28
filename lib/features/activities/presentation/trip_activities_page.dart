@@ -11,12 +11,24 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+
+final _activityCreatorsDataProvider = StreamProvider.autoDispose
+    .family<Map<String, Map<String, dynamic>>, String>((ref, creatorIdsKey) {
+  final creatorIds = creatorIdsKey
+      .split('|')
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList(growable: false);
+  return ref.read(usersRepositoryProvider).watchUsersDataByIds(creatorIds);
+});
 
 class TripActivitiesPage extends ConsumerStatefulWidget {
   const TripActivitiesPage({super.key});
@@ -161,6 +173,18 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       body: activitiesAsync.when(
         data: (items) {
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
+          final creatorIds = items
+              .map((activity) => activity.createdBy.trim())
+              .where((id) => id.isNotEmpty)
+              .toSet()
+              .toList(growable: false)
+            ..sort();
+          final creatorIdsKey = creatorIds.join('|');
+          final creatorsDataAsync = creatorIdsKey.isEmpty
+              ? const AsyncValue<Map<String, Map<String, dynamic>>>.data({})
+              : ref.watch(_activityCreatorsDataProvider(creatorIdsKey));
+          final creatorsDataById =
+              creatorsDataAsync.asData?.value ?? const <String, Map<String, dynamic>>{};
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = _buildSuggestionsEntries(
@@ -170,6 +194,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                 creatorLabelForActivity(
                   activity,
                   trip.memberPublicLabels,
+                  usersDataById: creatorsDataById,
+                  currentUserId: myUid,
                   unknownLabel: l10n.roleParticipant,
                 ),
           );
@@ -180,6 +206,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                 creatorLabelForActivity(
                   activity,
                   trip.memberPublicLabels,
+                  usersDataById: creatorsDataById,
+                  currentUserId: myUid,
                   unknownLabel: l10n.roleParticipant,
                 ),
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
@@ -212,6 +240,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: suggestionsEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        usersDataById: creatorsDataById,
+                        currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoSuggestion,
                         showVoteButton: true,
                         myUid: myUid,
@@ -222,6 +252,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: plannedEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        usersDataById: creatorsDataById,
+                        currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoPlanned,
                       ),
                       _ActivitiesAgendaTab(
@@ -231,6 +263,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         agendaItems: agendaItems,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        usersDataById: creatorsDataById,
+                        currentUserId: myUid,
                         onMoveBackward: () => setState(
                           () => _agendaCenterDay = _agendaCenterDay.subtract(
                             const Duration(days: 7),
@@ -282,6 +316,8 @@ class _ActivitiesTabList extends StatelessWidget {
     required this.entries,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.usersDataById,
+    required this.currentUserId,
     required this.emptyMessage,
     this.showVoteButton = false,
     this.myUid,
@@ -292,6 +328,8 @@ class _ActivitiesTabList extends StatelessWidget {
   final List<_ActivitiesListEntry> entries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final String? currentUserId;
   final String emptyMessage;
   final bool showVoteButton;
   final String? myUid;
@@ -337,6 +375,8 @@ class _ActivitiesTabList extends StatelessWidget {
                       tripId: tripId,
                       activity: entry.activity!,
                       tripMemberPublicLabels: tripMemberPublicLabels,
+                      usersDataById: usersDataById,
+                      currentUserId: currentUserId,
                       showVoteButton: showVoteButton,
                       myUid: myUid,
                     );
@@ -356,6 +396,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.agendaItems,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.usersDataById,
+    required this.currentUserId,
     required this.onMoveBackward,
     required this.onMoveForward,
     required this.onSelectDay,
@@ -367,6 +409,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final List<TripActivity> agendaItems;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final String? currentUserId;
   final VoidCallback onMoveBackward;
   final VoidCallback onMoveForward;
   final ValueChanged<DateTime> onSelectDay;
@@ -421,6 +465,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                       tripId: tripId,
                       activity: agendaItems[index],
                       tripMemberPublicLabels: tripMemberPublicLabels,
+                      usersDataById: usersDataById,
+                      currentUserId: currentUserId,
                     );
                   },
                 ),
@@ -644,6 +690,8 @@ class _ActivityListTile extends StatelessWidget {
     required this.tripId,
     required this.activity,
     required this.tripMemberPublicLabels,
+    required this.usersDataById,
+    required this.currentUserId,
     this.showVoteButton = false,
     this.myUid,
   });
@@ -651,6 +699,8 @@ class _ActivityListTile extends StatelessWidget {
   final String tripId;
   final TripActivity activity;
   final Map<String, String> tripMemberPublicLabels;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final String? currentUserId;
   final bool showVoteButton;
   final String? myUid;
 
@@ -740,6 +790,8 @@ class _ActivityListTile extends StatelessWidget {
     return creatorLabelForActivity(
       activity,
       tripMemberPublicLabels,
+      usersDataById: usersDataById,
+      currentUserId: currentUserId,
       unknownLabel: AppLocalizations.of(context)!.roleParticipant,
     );
   }
@@ -927,13 +979,21 @@ String _agendaMonthLabel(DateTime day, String localeTag) {
 String creatorLabelForActivity(
   TripActivity activity,
   Map<String, String> tripMemberPublicLabels,
-  {required String unknownLabel}
+  {
+  required Map<String, Map<String, dynamic>> usersDataById,
+  String? currentUserId,
+  required String unknownLabel,
+}
 ) {
   final id = activity.createdBy.trim();
   if (id.isEmpty) return unknownLabel;
-  return tripMemberPublicLabels[id]?.trim().isNotEmpty == true
-      ? tripMemberPublicLabels[id]!.trim()
-      : id;
+  return resolveTripMemberDisplayLabel(
+    memberId: id,
+    userData: usersDataById[id],
+    tripMemberPublicLabels: tripMemberPublicLabels,
+    currentUserId: currentUserId,
+    emptyFallback: unknownLabel,
+  );
 }
 
 class _VoteButton extends ConsumerStatefulWidget {
