@@ -1790,7 +1790,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     onPressed: _isSavingPotluckItems
                                         ? null
                                         : _addPotluckItem,
-                                    icon: const Icon(Icons.add_circle_outline),
+                                    icon: const Icon(Icons.add),
                                   ),
                                 ],
                               ),
