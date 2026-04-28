@@ -55,7 +55,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _componentsUserOrdered = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
-  bool _isRestaurantLinkEditing = true;
+  bool _isRestaurantLinkEditing = false;
   String _restaurantUrl = '';
 
   String get _currentUserId =>
@@ -363,6 +363,41 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     });
   }
 
+  void _cancelEditRestaurantUrl() {
+    setState(() {
+      _restaurantUrlController.text = _restaurantUrl;
+      _isRestaurantLinkEditing = false;
+    });
+  }
+
+  Widget _buildRestaurantUrlEditActions(AppLocalizations l10n) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          iconSize: 18,
+          onPressed: _isSavingRestaurantUrl ? null : _saveRestaurantUrl,
+          tooltip: l10n.commonConfirm,
+          icon: _isSavingRestaurantUrl
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check),
+        ),
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          iconSize: 18,
+          onPressed: _isSavingRestaurantUrl ? null : _cancelEditRestaurantUrl,
+          tooltip: l10n.commonCancel,
+          icon: const Icon(Icons.undo_rounded),
+        ),
+      ],
+    );
+  }
+
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
     _mealDate = meal.mealDateAsDateTime;
@@ -378,9 +413,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
     _restaurantUrl = meal.restaurantUrl.trim();
     _restaurantUrlController.text = _restaurantUrl;
-    // Keep explicit local edit mode active; stream refresh should not force-close it.
-    _isRestaurantLinkEditing =
-        _isRestaurantLinkEditing || _restaurantUrl.isEmpty;
     _potluckItems = meal.potluckItems.toList(growable: false);
     if (widget.isCreate) {
       _isHydrated = true;
@@ -1659,6 +1691,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Expanded(
                                           child: TextFormField(
@@ -1670,30 +1704,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             onFieldSubmitted: (_) =>
                                                 _saveRestaurantUrl(),
                                             decoration: InputDecoration(
-                                              labelText:
-                                                  l10n.mealRestaurantLinkLabel,
+                                              labelText: l10n
+                                                  .mealRestaurantLinkLabel,
                                               border:
                                                   const OutlineInputBorder(),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: l10n.commonSave,
-                                          onPressed: _isSavingRestaurantUrl
-                                              ? null
-                                              : _saveRestaurantUrl,
-                                          icon: _isSavingRestaurantUrl
-                                              ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.check),
-                                        ),
+                                        const SizedBox(width: 4),
+                                        _buildRestaurantUrlEditActions(l10n),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -1718,10 +1737,19 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           CrossAxisAlignment.center,
                                       children: [
                                         Expanded(
-                                          child: LinkPreviewCardFromFirestore(
-                                            url: _restaurantUrl,
-                                            preview: const {},
-                                          ),
+                                          child: _restaurantUrl.isEmpty
+                                              ? Text(
+                                                  l10n.mealRestaurantLinkHint,
+                                                  style: textTheme.bodyMedium
+                                                      ?.copyWith(
+                                                    color: colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                )
+                                              : LinkPreviewCardFromFirestore(
+                                                  url: _restaurantUrl,
+                                                  preview: const {},
+                                                ),
                                         ),
                                         const SizedBox(width: 8),
                                         IconButton(
