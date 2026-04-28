@@ -4,21 +4,18 @@ import 'package:planerz/features/trips/data/trip_day_part.dart';
 enum MealComponentKind {
   entree,
   plat,
-  dessert,
-  autre;
+  dessert;
 
   String get firestoreValue => switch (this) {
         MealComponentKind.entree => 'entree',
         MealComponentKind.plat => 'plat',
         MealComponentKind.dessert => 'dessert',
-        MealComponentKind.autre => 'autre',
       };
 
   String get labelFr => switch (this) {
         MealComponentKind.entree => 'Entree',
         MealComponentKind.plat => 'Plat',
         MealComponentKind.dessert => 'Dessert',
-        MealComponentKind.autre => 'Autre',
       };
 
   static MealComponentKind fromFirestore(String? raw) {
@@ -27,8 +24,8 @@ enum MealComponentKind {
       'entree' => MealComponentKind.entree,
       'plat' => MealComponentKind.plat,
       'dessert' => MealComponentKind.dessert,
-      'autre' => MealComponentKind.autre,
-      _ => MealComponentKind.autre,
+      'autre' => MealComponentKind.plat,
+      _ => MealComponentKind.plat,
     };
   }
 }

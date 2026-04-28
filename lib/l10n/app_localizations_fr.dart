@@ -1704,9 +1704,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealComponentKindDessert => 'Dessert';
 
   @override
-  String get mealComponentKindOther => 'Autre';
-
-  @override
   String get commonMe => 'Moi';
 
   @override
@@ -3771,9 +3768,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealComponentKindDessert => 'Dessert';
-
-  @override
-  String get mealComponentKindOther => 'Autre';
 
   @override
   String get commonMe => 'Moi';

@@ -676,7 +676,6 @@
   "mealComponentKindEntree": "Entrée",
   "mealComponentKindMain": "Plat",
   "mealComponentKindDessert": "Dessert",
-  "mealComponentKindOther": "Autre",
   "commonMe": "Moi",
   "commonRequired": "Obligatoire",
   "expenseGroupSelectAtLeastOne": "Coche au moins une personne qui voit ce poste",

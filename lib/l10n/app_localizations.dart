@@ -3125,12 +3125,6 @@ abstract class AppLocalizations {
   /// **'Dessert'**
   String get mealComponentKindDessert;
 
-  /// No description provided for @mealComponentKindOther.
-  ///
-  /// In fr, this message translates to:
-  /// **'Autre'**
-  String get mealComponentKindOther;
-
   /// No description provided for @commonMe.
   ///
   /// In fr, this message translates to:

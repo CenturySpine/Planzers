@@ -84,7 +84,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       MealComponentKind.entree => l10n.mealComponentKindEntree,
       MealComponentKind.plat => l10n.mealComponentKindMain,
       MealComponentKind.dessert => l10n.mealComponentKindDessert,
-      MealComponentKind.autre => l10n.mealComponentKindOther,
     };
   }
 

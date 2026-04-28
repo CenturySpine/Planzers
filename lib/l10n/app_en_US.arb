@@ -676,7 +676,6 @@
   "mealComponentKindEntree": "Starter",
   "mealComponentKindMain": "Main",
   "mealComponentKindDessert": "Dessert",
-  "mealComponentKindOther": "Other",
   "commonMe": "Me",
   "commonRequired": "Required",
   "expenseGroupSelectAtLeastOne": "Select at least one person who can see this section",
