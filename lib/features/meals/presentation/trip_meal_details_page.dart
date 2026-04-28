@@ -1480,6 +1480,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
                                     return Card(
                                       key: ValueKey(component.id),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
                                       margin: const EdgeInsets.only(bottom: 12),
                                       child: ListTile(
                                         onTap: catalogItems == null
@@ -1517,7 +1520,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   l10n,
                                                   component.kind,
                                                 )
-                                              : component.title.trim(),
+                                              : '${component.title.trim()} (${_componentKindLabel(
+                                                  l10n,
+                                                  component.kind,
+                                                )})',
                                         ),
                                         subtitle: Text(
                                           l10n.mealIngredientsCount(
