@@ -52,6 +52,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   Set<String> _participantIds = <String>{};
   String? _chefParticipantId;
   List<MealComponent> _components = const [];
+  bool _componentsUserOrdered = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
   bool _isRestaurantLinkEditing = true;
@@ -287,6 +288,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         : null;
     _components = meal.components.toList(growable: true)
       ..sort((a, b) => a.order.compareTo(b.order));
+    _componentsUserOrdered = meal.componentsUserOrdered;
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
     _restaurantUrl = meal.restaurantUrl.trim();
     _restaurantUrlController.text = _restaurantUrl;
@@ -315,11 +317,45 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
+  bool get _shouldAutoOrderComponents =>
+      _activeMealView == _MealDetailsView.cooked && !_componentsUserOrdered;
+
+  int _componentKindSortIndex(MealComponentKind kind) {
+    return switch (kind) {
+      MealComponentKind.entree => 0,
+      MealComponentKind.plat => 1,
+      MealComponentKind.dessert => 2,
+    };
+  }
+
+  List<MealComponent> _normalizeComponentOrder(
+    List<MealComponent> components, {
+    required bool shouldAutoOrder,
+  }) {
+    final normalizedComponents = components.toList(growable: true);
+    if (shouldAutoOrder) {
+      normalizedComponents.sort((leftComponent, rightComponent) {
+        final kindCompare = _componentKindSortIndex(leftComponent.kind).compareTo(
+          _componentKindSortIndex(rightComponent.kind),
+        );
+        if (kindCompare != 0) {
+          return kindCompare;
+        }
+        return leftComponent.order.compareTo(rightComponent.order);
+      });
+    }
+    return [
+      for (var index = 0; index < normalizedComponents.length; index++)
+        normalizedComponents[index].copyWith(order: index),
+    ];
+  }
+
   Future<void> _addComponent(MealComponentKind kind) async {
     if (widget.isCreate) return;
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     setState(() {
-      _components = [
+      final nextComponents = [
         ..._components,
         MealComponent(
           id: 'cmp_${DateTime.now().microsecondsSinceEpoch}_${_components.length}',
@@ -328,8 +364,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           ingredients: const [],
         ),
       ];
+      _components = _normalizeComponentOrder(
+        nextComponents,
+        shouldAutoOrder: _shouldAutoOrderComponents,
+      );
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _openComponentEditor({
@@ -351,13 +394,28 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       );
       if (!mounted || updated == null) return;
       final previousComponents = _components;
-      _updateComponent(
-        updated.copyWith(
-          order: component.order,
-          lockedBy: _currentUserId,
-        ),
+      final previousComponentsUserOrdered = _componentsUserOrdered;
+      final updatedComponent = updated.copyWith(
+        order: component.order,
+        lockedBy: _currentUserId,
       );
-      await _saveMealComponents(previousComponents: previousComponents);
+      final kindChanged = updatedComponent.kind != component.kind;
+      final nextComponents = _components
+          .map((existingComponent) =>
+              existingComponent.id == updatedComponent.id
+                  ? updatedComponent
+                  : existingComponent)
+          .toList(growable: false);
+      setState(() {
+        _components = _normalizeComponentOrder(
+          nextComponents,
+          shouldAutoOrder: kindChanged && _shouldAutoOrderComponents,
+        );
+      });
+      await _saveMealComponents(
+        previousComponents: previousComponents,
+        previousComponentsUserOrdered: previousComponentsUserOrdered,
+      );
     }
 
     final mealId = (widget.mealId ?? '').trim();
@@ -437,16 +495,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  void _updateComponent(MealComponent next) {
-    setState(() {
-      _components = _components
-          .map((component) => component.id == next.id ? next : component)
-          .toList(growable: false);
-    });
-  }
-
   Future<void> _deleteComponent(String componentId) async {
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     MealComponent? component;
     for (final it in previousComponents) {
       if (it.id == componentId) {
@@ -492,11 +543,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           filtered[i].copyWith(order: i),
       ];
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _reorderComponents(int oldIndex, int newIndex) async {
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     final movingComponent = previousComponents[oldIndex];
     if (_isComponentLockedByOther(movingComponent)) {
       final lockOwnerId = (movingComponent.lockedBy ?? '').trim();
@@ -537,12 +592,17 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       _components = [
         for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
       ];
+      _componentsUserOrdered = true;
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _saveMealComponents({
     required List<MealComponent> previousComponents,
+    required bool previousComponentsUserOrdered,
   }) async {
     if (widget.isCreate || _isSavingComponents || _isSaving) return;
     setState(() => _isSavingComponents = true);
@@ -551,11 +611,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             tripId: widget.tripId,
             mealId: widget.mealId!,
             components: _components,
+            componentsUserOrdered: _componentsUserOrdered,
           );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _components = previousComponents;
+        _componentsUserOrdered = previousComponentsUserOrdered;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
