@@ -1424,6 +1424,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       onSelected: _isSavingComponents
                                           ? null
                                           : (kind) => _addComponent(kind),
+                                      icon: const Icon(Icons.add),
                                       itemBuilder: (context) => [
                                         for (final kind
                                             in MealComponentKind.values)
@@ -1436,11 +1437,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             ),
                                           ),
                                       ],
-                                      child: const Padding(
-                                        padding:
-                                            EdgeInsets.symmetric(horizontal: 8),
-                                        child: Icon(Icons.add_circle_outline),
-                                      ),
                                     ),
                                 ],
                               ),
