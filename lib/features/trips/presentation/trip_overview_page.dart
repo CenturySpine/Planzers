@@ -465,7 +465,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
         final liveLinkUrl =
-            (liveData?['photosStorageUrl'] as String?) ?? _trip.linkUrl;
+            (liveData?['linkUrl'] as String?) ??
+                (liveData?['photosStorageUrl'] as String?) ??
+                _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =
@@ -480,7 +482,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
-        final photosStorageLinkUrl = liveLinkUrl.trim();
+        final photosStorageLinkUrl =
+            ((liveData?['photosStorageUrl'] as String?) ?? '').trim();
         final tripDateLabel =
             formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
