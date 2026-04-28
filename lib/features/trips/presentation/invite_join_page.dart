@@ -244,7 +244,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
   }
 
-  Future<void> _join({String? placeholderMemberId}) async {
+  Future<void> _join({
+    String? placeholderMemberId,
+    bool bypassPlaceholderChoice = false,
+  }) async {
     if (_joining || _joined) return;
     setState(() {
       _joining = true;
@@ -255,6 +258,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripId: widget.tripId,
             token: widget.token,
             placeholderMemberId: placeholderMemberId,
+            bypassPlaceholderChoice: bypassPlaceholderChoice,
           );
       if (!mounted) return;
       setState(() {
@@ -311,6 +315,16 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _inviteFormStep = 1;
     });
     unawaited(_loadAllergenIdsForForm());
+  }
+
+  Future<void> _joinWithCurrentProfileDirectly() async {
+    setState(() {
+      _error = null;
+    });
+    await _join(
+      placeholderMemberId: null,
+      bypassPlaceholderChoice: true,
+    );
   }
 
   void _backToNameStep() {
@@ -481,6 +495,26 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                 );
                               },
                             ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.inviteJoinWithCurrentProfileHint,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton.icon(
+                        onPressed:
+                            _joining ? null : _joinWithCurrentProfileDirectly,
+                        icon: const Icon(Icons.person_add_alt_1_outlined),
+                        label: Text(l10n.inviteJoinWithCurrentProfileAction),
+                      ),
                     ),
                   ] else ...[
                     const SizedBox(height: 16),

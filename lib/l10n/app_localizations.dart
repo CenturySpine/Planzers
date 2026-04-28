@@ -2255,6 +2255,18 @@ abstract class AppLocalizations {
   /// **'Modifier le choix du voyageur'**
   String get inviteEditTravelerChoice;
 
+  /// No description provided for @inviteJoinWithCurrentProfileHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.'**
+  String get inviteJoinWithCurrentProfileHint;
+
+  /// No description provided for @inviteJoinWithCurrentProfileAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Continuer avec mon profil actuel'**
+  String get inviteJoinWithCurrentProfileAction;
+
   /// No description provided for @commonContinue.
   ///
   /// In fr, this message translates to:

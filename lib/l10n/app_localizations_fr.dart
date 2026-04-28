@@ -1219,6 +1219,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
 
   @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continuer avec mon profil actuel';
+
+  @override
   String get commonContinue => 'Continuer';
 
   @override
@@ -3278,6 +3286,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continuer avec mon profil actuel';
 
   @override
   String get commonContinue => 'Continuer';

@@ -1751,20 +1751,24 @@ exports.generateTripLinkPreview = onDocumentUpdated(
 /**
  * Adds [uid] to trip members if [token] matches the trip inviteToken.
  * When the trip still has placeholder members, [placeholderMemberId] must name
- * the placeholder row to claim (replaced by [uid]).
+ * the placeholder row to claim (replaced by [uid]), unless
+ * [bypassPlaceholderChoice] is true.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} uid
  * @param {string} token
  * @param {string} placeholderMemberId
+ * @param {boolean} bypassPlaceholderChoice
  */
 async function completeJoinTripWithInvite(
   tripRef,
   uid,
   token,
-  placeholderMemberId
+  placeholderMemberId,
+  bypassPlaceholderChoice
 ) {
   const FieldValue = admin.firestore.FieldValue;
   const placeholderArg = normalizeString(placeholderMemberId);
+  const bypassPlaceholder = bypassPlaceholderChoice === true;
   let claimedPh = null;
 
   await admin.firestore().runTransaction(async (tx) => {
@@ -1786,6 +1790,14 @@ async function completeJoinTripWithInvite(
     const phMembers = memberIds.filter(isPlaceholderMemberId);
 
     if (phMembers.length > 0) {
+      if (bypassPlaceholder) {
+        memberIds.push(uid);
+        tx.update(tripRef, {
+          memberIds,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return;
+      }
       if (!placeholderArg || !isPlaceholderMemberId(placeholderArg)) {
         throw new HttpsError(
           'invalid-argument',
@@ -2119,13 +2131,15 @@ exports.joinTripWithInvite = onCall(
     const placeholderMemberId = normalizeString(
       request.data?.placeholderMemberId
     );
+    const bypassPlaceholderChoice = request.data?.bypassPlaceholderChoice === true;
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
     await completeJoinTripWithInvite(
       tripRef,
       uid,
       token,
-      placeholderMemberId
+      placeholderMemberId,
+      bypassPlaceholderChoice
     );
 
     return { ok: true };

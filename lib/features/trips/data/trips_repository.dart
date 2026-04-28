@@ -397,6 +397,7 @@ class TripsRepository {
     required String tripId,
     required String token,
     String? placeholderMemberId,
+    bool bypassPlaceholderChoice = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -419,6 +420,9 @@ class TripsRepository {
     final ph = placeholderMemberId?.trim();
     if (ph != null && ph.isNotEmpty) {
       payload['placeholderMemberId'] = ph;
+    }
+    if (bypassPlaceholderChoice) {
+      payload['bypassPlaceholderChoice'] = true;
     }
     await callable.call(payload);
   }

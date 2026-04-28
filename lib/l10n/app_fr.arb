@@ -513,6 +513,8 @@
   "inviteWhoAreYouInTrip": "Qui es-tu dans ce voyage ?",
   "inviteCupidonSubtitle": "Tu pourras liker des participants du voyage.",
   "inviteEditTravelerChoice": "Modifier le choix du voyageur",
+  "inviteJoinWithCurrentProfileHint": "Tu ne te trouves pas ou tu n’es pas sûr ? Rejoins avec ton profil actuel. Les admins pourront réattribuer ta place plus tard si besoin.",
+  "inviteJoinWithCurrentProfileAction": "Continuer avec mon profil actuel",
   "commonContinue": "Continuer",
   "commonConfirm": "Valider",
   "inviteInvalidLink": "Lien d’invitation invalide.",

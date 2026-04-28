@@ -513,6 +513,8 @@
   "inviteWhoAreYouInTrip": "Who are you in this trip?",
   "inviteCupidonSubtitle": "You will be able to like trip participants.",
   "inviteEditTravelerChoice": "Edit traveler choice",
+  "inviteJoinWithCurrentProfileHint": "Can't find your name or not sure? Join with your current profile. Admins can reassign your slot later if needed.",
+  "inviteJoinWithCurrentProfileAction": "Continue with my current profile",
   "commonContinue": "Continue",
   "commonConfirm": "Confirm",
   "inviteInvalidLink": "Invalid invitation link.",

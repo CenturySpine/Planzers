@@ -1208,6 +1208,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteEditTravelerChoice => 'Edit traveler choice';
 
   @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Can\'t find your name or not sure? Join with your current profile. Admins can reassign your slot later if needed.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continue with my current profile';
+
+  @override
   String get commonContinue => 'Continue';
 
   @override
@@ -3253,6 +3261,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get inviteEditTravelerChoice => 'Edit traveler choice';
+
+  @override
+  String get inviteJoinWithCurrentProfileHint =>
+      'Can\'t find your name or not sure? Join with your current profile. Admins can reassign your slot later if needed.';
+
+  @override
+  String get inviteJoinWithCurrentProfileAction =>
+      'Continue with my current profile';
 
   @override
   String get commonContinue => 'Continue';
