@@ -1655,6 +1655,57 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
   }
 );
 
+/**
+ * When trip-level Cupidon mode is disabled by an admin/owner, force-disable
+ * per-member Cupidon preferences so participant settings stay consistent.
+ */
+exports.disableTripCupidonForAllMembers = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}',
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    const wasEnabled = before.cupidonModeEnabled !== false;
+    const isEnabled = after.cupidonModeEnabled !== false;
+    if (!wasEnabled || isEnabled) {
+      return;
+    }
+
+    const tripRef = event.data.after.ref;
+    const membersSnap = await tripRef
+      .collection('members')
+      .where('cupidonEnabled', '==', true)
+      .get();
+    if (membersSnap.empty) {
+      return;
+    }
+
+    const db = admin.firestore();
+    const FieldValue = admin.firestore.FieldValue;
+    let batch = db.batch();
+    let writeCount = 0;
+    for (const memberDoc of membersSnap.docs) {
+      batch.update(memberDoc.ref, {
+        cupidonEnabled: false,
+        cupidonUpdatedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      writeCount++;
+      if (writeCount >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        writeCount = 0;
+      }
+    }
+    if (writeCount > 0) {
+      await batch.commit();
+    }
+  }
+);
+
 exports.generateTripLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}',
