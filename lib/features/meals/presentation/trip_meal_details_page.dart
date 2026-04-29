@@ -52,9 +52,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   Set<String> _participantIds = <String>{};
   String? _chefParticipantId;
   List<MealComponent> _components = const [];
+  bool _componentsUserOrdered = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
-  bool _isRestaurantLinkEditing = true;
+  bool _isRestaurantLinkEditing = false;
   String _restaurantUrl = '';
 
   String get _currentUserId =>
@@ -84,7 +85,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       MealComponentKind.entree => l10n.mealComponentKindEntree,
       MealComponentKind.plat => l10n.mealComponentKindMain,
       MealComponentKind.dessert => l10n.mealComponentKindDessert,
-      MealComponentKind.autre => l10n.mealComponentKindOther,
     };
   }
 
@@ -218,6 +218,92 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
+  Widget _buildMealModeSelector({
+    required AppLocalizations l10n,
+    required TextTheme textTheme,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.outlineVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SegmentedButton<_MealDetailsView>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.cooked,
+                      icon: SvgPicture.asset(
+                        'assets/images/chef_hat.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModeCooked,
+                    ),
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.restaurant,
+                      icon: SvgPicture.asset(
+                        'assets/images/hand_meal.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModeRestaurant,
+                    ),
+                    ButtonSegment<_MealDetailsView>(
+                      value: _MealDetailsView.potluck,
+                      icon: SvgPicture.asset(
+                        'assets/images/tapas.svg',
+                        width: 18,
+                        height: 18,
+                      ),
+                      tooltip: l10n.mealModePotluck,
+                    ),
+                  ],
+                  selected: {_activeMealView},
+                  onSelectionChanged: _isSavingMealMode
+                      ? null
+                      : (selection) async {
+                          if (selection.isEmpty) {
+                            return;
+                          }
+                          if (_activeMealView == selection.first) {
+                            return;
+                          }
+                          final previousMealView = _activeMealView;
+                          setState(() {
+                            _activeMealView = selection.first;
+                          });
+                          await _saveMealMode(
+                            previousMealView: previousMealView,
+                          );
+                        },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _mealModeDisplayLabel(l10n),
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveRestaurantUrl() async {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingRestaurantUrl) return;
@@ -277,6 +363,41 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     });
   }
 
+  void _cancelEditRestaurantUrl() {
+    setState(() {
+      _restaurantUrlController.text = _restaurantUrl;
+      _isRestaurantLinkEditing = false;
+    });
+  }
+
+  Widget _buildRestaurantUrlEditActions(AppLocalizations l10n) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          iconSize: 18,
+          onPressed: _isSavingRestaurantUrl ? null : _saveRestaurantUrl,
+          tooltip: l10n.commonConfirm,
+          icon: _isSavingRestaurantUrl
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.check),
+        ),
+        IconButton(
+          visualDensity: VisualDensity.compact,
+          iconSize: 18,
+          onPressed: _isSavingRestaurantUrl ? null : _cancelEditRestaurantUrl,
+          tooltip: l10n.commonCancel,
+          icon: const Icon(Icons.undo_rounded),
+        ),
+      ],
+    );
+  }
+
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
     _mealDate = meal.mealDateAsDateTime;
@@ -288,12 +409,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         : null;
     _components = meal.components.toList(growable: true)
       ..sort((a, b) => a.order.compareTo(b.order));
+    _componentsUserOrdered = meal.componentsUserOrdered;
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
     _restaurantUrl = meal.restaurantUrl.trim();
     _restaurantUrlController.text = _restaurantUrl;
-    // Keep explicit local edit mode active; stream refresh should not force-close it.
-    _isRestaurantLinkEditing =
-        _isRestaurantLinkEditing || _restaurantUrl.isEmpty;
     _potluckItems = meal.potluckItems.toList(growable: false);
     if (widget.isCreate) {
       _isHydrated = true;
@@ -316,11 +435,45 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
+  bool get _shouldAutoOrderComponents =>
+      _activeMealView == _MealDetailsView.cooked && !_componentsUserOrdered;
+
+  int _componentKindSortIndex(MealComponentKind kind) {
+    return switch (kind) {
+      MealComponentKind.entree => 0,
+      MealComponentKind.plat => 1,
+      MealComponentKind.dessert => 2,
+    };
+  }
+
+  List<MealComponent> _normalizeComponentOrder(
+    List<MealComponent> components, {
+    required bool shouldAutoOrder,
+  }) {
+    final normalizedComponents = components.toList(growable: true);
+    if (shouldAutoOrder) {
+      normalizedComponents.sort((leftComponent, rightComponent) {
+        final kindCompare = _componentKindSortIndex(leftComponent.kind).compareTo(
+          _componentKindSortIndex(rightComponent.kind),
+        );
+        if (kindCompare != 0) {
+          return kindCompare;
+        }
+        return leftComponent.order.compareTo(rightComponent.order);
+      });
+    }
+    return [
+      for (var index = 0; index < normalizedComponents.length; index++)
+        normalizedComponents[index].copyWith(order: index),
+    ];
+  }
+
   Future<void> _addComponent(MealComponentKind kind) async {
     if (widget.isCreate) return;
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     setState(() {
-      _components = [
+      final nextComponents = [
         ..._components,
         MealComponent(
           id: 'cmp_${DateTime.now().microsecondsSinceEpoch}_${_components.length}',
@@ -329,8 +482,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           ingredients: const [],
         ),
       ];
+      _components = _normalizeComponentOrder(
+        nextComponents,
+        shouldAutoOrder: _shouldAutoOrderComponents,
+      );
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _openComponentEditor({
@@ -352,13 +512,28 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       );
       if (!mounted || updated == null) return;
       final previousComponents = _components;
-      _updateComponent(
-        updated.copyWith(
-          order: component.order,
-          lockedBy: _currentUserId,
-        ),
+      final previousComponentsUserOrdered = _componentsUserOrdered;
+      final updatedComponent = updated.copyWith(
+        order: component.order,
+        lockedBy: _currentUserId,
       );
-      await _saveMealComponents(previousComponents: previousComponents);
+      final kindChanged = updatedComponent.kind != component.kind;
+      final nextComponents = _components
+          .map((existingComponent) =>
+              existingComponent.id == updatedComponent.id
+                  ? updatedComponent
+                  : existingComponent)
+          .toList(growable: false);
+      setState(() {
+        _components = _normalizeComponentOrder(
+          nextComponents,
+          shouldAutoOrder: kindChanged && _shouldAutoOrderComponents,
+        );
+      });
+      await _saveMealComponents(
+        previousComponents: previousComponents,
+        previousComponentsUserOrdered: previousComponentsUserOrdered,
+      );
     }
 
     final mealId = (widget.mealId ?? '').trim();
@@ -438,16 +613,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  void _updateComponent(MealComponent next) {
-    setState(() {
-      _components = _components
-          .map((component) => component.id == next.id ? next : component)
-          .toList(growable: false);
-    });
-  }
-
   Future<void> _deleteComponent(String componentId) async {
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     MealComponent? component;
     for (final it in previousComponents) {
       if (it.id == componentId) {
@@ -493,11 +661,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
           filtered[i].copyWith(order: i),
       ];
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _reorderComponents(int oldIndex, int newIndex) async {
     final previousComponents = _components;
+    final previousComponentsUserOrdered = _componentsUserOrdered;
     final movingComponent = previousComponents[oldIndex];
     if (_isComponentLockedByOther(movingComponent)) {
       final lockOwnerId = (movingComponent.lockedBy ?? '').trim();
@@ -538,12 +710,17 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       _components = [
         for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
       ];
+      _componentsUserOrdered = true;
     });
-    await _saveMealComponents(previousComponents: previousComponents);
+    await _saveMealComponents(
+      previousComponents: previousComponents,
+      previousComponentsUserOrdered: previousComponentsUserOrdered,
+    );
   }
 
   Future<void> _saveMealComponents({
     required List<MealComponent> previousComponents,
+    required bool previousComponentsUserOrdered,
   }) async {
     if (widget.isCreate || _isSavingComponents || _isSaving) return;
     setState(() => _isSavingComponents = true);
@@ -552,11 +729,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             tripId: widget.tripId,
             mealId: widget.mealId!,
             components: _components,
+            componentsUserOrdered: _componentsUserOrdered,
           );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _components = previousComponents;
+        _componentsUserOrdered = previousComponentsUserOrdered;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1248,96 +1427,21 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Card.outlined(
-                      color:
-                          colorScheme.primaryContainer.withValues(alpha: 0.35),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SegmentedButton<_MealDetailsView>(
-                                    showSelectedIcon: false,
-                                    segments: [
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.cooked,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/chef_hat.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModeCooked,
-                                      ),
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.restaurant,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/hand_meal.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModeRestaurant,
-                                      ),
-                                      ButtonSegment<_MealDetailsView>(
-                                        value: _MealDetailsView.potluck,
-                                        icon: SvgPicture.asset(
-                                          'assets/images/tapas.svg',
-                                          width: 18,
-                                          height: 18,
-                                        ),
-                                        tooltip: l10n.mealModePotluck,
-                                      ),
-                                    ],
-                                    selected: {_activeMealView},
-                                    onSelectionChanged: _isSavingMealMode
-                                        ? null
-                                        : (selection) async {
-                                            if (selection.isEmpty) {
-                                              return;
-                                            }
-                                            if (_activeMealView ==
-                                                selection.first) {
-                                              return;
-                                            }
-                                            final previousMealView =
-                                                _activeMealView;
-                                            setState(() {
-                                              _activeMealView = selection.first;
-                                            });
-                                            await _saveMealMode(
-                                              previousMealView:
-                                                  previousMealView,
-                                            );
-                                          },
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _mealModeDisplayLabel(l10n),
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontStyle: FontStyle.italic,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     if (_activeMealView == _MealDetailsView.cooked) ...[
                       Card.outlined(
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
@@ -1352,6 +1456,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       onSelected: _isSavingComponents
                                           ? null
                                           : (kind) => _addComponent(kind),
+                                      icon: const Icon(Icons.add),
                                       itemBuilder: (context) => [
                                         for (final kind
                                             in MealComponentKind.values)
@@ -1364,11 +1469,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             ),
                                           ),
                                       ],
-                                      child: const Padding(
-                                        padding:
-                                            EdgeInsets.symmetric(horizontal: 8),
-                                        child: Icon(Icons.add_circle_outline),
-                                      ),
                                     ),
                                 ],
                               ),
@@ -1419,6 +1519,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
                                     return Card(
                                       key: ValueKey(component.id),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
                                       margin: const EdgeInsets.only(bottom: 12),
                                       child: ListTile(
                                         onTap: catalogItems == null
@@ -1456,7 +1559,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   l10n,
                                                   component.kind,
                                                 )
-                                              : component.title.trim(),
+                                              : '${component.title.trim()} (${_componentKindLabel(
+                                                  l10n,
+                                                  component.kind,
+                                                )})',
                                         ),
                                         subtitle: Text(
                                           l10n.mealIngredientsCount(
@@ -1578,7 +1684,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               ? Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    _buildMealModeSelector(
+                                      l10n: l10n,
+                                      textTheme: textTheme,
+                                      colorScheme: colorScheme,
+                                    ),
+                                    const SizedBox(height: 12),
                                     Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         Expanded(
                                           child: TextFormField(
@@ -1590,30 +1704,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             onFieldSubmitted: (_) =>
                                                 _saveRestaurantUrl(),
                                             decoration: InputDecoration(
-                                              labelText:
-                                                  l10n.mealRestaurantLinkLabel,
+                                              labelText: l10n
+                                                  .mealRestaurantLinkLabel,
                                               border:
                                                   const OutlineInputBorder(),
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: l10n.commonSave,
-                                          onPressed: _isSavingRestaurantUrl
-                                              ? null
-                                              : _saveRestaurantUrl,
-                                          icon: _isSavingRestaurantUrl
-                                              ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.check),
-                                        ),
+                                        const SizedBox(width: 4),
+                                        _buildRestaurantUrlEditActions(l10n),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -1625,20 +1724,41 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     ),
                                   ],
                                 )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                              : Column(
                                   children: [
-                                    Expanded(
-                                      child: LinkPreviewCardFromFirestore(
-                                        url: _restaurantUrl,
-                                        preview: const {},
-                                      ),
+                                    _buildMealModeSelector(
+                                      l10n: l10n,
+                                      textTheme: textTheme,
+                                      colorScheme: colorScheme,
                                     ),
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      tooltip: l10n.commonEdit,
-                                      onPressed: _startEditRestaurantUrl,
-                                      icon: const Icon(Icons.edit_outlined),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: _restaurantUrl.isEmpty
+                                              ? Text(
+                                                  l10n.mealRestaurantLinkHint,
+                                                  style: textTheme.bodyMedium
+                                                      ?.copyWith(
+                                                    color: colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                )
+                                              : LinkPreviewCardFromFirestore(
+                                                  url: _restaurantUrl,
+                                                  preview: const {},
+                                                ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          tooltip: l10n.commonEdit,
+                                          onPressed: _startEditRestaurantUrl,
+                                          icon:
+                                              const Icon(Icons.edit_outlined),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1651,6 +1771,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                              ),
+                              const SizedBox(height: 12),
                               Row(
                                 children: [
                                   Expanded(
@@ -1664,7 +1790,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     onPressed: _isSavingPotluckItems
                                         ? null
                                         : _addPotluckItem,
-                                    icon: const Icon(Icons.add_circle_outline),
+                                    icon: const Icon(Icons.add),
                                   ),
                                 ],
                               ),

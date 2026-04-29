@@ -188,7 +188,8 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'linkUrl': linkUrl.trim(),
+      'photosStorageUrl': linkUrl.trim(),
+      'cupidonModeEnabled': true,
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
@@ -278,7 +279,7 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'linkUrl': linkUrl.trim(),
+      'photosStorageUrl': linkUrl.trim(),
       'startDate': startDate != null
           ? Timestamp.fromDate(startDate)
           : FieldValue.delete(),
@@ -288,6 +289,38 @@ class TripsRepository {
     };
 
     await docRef.update(update);
+  }
+
+  Future<void> updateTripGeneralSettings({
+    required String tripId,
+    required String photosLinkUrl,
+    required bool cupidonModeEnabled,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    if (!trip.memberHasAdminRole(user.uid)) {
+      throw StateError('Droits insuffisants pour modifier ces reglages');
+    }
+
+    await tripRef.update(<String, dynamic>{
+      'photosStorageUrl': photosLinkUrl.trim(),
+      'cupidonModeEnabled': cupidonModeEnabled,
+    });
   }
 
   /// Invite secret shared with guests (same value as the `token` query param

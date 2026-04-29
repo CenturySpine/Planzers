@@ -140,6 +140,7 @@ class MealsRepository {
     MealMode mealMode = MealMode.cooked,
     String restaurantUrl = '',
     List<MealPotluckItem> potluckItems = const [],
+    bool componentsUserOrdered = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -166,6 +167,7 @@ class MealsRepository {
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
+      'componentsUserOrdered': componentsUserOrdered,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -185,6 +187,7 @@ class MealsRepository {
     MealMode mealMode = MealMode.cooked,
     String restaurantUrl = '',
     List<MealPotluckItem> potluckItems = const [],
+    bool componentsUserOrdered = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -218,6 +221,7 @@ class MealsRepository {
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
+      'componentsUserOrdered': componentsUserOrdered,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -411,6 +415,7 @@ class MealsRepository {
     required String tripId,
     required String mealId,
     required List<MealComponent> components,
+    bool? componentsUserOrdered,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -429,10 +434,14 @@ class MealsRepository {
       throw StateError('Repas introuvable');
     }
 
-    await docRef.update({
+    final payload = <String, dynamic>{
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (componentsUserOrdered != null) {
+      payload['componentsUserOrdered'] = componentsUserOrdered;
+    }
+    await docRef.update(payload);
   }
 
   Future<String?> lockMealComponent({

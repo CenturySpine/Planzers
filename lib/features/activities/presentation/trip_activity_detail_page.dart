@@ -406,16 +406,31 @@ class _ReadBody extends ConsumerWidget {
     }
   }
 
-  Future<DateTime?> _pickPlannedDate(BuildContext context) {
+  Future<DateTime?> _pickPlannedDateTime(BuildContext context) async {
     final now = DateTime.now();
-    final initial = DateUtils.dateOnly(activity.plannedAt?.toLocal() ?? now);
-    return showDatePicker(
+    final localPlannedAt = activity.plannedAt?.toLocal();
+    final initialDate = DateUtils.dateOnly(localPlannedAt ?? now);
+    final pickedDate = await showDatePicker(
       context: context,
       locale: Localizations.localeOf(context),
-      initialDate: initial,
+      initialDate: initialDate,
       firstDate: DateTime(now.year - 5),
       lastDate: DateTime(now.year + 5),
       helpText: AppLocalizations.of(context)!.activitiesPlannedDateHelp,
+    );
+    if (pickedDate == null || !context.mounted) return null;
+    final initialTime = TimeOfDay.fromDateTime(localPlannedAt ?? now);
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+    if (pickedTime == null) return null;
+    return DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
     );
   }
 
@@ -584,10 +599,16 @@ class _ReadBody extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: canPlanActivity
                       ? () async {
-                          final pickedDate = await _pickPlannedDate(context);
-                          if (pickedDate == null) return;
+                          final pickedDateTime = await _pickPlannedDateTime(
+                            context,
+                          );
+                          if (pickedDateTime == null) return;
                           if (!context.mounted) return;
-                          await _setPlannedDate(ref, context, pickedDate);
+                          await _setPlannedDate(
+                            ref,
+                            context,
+                            pickedDateTime,
+                          );
                         }
                       : null,
                   icon: const Icon(Icons.calendar_month_outlined),
@@ -595,10 +616,9 @@ class _ReadBody extends ConsumerWidget {
                     activity.plannedAt == null
                         ? AppLocalizations.of(context)!.activitiesPlannedUnset
                         : AppLocalizations.of(context)!.activitiesPlannedOn(
-                            DateFormat(
-                              'd MMMM yyyy',
+                            DateFormat.yMMMMd(
                               Localizations.localeOf(context).toString(),
-                            ).format(activity.plannedAt!.toLocal()),
+                            ).add_Hm().format(activity.plannedAt!.toLocal()),
                           ),
                   ),
                 ),

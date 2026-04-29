@@ -1180,6 +1180,72 @@ abstract class AppLocalizations {
   /// **'Hiérarchie des privilèges : créateur > admin > participant'**
   String get tripRoleHierarchyHint;
 
+  /// No description provided for @tripSettingsPermissionsSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions'**
+  String get tripSettingsPermissionsSectionTitle;
+
+  /// No description provided for @tripSettingsPermissionsSectionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Définis les rôles minimaux pour chaque domaine du voyage.'**
+  String get tripSettingsPermissionsSectionDescription;
+
+  /// No description provided for @tripSettingsGeneralSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres généraux'**
+  String get tripSettingsGeneralSectionTitle;
+
+  /// No description provided for @tripSettingsGeneralSectionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages transverses du voyage (hors permissions).'**
+  String get tripSettingsGeneralSectionDescription;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Stockage des photos'**
+  String get tripSettingsGeneralPhotosStorageTitle;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien du dossier ou service de stockage partagé pour les photos du voyage.'**
+  String get tripSettingsGeneralPhotosStorageDescription;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien de stockage photos'**
+  String get tripSettingsGeneralPhotosStorageFieldLabel;
+
+  /// No description provided for @tripSettingsGeneralPhotosStorageFieldHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'https://drive.google.com/... ou https://photos.app.goo.gl/...'**
+  String get tripSettingsGeneralPhotosStorageFieldHint;
+
+  /// No description provided for @tripSettingsGeneralCupidonModeDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.'**
+  String get tripSettingsGeneralCupidonModeDescription;
+
+  /// No description provided for @tripSettingsGeneralComingSoonTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres généraux du voyage'**
+  String get tripSettingsGeneralComingSoonTitle;
+
+  /// No description provided for @tripSettingsGeneralComingSoonDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette section arrive bientôt.'**
+  String get tripSettingsGeneralComingSoonDescription;
+
   /// No description provided for @roleOwner.
   ///
   /// In fr, this message translates to:
@@ -3125,12 +3191,6 @@ abstract class AppLocalizations {
   /// **'Dessert'**
   String get mealComponentKindDessert;
 
-  /// No description provided for @mealComponentKindOther.
-  ///
-  /// In fr, this message translates to:
-  /// **'Autre'**
-  String get mealComponentKindOther;
-
   /// No description provided for @commonMe.
   ///
   /// In fr, this message translates to:
@@ -3688,6 +3748,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Voitures'**
   String get tripOverviewTileCars;
+
+  /// No description provided for @tripOverviewTileGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux'**
+  String get tripOverviewTileGames;
 
   /// No description provided for @tripOverviewTopTabAnnouncements.
   ///

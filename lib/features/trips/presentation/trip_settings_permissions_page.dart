@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
-import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
-class TripSettingsPage extends ConsumerWidget {
-  const TripSettingsPage({
+class TripSettingsPermissionsPage extends ConsumerWidget {
+  const TripSettingsPermissionsPage({
     super.key,
     required this.tripId,
   });
@@ -24,7 +24,12 @@ class TripSettingsPage extends ConsumerWidget {
         if (trip == null) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(l10n.tripSettingsTitle),
+              title: Text(l10n.tripSettingsPermissionsSectionTitle),
+              leading: IconButton(
+                onPressed: () => context.go('/trips/$tripId/settings'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: l10n.tripBackToTrip,
+              ),
             ),
             body: Center(
               child: Padding(
@@ -38,31 +43,19 @@ class TripSettingsPage extends ConsumerWidget {
           );
         }
 
-        final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
-        final myRole = _roleLabelFor(
-          l10n: l10n,
-          uid: myUid,
-          ownerId: trip.ownerId,
-          adminMemberIds: trip.adminMemberIds,
-        );
-        final currentRole = resolveTripPermissionRole(
-          trip: trip,
-          userId: myUid,
-        );
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim();
+        final currentRole =
+            resolveTripPermissionRole(trip: trip, userId: currentUserId);
         final canAccessTripSettings = isTripRoleAllowed(
           currentRole: currentRole,
           minRole: trip.generalPermissions.manageTripSettingsMinRole,
         );
-        final title = trip.title.trim().isEmpty
-            ? l10n.tripLabelGeneric
-            : trip.title.trim();
-
         if (!canAccessTripSettings) {
           return Scaffold(
             appBar: AppBar(
-              title: Text(l10n.tripSettingsTitle),
+              title: Text(l10n.tripSettingsPermissionsSectionTitle),
               leading: IconButton(
-                onPressed: () => context.go('/trips/$tripId/overview'),
+                onPressed: () => context.go('/trips/$tripId/settings'),
                 icon: const Icon(Icons.arrow_back),
                 tooltip: l10n.tripBackToTrip,
               ),
@@ -81,9 +74,9 @@ class TripSettingsPage extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(l10n.tripSettingsTitle),
+            title: Text(l10n.tripSettingsPermissionsSectionTitle),
             leading: IconButton(
-              onPressed: () => context.go('/trips/$tripId/overview'),
+              onPressed: () => context.go('/trips/$tripId/settings'),
               icon: const Icon(Icons.arrow_back),
               tooltip: l10n.tripBackToTrip,
             ),
@@ -91,42 +84,45 @@ class TripSettingsPage extends ConsumerWidget {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 8),
-                      Text(l10n.tripMyRole(myRole)),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.tripRoleHierarchyHint,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
               _SettingsSectionCard(
-                title: l10n.tripSettingsPermissionsSectionTitle,
-                icon: Icons.admin_panel_settings_outlined,
-                description: l10n.tripSettingsPermissionsSectionDescription,
+                title: l10n.tripSectionTrip,
+                icon: Icons.luggage_outlined,
+                description: l10n.tripSectionTripDescription,
                 onTap: () =>
-                    context.push('/trips/$tripId/settings/permissions'),
+                    context.push('/trips/$tripId/settings/permissions/trip'),
               ),
               _SettingsSectionCard(
-                title: l10n.tripSettingsGeneralComingSoonTitle,
-                icon: Icons.tune_outlined,
-                description: l10n.tripSettingsGeneralSectionDescription,
-                onTap: () => context.push('/trips/$tripId/settings/general'),
+                title: l10n.tripSectionParticipants,
+                icon: Icons.group_outlined,
+                description: l10n.tripSectionParticipantsDescription,
+                onTap: () => context
+                    .push('/trips/$tripId/settings/permissions/participants'),
+              ),
+              _SettingsSectionCard(
+                title: l10n.tripSectionExpenses,
+                icon: Icons.payments_outlined,
+                description: l10n.tripSectionExpensesDescription,
+                onTap: () => context
+                    .push('/trips/$tripId/settings/permissions/expenses'),
+              ),
+              _SettingsSectionCard(
+                title: l10n.tripSectionActivities,
+                icon: Icons.event_available_outlined,
+                description: l10n.tripSectionActivitiesDescription,
+                onTap: () => context
+                    .push('/trips/$tripId/settings/permissions/activities'),
+              ),
+              _SettingsSectionCard(
+                title: l10n.tripSectionMeals,
+                icon: Icons.restaurant_outlined,
+                description: l10n.tripSectionMealsDescription,
+              ),
+              _SettingsSectionCard(
+                title: l10n.tripSectionShopping,
+                icon: Icons.shopping_cart_outlined,
+                description: l10n.tripSectionShoppingDescription,
+                onTap: () => context
+                    .push('/trips/$tripId/settings/permissions/shopping'),
               ),
             ],
           ),
@@ -137,7 +133,12 @@ class TripSettingsPage extends ConsumerWidget {
       ),
       error: (error, _) => Scaffold(
         appBar: AppBar(
-          title: Text(l10n.tripSettingsTitle),
+          title: Text(l10n.tripSettingsPermissionsSectionTitle),
+          leading: IconButton(
+            onPressed: () => context.go('/trips/$tripId/settings'),
+            icon: const Icon(Icons.arrow_back),
+            tooltip: l10n.tripBackToTrip,
+          ),
         ),
         body: Center(
           child: Padding(
@@ -151,19 +152,6 @@ class TripSettingsPage extends ConsumerWidget {
       ),
     );
   }
-}
-
-String _roleLabelFor({
-  required AppLocalizations l10n,
-  required String? uid,
-  required String ownerId,
-  required List<String> adminMemberIds,
-}) {
-  final currentUid = uid?.trim() ?? '';
-  if (currentUid.isEmpty) return l10n.roleParticipant;
-  if (currentUid == ownerId.trim()) return l10n.roleOwner;
-  if (adminMemberIds.contains(currentUid)) return l10n.roleAdmin;
-  return l10n.roleParticipant;
 }
 
 class _SettingsSectionCard extends StatelessWidget {

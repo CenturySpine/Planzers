@@ -4,21 +4,18 @@ import 'package:planerz/features/trips/data/trip_day_part.dart';
 enum MealComponentKind {
   entree,
   plat,
-  dessert,
-  autre;
+  dessert;
 
   String get firestoreValue => switch (this) {
         MealComponentKind.entree => 'entree',
         MealComponentKind.plat => 'plat',
         MealComponentKind.dessert => 'dessert',
-        MealComponentKind.autre => 'autre',
       };
 
   String get labelFr => switch (this) {
         MealComponentKind.entree => 'Entree',
         MealComponentKind.plat => 'Plat',
         MealComponentKind.dessert => 'Dessert',
-        MealComponentKind.autre => 'Autre',
       };
 
   static MealComponentKind fromFirestore(String? raw) {
@@ -27,8 +24,8 @@ enum MealComponentKind {
       'entree' => MealComponentKind.entree,
       'plat' => MealComponentKind.plat,
       'dessert' => MealComponentKind.dessert,
-      'autre' => MealComponentKind.autre,
-      _ => MealComponentKind.autre,
+      'autre' => MealComponentKind.plat,
+      _ => MealComponentKind.plat,
     };
   }
 }
@@ -250,6 +247,7 @@ class TripMeal {
     this.mealMode = MealMode.cooked,
     this.restaurantUrl = '',
     this.potluckItems = const [],
+    this.componentsUserOrdered = false,
   });
 
   final String id;
@@ -271,6 +269,7 @@ class TripMeal {
   final MealMode mealMode;
   final String restaurantUrl;
   final List<MealPotluckItem> potluckItems;
+  final bool componentsUserOrdered;
 
   /// Convenience accessor for participant count.
   int get participantCount => participantIds.length;
@@ -338,6 +337,7 @@ class TripMeal {
           .map(MealPotluckItem.fromDynamic)
           .where((item) => item.label.isNotEmpty)
           .toList(growable: false),
+      componentsUserOrdered: data['componentsUserOrdered'] == true,
       createdBy: (data['createdBy'] as String?)?.trim() ?? '',
       createdAt: _parseDateOrNow(data['createdAt']),
       updatedAt: _parseOptionalDate(data['updatedAt']),
@@ -376,6 +376,7 @@ class TripMeal {
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
+      'componentsUserOrdered': componentsUserOrdered,
       'createdBy': createdBy.trim(),
       'createdAt': FieldValue.serverTimestamp(),
     };
@@ -396,6 +397,7 @@ class TripMeal {
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
           .toList(growable: false),
+      'componentsUserOrdered': componentsUserOrdered,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -415,6 +417,7 @@ class TripMeal {
     MealMode? mealMode,
     String? restaurantUrl,
     List<MealPotluckItem>? potluckItems,
+    bool? componentsUserOrdered,
   }) {
     return TripMeal(
       id: id ?? this.id,
@@ -433,6 +436,7 @@ class TripMeal {
       mealMode: mealMode ?? this.mealMode,
       restaurantUrl: restaurantUrl ?? this.restaurantUrl,
       potluckItems: potluckItems ?? this.potluckItems,
+      componentsUserOrdered: componentsUserOrdered ?? this.componentsUserOrdered,
     );
   }
 

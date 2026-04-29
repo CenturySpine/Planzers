@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -201,6 +202,28 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   void _openTripUserPreferencesPage() {
     context.push('/trips/${_trip.id}/preferences');
+  }
+
+  Future<void> _openPhotosStorageLink(String url) async {
+    final l10n = AppLocalizations.of(context)!;
+    final parsedUrl = Uri.tryParse(url.trim());
+    if (parsedUrl == null || !parsedUrl.isAbsolute) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkInvalid)),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(
+      parsedUrl,
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkOpenImpossible)),
+      );
+    }
   }
 
   Future<void> _pickAndUploadBannerImage() async {
@@ -441,7 +464,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       stream: tripDocStream,
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
-        final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+        final liveLinkUrl =
+            (liveData?['linkUrl'] as String?) ??
+                (liveData?['photosStorageUrl'] as String?) ??
+                _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =
@@ -456,6 +482,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+        final photosStorageLinkUrl =
+            ((liveData?['photosStorageUrl'] as String?) ?? '').trim();
         final tripDateLabel =
             formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
@@ -886,6 +914,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 leftAlertCount: unreadAnnouncements,
                 onLeftTap: _openAnnouncementsPage,
                 onRightTap: _openExpensesPage,
+                thirdLabel: photosStorageLinkUrl.isNotEmpty ? 'Photos' : null,
+                onThirdTap: photosStorageLinkUrl.isNotEmpty
+                    ? () => _openPhotosStorageLink(photosStorageLinkUrl)
+                    : null,
               ),
             ),
             Padding(
@@ -1131,11 +1163,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     Builder(builder: (context) {
                       final cs = Theme.of(context).colorScheme;
                       final pz = context.planerzColors;
-                      return Column(
-                        children: [
-                          Row(
+                      const tileSpacing = 10.0;
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final halfTileWidth =
+                              (constraints.maxWidth - tileSpacing) / 2;
+                          return Wrap(
+                            spacing: tileSpacing,
+                            runSpacing: tileSpacing,
                             children: [
-                              Expanded(
+                              SizedBox(
+                                width: constraints.maxWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileParticipants,
                                   icon: Icons.assignment_ind_outlined,
@@ -1143,12 +1181,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   backgroundColor: cs.tertiaryContainer,
                                   iconColor: cs.primary,
                                   previewParticipants: participantsPreview,
-                                  onTap: () =>
-                                      _openParticipantsPage(),
+                                  onTap: _openParticipantsPage,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileActivities,
                                   icon: Icons.event_note_outlined,
@@ -1166,12 +1203,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileRooms,
                                   icon: Icons.bed_outlined,
@@ -1188,8 +1221,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       context.go('/trips/${_trip.id}/rooms'),
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
+                              SizedBox(
+                                width: halfTileWidth,
                                 child: _TripAccessTile(
                                   label: l10n.tripOverviewTileCars,
                                   icon: Icons.directions_car_outlined,
@@ -1204,9 +1237,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       context.go('/trips/${_trip.id}/cars'),
                                 ),
                               ),
+                              SizedBox(
+                                width: halfTileWidth,
+                                child: _TripAccessTile(
+                                  label: l10n.tripOverviewTileGames,
+                                  icon: Icons.sports_esports_outlined,
+                                  countLabel: '0',
+                                  backgroundColor: cs.primaryContainer,
+                                  iconColor: cs.primary,
+                                  showDetailBullets: false,
+                                  wrapDetailLines: true,
+                                  emptyStateMessage:
+                                      l10n.tripOverviewTileComingSoon,
+                                  onTap: () {},
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       );
                     }),
                   ],
@@ -1477,6 +1525,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
     this.leftAlertCount = 0,
     required this.onLeftTap,
     required this.onRightTap,
+    this.thirdLabel,
+    this.onThirdTap,
   });
 
   final String leftLabel;
@@ -1484,6 +1534,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
   final int leftAlertCount;
   final VoidCallback onLeftTap;
   final VoidCallback onRightTap;
+  final String? thirdLabel;
+  final VoidCallback? onThirdTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1519,6 +1571,20 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               onTap: onRightTap,
             ),
           ),
+          if (thirdLabel != null && onThirdTap != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: _TripOverviewTopSwitchItem(
+                label: thirdLabel!,
+                icon: Icons.photo_library_outlined,
+                color: cs.tertiaryContainer,
+                foregroundColor: cs.onTertiaryContainer,
+                borderColor: cs.outlineVariant,
+                textStyle: labelStyle,
+                onTap: onThirdTap!,
+              ),
+            ),
+          ],
         ],
       ),
     );

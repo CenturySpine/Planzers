@@ -602,6 +602,45 @@ class AppLocalizationsEn extends AppLocalizations {
       'Privilege hierarchy: owner > admin > participant';
 
   @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Set the minimum roles for each trip domain.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'General settings';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Cross-cutting trip settings (outside permissions).';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Link to the shared folder or storage service used for trip photos.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... or https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Enable or disable Cupidon mode for all participants in this trip.';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'This section is coming soon.';
+
+  @override
   String get roleOwner => 'Owner';
 
   @override
@@ -1692,9 +1731,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealComponentKindDessert => 'Dessert';
 
   @override
-  String get mealComponentKindOther => 'Other';
-
-  @override
   String get commonMe => 'Me';
 
   @override
@@ -2015,6 +2051,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewTileCars => 'Cars';
+
+  @override
+  String get tripOverviewTileGames => 'Games';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
@@ -2657,6 +2696,45 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Privilege hierarchy: owner > admin > participant';
 
   @override
+  String get tripSettingsPermissionsSectionTitle => 'Permissions';
+
+  @override
+  String get tripSettingsPermissionsSectionDescription =>
+      'Set the minimum roles for each trip domain.';
+
+  @override
+  String get tripSettingsGeneralSectionTitle => 'General settings';
+
+  @override
+  String get tripSettingsGeneralSectionDescription =>
+      'Cross-cutting trip settings (outside permissions).';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageDescription =>
+      'Link to the shared folder or storage service used for trip photos.';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
+
+  @override
+  String get tripSettingsGeneralPhotosStorageFieldHint =>
+      'https://drive.google.com/... or https://photos.app.goo.gl/...';
+
+  @override
+  String get tripSettingsGeneralCupidonModeDescription =>
+      'Enable or disable Cupidon mode for all participants in this trip.';
+
+  @override
+  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
+
+  @override
+  String get tripSettingsGeneralComingSoonDescription =>
+      'This section is coming soon.';
+
+  @override
   String get roleOwner => 'Owner';
 
   @override
@@ -3747,9 +3825,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealComponentKindDessert => 'Dessert';
 
   @override
-  String get mealComponentKindOther => 'Other';
-
-  @override
   String get commonMe => 'Me';
 
   @override
@@ -4070,6 +4145,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTileCars => 'Cars';
+
+  @override
+  String get tripOverviewTileGames => 'Games';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
