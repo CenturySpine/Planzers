@@ -52,15 +52,96 @@ async function fetchHtml(url) {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       accept:
         'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'accept-language': 'fr-FR,fr;q=0.9,en;q=0.8',
     },
   });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`);
   }
-  return await res.text();
+  const finalUrl = safeUrl(res.url) || url;
+  return { html: await res.text(), finalUrl };
 }
 
-function parsePreviewFromHtml(pageUrl, html) {
+function isGoogleMapsUrl(url) {
+  const h = url.hostname;
+  return (
+    h === 'maps.google.com' ||
+    (h === 'www.google.com' && url.pathname.startsWith('/maps'))
+  );
+}
+
+function extractGoogleMapsPreview(url) {
+  const p = url.pathname;
+
+  let title = '';
+  // /maps/place/NAME/@lat,lng  or  /maps/search/NAME/@...
+  const placeMatch = p.match(/\/maps\/(?:place|search)\/([^/@?]+)/);
+  if (placeMatch) {
+    title = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+  }
+  // ?q=NAME fallback
+  if (!title) {
+    const q = url.searchParams.get('q');
+    if (q) title = q;
+  }
+
+  let description = '';
+  let lat = null;
+  let lng = null;
+  // Coordinates as human-readable fallback description
+  const coordMatch = p.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+  if (coordMatch) {
+    lat = parseFloat(coordMatch[1]);
+    lng = parseFloat(coordMatch[2]);
+    description = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
+
+  return { title, description, siteName: 'Google Maps', imageUrl: '', lat, lng };
+}
+
+function extractJsonLd($) {
+  let title = '';
+  let description = '';
+  let imageUrl = '';
+
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (title && description && imageUrl) return;
+    try {
+      const data = JSON.parse($(el).html() || '');
+      const nodes =
+        data && Array.isArray(data['@graph']) ? data['@graph'] : [data];
+      for (const node of nodes) {
+        if (!node || typeof node !== 'object') continue;
+        if (!title) title = normalizeString(node.name);
+        if (!description) description = normalizeString(node.description);
+        if (!imageUrl) {
+          const img = node.image;
+          if (typeof img === 'string') imageUrl = img;
+          else if (img && !Array.isArray(img))
+            imageUrl = normalizeString(img.url);
+          else if (Array.isArray(img) && img.length > 0) {
+            const first = img[0];
+            imageUrl =
+              typeof first === 'string'
+                ? first
+                : normalizeString((first || {}).url);
+          }
+        }
+      }
+    } catch {}
+  });
+
+  return { title, description, imageUrl };
+}
+
+const _GOOGLE_MAPS_GENERIC_DESC =
+  'Find local businesses, view maps and get driving directions in Google Maps.';
+
+function isGoogleMapsGenericDesc(desc) {
+  return normalizeString(desc) === _GOOGLE_MAPS_GENERIC_DESC;
+}
+
+function parsePreviewFromHtml(finalUrl, html) {
   const $ = cheerio.load(html);
 
   const meta = (key) =>
@@ -79,27 +160,107 @@ function parsePreviewFromHtml(pageUrl, html) {
   const twitterImage = meta('twitter:image');
 
   const titleTag = normalizeString($('title').first().text());
+  const jsonLd = extractJsonLd($);
 
-  const title = pickFirst(ogTitle, twitterTitle, titleTag);
-  const description = pickFirst(ogDescription, twitterDescription);
-  const siteName = pickFirst(ogSiteName, pageUrl.hostname);
-  const imageRaw = pickFirst(ogImage, twitterImage);
+  const title = pickFirst(ogTitle, twitterTitle, jsonLd.title, titleTag);
+  const description = pickFirst(
+    ogDescription,
+    twitterDescription,
+    jsonLd.description
+  );
+  const siteName = pickFirst(ogSiteName, finalUrl.hostname);
+  const imageRaw = pickFirst(ogImage, twitterImage, jsonLd.imageUrl);
 
   let imageUrl = '';
   if (imageRaw) {
     try {
-      imageUrl = new URL(imageRaw, pageUrl).toString();
+      imageUrl = new URL(imageRaw, finalUrl).toString();
     } catch {
       imageUrl = '';
     }
   }
 
-  return {
-    title,
-    description,
-    siteName,
-    imageUrl,
-  };
+  const result = { title, description, siteName, imageUrl };
+
+  // For Google Maps URLs, override generic og data with URL-extracted values.
+  if (isGoogleMapsUrl(finalUrl)) {
+    const maps = extractGoogleMapsPreview(finalUrl);
+
+    // og:title is usually correct (place name), but override if missing/generic.
+    if (maps.title && (!result.title || result.title === 'Google Maps')) {
+      result.title = maps.title;
+    }
+
+    // og:description is always Google's generic app tagline — discard it.
+    result.description =
+      isGoogleMapsGenericDesc(result.description) || !result.description
+        ? maps.description
+        : result.description;
+
+    // og:image is a generic static-map thumbnail, never a place photo — drop it.
+    result.imageUrl = '';
+
+    // "Google Maps" as siteName is redundant alongside the place name.
+    result.siteName = '';
+  }
+
+  return result;
+}
+
+/**
+ * Enriches a Google Maps preview with data from the Places API (New).
+ * Returns { title, description, imageUrl } overrides, or null on failure.
+ */
+async function enrichWithGooglePlaces(name, lat, lng) {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey || !name) return null;
+
+  try {
+    const searchBody = { textQuery: name };
+    if (lat != null && lng != null) {
+      searchBody.locationBias = {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: 500.0,
+        },
+      };
+    }
+
+    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.shortFormattedAddress,places.photos',
+      },
+      body: JSON.stringify(searchBody),
+    });
+    if (!searchRes.ok) return null;
+
+    const searchData = await searchRes.json();
+    const places = searchData.places;
+    if (!places || places.length === 0) return null;
+
+    const place = places[0];
+    const title = place.displayName?.text || name;
+    const description = place.shortFormattedAddress || '';
+
+    let imageUrl = '';
+    if (place.photos && place.photos.length > 0) {
+      const photoName = place.photos[0].name;
+      const photoRes = await fetch(
+        `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&key=${apiKey}`,
+        { redirect: 'follow' }
+      );
+      if (photoRes.ok) {
+        imageUrl = photoRes.url;
+      }
+    }
+
+    return { title, description, imageUrl };
+  } catch {
+    return null;
+  }
 }
 
 /** @param {FirebaseFirestore.DocumentData} data */
@@ -1706,96 +1867,153 @@ exports.disableTripCupidonForAllMembers = onDocumentUpdated(
   }
 );
 
-exports.generateTripLinkPreview = onDocumentUpdated(
-  {
-    document: 'trips/{tripId}',
-    timeoutSeconds: 30,
-    memory: '256MiB',
-  },
-  async (event) => {
-    const before = event.data.before.data() || {};
-    const after = event.data.after.data() || {};
+/**
+ * Shared logic: fetch and store a link preview on any Firestore document.
+ * @param {FirebaseFirestore.DocumentReference} docRef
+ * @param {string} beforeUrlRaw
+ * @param {string} afterUrlRaw
+ * @param {string} previewField  Firestore field name to write the preview into.
+ */
+async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewField) {
+  const beforeUrl = normalizeString(beforeUrlRaw);
+  const afterUrl = normalizeString(afterUrlRaw);
 
-    const beforeUrl = normalizeString(before.linkUrl);
-    const afterUrl = normalizeString(after.linkUrl);
+  if (beforeUrl === afterUrl) return;
 
-    // Avoid loops: only run when linkUrl actually changes.
-    if (beforeUrl === afterUrl) return;
+  if (!afterUrl) {
+    await docRef.set(
+      { [previewField]: admin.firestore.FieldValue.delete() },
+      { merge: true }
+    );
+    return;
+  }
 
-    const tripRef = event.data.after.ref;
-
-    if (!afterUrl) {
-      await tripRef.set(
-        {
-          linkPreview: admin.firestore.FieldValue.delete(),
-        },
-        { merge: true }
-      );
-      return;
-    }
-
-    const parsed = safeUrl(afterUrl);
-    if (!parsed) {
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: 'error',
-            url: afterUrl,
-            error: 'invalid_url',
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
-      return;
-    }
-
-    // Mark as loading (UI can show spinner).
-    await tripRef.set(
+  const parsed = safeUrl(afterUrl);
+  if (!parsed) {
+    await docRef.set(
       {
-        linkPreview: {
-          status: 'loading',
-          url: parsed.toString(),
+        [previewField]: {
+          status: 'error',
+          url: afterUrl,
+          error: 'invalid_url',
           fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
       },
       { merge: true }
     );
+    return;
+  }
 
-    try {
-      const html = await fetchHtml(parsed);
-      const preview = parsePreviewFromHtml(parsed, html);
+  await docRef.set(
+    {
+      [previewField]: {
+        status: 'loading',
+        url: parsed.toString(),
+        fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+    },
+    { merge: true }
+  );
 
-      const hasSomething =
-        preview.title || preview.description || preview.imageUrl || preview.siteName;
+  try {
+    const { html, finalUrl } = await fetchHtml(parsed);
+    const preview = parsePreviewFromHtml(finalUrl, html);
 
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: hasSomething ? 'ok' : 'empty',
-            url: parsed.toString(),
-            title: preview.title,
-            description: preview.description,
-            siteName: preview.siteName,
-            imageUrl: preview.imageUrl,
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
+    if (isGoogleMapsUrl(finalUrl)) {
+      const maps = extractGoogleMapsPreview(finalUrl);
+      const enriched = await enrichWithGooglePlaces(
+        maps.title || preview.title,
+        maps.lat,
+        maps.lng
       );
-    } catch (e) {
-      await tripRef.set(
-        {
-          linkPreview: {
-            status: 'error',
-            url: parsed.toString(),
-            error: String(e),
-            fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
-        },
-        { merge: true }
-      );
+      if (enriched) {
+        if (enriched.title) preview.title = enriched.title;
+        if (enriched.description) preview.description = enriched.description;
+        if (enriched.imageUrl) preview.imageUrl = enriched.imageUrl;
+      }
     }
+
+    const hasSomething =
+      preview.title || preview.description || preview.imageUrl || preview.siteName;
+
+    await docRef.set(
+      {
+        [previewField]: {
+          status: hasSomething ? 'ok' : 'empty',
+          url: finalUrl.toString(),
+          title: preview.title,
+          description: preview.description,
+          siteName: preview.siteName,
+          imageUrl: preview.imageUrl,
+          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  } catch (e) {
+    await docRef.set(
+      {
+        [previewField]: {
+          status: 'error',
+          url: parsed.toString(),
+          error: String(e),
+          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      },
+      { merge: true }
+    );
+  }
+}
+
+exports.generateTripLinkPreview = onDocumentUpdated(
+  { document: 'trips/{tripId}', timeoutSeconds: 30, memory: '256MiB', secrets: ['GOOGLE_PLACES_API_KEY'] },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.linkUrl,
+      after.linkUrl,
+      'linkPreview'
+    );
+  }
+);
+
+exports.generateActivityLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.linkUrl,
+      after.linkUrl,
+      'linkPreview'
+    );
+  }
+);
+
+exports.generateMealLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/meals/{mealId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.restaurantUrl,
+      after.restaurantUrl,
+      'restaurantLinkPreview'
+    );
   }
 );
 
