@@ -16,6 +16,7 @@ import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
+import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -652,6 +653,24 @@ class _SignInPageState extends ConsumerState<SignInPage> {
               ),
             ),
           ),
+          if (ref.watch(appVersionProvider).asData?.value case final version?)
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10, left: 14),
+                  child: Text(
+                    version,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF757575),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           SafeArea(
             top: false,
             child: Align(

@@ -11,6 +11,7 @@ import 'package:planerz/features/legal/presentation/legal_information_page.dart'
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
@@ -747,11 +748,12 @@ class _FooterSeparator extends StatelessWidget {
   }
 }
 
-class _TripsAppBranding extends StatelessWidget {
+class _TripsAppBranding extends ConsumerWidget {
   const _TripsAppBranding();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final version = ref.watch(appVersionProvider).asData?.value;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -772,6 +774,17 @@ class _TripsAppBranding extends StatelessWidget {
                 letterSpacing: 0.5,
               ),
         ),
+        if (version != null) ...[
+          const SizedBox(width: 8),
+          Text(
+            version,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF757575),
+            ),
+          ),
+        ],
       ],
     );
   }
