@@ -147,6 +147,7 @@ class Trip {
       'destination': destination,
       'address': address,
       'linkUrl': linkUrl,
+      'photosStorageUrl': photosStorageUrl,
       'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': ownerId,
       'memberIds': memberIds,
