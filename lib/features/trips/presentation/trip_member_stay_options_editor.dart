@@ -281,18 +281,39 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           if (widget.phoneVisibilityTitle != null) ...[
             const SizedBox(height: 6),
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Opacity(
+                opacity: hasPhoneNumber ? 1.0 : 0.38,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.phoneVisibilityTitle!,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.phoneVisibilityTitle!,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            hasPhoneNumber
+                                ? l10n.tripPhoneVisibilitySubtitle
+                                : l10n.tripPhoneVisibilityRequiresProfileNumber,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<TripMemberPhoneVisibility>(
-                      initialValue: _phoneVisibility,
+                    const SizedBox(width: 16),
+                    DropdownButton<TripMemberPhoneVisibility>(
+                      value: _phoneVisibility,
                       onChanged: phoneVisibilitySectionEnabled
                           ? (value) {
                               if (value != null) {
@@ -300,8 +321,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                               }
                             }
                           : null,
-                      items:
-                          TripMemberPhoneVisibility.values.map((visibility) {
+                      items: TripMemberPhoneVisibility.values.map((visibility) {
                         String label;
                         switch (visibility) {
                           case TripMemberPhoneVisibility.nobody:
@@ -319,18 +339,8 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                         );
                       }).toList(),
                     ),
-                    if (!hasPhoneNumber) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.tripPhoneVisibilityRequiresProfileNumber,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                    ],
                   ],
+                  ),
                 ),
               ),
             ),

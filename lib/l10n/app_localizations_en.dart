@@ -573,6 +573,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
 
   @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Define who can see your phone number on this trip.';
+
+  @override
   String get tripPhoneVisibilityRequiresProfileNumber =>
       'You have not added a phone number in your profile yet.';
 
@@ -2691,6 +2695,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
+
+  @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Define who can see your phone number on this trip.';
 
   @override
   String get tripPhoneVisibilityRequiresProfileNumber =>

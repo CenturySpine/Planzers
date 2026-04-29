@@ -227,6 +227,7 @@
   "tripUserPreferencesTitle": "Mes préférences du voyage",
   "tripUserPreferencesMenuAction": "Mes préférences",
   "tripPhoneVisibilityTitle": "Rôle minimum pour voir mon numéro de téléphone",
+  "tripPhoneVisibilitySubtitle": "Définis qui peut voir ton numéro dans ce voyage.",
   "tripPhoneVisibilityRequiresProfileNumber": "Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.",
   "tripPhoneVisibilityPersonne": "Personne",
   "tripPhoneVisibilityCreateur": "Créateur",

@@ -1132,6 +1132,12 @@ abstract class AppLocalizations {
   /// **'Rôle minimum pour voir mon numéro de téléphone'**
   String get tripPhoneVisibilityTitle;
 
+  /// No description provided for @tripPhoneVisibilitySubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Définis qui peut voir ton numéro dans ce voyage.'**
+  String get tripPhoneVisibilitySubtitle;
+
   /// No description provided for @tripPhoneVisibilityRequiresProfileNumber.
   ///
   /// In fr, this message translates to:

@@ -578,6 +578,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rôle minimum pour voir mon numéro de téléphone';
 
   @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Définis qui peut voir ton numéro dans ce voyage.';
+
+  @override
   String get tripPhoneVisibilityRequiresProfileNumber =>
       'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.';
 
@@ -2712,6 +2716,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPhoneVisibilityTitle =>
       'Rôle minimum pour voir mon numéro de téléphone';
+
+  @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Définis qui peut voir ton numéro dans ce voyage.';
 
   @override
   String get tripPhoneVisibilityRequiresProfileNumber =>
