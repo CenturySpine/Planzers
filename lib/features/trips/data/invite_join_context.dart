@@ -14,6 +14,7 @@ class InviteJoinContext {
     required this.tripTitle,
     required this.placeholders,
     required this.requiresPlaceholderChoice,
+    required this.cupidonModeEnabled,
     this.tripStartDate,
     this.tripEndDate,
   });
@@ -22,6 +23,7 @@ class InviteJoinContext {
   final String tripTitle;
   final List<InviteJoinPlaceholderOption> placeholders;
   final bool requiresPlaceholderChoice;
+  final bool cupidonModeEnabled;
 
   /// From Cloud Function [getInviteJoinContext] (ISO), for stay bounds UI.
   final DateTime? tripStartDate;

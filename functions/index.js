@@ -2009,6 +2009,7 @@ exports.getInviteJoinContext = onCall(
       tripTitle: normalizeString(data.title) || 'Voyage',
       placeholders,
       requiresPlaceholderChoice: placeholders.length > 0,
+      cupidonModeEnabled: data.cupidonModeEnabled !== false,
       tripStartDate,
       tripEndDate,
     };

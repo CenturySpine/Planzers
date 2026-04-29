@@ -424,6 +424,7 @@ class TripsRepository {
       tripTitle: tripTitle,
       placeholders: list,
       requiresPlaceholderChoice: requires,
+      cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
       tripStartDate: parseIso(raw['tripStartDate'] as String?),
       tripEndDate: parseIso(raw['tripEndDate'] as String?),
     );

@@ -440,9 +440,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final l10n = AppLocalizations.of(context)!;
     final ctx = _context!;
     final myPhoneNumber = ref.watch(myPhoneNumberProvider).asData?.value;
-    final tripCupidonModeEnabled =
-        ref.watch(tripStreamProvider(widget.tripId)).asData?.value?.cupidonModeEnabled ??
-        false;
+    final tripCupidonModeEnabled = ctx.cupidonModeEnabled;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
     final stepTitle = _inviteFormStep == 0
