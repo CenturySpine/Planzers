@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -192,64 +193,124 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final cupidonSectionEnabled = widget.isCupidonModeEnabled;
+    final cupidonDescription = cupidonSectionEnabled
+        ? l10n.cupidonModeExplanation
+        : l10n.cupidonModeDisabledByAdmin;
+    final hasPhoneNumber = _phoneVisibility != null;
+    final phoneVisibilitySectionEnabled = hasPhoneNumber &&
+        !_isUpdatingPhoneVisibility &&
+        (_isDraft || widget.onLivePhoneVisibilityChanged != null);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TripStayBoundsEditor(
-          tripStartDate: widget.tripStartDate,
-          tripEndDate: widget.tripEndDate,
-          value: _stay,
-          onChanged: _handleStayChanged,
-        ),
-        if (widget.isCupidonModeEnabled) ...[
-          const SizedBox(height: 20),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            value: _cupidonEnabled,
-            onChanged: _isUpdatingCupidon ? null : _handleCupidonChanged,
-            title: Text(widget.cupidonTitle),
-            subtitle: widget.cupidonSubtitle == null
-                ? null
-                : Text(widget.cupidonSubtitle!),
-          ),
-        ],
-        if (_phoneVisibility != null && widget.phoneVisibilityTitle != null) ...[
-          const SizedBox(height: 20),
-          Text(
-            widget.phoneVisibilityTitle!,
-            style: Theme.of(context).textTheme.titleMedium,
+        if (_isDraft) ...[
+          Card(
+            color: context.planerzColors.successContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.inviteOptionsEditableAfterJoinInfo,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<TripMemberPhoneVisibility>(
-            initialValue: _phoneVisibility,
-            onChanged: (_isUpdatingPhoneVisibility ||
-                    (_isDraft
-                        ? _phoneVisibility == null
-                        : widget.onLivePhoneVisibilityChanged == null))
-                ? null
-                : (value) {
-                    if (value != null) {
-                      _handlePhoneVisibilityChanged(value);
-                    }
-                  },
-            items: TripMemberPhoneVisibility.values.map((visibility) {
-              String label;
-              switch (visibility) {
-                case TripMemberPhoneVisibility.nobody:
-                  label = l10n.tripPhoneVisibilityPersonne;
-                case TripMemberPhoneVisibility.owner:
-                  label = l10n.tripPhoneVisibilityCreateur;
-                case TripMemberPhoneVisibility.admin:
-                  label = l10n.tripPhoneVisibilityAdmin;
-                case TripMemberPhoneVisibility.participant:
-                  label = l10n.tripPhoneVisibilityParticipant;
-              }
-              return DropdownMenuItem(
-                value: visibility,
-                child: Text(label),
-              );
-            }).toList(),
+        ],
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TripStayBoundsEditor(
+              tripStartDate: widget.tripStartDate,
+              tripEndDate: widget.tripEndDate,
+              value: _stay,
+              onChanged: _handleStayChanged,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _cupidonEnabled,
+              onChanged: (_isUpdatingCupidon || !cupidonSectionEnabled)
+                  ? null
+                  : _handleCupidonChanged,
+              title: Text(widget.cupidonTitle),
+              subtitle: Text(cupidonDescription),
+            ),
+          ),
+        ),
+        if (widget.phoneVisibilityTitle != null) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.phoneVisibilityTitle!,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<TripMemberPhoneVisibility>(
+                    initialValue: _phoneVisibility,
+                    onChanged: phoneVisibilitySectionEnabled
+                        ? (value) {
+                            if (value != null) {
+                              _handlePhoneVisibilityChanged(value);
+                            }
+                          }
+                        : null,
+                    items: TripMemberPhoneVisibility.values.map((visibility) {
+                      String label;
+                      switch (visibility) {
+                        case TripMemberPhoneVisibility.nobody:
+                          label = l10n.tripPhoneVisibilityPersonne;
+                        case TripMemberPhoneVisibility.owner:
+                          label = l10n.tripPhoneVisibilityCreateur;
+                        case TripMemberPhoneVisibility.admin:
+                          label = l10n.tripPhoneVisibilityAdmin;
+                        case TripMemberPhoneVisibility.participant:
+                          label = l10n.tripPhoneVisibilityParticipant;
+                      }
+                      return DropdownMenuItem(
+                        value: visibility,
+                        child: Text(label),
+                      );
+                    }).toList(),
+                  ),
+                  if (!hasPhoneNumber) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.tripPhoneVisibilityRequiresProfileNumber,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ],

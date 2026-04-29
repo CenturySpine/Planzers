@@ -581,11 +581,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                           TripMemberPhoneVisibility.nobody;
                                 }),
                                 cupidonTitle: l10n.cupidonModeTitle,
-                                cupidonSubtitle: l10n.inviteCupidonSubtitle,
-                                phoneVisibilityTitle:
-                                    myPhoneNumber == null
-                                        ? null
-                                        : l10n.tripPhoneVisibilityTitle,
+                                phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
                               ),
                           ],
                         ),

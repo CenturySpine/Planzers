@@ -578,6 +578,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rôle minimum pour voir mon numéro de téléphone';
 
   @override
+  String get tripPhoneVisibilityRequiresProfileNumber =>
+      'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.';
+
+  @override
   String get tripPhoneVisibilityPersonne => 'Personne';
 
   @override
@@ -1147,6 +1151,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cupidonModeTitle => 'Mode cupidon';
 
   @override
+  String get cupidonModeExplanation =>
+      'Si toi et un autre participant vous likez mutuellement, vous obtenez un match et recevez une notification.';
+
+  @override
+  String get cupidonModeDisabledByAdmin =>
+      'Le mode Cupidon est désactivé pour ce voyage par un admin.';
+
+  @override
   String get cupidonEnableAction => 'Activer Cupidon';
 
   @override
@@ -1269,6 +1281,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
+
+  @override
+  String get inviteOptionsEditableAfterJoinInfo =>
+      'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.';
 
   @override
   String get commonContinue => 'Continuer';
@@ -2695,6 +2711,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Rôle minimum pour voir mon numéro de téléphone';
 
   @override
+  String get tripPhoneVisibilityRequiresProfileNumber =>
+      'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.';
+
+  @override
   String get tripPhoneVisibilityPersonne => 'Personne';
 
   @override
@@ -3264,6 +3284,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get cupidonModeTitle => 'Mode cupidon';
 
   @override
+  String get cupidonModeExplanation =>
+      'Si toi et un autre participant vous likez mutuellement, vous obtenez un match et recevez une notification.';
+
+  @override
+  String get cupidonModeDisabledByAdmin =>
+      'Le mode Cupidon est désactivé pour ce voyage par un admin.';
+
+  @override
   String get cupidonEnableAction => 'Activer Cupidon';
 
   @override
@@ -3386,6 +3414,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
+
+  @override
+  String get inviteOptionsEditableAfterJoinInfo =>
+      'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.';
 
   @override
   String get commonContinue => 'Continuer';

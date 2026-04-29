@@ -180,40 +180,28 @@ class _TripMemberPreferencesPageState
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TripMemberStayOptionsEditor(
-                        mode: TripMemberStayOptionsEditorMode.live,
-                        tripStartDate: trip.startDate,
-                        tripEndDate: trip.endDate,
-                        isCupidonModeEnabled: trip.cupidonModeEnabled,
-                        initialStay: currentStay,
-                        initialCupidonEnabled: myCupidonEnabled,
-                        initialPhoneVisibility:
-                            myPhoneNumber == null ? null : currentPhoneVisibility,
-                        onLiveStayChanged: (value) => _updateStayLive(
-                          stay: value,
-                          trip: trip,
-                        ),
-                        onLiveCupidonChanged: (enabled) =>
-                            _toggleCupidon(enabled: enabled),
-                        cupidonTitle: l10n.cupidonModeTitle,
-                        onLivePhoneVisibilityChanged: myPhoneNumber == null
-                            ? null
-                            : (value) => _updatePhoneVisibilityLive(
-                                  visibility: value,
-                                ),
-                        phoneVisibilityTitle: myPhoneNumber == null
-                            ? null
-                            : l10n.tripPhoneVisibilityTitle,
-                      ),
-                    ],
-                  ),
+              TripMemberStayOptionsEditor(
+                mode: TripMemberStayOptionsEditorMode.live,
+                tripStartDate: trip.startDate,
+                tripEndDate: trip.endDate,
+                isCupidonModeEnabled: trip.cupidonModeEnabled,
+                initialStay: currentStay,
+                initialCupidonEnabled: myCupidonEnabled,
+                initialPhoneVisibility:
+                    myPhoneNumber == null ? null : currentPhoneVisibility,
+                onLiveStayChanged: (value) => _updateStayLive(
+                  stay: value,
+                  trip: trip,
                 ),
+                onLiveCupidonChanged: (enabled) =>
+                    _toggleCupidon(enabled: enabled),
+                cupidonTitle: l10n.cupidonModeTitle,
+                onLivePhoneVisibilityChanged: myPhoneNumber == null
+                    ? null
+                    : (value) => _updatePhoneVisibilityLive(
+                          visibility: value,
+                        ),
+                phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
               ),
             ],
           ),
