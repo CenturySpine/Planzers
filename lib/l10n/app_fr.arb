@@ -789,6 +789,7 @@
   "tripDateRangeUntil": "Jusqu'au {end}",
   "@tripDateRangeUntil": {"placeholders": {"end": {}}},
   "tripStayPresenceDatesTitle": "Dates de présence",
+  "tripStayMealsIncludedHint": "Ces repas sont inclus dans tes dates de voyage.",
   "tripStayFromLabel": "Du",
   "tripStayToLabel": "au",
   "tripOverviewTileParticipants": "Participants",

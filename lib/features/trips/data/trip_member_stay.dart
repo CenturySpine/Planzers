@@ -108,9 +108,9 @@ class TripMemberStay {
     final later = end.isBefore(start) ? start : end;
     return TripMemberStay(
       startDateKey: dateKeyFromDateTime(start),
-      startDayPart: TripDayPart.morning,
+      startDayPart: TripDayPart.evening,
       endDateKey: dateKeyFromDateTime(later),
-      endDayPart: TripDayPart.evening,
+      endDayPart: TripDayPart.morning,
     );
   }
 

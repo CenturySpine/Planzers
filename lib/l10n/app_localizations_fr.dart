@@ -2050,6 +2050,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripStayPresenceDatesTitle => 'Dates de présence';
 
   @override
+  String get tripStayMealsIncludedHint =>
+      'Ces repas sont inclus dans tes dates de voyage.';
+
+  @override
   String get tripStayFromLabel => 'Du';
 
   @override
@@ -4158,6 +4162,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripStayPresenceDatesTitle => 'Dates de présence';
+
+  @override
+  String get tripStayMealsIncludedHint =>
+      'Ces repas sont inclus dans tes dates de voyage.';
 
   @override
   String get tripStayFromLabel => 'Du';

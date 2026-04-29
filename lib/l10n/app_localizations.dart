@@ -3713,6 +3713,12 @@ abstract class AppLocalizations {
   /// **'Dates de présence'**
   String get tripStayPresenceDatesTitle;
 
+  /// No description provided for @tripStayMealsIncludedHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces repas sont inclus dans tes dates de voyage.'**
+  String get tripStayMealsIncludedHint;
+
   /// No description provided for @tripStayFromLabel.
   ///
   /// In fr, this message translates to:

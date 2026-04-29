@@ -90,6 +90,13 @@ class TripStayBoundsEditor extends StatelessWidget {
           l10n.tripStayPresenceDatesTitle,
           style: textTheme.titleSmall,
         ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.tripStayMealsIncludedHint,
+          style: textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 8),
         _BoundRow(
           label: l10n.tripStayFromLabel,
