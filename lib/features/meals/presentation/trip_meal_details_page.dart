@@ -1748,7 +1748,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 )
                                               : LinkPreviewCardFromFirestore(
                                                   url: _restaurantUrl,
-                                                  preview: const {},
+                                                  preview: meal?.restaurantLinkPreview ?? const {},
                                                 ),
                                         ),
                                         const SizedBox(width: 8),

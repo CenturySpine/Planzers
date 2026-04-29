@@ -8,6 +8,7 @@ class Trip {
     required this.destination,
     required this.address,
     required this.linkUrl,
+    required this.photosStorageUrl,
     required this.cupidonModeEnabled,
     required this.ownerId,
     required this.memberIds,
@@ -30,6 +31,7 @@ class Trip {
   final String destination;
   final String address;
   final String linkUrl;
+  final String photosStorageUrl;
   final bool cupidonModeEnabled;
   final String ownerId;
   final List<String> memberIds;
@@ -106,7 +108,8 @@ class Trip {
       title: (data['title'] as String?) ?? '',
       destination: (data['destination'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',
-      linkUrl: (data['photosStorageUrl'] as String?) ?? '',
+      linkUrl: (data['linkUrl'] as String?) ?? '',
+      photosStorageUrl: (data['photosStorageUrl'] as String?) ?? '',
       cupidonModeEnabled: data['cupidonModeEnabled'] != false,
       ownerId: (data['ownerId'] as String?) ?? '',
       memberIds: ((data['memberIds'] as List<dynamic>?) ?? const [])
@@ -143,7 +146,7 @@ class Trip {
       'title': title,
       'destination': destination,
       'address': address,
-      'photosStorageUrl': linkUrl,
+      'linkUrl': linkUrl,
       'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': ownerId,
       'memberIds': memberIds,

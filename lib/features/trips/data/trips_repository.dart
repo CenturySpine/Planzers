@@ -188,7 +188,7 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'photosStorageUrl': linkUrl.trim(),
+      'linkUrl': linkUrl.trim(),
       'cupidonModeEnabled': true,
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
@@ -279,7 +279,7 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'photosStorageUrl': linkUrl.trim(),
+      'linkUrl': linkUrl.trim(),
       'startDate': startDate != null
           ? Timestamp.fromDate(startDate)
           : FieldValue.delete(),
@@ -293,7 +293,7 @@ class TripsRepository {
 
   Future<void> updateTripGeneralSettings({
     required String tripId,
-    required String photosLinkUrl,
+    required String photosStorageUrl,
     required bool cupidonModeEnabled,
   }) async {
     final user = auth.currentUser;
@@ -318,7 +318,7 @@ class TripsRepository {
     }
 
     await tripRef.update(<String, dynamic>{
-      'photosStorageUrl': photosLinkUrl.trim(),
+      'photosStorageUrl': photosStorageUrl.trim(),
       'cupidonModeEnabled': cupidonModeEnabled,
     });
   }
