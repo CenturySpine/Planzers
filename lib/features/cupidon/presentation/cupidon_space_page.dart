@@ -184,7 +184,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
                                   child:
                                       CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                              : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     ),

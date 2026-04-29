@@ -192,7 +192,7 @@ class _TripExpensesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionExpensesDeletePost,
                         minRole: trip.expensesPermissions.deleteExpensePostMinRole,
-                        icon: Icons.delete,
+                        icon: Icons.delete_outline,
                         iconColor: Theme.of(context).colorScheme.error,
                         busy: _savingActions.contains(
                           TripExpensesPermissionAction.deleteExpensePost,

@@ -274,7 +274,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                                 strokeWidth: 2,
                                               ),
                                             )
-                                          : Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                                          : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                                       tooltip: l10n.commonDelete,
                                       visualDensity: VisualDensity.compact,
                                       padding: EdgeInsets.zero,

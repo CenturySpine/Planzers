@@ -327,7 +327,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete,
+                        Icon(Icons.delete_outline,
                             size: 20, color: colorScheme.error),
                         const SizedBox(width: 10),
                         Text(l10n.commonDelete,

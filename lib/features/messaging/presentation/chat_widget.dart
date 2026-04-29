@@ -1015,7 +1015,7 @@ class _MessageSelectionAppBar extends StatelessWidget {
                 ),
               if (onDelete != null)
                 IconButton(
-                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                  icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                   tooltip: AppLocalizations.of(context)!.commonDelete,
                   onPressed: () => unawaited(onDelete!()),
                 ),

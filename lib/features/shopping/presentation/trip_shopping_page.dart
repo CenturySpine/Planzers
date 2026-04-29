@@ -328,7 +328,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                       onPressed: checkedCount == 0
                           ? null
                           : () => _confirmAndDeleteChecked(context),
-                      child: const Icon(Icons.delete_sweep_outlined),
+                      child: const Icon(Icons.delete_outline),
                     ),
                   ],
                 ],

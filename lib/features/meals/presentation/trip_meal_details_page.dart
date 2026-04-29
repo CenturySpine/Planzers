@@ -1202,7 +1202,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                          : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),
@@ -1666,7 +1666,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                             _deleteComponent(
                                                               component.id,
                                                             ),
-                                                icon: Icon(Icons.delete,
+                                                icon: Icon(Icons.delete_outline,
                                                     color: Theme.of(context).colorScheme.error),
                                               ),
                                               const Icon(Icons.chevron_right),
@@ -1775,7 +1775,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                     _isSavingRestaurantUrl
                                                         ? null
                                                         : _clearRestaurantUrl,
-                                                icon: Icon(Icons.delete,
+                                                icon: Icon(Icons.delete_outline,
                                                     color: Theme.of(context).colorScheme.error),
                                               ),
                                           ],
@@ -1879,7 +1879,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 ? null
                                                 : () =>
                                                     _deletePotluckItem(index),
-                                            icon: Icon(Icons.delete,
+                                            icon: Icon(Icons.delete_outline,
                                                 color: Theme.of(context).colorScheme.error),
                                           ),
                                         ],

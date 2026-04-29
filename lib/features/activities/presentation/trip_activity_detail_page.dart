@@ -323,7 +323,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                        : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                   ),
               ],
               if (canEdit && _editing) ...[
