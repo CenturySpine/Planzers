@@ -21,21 +21,21 @@ class TripSettingsGeneralPage extends ConsumerStatefulWidget {
 }
 
 class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPage> {
-  final TextEditingController _photosLinkController = TextEditingController();
+  final TextEditingController _linkController = TextEditingController();
   bool _cupidonModeEnabled = true;
   bool _initialized = false;
   bool _isSaving = false;
-  String _initialPhotosLink = '';
+  String _initialLinkUrl = '';
   bool _initialCupidonModeEnabled = true;
 
   bool get _hasUnsavedChanges {
-    return _photosLinkController.text.trim() != _initialPhotosLink ||
+    return _linkController.text.trim() != _initialLinkUrl ||
         _cupidonModeEnabled != _initialCupidonModeEnabled;
   }
 
   @override
   void dispose() {
-    _photosLinkController.dispose();
+    _linkController.dispose();
     super.dispose();
   }
 
@@ -46,7 +46,7 @@ class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPag
     try {
       await ref.read(tripsRepositoryProvider).updateTripGeneralSettings(
             tripId: widget.tripId,
-            photosLinkUrl: _photosLinkController.text,
+            photosStorageUrl: _linkController.text,
             cupidonModeEnabled: _cupidonModeEnabled,
           );
       if (!mounted) return;
@@ -125,9 +125,9 @@ class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPag
 
         if (!_initialized) {
           _initialized = true;
-          _photosLinkController.text = trip.linkUrl;
+          _linkController.text = trip.photosStorageUrl;
           _cupidonModeEnabled = trip.cupidonModeEnabled;
-          _initialPhotosLink = trip.linkUrl.trim();
+          _initialLinkUrl = trip.photosStorageUrl.trim();
           _initialCupidonModeEnabled = trip.cupidonModeEnabled;
         }
 
@@ -192,7 +192,7 @@ class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPag
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
-                        controller: _photosLinkController,
+                        controller: _linkController,
                         keyboardType: TextInputType.url,
                         textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
@@ -217,11 +217,7 @@ class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPag
                         : (enabled) =>
                             setState(() => _cupidonModeEnabled = enabled),
                     secondary: const Icon(Icons.favorite_outline),
-                    title: Text(
-                      _cupidonModeEnabled
-                          ? l10n.cupidonDisableAction
-                          : l10n.cupidonEnableAction,
-                    ),
+                    title: Text(l10n.cupidonModeTitle),
                     subtitle: Text(
                       l10n.tripSettingsGeneralCupidonModeDescription,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(

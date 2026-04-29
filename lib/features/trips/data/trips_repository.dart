@@ -188,7 +188,7 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'photosStorageUrl': linkUrl.trim(),
+      'linkUrl': linkUrl.trim(),
       'cupidonModeEnabled': true,
       'ownerId': user.uid,
       'memberIds': <String>[user.uid],
@@ -279,7 +279,7 @@ class TripsRepository {
       'title': title.trim(),
       'destination': destination.trim(),
       'address': address.trim(),
-      'photosStorageUrl': linkUrl.trim(),
+      'linkUrl': linkUrl.trim(),
       'startDate': startDate != null
           ? Timestamp.fromDate(startDate)
           : FieldValue.delete(),
@@ -293,7 +293,7 @@ class TripsRepository {
 
   Future<void> updateTripGeneralSettings({
     required String tripId,
-    required String photosLinkUrl,
+    required String photosStorageUrl,
     required bool cupidonModeEnabled,
   }) async {
     final user = auth.currentUser;
@@ -318,7 +318,7 @@ class TripsRepository {
     }
 
     await tripRef.update(<String, dynamic>{
-      'photosStorageUrl': photosLinkUrl.trim(),
+      'photosStorageUrl': photosStorageUrl.trim(),
       'cupidonModeEnabled': cupidonModeEnabled,
     });
   }
@@ -413,7 +413,10 @@ class TripsRepository {
     DateTime? parseIso(String? s) {
       final t = s?.trim() ?? '';
       if (t.isEmpty) return null;
-      return DateTime.tryParse(t);
+      final parsed = DateTime.tryParse(t);
+      if (parsed == null) return null;
+      // Normalize to local calendar day to avoid off-by-one in date pickers.
+      return parsed.toLocal();
     }
 
     return InviteJoinContext(
@@ -421,6 +424,7 @@ class TripsRepository {
       tripTitle: tripTitle,
       placeholders: list,
       requiresPlaceholderChoice: requires,
+      cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
       tripStartDate: parseIso(raw['tripStartDate'] as String?),
       tripEndDate: parseIso(raw['tripEndDate'] as String?),
     );

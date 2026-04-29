@@ -204,7 +204,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     context.push('/trips/${_trip.id}/preferences');
   }
 
-  Future<void> _openPhotosStorageLink(String url) async {
+  Future<void> _openLinkUrl(String url) async {
     final l10n = AppLocalizations.of(context)!;
     final parsedUrl = Uri.tryParse(url.trim());
     if (parsedUrl == null || !parsedUrl.isAbsolute) {
@@ -465,9 +465,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
         final liveLinkUrl =
-            (liveData?['linkUrl'] as String?) ??
-                (liveData?['photosStorageUrl'] as String?) ??
-                _trip.linkUrl;
+            (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =
@@ -482,7 +480,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 (_trip.bannerImageUrl ?? '').trim();
         final linkUrlForUi =
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
-        final photosStorageLinkUrl =
+        final photosStorageUrl =
             ((liveData?['photosStorageUrl'] as String?) ?? '').trim();
         final tripDateLabel =
             formatTripDateRange(context, _trip.startDate, _trip.endDate);
@@ -914,9 +912,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 leftAlertCount: unreadAnnouncements,
                 onLeftTap: _openAnnouncementsPage,
                 onRightTap: _openExpensesPage,
-                thirdLabel: photosStorageLinkUrl.isNotEmpty ? 'Photos' : null,
-                onThirdTap: photosStorageLinkUrl.isNotEmpty
-                    ? () => _openPhotosStorageLink(photosStorageLinkUrl)
+                thirdLabel: photosStorageUrl.isNotEmpty ? 'Photos' : null,
+                onThirdTap: photosStorageUrl.isNotEmpty
+                    ? () => _openLinkUrl(photosStorageUrl)
                     : null,
               ),
             ),

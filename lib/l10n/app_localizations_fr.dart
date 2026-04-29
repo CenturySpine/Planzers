@@ -578,6 +578,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rôle minimum pour voir mon numéro de téléphone';
 
   @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Définis qui peut voir ton numéro dans ce voyage.';
+
+  @override
+  String get tripPhoneVisibilityRequiresProfileNumber =>
+      'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.';
+
+  @override
   String get tripPhoneVisibilityPersonne => 'Personne';
 
   @override
@@ -1144,6 +1152,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cupidonDisabled => 'Mode Cupidon désactivé';
 
   @override
+  String get cupidonModeTitle => 'Mode cupidon';
+
+  @override
+  String get cupidonModeExplanation =>
+      'Si toi et un autre participant vous likez mutuellement, vous obtenez un match et recevez une notification.';
+
+  @override
+  String get cupidonModeDisabledByAdmin =>
+      'Les admins ont désactivé cette option pour ce voyage.';
+
+  @override
   String get cupidonEnableAction => 'Activer Cupidon';
 
   @override
@@ -1257,7 +1276,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tu pourras liker des participants du voyage.';
 
   @override
-  String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
+  String get inviteBack => 'Retour';
 
   @override
   String get inviteJoinWithCurrentProfileHint =>
@@ -1266,6 +1285,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
+
+  @override
+  String get inviteOptionsEditableAfterJoinInfo =>
+      'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.';
 
   @override
   String get commonContinue => 'Continuer';
@@ -2048,6 +2071,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripStayPresenceDatesTitle => 'Dates de présence';
+
+  @override
+  String get tripMemberStayOptionsTab => 'Options';
+
+  @override
+  String get tripStayMealsIncludedHint =>
+      'Ces repas sont inclus dans tes dates de voyage.';
 
   @override
   String get tripStayFromLabel => 'Du';
@@ -2688,6 +2718,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Rôle minimum pour voir mon numéro de téléphone';
 
   @override
+  String get tripPhoneVisibilitySubtitle =>
+      'Définis qui peut voir ton numéro dans ce voyage.';
+
+  @override
+  String get tripPhoneVisibilityRequiresProfileNumber =>
+      'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.';
+
+  @override
   String get tripPhoneVisibilityPersonne => 'Personne';
 
   @override
@@ -3254,6 +3292,17 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get cupidonDisabled => 'Mode Cupidon désactivé';
 
   @override
+  String get cupidonModeTitle => 'Mode cupidon';
+
+  @override
+  String get cupidonModeExplanation =>
+      'Si toi et un autre participant vous likez mutuellement, vous obtenez un match et recevez une notification.';
+
+  @override
+  String get cupidonModeDisabledByAdmin =>
+      'Les admins ont désactivé cette option pour ce voyage.';
+
+  @override
   String get cupidonEnableAction => 'Activer Cupidon';
 
   @override
@@ -3367,7 +3416,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Tu pourras liker des participants du voyage.';
 
   @override
-  String get inviteEditTravelerChoice => 'Modifier le choix du voyageur';
+  String get inviteBack => 'Retour';
 
   @override
   String get inviteJoinWithCurrentProfileHint =>
@@ -3376,6 +3425,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
+
+  @override
+  String get inviteOptionsEditableAfterJoinInfo =>
+      'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.';
 
   @override
   String get commonContinue => 'Continuer';
@@ -4158,6 +4211,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripStayPresenceDatesTitle => 'Dates de présence';
+
+  @override
+  String get tripMemberStayOptionsTab => 'Options';
+
+  @override
+  String get tripStayMealsIncludedHint =>
+      'Ces repas sont inclus dans tes dates de voyage.';
 
   @override
   String get tripStayFromLabel => 'Du';

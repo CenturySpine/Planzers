@@ -1132,6 +1132,18 @@ abstract class AppLocalizations {
   /// **'Rôle minimum pour voir mon numéro de téléphone'**
   String get tripPhoneVisibilityTitle;
 
+  /// No description provided for @tripPhoneVisibilitySubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Définis qui peut voir ton numéro dans ce voyage.'**
+  String get tripPhoneVisibilitySubtitle;
+
+  /// No description provided for @tripPhoneVisibilityRequiresProfileNumber.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu n’as pas encore renseigné de numéro de téléphone dans ton profil.'**
+  String get tripPhoneVisibilityRequiresProfileNumber;
+
   /// No description provided for @tripPhoneVisibilityPersonne.
   ///
   /// In fr, this message translates to:
@@ -2105,6 +2117,24 @@ abstract class AppLocalizations {
   /// **'Mode Cupidon désactivé'**
   String get cupidonDisabled;
 
+  /// No description provided for @cupidonModeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode cupidon'**
+  String get cupidonModeTitle;
+
+  /// No description provided for @cupidonModeExplanation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Si toi et un autre participant vous likez mutuellement, vous obtenez un match et recevez une notification.'**
+  String get cupidonModeExplanation;
+
+  /// No description provided for @cupidonModeDisabledByAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les admins ont désactivé cette option pour ce voyage.'**
+  String get cupidonModeDisabledByAdmin;
+
   /// No description provided for @cupidonEnableAction.
   ///
   /// In fr, this message translates to:
@@ -2315,11 +2345,11 @@ abstract class AppLocalizations {
   /// **'Tu pourras liker des participants du voyage.'**
   String get inviteCupidonSubtitle;
 
-  /// No description provided for @inviteEditTravelerChoice.
+  /// No description provided for @inviteBack.
   ///
   /// In fr, this message translates to:
-  /// **'Modifier le choix du voyageur'**
-  String get inviteEditTravelerChoice;
+  /// **'Retour'**
+  String get inviteBack;
 
   /// No description provided for @inviteJoinWithCurrentProfileHint.
   ///
@@ -2332,6 +2362,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Continuer avec mon profil actuel'**
   String get inviteJoinWithCurrentProfileAction;
+
+  /// No description provided for @inviteOptionsEditableAfterJoinInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.'**
+  String get inviteOptionsEditableAfterJoinInfo;
 
   /// No description provided for @commonContinue.
   ///
@@ -3712,6 +3748,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Dates de présence'**
   String get tripStayPresenceDatesTitle;
+
+  /// No description provided for @tripMemberStayOptionsTab.
+  ///
+  /// In fr, this message translates to:
+  /// **'Options'**
+  String get tripMemberStayOptionsTab;
+
+  /// No description provided for @tripStayMealsIncludedHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces repas sont inclus dans tes dates de voyage.'**
+  String get tripStayMealsIncludedHint;
 
   /// No description provided for @tripStayFromLabel.
   ///

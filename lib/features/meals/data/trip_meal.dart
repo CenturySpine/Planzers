@@ -246,6 +246,7 @@ class TripMeal {
     this.components = const [],
     this.mealMode = MealMode.cooked,
     this.restaurantUrl = '',
+    this.restaurantLinkPreview = const {},
     this.potluckItems = const [],
     this.componentsUserOrdered = false,
   });
@@ -268,6 +269,10 @@ class TripMeal {
   final List<MealComponent> components;
   final MealMode mealMode;
   final String restaurantUrl;
+
+  /// Same shape as trip/activity `linkPreview` (filled by Cloud Function).
+  final Map<String, dynamic> restaurantLinkPreview;
+
   final List<MealPotluckItem> potluckItems;
   final bool componentsUserOrdered;
 
@@ -307,6 +312,11 @@ class TripMeal {
     return sorted;
   }
 
+  static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
+    if (raw is! Map) return const {};
+    return Map<String, dynamic>.from(raw);
+  }
+
   factory TripMeal.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
     return TripMeal(
@@ -333,6 +343,7 @@ class TripMeal {
         ..sort((a, b) => a.order.compareTo(b.order)),
       mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
       restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
+      restaurantLinkPreview: _previewFromFirestore(data['restaurantLinkPreview']),
       potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
           .map(MealPotluckItem.fromDynamic)
           .where((item) => item.label.isNotEmpty)
@@ -416,6 +427,7 @@ class TripMeal {
     List<MealComponent>? components,
     MealMode? mealMode,
     String? restaurantUrl,
+    Map<String, dynamic>? restaurantLinkPreview,
     List<MealPotluckItem>? potluckItems,
     bool? componentsUserOrdered,
   }) {
@@ -435,6 +447,7 @@ class TripMeal {
       components: components ?? this.components,
       mealMode: mealMode ?? this.mealMode,
       restaurantUrl: restaurantUrl ?? this.restaurantUrl,
+      restaurantLinkPreview: restaurantLinkPreview ?? this.restaurantLinkPreview,
       potluckItems: potluckItems ?? this.potluckItems,
       componentsUserOrdered: componentsUserOrdered ?? this.componentsUserOrdered,
     );
