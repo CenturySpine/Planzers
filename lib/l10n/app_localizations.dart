@@ -3791,6 +3791,12 @@ abstract class AppLocalizations {
   /// **'Chambres'**
   String get tripOverviewTileRooms;
 
+  /// No description provided for @tripOverviewTileAccommodation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get tripOverviewTileAccommodation;
+
   /// No description provided for @tripOverviewTileCars.
   ///
   /// In fr, this message translates to:
