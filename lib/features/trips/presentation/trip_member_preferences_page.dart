@@ -8,7 +8,7 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMemberPreferencesPage extends ConsumerStatefulWidget {
@@ -26,51 +26,7 @@ class TripMemberPreferencesPage extends ConsumerStatefulWidget {
 
 class _TripMemberPreferencesPageState
     extends ConsumerState<TripMemberPreferencesPage> {
-  TripMemberStay? _stayDraft;
-  bool _isSavingStay = false;
   bool _isSavingCupidon = false;
-  TripMemberPhoneVisibility? _phoneVisibilityDraft;
-  bool _isSavingPhoneVisibility = false;
-
-  Future<void> _saveStay({
-    required TripMemberStay stay,
-    required Trip trip,
-  }) async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_isSavingStay) return;
-    if (!TripMemberStay.isChronological(stay)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayInvalidRange)),
-      );
-      return;
-    }
-    if (!TripMemberStay.withinTripCalendarBounds(stay: stay, trip: trip)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayOutOfTripBounds)),
-      );
-      return;
-    }
-    setState(() => _isSavingStay = true);
-    try {
-      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
-            tripId: widget.tripId,
-            stay: stay,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayUpdated)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingStay = false);
-      }
-    }
-  }
 
   Future<void> _toggleCupidon({
     required bool enabled,
@@ -94,6 +50,7 @@ class _TripMemberPreferencesPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripOverviewCupidonToggleError(e.toString()))),
       );
+      rethrow;
     } finally {
       if (mounted) {
         setState(() => _isSavingCupidon = false);
@@ -101,12 +58,45 @@ class _TripMemberPreferencesPageState
     }
   }
 
-  Future<void> _savePhoneVisibility({
+  Future<void> _updateStayLive({
+    required TripMemberStay stay,
+    required Trip trip,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (!TripMemberStay.isChronological(stay)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripStayInvalidRange)),
+      );
+      return;
+    }
+    if (!TripMemberStay.withinTripCalendarBounds(stay: stay, trip: trip)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripStayOutOfTripBounds)),
+      );
+      return;
+    }
+    try {
+      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
+            tripId: widget.tripId,
+            stay: stay,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripStayUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> _updatePhoneVisibilityLive({
     required TripMemberPhoneVisibility visibility,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    if (_isSavingPhoneVisibility) return;
-    setState(() => _isSavingPhoneVisibility = true);
     try {
       await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
             tripId: widget.tripId,
@@ -121,10 +111,7 @@ class _TripMemberPreferencesPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripPhoneVisibilityUpdateError(e.toString()))),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingPhoneVisibility = false);
-      }
+      rethrow;
     }
   }
 
@@ -175,12 +162,11 @@ class _TripMemberPreferencesPageState
           );
         }
 
-        final initialStay = stayAsync.asData?.value ?? TripMemberStay.defaultForTrip(trip);
-        final currentStay = _stayDraft ?? initialStay;
+        final currentStay = stayAsync.asData?.value ?? TripMemberStay.defaultForTrip(trip);
         final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
         final myPhoneNumber = myPhoneNumberAsync.asData?.value;
-        final initialPhoneVisibility = myPhoneVisibilityAsync.asData?.value ?? TripMemberPhoneVisibility.nobody;
-        final currentPhoneVisibility = _phoneVisibilityDraft ?? initialPhoneVisibility;
+        final currentPhoneVisibility =
+            myPhoneVisibilityAsync.asData?.value ?? TripMemberPhoneVisibility.nobody;
 
         return Scaffold(
           appBar: AppBar(
@@ -200,119 +186,36 @@ class _TripMemberPreferencesPageState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l10n.tripStayDialogTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      TripStayBoundsEditor(
+                      TripMemberStayOptionsEditor(
+                        mode: TripMemberStayOptionsEditorMode.live,
                         tripStartDate: trip.startDate,
                         tripEndDate: trip.endDate,
-                        value: currentStay,
-                        onChanged: (value) => setState(() => _stayDraft = value),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: FilledButton.icon(
-                          onPressed: _isSavingStay
-                              ? null
-                              : () => _saveStay(
-                                    stay: currentStay,
-                                    trip: trip,
-                                  ),
-                          icon: _isSavingStay
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.check),
-                          label: Text(l10n.commonSave),
+                        initialStay: currentStay,
+                        initialCupidonEnabled: myCupidonEnabled,
+                        initialPhoneVisibility:
+                            myPhoneNumber == null ? null : currentPhoneVisibility,
+                        onLiveStayChanged: (value) => _updateStayLive(
+                          stay: value,
+                          trip: trip,
                         ),
+                        onLiveCupidonChanged: (enabled) =>
+                            _toggleCupidon(enabled: enabled),
+                        cupidonTitle: myCupidonEnabled
+                            ? l10n.cupidonDisableAction
+                            : l10n.cupidonEnableAction,
+                        onLivePhoneVisibilityChanged: myPhoneNumber == null
+                            ? null
+                            : (value) => _updatePhoneVisibilityLive(
+                                  visibility: value,
+                                ),
+                        phoneVisibilityTitle: myPhoneNumber == null
+                            ? null
+                            : l10n.tripPhoneVisibilityTitle,
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Card(
-                child: SwitchListTile.adaptive(
-                  value: myCupidonEnabled,
-                  onChanged: _isSavingCupidon
-                      ? null
-                      : (enabled) => _toggleCupidon(enabled: enabled),
-                  title: Text(myCupidonEnabled ? l10n.cupidonDisableAction : l10n.cupidonEnableAction),
-                ),
-              ),
-              if (myPhoneNumber != null)
-                const SizedBox(height: 12),
-              if (myPhoneNumber != null)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.tripPhoneVisibilityTitle,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<TripMemberPhoneVisibility>(
-                          initialValue: currentPhoneVisibility,
-                          onChanged: _isSavingPhoneVisibility
-                              ? null
-                              : (value) {
-                                  if (value != null) {
-                                    setState(() => _phoneVisibilityDraft = value);
-                                  }
-                                },
-                          items: TripMemberPhoneVisibility.values.map((visibility) {
-                            String label;
-                            switch (visibility) {
-                              case TripMemberPhoneVisibility.nobody:
-                                label = l10n.tripPhoneVisibilityPersonne;
-                              case TripMemberPhoneVisibility.owner:
-                                label = l10n.tripPhoneVisibilityCreateur;
-                              case TripMemberPhoneVisibility.admin:
-                                label = l10n.tripPhoneVisibilityAdmin;
-                              case TripMemberPhoneVisibility.participant:
-                                label = l10n.tripPhoneVisibilityParticipant;
-                            }
-                            return DropdownMenuItem(
-                              value: visibility,
-                              child: Text(label),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FilledButton.icon(
-                            onPressed: _isSavingPhoneVisibility
-                                ? null
-                                : () => _savePhoneVisibility(
-                                      visibility: currentPhoneVisibility,
-                                    ),
-                            icon: _isSavingPhoneVisibility
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.check),
-                            label: Text(l10n.commonSave),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
             ],
           ),
         );

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,13 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
-import 'package:planerz/features/ingredients/presentation/food_allergens_list_editor.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
@@ -53,11 +50,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   final TextEditingController _placeholderSearchController =
       TextEditingController();
 
-  /// 0: choose name, 1: stay + allergens (only when [requiresPlaceholderChoice]).
+  /// 0: choose name, 1: stay + options (only when [requiresPlaceholderChoice]).
   int _inviteFormStep = 0;
   bool _joinUsingCurrentProfile = false;
   TripMemberStay? _stayDraft;
-  List<String> _allergenCatalogIds = const [];
+  TripMemberPhoneVisibility _phoneVisibilityDraft =
+      TripMemberPhoneVisibility.nobody;
   bool _inviteCupidonEnabled = false;
 
   void _goToTripsList() {
@@ -254,6 +252,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         _context = ctx;
         _inviteFormStep = 0;
         _joinUsingCurrentProfile = false;
+        _phoneVisibilityDraft = TripMemberPhoneVisibility.nobody;
         _placeholderSearchController.clear();
         if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
           final sorted = _sortedPlaceholders(ctx);
@@ -322,16 +321,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
   }
 
-  Future<void> _loadAllergenIdsForForm() async {
-    try {
-      final ids = await ref
-          .read(accountRepositoryProvider)
-          .readMyFoodAllergenCatalogIds();
-      if (!mounted) return;
-      setState(() => _allergenCatalogIds = ids);
-    } catch (_) {}
-  }
-
   Future<void> _persistCupidonPreferenceForTrip() async {
     try {
       await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
@@ -354,7 +343,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _inviteFormStep = 1;
       _joinUsingCurrentProfile = false;
     });
-    unawaited(_loadAllergenIdsForForm());
   }
 
   void _continueWithCurrentProfile() {
@@ -363,7 +351,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _inviteFormStep = 1;
       _joinUsingCurrentProfile = true;
     });
-    unawaited(_loadAllergenIdsForForm());
   }
 
   void _backToNameStep() {
@@ -409,9 +396,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripId: widget.tripId,
             stay: stay,
           );
-      await ref.read(accountRepositoryProvider).updateFoodAllergenCatalogIds(
-            _allergenCatalogIds,
-          );
+      final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+      if (myPhoneNumber != null) {
+        await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
+              tripId: widget.tripId,
+              visibility: _phoneVisibilityDraft,
+            );
+      }
       await _persistCupidonPreferenceForTrip();
     } catch (e) {
       if (mounted) {
@@ -448,6 +439,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   Widget _buildPlaceholderChoiceLayout(String tripTitle) {
     final l10n = AppLocalizations.of(context)!;
     final ctx = _context!;
+    final myPhoneNumber = ref.watch(myPhoneNumberProvider).asData?.value;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
     final stepTitle = _inviteFormStep == 0
@@ -569,32 +561,30 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             if (_stayDraft != null)
-                              TripStayBoundsEditor(
+                              TripMemberStayOptionsEditor(
+                                mode: TripMemberStayOptionsEditorMode.draft,
                                 tripStartDate: ctx.tripStartDate,
                                 tripEndDate: ctx.tripEndDate,
-                                value: _stayDraft!,
-                                onChanged: (v) =>
-                                    setState(() => _stayDraft = v),
+                                initialStay: _stayDraft!,
+                                initialCupidonEnabled: _inviteCupidonEnabled,
+                                initialPhoneVisibility:
+                                    myPhoneNumber == null
+                                        ? null
+                                        : _phoneVisibilityDraft,
+                                onDraftChanged: (draft) => setState(() {
+                                  _stayDraft = draft.stay;
+                                  _inviteCupidonEnabled = draft.cupidonEnabled;
+                                  _phoneVisibilityDraft =
+                                      draft.phoneVisibility ??
+                                          TripMemberPhoneVisibility.nobody;
+                                }),
+                                cupidonTitle: l10n.cupidonEnableAction,
+                                cupidonSubtitle: l10n.inviteCupidonSubtitle,
+                                phoneVisibilityTitle:
+                                    myPhoneNumber == null
+                                        ? null
+                                        : l10n.tripPhoneVisibilityTitle,
                               ),
-                            const SizedBox(height: 20),
-                            FoodAllergensListEditor(
-                              selectedCatalogIds: _allergenCatalogIds,
-                              onChanged: (ids) => setState(
-                                () => _allergenCatalogIds = ids,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SwitchListTile.adaptive(
-                              contentPadding: EdgeInsets.zero,
-                              value: _inviteCupidonEnabled,
-                              onChanged: (value) => setState(
-                                () => _inviteCupidonEnabled = value,
-                              ),
-                              title: Text(l10n.cupidonEnableAction),
-                              subtitle: Text(
-                                l10n.inviteCupidonSubtitle,
-                              ),
-                            ),
                           ],
                         ),
                       ),
