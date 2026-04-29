@@ -201,9 +201,7 @@ class _TripMemberPreferencesPageState
                         ),
                         onLiveCupidonChanged: (enabled) =>
                             _toggleCupidon(enabled: enabled),
-                        cupidonTitle: myCupidonEnabled
-                            ? l10n.cupidonDisableAction
-                            : l10n.cupidonEnableAction,
+                        cupidonTitle: l10n.cupidonModeTitle,
                         onLivePhoneVisibilityChanged: myPhoneNumber == null
                             ? null
                             : (value) => _updatePhoneVisibilityLive(

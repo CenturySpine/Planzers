@@ -217,11 +217,7 @@ class _TripSettingsGeneralPageState extends ConsumerState<TripSettingsGeneralPag
                         : (enabled) =>
                             setState(() => _cupidonModeEnabled = enabled),
                     secondary: const Icon(Icons.favorite_outline),
-                    title: Text(
-                      _cupidonModeEnabled
-                          ? l10n.cupidonDisableAction
-                          : l10n.cupidonEnableAction,
-                    ),
+                    title: Text(l10n.cupidonModeTitle),
                     subtitle: Text(
                       l10n.tripSettingsGeneralCupidonModeDescription,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(

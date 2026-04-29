@@ -2105,6 +2105,12 @@ abstract class AppLocalizations {
   /// **'Mode Cupidon désactivé'**
   String get cupidonDisabled;
 
+  /// No description provided for @cupidonModeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode cupidon'**
+  String get cupidonModeTitle;
+
   /// No description provided for @cupidonEnableAction.
   ///
   /// In fr, this message translates to:

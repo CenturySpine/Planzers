@@ -1144,6 +1144,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cupidonDisabled => 'Mode Cupidon désactivé';
 
   @override
+  String get cupidonModeTitle => 'Mode cupidon';
+
+  @override
   String get cupidonEnableAction => 'Activer Cupidon';
 
   @override
@@ -3256,6 +3259,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get cupidonDisabled => 'Mode Cupidon désactivé';
+
+  @override
+  String get cupidonModeTitle => 'Mode cupidon';
 
   @override
   String get cupidonEnableAction => 'Activer Cupidon';

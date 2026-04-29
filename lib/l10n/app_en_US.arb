@@ -484,6 +484,7 @@
   },
   "cupidonEnabled": "Cupidon mode enabled",
   "cupidonDisabled": "Cupidon mode disabled",
+  "cupidonModeTitle": "Cupidon mode",
   "cupidonEnableAction": "Enable Cupidon",
   "cupidonDisableAction": "Disable Cupidon",
   "tripOverviewCupidonToggleError": "Cupidon mode error: {error}",
