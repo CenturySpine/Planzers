@@ -205,7 +205,6 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
           .collection('users')
           .doc(user.uid);
       await userRef.set({
-        'displayName': enteredPhone,
         'account': {
           'name': enteredPhone,
           'phoneNumber': enteredPhone,

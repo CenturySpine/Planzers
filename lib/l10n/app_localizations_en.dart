@@ -1757,6 +1757,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonMe => 'Me';
 
   @override
+  String get commonUnknown => 'Unknown';
+
+  @override
   String get commonRequired => 'Required';
 
   @override
@@ -3882,6 +3885,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonMe => 'Me';
+
+  @override
+  String get commonUnknown => 'Unknown';
 
   @override
   String get commonRequired => 'Required';

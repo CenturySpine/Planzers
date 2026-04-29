@@ -216,7 +216,7 @@ class _MealCard extends ConsumerWidget {
             memberId: chefId,
             userData: chefUserData,
             tripMemberPublicLabels: memberPublicLabels,
-            emptyFallback: l10n.roleParticipant,
+            emptyFallback: l10n.commonUnknown,
           )
         : '';
 

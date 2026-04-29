@@ -694,6 +694,7 @@
   "mealComponentKindMain": "Main",
   "mealComponentKindDessert": "Dessert",
   "commonMe": "Me",
+  "commonUnknown": "Unknown",
   "commonRequired": "Required",
   "expenseGroupSelectAtLeastOne": "Select at least one person who can see this section",
   "expenseGroupUpdated": "Section updated",

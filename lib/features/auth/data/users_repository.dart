@@ -76,8 +76,11 @@ class UsersRepository {
       final splitPhone = _splitPhoneNumber(authPhoneNumber);
       final hasAuthPhone = authPhoneNumber.isNotEmpty;
       final authDisplayName = (user.displayName ?? '').trim();
-      final fallbackDisplayName =
-          authDisplayName.isNotEmpty ? authDisplayName : authPhoneNumber;
+      final initialAccountName = authDisplayName.isNotEmpty
+          ? authDisplayName
+          : authPhoneNumber.isNotEmpty
+              ? authPhoneNumber
+              : (user.email ?? '').trim();
       final baseData = <String, dynamic>{
         'uid': user.uid,
         'email': user.email,
@@ -88,12 +91,9 @@ class UsersRepository {
         },
         'lastSignInAt': now,
       };
-      if (fallbackDisplayName.isNotEmpty) {
-        baseData['displayName'] = fallbackDisplayName;
-      }
-      if (fallbackDisplayName.isNotEmpty) {
+      if (initialAccountName.isNotEmpty) {
         (baseData['account'] as Map<String, dynamic>)['name'] =
-            fallbackDisplayName;
+            initialAccountName;
       }
       if (googlePhotoUrl.isNotEmpty) {
         baseData['googlePhotoUrl'] = googlePhotoUrl;

@@ -45,29 +45,15 @@ String tripMemberStoredProfileBadgeUrl(Map<String, dynamic>? data) {
 
 /// Label for a trip member (chip, expenses, etc.).
 ///
-/// Prefers [account.name], then Firebase [displayName], then the local part of
-/// the best available email ([account.email], then root [email]).
+/// Returns [account.name] when set, otherwise [emptyFallback].
 String tripMemberDisplayLabel(
   Map<String, dynamic>? data, {
   required String emptyFallback,
 }) {
   if (data == null) return emptyFallback;
-
   final account = (data['account'] as Map<String, dynamic>?) ?? const {};
   final accountName = (account['name'] as String?)?.trim() ?? '';
-  final accountEmail = (account['email'] as String?)?.trim() ?? '';
-  final rootEmail = (data['email'] as String?)?.trim() ?? '';
-  final displayName = (data['displayName'] as String?)?.trim() ?? '';
-
-  if (accountName.isNotEmpty) return accountName;
-  if (displayName.isNotEmpty) return displayName;
-
-  final rawEmail =
-      accountEmail.isNotEmpty ? accountEmail : rootEmail;
-  if (rawEmail.isEmpty) return emptyFallback;
-
-  final local = displayLabelFromEmail(rawEmail);
-  return local.isNotEmpty ? local : rawEmail;
+  return accountName.isNotEmpty ? accountName : emptyFallback;
 }
 
 /// When the `users/{memberId}` snapshot is missing (e.g. doc absent from the

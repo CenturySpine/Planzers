@@ -1771,6 +1771,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonMe => 'Moi';
 
   @override
+  String get commonUnknown => 'Inconnu';
+
+  @override
   String get commonRequired => 'Obligatoire';
 
   @override
@@ -3912,6 +3915,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get commonMe => 'Moi';
+
+  @override
+  String get commonUnknown => 'Inconnu';
 
   @override
   String get commonRequired => 'Obligatoire';

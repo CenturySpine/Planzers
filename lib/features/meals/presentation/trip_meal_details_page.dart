@@ -563,7 +563,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: tripMemberPublicLabels,
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -596,7 +596,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: tripMemberPublicLabels,
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -647,7 +647,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: const {},
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -695,7 +695,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: const {},
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1122,16 +1122,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             .map((id) => id.trim())
             .where((id) => id.isNotEmpty)
             .toList();
-        final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
-        final labels = <String, String>{
-          for (final id in memberIds)
-            id: (id == myUid)
-                ? l10n.commonMe
-                : ((trip.memberPublicLabels[id]?.trim().isNotEmpty ?? false)
-                    ? trip.memberPublicLabels[id]!.trim()
-                    : l10n.roleParticipant)
-        };
-
         return mealAsync.when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -1174,8 +1164,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 .toList(growable: false)
               ..sort();
             final potluckAddedByRiskKey = potluckAddedByIds.join('|');
+            final memberIdsRiskKey = memberIds.toList(growable: false)
+              ..sort();
+            final memberIdsKey = memberIdsRiskKey.join('|');
             final usersAsync = ref.watch(
               usersDataByIdsProvider(participantIdsRiskKey),
+            );
+            final membersAsync = ref.watch(
+              usersDataByIdsProvider(memberIdsKey),
             );
             final potluckUsersAsync = ref.watch(
               usersDataByIdsProvider(potluckAddedByRiskKey),
@@ -1183,6 +1179,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final lockOwnersAsync = ref.watch(
               usersDataByIdsProvider(componentLockOwnerRiskKey),
             );
+            final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+            final membersData = membersAsync.asData?.value ?? {};
+            final labels = <String, String>{
+              for (final id in memberIds)
+                id: (id == myUid)
+                    ? l10n.commonMe
+                    : resolveTripMemberDisplayLabel(
+                        memberId: id,
+                        userData: membersData[id],
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        currentUserId: myUid,
+                        emptyFallback: l10n.roleParticipant,
+                      ),
+            };
             final colorScheme = Theme.of(context).colorScheme;
             final textTheme = Theme.of(context).textTheme;
 

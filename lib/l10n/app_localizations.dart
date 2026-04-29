@@ -3233,6 +3233,12 @@ abstract class AppLocalizations {
   /// **'Moi'**
   String get commonMe;
 
+  /// No description provided for @commonUnknown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Inconnu'**
+  String get commonUnknown;
+
   /// No description provided for @commonRequired.
   ///
   /// In fr, this message translates to:

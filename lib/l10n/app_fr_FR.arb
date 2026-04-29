@@ -694,6 +694,7 @@
   "mealComponentKindMain": "Plat",
   "mealComponentKindDessert": "Dessert",
   "commonMe": "Moi",
+  "commonUnknown": "Inconnu",
   "commonRequired": "Obligatoire",
   "expenseGroupSelectAtLeastOne": "Coche au moins une personne qui voit ce poste",
   "expenseGroupUpdated": "Poste mis à jour",
