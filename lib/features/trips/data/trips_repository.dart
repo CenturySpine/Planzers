@@ -413,7 +413,10 @@ class TripsRepository {
     DateTime? parseIso(String? s) {
       final t = s?.trim() ?? '';
       if (t.isEmpty) return null;
-      return DateTime.tryParse(t);
+      final parsed = DateTime.tryParse(t);
+      if (parsed == null) return null;
+      // Normalize to local calendar day to avoid off-by-one in date pickers.
+      return parsed.toLocal();
     }
 
     return InviteJoinContext(
