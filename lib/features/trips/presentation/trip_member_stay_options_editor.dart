@@ -65,7 +65,9 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
       _TripMemberStayOptionsEditorState();
 }
 
-class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEditor> {
+class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEditor>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   late TripMemberStay _stay;
   late bool _cupidonEnabled;
   TripMemberPhoneVisibility? _phoneVisibility;
@@ -78,9 +80,17 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
     _stay = widget.initialStay;
     _cupidonEnabled = widget.initialCupidonEnabled;
     _phoneVisibility = widget.initialPhoneVisibility;
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -233,85 +243,98 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           ),
           const SizedBox(height: 6),
         ],
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: TripStayBoundsEditor(
-              tripStartDate: widget.tripStartDate,
-              tripEndDate: widget.tripEndDate,
-              value: _stay,
-              onChanged: _handleStayChanged,
-            ),
-          ),
+        TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: l10n.tripStayPresenceDatesTitle),
+            Tab(text: l10n.tripMemberStayOptionsTab),
+          ],
         ),
-        const SizedBox(height: 6),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              value: _cupidonEnabled,
-              onChanged: (_isUpdatingCupidon || !cupidonSectionEnabled)
-                  ? null
-                  : _handleCupidonChanged,
-              title: Text(widget.cupidonTitle),
-              subtitle: Text(cupidonDescription),
-            ),
-          ),
-        ),
-        if (widget.phoneVisibilityTitle != null) ...[
-          const SizedBox(height: 6),
+        const SizedBox(height: 12),
+        if (_tabController.index == 0)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.phoneVisibilityTitle!,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<TripMemberPhoneVisibility>(
-                    initialValue: _phoneVisibility,
-                    onChanged: phoneVisibilitySectionEnabled
-                        ? (value) {
-                            if (value != null) {
-                              _handlePhoneVisibilityChanged(value);
-                            }
-                          }
-                        : null,
-                    items: TripMemberPhoneVisibility.values.map((visibility) {
-                      String label;
-                      switch (visibility) {
-                        case TripMemberPhoneVisibility.nobody:
-                          label = l10n.tripPhoneVisibilityPersonne;
-                        case TripMemberPhoneVisibility.owner:
-                          label = l10n.tripPhoneVisibilityCreateur;
-                        case TripMemberPhoneVisibility.admin:
-                          label = l10n.tripPhoneVisibilityAdmin;
-                        case TripMemberPhoneVisibility.participant:
-                          label = l10n.tripPhoneVisibilityParticipant;
-                      }
-                      return DropdownMenuItem(
-                        value: visibility,
-                        child: Text(label),
-                      );
-                    }).toList(),
-                  ),
-                  if (!hasPhoneNumber) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.tripPhoneVisibilityRequiresProfileNumber,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ],
+              child: TripStayBoundsEditor(
+                tripStartDate: widget.tripStartDate,
+                tripEndDate: widget.tripEndDate,
+                value: _stay,
+                onChanged: _handleStayChanged,
               ),
             ),
           ),
+        if (_tabController.index == 1) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: _cupidonEnabled,
+                onChanged: (_isUpdatingCupidon || !cupidonSectionEnabled)
+                    ? null
+                    : _handleCupidonChanged,
+                title: Text(widget.cupidonTitle),
+                subtitle: Text(cupidonDescription),
+              ),
+            ),
+          ),
+          if (widget.phoneVisibilityTitle != null) ...[
+            const SizedBox(height: 6),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.phoneVisibilityTitle!,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<TripMemberPhoneVisibility>(
+                      initialValue: _phoneVisibility,
+                      onChanged: phoneVisibilitySectionEnabled
+                          ? (value) {
+                              if (value != null) {
+                                _handlePhoneVisibilityChanged(value);
+                              }
+                            }
+                          : null,
+                      items:
+                          TripMemberPhoneVisibility.values.map((visibility) {
+                        String label;
+                        switch (visibility) {
+                          case TripMemberPhoneVisibility.nobody:
+                            label = l10n.tripPhoneVisibilityPersonne;
+                          case TripMemberPhoneVisibility.owner:
+                            label = l10n.tripPhoneVisibilityCreateur;
+                          case TripMemberPhoneVisibility.admin:
+                            label = l10n.tripPhoneVisibilityAdmin;
+                          case TripMemberPhoneVisibility.participant:
+                            label = l10n.tripPhoneVisibilityParticipant;
+                        }
+                        return DropdownMenuItem(
+                          value: visibility,
+                          child: Text(label),
+                        );
+                      }).toList(),
+                    ),
+                    if (!hasPhoneNumber) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.tripPhoneVisibilityRequiresProfileNumber,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ],
     );

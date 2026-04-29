@@ -794,6 +794,7 @@
   "tripDateRangeUntil": "Until {end}",
   "@tripDateRangeUntil": {"placeholders": {"end": {}}},
   "tripStayPresenceDatesTitle": "Presence dates",
+  "tripMemberStayOptionsTab": "Options",
   "tripStayMealsIncludedHint": "These meals are included in your trip dates.",
   "tripStayFromLabel": "From",
   "tripStayToLabel": "to",

@@ -2054,6 +2054,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripStayPresenceDatesTitle => 'Presence dates';
 
   @override
+  String get tripMemberStayOptionsTab => 'Options';
+
+  @override
   String get tripStayMealsIncludedHint =>
       'These meals are included in your trip dates.';
 
@@ -4169,6 +4172,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripStayPresenceDatesTitle => 'Presence dates';
+
+  @override
+  String get tripMemberStayOptionsTab => 'Options';
 
   @override
   String get tripStayMealsIncludedHint =>
