@@ -114,4 +114,30 @@ class TripAnnouncementsRepository {
     await _resolveAllowedPublisher(cleanTripId);
     await _announcementsCol(cleanTripId).doc(cleanAnnouncementId).delete();
   }
+
+  Future<void> updateAnnouncement({
+    required String tripId,
+    required String announcementId,
+    required String text,
+  }) async {
+    final cleanTripId = tripId.trim();
+    final cleanAnnouncementId = announcementId.trim();
+    if (cleanTripId.isEmpty || cleanAnnouncementId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      throw StateError('Message vide');
+    }
+    if (trimmed.length > maxTextLength) {
+      throw StateError('Message trop long');
+    }
+
+    await _resolveAllowedPublisher(cleanTripId);
+    await _announcementsCol(cleanTripId).doc(cleanAnnouncementId).update(<String, dynamic>{
+      'text': trimmed,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }

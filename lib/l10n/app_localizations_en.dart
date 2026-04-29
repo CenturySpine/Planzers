@@ -2101,6 +2101,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
 
   @override
+  String get tripAnnouncementsEditTitle => 'Edit announcement';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Expenses';
 
   @override
@@ -4223,6 +4226,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
+
+  @override
+  String get tripAnnouncementsEditTitle => 'Edit announcement';
 
   @override
   String get tripOverviewTopTabExpenses => 'Expenses';

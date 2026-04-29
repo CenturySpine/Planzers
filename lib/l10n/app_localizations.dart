@@ -3833,6 +3833,12 @@ abstract class AppLocalizations {
   /// **'Supprimer cette annonce ?'**
   String get tripAnnouncementsDeleteConfirmBody;
 
+  /// No description provided for @tripAnnouncementsEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier l\'annonce'**
+  String get tripAnnouncementsEditTitle;
+
   /// No description provided for @tripOverviewTopTabExpenses.
   ///
   /// In fr, this message translates to:

@@ -809,6 +809,7 @@
   "tripAnnouncementsEmptyState": "No announcements yet.",
   "tripAnnouncementsInputHint": "Write an announcement...",
   "tripAnnouncementsDeleteConfirmBody": "Delete this announcement?",
+  "tripAnnouncementsEditTitle": "Edit announcement",
   "tripOverviewTopTabExpenses": "Expenses",
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
