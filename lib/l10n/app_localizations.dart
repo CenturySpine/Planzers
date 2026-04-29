@@ -2753,6 +2753,96 @@ abstract class AppLocalizations {
   /// **'Restaurant'**
   String get activityCategoryRestaurant;
 
+  /// No description provided for @activityCategoryCafe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Café'**
+  String get activityCategoryCafe;
+
+  /// No description provided for @activityCategoryMuseum.
+  ///
+  /// In fr, this message translates to:
+  /// **'Musée'**
+  String get activityCategoryMuseum;
+
+  /// No description provided for @activityCategoryShow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Spectacle'**
+  String get activityCategoryShow;
+
+  /// No description provided for @activityCategoryNightlife.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soirée'**
+  String get activityCategoryNightlife;
+
+  /// No description provided for @activityCategoryKaraoke.
+  ///
+  /// In fr, this message translates to:
+  /// **'Karaoké'**
+  String get activityCategoryKaraoke;
+
+  /// No description provided for @activityCategoryGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux'**
+  String get activityCategoryGames;
+
+  /// No description provided for @activityCategoryBeach.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plage'**
+  String get activityCategoryBeach;
+
+  /// No description provided for @activityCategoryPark.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parc'**
+  String get activityCategoryPark;
+
+  /// No description provided for @activityCategoryTransport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Transport'**
+  String get activityCategoryTransport;
+
+  /// No description provided for @activityCategoryAccommodation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get activityCategoryAccommodation;
+
+  /// No description provided for @activityCategoryWellness.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bien-être'**
+  String get activityCategoryWellness;
+
+  /// No description provided for @activityCategoryCooking.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cuisine'**
+  String get activityCategoryCooking;
+
+  /// No description provided for @activityCategoryWorkshop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Atelier'**
+  String get activityCategoryWorkshop;
+
+  /// No description provided for @activityCategoryMarket.
+  ///
+  /// In fr, this message translates to:
+  /// **'Marché'**
+  String get activityCategoryMarket;
+
+  /// No description provided for @activityCategoryMeeting.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réunion'**
+  String get activityCategoryMeeting;
+
   /// No description provided for @activitiesUpdated.
   ///
   /// In fr, this message translates to:

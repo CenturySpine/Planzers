@@ -1501,6 +1501,51 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activityCategoryRestaurant => 'Restaurant';
 
   @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Musée';
+
+  @override
+  String get activityCategoryShow => 'Spectacle';
+
+  @override
+  String get activityCategoryNightlife => 'Soirée';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoké';
+
+  @override
+  String get activityCategoryGames => 'Jeux';
+
+  @override
+  String get activityCategoryBeach => 'Plage';
+
+  @override
+  String get activityCategoryPark => 'Parc';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Hébergement';
+
+  @override
+  String get activityCategoryWellness => 'Bien-être';
+
+  @override
+  String get activityCategoryCooking => 'Cuisine';
+
+  @override
+  String get activityCategoryWorkshop => 'Atelier';
+
+  @override
+  String get activityCategoryMarket => 'Marché';
+
+  @override
+  String get activityCategoryMeeting => 'Réunion';
+
+  @override
   String get activitiesUpdated => 'Activité mise à jour';
 
   @override
@@ -3645,6 +3690,51 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activityCategoryRestaurant => 'Restaurant';
+
+  @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Musée';
+
+  @override
+  String get activityCategoryShow => 'Spectacle';
+
+  @override
+  String get activityCategoryNightlife => 'Soirée';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoké';
+
+  @override
+  String get activityCategoryGames => 'Jeux';
+
+  @override
+  String get activityCategoryBeach => 'Plage';
+
+  @override
+  String get activityCategoryPark => 'Parc';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Hébergement';
+
+  @override
+  String get activityCategoryWellness => 'Bien-être';
+
+  @override
+  String get activityCategoryCooking => 'Cuisine';
+
+  @override
+  String get activityCategoryWorkshop => 'Atelier';
+
+  @override
+  String get activityCategoryMarket => 'Marché';
+
+  @override
+  String get activityCategoryMeeting => 'Réunion';
 
   @override
   String get activitiesUpdated => 'Activité mise à jour';
