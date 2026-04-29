@@ -67,13 +67,13 @@ class _TripMemberPreferencesPageState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripStayInvalidRange)),
       );
-      return;
+      throw Exception('Stay validation failed: not chronological');
     }
     if (!TripMemberStay.withinTripCalendarBounds(stay: stay, trip: trip)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripStayOutOfTripBounds)),
       );
-      return;
+      throw Exception('Stay validation failed: out of trip bounds');
     }
     try {
       await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
