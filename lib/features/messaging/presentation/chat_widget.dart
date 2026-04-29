@@ -589,11 +589,9 @@ class _ChatWidgetState extends State<ChatWidget> {
                               : MouseCursor.defer,
                           child: Stack(
                             clipBehavior: Clip.none,
-                            alignment: Alignment.topCenter,
                             children: [
                               Padding(
                                 padding: EdgeInsets.only(
-                                  top: isSelected ? 34 : 0,
                                   bottom:
                                       groupedReactions.isNotEmpty ? 16 : 0,
                                 ),
@@ -697,57 +695,41 @@ class _ChatWidgetState extends State<ChatWidget> {
                                     totalCount: totalReactionCount,
                                   ),
                                 ),
-                              if (isSelected)
-                                Positioned(
-                                  top: 0,
-                                  child: _InlineMessageQuickReactionBar(
-                                    emojis: _quickReactionEmojis,
-                                    onEmojiTap: (emoji) =>
-                                        _setReactionWithEmoji(
-                                      message: m,
-                                      reactions: reactions,
-                                      selectedEmoji: emoji,
-                                    ),
-                                    onMoreTap: () => _reactToMessage(
-                                      message: m,
-                                      reactions: reactions,
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
                       );
 
-                      // Non-mine messages: badge column + constrained bubble
-                      if (!isMine && widget.showUserBadges) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      // Builds the reaction bar overlay anchored outside
+                      // IntrinsicWidth so that all buttons remain hittable even
+                      // when the bubble is narrower than the bar.
+                      Widget wrapWithReactionBar(
+                        Widget item, {
+                        required double? left,
+                        required double? right,
+                      }) {
+                        if (!isSelected) return item;
+                        return Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            SizedBox(
-                              width: 38, // 32px badge + 6px gap
-                              child: entry.showBadge
-                                  ? Align(
-                                      alignment: Alignment.topCenter,
-                                      child: buildProfileBadge(
-                                        context: context,
-                                        displayLabel: label,
-                                        userData: widget.userDocs[m.authorId],
-                                        size: 32,
-                                      ),
-                                    )
-                                  : null,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 34),
+                              child: item,
                             ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: IntrinsicWidth(
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxWidth: maxBubbleWidthWithBadge,
-                                    ),
-                                    child: bubble,
-                                  ),
+                            Positioned(
+                              top: 0,
+                              left: left,
+                              right: right,
+                              child: _InlineMessageQuickReactionBar(
+                                emojis: _quickReactionEmojis,
+                                onEmojiTap: (emoji) => _setReactionWithEmoji(
+                                  message: m,
+                                  reactions: reactions,
+                                  selectedEmoji: emoji,
+                                ),
+                                onMoreTap: () => _reactToMessage(
+                                  message: m,
+                                  reactions: reactions,
                                 ),
                               ),
                             ),
@@ -755,16 +737,61 @@ class _ChatWidgetState extends State<ChatWidget> {
                         );
                       }
 
-                      return Align(
-                        alignment: isMine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: IntrinsicWidth(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
-                            child: bubble,
+                      // Non-mine messages: badge column + constrained bubble
+                      if (!isMine && widget.showUserBadges) {
+                        return wrapWithReactionBar(
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 38, // 32px badge + 6px gap
+                                child: entry.showBadge
+                                    ? Align(
+                                        alignment: Alignment.topCenter,
+                                        child: buildProfileBadge(
+                                          context: context,
+                                          displayLabel: label,
+                                          userData: widget.userDocs[m.authorId],
+                                          size: 32,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: IntrinsicWidth(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: maxBubbleWidthWithBadge,
+                                      ),
+                                      child: bubble,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          left: 38.0,
+                          right: null,
+                        );
+                      }
+
+                      return wrapWithReactionBar(
+                        Align(
+                          alignment: isMine
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                              constraints:
+                                  BoxConstraints(maxWidth: maxBubbleWidth),
+                              child: bubble,
+                            ),
                           ),
                         ),
+                        left: isMine ? null : 0.0,
+                        right: isMine ? 0.0 : null,
                       );
                     },
                   ),
