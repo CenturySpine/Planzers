@@ -55,6 +55,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   /// 0: choose name, 1: stay + allergens (only when [requiresPlaceholderChoice]).
   int _inviteFormStep = 0;
+  bool _joinUsingCurrentProfile = false;
   TripMemberStay? _stayDraft;
   List<String> _allergenCatalogIds = const [];
   bool _inviteCupidonEnabled = false;
@@ -252,6 +253,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       setState(() {
         _context = ctx;
         _inviteFormStep = 0;
+        _joinUsingCurrentProfile = false;
         _placeholderSearchController.clear();
         if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
           final sorted = _sortedPlaceholders(ctx);
@@ -350,23 +352,24 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     setState(() {
       _error = null;
       _inviteFormStep = 1;
+      _joinUsingCurrentProfile = false;
     });
     unawaited(_loadAllergenIdsForForm());
   }
 
-  Future<void> _joinWithCurrentProfileDirectly() async {
+  void _continueWithCurrentProfile() {
     setState(() {
       _error = null;
+      _inviteFormStep = 1;
+      _joinUsingCurrentProfile = true;
     });
-    await _join(
-      placeholderMemberId: null,
-      bypassPlaceholderChoice: true,
-    );
+    unawaited(_loadAllergenIdsForForm());
   }
 
   void _backToNameStep() {
     setState(() {
       _inviteFormStep = 0;
+      _joinUsingCurrentProfile = false;
       _error = null;
     });
   }
@@ -375,7 +378,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final ctx = _context;
     final stay = _stayDraft;
     final id = _selectedPlaceholderId?.trim();
-    if (ctx == null || stay == null || id == null) return;
+    if (ctx == null || stay == null) return;
+    if (!_joinUsingCurrentProfile && (id == null || id.isEmpty)) return;
 
     if (!TripMemberStay.isChronological(stay)) {
       setState(() {
@@ -394,7 +398,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       return;
     }
 
-    await _join(placeholderMemberId: id);
+    await _join(
+      placeholderMemberId: _joinUsingCurrentProfile ? null : id,
+      bypassPlaceholderChoice: _joinUsingCurrentProfile,
+    );
     if (!_joined || !mounted) return;
 
     try {
@@ -549,8 +556,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Align(
                       alignment: Alignment.center,
                       child: TextButton.icon(
-                        onPressed:
-                            _joining ? null : _joinWithCurrentProfileDirectly,
+                        onPressed: _joining ? null : _continueWithCurrentProfile,
                         icon: const Icon(Icons.person_add_alt_1_outlined),
                         label: Text(l10n.inviteJoinWithCurrentProfileAction),
                       ),
