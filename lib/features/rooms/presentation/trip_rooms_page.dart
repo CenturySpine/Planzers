@@ -416,7 +416,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                     ),
                     IconButton(
                       onPressed: () => _delete(room),
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     ),
                   ],
                 ],
@@ -466,7 +466,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                   children: [
                                     if (_beds.length > 1)
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline),
+                                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                                         onPressed: () => setState(() {
                                           _beds = [..._beds]..removeAt(i);
                                         }),
@@ -781,7 +781,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                           : () => setState(() {
                                 _beds = [..._beds]..removeAt(i);
                               }),
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     ),
                   ),
                 ),

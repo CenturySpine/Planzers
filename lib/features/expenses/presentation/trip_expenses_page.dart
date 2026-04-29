@@ -807,7 +807,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                             child: Row(
                               children: [
                                 Icon(
-                                  Icons.delete_outline,
+                                  Icons.delete,
                                   size: 18,
                                   color: Theme.of(context).colorScheme.error,
                                 ),

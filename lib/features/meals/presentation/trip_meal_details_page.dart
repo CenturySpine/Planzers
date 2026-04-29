@@ -1202,7 +1202,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.delete_outline),
+                          : Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),
@@ -1666,8 +1666,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                             _deleteComponent(
                                                               component.id,
                                                             ),
-                                                icon: const Icon(
-                                                    Icons.delete_outline),
+                                                icon: Icon(Icons.delete,
+                                                    color: Theme.of(context).colorScheme.error),
                                               ),
                                               const Icon(Icons.chevron_right),
                                             ],
@@ -1775,8 +1775,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                     _isSavingRestaurantUrl
                                                         ? null
                                                         : _clearRestaurantUrl,
-                                                icon: const Icon(
-                                                    Icons.delete_outline),
+                                                icon: Icon(Icons.delete,
+                                                    color: Theme.of(context).colorScheme.error),
                                               ),
                                           ],
                                         ),
@@ -1879,8 +1879,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 ? null
                                                 : () =>
                                                     _deletePotluckItem(index),
-                                            icon: const Icon(
-                                                Icons.delete_outline),
+                                            icon: Icon(Icons.delete,
+                                                color: Theme.of(context).colorScheme.error),
                                           ),
                                         ],
                                       ),

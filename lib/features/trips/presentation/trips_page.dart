@@ -951,7 +951,7 @@ class _TripCard extends ConsumerWidget {
                     IconButton(
                       tooltip: AppLocalizations.of(context)!.commonDelete,
                       onPressed: onDelete,
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),

@@ -269,7 +269,8 @@ class _TripActivitiesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesDelete,
                         minRole: trip.activitiesPermissions.deleteActivityMinRole,
-                        icon: Icons.delete_outline,
+                        icon: Icons.delete,
+                        iconColor: Theme.of(context).colorScheme.error,
                         busy: _isSavingDeletePermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) =>

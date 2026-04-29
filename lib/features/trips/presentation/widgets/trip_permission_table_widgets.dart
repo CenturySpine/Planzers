@@ -13,11 +13,13 @@ class TripPermissionItemRow extends StatelessWidget {
     required this.busy,
     required this.enabled,
     required this.onChanged,
+    this.iconColor,
   });
 
   final String title;
   final TripPermissionRole minRole;
   final IconData icon;
+  final Color? iconColor;
   final bool busy;
   final bool enabled;
   final ValueChanged<TripPermissionRole> onChanged;
@@ -32,7 +34,7 @@ class TripPermissionItemRow extends StatelessWidget {
             flex: 6,
             child: Row(
               children: [
-                Icon(icon),
+                Icon(icon, color: iconColor),
                 const SizedBox(width: 12),
                 Expanded(child: Text(title)),
               ],
