@@ -308,13 +308,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingRestaurantUrl) return;
     final trimmed = _restaurantUrlController.text.trim();
-    if (trimmed.isEmpty) return;
-    final parsed = Uri.tryParse(trimmed);
-    if (parsed == null || !parsed.isAbsolute) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.linkInvalid)),
-      );
-      return;
+    if (trimmed.isNotEmpty) {
+      final parsed = Uri.tryParse(trimmed);
+      if (parsed == null || !parsed.isAbsolute) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.linkInvalid)),
+        );
+        return;
+      }
     }
     final previousUrl = _restaurantUrl;
     final previousEditing = _isRestaurantLinkEditing;
@@ -361,6 +362,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       _restaurantUrlController.text = _restaurantUrl;
       _isRestaurantLinkEditing = true;
     });
+  }
+
+  Future<void> _clearRestaurantUrl() async {
+    _restaurantUrlController.text = '';
+    await _saveRestaurantUrl();
   }
 
   void _cancelEditRestaurantUrl() {
@@ -1752,11 +1758,27 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 ),
                                         ),
                                         const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: l10n.commonEdit,
-                                          onPressed: _startEditRestaurantUrl,
-                                          icon:
-                                              const Icon(Icons.edit_outlined),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              tooltip: l10n.commonEdit,
+                                              onPressed:
+                                                  _startEditRestaurantUrl,
+                                              icon: const Icon(
+                                                  Icons.edit_outlined),
+                                            ),
+                                            if (_restaurantUrl.isNotEmpty)
+                                              IconButton(
+                                                tooltip: l10n.commonDelete,
+                                                onPressed:
+                                                    _isSavingRestaurantUrl
+                                                        ? null
+                                                        : _clearRestaurantUrl,
+                                                icon: const Icon(
+                                                    Icons.delete_outline),
+                                              ),
+                                          ],
                                         ),
                                       ],
                                     ),
