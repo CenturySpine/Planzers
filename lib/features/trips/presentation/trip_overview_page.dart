@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:planerz/app/theme/neutral_colors.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -1126,11 +1127,29 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   Card(
+                    color: NeutralColors.cardSurface,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.tripOverviewTileAccommodation,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                              ),
+                              Icon(
+                                Icons.home_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
                           if (linkUrlForUi.isNotEmpty) ...[
                             LinkPreviewCardFromFirestore(
                               url: linkUrlForUi,
@@ -1190,7 +1209,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   countLabel: '$plannedActivitiesCount',
                                   alertCount: unreadActivities,
                                   backgroundColor: pz.warningContainer,
-                                  iconColor: cs.tertiary,
+                                  iconColor: cs.primary,
                                   detailLines: activitiesTodayLabels,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1208,7 +1227,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   icon: Icons.bed_outlined,
                                   countLabel: '$roomsCount',
                                   backgroundColor: pz.successContainer,
-                                  iconColor: pz.success,
+                                  iconColor: cs.primary,
                                   detailLines: roomsDetailLines,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1226,7 +1245,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   icon: Icons.directions_car_outlined,
                                   countLabel: '0',
                                   backgroundColor: cs.secondaryContainer,
-                                  iconColor: cs.secondary,
+                                  iconColor: cs.primary,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
                                   emptyStateMessage:
@@ -1428,6 +1447,7 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Card(
+      color: NeutralColors.cardSurface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1693,7 +1713,7 @@ class _TripAccessTile extends StatelessWidget {
     final visibleDetails = detailLines.take(3).toList();
     final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
-      color: backgroundColor,
+      color: NeutralColors.cardSurface,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,

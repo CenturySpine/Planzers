@@ -2080,6 +2080,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTileRooms => 'Rooms';
 
   @override
+  String get tripOverviewTileAccommodation => 'Accommodation';
+
+  @override
   String get tripOverviewTileCars => 'Cars';
 
   @override
@@ -4202,6 +4205,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTileRooms => 'Rooms';
+
+  @override
+  String get tripOverviewTileAccommodation => 'Accommodation';
 
   @override
   String get tripOverviewTileCars => 'Cars';

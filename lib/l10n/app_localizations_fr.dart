@@ -2095,6 +2095,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileRooms => 'Chambres';
 
   @override
+  String get tripOverviewTileAccommodation => 'Hébergement';
+
+  @override
   String get tripOverviewTileCars => 'Voitures';
 
   @override
@@ -4233,6 +4236,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTileRooms => 'Chambres';
+
+  @override
+  String get tripOverviewTileAccommodation => 'Hébergement';
 
   @override
   String get tripOverviewTileCars => 'Voitures';
