@@ -234,7 +234,6 @@ class MealComponent {
 class TripMeal {
   TripMeal({
     required this.id,
-    required this.name,
     required this.mealDateKey,
     required this.mealDayPart,
     required this.participantIds,
@@ -252,7 +251,6 @@ class TripMeal {
   });
 
   final String id;
-  final String name;
 
   /// Date in YYYY-MM-DD format (must be consistent with [TripMemberStay.dateKeyFromDateTime]).
   final String mealDateKey;
@@ -321,7 +319,6 @@ class TripMeal {
     final data = doc.data() ?? const <String, dynamic>{};
     return TripMeal(
       id: doc.id,
-      name: (data['name'] as String?)?.trim() ?? '',
       mealDateKey: (data['mealDateKey'] as String?)?.trim() ?? '',
       mealDayPart: tripDayPartFromFirestore(
             data['mealDayPart'] as String?,
@@ -415,7 +412,6 @@ class TripMeal {
 
   TripMeal copyWith({
     String? id,
-    String? name,
     String? mealDateKey,
     TripDayPart? mealDayPart,
     List<String>? participantIds,
@@ -433,7 +429,6 @@ class TripMeal {
   }) {
     return TripMeal(
       id: id ?? this.id,
-      name: name ?? this.name,
       mealDateKey: mealDateKey ?? this.mealDateKey,
       mealDayPart: mealDayPart ?? this.mealDayPart,
       participantIds: participantIds ?? this.participantIds,
@@ -454,7 +449,7 @@ class TripMeal {
   }
 
   @override
-  String toString() => 'TripMeal(id=$id, name=$name, date=$mealDateKey, '
+  String toString() => 'TripMeal(id=$id, date=$mealDateKey, '
       'part=$mealDayPart, participants=${participantIds.length}, chef=$chefParticipantId)';
 }
 

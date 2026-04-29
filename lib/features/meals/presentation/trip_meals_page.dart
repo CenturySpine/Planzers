@@ -63,7 +63,6 @@ class _MealsList extends StatelessWidget {
   String _dateKeyToLabel(BuildContext context, String dateKey) {
     final dt = TripMeal(
       id: '',
-      name: '',
       mealDateKey: dateKey,
       mealDayPart: TripDayPart.morning,
       participantIds: const [],
@@ -331,9 +330,10 @@ String _cookedMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
 }
 
 String _restaurantMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
-  final restaurantName = meal.name.trim();
-  if (restaurantName.isNotEmpty) {
-    return restaurantName;
+  final previewTitle =
+      (meal.restaurantLinkPreview['title'] as String? ?? '').trim();
+  if (previewTitle.isNotEmpty) {
+    return previewTitle;
   }
   final restaurantUrl = meal.restaurantUrl.trim();
   if (restaurantUrl.isNotEmpty) {

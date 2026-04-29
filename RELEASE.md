@@ -64,7 +64,23 @@ firebase deploy --project planerz
 
 ---
 
-## 4. Vérification
+## 4. Build APK / AAB Android *(release prod)*
+
+```powershell
+# APK (distribution directe)
+flutter build apk --release --target lib/main_prod.dart
+
+# AAB (Play Store)
+flutter build appbundle --release --target lib/main_prod.dart
+```
+
+Sorties :
+- APK : `build/app/outputs/flutter-apk/app-release.apk`
+- AAB : `build/app/outputs/bundle/release/app-release.aab`
+
+---
+
+## 5. Vérification
 
 - [ ] `planerz.centuryspine.org` charge correctement
 - [ ] Connexion Google fonctionnelle
