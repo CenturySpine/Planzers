@@ -302,6 +302,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       setState(() {
         _joined = true;
       });
+      await _persistCupidonPreferenceForTrip();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.inviteJoinedTrip)),
