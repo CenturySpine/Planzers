@@ -52,3 +52,10 @@ pz.warningContainer
 // Données brutes (pour construire le thème uniquement)
 // AppPaletteId.cupidon.data  →  BrandPaletteData
 ```
+
+## Palette Neon
+
+- `primary`: `#6745DE`
+- `accent`: `#FF6B6B`
+- `secondary`: `#4ECDC4`
+- Tous les autres champs de `BrandPaletteData` sont identiques à `Oligarch`.

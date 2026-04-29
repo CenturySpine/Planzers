@@ -583,8 +583,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             return ListView(
               padding: EdgeInsets.zero,
               children: [
-            Stack(
-              children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: NeutralColors.cardSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
                 _TripBanner(
                   imageUrl: liveBannerImageUrl,
                   busy: _isBannerBusy,
@@ -656,10 +664,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     PopupMenuButton<String>(
                                       tooltip: l10n.tripOverviewActions,
                                       onSelected: (value) {
-                                        if (value == 'participants') {
-                                          _openParticipantsPage();
-                                          return;
-                                        }
                                         if (value == 'preferences' &&
                                             isTripMember) {
                                           _openTripUserPreferencesPage();
@@ -680,17 +684,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         }
                                       },
                                       itemBuilder: (context) => [
-                                        PopupMenuItem(
-                                          value: 'participants',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons
-                                                  .assignment_ind_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripParticipantsTitle),
-                                            ],
-                                          ),
-                                        ),
                                         if (isTripMember)
                                           PopupMenuItem(
                                             value: 'preferences',
@@ -746,7 +739,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                   strokeWidth: 2,
                                                   color: Colors.white),
                                             )
-                                          : const Icon(Icons.more_vert,
+                                          : const Icon(Icons.settings_outlined,
                                               color: Colors.white),
                                     ),
                                 ],
@@ -759,10 +752,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   PopupMenuButton<String>(
                                     tooltip: l10n.tripOverviewActions,
                                     onSelected: (value) {
-                                      if (value == 'participants') {
-                                        _openParticipantsPage();
-                                        return;
-                                      }
                                       if (value == 'preferences' &&
                                           isTripMember) {
                                         _openTripUserPreferencesPage();
@@ -783,16 +772,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       }
                                     },
                                     itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'participants',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.assignment_ind_outlined),
-                                            SizedBox(width: 10),
-                                            Text(l10n.tripParticipantsTitle),
-                                          ],
-                                        ),
-                                      ),
                                       if (isTripMember)
                                         PopupMenuItem(
                                           value: 'preferences',
@@ -848,7 +827,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                 strokeWidth: 2,
                                                 color: Colors.white),
                                           )
-                                        : const Icon(Icons.more_vert,
+                                        : const Icon(Icons.settings_outlined,
                                             color: Colors.white),
                                   ),
                                 ],
@@ -903,7 +882,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   ),
-              ],
+                  ],
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -1570,8 +1551,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               label: leftLabel,
               icon: Icons.campaign_outlined,
               alertCount: leftAlertCount,
-              color: cs.primaryContainer,
-              foregroundColor: cs.onPrimaryContainer,
+              color: cs.primary,
+              foregroundColor: cs.onPrimary,
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
               onTap: onLeftTap,
@@ -1582,8 +1563,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
             child: _TripOverviewTopSwitchItem(
               label: rightLabel,
               icon: Icons.payments_outlined,
-              color: cs.secondaryContainer,
-              foregroundColor: cs.onSecondaryContainer,
+              color: cs.tertiary,
+              foregroundColor: cs.onTertiary,
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
               onTap: onRightTap,
@@ -1595,8 +1576,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               child: _TripOverviewTopSwitchItem(
                 label: thirdLabel!,
                 icon: Icons.photo_library_outlined,
-                color: cs.tertiaryContainer,
-                foregroundColor: cs.onTertiaryContainer,
+                color: cs.secondary,
+                foregroundColor: cs.onSecondary,
                 borderColor: cs.outlineVariant,
                 textStyle: labelStyle,
                 onTap: onThirdTap!,

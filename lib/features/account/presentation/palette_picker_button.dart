@@ -28,6 +28,7 @@ class PalettePickerButton extends ConsumerWidget {
         final label = switch (id) {
           AppPaletteId.cupidon => 'Cupidon',
           AppPaletteId.oligarch => 'Oligarch',
+          AppPaletteId.neon => 'Neon',
         };
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -52,6 +53,13 @@ class PalettePickerButton extends ConsumerWidget {
           label: 'Oligarch',
           colors: BrandPaletteData.oligarch,
           selected: current == AppPaletteId.oligarch,
+        ),
+        _paletteMenuItem(
+          context,
+          id: AppPaletteId.neon,
+          label: 'Neon',
+          colors: BrandPaletteData.neon,
+          selected: current == AppPaletteId.neon,
         ),
       ],
       child: Padding(
