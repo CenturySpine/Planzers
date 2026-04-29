@@ -221,7 +221,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final match = findBestUiStringSimilarityMatch(
       source: emailLocalPart,
       candidates: sorted.map((option) => option.displayName).toList(),
-      minimumScore: 0.7,
+      minimumScore: 0.5,
     );
     if (match == null) return null;
     return sorted[match.index].id;
