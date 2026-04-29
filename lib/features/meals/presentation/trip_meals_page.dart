@@ -231,6 +231,8 @@ class _MealCard extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
+              _MealModeBadge(mealMode: meal.mealMode),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,9 +296,6 @@ class _MealCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
               ],
-              const SizedBox(width: 12),
-              _MealModeBadge(mealMode: meal.mealMode),
-              const SizedBox(width: 12),
               Badge(
                 label: Text(meal.participantCount.toString()),
                 child: const Icon(Icons.people_outline),
