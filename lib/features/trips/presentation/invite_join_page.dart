@@ -587,13 +587,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: _joining ? null : _backToNameStep,
-                        child: Text(l10n.inviteEditTravelerChoice),
-                      ),
-                    ),
                   ],
                   if (_error != null) ...[
                     const SizedBox(height: 8),
@@ -608,6 +601,15 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
+                      if (_inviteFormStep == 1) ...[
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _joining ? null : _backToNameStep,
+                            child: Text(l10n.inviteBack),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: OutlinedButton(
                           onPressed: _joining ? null : _goToTripsList,
@@ -616,7 +618,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        flex: 2,
                         child: FilledButton(
                           onPressed:
                               (_joining ||

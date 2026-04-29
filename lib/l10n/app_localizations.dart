@@ -2126,7 +2126,7 @@ abstract class AppLocalizations {
   /// No description provided for @cupidonModeDisabledByAdmin.
   ///
   /// In fr, this message translates to:
-  /// **'Le mode Cupidon est désactivé pour ce voyage par un admin.'**
+  /// **'Les admins ont désactivé cette option pour ce voyage.'**
   String get cupidonModeDisabledByAdmin;
 
   /// No description provided for @cupidonEnableAction.
@@ -2339,11 +2339,11 @@ abstract class AppLocalizations {
   /// **'Tu pourras liker des participants du voyage.'**
   String get inviteCupidonSubtitle;
 
-  /// No description provided for @inviteEditTravelerChoice.
+  /// No description provided for @inviteBack.
   ///
   /// In fr, this message translates to:
-  /// **'Modifier le choix du voyageur'**
-  String get inviteEditTravelerChoice;
+  /// **'Retour'**
+  String get inviteBack;
 
   /// No description provided for @inviteJoinWithCurrentProfileHint.
   ///

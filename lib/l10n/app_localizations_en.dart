@@ -1143,7 +1143,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cupidonModeDisabledByAdmin =>
-      'Cupidon mode is disabled for this trip by an admin.';
+      'Admins have disabled this option for this trip.';
 
   @override
   String get cupidonEnableAction => 'Enable Cupidon';
@@ -1259,7 +1259,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'You will be able to like trip participants.';
 
   @override
-  String get inviteEditTravelerChoice => 'Edit traveler choice';
+  String get inviteBack => 'Back';
 
   @override
   String get inviteJoinWithCurrentProfileHint =>
@@ -3260,7 +3260,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get cupidonModeDisabledByAdmin =>
-      'Cupidon mode is disabled for this trip by an admin.';
+      'Admins have disabled this option for this trip.';
 
   @override
   String get cupidonEnableAction => 'Enable Cupidon';
@@ -3376,7 +3376,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'You will be able to like trip participants.';
 
   @override
-  String get inviteEditTravelerChoice => 'Edit traveler choice';
+  String get inviteBack => 'Back';
 
   @override
   String get inviteJoinWithCurrentProfileHint =>
