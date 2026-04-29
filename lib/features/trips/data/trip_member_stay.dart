@@ -106,11 +106,12 @@ class TripMemberStay {
         ? DateUtils.dateOnly(tripEndDate)
         : start;
     final later = end.isBefore(start) ? start : end;
+    final isSingleDay = start.isAtSameMomentAs(later);
     return TripMemberStay(
       startDateKey: dateKeyFromDateTime(start),
-      startDayPart: TripDayPart.evening,
+      startDayPart: isSingleDay ? TripDayPart.morning : TripDayPart.evening,
       endDateKey: dateKeyFromDateTime(later),
-      endDayPart: TripDayPart.morning,
+      endDayPart: isSingleDay ? TripDayPart.evening : TripDayPart.morning,
     );
   }
 
