@@ -231,7 +231,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
         ],
         Card(
           child: Padding(
@@ -244,7 +244,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -260,7 +260,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           ),
         ),
         if (widget.phoneVisibilityTitle != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
