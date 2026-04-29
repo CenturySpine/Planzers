@@ -837,24 +837,15 @@ Widget _participantRoleLeading({
     return Tooltip(message: tooltip, child: fixed);
   }
 
-  return SizedBox(
-    width: _kParticipantRoleLeadingExtent,
-    height: _kParticipantRoleLeadingExtent,
-    child: GestureDetector(
-      onLongPress: onCycle,
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(
-          width: _kParticipantRoleLeadingExtent,
-          height: _kParticipantRoleLeadingExtent,
-        ),
-        visualDensity: VisualDensity.compact,
-        style: IconButton.styleFrom(
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        icon: icon,
-        tooltip: tooltip,
-        onPressed: null,
+  return Tooltip(
+    message: tooltip ?? '',
+    child: SizedBox(
+      width: _kParticipantRoleLeadingExtent,
+      height: _kParticipantRoleLeadingExtent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onLongPress: onCycle,
+        child: Center(child: icon),
       ),
     ),
   );
