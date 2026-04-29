@@ -190,6 +190,7 @@ class _TripMemberPreferencesPageState
                         mode: TripMemberStayOptionsEditorMode.live,
                         tripStartDate: trip.startDate,
                         tripEndDate: trip.endDate,
+                        isCupidonModeEnabled: trip.cupidonModeEnabled,
                         initialStay: currentStay,
                         initialCupidonEnabled: myCupidonEnabled,
                         initialPhoneVisibility:

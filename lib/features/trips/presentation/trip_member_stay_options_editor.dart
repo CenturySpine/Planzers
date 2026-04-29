@@ -36,6 +36,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
     required this.cupidonTitle,
     this.cupidonSubtitle,
     this.phoneVisibilityTitle,
+    this.isCupidonModeEnabled = true,
   }) : assert(
           mode == TripMemberStayOptionsEditorMode.draft
               ? onDraftChanged != null
@@ -56,6 +57,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
   final String cupidonTitle;
   final String? cupidonSubtitle;
   final String? phoneVisibilityTitle;
+  final bool isCupidonModeEnabled;
 
   @override
   State<TripMemberStayOptionsEditor> createState() =>
@@ -200,16 +202,18 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           value: _stay,
           onChanged: _handleStayChanged,
         ),
-        const SizedBox(height: 20),
-        SwitchListTile.adaptive(
-          contentPadding: EdgeInsets.zero,
-          value: _cupidonEnabled,
-          onChanged: _isUpdatingCupidon ? null : _handleCupidonChanged,
-          title: Text(widget.cupidonTitle),
-          subtitle: widget.cupidonSubtitle == null
-              ? null
-              : Text(widget.cupidonSubtitle!),
-        ),
+        if (widget.isCupidonModeEnabled) ...[
+          const SizedBox(height: 20),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            value: _cupidonEnabled,
+            onChanged: _isUpdatingCupidon ? null : _handleCupidonChanged,
+            title: Text(widget.cupidonTitle),
+            subtitle: widget.cupidonSubtitle == null
+                ? null
+                : Text(widget.cupidonSubtitle!),
+          ),
+        ],
         if (_phoneVisibility != null && widget.phoneVisibilityTitle != null) ...[
           const SizedBox(height: 20),
           Text(
