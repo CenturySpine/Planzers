@@ -17,6 +17,7 @@ class Trip {
     this.endDate,
     this.bannerImageUrl,
     this.bannerImagePath,
+    this.linkPreview = const {},
     this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
     this.generalPermissions = TripGeneralPermissions.defaults,
@@ -48,6 +49,9 @@ class Trip {
   final DateTime? endDate;
   final String? bannerImageUrl;
   final String? bannerImagePath;
+
+  /// Open Graph / meta preview data written by Cloud Functions after a [linkUrl] fetch.
+  final Map<String, dynamic> linkPreview;
 
   /// Public display strings for members (e.g. email local part), readable by all
   /// trip participants; populated by Cloud Functions / client on create.
@@ -120,6 +124,8 @@ class Trip {
       endDate: _parseOptionalDate(data['endDate']),
       bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
+      linkPreview:
+          (data['linkPreview'] as Map<String, dynamic>?) ?? const {},
       memberPublicLabels:
           memberPublicLabelsFromFirestore(data['memberPublicLabels']),
       adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),

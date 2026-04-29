@@ -889,7 +889,11 @@ class _TripCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _TripCardLeadingImage(imageUrl: trip.bannerImageUrl),
+              _TripCardLeadingImage(
+                imageUrl: trip.bannerImageUrl?.isNotEmpty == true
+                    ? trip.bannerImageUrl
+                    : (trip.linkPreview['imageUrl'] as String?)?.trim(),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
