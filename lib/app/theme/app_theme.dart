@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
-import 'package:planerz/app/theme/neutral_colors.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 
 class AppTheme {
@@ -44,19 +42,14 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: GoogleFonts.geistTextTheme(),
-      scaffoldBackgroundColor: NeutralColors.backgroundSubtle,
+      scaffoldBackgroundColor: p.scaffoldBackground,
       appBarTheme: AppBarTheme(
-        backgroundColor: NeutralColors.backgroundSubtle,
+        backgroundColor: p.appBarBackground,
         foregroundColor: p.deep,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         toolbarHeight: 52,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: NeutralColors.backgroundSubtle,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
-        ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(

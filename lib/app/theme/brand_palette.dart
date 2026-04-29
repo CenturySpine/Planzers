@@ -7,16 +7,12 @@ enum AppPaletteId {
 
   /// Turquoise, bleu et violet (palette Figma partagée).
   oligarch,
-
-  /// Violet néon, corail et turquoise.
-  neon,
 }
 
 extension AppPaletteIdX on AppPaletteId {
   BrandPaletteData get data => switch (this) {
         AppPaletteId.cupidon => BrandPaletteData.cupidon,
         AppPaletteId.oligarch => BrandPaletteData.oligarch,
-        AppPaletteId.neon => BrandPaletteData.neon,
       };
 }
 
@@ -97,29 +93,6 @@ class BrandPaletteData {
     primarySoft: Color(0xFFE5F2FD),
     accent: Color(0xFFD44D00),
     secondary: Color(0xFF70CDC5),
-    secondaryContainer: Color(0xFFCFF5F0),
-    success: Color(0xFF2EB37F),
-    successContainer: Color(0xFFCCF5E4),
-    warning: Color(0xFFC49A00),
-    warningContainer: Color(0xFFFFF3CC),
-    deep: Color(0xFF2E206D),
-    surface: Color(0xFFFFFBFF),
-    surfaceContainerHighest: Color(0xFFDCE3FA),
-    scaffoldBackground: Color(0xFFF2F4FD),
-    appBarBackground: Color(0xFFD2DAF8),
-    onSurfaceVariant: Color(0xFF483D6B),
-    outline: Color(0xFF6E6A8A),
-    outlineVariant: Color(0xFFC0BCDC),
-    inverseSurface: Color(0xFF2E206D),
-    onInverseSurface: Color(0xFFEFF0FA),
-  );
-
-  static const BrandPaletteData neon = BrandPaletteData(
-    primary: Color(0xFF6745DE),
-    primaryLight: Color(0xFFBDE2F9),
-    primarySoft: Color(0xFFE5F2FD),
-    accent: Color(0xFFFF6B6B),
-    secondary: Color(0xFF4ECDC4),
     secondaryContainer: Color(0xFFCFF5F0),
     success: Color(0xFF2EB37F),
     successContainer: Color(0xFFCCF5E4),

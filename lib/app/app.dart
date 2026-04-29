@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/app/preview_environment_chrome.dart';
 import 'package:planerz/app/router.dart';
 import 'package:planerz/app/theme/app_palette_provider.dart';
 import 'package:planerz/app/theme/app_theme.dart';
@@ -53,11 +54,14 @@ class _PlanerzThemedApp extends ConsumerWidget {
       builder: (context, child) {
         return FirebaseBootstrap(
           target: firebaseTarget,
-          // Inner ScaffoldMessenger for feedback SnackBars (errors,
-          // confirmations). Isolated from the notification messenger above so
-          // the two queues never interfere.
-          child: ScaffoldMessenger(
-            child: child ?? const SizedBox.shrink(),
+          child: PreviewEnvironmentChrome(
+            target: firebaseTarget,
+            // Inner ScaffoldMessenger for feedback SnackBars (errors,
+            // confirmations). Isolated from the notification messenger above so
+            // the two queues never interfere.
+            child: ScaffoldMessenger(
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         );
       },

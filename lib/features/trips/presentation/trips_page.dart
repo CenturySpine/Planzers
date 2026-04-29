@@ -12,9 +12,6 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/app/app_version_provider.dart';
-import 'package:planerz/app/theme/neutral_colors.dart';
-import 'package:planerz/core/firebase/firebase_target.dart';
-import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
@@ -162,11 +159,12 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
                       final timelineContainerColors =
                           <_TripTimelineCategory, Color>{
-                        _TripTimelineCategory.past: NeutralColors.cardSurface,
+                        _TripTimelineCategory.past:
+                            Theme.of(context).scaffoldBackgroundColor,
                         _TripTimelineCategory.ongoing:
-                            NeutralColors.cardSurface,
+                            colorScheme.surfaceContainerHighest,
                         _TripTimelineCategory.upcoming:
-                            NeutralColors.cardSurface,
+                            colorScheme.tertiaryContainer,
                       };
                       final timelineTitleColors =
                           <_TripTimelineCategory, Color>{
@@ -756,8 +754,6 @@ class _TripsAppBranding extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final version = ref.watch(appVersionProvider).asData?.value;
-    final isPreview =
-        ref.watch(firebaseTargetProvider) == FirebaseTarget.preview;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -778,14 +774,6 @@ class _TripsAppBranding extends ConsumerWidget {
                 letterSpacing: 0.5,
               ),
         ),
-        if (isPreview) ...[
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.science_outlined,
-            size: 16,
-            color: Color(0xFFFF9800),
-          ),
-        ],
         if (version != null) ...[
           const SizedBox(width: 8),
           Text(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 
@@ -23,40 +22,32 @@ class PreviewEnvironmentChrome extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AnnotatedRegion<SystemUiOverlayStyle>(
-          value: const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-          ),
-          child: Material(
-            color: context.planerzColors.warning,
-            elevation: 1,
-            child: SafeArea(
-              bottom: false,
-              minimum: EdgeInsets.zero,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.science_outlined,
-                      size: 16,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Preview · préversion',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                          ),
-                    ),
-                  ],
-                ),
+        Material(
+          color: context.planerzColors.warning,
+          elevation: 1,
+          child: SafeArea(
+            bottom: false,
+            minimum: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.science_outlined,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.95),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Preview · préversion',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                  ),
+                ],
               ),
             ),
           ),

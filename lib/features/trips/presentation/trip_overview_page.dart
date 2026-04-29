@@ -11,7 +11,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:planerz/app/theme/neutral_colors.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -583,16 +582,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             return ListView(
               padding: EdgeInsets.zero,
               children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: NeutralColors.cardSurface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
+            Stack(
+              children: [
                 _TripBanner(
                   imageUrl: liveBannerImageUrl,
                   busy: _isBannerBusy,
@@ -664,6 +655,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     PopupMenuButton<String>(
                                       tooltip: l10n.tripOverviewActions,
                                       onSelected: (value) {
+                                        if (value == 'participants') {
+                                          _openParticipantsPage();
+                                          return;
+                                        }
                                         if (value == 'preferences' &&
                                             isTripMember) {
                                           _openTripUserPreferencesPage();
@@ -684,6 +679,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         }
                                       },
                                       itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          value: 'participants',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons
+                                                  .assignment_ind_outlined),
+                                              SizedBox(width: 10),
+                                              Text(l10n.tripParticipantsTitle),
+                                            ],
+                                          ),
+                                        ),
                                         if (isTripMember)
                                           PopupMenuItem(
                                             value: 'preferences',
@@ -739,7 +745,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                   strokeWidth: 2,
                                                   color: Colors.white),
                                             )
-                                          : const Icon(Icons.settings_outlined,
+                                          : const Icon(Icons.more_vert,
                                               color: Colors.white),
                                     ),
                                 ],
@@ -752,6 +758,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   PopupMenuButton<String>(
                                     tooltip: l10n.tripOverviewActions,
                                     onSelected: (value) {
+                                      if (value == 'participants') {
+                                        _openParticipantsPage();
+                                        return;
+                                      }
                                       if (value == 'preferences' &&
                                           isTripMember) {
                                         _openTripUserPreferencesPage();
@@ -772,6 +782,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       }
                                     },
                                     itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 'participants',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.assignment_ind_outlined),
+                                            SizedBox(width: 10),
+                                            Text(l10n.tripParticipantsTitle),
+                                          ],
+                                        ),
+                                      ),
                                       if (isTripMember)
                                         PopupMenuItem(
                                           value: 'preferences',
@@ -827,7 +847,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                                 strokeWidth: 2,
                                                 color: Colors.white),
                                           )
-                                        : const Icon(Icons.settings_outlined,
+                                        : const Icon(Icons.more_vert,
                                             color: Colors.white),
                                   ),
                                 ],
@@ -882,9 +902,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   ),
-                  ],
-                ),
-              ),
+              ],
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -1108,29 +1126,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ),
                     ),
                   Card(
-                    color: NeutralColors.cardSurface,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.tripOverviewTileAccommodation,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                              ),
-                              Icon(
-                                Icons.home_outlined,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
                           if (linkUrlForUi.isNotEmpty) ...[
                             LinkPreviewCardFromFirestore(
                               url: linkUrlForUi,
@@ -1190,7 +1190,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   countLabel: '$plannedActivitiesCount',
                                   alertCount: unreadActivities,
                                   backgroundColor: pz.warningContainer,
-                                  iconColor: cs.primary,
+                                  iconColor: cs.tertiary,
                                   detailLines: activitiesTodayLabels,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1208,7 +1208,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   icon: Icons.bed_outlined,
                                   countLabel: '$roomsCount',
                                   backgroundColor: pz.successContainer,
-                                  iconColor: cs.primary,
+                                  iconColor: pz.success,
                                   detailLines: roomsDetailLines,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
@@ -1226,7 +1226,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   icon: Icons.directions_car_outlined,
                                   countLabel: '0',
                                   backgroundColor: cs.secondaryContainer,
-                                  iconColor: cs.primary,
+                                  iconColor: cs.secondary,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
                                   emptyStateMessage:
@@ -1428,7 +1428,6 @@ class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Card(
-      color: NeutralColors.cardSurface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1551,8 +1550,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               label: leftLabel,
               icon: Icons.campaign_outlined,
               alertCount: leftAlertCount,
-              color: cs.primary,
-              foregroundColor: cs.onPrimary,
+              color: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
               onTap: onLeftTap,
@@ -1563,8 +1562,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
             child: _TripOverviewTopSwitchItem(
               label: rightLabel,
               icon: Icons.payments_outlined,
-              color: cs.tertiary,
-              foregroundColor: cs.onTertiary,
+              color: cs.secondaryContainer,
+              foregroundColor: cs.onSecondaryContainer,
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
               onTap: onRightTap,
@@ -1576,8 +1575,8 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               child: _TripOverviewTopSwitchItem(
                 label: thirdLabel!,
                 icon: Icons.photo_library_outlined,
-                color: cs.secondary,
-                foregroundColor: cs.onSecondary,
+                color: cs.tertiaryContainer,
+                foregroundColor: cs.onTertiaryContainer,
                 borderColor: cs.outlineVariant,
                 textStyle: labelStyle,
                 onTap: onThirdTap!,
@@ -1694,7 +1693,7 @@ class _TripAccessTile extends StatelessWidget {
     final visibleDetails = detailLines.take(3).toList();
     final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
-      color: NeutralColors.cardSurface,
+      color: backgroundColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
