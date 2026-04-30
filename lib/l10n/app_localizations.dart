@@ -3988,6 +3988,48 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Quelqu\'un'**
   String get cupidonPopupUnknownMember;
+
+  /// No description provided for @accountHelpSupport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aide et support'**
+  String get accountHelpSupport;
+
+  /// No description provided for @helpSupportTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aide et support'**
+  String get helpSupportTitle;
+
+  /// No description provided for @helpSupportIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Merci d\'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N\'hésite pas à partager tes retours, signaler un bug ou proposer une idée.'**
+  String get helpSupportIntro;
+
+  /// No description provided for @helpSupportContactIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour toute question, suggestion ou bug, plusieurs solutions :'**
+  String get helpSupportContactIntro;
+
+  /// No description provided for @helpSupportGithubLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir un ticket sur GitHub'**
+  String get helpSupportGithubLabel;
+
+  /// No description provided for @helpSupportEmailLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer un mail'**
+  String get helpSupportEmailLabel;
+
+  /// No description provided for @helpSupportAboutLinkLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Contacter le développeur'**
+  String get helpSupportAboutLinkLabel;
 }
 
 class _AppLocalizationsDelegate

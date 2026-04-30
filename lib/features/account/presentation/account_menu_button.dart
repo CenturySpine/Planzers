@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/external_links.dart';
+import 'package:planerz/features/help_support/presentation/help_support_page.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
@@ -125,6 +126,11 @@ class AccountMenuButton extends ConsumerWidget {
           await _downloadApk(context);
           return;
         }
+        if (value == 'help_support') {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          context.push(HelpSupportPage.routePath);
+          return;
+        }
         if (value == 'logout') {
           await _logout(context);
         }
@@ -139,6 +145,10 @@ class AccountMenuButton extends ConsumerWidget {
             value: 'download_apk',
             child: Text(l10n.accountDownloadApk),
           ),
+        PopupMenuItem<String>(
+          value: 'help_support',
+          child: Text(l10n.accountHelpSupport),
+        ),
         PopupMenuItem<String>(
           value: 'logout',
           child: Text(l10n.accountSignOut),

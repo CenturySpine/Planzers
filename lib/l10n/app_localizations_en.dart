@@ -2177,6 +2177,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cupidonPopupUnknownMember => 'Someone';
+
+  @override
+  String get accountHelpSupport => 'Help and support';
+
+  @override
+  String get helpSupportTitle => 'Help and support';
+
+  @override
+  String get helpSupportIntro =>
+      'Thank you for using Planerz! This app is developed and maintained by a single person, with passion. Feel free to share your feedback, report a bug, or suggest an idea.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'For any question, suggestion, or bug, here are a few options:';
+
+  @override
+  String get helpSupportGithubLabel => 'Open a ticket on GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Send an email';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contact the developer';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -4352,4 +4375,27 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get cupidonPopupUnknownMember => 'Someone';
+
+  @override
+  String get accountHelpSupport => 'Help and support';
+
+  @override
+  String get helpSupportTitle => 'Help and support';
+
+  @override
+  String get helpSupportIntro =>
+      'Thank you for using Planerz! This app is developed and maintained by a single person, with passion. Feel free to share your feedback, report a bug, or suggest an idea.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'For any question, suggestion, or bug, here are a few options:';
+
+  @override
+  String get helpSupportGithubLabel => 'Open a ticket on GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Send an email';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contact the developer';
 }
