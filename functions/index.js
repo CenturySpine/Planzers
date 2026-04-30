@@ -3045,3 +3045,113 @@ exports.deleteCupidonMatch = onCall(
   }
 );
 
+/**
+ * Returns anonymous app-wide usage statistics for the administration panel.
+ * Restricted to users with isApplicationOwner === true in Firestore.
+ * No PII is returned — no names, emails, or location data.
+ */
+exports.getAppUsageStats = onCall(
+  {
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    if (userData.isApplicationOwner !== true) {
+      throw new HttpsError('permission-denied', 'Accès réservé aux administrateurs');
+    }
+
+    const now = Date.now();
+
+    // --- Trips ---
+    const tripsSnap = await db.collection('trips').get();
+    let totalTrips = 0;
+    let pastTrips = 0;
+    let ongoingTrips = 0;
+    let upcomingTrips = 0;
+    let uncategorizedTrips = 0;
+    let maxParticipants = 0;
+    let maxDurationDays = 0;
+
+    for (const doc of tripsSnap.docs) {
+      const trip = doc.data() || {};
+      totalTrips++;
+
+      const memberCount = Array.isArray(trip.memberIds) ? trip.memberIds.length : 0;
+      if (memberCount > maxParticipants) maxParticipants = memberCount;
+
+      const startDate = trip.startDate instanceof admin.firestore.Timestamp
+        ? trip.startDate
+        : null;
+      const endDate = trip.endDate instanceof admin.firestore.Timestamp
+        ? trip.endDate
+        : null;
+
+      if (startDate && endDate) {
+        const durationMs = endDate.toMillis() - startDate.toMillis();
+        const durationDays = Math.max(0, Math.round(durationMs / (1000 * 60 * 60 * 24)));
+        if (durationDays > maxDurationDays) maxDurationDays = durationDays;
+
+        const startMs = startDate.toMillis();
+        const endMs = endDate.toMillis();
+        if (endMs < now) {
+          pastTrips++;
+        } else if (startMs > now) {
+          upcomingTrips++;
+        } else {
+          ongoingTrips++;
+        }
+      } else if (startDate) {
+        if (startDate.toMillis() > now) {
+          upcomingTrips++;
+        } else {
+          ongoingTrips++;
+        }
+      } else {
+        uncategorizedTrips++;
+      }
+    }
+
+    // --- Users ---
+    let totalUsers = 0;
+    let latestSignInMs = 0;
+    let pageToken;
+
+    do {
+      const listResult = await admin.auth().listUsers(1000, pageToken);
+      for (const user of listResult.users) {
+        totalUsers++;
+        const signInTime = user.metadata.lastSignInTime;
+        if (signInTime) {
+          const ms = new Date(signInTime).getTime();
+          if (!isNaN(ms) && ms > latestSignInMs) latestSignInMs = ms;
+        }
+      }
+      pageToken = listResult.pageToken;
+    } while (pageToken);
+
+    return {
+      trips: {
+        total: totalTrips,
+        past: pastTrips,
+        ongoing: ongoingTrips,
+        upcoming: upcomingTrips,
+        uncategorized: uncategorizedTrips,
+        maxParticipants,
+        maxDurationDays,
+      },
+      users: {
+        total: totalUsers,
+        latestSignInMs: latestSignInMs > 0 ? latestSignInMs : null,
+      },
+    };
+  }
+);
+
