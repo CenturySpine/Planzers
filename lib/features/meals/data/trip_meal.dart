@@ -51,16 +51,44 @@ enum MealMode {
   }
 }
 
+enum MealPotluckCategory {
+  salty,
+  sweet,
+  soft,
+  alcohol;
+
+  String get firestoreValue => switch (this) {
+        MealPotluckCategory.salty => 'salty',
+        MealPotluckCategory.sweet => 'sweet',
+        MealPotluckCategory.soft => 'soft',
+        MealPotluckCategory.alcohol => 'alcohol',
+      };
+
+  static MealPotluckCategory fromFirestore(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    return switch (normalized) {
+      'sweet' => MealPotluckCategory.sweet,
+      'soft' => MealPotluckCategory.soft,
+      'alcohol' => MealPotluckCategory.alcohol,
+      _ => MealPotluckCategory.salty,
+    };
+  }
+}
+
 class MealPotluckItem {
   const MealPotluckItem({
     required this.id,
     required this.label,
     required this.addedBy,
+    this.category = MealPotluckCategory.salty,
+    this.quantityUnits = 1,
   });
 
   final String id;
   final String label;
   final String addedBy;
+  final MealPotluckCategory category;
+  final int quantityUnits;
 
   factory MealPotluckItem.fromDynamic(dynamic raw) {
     if (raw is String) {
@@ -68,6 +96,8 @@ class MealPotluckItem {
         id: 'legacy_${raw.hashCode}',
         label: raw.trim(),
         addedBy: '',
+        category: MealPotluckCategory.salty,
+        quantityUnits: 1,
       );
     }
     if (raw is Map) {
@@ -75,10 +105,17 @@ class MealPotluckItem {
       final label = (map['label'] as String? ?? '').trim();
       final id = (map['id'] as String? ?? '').trim();
       final addedBy = (map['addedBy'] as String? ?? '').trim();
+      final quantityRaw = map['quantityUnits'];
       return MealPotluckItem(
         id: id.isEmpty ? 'potluck_${label.hashCode}' : id,
         label: label,
         addedBy: addedBy,
+        category: MealPotluckCategory.fromFirestore(map['category'] as String?),
+        quantityUnits: switch (quantityRaw) {
+          int n when n > 0 => n,
+          num n when n > 0 => n.toInt(),
+          _ => 1,
+        },
       );
     }
     return const MealPotluckItem(id: '', label: '', addedBy: '');
@@ -89,6 +126,8 @@ class MealPotluckItem {
       'id': id.trim(),
       'label': label.trim(),
       'addedBy': addedBy.trim(),
+      'category': category.firestoreValue,
+      'quantityUnits': quantityUnits > 0 ? quantityUnits : 1,
     };
   }
 
@@ -96,11 +135,15 @@ class MealPotluckItem {
     String? id,
     String? label,
     String? addedBy,
+    MealPotluckCategory? category,
+    int? quantityUnits,
   }) {
     return MealPotluckItem(
       id: id ?? this.id,
       label: label ?? this.label,
       addedBy: addedBy ?? this.addedBy,
+      category: category ?? this.category,
+      quantityUnits: quantityUnits ?? this.quantityUnits,
     );
   }
 }
@@ -328,10 +371,10 @@ class TripMeal {
           .map((e) => e.toString().trim())
           .where((id) => id.isNotEmpty)
           .toList(),
-      chefParticipantId: (data['chefParticipantId'] as String?)?.trim().isEmpty ??
-              true
-          ? null
-          : (data['chefParticipantId'] as String).trim(),
+      chefParticipantId:
+          (data['chefParticipantId'] as String?)?.trim().isEmpty ?? true
+              ? null
+              : (data['chefParticipantId'] as String).trim(),
       notes: (data['notes'] as String?)?.trim() ?? '',
       components: ((data['components'] as List<dynamic>?) ?? const [])
           .whereType<Map>()
@@ -340,7 +383,8 @@ class TripMeal {
         ..sort((a, b) => a.order.compareTo(b.order)),
       mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
       restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
-      restaurantLinkPreview: _previewFromFirestore(data['restaurantLinkPreview']),
+      restaurantLinkPreview:
+          _previewFromFirestore(data['restaurantLinkPreview']),
       potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
           .map(MealPotluckItem.fromDynamic)
           .where((item) => item.label.isNotEmpty)
@@ -432,9 +476,10 @@ class TripMeal {
       mealDateKey: mealDateKey ?? this.mealDateKey,
       mealDayPart: mealDayPart ?? this.mealDayPart,
       participantIds: participantIds ?? this.participantIds,
-      chefParticipantId: identical(chefParticipantId, _noChefParticipantIdChange)
-          ? this.chefParticipantId
-          : chefParticipantId as String?,
+      chefParticipantId:
+          identical(chefParticipantId, _noChefParticipantIdChange)
+              ? this.chefParticipantId
+              : chefParticipantId as String?,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -442,9 +487,11 @@ class TripMeal {
       components: components ?? this.components,
       mealMode: mealMode ?? this.mealMode,
       restaurantUrl: restaurantUrl ?? this.restaurantUrl,
-      restaurantLinkPreview: restaurantLinkPreview ?? this.restaurantLinkPreview,
+      restaurantLinkPreview:
+          restaurantLinkPreview ?? this.restaurantLinkPreview,
       potluckItems: potluckItems ?? this.potluckItems,
-      componentsUserOrdered: componentsUserOrdered ?? this.componentsUserOrdered,
+      componentsUserOrdered:
+          componentsUserOrdered ?? this.componentsUserOrdered,
     );
   }
 

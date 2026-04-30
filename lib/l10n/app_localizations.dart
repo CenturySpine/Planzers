@@ -3353,6 +3353,48 @@ abstract class AppLocalizations {
   /// **'Élément'**
   String get mealPotluckItemLabel;
 
+  /// No description provided for @mealPotluckQuantityLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quantité (unités)'**
+  String get mealPotluckQuantityLabel;
+
+  /// No description provided for @mealPotluckCategorySalty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Salé'**
+  String get mealPotluckCategorySalty;
+
+  /// No description provided for @mealPotluckCategorySweet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sucré'**
+  String get mealPotluckCategorySweet;
+
+  /// No description provided for @mealPotluckCategorySoft.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soft'**
+  String get mealPotluckCategorySoft;
+
+  /// No description provided for @mealPotluckCategoryAlcohol.
+  ///
+  /// In fr, this message translates to:
+  /// **'Alcool'**
+  String get mealPotluckCategoryAlcohol;
+
+  /// No description provided for @mealPotluckMaxItemsReached.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maximum 5 éléments.'**
+  String get mealPotluckMaxItemsReached;
+
+  /// No description provided for @mealPotluckCreateRowsHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'{currentCount}/{maxCount} éléments ajoutés'**
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount);
+
   /// No description provided for @commonSaving.
   ///
   /// In fr, this message translates to:

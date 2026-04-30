@@ -89,28 +89,124 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
-  Future<String?> _showPotluckItemDialog({
+  Widget _buildPotluckDraftInlineRow({
+    required AppLocalizations l10n,
+    required _PotluckItemDraft draft,
+    required ValueChanged<_PotluckItemDraft> onChanged,
+    bool showRemove = false,
+    VoidCallback? onRemove,
+  }) {
+    return Row(
+      children: [
+        PopupMenuButton<MealPotluckCategory>(
+          tooltip: _potluckCategoryLabel(l10n, draft.category),
+          onSelected: (category) {
+            onChanged(draft.copyWith(category: category));
+          },
+          itemBuilder: (context) => [
+            for (final category in MealPotluckCategory.values)
+              PopupMenuItem<MealPotluckCategory>(
+                value: category,
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      _potluckCategoryAsset(category),
+                      width: 18,
+                      height: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_potluckCategoryLabel(l10n, category)),
+                  ],
+                ),
+              ),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: SvgPicture.asset(
+              _potluckCategoryAsset(draft.category),
+              width: 20,
+              height: 20,
+              semanticsLabel: _potluckCategoryLabel(l10n, draft.category),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: TextFormField(
+            initialValue: draft.label,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: l10n.mealPotluckItemLabel,
+              isDense: true,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) => onChanged(draft.copyWith(label: value)),
+          ),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: 86,
+          child: TextFormField(
+            initialValue: draft.quantityUnits.toString(),
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              labelText: l10n.mealPotluckQuantityLabel,
+              isDense: true,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) => onChanged(
+              draft.copyWith(
+                quantityUnits:
+                    int.tryParse(value.trim()) ?? draft.quantityUnits,
+              ),
+            ),
+          ),
+        ),
+        if (showRemove) ...[
+          const SizedBox(width: 2),
+          IconButton(
+            tooltip: l10n.commonDelete,
+            visualDensity: VisualDensity.compact,
+            onPressed: onRemove,
+            icon: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<_PotluckItemDraft?> _showPotluckItemDialog({
     required String title,
-    String initialValue = '',
     required String confirmLabel,
+    _PotluckItemDraft? initialValue,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    var draft = initialValue;
-    return showDialog<String>(
+    var draft = initialValue ??
+        const _PotluckItemDraft(
+          category: MealPotluckCategory.salty,
+          label: '',
+          quantityUnits: 1,
+        );
+    final result = await showDialog<_PotluckItemDraft>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: TextFormField(
-          initialValue: initialValue,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: l10n.mealPotluckItemLabel,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (value) => draft = value,
-          onFieldSubmitted: (value) =>
-              Navigator.of(dialogContext).pop(value.trim()),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return _buildPotluckDraftInlineRow(
+              l10n: l10n,
+              draft: draft,
+              onChanged: (nextDraft) {
+                setDialogState(() {
+                  draft = nextDraft;
+                });
+              },
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -118,8 +214,107 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(draft.trim()),
+            onPressed: () => Navigator.of(dialogContext).pop(
+              draft.copyWith(
+                label: draft.label.trim(),
+                quantityUnits:
+                    draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+              ),
+            ),
             child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result;
+  }
+
+  Future<List<_PotluckItemDraft>?> _showPotluckCreateDialog({
+    required int maxRows,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    var drafts = <_PotluckItemDraft>[
+      const _PotluckItemDraft(
+        category: MealPotluckCategory.salty,
+        label: '',
+        quantityUnits: 1,
+      ),
+    ];
+    return showDialog<List<_PotluckItemDraft>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealPotluckAddItemTitle),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return SizedBox(
+              width: 560,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var index = 0; index < drafts.length; index++) ...[
+                    _buildPotluckDraftInlineRow(
+                      l10n: l10n,
+                      draft: drafts[index],
+                      onChanged: (updated) {
+                        setDialogState(() {
+                          drafts[index] = updated;
+                        });
+                      },
+                      showRemove: drafts.length > 1,
+                      onRemove: () {
+                        setDialogState(() {
+                          drafts.removeAt(index);
+                        });
+                      },
+                    ),
+                    if (index < drafts.length - 1) const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: drafts.length >= maxRows
+                          ? null
+                          : () {
+                              setDialogState(() {
+                                drafts.add(
+                                  const _PotluckItemDraft(
+                                    category: MealPotluckCategory.salty,
+                                    label: '',
+                                    quantityUnits: 1,
+                                  ),
+                                );
+                              });
+                            },
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.commonAdd),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final cleaned = drafts
+                  .where((draft) => draft.label.trim().isNotEmpty)
+                  .map(
+                    (draft) => draft.copyWith(
+                      label: draft.label.trim(),
+                      quantityUnits:
+                          draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+                    ),
+                  )
+                  .toList(growable: false);
+              Navigator.of(dialogContext).pop(cleaned);
+            },
+            child: Text(l10n.commonAdd),
           ),
         ],
       ),
@@ -128,23 +323,34 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   Future<void> _addPotluckItem() async {
     final l10n = AppLocalizations.of(context)!;
-    final value = await _showPotluckItemDialog(
-      title: l10n.mealPotluckAddItemTitle,
-      confirmLabel: l10n.commonAdd,
+    if (_potluckItems.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.mealPotluckMaxItemsReached)),
+      );
+      return;
+    }
+    final availableSlots = 5 - _potluckItems.length;
+    final value = await _showPotluckCreateDialog(
+      maxRows: availableSlots,
     );
     if (!mounted) return;
-    final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty) return;
+    final drafts = value;
+    if (drafts == null || drafts.isEmpty) return;
     final uid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final previousItems = _potluckItems;
     setState(() {
       _potluckItems = [
         ..._potluckItems,
-        MealPotluckItem(
-          id: 'potluck_${DateTime.now().microsecondsSinceEpoch}_${_potluckItems.length}',
-          label: trimmed,
-          addedBy: uid,
-        ),
+        for (var index = 0; index < drafts.length; index++)
+          MealPotluckItem(
+            id: 'potluck_${DateTime.now().microsecondsSinceEpoch}_${_potluckItems.length}_$index',
+            label: drafts[index].label.trim(),
+            addedBy: uid,
+            category: drafts[index].category,
+            quantityUnits: drafts[index].quantityUnits > 0
+                ? drafts[index].quantityUnits
+                : 1,
+          ),
       ];
     });
     await _savePotluckItems(previousItems: previousItems);
@@ -152,18 +358,27 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   Future<void> _editPotluckItem(int index) async {
     final l10n = AppLocalizations.of(context)!;
+    final item = _potluckItems[index];
     final value = await _showPotluckItemDialog(
       title: l10n.commonEdit,
-      initialValue: _potluckItems[index].label,
       confirmLabel: l10n.commonSave,
+      initialValue: _PotluckItemDraft(
+        category: item.category,
+        label: item.label,
+        quantityUnits: item.quantityUnits,
+      ),
     );
     if (!mounted) return;
-    final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty) return;
+    final draft = value;
+    if (draft == null || draft.label.trim().isEmpty) return;
     final previousItems = _potluckItems;
     setState(() {
       final next = _potluckItems.toList(growable: true);
-      next[index] = next[index].copyWith(label: trimmed);
+      next[index] = next[index].copyWith(
+        label: draft.label.trim(),
+        category: draft.category,
+        quantityUnits: draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+      );
       _potluckItems = next;
     });
     await _savePotluckItems(previousItems: previousItems);
@@ -471,7 +686,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final normalizedComponents = components.toList(growable: true);
     if (shouldAutoOrder) {
       normalizedComponents.sort((leftComponent, rightComponent) {
-        final kindCompare = _componentKindSortIndex(leftComponent.kind).compareTo(
+        final kindCompare =
+            _componentKindSortIndex(leftComponent.kind).compareTo(
           _componentKindSortIndex(rightComponent.kind),
         );
         if (kindCompare != 0) {
@@ -1176,8 +1392,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 .toList(growable: false)
               ..sort();
             final potluckAddedByRiskKey = potluckAddedByIds.join('|');
-            final memberIdsRiskKey = memberIds.toList(growable: false)
-              ..sort();
+            final memberIdsRiskKey = memberIds.toList(growable: false)..sort();
             final memberIdsKey = memberIdsRiskKey.join('|');
             final usersAsync = ref.watch(
               usersDataByIdsProvider(participantIdsRiskKey),
@@ -1270,7 +1485,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                          : Icon(Icons.delete_outline,
+                              color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),
@@ -1301,8 +1517,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         ),
                                         tooltip: _dayPartLabel(context, part),
                                         selected: _mealDayPart == part,
-                                        onSelected:
-                                            (_isSavingMealDayPart || !canEditMealCore)
+                                        onSelected: (_isSavingMealDayPart ||
+                                                !canEditMealCore)
                                             ? null
                                             : (_) async {
                                                 if (_mealDayPart == part) {
@@ -1393,14 +1609,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         ? null
                                         : () => _autoRecalculateParticipants(
                                             memberIds),
-                                    icon:
-                                        const Icon(Icons.auto_fix_high_outlined),
+                                    icon: const Icon(
+                                        Icons.auto_fix_high_outlined),
                                     label: Text(l10n.commonAuto),
                                   ),
                                   TextButton.icon(
                                     onPressed: _isSavingParticipants
                                         ? null
-                                        : () => _toggleAllParticipants(memberIds),
+                                        : () =>
+                                            _toggleAllParticipants(memberIds),
                                     icon: const Icon(Icons.done_all_outlined),
                                     label: Text(
                                       areAllParticipantsSelected
@@ -1569,9 +1786,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   physics: const NeverScrollableScrollPhysics(),
                                   buildDefaultDragHandles: false,
                                   itemCount: _components.length,
-                                  onReorder: (_isSavingComponents || !canEditRecipe)
-                                      ? (_, __) {}
-                                      : _reorderComponents,
+                                  onReorder:
+                                      (_isSavingComponents || !canEditRecipe)
+                                          ? (_, __) {}
+                                          : _reorderComponents,
                                   itemBuilder: (context, index) {
                                     final component = _components[index];
                                     final isLocked = (component.lockedBy ?? '')
@@ -1609,9 +1827,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           .surfaceContainerHighest,
                                       margin: const EdgeInsets.only(bottom: 12),
                                       child: ListTile(
-                                        onTap: catalogItems == null
-                                            || widget.isCreate
-                                            || !canEditRecipe
+                                        onTap: catalogItems == null ||
+                                                widget.isCreate ||
+                                                !canEditRecipe
                                             ? null
                                             : () => _openComponentEditor(
                                                   component: component,
@@ -1748,7 +1966,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                               component.id,
                                                             ),
                                                 icon: Icon(Icons.delete_outline,
-                                                    color: Theme.of(context).colorScheme.error),
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error),
                                               ),
                                               const Icon(Icons.chevron_right),
                                             ],
@@ -1793,8 +2013,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             onFieldSubmitted: (_) =>
                                                 _saveRestaurantUrl(),
                                             decoration: InputDecoration(
-                                              labelText: l10n
-                                                  .mealRestaurantLinkLabel,
+                                              labelText:
+                                                  l10n.mealRestaurantLinkLabel,
                                               border:
                                                   const OutlineInputBorder(),
                                             ),
@@ -1839,7 +2059,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 )
                                               : LinkPreviewCardFromFirestore(
                                                   url: _restaurantUrl,
-                                                  preview: meal?.restaurantLinkPreview ?? const {},
+                                                  preview:
+                                                      meal?.restaurantLinkPreview ??
+                                                          const {},
                                                 ),
                                         ),
                                         const SizedBox(width: 8),
@@ -1863,7 +2085,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                         ? null
                                                         : _clearRestaurantUrl,
                                                 icon: Icon(Icons.delete_outline,
-                                                    color: Theme.of(context).colorScheme.error),
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error),
                                               ),
                                           ],
                                         ),
@@ -1895,7 +2119,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       style: textTheme.titleMedium,
                                     ),
                                   ),
-                                  if (canAddContribution)
+                                  if (widget.isCreate && canAddContribution)
                                     IconButton(
                                       tooltip: l10n.commonAdd,
                                       onPressed: _isSavingPotluckItems
@@ -1923,6 +2147,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   itemBuilder: (context, index) {
                                     return ListTile(
                                       contentPadding: EdgeInsets.zero,
+                                      onTap: canAddContribution
+                                          ? _isSavingPotluckItems
+                                              ? null
+                                              : () => _editPotluckItem(index)
+                                          : null,
                                       leading: Builder(
                                         builder: (context) {
                                           final item = _potluckItems[index];
@@ -1956,22 +2185,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         children: [
                                           if (canAddContribution)
                                             IconButton(
-                                              tooltip: l10n.commonEdit,
-                                              onPressed: _isSavingPotluckItems
-                                                  ? null
-                                                  : () => _editPotluckItem(index),
-                                              icon:
-                                                  const Icon(Icons.edit_outlined),
-                                            ),
-                                          if (canAddContribution)
-                                            IconButton(
                                               tooltip: l10n.commonDelete,
                                               onPressed: _isSavingPotluckItems
                                                   ? null
                                                   : () =>
                                                       _deletePotluckItem(index),
                                               icon: Icon(Icons.delete_outline,
-                                                  color: Theme.of(context).colorScheme.error),
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .error),
                                             ),
                                         ],
                                       ),
@@ -2038,4 +2260,49 @@ String _dayPartIconAsset(TripDayPart dayPart) {
     TripDayPart.midday => 'assets/images/meal_lunch.svg',
     TripDayPart.evening => 'assets/images/meal_dinner.svg',
   };
+}
+
+String _potluckCategoryAsset(MealPotluckCategory category) {
+  return switch (category) {
+    MealPotluckCategory.salty => 'assets/images/meal_potluck_salty.svg',
+    MealPotluckCategory.sweet => 'assets/images/meal_potluck_sweet.svg',
+    MealPotluckCategory.soft => 'assets/images/meal_potluck_soft.svg',
+    MealPotluckCategory.alcohol => 'assets/images/meal_potluck_alcohol.svg',
+  };
+}
+
+String _potluckCategoryLabel(
+  AppLocalizations l10n,
+  MealPotluckCategory category,
+) {
+  return switch (category) {
+    MealPotluckCategory.salty => l10n.mealPotluckCategorySalty,
+    MealPotluckCategory.sweet => l10n.mealPotluckCategorySweet,
+    MealPotluckCategory.soft => l10n.mealPotluckCategorySoft,
+    MealPotluckCategory.alcohol => l10n.mealPotluckCategoryAlcohol,
+  };
+}
+
+class _PotluckItemDraft {
+  const _PotluckItemDraft({
+    required this.category,
+    required this.label,
+    required this.quantityUnits,
+  });
+
+  final MealPotluckCategory category;
+  final String label;
+  final int quantityUnits;
+
+  _PotluckItemDraft copyWith({
+    MealPotluckCategory? category,
+    String? label,
+    int? quantityUnits,
+  }) {
+    return _PotluckItemDraft(
+      category: category ?? this.category,
+      label: label ?? this.label,
+      quantityUnits: quantityUnits ?? this.quantityUnits,
+    );
+  }
 }

@@ -1822,6 +1822,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealPotluckItemLabel => 'Item';
 
   @override
+  String get mealPotluckQuantityLabel => 'Quantity (units)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Savory';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sweet';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft drink';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcohol';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 items.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount items added';
+  }
+
+  @override
   String get commonSaving => 'Saving...';
 
   @override
@@ -4077,6 +4100,29 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealPotluckItemLabel => 'Item';
+
+  @override
+  String get mealPotluckQuantityLabel => 'Quantity (units)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Savory';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sweet';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft drink';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcohol';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 items.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount items added';
+  }
 
   @override
   String get commonSaving => 'Saving...';

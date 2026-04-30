@@ -714,6 +714,23 @@
   "mealPotluckEmptyHint": "Add items (drinks, starter, main, dessert, etc.).",
   "mealPotluckAddItemTitle": "Add item",
   "mealPotluckItemLabel": "Item",
+  "mealPotluckQuantityLabel": "Quantity (units)",
+  "mealPotluckCategorySalty": "Savory",
+  "mealPotluckCategorySweet": "Sweet",
+  "mealPotluckCategorySoft": "Soft drink",
+  "mealPotluckCategoryAlcohol": "Alcohol",
+  "mealPotluckMaxItemsReached": "Maximum 5 items.",
+  "mealPotluckCreateRowsHint": "{currentCount}/{maxCount} items added",
+  "@mealPotluckCreateRowsHint": {
+    "placeholders": {
+      "currentCount": {
+        "type": "int"
+      },
+      "maxCount": {
+        "type": "int"
+      }
+    }
+  },
   "commonSaving": "Saving...",
   "mealComponentKindEntree": "Starter",
   "mealComponentKindMain": "Main",

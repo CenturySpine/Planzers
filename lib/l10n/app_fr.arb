@@ -714,6 +714,23 @@
   "mealPotluckEmptyHint": "Ajoute des éléments (boisson, entrée, plat, dessert, etc.).",
   "mealPotluckAddItemTitle": "Ajouter un élément",
   "mealPotluckItemLabel": "Élément",
+  "mealPotluckQuantityLabel": "Quantité (unités)",
+  "mealPotluckCategorySalty": "Salé",
+  "mealPotluckCategorySweet": "Sucré",
+  "mealPotluckCategorySoft": "Soft",
+  "mealPotluckCategoryAlcohol": "Alcool",
+  "mealPotluckMaxItemsReached": "Maximum 5 éléments.",
+  "mealPotluckCreateRowsHint": "{currentCount}/{maxCount} éléments ajoutés",
+  "@mealPotluckCreateRowsHint": {
+    "placeholders": {
+      "currentCount": {
+        "type": "int"
+      },
+      "maxCount": {
+        "type": "int"
+      }
+    }
+  },
   "commonSaving": "Enregistrement...",
   "mealComponentKindEntree": "Entrée",
   "mealComponentKindMain": "Plat",

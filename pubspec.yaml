@@ -68,6 +68,10 @@ flutter:
     - assets/images/meal_breakfast.svg
     - assets/images/meal_lunch.svg
     - assets/images/meal_dinner.svg
+    - assets/images/meal_potluck_salty.svg
+    - assets/images/meal_potluck_sweet.svg
+    - assets/images/meal_potluck_soft.svg
+    - assets/images/meal_potluck_alcohol.svg
     - legal/mentions_legales.txt
     - legal/vie_privee_rgpd.txt
     - legal/mentions_legales_en.txt
