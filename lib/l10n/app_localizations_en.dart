@@ -544,6 +544,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDownloadApk => 'Download APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Sign out';
 
   @override
@@ -2764,6 +2767,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountDownloadApk => 'Download APK';
+
+  @override
+  String get accountAdministration => 'Administration';
 
   @override
   String get accountSignOut => 'Sign out';

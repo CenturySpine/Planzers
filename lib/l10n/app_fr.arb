@@ -213,6 +213,7 @@
     }
   },
   "accountDownloadApk": "Télécharger l'APK",
+  "accountAdministration": "Administration",
   "accountSignOut": "Se déconnecter",
   "paletteSaved": "Palette {label} enregistrée",
   "@paletteSaved": {

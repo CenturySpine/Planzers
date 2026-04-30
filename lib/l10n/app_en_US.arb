@@ -213,6 +213,7 @@
     }
   },
   "accountDownloadApk": "Download APK",
+  "accountAdministration": "Administration",
   "accountSignOut": "Sign out",
   "paletteSaved": "Palette {label} saved",
   "@paletteSaved": {

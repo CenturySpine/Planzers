@@ -1078,6 +1078,12 @@ abstract class AppLocalizations {
   /// **'Télécharger l\'APK'**
   String get accountDownloadApk;
 
+  /// No description provided for @accountAdministration.
+  ///
+  /// In fr, this message translates to:
+  /// **'Administration'**
+  String get accountAdministration;
+
   /// No description provided for @accountSignOut.
   ///
   /// In fr, this message translates to:

@@ -548,6 +548,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountDownloadApk => 'Télécharger l\'APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Se déconnecter';
 
   @override
@@ -2784,6 +2787,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get accountDownloadApk => 'Télécharger l\'APK';
+
+  @override
+  String get accountAdministration => 'Administration';
 
   @override
   String get accountSignOut => 'Se déconnecter';
