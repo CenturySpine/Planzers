@@ -3079,10 +3079,19 @@ exports.getAppUsageStats = onCall(
     let uncategorizedTrips = 0;
     let maxParticipants = 0;
     let maxDurationDays = 0;
+    let latestTripCreatedAtMs = 0;
 
     for (const doc of tripsSnap.docs) {
       const trip = doc.data() || {};
       totalTrips++;
+      const createdAt = trip.createdAt instanceof admin.firestore.Timestamp
+        ? trip.createdAt.toMillis()
+        : doc.createTime instanceof admin.firestore.Timestamp
+        ? doc.createTime.toMillis()
+        : 0;
+      if (createdAt > latestTripCreatedAtMs) {
+        latestTripCreatedAtMs = createdAt;
+      }
 
       const memberCount = Array.isArray(trip.memberIds) ? trip.memberIds.length : 0;
       if (memberCount > maxParticipants) maxParticipants = memberCount;
@@ -3165,6 +3174,9 @@ exports.getAppUsageStats = onCall(
         uncategorized: uncategorizedTrips,
         maxParticipants,
         maxDurationDays,
+        latestCreatedAtIso: latestTripCreatedAtMs > 0
+          ? new Date(latestTripCreatedAtMs).toISOString()
+          : null,
       },
       users: {
         total: totalUsers,

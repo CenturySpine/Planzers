@@ -133,6 +133,12 @@ class _StatsBody extends StatelessWidget {
               ? '${stats.tripsMaxDurationDays} jours'
               : '–',
         ),
+        _StatRow(
+          label: 'Dernier voyage créé',
+          value: stats.tripsLatestCreatedAt != null
+              ? dateFormat.format(stats.tripsLatestCreatedAt!.toLocal())
+              : '–',
+        ),
         const SizedBox(height: 24),
         _SectionTitle(title: 'Utilisateurs'),
         _StatRow(label: 'Total', value: '${stats.usersTotal}'),

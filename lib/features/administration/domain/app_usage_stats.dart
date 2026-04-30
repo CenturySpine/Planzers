@@ -7,6 +7,7 @@ class AppUsageStats {
     required this.tripsUncategorized,
     required this.tripsMaxParticipants,
     required this.tripsMaxDurationDays,
+    this.tripsLatestCreatedAt,
     required this.usersTotal,
     this.usersLatestSignIn,
     required this.activitiesTotal,
@@ -21,6 +22,7 @@ class AppUsageStats {
   final int tripsUncategorized;
   final int tripsMaxParticipants;
   final int tripsMaxDurationDays;
+  final DateTime? tripsLatestCreatedAt;
   final int usersTotal;
   final DateTime? usersLatestSignIn;
   final int activitiesTotal;
@@ -31,6 +33,7 @@ class AppUsageStats {
     final trips = map['trips'] as Map<String, dynamic>? ?? {};
     final users = map['users'] as Map<String, dynamic>? ?? {};
     final activities = map['activities'] as Map<String, dynamic>? ?? {};
+    final latestTripCreatedAtIso = trips['latestCreatedAtIso'] as String?;
     final latestSignInMs = users['latestSignInMs'] as num?;
     final byCategoryRaw =
         activities['byCategory'] as Map<String, dynamic>? ?? {};
@@ -42,6 +45,9 @@ class AppUsageStats {
       tripsUncategorized: (trips['uncategorized'] as num?)?.toInt() ?? 0,
       tripsMaxParticipants: (trips['maxParticipants'] as num?)?.toInt() ?? 0,
       tripsMaxDurationDays: (trips['maxDurationDays'] as num?)?.toInt() ?? 0,
+      tripsLatestCreatedAt: latestTripCreatedAtIso != null
+          ? DateTime.tryParse(latestTripCreatedAtIso)
+          : null,
       usersTotal: (users['total'] as num?)?.toInt() ?? 0,
       usersLatestSignIn: latestSignInMs != null
           ? DateTime.fromMillisecondsSinceEpoch(latestSignInMs.toInt())
