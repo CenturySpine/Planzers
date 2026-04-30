@@ -4042,6 +4042,36 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Contacter le développeur'**
   String get helpSupportAboutLinkLabel;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mise à jour disponible'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @updateRequiredCurrentVersion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version actuelle'**
+  String get updateRequiredCurrentVersion;
+
+  /// No description provided for @updateRequiredNewVersion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle version'**
+  String get updateRequiredNewVersion;
+
+  /// No description provided for @updateRequiredDownloadButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Télécharger {version}'**
+  String updateRequiredDownloadButton(String version);
 }
 
 class _AppLocalizationsDelegate

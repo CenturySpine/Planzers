@@ -2222,6 +2222,24 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get helpSupportAboutLinkLabel => 'Contacter le développeur';
+
+  @override
+  String get updateRequiredTitle => 'Mise à jour disponible';
+
+  @override
+  String get updateRequiredBody =>
+      'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Version actuelle';
+
+  @override
+  String get updateRequiredNewVersion => 'Nouvelle version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Télécharger $version';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -4442,4 +4460,22 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get helpSupportAboutLinkLabel => 'Contacter le développeur';
+
+  @override
+  String get updateRequiredTitle => 'Mise à jour disponible';
+
+  @override
+  String get updateRequiredBody =>
+      'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Version actuelle';
+
+  @override
+  String get updateRequiredNewVersion => 'Nouvelle version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Télécharger $version';
+  }
 }

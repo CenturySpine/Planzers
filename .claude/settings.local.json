@@ -7,7 +7,12 @@
       "PowerShell(git add CLAUDE.md GUIDELINES.md .cursor/rules/planerz-guidelines.mdc)",
       "PowerShell(git add android/app/src/main/AndroidManifest.xml lib/features/auth/data/auth_repository.dart)",
       "Bash(flutter gen-l10n *)",
-      "Bash(flutter pub *)"
+      "Bash(flutter pub *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh issue *)",
+      "Bash(git -C c:/Users/pc_ga/repos/Planzers status)",
+      "Bash(git -C c:/Users/pc_ga/repos/Planzers diff --stat)"
     ]
   }
 }

@@ -2206,6 +2206,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpSupportAboutLinkLabel => 'Contact the developer';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'A new version of Planerz is available. You must update the app to continue using it.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Current version';
+
+  @override
+  String get updateRequiredNewVersion => 'New version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Download $version';
+  }
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -4410,4 +4428,22 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get helpSupportAboutLinkLabel => 'Contact the developer';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'A new version of Planerz is available. You must update the app to continue using it.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Current version';
+
+  @override
+  String get updateRequiredNewVersion => 'New version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Download $version';
+  }
 }

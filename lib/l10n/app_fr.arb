@@ -843,5 +843,15 @@
   "helpSupportReleaseNotesLabel": "Notes de version",
   "helpSupportGithubLabel": "Ouvrir un ticket sur GitHub",
   "helpSupportEmailLabel": "Envoyer un mail",
-  "helpSupportAboutLinkLabel": "Contacter le développeur"
+  "helpSupportAboutLinkLabel": "Contacter le développeur",
+  "updateRequiredTitle": "Mise à jour disponible",
+  "updateRequiredBody": "Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l'application pour continuer à l'utiliser.",
+  "updateRequiredCurrentVersion": "Version actuelle",
+  "updateRequiredNewVersion": "Nouvelle version",
+  "updateRequiredDownloadButton": "Télécharger {version}",
+  "@updateRequiredDownloadButton": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  }
 }
