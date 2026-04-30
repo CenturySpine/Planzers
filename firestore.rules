@@ -19,20 +19,22 @@ service cloud.firestore {
 
     function tripCallerRoleRank(tripId) {
       return tripDoc(tripId).data.ownerId == request.auth.uid
-        ? 2
+        ? 3
         : (
             tripDoc(tripId).data.adminMemberIds is list
             && request.auth.uid in tripDoc(tripId).data.adminMemberIds
           )
-          ? 1
+          ? 2
           : 0;
     }
 
     function roleRank(roleName) {
       return roleName == 'owner'
-        ? 2
+        ? 3
         : roleName == 'admin'
-          ? 1
+          ? 2
+          : roleName == 'chef'
+            ? 1
           : 0;
     }
 
@@ -229,6 +231,119 @@ service cloud.firestore {
     function canDeleteCheckedShoppingItems(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripDeleteCheckedShoppingItemsMinRole(tripId));
+    }
+
+    function tripMealCreateMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.createMeal is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.createMeal
+        : 'admin';
+    }
+
+    function tripMealDeleteMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.deleteMeal is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.deleteMeal
+        : 'admin';
+    }
+
+    function tripMealEditMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.editMeal is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.editMeal
+        : 'admin';
+    }
+
+    function tripMealSuggestRestaurantMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.suggestRestaurant is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.suggestRestaurant
+        : 'admin';
+    }
+
+    function tripMealAddContributionMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.addContribution is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.addContribution
+        : 'participant';
+    }
+
+    function tripMealManageRecipeMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.meals is map
+          && tripDoc(tripId).data.permissions.meals.manageRecipe is string
+        )
+        ? tripDoc(tripId).data.permissions.meals.manageRecipe
+        : 'chef';
+    }
+
+    function canCreateMeal(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealCreateMinRole(tripId));
+    }
+
+    function canDeleteMeal(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealDeleteMinRole(tripId));
+    }
+
+    function canEditMeal(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealEditMinRole(tripId));
+    }
+
+    function canSuggestMealRestaurant(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealSuggestRestaurantMinRole(tripId));
+    }
+
+    function canAddMealContribution(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealAddContributionMinRole(tripId));
+    }
+
+    function canManageMealRecipe(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripMealManageRecipeMinRole(tripId));
+    }
+
+    function isMealChef(mealData) {
+      return mealData.chefParticipantId is string
+        && mealData.chefParticipantId == request.auth.uid;
+    }
+
+    function mealRecipeUpdateOnlyTouchesAllowedFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'components',
+          'componentsUserOrdered',
+        ])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'mealDateKey',
+          'mealDayPart',
+          'participantIds',
+          'chefParticipantId',
+          'mealMode',
+          'restaurantUrl',
+          'potluckItems',
+          'createdBy',
+          'createdAt',
+        ]);
     }
 
     function tripCreateParticipantMinRole(tripId) {
@@ -449,7 +564,41 @@ service cloud.firestore {
       }
 
       match /meals/{mealId} {
-        allow read, write: if isTripMember(tripId);
+        allow read: if isTripMember(tripId);
+        allow create: if canCreateMeal(tripId)
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if (
+          canEditMeal(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'mealDateKey',
+              'mealDayPart',
+              'participantIds',
+              'chefParticipantId',
+              'mealMode',
+              'updatedAt',
+            ])
+        ) || (
+          canSuggestMealRestaurant(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'restaurantUrl',
+              'updatedAt',
+            ])
+        ) || (
+          canAddMealContribution(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'participantIds',
+              'chefParticipantId',
+              'potluckItems',
+              'updatedAt',
+            ])
+        ) || (
+          (canManageMealRecipe(tripId) || isMealChef(resource.data))
+          && mealRecipeUpdateOnlyTouchesAllowedFields()
+        );
+        allow delete: if canDeleteMeal(tripId);
       }
 
       match /messages/{messageId} {

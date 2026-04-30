@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -9,6 +10,7 @@ import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -18,6 +20,11 @@ class TripMealsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = TripScope.of(context);
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canCreateMeal = canCreateMealForTrip(
+      trip: trip,
+      userId: currentUserId,
+    );
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
     return mealsAsync.when(
@@ -25,6 +32,7 @@ class TripMealsPage extends ConsumerWidget {
         tripId: trip.id,
         meals: meals,
         memberPublicLabels: trip.memberPublicLabels,
+        canCreateMeal: canCreateMeal,
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
@@ -45,11 +53,13 @@ class _MealsList extends StatelessWidget {
     required this.tripId,
     required this.meals,
     required this.memberPublicLabels,
+    required this.canCreateMeal,
   });
 
   final String tripId;
   final List<TripMeal> meals;
   final Map<String, String> memberPublicLabels;
+  final bool canCreateMeal;
 
   /// Group meals by date key.
   Map<String, List<TripMeal>> _groupMealsByDate() {
@@ -128,17 +138,18 @@ class _MealsList extends StatelessWidget {
             },
           ),
         ],
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: FloatingActionButton(
-            heroTag: 'add_meal',
-            onPressed: () => context.push(
-              '/trips/$tripId/meals/new',
+        if (canCreateMeal)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'add_meal',
+              onPressed: () => context.push(
+                '/trips/$tripId/meals/new',
+              ),
+              child: const Icon(Icons.add),
             ),
-            child: const Icon(Icons.add),
           ),
-        ),
       ],
     );
   }

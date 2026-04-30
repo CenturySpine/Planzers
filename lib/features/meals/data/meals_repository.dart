@@ -300,10 +300,6 @@ class MealsRepository {
     }
 
     final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
-    final snap = await docRef.get();
-    if (!snap.exists) {
-      throw StateError('Repas introuvable');
-    }
 
     final normalizedParticipantIds = participantIds
         .map((id) => id.trim())
@@ -314,14 +310,21 @@ class MealsRepository {
 
     final normalizedChef = (chefParticipantId ?? '').trim();
 
-    await docRef.update({
-      'participantIds': normalizedParticipantIds,
-      'chefParticipantId': normalizedChef.isEmpty ||
-              !normalizedParticipantIds.contains(normalizedChef)
-          ? null
-          : normalizedChef,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await docRef.update({
+        'participantIds': normalizedParticipantIds,
+        'chefParticipantId': normalizedChef.isEmpty ||
+                !normalizedParticipantIds.contains(normalizedChef)
+            ? null
+            : normalizedChef,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (error) {
+      if (error.code == 'not-found') {
+        throw StateError('Repas introuvable');
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateMealMode({

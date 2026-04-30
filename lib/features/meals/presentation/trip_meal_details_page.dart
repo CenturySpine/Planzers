@@ -14,6 +14,7 @@ import 'package:planerz/features/meals/presentation/meal_component_editor_page.d
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -222,6 +223,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required AppLocalizations l10n,
     required TextTheme textTheme,
     required ColorScheme colorScheme,
+    required bool canEditMealMode,
   }) {
     return Container(
       width: double.infinity,
@@ -269,7 +271,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     ),
                   ],
                   selected: {_activeMealView},
-                  onSelectionChanged: _isSavingMealMode
+                  onSelectionChanged: (_isSavingMealMode || !canEditMealMode)
                       ? null
                       : (selection) async {
                           if (selection.isEmpty) {
@@ -406,6 +408,16 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
+    // Keep optimistic local edits while a save is in-flight.
+    if (_isSavingParticipants ||
+        _isSavingDate ||
+        _isSavingMealDayPart ||
+        _isSavingMealMode ||
+        _isSavingPotluckItems ||
+        _isSavingRestaurantUrl ||
+        _isSavingComponents) {
+      return;
+    }
     _mealDate = meal.mealDateAsDateTime;
     _mealDayPart = meal.mealDayPart;
     _participantIds = meal.participantIds.toSet();
@@ -1195,6 +1207,52 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             };
             final colorScheme = Theme.of(context).colorScheme;
             final textTheme = Theme.of(context).textTheme;
+            final canCreateMeal = canCreateMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canDeleteMeal = canDeleteMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canEditMealCore = canEditMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canSuggestRestaurant = canSuggestRestaurantForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canAddContribution = canAddMealContributionForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canManageRecipe = canManageMealRecipeForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final isMealChef = (myUid ?? '').isNotEmpty &&
+                _chefParticipantId != null &&
+                _chefParticipantId == myUid;
+            final canAccessTrip = trip.memberIds.contains(myUid);
+            final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
+            final canEditParticipants = canEditMealCore;
+            final canEditRestaurantLink = canSuggestRestaurant;
+            final canEditRecipe = canManageRecipe || isMealChef;
+            if (widget.isCreate && !canAccessMealCreatePage) {
+              return Scaffold(
+                appBar: AppBar(),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.tripNotFoundOrNoAccess,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            }
 
             return Scaffold(
               appBar: AppBar(
@@ -1202,7 +1260,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                   widget.isCreate ? l10n.mealNew : l10n.mealEdit,
                 ),
                 actions: [
-                  if (!widget.isCreate)
+                  if (!widget.isCreate && canDeleteMeal)
                     IconButton(
                       tooltip: l10n.commonDelete,
                       onPressed: _isDeleting ? null : _confirmAndDelete,
@@ -1243,7 +1301,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         ),
                                         tooltip: _dayPartLabel(context, part),
                                         selected: _mealDayPart == part,
-                                        onSelected: _isSavingMealDayPart
+                                        onSelected:
+                                            (_isSavingMealDayPart || !canEditMealCore)
                                             ? null
                                             : (_) async {
                                                 if (_mealDayPart == part) {
@@ -1280,7 +1339,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               children: [
                                 IconButton(
                                   tooltip: l10n.commonDate,
-                                  onPressed: _isSavingDate ? null : _pickDate,
+                                  onPressed: (_isSavingDate || !canEditMealCore)
+                                      ? null
+                                      : _pickDate,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                   icon: _isSavingDate
@@ -1326,30 +1387,33 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     style: textTheme.labelLarge,
                                   ),
                                 ),
-                                TextButton.icon(
-                                  onPressed: _isSavingParticipants
-                                      ? null
-                                      : () => _autoRecalculateParticipants(
-                                          memberIds),
-                                  icon:
-                                      const Icon(Icons.auto_fix_high_outlined),
-                                  label: Text(l10n.commonAuto),
-                                ),
-                                TextButton.icon(
-                                  onPressed: _isSavingParticipants
-                                      ? null
-                                      : () => _toggleAllParticipants(memberIds),
-                                  icon: const Icon(Icons.done_all_outlined),
-                                  label: Text(
-                                    areAllParticipantsSelected
-                                        ? l10n.commonNone
-                                        : l10n.commonAll,
+                                if (canEditParticipants) ...[
+                                  TextButton.icon(
+                                    onPressed: _isSavingParticipants
+                                        ? null
+                                        : () => _autoRecalculateParticipants(
+                                            memberIds),
+                                    icon:
+                                        const Icon(Icons.auto_fix_high_outlined),
+                                    label: Text(l10n.commonAuto),
                                   ),
-                                ),
+                                  TextButton.icon(
+                                    onPressed: _isSavingParticipants
+                                        ? null
+                                        : () => _toggleAllParticipants(memberIds),
+                                    icon: const Icon(Icons.done_all_outlined),
+                                    label: Text(
+                                      areAllParticipantsSelected
+                                          ? l10n.commonNone
+                                          : l10n.commonAll,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 8),
-                            if (_activeMealView == _MealDetailsView.cooked) ...[
+                            if (_activeMealView == _MealDetailsView.cooked &&
+                                canEditParticipants) ...[
                               Text(
                                 l10n.mealChefLongPressHint,
                                 style: textTheme.bodySmall?.copyWith(
@@ -1365,7 +1429,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 for (final memberId in memberIds)
                                   GestureDetector(
                                     onLongPress: _activeMealView ==
-                                            _MealDetailsView.cooked
+                                                _MealDetailsView.cooked &&
+                                            canEditParticipants
                                         ? () => _toggleChefParticipant(memberId)
                                         : null,
                                     child: Builder(
@@ -1409,7 +1474,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 )
                                               : null,
                                           onSelected: (selected) {
-                                            if (_isSavingParticipants) return;
+                                            if (_isSavingParticipants ||
+                                                !canEditParticipants) {
+                                              return;
+                                            }
                                             final previousParticipantIds =
                                                 _participantIds.toSet();
                                             final previousChefParticipantId =
@@ -1456,6 +1524,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 l10n: l10n,
                                 textTheme: textTheme,
                                 colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
                               ),
                               const SizedBox(height: 12),
                               Row(
@@ -1466,7 +1535,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       style: textTheme.titleMedium,
                                     ),
                                   ),
-                                  if (!widget.isCreate)
+                                  if (!widget.isCreate && canEditRecipe)
                                     PopupMenuButton<MealComponentKind>(
                                       tooltip: l10n.mealAddComponent,
                                       onSelected: _isSavingComponents
@@ -1500,7 +1569,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   physics: const NeverScrollableScrollPhysics(),
                                   buildDefaultDragHandles: false,
                                   itemCount: _components.length,
-                                  onReorder: _isSavingComponents
+                                  onReorder: (_isSavingComponents || !canEditRecipe)
                                       ? (_, __) {}
                                       : _reorderComponents,
                                   itemBuilder: (context, index) {
@@ -1542,6 +1611,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       child: ListTile(
                                         onTap: catalogItems == null
                                             || widget.isCreate
+                                            || !canEditRecipe
                                             ? null
                                             : () => _openComponentEditor(
                                                   component: component,
@@ -1552,7 +1622,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       trip.memberPublicLabels,
                                                 ),
                                         leading: _isComponentLockedByOther(
-                                                component)
+                                                    component) ||
+                                                !canEditRecipe
                                             ? const Padding(
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: 4,
@@ -1662,7 +1733,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   color: Colors.orange,
                                                 ),
                                               ),
-                                            if (!isLocked) ...[
+                                            if (!isLocked && canEditRecipe) ...[
                                               IconButton(
                                                 tooltip:
                                                     l10n.mealDeleteComponent,
@@ -1704,6 +1775,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       l10n: l10n,
                                       textTheme: textTheme,
                                       colorScheme: colorScheme,
+                                      canEditMealMode: canEditMealCore,
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
@@ -1717,6 +1789,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             textInputAction:
                                                 TextInputAction.done,
                                             enabled: !_isSavingRestaurantUrl,
+                                            readOnly: !canEditRestaurantLink,
                                             onFieldSubmitted: (_) =>
                                                 _saveRestaurantUrl(),
                                             decoration: InputDecoration(
@@ -1728,7 +1801,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           ),
                                         ),
                                         const SizedBox(width: 4),
-                                        _buildRestaurantUrlEditActions(l10n),
+                                        if (canEditRestaurantLink)
+                                          _buildRestaurantUrlEditActions(l10n),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -1746,6 +1820,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       l10n: l10n,
                                       textTheme: textTheme,
                                       colorScheme: colorScheme,
+                                      canEditMealMode: canEditMealCore,
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
@@ -1771,14 +1846,16 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            IconButton(
-                                              tooltip: l10n.commonEdit,
-                                              onPressed:
-                                                  _startEditRestaurantUrl,
-                                              icon: const Icon(
-                                                  Icons.edit_outlined),
-                                            ),
-                                            if (_restaurantUrl.isNotEmpty)
+                                            if (canEditRestaurantLink)
+                                              IconButton(
+                                                tooltip: l10n.commonEdit,
+                                                onPressed:
+                                                    _startEditRestaurantUrl,
+                                                icon: const Icon(
+                                                    Icons.edit_outlined),
+                                              ),
+                                            if (_restaurantUrl.isNotEmpty &&
+                                                canEditRestaurantLink)
                                               IconButton(
                                                 tooltip: l10n.commonDelete,
                                                 onPressed:
@@ -1807,6 +1884,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 l10n: l10n,
                                 textTheme: textTheme,
                                 colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
                               ),
                               const SizedBox(height: 12),
                               Row(
@@ -1817,13 +1895,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       style: textTheme.titleMedium,
                                     ),
                                   ),
-                                  IconButton(
-                                    tooltip: l10n.commonAdd,
-                                    onPressed: _isSavingPotluckItems
-                                        ? null
-                                        : _addPotluckItem,
-                                    icon: const Icon(Icons.add),
-                                  ),
+                                  if (canAddContribution)
+                                    IconButton(
+                                      tooltip: l10n.commonAdd,
+                                      onPressed: _isSavingPotluckItems
+                                          ? null
+                                          : _addPotluckItem,
+                                      icon: const Icon(Icons.add),
+                                    ),
                                 ],
                               ),
                               const SizedBox(height: 8),
@@ -1875,23 +1954,25 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       trailing: Wrap(
                                         spacing: 4,
                                         children: [
-                                          IconButton(
-                                            tooltip: l10n.commonEdit,
-                                            onPressed: _isSavingPotluckItems
-                                                ? null
-                                                : () => _editPotluckItem(index),
-                                            icon:
-                                                const Icon(Icons.edit_outlined),
-                                          ),
-                                          IconButton(
-                                            tooltip: l10n.commonDelete,
-                                            onPressed: _isSavingPotluckItems
-                                                ? null
-                                                : () =>
-                                                    _deletePotluckItem(index),
-                                            icon: Icon(Icons.delete_outline,
-                                                color: Theme.of(context).colorScheme.error),
-                                          ),
+                                          if (canAddContribution)
+                                            IconButton(
+                                              tooltip: l10n.commonEdit,
+                                              onPressed: _isSavingPotluckItems
+                                                  ? null
+                                                  : () => _editPotluckItem(index),
+                                              icon:
+                                                  const Icon(Icons.edit_outlined),
+                                            ),
+                                          if (canAddContribution)
+                                            IconButton(
+                                              tooltip: l10n.commonDelete,
+                                              onPressed: _isSavingPotluckItems
+                                                  ? null
+                                                  : () =>
+                                                      _deletePotluckItem(index),
+                                              icon: Icon(Icons.delete_outline,
+                                                  color: Theme.of(context).colorScheme.error),
+                                            ),
                                         ],
                                       ),
                                     );
@@ -1905,7 +1986,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                   ],
                 ),
               ),
-              bottomNavigationBar: widget.isCreate
+              bottomNavigationBar: widget.isCreate && canCreateMeal
                   ? SafeArea(
                       top: false,
                       child: Padding(
