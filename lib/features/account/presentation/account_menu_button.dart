@@ -138,20 +138,44 @@ class AccountMenuButton extends ConsumerWidget {
       itemBuilder: (context) => [
         PopupMenuItem<String>(
           value: 'account',
-          child: Text(l10n.accountTitle),
+          child: Row(
+            children: [
+              const Icon(Icons.manage_accounts_outlined, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountTitle),
+            ],
+          ),
         ),
         if (showDownloadApkAction)
           PopupMenuItem<String>(
             value: 'download_apk',
-            child: Text(l10n.accountDownloadApk),
+            child: Row(
+              children: [
+                const Icon(Icons.download_outlined, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.accountDownloadApk),
+              ],
+            ),
           ),
         PopupMenuItem<String>(
           value: 'help_support',
-          child: Text(l10n.accountHelpSupport),
+          child: Row(
+            children: [
+              const Icon(Icons.help_outline, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountHelpSupport),
+            ],
+          ),
         ),
         PopupMenuItem<String>(
           value: 'logout',
-          child: Text(l10n.accountSignOut),
+          child: Row(
+            children: [
+              const Icon(Icons.logout, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountSignOut),
+            ],
+          ),
         ),
       ],
       child: Padding(
