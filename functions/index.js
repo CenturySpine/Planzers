@@ -1917,6 +1917,10 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
 
   try {
     const { html, finalUrl } = await fetchHtml(parsed);
+
+    // Guard: document may have been deleted while fetching (cancelled creation).
+    if (!(await docRef.get()).exists) return;
+
     const preview = parsePreviewFromHtml(finalUrl, html);
 
     if (isGoogleMapsUrl(finalUrl)) {
@@ -2014,6 +2018,40 @@ exports.generateMealLinkPreview = onDocumentUpdated(
       after.restaurantUrl,
       'restaurantLinkPreview'
     );
+  }
+);
+
+exports.generateTripLinkPreviewOnCreate = onDocumentCreated(
+  { document: 'trips/{tripId}', timeoutSeconds: 30, memory: '256MiB', secrets: ['GOOGLE_PLACES_API_KEY'] },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+exports.generateActivityLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+exports.generateMealLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/meals/{mealId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.restaurantUrl, 'restaurantLinkPreview');
   }
 );
 
