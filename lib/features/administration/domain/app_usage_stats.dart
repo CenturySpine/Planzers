@@ -9,6 +9,9 @@ class AppUsageStats {
     required this.tripsMaxDurationDays,
     required this.usersTotal,
     this.usersLatestSignIn,
+    required this.activitiesTotal,
+    required this.activitiesPlanned,
+    required this.activitiesByCategory,
   });
 
   final int tripsTotal;
@@ -20,11 +23,17 @@ class AppUsageStats {
   final int tripsMaxDurationDays;
   final int usersTotal;
   final DateTime? usersLatestSignIn;
+  final int activitiesTotal;
+  final int activitiesPlanned;
+  final Map<String, int> activitiesByCategory;
 
   factory AppUsageStats.fromMap(Map<String, dynamic> map) {
     final trips = map['trips'] as Map<String, dynamic>? ?? {};
     final users = map['users'] as Map<String, dynamic>? ?? {};
+    final activities = map['activities'] as Map<String, dynamic>? ?? {};
     final latestSignInMs = users['latestSignInMs'] as num?;
+    final byCategoryRaw =
+        activities['byCategory'] as Map<String, dynamic>? ?? {};
     return AppUsageStats(
       tripsTotal: (trips['total'] as num?)?.toInt() ?? 0,
       tripsPast: (trips['past'] as num?)?.toInt() ?? 0,
@@ -37,6 +46,11 @@ class AppUsageStats {
       usersLatestSignIn: latestSignInMs != null
           ? DateTime.fromMillisecondsSinceEpoch(latestSignInMs.toInt())
           : null,
+      activitiesTotal: (activities['total'] as num?)?.toInt() ?? 0,
+      activitiesPlanned: (activities['planned'] as num?)?.toInt() ?? 0,
+      activitiesByCategory: byCategoryRaw.map(
+        (k, v) => MapEntry(k, (v as num?)?.toInt() ?? 0),
+      ),
     );
   }
 }

@@ -3137,6 +3137,25 @@ exports.getAppUsageStats = onCall(
       pageToken = listResult.pageToken;
     } while (pageToken);
 
+    // --- Activities ---
+    const activitiesSnap = await db.collectionGroup('activities').get();
+    let totalActivities = 0;
+    let plannedActivities = 0;
+    /** @type {Record<string, number>} */
+    const activitiesByCategory = {};
+
+    for (const doc of activitiesSnap.docs) {
+      const act = doc.data() || {};
+      totalActivities++;
+
+      const category = normalizeString(act.category) || 'unknown';
+      activitiesByCategory[category] = (activitiesByCategory[category] || 0) + 1;
+
+      if (act.plannedAt instanceof admin.firestore.Timestamp) {
+        plannedActivities++;
+      }
+    }
+
     return {
       trips: {
         total: totalTrips,
@@ -3150,6 +3169,11 @@ exports.getAppUsageStats = onCall(
       users: {
         total: totalUsers,
         latestSignInMs: latestSignInMs > 0 ? latestSignInMs : null,
+      },
+      activities: {
+        total: totalActivities,
+        planned: plannedActivities,
+        byCategory: activitiesByCategory,
       },
     };
   }

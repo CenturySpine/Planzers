@@ -69,6 +69,29 @@ class AdministrationPage extends ConsumerWidget {
   }
 }
 
+const _kCategoryLabels = {
+  'sport': 'Sport',
+  'hiking': 'Randonnée',
+  'shopping': 'Shopping',
+  'visit': 'Visite',
+  'restaurant': 'Restaurant',
+  'cafe': 'Café',
+  'museum': 'Musée',
+  'show': 'Spectacle',
+  'nightlife': 'Soirée',
+  'karaoke': 'Karaoké',
+  'games': 'Jeux',
+  'beach': 'Plage',
+  'park': 'Parc',
+  'transport': 'Transport',
+  'accommodation': 'Hébergement',
+  'wellness': 'Bien-être',
+  'cooking': 'Cuisine',
+  'workshop': 'Atelier',
+  'market': 'Marché',
+  'meeting': 'Réunion',
+};
+
 class _StatsBody extends StatelessWidget {
   const _StatsBody({required this.stats});
 
@@ -78,19 +101,26 @@ class _StatsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd/MM/yyyy à HH:mm');
 
+    final sortedCategories = stats.activitiesByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
         _SectionTitle(title: 'Voyages'),
         _StatRow(label: 'Total créés', value: '${stats.tripsTotal}'),
-        _StatRow(label: 'Passés', value: '${stats.tripsPast}'),
-        _StatRow(label: 'En cours', value: '${stats.tripsOngoing}'),
-        _StatRow(label: 'À venir', value: '${stats.tripsUpcoming}'),
-        if (stats.tripsUncategorized > 0)
-          _StatRow(
-            label: 'Sans dates',
-            value: '${stats.tripsUncategorized}',
-          ),
+        _StatBreakdown(
+          rows: [
+            _BreakdownStat(label: 'Passés', value: '${stats.tripsPast}'),
+            _BreakdownStat(label: 'En cours', value: '${stats.tripsOngoing}'),
+            _BreakdownStat(label: 'À venir', value: '${stats.tripsUpcoming}'),
+            if (stats.tripsUncategorized > 0)
+              _BreakdownStat(
+                label: 'Sans dates',
+                value: '${stats.tripsUncategorized}',
+              ),
+          ],
+        ),
         _StatRow(
           label: 'Max. participants',
           value: stats.tripsMaxParticipants > 0
@@ -112,7 +142,50 @@ class _StatsBody extends StatelessWidget {
               ? dateFormat.format(stats.usersLatestSignIn!.toLocal())
               : '–',
         ),
+        const SizedBox(height: 24),
+        _SectionTitle(title: 'Activités'),
+        _StatRow(label: 'Total créées', value: '${stats.activitiesTotal}'),
+        _StatBreakdown(
+          rows: [
+            _BreakdownStat(
+              label: 'Planifiées',
+              value: '${stats.activitiesPlanned}',
+            ),
+          ],
+        ),
+        if (sortedCategories.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _SubSectionTitle(title: 'Par catégorie'),
+          _StatBreakdown(
+            rows: [
+              for (final entry in sortedCategories)
+                _BreakdownStat(
+                  label: _kCategoryLabels[entry.key] ?? entry.key,
+                  value: '${entry.value}',
+                ),
+            ],
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _SubSectionTitle extends StatelessWidget {
+  const _SubSectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
     );
   }
 }
@@ -145,7 +218,7 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -153,6 +226,86 @@ class _StatRow extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BreakdownStat {
+  const _BreakdownStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+}
+
+class _StatBreakdown extends StatelessWidget {
+  const _StatBreakdown({required this.rows});
+
+  final List<_BreakdownStat> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 4, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          for (int index = 0; index < rows.length; index++) ...[
+            _BreakdownRow(
+              label: rows[index].label,
+              value: rows[index].value,
+            ),
+            if (index < rows.length - 1)
+              Divider(
+                height: 1,
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  const _BreakdownRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 0),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
           ),
