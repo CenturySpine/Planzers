@@ -2139,7 +2139,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                               if (category !=
                                                   _orderedPotluckCategories
                                                       .first)
-                                                const SizedBox(height: 12),
+                                                const SizedBox(height: 2),
                                               Padding(
                                                 padding:
                                                     const EdgeInsets.symmetric(
@@ -2188,7 +2188,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                     padding: const EdgeInsets
                                                         .symmetric(
                                                       horizontal: 10,
-                                                      vertical: 8,
+                                                      vertical: 3,
                                                     ),
                                                     decoration: BoxDecoration(
                                                       color: colorScheme
