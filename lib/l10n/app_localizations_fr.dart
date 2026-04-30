@@ -2209,6 +2209,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pour toute question, suggestion ou bug, plusieurs solutions :';
 
   @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Notes de version';
+
+  @override
   String get helpSupportGithubLabel => 'Ouvrir un ticket sur GitHub';
 
   @override
@@ -4421,6 +4427,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get helpSupportContactIntro =>
       'Pour toute question, suggestion ou bug, plusieurs solutions :';
+
+  @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Notes de version';
 
   @override
   String get helpSupportGithubLabel => 'Ouvrir un ticket sur GitHub';

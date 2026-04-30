@@ -839,6 +839,8 @@
   "helpSupportTitle": "Aide et support",
   "helpSupportIntro": "Merci d'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N'hésite pas à partager tes retours, signaler un bug ou proposer une idée.",
   "helpSupportContactIntro": "Pour toute question, suggestion ou bug, plusieurs solutions :",
+  "helpSupportVersionLabel": "Version",
+  "helpSupportReleaseNotesLabel": "Notes de version",
   "helpSupportGithubLabel": "Ouvrir un ticket sur GitHub",
   "helpSupportEmailLabel": "Envoyer un mail",
   "helpSupportAboutLinkLabel": "Contacter le développeur"

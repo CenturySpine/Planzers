@@ -4013,6 +4013,18 @@ abstract class AppLocalizations {
   /// **'Pour toute question, suggestion ou bug, plusieurs solutions :'**
   String get helpSupportContactIntro;
 
+  /// No description provided for @helpSupportVersionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version'**
+  String get helpSupportVersionLabel;
+
+  /// No description provided for @helpSupportReleaseNotesLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notes de version'**
+  String get helpSupportReleaseNotesLabel;
+
   /// No description provided for @helpSupportGithubLabel.
   ///
   /// In fr, this message translates to:

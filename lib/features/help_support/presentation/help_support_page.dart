@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class HelpSupportPage extends StatelessWidget {
+class HelpSupportPage extends ConsumerWidget {
   const HelpSupportPage({super.key});
 
   static const String routePath = '/help-support';
@@ -20,8 +22,9 @@ class HelpSupportPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final version = ref.watch(appVersionProvider).asData?.value;
     final bodyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4);
     final sectionTitleStyle = Theme.of(context)
         .textTheme
@@ -43,6 +46,40 @@ class HelpSupportPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(l10n.helpSupportIntro, style: bodyStyle),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        '${l10n.helpSupportVersionLabel} : ${version ?? '…'}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: () => _openUrl(
+                          context,
+                          Uri.parse(
+                            'https://github.com/CenturySpine/Planzers/releases/latest',
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            l10n.helpSupportReleaseNotesLabel,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.tertiary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   Text(l10n.helpSupportContactIntro, style: sectionTitleStyle),
                   const SizedBox(height: 12),
