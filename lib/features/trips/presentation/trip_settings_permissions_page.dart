@@ -116,6 +116,8 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
                 title: l10n.tripSectionMeals,
                 icon: Icons.restaurant_outlined,
                 description: l10n.tripSectionMealsDescription,
+                onTap: () =>
+                    context.push('/trips/$tripId/settings/permissions/meals'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionShopping,
