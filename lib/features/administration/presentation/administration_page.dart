@@ -107,71 +107,83 @@ class _StatsBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        _SectionTitle(title: 'Voyages'),
-        _StatRow(label: 'Total créés', value: '${stats.tripsTotal}'),
-        _StatBreakdown(
-          rows: [
-            _BreakdownStat(label: 'Passés', value: '${stats.tripsPast}'),
-            _BreakdownStat(label: 'En cours', value: '${stats.tripsOngoing}'),
-            _BreakdownStat(label: 'À venir', value: '${stats.tripsUpcoming}'),
-            if (stats.tripsUncategorized > 0)
-              _BreakdownStat(
-                label: 'Sans dates',
-                value: '${stats.tripsUncategorized}',
-              ),
-          ],
-        ),
-        _StatRow(
-          label: 'Max. participants',
-          value: stats.tripsMaxParticipants > 0
-              ? '${stats.tripsMaxParticipants}'
-              : '–',
-        ),
-        _StatRow(
-          label: 'Durée maximale',
-          value: stats.tripsMaxDurationDays > 0
-              ? '${stats.tripsMaxDurationDays} jours'
-              : '–',
-        ),
-        _StatRow(
-          label: 'Dernier voyage créé',
-          value: stats.tripsLatestCreatedAt != null
-              ? dateFormat.format(stats.tripsLatestCreatedAt!.toLocal())
-              : '–',
-        ),
-        const SizedBox(height: 24),
-        _SectionTitle(title: 'Utilisateurs'),
-        _StatRow(label: 'Total', value: '${stats.usersTotal}'),
-        _StatRow(
-          label: 'Dernière connexion',
-          value: stats.usersLatestSignIn != null
-              ? dateFormat.format(stats.usersLatestSignIn!.toLocal())
-              : '–',
-        ),
-        const SizedBox(height: 24),
-        _SectionTitle(title: 'Activités'),
-        _StatRow(label: 'Total créées', value: '${stats.activitiesTotal}'),
-        _StatBreakdown(
-          rows: [
-            _BreakdownStat(
-              label: 'Planifiées',
-              value: '${stats.activitiesPlanned}',
+        _StatsExpander(
+          title: 'Voyages',
+          total: '${stats.tripsTotal}',
+          children: [
+            _StatBreakdown(
+              rows: [
+                _BreakdownStat(label: 'Passés', value: '${stats.tripsPast}'),
+                _BreakdownStat(label: 'En cours', value: '${stats.tripsOngoing}'),
+                _BreakdownStat(label: 'À venir', value: '${stats.tripsUpcoming}'),
+                if (stats.tripsUncategorized > 0)
+                  _BreakdownStat(
+                    label: 'Sans dates',
+                    value: '${stats.tripsUncategorized}',
+                  ),
+              ],
+            ),
+            _StatRow(
+              label: 'Max. participants',
+              value: stats.tripsMaxParticipants > 0
+                  ? '${stats.tripsMaxParticipants}'
+                  : '–',
+            ),
+            _StatRow(
+              label: 'Durée maximale',
+              value: stats.tripsMaxDurationDays > 0
+                  ? '${stats.tripsMaxDurationDays} jours'
+                  : '–',
+            ),
+            _StatRow(
+              label: 'Dernier voyage créé',
+              value: stats.tripsLatestCreatedAt != null
+                  ? dateFormat.format(stats.tripsLatestCreatedAt!.toLocal())
+                  : '–',
             ),
           ],
         ),
-        if (sortedCategories.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _SubSectionTitle(title: 'Par catégorie'),
-          _StatBreakdown(
-            rows: [
-              for (final entry in sortedCategories)
+        const SizedBox(height: 12),
+        _StatsExpander(
+          title: 'Utilisateurs',
+          total: '${stats.usersTotal}',
+          children: [
+            _StatRow(
+              label: 'Dernière connexion',
+              value: stats.usersLatestSignIn != null
+                  ? dateFormat.format(stats.usersLatestSignIn!.toLocal())
+                  : '–',
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _StatsExpander(
+          title: 'Activités',
+          total: '${stats.activitiesTotal}',
+          children: [
+            _StatBreakdown(
+              rows: [
                 _BreakdownStat(
-                  label: _kCategoryLabels[entry.key] ?? entry.key,
-                  value: '${entry.value}',
+                  label: 'Planifiées',
+                  value: '${stats.activitiesPlanned}',
                 ),
+              ],
+            ),
+            if (sortedCategories.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _SubSectionTitle(title: 'Par catégorie'),
+              _StatBreakdown(
+                rows: [
+                  for (final entry in sortedCategories)
+                    _BreakdownStat(
+                      label: _kCategoryLabels[entry.key] ?? entry.key,
+                      value: '${entry.value}',
+                    ),
+                ],
+              ),
             ],
-          ),
-        ],
+          ],
+        ),
       ],
     );
   }
@@ -196,20 +208,43 @@ class _SubSectionTitle extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+class _StatsExpander extends StatelessWidget {
+  const _StatsExpander({
+    required this.title,
+    required this.total,
+    required this.children,
+  });
 
   final String title;
+  final String total;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+    final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+        );
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: titleStyle),
+            Text(total, style: titleStyle),
+          ],
+        ),
+        children: children,
       ),
     );
   }
