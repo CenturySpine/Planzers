@@ -46,6 +46,8 @@ These rules apply to **automated coding agents and assistants** (not an expectat
 
 - **Git commits:** Do **not** run `git commit` (or create commits) on your own initiative. The product owner **decides what to commit and when**; keep changes in the working tree until they request a commit.
 
+- **Version format (semver):** App versions must follow the [semver](https://semver.org) standard (`MAJOR.MINOR.PATCH` or `MAJOR.MINOR.PATCH-prerelease`). If asked to set or bump a version that is not valid semver, **stop and alert the product owner** before applying any change.
+
 ## Stack (reference)
 
 - **Flutter / Dart** with **Riverpod** for state.
