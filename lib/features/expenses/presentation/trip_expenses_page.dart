@@ -852,7 +852,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       transfer: transfer,
                     );
               } catch (e) {
-                if (!mounted) return;
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -877,7 +877,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       settledTransferId: settled.id,
                     );
               } catch (e) {
-                if (!mounted) return;
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
