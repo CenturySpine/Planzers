@@ -615,7 +615,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Hiérarchie des privilèges : créateur > admin > participant';
+      'Hiérarchie des privilèges : créateur > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -663,6 +663,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -784,6 +787,35 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPermissionActivitiesDelete => 'Supprimer une activité';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Permissions liées aux repas';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Créer un repas';
+
+  @override
+  String get tripPermissionMealsDelete => 'Supprimer un repas';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Éditer un repas (date, type, participants, chef, catégorie)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggérer un restaurant (mode resto)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Ajouter un apport (mode auberge)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Créer / supprimer / éditer une recette (mode cuisine)';
 
   @override
   String get tripSectionTrip => 'Voyage';
@@ -2856,7 +2888,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Hiérarchie des privilèges : créateur > admin > participant';
+      'Hiérarchie des privilèges : créateur > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -2904,6 +2936,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -3025,6 +3060,35 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionActivitiesDelete => 'Supprimer une activité';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Permissions liées aux repas';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Créer un repas';
+
+  @override
+  String get tripPermissionMealsDelete => 'Supprimer un repas';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Éditer un repas (date, type, participants, chef, catégorie)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggérer un restaurant (mode resto)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Ajouter un apport (mode auberge)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Créer / supprimer / éditer une recette (mode cuisine)';
 
   @override
   String get tripSectionTrip => 'Voyage';

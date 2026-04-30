@@ -9,12 +9,14 @@ class PermissionMinRoleSelector extends StatelessWidget {
     required this.onChanged,
     this.busy = false,
     this.enabled = true,
+    this.availableRoles,
   });
 
   final TripPermissionRole value;
   final ValueChanged<TripPermissionRole> onChanged;
   final bool busy;
   final bool enabled;
+  final List<TripPermissionRole>? availableRoles;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,12 @@ class PermissionMinRoleSelector extends StatelessWidget {
         child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
+    final roles = availableRoles ??
+        const <TripPermissionRole>[
+          TripPermissionRole.participant,
+          TripPermissionRole.admin,
+          TripPermissionRole.owner,
+        ];
     return DropdownButton<TripPermissionRole>(
       isExpanded: true,
       value: value,
@@ -35,7 +43,7 @@ class PermissionMinRoleSelector extends StatelessWidget {
               onChanged(next);
             }
           : null,
-      items: TripPermissionRole.values
+      items: roles
           .map(
             (role) => DropdownMenuItem<TripPermissionRole>(
               value: role,
@@ -61,6 +69,7 @@ String _labelForRole(
 ) {
   return switch (role) {
     TripPermissionRole.participant => l10n.roleParticipant,
+    TripPermissionRole.chef => l10n.roleChef,
     TripPermissionRole.admin => l10n.roleAdmin,
     TripPermissionRole.owner => l10n.roleOwner,
   };

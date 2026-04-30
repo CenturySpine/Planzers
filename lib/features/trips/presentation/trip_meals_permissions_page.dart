@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/widgets/trip_permission_table_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-class TripMealsPermissionsPage extends ConsumerWidget {
+class TripMealsPermissionsPage extends ConsumerStatefulWidget {
   const TripMealsPermissionsPage({
     super.key,
     required this.tripId,
@@ -15,9 +17,70 @@ class TripMealsPermissionsPage extends ConsumerWidget {
   final String tripId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripMealsPermissionsPage> createState() =>
+      _TripMealsPermissionsPageState();
+}
+
+class _TripMealsPermissionsPageState
+    extends ConsumerState<TripMealsPermissionsPage> {
+  final Set<TripMealsPermissionAction> _savingActions =
+      <TripMealsPermissionAction>{};
+  bool _isResettingDefaults = false;
+
+  Future<void> _updatePermission({
+    required TripMealsPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    if (_savingActions.contains(action) || _isResettingDefaults) return;
+    setState(() => _savingActions.add(action));
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripMealsPermission(
+            tripId: widget.tripId,
+            action: action,
+            minRole: minRole,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _savingActions.remove(action));
+      }
+    }
+  }
+
+  Future<void> _resetDefaults() async {
+    if (_isResettingDefaults) return;
+    setState(() => _isResettingDefaults = true);
+    try {
+      await ref
+          .read(tripsRepositoryProvider)
+          .resetTripMealsPermissionsToDefaults(tripId: widget.tripId);
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripPermissionsResetDone)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isResettingDefaults = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final tripAsync = ref.watch(tripStreamProvider(tripId));
+    final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
 
     return tripAsync.when(
       data: (trip) {
@@ -68,7 +131,7 @@ class TripMealsPermissionsPage extends ConsumerWidget {
           appBar: AppBar(
             title: Text(l10n.tripSectionMeals),
             leading: IconButton(
-              onPressed: () => context.go('/trips/$tripId/settings'),
+              onPressed: () => context.go('/trips/${widget.tripId}/settings'),
               icon: const Icon(Icons.arrow_back),
               tooltip: l10n.commonClose,
             ),
@@ -83,24 +146,128 @@ class TripMealsPermissionsPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.tripSectionMeals,
+                        l10n.tripPermissionsMealsTitle,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        l10n.tripSectionMealsDescription,
+                        l10n.tripPermissionsMealsDescription,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        l10n.tripSettingsGeneralComingSoonDescription,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      TripPermissionsColumnsHeader(
+                        actionLabel: l10n.tripPermissionsColumnAction,
+                        minRoleLabel: l10n.tripPermissionsColumnMinRole,
+                      ),
+                      const SizedBox(height: 4),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsCreate,
+                        minRole: trip.mealsPermissions.createMealMinRole,
+                        icon: Icons.add_circle_outline,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.createMeal,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.createMeal,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsDelete,
+                        minRole: trip.mealsPermissions.deleteMealMinRole,
+                        icon: Icons.delete_outline,
+                        iconColor: Theme.of(context).colorScheme.error,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.deleteMeal,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.deleteMeal,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsEdit,
+                        minRole: trip.mealsPermissions.editMealMinRole,
+                        icon: Icons.edit_outlined,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.editMeal,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.editMeal,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsSuggestRestaurant,
+                        minRole: trip.mealsPermissions.suggestRestaurantMinRole,
+                        icon: Icons.restaurant_menu_outlined,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.suggestRestaurant,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.suggestRestaurant,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsAddContribution,
+                        minRole: trip.mealsPermissions.addContributionMinRole,
+                        icon: Icons.volunteer_activism_outlined,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.addContribution,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.addContribution,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsManageRecipe,
+                        minRole: trip.mealsPermissions.manageRecipeMinRole,
+                        icon: Icons.menu_book_outlined,
+                        availableRoles: const <TripPermissionRole>[
+                          TripPermissionRole.participant,
+                          TripPermissionRole.chef,
+                          TripPermissionRole.admin,
+                          TripPermissionRole.owner,
+                        ],
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.manageRecipe,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.manageRecipe,
+                          minRole: role,
+                        ),
                       ),
                     ],
                   ),
                 ),
+              ),
+              Row(
+                children: [
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: (_isResettingDefaults || _savingActions.isNotEmpty)
+                        ? null
+                        : _resetDefaults,
+                    icon: _isResettingDefaults
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: Text(l10n.tripPermissionsResetDefaultsAction),
+                  ),
+                ],
               ),
             ],
           ),

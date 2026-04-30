@@ -610,7 +610,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Privilege hierarchy: owner > admin > participant';
+      'Privilege hierarchy: owner > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -656,6 +656,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -772,6 +775,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionActivitiesDelete => 'Delete an activity';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Meal-related permissions';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Create a meal';
+
+  @override
+  String get tripPermissionMealsDelete => 'Delete a meal';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggest a restaurant (restaurant mode)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Add a contribution (lodge mode)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Create / delete / edit a recipe (cooking mode)';
 
   @override
   String get tripSectionTrip => 'Trip';
@@ -2835,7 +2867,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Privilege hierarchy: owner > admin > participant';
+      'Privilege hierarchy: owner > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -2881,6 +2913,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -2997,6 +3032,35 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionActivitiesDelete => 'Delete an activity';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Meal-related permissions';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Create a meal';
+
+  @override
+  String get tripPermissionMealsDelete => 'Delete a meal';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggest a restaurant (restaurant mode)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Add a contribution (lodge mode)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Create / delete / edit a recipe (cooking mode)';
 
   @override
   String get tripSectionTrip => 'Trip';

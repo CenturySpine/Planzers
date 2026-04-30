@@ -14,6 +14,7 @@ class TripPermissionItemRow extends StatelessWidget {
     required this.enabled,
     required this.onChanged,
     this.iconColor,
+    this.availableRoles,
   });
 
   final String title;
@@ -23,6 +24,7 @@ class TripPermissionItemRow extends StatelessWidget {
   final bool busy;
   final bool enabled;
   final ValueChanged<TripPermissionRole> onChanged;
+  final List<TripPermissionRole>? availableRoles;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +50,7 @@ class TripPermissionItemRow extends StatelessWidget {
               busy: busy,
               enabled: enabled,
               onChanged: onChanged,
+              availableRoles: availableRoles,
             ),
           ),
         ],

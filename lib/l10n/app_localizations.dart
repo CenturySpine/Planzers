@@ -1195,7 +1195,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripRoleHierarchyHint.
   ///
   /// In fr, this message translates to:
-  /// **'Hiérarchie des privilèges : créateur > admin > participant'**
+  /// **'Hiérarchie des privilèges : créateur > admin > chef > participant'**
   String get tripRoleHierarchyHint;
 
   /// No description provided for @tripSettingsPermissionsSectionTitle.
@@ -1275,6 +1275,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Admin'**
   String get roleAdmin;
+
+  /// No description provided for @roleChef.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chef'**
+  String get roleChef;
 
   /// No description provided for @roleParticipant.
   ///
@@ -1485,6 +1491,54 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Supprimer une activité'**
   String get tripPermissionActivitiesDelete;
+
+  /// No description provided for @tripPermissionsMealsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions liées aux repas'**
+  String get tripPermissionsMealsTitle;
+
+  /// No description provided for @tripPermissionsMealsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.'**
+  String get tripPermissionsMealsDescription;
+
+  /// No description provided for @tripPermissionMealsCreate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un repas'**
+  String get tripPermissionMealsCreate;
+
+  /// No description provided for @tripPermissionMealsDelete.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer un repas'**
+  String get tripPermissionMealsDelete;
+
+  /// No description provided for @tripPermissionMealsEdit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Éditer un repas (date, type, participants, chef, catégorie)'**
+  String get tripPermissionMealsEdit;
+
+  /// No description provided for @tripPermissionMealsSuggestRestaurant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suggérer un restaurant (mode resto)'**
+  String get tripPermissionMealsSuggestRestaurant;
+
+  /// No description provided for @tripPermissionMealsAddContribution.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un apport (mode auberge)'**
+  String get tripPermissionMealsAddContribution;
+
+  /// No description provided for @tripPermissionMealsManageRecipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer / supprimer / éditer une recette (mode cuisine)'**
+  String get tripPermissionMealsManageRecipe;
 
   /// No description provided for @tripSectionTrip.
   ///
