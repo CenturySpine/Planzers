@@ -348,6 +348,14 @@ function defaultTripPermissions() {
       editActivity: 'participant',
       deleteActivity: 'admin',
     },
+    meals: {
+      createMeal: 'admin',
+      deleteMeal: 'admin',
+      editMeal: 'admin',
+      suggestRestaurant: 'admin',
+      addContribution: 'participant',
+      manageRecipe: 'chef',
+    },
     shopping: {
       deleteCheckedItems: 'admin',
     },
