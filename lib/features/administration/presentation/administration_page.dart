@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/administration/data/administration_repository.dart';
+import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
 import 'package:planerz/features/administration/domain/app_usage_stats.dart';
 
 final _administrationRepositoryProvider =
@@ -107,6 +109,16 @@ class _StatsBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.campaign_outlined),
+            title: const Text('Annonces globales'),
+            subtitle: const Text('Créer, modifier et supprimer les annonces.'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AdminAnnouncementsManagePage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
         _StatsExpander(
           title: 'Voyages',
           total: '${stats.tripsTotal}',
