@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -50,6 +51,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
       appBar: AppBar(
         title: const _TripsAppBranding(),
         actions: const [
+          AdminAnnouncementsBellButton(),
           AccountAppBarActions(),
         ],
       ),

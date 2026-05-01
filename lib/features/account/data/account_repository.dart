@@ -68,6 +68,10 @@ String? phoneNumberFromUserData(Map<String, dynamic> data) {
   return null;
 }
 
+bool isApplicationOwnerFromUserData(Map<String, dynamic> data) {
+  return data['isApplicationOwner'] == true;
+}
+
 final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
   return ref
       .watch(accountRepositoryProvider)
@@ -76,6 +80,10 @@ final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
 
 final myPhoneNumberProvider = StreamProvider<String?>((ref) {
   return ref.watch(accountRepositoryProvider).watchMyPhoneNumber();
+});
+
+final myIsApplicationOwnerProvider = StreamProvider.autoDispose<bool>((ref) {
+  return ref.watch(accountRepositoryProvider).watchIsApplicationOwner();
 });
 
 class AccountRepository {
@@ -147,6 +155,17 @@ class AccountRepository {
     return watchMyUserDocument().map((snapshot) {
       final data = snapshot.data() ?? const <String, dynamic>{};
       return phoneNumberFromUserData(data);
+    });
+  }
+
+  Stream<bool> watchIsApplicationOwner() {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) {
+      return Stream.value(false);
+    }
+    return watchMyUserDocument().map((snapshot) {
+      final data = snapshot.data() ?? const <String, dynamic>{};
+      return isApplicationOwnerFromUserData(data);
     });
   }
 
