@@ -28,7 +28,7 @@ String displayLabelFromPhoneNumber(String phoneNumber) {
   final countryCodePrefix = countryCodeMatch?.group(0) ?? '';
   final prefix =
       countryCodePrefix.isNotEmpty ? '$countryCodePrefix ' : '';
-  return '${prefix}•• •• •• $lastTwoDigits';
+  return '$prefix•• •• •• $lastTwoDigits';
 }
 
 /// First uppercase character used for avatar fallback.
