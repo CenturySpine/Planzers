@@ -36,6 +36,13 @@ function pickFirst(...values) {
   return '';
 }
 
+function normalizeLanguageCode(value) {
+  const rawCode = normalizeString(value).replace('_', '-');
+  if (!rawCode) return '';
+  if (!/^[A-Za-z]{2,3}(-[A-Za-z]{2,4})?$/.test(rawCode)) return '';
+  return rawCode;
+}
+
 /** Text before @ for public trip member chips (empty if unusable). */
 function emailLocalPart(email) {
   const e = normalizeString(email);
@@ -3479,6 +3486,134 @@ exports.getAppUsageStats = onCall(
         planned: plannedActivities,
         byCategory: activitiesByCategory,
       },
+    };
+  }
+);
+
+/**
+ * Translates a text from one language to another using Google Cloud Translation.
+ * Restricted to users with isApplicationOwner === true in Firestore.
+ */
+exports.translateTextWithGoogleCloud = onCall(
+  {
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_CLOUD_TRANSLATION_API_KEY'],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    if (userData.isApplicationOwner !== true) {
+      throw new HttpsError('permission-denied', 'Accès réservé aux administrateurs');
+    }
+
+    const input = request.data || {};
+    const text = normalizeString(input.text);
+    const sourceLanguage = normalizeLanguageCode(input.sourceLanguage);
+    const targetLanguage = normalizeLanguageCode(input.targetLanguage);
+
+    if (!text) {
+      throw new HttpsError('invalid-argument', 'Le texte à traduire est requis');
+    }
+    if (!targetLanguage) {
+      throw new HttpsError('invalid-argument', 'La langue cible est invalide');
+    }
+    if (text.length > 8000) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Le texte dépasse la limite autorisée (8000 caractères)'
+      );
+    }
+
+    const apiKey = process.env.GOOGLE_CLOUD_TRANSLATION_API_KEY;
+    if (!apiKey) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Secret GOOGLE_CLOUD_TRANSLATION_API_KEY manquant'
+      );
+    }
+
+    /** @type {Record<string, unknown>} */
+    const payload = {
+      q: text,
+      target: targetLanguage,
+      format: 'text',
+    };
+    if (sourceLanguage) {
+      payload.source = sourceLanguage;
+    }
+
+    let response;
+    try {
+      response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+    } catch {
+      throw new HttpsError('unavailable', 'Service de traduction indisponible');
+    }
+
+    let responseBody;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const apiMessage = normalizeString(
+        responseBody &&
+          typeof responseBody === 'object' &&
+          responseBody.error &&
+          typeof responseBody.error === 'object'
+          ? responseBody.error.message
+          : ''
+      );
+      throw new HttpsError(
+        'internal',
+        apiMessage || 'La traduction a échoué'
+      );
+    }
+
+    const firstTranslation =
+      responseBody &&
+      typeof responseBody === 'object' &&
+      responseBody.data &&
+      typeof responseBody.data === 'object' &&
+      Array.isArray(responseBody.data.translations) &&
+      responseBody.data.translations.length > 0
+        ? responseBody.data.translations[0]
+        : null;
+
+    const translatedText = normalizeString(
+      firstTranslation && typeof firstTranslation === 'object'
+        ? firstTranslation.translatedText
+        : ''
+    );
+    const detectedSourceLanguage = normalizeString(
+      firstTranslation && typeof firstTranslation === 'object'
+        ? firstTranslation.detectedSourceLanguage
+        : ''
+    );
+
+    if (!translatedText) {
+      throw new HttpsError('internal', 'Réponse de traduction invalide');
+    }
+
+    return {
+      translatedText,
+      sourceLanguage: sourceLanguage || detectedSourceLanguage || null,
+      targetLanguage,
     };
   }
 );
