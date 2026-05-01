@@ -632,24 +632,19 @@ class TripsRepository {
       );
     }
 
-    final docRef = firestore.collection('trips').doc(tripId);
-    final snapshot = await docRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
     }
 
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    _ensureTripGeneralPermissionForAction(
-      trip: trip,
-      userId: user.uid,
-      requiredRole: trip.participantsPermissions.deleteRegisteredParticipantMinRole,
+    final regionFunctions = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
     );
-
-    await docRef.update({
-      'memberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
-      'memberPublicLabels.$cleanMemberId': FieldValue.delete(),
-      'adminMemberIds': FieldValue.arrayRemove(<String>[cleanMemberId]),
+    final callable =
+        regionFunctions.httpsCallable('removeTripRegisteredMember');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'memberId': cleanMemberId,
     });
   }
 

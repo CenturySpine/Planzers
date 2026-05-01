@@ -710,6 +710,210 @@ async function assertPlaceholderUnusedInExpensesAndRooms(tripRef, phId) {
 }
 
 /**
+ * @param {unknown} raw
+ * @returns {string[]}
+ */
+function normalizedIdList(raw) {
+  return (Array.isArray(raw) ? raw : [])
+    .map((v) => String(v).trim())
+    .filter((id) => id.length > 0);
+}
+
+/**
+ * @param {unknown} raw
+ * @param {string} memberId
+ * @returns {boolean}
+ */
+function participantSharesContainsMember(raw, memberId) {
+  return (
+    raw &&
+    typeof raw === 'object' &&
+    !Array.isArray(raw) &&
+    Object.prototype.hasOwnProperty.call(raw, memberId)
+  );
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
+ * @param {string} memberId
+ */
+function assertMemberNotUsedInExpenses(expenseDocs, memberId) {
+  for (const doc of expenseDocs) {
+    const exp = doc.data() || {};
+    const participants = normalizedIdList(exp.participantIds);
+    const paidBy = normalizeString(exp.paidBy);
+    const inShares = participantSharesContainsMember(
+      exp.participantShares,
+      memberId
+    );
+    if (participants.includes(memberId) || paidBy === memberId || inShares) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce membre est encore utilisé dans des dépenses. Retire-le des dépenses avant de le supprimer.'
+      );
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} roomDocs
+ * @param {string} memberId
+ */
+function assertMemberNotAssignedInRooms(roomDocs, memberId) {
+  for (const doc of roomDocs) {
+    const data = doc.data() || {};
+    const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
+    for (const bed of bedsRaw) {
+      if (!bed || typeof bed !== 'object') continue;
+      const ids = normalizedIdList(bed.assignedMemberIds);
+      if (ids.includes(memberId)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce membre est encore assigné à une chambre. Retire son assignation avant de le supprimer.'
+        );
+      }
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} mealDocs
+ * @param {string} memberId
+ */
+function assertMemberNotUsedInMeals(mealDocs, memberId) {
+  for (const doc of mealDocs) {
+    const meal = doc.data() || {};
+    const participants = normalizedIdList(meal.participantIds);
+    const chefParticipantId = normalizeString(meal.chefParticipantId);
+    if (participants.includes(memberId) || chefParticipantId === memberId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce membre est encore affecté à un repas. Retire-le des repas avant de le supprimer.'
+      );
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseGroupDocs
+ * @param {string} memberId
+ */
+function assertMemberNotCreatorOfNonDefaultExpensePost(expenseGroupDocs, memberId) {
+  for (const doc of expenseGroupDocs) {
+    const data = doc.data() || {};
+    const createdBy = normalizeString(data.createdBy);
+    const isDefault = data.isDefault === true;
+    if (!isDefault && createdBy === memberId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce membre est créateur d’un poste de dépense. Transfère ou supprime ce poste avant de le supprimer.'
+      );
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentData} tripData
+ * @param {string} memberId
+ */
+function assertMemberIsNotTripAdmin(tripData, memberId) {
+  if (tripAdminMemberIdSet(tripData).has(memberId)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Ce membre est administrateur du voyage. Rétrograde-le avant de le supprimer.'
+    );
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} memberId
+ * @param {FirebaseFirestore.DocumentData} tripData
+ */
+async function assertMemberRemovalBlockingDependencies({
+  tripRef,
+  memberId,
+  tripData,
+}) {
+  const [expensesSnap, roomsSnap, mealsSnap, groupsSnap] = await Promise.all([
+    tripRef.collection('expenses').get(),
+    tripRef.collection('rooms').get(),
+    tripRef.collection('meals').get(),
+    tripRef.collection('expenseGroups').get(),
+  ]);
+  assertMemberNotUsedInExpenses(expensesSnap.docs, memberId);
+  assertMemberNotAssignedInRooms(roomsSnap.docs, memberId);
+  assertMemberNotUsedInMeals(mealsSnap.docs, memberId);
+  assertMemberIsNotTripAdmin(tripData, memberId);
+  assertMemberNotCreatorOfNonDefaultExpensePost(groupsSnap.docs, memberId);
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} memberId
+ */
+async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
+  const db = admin.firestore();
+  const FieldValue = admin.firestore.FieldValue;
+  const [activitiesSnap, mealsSnap, shoppingSnap] = await Promise.all([
+    tripRef.collection('activities').get(),
+    tripRef.collection('meals').get(),
+    tripRef.collection('shoppingItems').get(),
+  ]);
+
+  /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
+  const updates = [];
+
+  for (const doc of activitiesSnap.docs) {
+    const votes = normalizedIdList(doc.data().votes);
+    if (!votes.includes(memberId)) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { votes: FieldValue.arrayRemove(memberId) },
+    });
+  }
+
+  for (const doc of mealsSnap.docs) {
+    const meal = doc.data() || {};
+    const rawPotluckItems = Array.isArray(meal.potluckItems) ? meal.potluckItems : [];
+    const nextPotluckItems = rawPotluckItems.filter((raw) => {
+      if (!raw || typeof raw !== 'object') return true;
+      const addedBy = normalizeString(raw.addedBy);
+      return addedBy !== memberId;
+    });
+    if (nextPotluckItems.length === rawPotluckItems.length) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { potluckItems: nextPotluckItems },
+    });
+  }
+
+  for (const doc of shoppingSnap.docs) {
+    const claimedBy = normalizeString(doc.data().claimedBy);
+    if (claimedBy !== memberId) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { claimedBy: FieldValue.delete() },
+    });
+  }
+
+  let batch = db.batch();
+  let n = 0;
+  for (const { ref, data } of updates) {
+    batch.update(ref, data);
+    n++;
+    if (n >= 450) {
+      await batch.commit();
+      batch = db.batch();
+      n = 0;
+    }
+  }
+  if (n > 0) {
+    await batch.commit();
+  }
+}
+
+/**
  * When someone is added to trip.memberIds, add them to every expense post
  * (visibleToMemberIds) and every expense (participantIds). arrayUnion is
  * idempotent. Batched in chunks of 500 writes.
@@ -2488,6 +2692,12 @@ exports.removeTripPlaceholderMember = onCall(
     }
 
     await assertPlaceholderUnusedInExpensesAndRooms(tripRef, placeholderId);
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId: placeholderId,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, placeholderId);
 
     const FieldValue = admin.firestore.FieldValue;
     const groupsSnap = await tripRef.collection('expenseGroups').get();
@@ -2652,45 +2862,108 @@ exports.leaveTrip = onCall(
 
     const db = admin.firestore();
     const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const data = tripSnap.data() || {};
+    const ownerId = normalizeString(data.ownerId);
+    if (ownerId === uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Le créateur du voyage ne peut pas quitter ainsi'
+      );
+    }
 
-    await db.runTransaction(async (tx) => {
-      const tripSnap = await tx.get(tripRef);
-      if (!tripSnap.exists) {
-        throw new HttpsError('not-found', 'Voyage introuvable');
-      }
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
 
-      const data = tripSnap.data() || {};
-      const ownerId = normalizeString(data.ownerId);
-      if (ownerId === uid) {
-        throw new HttpsError(
-          'permission-denied',
-          'Le créateur du voyage ne peut pas quitter ainsi'
-        );
-      }
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId: uid,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, uid);
 
-      const memberIds = Array.isArray(data.memberIds)
-        ? data.memberIds.map((v) => String(v))
-        : [];
-      if (!memberIds.includes(uid)) {
-        throw new HttpsError(
-          'permission-denied',
-          'Tu ne fais pas partie de ce voyage'
-        );
-      }
+    await tripRef.update({
+      memberIds: admin.firestore.FieldValue.arrayRemove(uid),
+      [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
+      adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
+    });
 
-      const expensesQuery = tripRef.collection('expenses');
-      const expensesSnap = await tx.get(expensesQuery);
-      applyLeaveTripExpenseStripping(tx, expensesSnap.docs, uid);
+    return { ok: true };
+  }
+);
 
-      const mealsQuery = tripRef.collection('meals');
-      const mealsSnap = await tx.get(mealsQuery);
-      applyLeaveTripMealStripping(tx, mealsSnap.docs, uid);
+exports.removeTripRegisteredMember = onCall(
+  {
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
 
-      tx.update(tripRef, {
-        memberIds: admin.firestore.FieldValue.arrayRemove(uid),
-        [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
-        adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
-      });
+    const tripId = normalizeString(request.data?.tripId);
+    const memberId = normalizeString(request.data?.memberId);
+    if (!tripId || !memberId || isPlaceholderMemberId(memberId)) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+    if (memberId === uid) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Utilise l’action quitter le voyage pour ton propre compte.'
+      );
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const data = tripSnap.data() || {};
+    assertTripParticipantPermission({
+      tripData: data,
+      uid,
+      permissionKey: 'deleteRegisteredParticipant',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour retirer ce participant.',
+    });
+
+    const ownerId = normalizeString(data.ownerId);
+    if (memberId === ownerId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Le créateur du voyage ne peut pas être supprimé.'
+      );
+    }
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(memberId)) {
+      throw new HttpsError('not-found', 'Participant introuvable');
+    }
+
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, memberId);
+
+    await tripRef.update({
+      memberIds: admin.firestore.FieldValue.arrayRemove(memberId),
+      [`memberPublicLabels.${memberId}`]: admin.firestore.FieldValue.delete(),
+      adminMemberIds: admin.firestore.FieldValue.arrayRemove(memberId),
     });
 
     return { ok: true };
