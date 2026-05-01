@@ -12,6 +12,25 @@ String displayLabelFromEmail(String email) {
   return e.substring(0, at).trim();
 }
 
+/// Masked phone-based label for compact fallback display.
+///
+/// Keeps country code when present and reveals only last 2 digits.
+String displayLabelFromPhoneNumber(String phoneNumber) {
+  final rawPhoneNumber = phoneNumber.trim();
+  if (rawPhoneNumber.isEmpty) return '';
+
+  final phoneDigits = rawPhoneNumber.replaceAll(RegExp(r'\D'), '');
+  if (phoneDigits.isEmpty) return '';
+  if (phoneDigits.length < 2) return rawPhoneNumber;
+
+  final lastTwoDigits = phoneDigits.substring(phoneDigits.length - 2);
+  final countryCodeMatch = RegExp(r'^\+\d+').firstMatch(rawPhoneNumber);
+  final countryCodePrefix = countryCodeMatch?.group(0) ?? '';
+  final prefix =
+      countryCodePrefix.isNotEmpty ? '$countryCodePrefix ' : '';
+  return '${prefix}•• •• •• $lastTwoDigits';
+}
+
 /// First uppercase character used for avatar fallback.
 String avatarInitialFromDisplayLabel(String label) {
   final trimmed = label.trim();
@@ -57,8 +76,9 @@ String tripMemberDisplayLabel(
 }
 
 /// When the `users/{memberId}` snapshot is missing (e.g. doc absent from the
-/// query) but the member is the signed-in user, use Auth email so [resolveTripMemberDisplayLabel]
-/// can still derive a local-part label before [tripMemberPublicLabels] is filled.
+/// query) but the member is the signed-in user, use Auth info so
+/// [resolveTripMemberDisplayLabel] can still derive a label before
+/// [tripMemberPublicLabels] is filled.
 Map<String, dynamic>? tripMemberUserDataWithAuthFallback(
   String memberId,
   String? currentUserId,
@@ -66,11 +86,26 @@ Map<String, dynamic>? tripMemberUserDataWithAuthFallback(
 ) {
   if (memberUserData != null) return memberUserData;
   if (currentUserId == null || memberId != currentUserId) return null;
-  final email = FirebaseAuth.instance.currentUser?.email?.trim() ?? '';
-  if (email.isEmpty) return null;
+  final currentUser = FirebaseAuth.instance.currentUser;
+  final email = currentUser?.email?.trim() ?? '';
+  final phoneNumber = currentUser?.phoneNumber?.trim() ?? '';
+
+  var fallbackName = '';
+  if (email.isNotEmpty) {
+    fallbackName = displayLabelFromEmail(email);
+  } else if (phoneNumber.isNotEmpty) {
+    fallbackName = displayLabelFromPhoneNumber(phoneNumber);
+  }
+
+  if (fallbackName.isEmpty) return null;
   return {
     'email': email,
-    'account': <String, dynamic>{'email': email},
+    'phoneNumber': phoneNumber,
+    'account': <String, dynamic>{
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'name': fallbackName,
+    },
   };
 }
 
