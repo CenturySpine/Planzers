@@ -305,8 +305,8 @@ function roleRank(roleName) {
 function tripCallerRoleRank(data, uid) {
   const cleanUid = normalizeString(uid);
   if (!cleanUid) return -1;
-  if (normalizeString(data.ownerId) === cleanUid) return 2;
-  return tripAdminMemberIdSet(data).has(cleanUid) ? 1 : 0;
+  if (normalizeString(data.ownerId) === cleanUid) return 3;
+  return tripAdminMemberIdSet(data).has(cleanUid) ? 2 : 0;
 }
 
 function tripParticipantPermissionMinRole(data, key, fallbackRole) {
