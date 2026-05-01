@@ -2084,6 +2084,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       key: ValueKey<String>(_paidBy ?? ''),
+                      isExpanded: true,
                       initialValue: _paidBy != null && members.contains(_paidBy)
                           ? _paidBy
                           : null,
@@ -2091,6 +2092,18 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                         labelText: l10n.expensesPaidByLabel,
                         border: OutlineInputBorder(),
                       ),
+                      selectedItemBuilder: (context) => [
+                        for (final id in members)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.memberLabels[id] ?? id,
+                              maxLines: 2,
+                              softWrap: true,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                       items: [
                         for (final id in members)
                           DropdownMenuItem(
