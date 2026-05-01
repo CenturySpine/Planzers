@@ -2768,48 +2768,6 @@ exports.joinTripWithInvite = onCall(
   }
 );
 
-/**
- * Removes [uid] from shared expenses for a trip: drops them from participantIds,
- * reassigns paidBy when needed, deletes docs with no participants left.
- *
- * @param {FirebaseFirestore.Transaction} tx
- * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
- * @param {string} uid
- */
-function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
-  for (const doc of expenseDocs) {
-    const exp = doc.data() || {};
-    const participants = (Array.isArray(exp.participantIds)
-      ? exp.participantIds
-      : []
-    )
-      .map((v) => String(v).trim())
-      .filter((id) => id.length > 0);
-    const paidBy = normalizeString(exp.paidBy);
-    const inParticipants = participants.includes(uid);
-    const isPayer = paidBy === uid;
-    if (!inParticipants && !isPayer) {
-      continue;
-    }
-
-    const newParticipants = participants.filter((id) => id !== uid);
-    if (newParticipants.length === 0) {
-      tx.delete(doc.ref);
-      continue;
-    }
-
-    let newPaidBy = paidBy;
-    if (isPayer || !newParticipants.includes(paidBy)) {
-      newPaidBy = newParticipants[0];
-    }
-
-    tx.update(doc.ref, {
-      participantIds: newParticipants,
-      paidBy: newPaidBy,
-    });
-  }
-}
-
 exports.leaveTrip = onCall(
   {
   },
