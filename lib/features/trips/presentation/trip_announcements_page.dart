@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:planerz/features/trips/data/trip_announcement.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
@@ -324,7 +325,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                         mainAxisSize: MainAxisSize.min,
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(announcement.text),
+                                          LinkifiedText(text: announcement.text),
                                           const SizedBox(height: 6),
                                           Row(
                                             children: [
