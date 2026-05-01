@@ -1,0 +1,34 @@
+---
+description: Structured release notes writing, product-first then technical
+alwaysApply: false
+---
+
+# Release Note
+
+Write every release note in two parts, in this strict order.
+
+## 1) Priority section for end users (always first)
+
+- Start with changes that have direct impact for end users.
+- Avoid technical jargon in this section.
+- Highlight features, user value, and business outcomes.
+- Organize this section by major business domains of the app:
+  - Trips
+  - Messaging
+  - Activities
+  - Expenses
+  - Meals
+- Include administrator-oriented items in this section only when they are true feature-level business value.
+
+## 2) Complementary detailed section (technical / operations)
+
+- Then add a more detailed section with a moderate technical level.
+- Include items here that were not listed in the first section.
+- Include bug fixes, technical adjustments, and administrator-oriented changes.
+- Keep the writing clear and structured without losing product readability.
+
+## Style rules
+
+- Prioritize clarity and business impact over implementation details.
+- Present information from most important to most detailed.
+- Keep a concise, value-oriented tone.
