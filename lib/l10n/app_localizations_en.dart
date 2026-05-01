@@ -340,21 +340,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountLanguageSubtitle => 'App language';
 
   @override
-  String get accountAutoOpenCurrentTripTitle => 'Auto-open current trip';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'If only one trip is currently active today, it opens at launch.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Auto-open current trip enabled';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Auto-open current trip disabled';
-
-  @override
   String get accountEnabling => 'Enabling...';
 
   @override
@@ -2618,21 +2603,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountLanguageSubtitle => 'App language';
-
-  @override
-  String get accountAutoOpenCurrentTripTitle => 'Auto-open current trip';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'If only one trip is currently active today, it opens at launch.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Auto-open current trip enabled';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Auto-open current trip disabled';
 
   @override
   String get accountEnabling => 'Enabling...';

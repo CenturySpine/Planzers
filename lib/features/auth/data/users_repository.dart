@@ -141,9 +141,7 @@ class UsersRepository {
             'email': user.email,
             if (googlePhotoUrl.isNotEmpty) 'photoUrl': googlePhotoUrl,
             if (googlePhotoUrl.isNotEmpty) 'googlePhotoUrl': googlePhotoUrl,
-            'preferences': {
-              'autoOpenCurrentTripOnLaunch': true,
-            },
+
           },
           'createdAt': now,
         });

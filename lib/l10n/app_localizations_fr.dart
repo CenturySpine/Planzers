@@ -339,22 +339,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountLanguageSubtitle => 'Langue de l\'application';
 
   @override
-  String get accountAutoOpenCurrentTripTitle =>
-      'Ouvrir automatiquement le voyage en cours';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Ouverture auto du voyage activée';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Ouverture auto du voyage désactivée';
-
-  @override
   String get accountEnabling => 'Activation en cours...';
 
   @override
@@ -2633,22 +2617,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get accountLanguageSubtitle => 'Langue de l\'application';
-
-  @override
-  String get accountAutoOpenCurrentTripTitle =>
-      'Ouvrir automatiquement le voyage en cours';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Ouverture auto du voyage activée';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Ouverture auto du voyage désactivée';
 
   @override
   String get accountEnabling => 'Activation en cours...';

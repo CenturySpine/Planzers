@@ -724,30 +724,6 @@ abstract class AppLocalizations {
   /// **'Langue de l\'application'**
   String get accountLanguageSubtitle;
 
-  /// No description provided for @accountAutoOpenCurrentTripTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouvrir automatiquement le voyage en cours'**
-  String get accountAutoOpenCurrentTripTitle;
-
-  /// No description provided for @accountAutoOpenCurrentTripSubtitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.'**
-  String get accountAutoOpenCurrentTripSubtitle;
-
-  /// No description provided for @accountAutoOpenCurrentTripEnabled.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouverture auto du voyage activée'**
-  String get accountAutoOpenCurrentTripEnabled;
-
-  /// No description provided for @accountAutoOpenCurrentTripDisabled.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouverture auto du voyage désactivée'**
-  String get accountAutoOpenCurrentTripDisabled;
-
   /// No description provided for @accountEnabling.
   ///
   /// In fr, this message translates to:

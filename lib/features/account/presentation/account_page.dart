@@ -42,7 +42,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _isSavingPhone = false;
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
-  bool _isUpdatingAutoOpenCurrentTrip = false;
   bool _isUpdatingLanguage = false;
 
   @override
@@ -459,40 +458,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     );
   }
 
-  Future<void> _updateAutoOpenCurrentTripPreference(bool enabled) async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_isUpdatingAutoOpenCurrentTrip) return;
-    setState(() => _isUpdatingAutoOpenCurrentTrip = true);
-    try {
-      await ref
-          .read(accountRepositoryProvider)
-          .updateAutoOpenCurrentTripOnLaunchPreference(enabled);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              enabled
-                  ? l10n.accountAutoOpenCurrentTripEnabled
-                  : l10n.accountAutoOpenCurrentTripDisabled,
-            ),
-            duration: const Duration(milliseconds: 1100),
-          ),
-        );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.accountPreferenceUpdateError(e.toString())),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isUpdatingAutoOpenCurrentTrip = false);
-      }
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -551,8 +517,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               : (authUser.displayName ?? '').trim().isNotEmpty
                   ? (authUser.displayName ?? '').trim()
                   : displayLabelFromEmail(email);
-          final autoOpenCurrentTripOnLaunch =
-              autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
 
           if (!_didInitFromFirestore) {
             _accountNameController.text = accountName;
@@ -956,17 +920,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: autoOpenCurrentTripOnLaunch,
-                onChanged: _isUpdatingAutoOpenCurrentTrip
-                    ? null
-                    : _updateAutoOpenCurrentTripPreference,
-                title: Text(l10n.accountAutoOpenCurrentTripTitle),
-                subtitle: Text(
-                  l10n.accountAutoOpenCurrentTripSubtitle,
                 ),
               ),
               if (kIsWeb) ...[
