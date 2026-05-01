@@ -270,6 +270,7 @@ class _TripActivitiesPermissionsPageState
                         title: l10n.tripPermissionActivitiesDelete,
                         minRole: trip.activitiesPermissions.deleteActivityMinRole,
                         icon: Icons.delete_outline,
+                        iconColor: Theme.of(context).colorScheme.error,
                         busy: _isSavingDeletePermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) =>

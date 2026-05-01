@@ -24,6 +24,7 @@ class Trip {
     this.participantsPermissions = TripParticipantsPermissions.defaults,
     this.expensesPermissions = TripExpensesPermissions.defaults,
     this.activitiesPermissions = TripActivitiesPermissions.defaults,
+    this.mealsPermissions = TripMealsPermissions.defaults,
     this.shoppingPermissions = TripShoppingPermissions.defaults,
   });
 
@@ -43,6 +44,7 @@ class Trip {
   final TripParticipantsPermissions participantsPermissions;
   final TripExpensesPermissions expensesPermissions;
   final TripActivitiesPermissions activitiesPermissions;
+  final TripMealsPermissions mealsPermissions;
   final TripShoppingPermissions shoppingPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
@@ -141,6 +143,9 @@ class Trip {
       activitiesPermissions: TripActivitiesPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['activities'],
       ),
+      mealsPermissions: TripMealsPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['meals'],
+      ),
       shoppingPermissions: TripShoppingPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['shopping'],
       ),
@@ -171,6 +176,7 @@ class Trip {
         'participants': participantsPermissions.toFirestore(),
         'expenses': expensesPermissions.toFirestore(),
         'activities': activitiesPermissions.toFirestore(),
+        'meals': mealsPermissions.toFirestore(),
         'shopping': shoppingPermissions.toFirestore(),
       },
     };

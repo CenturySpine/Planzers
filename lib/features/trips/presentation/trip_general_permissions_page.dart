@@ -230,6 +230,7 @@ class _TripGeneralPermissionsPageState
                         title: l10n.tripPermissionDeleteTrip,
                         minRole: TripPermissionRole.owner,
                         icon: Icons.delete_outline,
+                        iconColor: Theme.of(context).colorScheme.error,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.deleteTrip,
                         ),

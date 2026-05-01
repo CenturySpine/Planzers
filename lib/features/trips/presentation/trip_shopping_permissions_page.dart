@@ -164,7 +164,7 @@ class _TripShoppingPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.shoppingDeleteCheckedTitle,
                         minRole: trip.shoppingPermissions.deleteCheckedItemsMinRole,
-                        icon: Icons.delete_sweep_outlined,
+                        icon: Icons.delete_outline,
                         busy: _isSavingDeleteCheckedItemsPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) =>

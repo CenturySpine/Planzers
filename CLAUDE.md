@@ -15,6 +15,7 @@ These rules apply to everyone working on the repository, including automated cod
 - **UI copy scope (agents):** Do not add extra explanatory sentences, hints, helper text, or "did you know" copy to feature UIs unless the task explicitly asks for that wording. Stick to labels and messages that implement what was requested; the product owner will supply hints and tutorials separately when they want them.
 - **Localization source of truth (GUI):** Never hardcode user-facing labels/messages in widgets, dialogs, SnackBars, tooltips, placeholders, or empty states. Always use an l10n key and add/update values in the reference ARB files (`app_fr`, `app_fr_FR`, `app_en`, `app_en_US`).
 - **Localization cleanup on deletion:** When deleting a UI component/flow, remove its now-unused translation keys and values from all reference ARB files. Do not keep obsolete keys, do not recreate equivalent aliases, and do not move/rename old keys just to preserve them.
+- **Administration section (localization exception):** The administration pages (`lib/features/administration/`) and all their sub-pages are exempt from the localization rule. Labels, titles, messages, and all user-facing copy in this section must be hardcoded directly in French — no ARB keys, no l10n lookups.
 
 ## Permissions management (product rules)
 
@@ -40,6 +41,8 @@ These rules apply to **automated coding agents and assistants** (not an expectat
 - **Cloud Functions IAM check (mandatory):** For every **new** or **redeployed** Firebase Functions v2 HTTP/callable function, explicitly verify Cloud Run invocation IAM right after deploy. Confirm the target service has `allUsers` with `roles/run.invoker` when public invocation is expected (Flutter/Web clients). Use `gcloud run services get-iam-policy <service-lowercase-name> --region=<region> --project=<project>`. If missing, report it immediately and provide the exact `gcloud run services add-iam-policy-binding ... --member=allUsers --role=roles/run.invoker` command.
 
 - **Git commits:** Do **not** run `git commit` (or create commits) on your own initiative. The product owner **decides what to commit and when**; keep changes in the working tree until they request a commit.
+
+- **Version format (semver):** App versions must follow the [semver](https://semver.org) standard (`MAJOR.MINOR.PATCH` or `MAJOR.MINOR.PATCH-prerelease`). If asked to set or bump a version that is not valid semver, **stop and alert the product owner** before applying any change.
 
 ## Stack (reference)
 

@@ -544,6 +544,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountDownloadApk => 'Download APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Sign out';
 
   @override
@@ -607,7 +610,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Privilege hierarchy: owner > admin > participant';
+      'Privilege hierarchy: owner > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -653,6 +656,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -769,6 +775,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionActivitiesDelete => 'Delete an activity';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Meal-related permissions';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Create a meal';
+
+  @override
+  String get tripPermissionMealsDelete => 'Delete a meal';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggest a restaurant (restaurant mode)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Add a contribution (lodge mode)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Create / delete / edit a recipe (cooking mode)';
 
   @override
   String get tripSectionTrip => 'Trip';
@@ -1487,6 +1522,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityCategoryRestaurant => 'Restaurant';
 
   @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Museum';
+
+  @override
+  String get activityCategoryShow => 'Show';
+
+  @override
+  String get activityCategoryNightlife => 'Nightlife';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoke';
+
+  @override
+  String get activityCategoryGames => 'Games';
+
+  @override
+  String get activityCategoryBeach => 'Beach';
+
+  @override
+  String get activityCategoryPark => 'Park';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Accommodation';
+
+  @override
+  String get activityCategoryWellness => 'Wellness';
+
+  @override
+  String get activityCategoryCooking => 'Cooking';
+
+  @override
+  String get activityCategoryWorkshop => 'Workshop';
+
+  @override
+  String get activityCategoryMarket => 'Market';
+
+  @override
+  String get activityCategoryMeeting => 'Meeting';
+
+  @override
   String get activitiesUpdated => 'Activity updated';
 
   @override
@@ -1742,6 +1822,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealPotluckItemLabel => 'Item';
 
   @override
+  String get mealPotluckQuantityLabel => 'Quantity (units)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Savory';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sweet';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft drink';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcohol';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 items.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount items added';
+  }
+
+  @override
   String get commonSaving => 'Saving...';
 
   @override
@@ -1755,6 +1858,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonMe => 'Me';
+
+  @override
+  String get commonUnknown => 'Unknown';
 
   @override
   String get commonRequired => 'Required';
@@ -2101,6 +2207,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
 
   @override
+  String get tripAnnouncementsEditTitle => 'Edit announcement';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Expenses';
 
   @override
@@ -2126,6 +2235,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cupidonPopupUnknownMember => 'Someone';
+
+  @override
+  String get accountHelpSupport => 'Help and support';
+
+  @override
+  String get helpSupportTitle => 'Help and support';
+
+  @override
+  String get helpSupportIntro =>
+      'Thank you for using Planerz! This app is developed and maintained by a single person, with passion. Feel free to share your feedback, report a bug, or suggest an idea.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'For any question, suggestion, or bug, here are a few options:';
+
+  @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Release notes';
+
+  @override
+  String get helpSupportGithubLabel => 'Open a ticket on GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Send an email';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contact the developer';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'A new version of Planerz is available. You must update the app to continue using it.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Current version';
+
+  @override
+  String get updateRequiredNewVersion => 'New version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Download $version';
+  }
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -2668,6 +2824,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountDownloadApk => 'Download APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Sign out';
 
   @override
@@ -2731,7 +2890,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Privilege hierarchy: owner > admin > participant';
+      'Privilege hierarchy: owner > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -2777,6 +2936,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -2893,6 +3055,35 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionActivitiesDelete => 'Delete an activity';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Meal-related permissions';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Create a meal';
+
+  @override
+  String get tripPermissionMealsDelete => 'Delete a meal';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Edit a meal (date, type, participants, chef, category)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggest a restaurant (restaurant mode)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Add a contribution (lodge mode)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Create / delete / edit a recipe (cooking mode)';
 
   @override
   String get tripSectionTrip => 'Trip';
@@ -3611,6 +3802,51 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activityCategoryRestaurant => 'Restaurant';
 
   @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Museum';
+
+  @override
+  String get activityCategoryShow => 'Show';
+
+  @override
+  String get activityCategoryNightlife => 'Nightlife';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoke';
+
+  @override
+  String get activityCategoryGames => 'Games';
+
+  @override
+  String get activityCategoryBeach => 'Beach';
+
+  @override
+  String get activityCategoryPark => 'Park';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Accommodation';
+
+  @override
+  String get activityCategoryWellness => 'Wellness';
+
+  @override
+  String get activityCategoryCooking => 'Cooking';
+
+  @override
+  String get activityCategoryWorkshop => 'Workshop';
+
+  @override
+  String get activityCategoryMarket => 'Market';
+
+  @override
+  String get activityCategoryMeeting => 'Meeting';
+
+  @override
   String get activitiesUpdated => 'Activity updated';
 
   @override
@@ -3866,6 +4102,29 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealPotluckItemLabel => 'Item';
 
   @override
+  String get mealPotluckQuantityLabel => 'Quantity (units)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Savory';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sweet';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft drink';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcohol';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 items.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount items added';
+  }
+
+  @override
   String get commonSaving => 'Saving...';
 
   @override
@@ -3879,6 +4138,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonMe => 'Me';
+
+  @override
+  String get commonUnknown => 'Unknown';
 
   @override
   String get commonRequired => 'Required';
@@ -4225,6 +4487,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripAnnouncementsDeleteConfirmBody => 'Delete this announcement?';
 
   @override
+  String get tripAnnouncementsEditTitle => 'Edit announcement';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Expenses';
 
   @override
@@ -4250,4 +4515,51 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get cupidonPopupUnknownMember => 'Someone';
+
+  @override
+  String get accountHelpSupport => 'Help and support';
+
+  @override
+  String get helpSupportTitle => 'Help and support';
+
+  @override
+  String get helpSupportIntro =>
+      'Thank you for using Planerz! This app is developed and maintained by a single person, with passion. Feel free to share your feedback, report a bug, or suggest an idea.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'For any question, suggestion, or bug, here are a few options:';
+
+  @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Release notes';
+
+  @override
+  String get helpSupportGithubLabel => 'Open a ticket on GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Send an email';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contact the developer';
+
+  @override
+  String get updateRequiredTitle => 'Update available';
+
+  @override
+  String get updateRequiredBody =>
+      'A new version of Planerz is available. You must update the app to continue using it.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Current version';
+
+  @override
+  String get updateRequiredNewVersion => 'New version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Download $version';
+  }
 }

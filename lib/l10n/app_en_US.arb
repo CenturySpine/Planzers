@@ -213,6 +213,7 @@
     }
   },
   "accountDownloadApk": "Download APK",
+  "accountAdministration": "Administration",
   "accountSignOut": "Sign out",
   "paletteSaved": "Palette {label} saved",
   "@paletteSaved": {
@@ -246,7 +247,7 @@
       "role": {}
     }
   },
-  "tripRoleHierarchyHint": "Privilege hierarchy: owner > admin > participant",
+  "tripRoleHierarchyHint": "Privilege hierarchy: owner > admin > chef > participant",
   "tripSettingsPermissionsSectionTitle": "Permissions",
   "tripSettingsPermissionsSectionDescription": "Set the minimum roles for each trip domain.",
   "tripSettingsGeneralSectionTitle": "General settings",
@@ -260,6 +261,7 @@
   "tripSettingsGeneralComingSoonDescription": "This section is coming soon.",
   "roleOwner": "Owner",
   "roleAdmin": "Admin",
+  "roleChef": "Chef",
   "roleParticipant": "Participant",
   "tripGeneralPermissionsTitle": "General trip characteristics",
   "tripGeneralPermissionsDescription": "Default minimum permissions for trip-wide actions.",
@@ -295,6 +297,14 @@
   "tripPermissionActivitiesPlan": "Plan an activity",
   "tripPermissionActivitiesEdit": "Edit an activity",
   "tripPermissionActivitiesDelete": "Delete an activity",
+  "tripPermissionsMealsTitle": "Meal-related permissions",
+  "tripPermissionsMealsDescription": "Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.",
+  "tripPermissionMealsCreate": "Create a meal",
+  "tripPermissionMealsDelete": "Delete a meal",
+  "tripPermissionMealsEdit": "Edit a meal (date, type, participants, chef, category)",
+  "tripPermissionMealsSuggestRestaurant": "Suggest a restaurant (restaurant mode)",
+  "tripPermissionMealsAddContribution": "Add a contribution (lodge mode)",
+  "tripPermissionMealsManageRecipe": "Create / delete / edit a recipe (cooking mode)",
   "tripSectionTrip": "Trip",
   "tripSectionTripDescription": "Rules related to general trip information.",
   "tripSectionExpenses": "Expenses",
@@ -603,6 +613,21 @@
   "activityCategoryShopping": "Shopping",
   "activityCategoryVisit": "Visit",
   "activityCategoryRestaurant": "Restaurant",
+  "activityCategoryCafe": "Café",
+  "activityCategoryMuseum": "Museum",
+  "activityCategoryShow": "Show",
+  "activityCategoryNightlife": "Nightlife",
+  "activityCategoryKaraoke": "Karaoke",
+  "activityCategoryGames": "Games",
+  "activityCategoryBeach": "Beach",
+  "activityCategoryPark": "Park",
+  "activityCategoryTransport": "Transport",
+  "activityCategoryAccommodation": "Accommodation",
+  "activityCategoryWellness": "Wellness",
+  "activityCategoryCooking": "Cooking",
+  "activityCategoryWorkshop": "Workshop",
+  "activityCategoryMarket": "Market",
+  "activityCategoryMeeting": "Meeting",
   "activitiesUpdated": "Activity updated",
   "activitiesDeleteTitle": "Delete this activity?",
   "activitiesDeleteBody": "\"{label}\" will be deleted.",
@@ -689,11 +714,29 @@
   "mealPotluckEmptyHint": "Add items (drinks, starter, main, dessert, etc.).",
   "mealPotluckAddItemTitle": "Add item",
   "mealPotluckItemLabel": "Item",
+  "mealPotluckQuantityLabel": "Quantity (units)",
+  "mealPotluckCategorySalty": "Savory",
+  "mealPotluckCategorySweet": "Sweet",
+  "mealPotluckCategorySoft": "Soft drink",
+  "mealPotluckCategoryAlcohol": "Alcohol",
+  "mealPotluckMaxItemsReached": "Maximum 5 items.",
+  "mealPotluckCreateRowsHint": "{currentCount}/{maxCount} items added",
+  "@mealPotluckCreateRowsHint": {
+    "placeholders": {
+      "currentCount": {
+        "type": "int"
+      },
+      "maxCount": {
+        "type": "int"
+      }
+    }
+  },
   "commonSaving": "Saving...",
   "mealComponentKindEntree": "Starter",
   "mealComponentKindMain": "Main",
   "mealComponentKindDessert": "Dessert",
   "commonMe": "Me",
+  "commonUnknown": "Unknown",
   "commonRequired": "Required",
   "expenseGroupSelectAtLeastOne": "Select at least one person who can see this section",
   "expenseGroupUpdated": "Section updated",
@@ -809,6 +852,7 @@
   "tripAnnouncementsEmptyState": "No announcements yet.",
   "tripAnnouncementsInputHint": "Write an announcement...",
   "tripAnnouncementsDeleteConfirmBody": "Delete this announcement?",
+  "tripAnnouncementsEditTitle": "Edit announcement",
   "tripOverviewTopTabExpenses": "Expenses",
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
@@ -817,5 +861,24 @@
   "tripOverviewMyRooms": "My rooms",
   "cupidonPopupTitle": "You have a match",
   "cupidonPopupViewMatchesAction": "See my matches",
-  "cupidonPopupUnknownMember": "Someone"
+  "cupidonPopupUnknownMember": "Someone",
+  "accountHelpSupport": "Help and support",
+  "helpSupportTitle": "Help and support",
+  "helpSupportIntro": "Thank you for using Planerz! This app is developed and maintained by a single person, with passion. Feel free to share your feedback, report a bug, or suggest an idea.",
+  "helpSupportContactIntro": "For any question, suggestion, or bug, here are a few options:",
+  "helpSupportVersionLabel": "Version",
+  "helpSupportReleaseNotesLabel": "Release notes",
+  "helpSupportGithubLabel": "Open a ticket on GitHub",
+  "helpSupportEmailLabel": "Send an email",
+  "helpSupportAboutLinkLabel": "Contact the developer",
+  "updateRequiredTitle": "Update available",
+  "updateRequiredBody": "A new version of Planerz is available. You must update the app to continue using it.",
+  "updateRequiredCurrentVersion": "Current version",
+  "updateRequiredNewVersion": "New version",
+  "updateRequiredDownloadButton": "Download {version}",
+  "@updateRequiredDownloadButton": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  }
 }

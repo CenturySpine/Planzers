@@ -248,12 +248,14 @@ async function enrichWithGooglePlaces(name, lat, lng) {
     let imageUrl = '';
     if (place.photos && place.photos.length > 0) {
       const photoName = place.photos[0].name;
-      const photoRes = await fetch(
-        `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&key=${apiKey}`,
-        { redirect: 'follow' }
-      );
+      const photoRes = await fetch(`https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800`, {
+        headers: { 'X-Goog-Api-Key': apiKey },
+        redirect: 'follow',
+      });
       if (photoRes.ok) {
-        imageUrl = photoRes.url;
+        const resolvedImageUrl = new URL(photoRes.url);
+        resolvedImageUrl.searchParams.delete('key');
+        imageUrl = resolvedImageUrl.toString();
       }
     }
 
@@ -296,16 +298,17 @@ function isTripAdminUser(data, uid) {
 
 function roleRank(roleName) {
   const role = normalizeString(roleName);
-  if (role === 'owner') return 2;
-  if (role === 'admin') return 1;
+  if (role === 'owner') return 3;
+  if (role === 'admin') return 2;
+  if (role === 'chef') return 1;
   return 0;
 }
 
 function tripCallerRoleRank(data, uid) {
   const cleanUid = normalizeString(uid);
   if (!cleanUid) return -1;
-  if (normalizeString(data.ownerId) === cleanUid) return 2;
-  return tripAdminMemberIdSet(data).has(cleanUid) ? 1 : 0;
+  if (normalizeString(data.ownerId) === cleanUid) return 3;
+  return tripAdminMemberIdSet(data).has(cleanUid) ? 2 : 0;
 }
 
 function tripParticipantPermissionMinRole(data, key, fallbackRole) {
@@ -347,6 +350,14 @@ function defaultTripPermissions() {
       planActivity: 'admin',
       editActivity: 'participant',
       deleteActivity: 'admin',
+    },
+    meals: {
+      createMeal: 'admin',
+      deleteMeal: 'admin',
+      editMeal: 'admin',
+      suggestRestaurant: 'admin',
+      addContribution: 'participant',
+      manageRecipe: 'chef',
     },
     shopping: {
       deleteCheckedItems: 'admin',
@@ -455,17 +466,18 @@ function assertTripInviteToken(data, token) {
 }
 
 /**
- * Rewires [fromId] to [toId] in expense groups, expenses, and room bed data.
+ * Rewires [fromId] to [toId] in expense groups, expenses, rooms, and meals.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} fromId
  * @param {string} toId
  */
 async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
   const db = admin.firestore();
-  const [groupsSnap, expensesSnap, roomsSnap] = await Promise.all([
+  const [groupsSnap, expensesSnap, roomsSnap, mealsSnap] = await Promise.all([
     tripRef.collection('expenseGroups').get(),
     tripRef.collection('expenses').get(),
     tripRef.collection('rooms').get(),
+    tripRef.collection('meals').get(),
   ]);
 
   /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
@@ -560,6 +572,49 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
     }
   }
 
+  for (const doc of mealsSnap.docs) {
+    const meal = doc.data() || {};
+    const participants = (
+      Array.isArray(meal.participantIds) ? meal.participantIds : []
+    )
+      .map((v) => String(v).trim())
+      .filter((id) => id.length > 0);
+    const chefParticipantId = normalizeString(meal.chefParticipantId);
+    let dirty = false;
+
+    let newParticipants = participants;
+    if (participants.includes(fromId)) {
+      newParticipants = [
+        ...new Set(participants.map((id) => (id === fromId ? toId : id))),
+      ];
+      dirty = true;
+    } else {
+      newParticipants = [...new Set(participants)];
+    }
+
+    let newChefParticipantId = chefParticipantId;
+    if (chefParticipantId === fromId) {
+      newChefParticipantId = toId;
+      dirty = true;
+    }
+    if (
+      newChefParticipantId &&
+      !newParticipants.includes(newChefParticipantId)
+    ) {
+      newChefParticipantId = null;
+      dirty = true;
+    }
+
+    if (!dirty) continue;
+    updates.push({
+      ref: doc.ref,
+      data: {
+        participantIds: newParticipants,
+        chefParticipantId: newChefParticipantId || null,
+      },
+    });
+  }
+
   let batch = db.batch();
   let n = 0;
   for (const { ref, data } of updates) {
@@ -610,50 +665,206 @@ async function revertTripMemberClaim(tripRef, uid, phId) {
 }
 
 /**
- * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} phId
+ * @param {unknown} raw
+ * @returns {string[]}
  */
-async function assertPlaceholderUnusedInExpensesAndRooms(tripRef, phId) {
-  const [expensesSnap, roomsSnap] = await Promise.all([
-    tripRef.collection('expenses').get(),
-    tripRef.collection('rooms').get(),
-  ]);
+function normalizedIdList(raw) {
+  return (Array.isArray(raw) ? raw : [])
+    .map((v) => String(v).trim())
+    .filter((id) => id.length > 0);
+}
 
-  for (const doc of expensesSnap.docs) {
+/**
+ * @param {unknown} raw
+ * @param {string} memberId
+ * @returns {boolean}
+ */
+function participantSharesContainsMember(raw, memberId) {
+  return (
+    raw &&
+    typeof raw === 'object' &&
+    !Array.isArray(raw) &&
+    Object.prototype.hasOwnProperty.call(raw, memberId)
+  );
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
+ * @param {string} memberId
+ */
+function assertMemberNotUsedInExpenses(expenseDocs, memberId) {
+  for (const doc of expenseDocs) {
     const exp = doc.data() || {};
-    const participants = (
-      Array.isArray(exp.participantIds) ? exp.participantIds : []
-    ).map(String);
+    const participants = normalizedIdList(exp.participantIds);
     const paidBy = normalizeString(exp.paidBy);
-    const shares = exp.participantShares;
-    const inShares =
-      shares &&
-      typeof shares === 'object' &&
-      !Array.isArray(shares) &&
-      Object.prototype.hasOwnProperty.call(shares, phId);
-    if (participants.includes(phId) || paidBy === phId || inShares) {
+    const inShares = participantSharesContainsMember(
+      exp.participantShares,
+      memberId
+    );
+    if (participants.includes(memberId) || paidBy === memberId || inShares) {
       throw new HttpsError(
         'failed-precondition',
-        'Ce voyageur prévu est encore utilisé dans des dépenses. Retire-le des participants avant de le supprimer.'
+        'Ce membre est encore utilisé dans des dépenses. Retire-le des dépenses avant de le supprimer.'
       );
     }
   }
+}
 
-  for (const doc of roomsSnap.docs) {
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} roomDocs
+ * @param {string} memberId
+ */
+function assertMemberNotAssignedInRooms(roomDocs, memberId) {
+  for (const doc of roomDocs) {
     const data = doc.data() || {};
     const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
     for (const bed of bedsRaw) {
       if (!bed || typeof bed !== 'object') continue;
-      const ids = Array.isArray(bed.assignedMemberIds)
-        ? bed.assignedMemberIds.map(String)
-        : [];
-      if (ids.includes(phId)) {
+      const ids = normalizedIdList(bed.assignedMemberIds);
+      if (ids.includes(memberId)) {
         throw new HttpsError(
           'failed-precondition',
-          'Ce voyageur prévu est encore assigné à une chambre. Retire l\'assignation avant de le supprimer.'
+          'Ce membre est encore assigné à une chambre. Retire son assignation avant de le supprimer.'
         );
       }
     }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} mealDocs
+ * @param {string} memberId
+ */
+function assertMemberNotUsedInMeals(mealDocs, memberId) {
+  for (const doc of mealDocs) {
+    const meal = doc.data() || {};
+    const participants = normalizedIdList(meal.participantIds);
+    const chefParticipantId = normalizeString(meal.chefParticipantId);
+    if (participants.includes(memberId) || chefParticipantId === memberId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce membre est encore affecté à un repas. Retire-le des repas avant de le supprimer.'
+      );
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseGroupDocs
+ * @param {string} memberId
+ */
+function assertMemberNotCreatorOfNonDefaultExpensePost(expenseGroupDocs, memberId) {
+  for (const doc of expenseGroupDocs) {
+    const data = doc.data() || {};
+    const createdBy = normalizeString(data.createdBy);
+    const isDefault = data.isDefault === true;
+    if (!isDefault && createdBy === memberId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce membre est créateur d’un poste de dépense. Transfère ou supprime ce poste avant de le supprimer.'
+      );
+    }
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentData} tripData
+ * @param {string} memberId
+ */
+function assertMemberIsNotTripAdmin(tripData, memberId) {
+  if (tripAdminMemberIdSet(tripData).has(memberId)) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Ce membre est administrateur du voyage. Rétrograde-le avant de le supprimer.'
+    );
+  }
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} memberId
+ * @param {FirebaseFirestore.DocumentData} tripData
+ */
+async function assertMemberRemovalBlockingDependencies({
+  tripRef,
+  memberId,
+  tripData,
+}) {
+  const [expensesSnap, roomsSnap, mealsSnap, groupsSnap] = await Promise.all([
+    tripRef.collection('expenses').get(),
+    tripRef.collection('rooms').get(),
+    tripRef.collection('meals').get(),
+    tripRef.collection('expenseGroups').get(),
+  ]);
+  assertMemberNotUsedInExpenses(expensesSnap.docs, memberId);
+  assertMemberNotAssignedInRooms(roomsSnap.docs, memberId);
+  assertMemberNotUsedInMeals(mealsSnap.docs, memberId);
+  assertMemberIsNotTripAdmin(tripData, memberId);
+  assertMemberNotCreatorOfNonDefaultExpensePost(groupsSnap.docs, memberId);
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} memberId
+ */
+async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
+  const db = admin.firestore();
+  const FieldValue = admin.firestore.FieldValue;
+  const [activitiesSnap, mealsSnap, shoppingSnap] = await Promise.all([
+    tripRef.collection('activities').get(),
+    tripRef.collection('meals').get(),
+    tripRef.collection('shoppingItems').get(),
+  ]);
+
+  /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
+  const updates = [];
+
+  for (const doc of activitiesSnap.docs) {
+    const votes = normalizedIdList(doc.data().votes);
+    if (!votes.includes(memberId)) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { votes: FieldValue.arrayRemove(memberId) },
+    });
+  }
+
+  for (const doc of mealsSnap.docs) {
+    const meal = doc.data() || {};
+    const rawPotluckItems = Array.isArray(meal.potluckItems) ? meal.potluckItems : [];
+    const nextPotluckItems = rawPotluckItems.filter((raw) => {
+      if (!raw || typeof raw !== 'object') return true;
+      const addedBy = normalizeString(raw.addedBy);
+      return addedBy !== memberId;
+    });
+    if (nextPotluckItems.length === rawPotluckItems.length) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { potluckItems: nextPotluckItems },
+    });
+  }
+
+  for (const doc of shoppingSnap.docs) {
+    const claimedBy = normalizeString(doc.data().claimedBy);
+    if (claimedBy !== memberId) continue;
+    updates.push({
+      ref: doc.ref,
+      data: { claimedBy: FieldValue.delete() },
+    });
+  }
+
+  let batch = db.batch();
+  let n = 0;
+  for (const { ref, data } of updates) {
+    batch.update(ref, data);
+    n++;
+    if (n >= 450) {
+      await batch.commit();
+      batch = db.batch();
+      n = 0;
+    }
+  }
+  if (n > 0) {
+    await batch.commit();
   }
 }
 
@@ -1785,20 +1996,19 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     const afterIds = memberIdsAsSet(afterSnap.data() || {});
 
     const added = [...afterIds].filter((id) => !beforeIds.has(id));
-    if (added.length === 0) return;
-
     const removed = [...beforeIds].filter((id) => !afterIds.has(id));
+    if (added.length === 0 && removed.length === 0) return;
+    const isPlaceholderClaimSwap =
+      added.length === 1 &&
+      removed.length === 1 &&
+      isPlaceholderMemberId(removed[0]) &&
+      !isPlaceholderMemberId(added[0]);
 
     const tripRef = afterSnap.ref;
     for (const uid of added) {
       // Placeholder claimed by a real account: join callable migrates data;
       // do not union the new uid into every expense like a brand-new member.
-      if (
-        added.length === 1 &&
-        removed.length === 1 &&
-        isPlaceholderMemberId(removed[0]) &&
-        !isPlaceholderMemberId(uid)
-      ) {
+      if (isPlaceholderClaimSwap) {
         continue;
       }
       try {
@@ -1812,6 +2022,58 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
         );
         throw e;
       }
+    }
+
+    // Keep meals consistent when members are removed from trip.memberIds
+    // (manual participant removal or leave-trip flow).
+    // Skip placeholder claim swap: joinTripWithInvite migrates meal IDs itself.
+    if (isPlaceholderClaimSwap || removed.length === 0) {
+      return;
+    }
+
+    const db = admin.firestore();
+    const mealsSnap = await tripRef.collection('meals').get();
+    if (mealsSnap.empty) return;
+    const FieldValue = admin.firestore.FieldValue;
+    const removedSet = new Set(removed);
+    let batch = db.batch();
+    let n = 0;
+    for (const doc of mealsSnap.docs) {
+      const meal = doc.data() || {};
+      const participants = (
+        Array.isArray(meal.participantIds) ? meal.participantIds : []
+      )
+        .map((v) => String(v).trim())
+        .filter((id) => id.length > 0);
+      const chefParticipantId = normalizeString(meal.chefParticipantId);
+      const newParticipants = [
+        ...new Set(participants.filter((id) => !removedSet.has(id))),
+      ];
+      const newChefParticipantId = newParticipants.includes(chefParticipantId)
+        ? chefParticipantId
+        : null;
+      const participantsChanged =
+        newParticipants.length !== participants.length ||
+        newParticipants.some((id, idx) => id !== participants[idx]);
+      const chefChanged = newChefParticipantId !== chefParticipantId;
+      if (!participantsChanged && !chefChanged) {
+        continue;
+      }
+
+      batch.update(doc.ref, {
+        participantIds: newParticipants,
+        chefParticipantId: newChefParticipantId,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        n = 0;
+      }
+    }
+    if (n > 0) {
+      await batch.commit();
     }
   }
 );
@@ -1917,6 +2179,10 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
 
   try {
     const { html, finalUrl } = await fetchHtml(parsed);
+
+    // Guard: document may have been deleted while fetching (cancelled creation).
+    if (!(await docRef.get()).exists) return;
+
     const preview = parsePreviewFromHtml(finalUrl, html);
 
     if (isGoogleMapsUrl(finalUrl)) {
@@ -2014,6 +2280,40 @@ exports.generateMealLinkPreview = onDocumentUpdated(
       after.restaurantUrl,
       'restaurantLinkPreview'
     );
+  }
+);
+
+exports.generateTripLinkPreviewOnCreate = onDocumentCreated(
+  { document: 'trips/{tripId}', timeoutSeconds: 30, memory: '256MiB', secrets: ['GOOGLE_PLACES_API_KEY'] },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+exports.generateActivityLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/activities/{activityId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+exports.generateMealLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/meals/{mealId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.restaurantUrl, 'restaurantLinkPreview');
   }
 );
 
@@ -2346,7 +2646,12 @@ exports.removeTripPlaceholderMember = onCall(
       throw new HttpsError('not-found', 'Voyageur prévu introuvable');
     }
 
-    await assertPlaceholderUnusedInExpensesAndRooms(tripRef, placeholderId);
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId: placeholderId,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, placeholderId);
 
     const FieldValue = admin.firestore.FieldValue;
     const groupsSnap = await tripRef.collection('expenseGroups').get();
@@ -2416,48 +2721,6 @@ exports.joinTripWithInvite = onCall(
   }
 );
 
-/**
- * Removes [uid] from shared expenses for a trip: drops them from participantIds,
- * reassigns paidBy when needed, deletes docs with no participants left.
- *
- * @param {FirebaseFirestore.Transaction} tx
- * @param {FirebaseFirestore.QueryDocumentSnapshot[]} expenseDocs
- * @param {string} uid
- */
-function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
-  for (const doc of expenseDocs) {
-    const exp = doc.data() || {};
-    const participants = (Array.isArray(exp.participantIds)
-      ? exp.participantIds
-      : []
-    )
-      .map((v) => String(v).trim())
-      .filter((id) => id.length > 0);
-    const paidBy = normalizeString(exp.paidBy);
-    const inParticipants = participants.includes(uid);
-    const isPayer = paidBy === uid;
-    if (!inParticipants && !isPayer) {
-      continue;
-    }
-
-    const newParticipants = participants.filter((id) => id !== uid);
-    if (newParticipants.length === 0) {
-      tx.delete(doc.ref);
-      continue;
-    }
-
-    let newPaidBy = paidBy;
-    if (isPayer || !newParticipants.includes(paidBy)) {
-      newPaidBy = newParticipants[0];
-    }
-
-    tx.update(doc.ref, {
-      participantIds: newParticipants,
-      paidBy: newPaidBy,
-    });
-  }
-}
-
 exports.leaveTrip = onCall(
   {
   },
@@ -2474,41 +2737,108 @@ exports.leaveTrip = onCall(
 
     const db = admin.firestore();
     const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const data = tripSnap.data() || {};
+    const ownerId = normalizeString(data.ownerId);
+    if (ownerId === uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Le créateur du voyage ne peut pas quitter ainsi'
+      );
+    }
 
-    await db.runTransaction(async (tx) => {
-      const tripSnap = await tx.get(tripRef);
-      if (!tripSnap.exists) {
-        throw new HttpsError('not-found', 'Voyage introuvable');
-      }
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
 
-      const data = tripSnap.data() || {};
-      const ownerId = normalizeString(data.ownerId);
-      if (ownerId === uid) {
-        throw new HttpsError(
-          'permission-denied',
-          'Le créateur du voyage ne peut pas quitter ainsi'
-        );
-      }
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId: uid,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, uid);
 
-      const memberIds = Array.isArray(data.memberIds)
-        ? data.memberIds.map((v) => String(v))
-        : [];
-      if (!memberIds.includes(uid)) {
-        throw new HttpsError(
-          'permission-denied',
-          'Tu ne fais pas partie de ce voyage'
-        );
-      }
+    await tripRef.update({
+      memberIds: admin.firestore.FieldValue.arrayRemove(uid),
+      [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
+      adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
+    });
 
-      const expensesQuery = tripRef.collection('expenses');
-      const expensesSnap = await tx.get(expensesQuery);
-      applyLeaveTripExpenseStripping(tx, expensesSnap.docs, uid);
+    return { ok: true };
+  }
+);
 
-      tx.update(tripRef, {
-        memberIds: admin.firestore.FieldValue.arrayRemove(uid),
-        [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
-        adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
-      });
+exports.removeTripRegisteredMember = onCall(
+  {
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const memberId = normalizeString(request.data?.memberId);
+    if (!tripId || !memberId || isPlaceholderMemberId(memberId)) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+    if (memberId === uid) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Utilise l’action quitter le voyage pour ton propre compte.'
+      );
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const data = tripSnap.data() || {};
+    assertTripParticipantPermission({
+      tripData: data,
+      uid,
+      permissionKey: 'deleteRegisteredParticipant',
+      fallbackRole: 'owner',
+      deniedMessage: 'Droits insuffisants pour retirer ce participant.',
+    });
+
+    const ownerId = normalizeString(data.ownerId);
+    if (memberId === ownerId) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Le créateur du voyage ne peut pas être supprimé.'
+      );
+    }
+
+    const memberIds = Array.isArray(data.memberIds)
+      ? data.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(memberId)) {
+      throw new HttpsError('not-found', 'Participant introuvable');
+    }
+
+    await assertMemberRemovalBlockingDependencies({
+      tripRef,
+      memberId,
+      tripData: data,
+    });
+    await cleanupNonBlockingMemberReferences(tripRef, memberId);
+
+    await tripRef.update({
+      memberIds: admin.firestore.FieldValue.arrayRemove(memberId),
+      [`memberPublicLabels.${memberId}`]: admin.firestore.FieldValue.delete(),
+      adminMemberIds: admin.firestore.FieldValue.arrayRemove(memberId),
     });
 
     return { ok: true };
@@ -3004,6 +3334,152 @@ exports.deleteCupidonMatch = onCall(
       });
     }
     return { ok: true };
+  }
+);
+
+/**
+ * Returns anonymous app-wide usage statistics for the administration panel.
+ * Restricted to users with isApplicationOwner === true in Firestore.
+ * No PII is returned — no names, emails, or location data.
+ */
+exports.getAppUsageStats = onCall(
+  {
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    if (userData.isApplicationOwner !== true) {
+      throw new HttpsError('permission-denied', 'Accès réservé aux administrateurs');
+    }
+
+    const now = Date.now();
+
+    // --- Trips ---
+    const tripsSnap = await db.collection('trips').get();
+    let totalTrips = 0;
+    let pastTrips = 0;
+    let ongoingTrips = 0;
+    let upcomingTrips = 0;
+    let uncategorizedTrips = 0;
+    let maxParticipants = 0;
+    let maxDurationDays = 0;
+    let latestTripCreatedAtMs = 0;
+
+    for (const doc of tripsSnap.docs) {
+      const trip = doc.data() || {};
+      totalTrips++;
+      const createdAt = trip.createdAt instanceof admin.firestore.Timestamp
+        ? trip.createdAt.toMillis()
+        : doc.createTime instanceof admin.firestore.Timestamp
+        ? doc.createTime.toMillis()
+        : 0;
+      if (createdAt > latestTripCreatedAtMs) {
+        latestTripCreatedAtMs = createdAt;
+      }
+
+      const memberCount = Array.isArray(trip.memberIds) ? trip.memberIds.length : 0;
+      if (memberCount > maxParticipants) maxParticipants = memberCount;
+
+      const startDate = trip.startDate instanceof admin.firestore.Timestamp
+        ? trip.startDate
+        : null;
+      const endDate = trip.endDate instanceof admin.firestore.Timestamp
+        ? trip.endDate
+        : null;
+
+      if (startDate && endDate) {
+        const durationMs = endDate.toMillis() - startDate.toMillis();
+        const durationDays = Math.max(0, Math.round(durationMs / (1000 * 60 * 60 * 24)));
+        if (durationDays > maxDurationDays) maxDurationDays = durationDays;
+
+        const startMs = startDate.toMillis();
+        const endMs = endDate.toMillis();
+        if (endMs < now) {
+          pastTrips++;
+        } else if (startMs > now) {
+          upcomingTrips++;
+        } else {
+          ongoingTrips++;
+        }
+      } else if (startDate) {
+        if (startDate.toMillis() > now) {
+          upcomingTrips++;
+        } else {
+          ongoingTrips++;
+        }
+      } else {
+        uncategorizedTrips++;
+      }
+    }
+
+    // --- Users ---
+    let totalUsers = 0;
+    let latestSignInMs = 0;
+    let pageToken;
+
+    do {
+      const listResult = await admin.auth().listUsers(1000, pageToken);
+      for (const user of listResult.users) {
+        totalUsers++;
+        const signInTime = user.metadata.lastSignInTime;
+        if (signInTime) {
+          const ms = new Date(signInTime).getTime();
+          if (!isNaN(ms) && ms > latestSignInMs) latestSignInMs = ms;
+        }
+      }
+      pageToken = listResult.pageToken;
+    } while (pageToken);
+
+    // --- Activities ---
+    const activitiesSnap = await db.collectionGroup('activities').get();
+    let totalActivities = 0;
+    let plannedActivities = 0;
+    /** @type {Record<string, number>} */
+    const activitiesByCategory = {};
+
+    for (const doc of activitiesSnap.docs) {
+      const act = doc.data() || {};
+      totalActivities++;
+
+      const category = normalizeString(act.category) || 'unknown';
+      activitiesByCategory[category] = (activitiesByCategory[category] || 0) + 1;
+
+      if (act.plannedAt instanceof admin.firestore.Timestamp) {
+        plannedActivities++;
+      }
+    }
+
+    return {
+      trips: {
+        total: totalTrips,
+        past: pastTrips,
+        ongoing: ongoingTrips,
+        upcoming: upcomingTrips,
+        uncategorized: uncategorizedTrips,
+        maxParticipants,
+        maxDurationDays,
+        latestCreatedAtIso: latestTripCreatedAtMs > 0
+          ? new Date(latestTripCreatedAtMs).toISOString()
+          : null,
+      },
+      users: {
+        total: totalUsers,
+        latestSignInMs: latestSignInMs > 0 ? latestSignInMs : null,
+      },
+      activities: {
+        total: totalActivities,
+        planned: plannedActivities,
+        byCategory: activitiesByCategory,
+      },
+    };
   }
 );
 

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
 import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
@@ -296,7 +297,11 @@ class _ChatWidgetState extends State<ChatWidget> {
   Future<bool> _editMessage(TripMessage message) async {
     final newText = await showDialog<String>(
       context: context,
-      builder: (ctx) => _EditChatMessageDialog(initialText: message.text),
+      builder: (ctx) => EditTextDialog(
+        initialText: message.text,
+        title: AppLocalizations.of(ctx)!.chatEditMessageTitle,
+        maxLength: TripMessagesRepository.maxTextLength,
+      ),
     );
     if (newText == null || !mounted) return false;
     try {
@@ -459,8 +464,7 @@ class _ChatWidgetState extends State<ChatWidget> {
       child: Column(
         children: [
           if (selected != null)
-            _MessageSelectionAppBar(
-              selectedIsMine: selectedIsMine,
+            MessageSelectionActionBar(
               onClose: _clearSelection,
               onCopy: () => _copyMessage(selected),
               onEdit: selectedIsMine
@@ -585,11 +589,9 @@ class _ChatWidgetState extends State<ChatWidget> {
                               : MouseCursor.defer,
                           child: Stack(
                             clipBehavior: Clip.none,
-                            alignment: Alignment.topCenter,
                             children: [
                               Padding(
                                 padding: EdgeInsets.only(
-                                  top: isSelected ? 34 : 0,
                                   bottom:
                                       groupedReactions.isNotEmpty ? 16 : 0,
                                 ),
@@ -693,57 +695,41 @@ class _ChatWidgetState extends State<ChatWidget> {
                                     totalCount: totalReactionCount,
                                   ),
                                 ),
-                              if (isSelected)
-                                Positioned(
-                                  top: 0,
-                                  child: _InlineMessageQuickReactionBar(
-                                    emojis: _quickReactionEmojis,
-                                    onEmojiTap: (emoji) =>
-                                        _setReactionWithEmoji(
-                                      message: m,
-                                      reactions: reactions,
-                                      selectedEmoji: emoji,
-                                    ),
-                                    onMoreTap: () => _reactToMessage(
-                                      message: m,
-                                      reactions: reactions,
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
                         ),
                       );
 
-                      // Non-mine messages: badge column + constrained bubble
-                      if (!isMine && widget.showUserBadges) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      // Builds the reaction bar overlay anchored outside
+                      // IntrinsicWidth so that all buttons remain hittable even
+                      // when the bubble is narrower than the bar.
+                      Widget wrapWithReactionBar(
+                        Widget item, {
+                        required double? left,
+                        required double? right,
+                      }) {
+                        if (!isSelected) return item;
+                        return Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            SizedBox(
-                              width: 38, // 32px badge + 6px gap
-                              child: entry.showBadge
-                                  ? Align(
-                                      alignment: Alignment.topCenter,
-                                      child: buildProfileBadge(
-                                        context: context,
-                                        displayLabel: label,
-                                        userData: widget.userDocs[m.authorId],
-                                        size: 32,
-                                      ),
-                                    )
-                                  : null,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 34),
+                              child: item,
                             ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: IntrinsicWidth(
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      maxWidth: maxBubbleWidthWithBadge,
-                                    ),
-                                    child: bubble,
-                                  ),
+                            Positioned(
+                              top: 0,
+                              left: left,
+                              right: right,
+                              child: _InlineMessageQuickReactionBar(
+                                emojis: _quickReactionEmojis,
+                                onEmojiTap: (emoji) => _setReactionWithEmoji(
+                                  message: m,
+                                  reactions: reactions,
+                                  selectedEmoji: emoji,
+                                ),
+                                onMoreTap: () => _reactToMessage(
+                                  message: m,
+                                  reactions: reactions,
                                 ),
                               ),
                             ),
@@ -751,16 +737,61 @@ class _ChatWidgetState extends State<ChatWidget> {
                         );
                       }
 
-                      return Align(
-                        alignment: isMine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: IntrinsicWidth(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
-                            child: bubble,
+                      // Non-mine messages: badge column + constrained bubble
+                      if (!isMine && widget.showUserBadges) {
+                        return wrapWithReactionBar(
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 38, // 32px badge + 6px gap
+                                child: entry.showBadge
+                                    ? Align(
+                                        alignment: Alignment.topCenter,
+                                        child: buildProfileBadge(
+                                          context: context,
+                                          displayLabel: label,
+                                          userData: widget.userDocs[m.authorId],
+                                          size: 32,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: IntrinsicWidth(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: maxBubbleWidthWithBadge,
+                                      ),
+                                      child: bubble,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          left: 38.0,
+                          right: null,
+                        );
+                      }
+
+                      return wrapWithReactionBar(
+                        Align(
+                          alignment: isMine
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                              constraints:
+                                  BoxConstraints(maxWidth: maxBubbleWidth),
+                              child: bubble,
+                            ),
                           ),
                         ),
+                        left: isMine ? null : 0.0,
+                        right: isMine ? 0.0 : null,
                       );
                     },
                   ),
@@ -966,68 +997,6 @@ Future<void> _openChatUrl(BuildContext context, String url) async {
   if (!didLaunch && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.linkOpenImpossible)),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Selection app bar
-// ---------------------------------------------------------------------------
-
-class _MessageSelectionAppBar extends StatelessWidget {
-  const _MessageSelectionAppBar({
-    required this.selectedIsMine,
-    required this.onClose,
-    required this.onCopy,
-    this.onEdit,
-    this.onDelete,
-  });
-
-  final bool selectedIsMine;
-  final VoidCallback onClose;
-  final VoidCallback onCopy;
-  final Future<void> Function()? onEdit;
-  final Future<void> Function()? onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      elevation: 3,
-      color: scheme.surfaceContainerHigh,
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: kToolbarHeight,
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close),
-                tooltip: AppLocalizations.of(context)!.commonClose,
-                onPressed: onClose,
-              ),
-              const Spacer(),
-              if (onEdit != null)
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: AppLocalizations.of(context)!.commonEdit,
-                  onPressed: () => unawaited(onEdit!()),
-                ),
-              if (onDelete != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  tooltip: AppLocalizations.of(context)!.commonDelete,
-                  onPressed: () => unawaited(onDelete!()),
-                ),
-              IconButton(
-                icon: const Icon(Icons.copy_outlined),
-                tooltip: AppLocalizations.of(context)!.chatCopy,
-                onPressed: onCopy,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1271,62 +1240,3 @@ class _ScrollToBottomButton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Edit message dialog
-// ---------------------------------------------------------------------------
-
-class _EditChatMessageDialog extends StatefulWidget {
-  const _EditChatMessageDialog({required this.initialText});
-
-  final String initialText;
-
-  @override
-  State<_EditChatMessageDialog> createState() => _EditChatMessageDialogState();
-}
-
-class _EditChatMessageDialogState extends State<_EditChatMessageDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialText);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.chatEditMessageTitle),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        minLines: 3,
-        maxLines: 8,
-        maxLength: TripMessagesRepository.maxTextLength,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.commonCancel),
-        ),
-        FilledButton(
-          onPressed: () {
-            final t = _controller.text.trim();
-            if (t.isEmpty) return;
-            Navigator.pop(context, t);
-          },
-          child: Text(AppLocalizations.of(context)!.commonSave),
-        ),
-      ],
-    );
-  }
-}

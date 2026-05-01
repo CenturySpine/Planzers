@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/core/presentation/message_selection_action_bar.dart';
+import 'package:planerz/features/trips/data/trip_announcement.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -25,6 +27,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
   late final NotificationCenterRepository _notificationCenter;
   bool _sending = false;
   final Set<String> _deletingIds = <String>{};
+  String? _selectedAnnouncementId;
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
   String? _presenceTripId;
@@ -145,7 +148,10 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
     );
     if (confirm != true || !mounted) return;
 
-    setState(() => _deletingIds.add(announcementId));
+    setState(() {
+      _deletingIds.add(announcementId);
+      _selectedAnnouncementId = null;
+    });
     try {
       await ref.read(tripAnnouncementsRepositoryProvider).deleteAnnouncement(
             tripId: tripId,
@@ -158,6 +164,36 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
       );
     } finally {
       if (mounted) setState(() => _deletingIds.remove(announcementId));
+    }
+  }
+
+  Future<bool> _editAnnouncement({
+    required String tripId,
+    required TripAnnouncement announcement,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => EditTextDialog(
+        initialText: announcement.text,
+        title: l10n.tripAnnouncementsEditTitle,
+        maxLength: TripAnnouncementsRepository.maxTextLength,
+      ),
+    );
+    if (newText == null || !mounted) return false;
+    try {
+      await ref.read(tripAnnouncementsRepositoryProvider).updateAnnouncement(
+            tripId: tripId,
+            announcementId: announcement.id,
+            text: newText,
+          );
+      return true;
+    } catch (e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+      return false;
     }
   }
 
@@ -177,182 +213,249 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
     final timeFmt = DateFormat.Hm(localeTag);
     final dateFmt = DateFormat('d MMM yyyy', localeTag);
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                l10n.tripAnnouncementsPageTitle,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: announcementsAsync.when(
-              data: (announcements) {
-                _markAnnouncementsAsReadIfNeeded(trip.id);
-                if (announcements.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        l10n.tripAnnouncementsEmptyState,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  );
-                }
-                _scrollToBottom();
-                return ListView.builder(
-                  controller: _scrollController,
+    return PopScope(
+      canPop: _selectedAnnouncementId == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selectedAnnouncementId != null) {
+          setState(() => _selectedAnnouncementId = null);
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Column(
+          children: [
+            if (_selectedAnnouncementId != null)
+              Builder(builder: (context) {
+                final announcements = announcementsAsync.asData?.value ?? [];
+                final selected = announcements.firstWhere(
+                  (a) => a.id == _selectedAnnouncementId,
+                  orElse: () {
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => setState(() => _selectedAnnouncementId = null),
+                    );
+                    return announcements.first;
+                  },
+                );
+                return MessageSelectionActionBar(
+                  onClose: () => setState(() => _selectedAnnouncementId = null),
+                  onEdit: canPublish
+                      ? () async {
+                          final ok = await _editAnnouncement(
+                            tripId: trip.id,
+                            announcement: selected,
+                          );
+                          if (ok && mounted) setState(() => _selectedAnnouncementId = null);
+                        }
+                      : null,
+                  onDelete: canPublish
+                      ? () => _deleteAnnouncement(
+                            tripId: trip.id,
+                            announcementId: selected.id,
+                          )
+                      : null,
+                );
+              }),
+            if (_selectedAnnouncementId == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  itemCount: announcements.length,
-                  itemBuilder: (context, index) {
-                    final announcement = announcements[index];
-                    final localDate = announcement.createdAt.toLocal();
-                    final deleting = _deletingIds.contains(announcement.id);
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    l10n.tripAnnouncementsPageTitle,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onTertiaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: announcementsAsync.when(
+                data: (announcements) {
+                  _markAnnouncementsAsReadIfNeeded(trip.id);
+                  if (announcements.isEmpty) {
+                    return Center(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(announcement.text),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        '${dateFmt.format(localDate)} · ${timeFmt.format(localDate)}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (canPublish)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 6),
-                                    child: IconButton(
-                                      onPressed: deleting
-                                          ? null
-                                          : () => unawaited(
-                                                _deleteAnnouncement(
-                                                  tripId: trip.id,
-                                                  announcementId: announcement.id,
-                                                ),
-                                              ),
-                                      icon: deleting
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Icon(Icons.delete_outline),
-                                      tooltip: l10n.commonDelete,
-                                      visualDensity: VisualDensity.compact,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 28,
-                                        minHeight: 28,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          l10n.tripAnnouncementsEmptyState,
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    l10n.commonErrorWithDetails(e.toString()),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (canPublish)
-            Material(
-              elevation: 2,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _textController,
-                          minLines: 1,
-                          maxLines: 5,
-                          textCapitalization: TextCapitalization.sentences,
-                          decoration: InputDecoration(
-                            hintText: l10n.tripAnnouncementsInputHint,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
+                  }
+                  _scrollToBottom();
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    itemCount: announcements.length,
+                    itemBuilder: (context, index) {
+                      final announcement = announcements[index];
+                      final localDate = announcement.createdAt.toLocal();
+                      final deleting = _deletingIds.contains(announcement.id);
+                      final isSelected = _selectedAnnouncementId == announcement.id;
+                      return GestureDetector(
+                        onLongPress: canPublish
+                            ? () => setState(() => _selectedAnnouncementId = announcement.id)
+                            : null,
+                        onTap: isSelected
+                            ? () => setState(() => _selectedAnnouncementId = null)
+                            : null,
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.secondaryContainer
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(announcement.text),
+                                          const SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                '${dateFmt.format(localDate)} · ${timeFmt.format(localDate)}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                              ),
+                                              if (announcement.wasEdited) ...[
+                                                const SizedBox(width: 4),
+                                                Icon(
+                                                  Icons.edit_rounded,
+                                                  size: 10,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (canPublish && !isSelected)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 6),
+                                        child: IconButton(
+                                          onPressed: deleting
+                                              ? null
+                                              : () => unawaited(
+                                                    _deleteAnnouncement(
+                                                      tripId: trip.id,
+                                                      announcementId: announcement.id,
+                                                    ),
+                                                  ),
+                                          icon: deleting
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : Icon(Icons.delete_outline,
+                                                  color: Theme.of(context).colorScheme.error),
+                                          tooltip: l10n.commonDelete,
+                                          visualDensity: VisualDensity.compact,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                            minWidth: 28,
+                                            minHeight: 28,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          onSubmitted: _sending ? null : (_) => unawaited(_send(trip.id)),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        onPressed: _sending ? null : () => unawaited(_send(trip.id)),
-                        icon: _sending
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.send),
-                        tooltip: l10n.chatSend,
-                      ),
-                    ],
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.commonErrorWithDetails(e.toString()),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ),
             ),
-        ],
+            if (canPublish)
+              Material(
+                elevation: 2,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            minLines: 1,
+                            maxLines: 5,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: l10n.tripAnnouncementsInputHint,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            onSubmitted: _sending ? null : (_) => unawaited(_send(trip.id)),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filled(
+                          onPressed: _sending ? null : () => unawaited(_send(trip.id)),
+                          icon: _sending
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send),
+                          tooltip: l10n.chatSend,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -13,14 +13,18 @@ class TripPermissionItemRow extends StatelessWidget {
     required this.busy,
     required this.enabled,
     required this.onChanged,
+    this.iconColor,
+    this.availableRoles,
   });
 
   final String title;
   final TripPermissionRole minRole;
   final IconData icon;
+  final Color? iconColor;
   final bool busy;
   final bool enabled;
   final ValueChanged<TripPermissionRole> onChanged;
+  final List<TripPermissionRole>? availableRoles;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ class TripPermissionItemRow extends StatelessWidget {
             flex: 6,
             child: Row(
               children: [
-                Icon(icon),
+                Icon(icon, color: iconColor),
                 const SizedBox(width: 12),
                 Expanded(child: Text(title)),
               ],
@@ -46,6 +50,7 @@ class TripPermissionItemRow extends StatelessWidget {
               busy: busy,
               enabled: enabled,
               onChanged: onChanged,
+              availableRoles: availableRoles,
             ),
           ),
         ],

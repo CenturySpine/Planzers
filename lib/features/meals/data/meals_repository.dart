@@ -135,7 +135,6 @@ class MealsRepository {
     required String mealDayPart, // 'morning', 'midday', 'evening'
     required List<String> participantIds,
     String? chefParticipantId,
-    required String notes,
     List<MealComponent> components = const [],
     MealMode mealMode = MealMode.cooked,
     String restaurantUrl = '',
@@ -159,7 +158,6 @@ class MealsRepository {
       'chefParticipantId': chefParticipantId?.trim().isEmpty ?? true
           ? null
           : chefParticipantId!.trim(),
-      'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
@@ -173,57 +171,6 @@ class MealsRepository {
     });
 
     return docRef.id;
-  }
-
-  Future<void> updateMeal({
-    required String tripId,
-    required String mealId,
-    required String mealDateKey,
-    required String mealDayPart,
-    required List<String> participantIds,
-    String? chefParticipantId,
-    required String notes,
-    List<MealComponent> components = const [],
-    MealMode mealMode = MealMode.cooked,
-    String restaurantUrl = '',
-    List<MealPotluckItem> potluckItems = const [],
-    bool componentsUserOrdered = false,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanMealId = mealId.trim();
-    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
-      throw StateError('Repas invalide');
-    }
-
-    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
-    final snap = await docRef.get();
-    if (!snap.exists) {
-      throw StateError('Repas introuvable');
-    }
-
-    await docRef.update({
-      'mealDateKey': mealDateKey.trim(),
-      'mealDayPart': mealDayPart.trim(),
-      'participantIds': participantIds,
-      'chefParticipantId': chefParticipantId?.trim().isEmpty ?? true
-          ? null
-          : chefParticipantId!.trim(),
-      'notes': notes.trim(),
-      'components': components.map((c) => c.toMap()).toList(growable: false),
-      'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
-      'potluckItems': potluckItems
-          .map((item) => item.toMap())
-          .where((item) => (item['label'] as String).isNotEmpty)
-          .toList(growable: false),
-      'componentsUserOrdered': componentsUserOrdered,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
   }
 
   Future<void> updateMealDate({
@@ -300,10 +247,6 @@ class MealsRepository {
     }
 
     final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
-    final snap = await docRef.get();
-    if (!snap.exists) {
-      throw StateError('Repas introuvable');
-    }
 
     final normalizedParticipantIds = participantIds
         .map((id) => id.trim())
@@ -314,14 +257,21 @@ class MealsRepository {
 
     final normalizedChef = (chefParticipantId ?? '').trim();
 
-    await docRef.update({
-      'participantIds': normalizedParticipantIds,
-      'chefParticipantId': normalizedChef.isEmpty ||
-              !normalizedParticipantIds.contains(normalizedChef)
-          ? null
-          : normalizedChef,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await docRef.update({
+        'participantIds': normalizedParticipantIds,
+        'chefParticipantId': normalizedChef.isEmpty ||
+                !normalizedParticipantIds.contains(normalizedChef)
+            ? null
+            : normalizedChef,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (error) {
+      if (error.code == 'not-found') {
+        throw StateError('Repas introuvable');
+      }
+      rethrow;
+    }
   }
 
   Future<void> updateMealMode({

@@ -9,7 +9,6 @@ TripMeal _meal({
 }) {
   return TripMeal(
     id: id,
-    name: id,
     mealDateKey: dateKey,
     mealDayPart: part,
     participantIds: const [],

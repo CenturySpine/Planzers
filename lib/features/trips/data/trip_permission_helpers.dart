@@ -212,3 +212,87 @@ bool canDeleteActivityForTrip({
     minRole: trip.activitiesPermissions.deleteActivityMinRole,
   );
 }
+
+bool canCreateMealForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.createMealMinRole,
+  );
+}
+
+bool canDeleteMealForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.deleteMealMinRole,
+  );
+}
+
+bool canEditMealForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.editMealMinRole,
+  );
+}
+
+bool canSuggestRestaurantForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.suggestRestaurantMinRole,
+  );
+}
+
+bool canAddMealContributionForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.addContributionMinRole,
+  );
+}
+
+bool canManageMealRecipeForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(
+    currentRole: role,
+    minRole: trip.mealsPermissions.manageRecipeMinRole,
+  );
+}

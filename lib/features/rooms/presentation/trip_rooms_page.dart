@@ -416,7 +416,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                     ),
                     IconButton(
                       onPressed: () => _delete(room),
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                     ),
                   ],
                 ],
@@ -466,7 +466,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                   children: [
                                     if (_beds.length > 1)
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline),
+                                        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                                         onPressed: () => setState(() {
                                           _beds = [..._beds]..removeAt(i);
                                         }),
@@ -682,6 +682,7 @@ class _CreateRoomSheet extends ConsumerStatefulWidget {
 class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
+  bool _defaultNameInitialized = false;
   List<_EditableBed> _beds = <_EditableBed>[
     _EditableBed(type: TripBedType.double, kind: TripBedKind.regular),
   ];
@@ -690,10 +691,16 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
   @override
   void initState() {
     super.initState();
+    _nameController = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_defaultNameInitialized) return;
+    _defaultNameInitialized = true;
     final l10n = AppLocalizations.of(context)!;
-    _nameController = TextEditingController(
-      text: '${l10n.roomsRoomLabel} ${widget.allRooms.length + 1}',
-    );
+    _nameController.text = '${l10n.roomsRoomLabel} ${widget.allRooms.length + 1}';
   }
 
   @override
@@ -781,7 +788,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                           : () => setState(() {
                                 _beds = [..._beds]..removeAt(i);
                               }),
-                      icon: const Icon(Icons.delete_outline),
+                      icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                     ),
                   ),
                 ),

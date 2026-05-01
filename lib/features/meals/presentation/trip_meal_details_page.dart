@@ -14,6 +14,7 @@ import 'package:planerz/features/meals/presentation/meal_component_editor_page.d
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -55,6 +56,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _componentsUserOrdered = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
+  final Set<MealPotluckCategory> _expandedPotluckCategories = {
+    MealPotluckCategory.salty,
+    MealPotluckCategory.sweet,
+    MealPotluckCategory.soft,
+    MealPotluckCategory.alcohol,
+  };
   bool _isRestaurantLinkEditing = false;
   String _restaurantUrl = '';
 
@@ -88,28 +95,124 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     };
   }
 
-  Future<String?> _showPotluckItemDialog({
+  Widget _buildPotluckDraftInlineRow({
+    required AppLocalizations l10n,
+    required _PotluckItemDraft draft,
+    required ValueChanged<_PotluckItemDraft> onChanged,
+    bool showRemove = false,
+    VoidCallback? onRemove,
+  }) {
+    return Row(
+      children: [
+        PopupMenuButton<MealPotluckCategory>(
+          tooltip: _potluckCategoryLabel(l10n, draft.category),
+          onSelected: (category) {
+            onChanged(draft.copyWith(category: category));
+          },
+          itemBuilder: (context) => [
+            for (final category in MealPotluckCategory.values)
+              PopupMenuItem<MealPotluckCategory>(
+                value: category,
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      _potluckCategoryAsset(category),
+                      width: 18,
+                      height: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_potluckCategoryLabel(l10n, category)),
+                  ],
+                ),
+              ),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: SvgPicture.asset(
+              _potluckCategoryAsset(draft.category),
+              width: 20,
+              height: 20,
+              semanticsLabel: _potluckCategoryLabel(l10n, draft.category),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: TextFormField(
+            initialValue: draft.label,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: l10n.mealPotluckItemLabel,
+              isDense: true,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) => onChanged(draft.copyWith(label: value)),
+          ),
+        ),
+        const SizedBox(width: 6),
+        SizedBox(
+          width: 86,
+          child: TextFormField(
+            initialValue: draft.quantityUnits.toString(),
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              labelText: l10n.mealPotluckQuantityLabel,
+              isDense: true,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (value) => onChanged(
+              draft.copyWith(
+                quantityUnits:
+                    int.tryParse(value.trim()) ?? draft.quantityUnits,
+              ),
+            ),
+          ),
+        ),
+        if (showRemove) ...[
+          const SizedBox(width: 2),
+          IconButton(
+            tooltip: l10n.commonDelete,
+            visualDensity: VisualDensity.compact,
+            onPressed: onRemove,
+            icon: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<_PotluckItemDraft?> _showPotluckItemDialog({
     required String title,
-    String initialValue = '',
     required String confirmLabel,
+    _PotluckItemDraft? initialValue,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    var draft = initialValue;
-    return showDialog<String>(
+    var draft = initialValue ??
+        const _PotluckItemDraft(
+          category: MealPotluckCategory.salty,
+          label: '',
+          quantityUnits: 1,
+        );
+    final result = await showDialog<_PotluckItemDraft>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(title),
-        content: TextFormField(
-          initialValue: initialValue,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: l10n.mealPotluckItemLabel,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (value) => draft = value,
-          onFieldSubmitted: (value) =>
-              Navigator.of(dialogContext).pop(value.trim()),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return _buildPotluckDraftInlineRow(
+              l10n: l10n,
+              draft: draft,
+              onChanged: (nextDraft) {
+                setDialogState(() {
+                  draft = nextDraft;
+                });
+              },
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -117,33 +220,135 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(draft.trim()),
+            onPressed: () => Navigator.of(dialogContext).pop(
+              draft.copyWith(
+                label: draft.label.trim(),
+                quantityUnits:
+                    draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+              ),
+            ),
             child: Text(confirmLabel),
+          ),
+        ],
+      ),
+    );
+    return result;
+  }
+
+  Future<List<_PotluckItemDraft>?> _showPotluckCreateDialog({
+    required MealPotluckCategory initialCategory,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    var drafts = <_PotluckItemDraft>[
+      _PotluckItemDraft(
+        category: initialCategory,
+        label: '',
+        quantityUnits: 1,
+      ),
+    ];
+    return showDialog<List<_PotluckItemDraft>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealPotluckAddItemTitle),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return SizedBox(
+              width: 560,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var index = 0; index < drafts.length; index++) ...[
+                    _buildPotluckDraftInlineRow(
+                      l10n: l10n,
+                      draft: drafts[index],
+                      onChanged: (updated) {
+                        setDialogState(() {
+                          drafts[index] = updated;
+                        });
+                      },
+                      showRemove: drafts.length > 1,
+                      onRemove: () {
+                        setDialogState(() {
+                          drafts.removeAt(index);
+                        });
+                      },
+                    ),
+                    if (index < drafts.length - 1) const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setDialogState(() {
+                          drafts.add(
+                            _PotluckItemDraft(
+                              category: initialCategory,
+                              label: '',
+                              quantityUnits: 1,
+                            ),
+                          );
+                        });
+                      },
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.commonAdd),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final cleaned = drafts
+                  .where((draft) => draft.label.trim().isNotEmpty)
+                  .map(
+                    (draft) => draft.copyWith(
+                      label: draft.label.trim(),
+                      quantityUnits:
+                          draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+                    ),
+                  )
+                  .toList(growable: false);
+              Navigator.of(dialogContext).pop(cleaned);
+            },
+            child: Text(l10n.commonAdd),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _addPotluckItem() async {
-    final l10n = AppLocalizations.of(context)!;
-    final value = await _showPotluckItemDialog(
-      title: l10n.mealPotluckAddItemTitle,
-      confirmLabel: l10n.commonAdd,
+  Future<void> _addPotluckItem({
+    required MealPotluckCategory initialCategory,
+  }) async {
+    final value = await _showPotluckCreateDialog(
+      initialCategory: initialCategory,
     );
     if (!mounted) return;
-    final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty) return;
+    final drafts = value;
+    if (drafts == null || drafts.isEmpty) return;
     final uid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final previousItems = _potluckItems;
     setState(() {
       _potluckItems = [
         ..._potluckItems,
-        MealPotluckItem(
-          id: 'potluck_${DateTime.now().microsecondsSinceEpoch}_${_potluckItems.length}',
-          label: trimmed,
-          addedBy: uid,
-        ),
+        for (var index = 0; index < drafts.length; index++)
+          MealPotluckItem(
+            id: 'potluck_${DateTime.now().microsecondsSinceEpoch}_${_potluckItems.length}_$index',
+            label: drafts[index].label.trim(),
+            addedBy: uid,
+            category: drafts[index].category,
+            quantityUnits: drafts[index].quantityUnits > 0
+                ? drafts[index].quantityUnits
+                : 1,
+          ),
       ];
     });
     await _savePotluckItems(previousItems: previousItems);
@@ -151,18 +356,27 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   Future<void> _editPotluckItem(int index) async {
     final l10n = AppLocalizations.of(context)!;
+    final item = _potluckItems[index];
     final value = await _showPotluckItemDialog(
       title: l10n.commonEdit,
-      initialValue: _potluckItems[index].label,
       confirmLabel: l10n.commonSave,
+      initialValue: _PotluckItemDraft(
+        category: item.category,
+        label: item.label,
+        quantityUnits: item.quantityUnits,
+      ),
     );
     if (!mounted) return;
-    final trimmed = (value ?? '').trim();
-    if (trimmed.isEmpty) return;
+    final draft = value;
+    if (draft == null || draft.label.trim().isEmpty) return;
     final previousItems = _potluckItems;
     setState(() {
       final next = _potluckItems.toList(growable: true);
-      next[index] = next[index].copyWith(label: trimmed);
+      next[index] = next[index].copyWith(
+        label: draft.label.trim(),
+        category: draft.category,
+        quantityUnits: draft.quantityUnits > 0 ? draft.quantityUnits : 1,
+      );
       _potluckItems = next;
     });
     await _savePotluckItems(previousItems: previousItems);
@@ -222,6 +436,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required AppLocalizations l10n,
     required TextTheme textTheme,
     required ColorScheme colorScheme,
+    required bool canEditMealMode,
   }) {
     return Container(
       width: double.infinity,
@@ -269,7 +484,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     ),
                   ],
                   selected: {_activeMealView},
-                  onSelectionChanged: _isSavingMealMode
+                  onSelectionChanged: (_isSavingMealMode || !canEditMealMode)
                       ? null
                       : (selection) async {
                           if (selection.isEmpty) {
@@ -308,13 +523,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingRestaurantUrl) return;
     final trimmed = _restaurantUrlController.text.trim();
-    if (trimmed.isEmpty) return;
-    final parsed = Uri.tryParse(trimmed);
-    if (parsed == null || !parsed.isAbsolute) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.linkInvalid)),
-      );
-      return;
+    if (trimmed.isNotEmpty) {
+      final parsed = Uri.tryParse(trimmed);
+      if (parsed == null || !parsed.isAbsolute) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.linkInvalid)),
+        );
+        return;
+      }
     }
     final previousUrl = _restaurantUrl;
     final previousEditing = _isRestaurantLinkEditing;
@@ -363,6 +579,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     });
   }
 
+  Future<void> _clearRestaurantUrl() async {
+    _restaurantUrlController.text = '';
+    await _saveRestaurantUrl();
+  }
+
   void _cancelEditRestaurantUrl() {
     setState(() {
       _restaurantUrlController.text = _restaurantUrl;
@@ -400,6 +621,16 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
+    // Keep optimistic local edits while a save is in-flight.
+    if (_isSavingParticipants ||
+        _isSavingDate ||
+        _isSavingMealDayPart ||
+        _isSavingMealMode ||
+        _isSavingPotluckItems ||
+        _isSavingRestaurantUrl ||
+        _isSavingComponents) {
+      return;
+    }
     _mealDate = meal.mealDateAsDateTime;
     _mealDayPart = meal.mealDayPart;
     _participantIds = meal.participantIds.toSet();
@@ -438,6 +669,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool get _shouldAutoOrderComponents =>
       _activeMealView == _MealDetailsView.cooked && !_componentsUserOrdered;
 
+  List<MealPotluckCategory> get _orderedPotluckCategories => const [
+        MealPotluckCategory.salty,
+        MealPotluckCategory.sweet,
+        MealPotluckCategory.soft,
+        MealPotluckCategory.alcohol,
+      ];
+
   int _componentKindSortIndex(MealComponentKind kind) {
     return switch (kind) {
       MealComponentKind.entree => 0,
@@ -453,7 +691,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     final normalizedComponents = components.toList(growable: true);
     if (shouldAutoOrder) {
       normalizedComponents.sort((leftComponent, rightComponent) {
-        final kindCompare = _componentKindSortIndex(leftComponent.kind).compareTo(
+        final kindCompare =
+            _componentKindSortIndex(leftComponent.kind).compareTo(
           _componentKindSortIndex(rightComponent.kind),
         );
         if (kindCompare != 0) {
@@ -557,7 +796,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: tripMemberPublicLabels,
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -590,7 +829,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: tripMemberPublicLabels,
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -641,7 +880,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: const {},
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -689,7 +928,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         userData: lockOwnerData,
         tripMemberPublicLabels: const {},
         currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.roleParticipant,
+        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1010,7 +1249,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         mealDayPart: mealDayPart,
         participantIds: participantIds,
         chefParticipantId: _chefParticipantId,
-        notes: '',
         components: _components,
         mealMode: mealMode,
         restaurantUrl: restaurantUrl,
@@ -1116,16 +1354,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             .map((id) => id.trim())
             .where((id) => id.isNotEmpty)
             .toList();
-        final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
-        final labels = <String, String>{
-          for (final id in memberIds)
-            id: (id == myUid)
-                ? l10n.commonMe
-                : ((trip.memberPublicLabels[id]?.trim().isNotEmpty ?? false)
-                    ? trip.memberPublicLabels[id]!.trim()
-                    : l10n.roleParticipant)
-        };
-
         return mealAsync.when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -1168,8 +1396,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 .toList(growable: false)
               ..sort();
             final potluckAddedByRiskKey = potluckAddedByIds.join('|');
+            final memberIdsRiskKey = memberIds.toList(growable: false)..sort();
+            final memberIdsKey = memberIdsRiskKey.join('|');
             final usersAsync = ref.watch(
               usersDataByIdsProvider(participantIdsRiskKey),
+            );
+            final membersAsync = ref.watch(
+              usersDataByIdsProvider(memberIdsKey),
             );
             final potluckUsersAsync = ref.watch(
               usersDataByIdsProvider(potluckAddedByRiskKey),
@@ -1177,8 +1410,68 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final lockOwnersAsync = ref.watch(
               usersDataByIdsProvider(componentLockOwnerRiskKey),
             );
+            final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+            final membersData = membersAsync.asData?.value ?? {};
+            final labels = <String, String>{
+              for (final id in memberIds)
+                id: (id == myUid)
+                    ? l10n.commonMe
+                    : resolveTripMemberDisplayLabel(
+                        memberId: id,
+                        userData: membersData[id],
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        currentUserId: myUid,
+                        emptyFallback: l10n.roleParticipant,
+                      ),
+            };
             final colorScheme = Theme.of(context).colorScheme;
             final textTheme = Theme.of(context).textTheme;
+            final canCreateMeal = canCreateMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canDeleteMeal = canDeleteMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canEditMealCore = canEditMealForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canSuggestRestaurant = canSuggestRestaurantForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canAddContribution = canAddMealContributionForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final canManageRecipe = canManageMealRecipeForTrip(
+              trip: trip,
+              userId: myUid,
+            );
+            final isMealChef = (myUid ?? '').isNotEmpty &&
+                _chefParticipantId != null &&
+                _chefParticipantId == myUid;
+            final canAccessTrip = trip.memberIds.contains(myUid);
+            final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
+            final canEditParticipants = canEditMealCore;
+            final canEditRestaurantLink = canSuggestRestaurant;
+            final canEditRecipe = canManageRecipe || isMealChef;
+            if (widget.isCreate && !canAccessMealCreatePage) {
+              return Scaffold(
+                appBar: AppBar(),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.tripNotFoundOrNoAccess,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              );
+            }
 
             return Scaffold(
               appBar: AppBar(
@@ -1186,7 +1479,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                   widget.isCreate ? l10n.mealNew : l10n.mealEdit,
                 ),
                 actions: [
-                  if (!widget.isCreate)
+                  if (!widget.isCreate && canDeleteMeal)
                     IconButton(
                       tooltip: l10n.commonDelete,
                       onPressed: _isDeleting ? null : _confirmAndDelete,
@@ -1196,7 +1489,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.delete_outline),
+                          : Icon(Icons.delete_outline,
+                              color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),
@@ -1227,7 +1521,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         ),
                                         tooltip: _dayPartLabel(context, part),
                                         selected: _mealDayPart == part,
-                                        onSelected: _isSavingMealDayPart
+                                        onSelected: (_isSavingMealDayPart ||
+                                                !canEditMealCore)
                                             ? null
                                             : (_) async {
                                                 if (_mealDayPart == part) {
@@ -1264,7 +1559,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               children: [
                                 IconButton(
                                   tooltip: l10n.commonDate,
-                                  onPressed: _isSavingDate ? null : _pickDate,
+                                  onPressed: (_isSavingDate || !canEditMealCore)
+                                      ? null
+                                      : _pickDate,
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                   icon: _isSavingDate
@@ -1310,30 +1607,34 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     style: textTheme.labelLarge,
                                   ),
                                 ),
-                                TextButton.icon(
-                                  onPressed: _isSavingParticipants
-                                      ? null
-                                      : () => _autoRecalculateParticipants(
-                                          memberIds),
-                                  icon:
-                                      const Icon(Icons.auto_fix_high_outlined),
-                                  label: Text(l10n.commonAuto),
-                                ),
-                                TextButton.icon(
-                                  onPressed: _isSavingParticipants
-                                      ? null
-                                      : () => _toggleAllParticipants(memberIds),
-                                  icon: const Icon(Icons.done_all_outlined),
-                                  label: Text(
-                                    areAllParticipantsSelected
-                                        ? l10n.commonNone
-                                        : l10n.commonAll,
+                                if (canEditParticipants) ...[
+                                  TextButton.icon(
+                                    onPressed: _isSavingParticipants
+                                        ? null
+                                        : () => _autoRecalculateParticipants(
+                                            memberIds),
+                                    icon: const Icon(
+                                        Icons.auto_fix_high_outlined),
+                                    label: Text(l10n.commonAuto),
                                   ),
-                                ),
+                                  TextButton.icon(
+                                    onPressed: _isSavingParticipants
+                                        ? null
+                                        : () =>
+                                            _toggleAllParticipants(memberIds),
+                                    icon: const Icon(Icons.done_all_outlined),
+                                    label: Text(
+                                      areAllParticipantsSelected
+                                          ? l10n.commonNone
+                                          : l10n.commonAll,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 8),
-                            if (_activeMealView == _MealDetailsView.cooked) ...[
+                            if (_activeMealView == _MealDetailsView.cooked &&
+                                canEditParticipants) ...[
                               Text(
                                 l10n.mealChefLongPressHint,
                                 style: textTheme.bodySmall?.copyWith(
@@ -1349,7 +1650,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 for (final memberId in memberIds)
                                   GestureDetector(
                                     onLongPress: _activeMealView ==
-                                            _MealDetailsView.cooked
+                                                _MealDetailsView.cooked &&
+                                            canEditParticipants
                                         ? () => _toggleChefParticipant(memberId)
                                         : null,
                                     child: Builder(
@@ -1393,7 +1695,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 )
                                               : null,
                                           onSelected: (selected) {
-                                            if (_isSavingParticipants) return;
+                                            if (_isSavingParticipants ||
+                                                !canEditParticipants) {
+                                              return;
+                                            }
                                             final previousParticipantIds =
                                                 _participantIds.toSet();
                                             final previousChefParticipantId =
@@ -1440,6 +1745,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 l10n: l10n,
                                 textTheme: textTheme,
                                 colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
                               ),
                               const SizedBox(height: 12),
                               Row(
@@ -1450,7 +1756,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       style: textTheme.titleMedium,
                                     ),
                                   ),
-                                  if (!widget.isCreate)
+                                  if (!widget.isCreate && canEditRecipe)
                                     PopupMenuButton<MealComponentKind>(
                                       tooltip: l10n.mealAddComponent,
                                       onSelected: _isSavingComponents
@@ -1484,9 +1790,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   physics: const NeverScrollableScrollPhysics(),
                                   buildDefaultDragHandles: false,
                                   itemCount: _components.length,
-                                  onReorder: _isSavingComponents
-                                      ? (_, __) {}
-                                      : _reorderComponents,
+                                  onReorder:
+                                      (_isSavingComponents || !canEditRecipe)
+                                          ? (_, __) {}
+                                          : _reorderComponents,
                                   itemBuilder: (context, index) {
                                     final component = _components[index];
                                     final isLocked = (component.lockedBy ?? '')
@@ -1524,8 +1831,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           .surfaceContainerHighest,
                                       margin: const EdgeInsets.only(bottom: 12),
                                       child: ListTile(
-                                        onTap: catalogItems == null
-                                            || widget.isCreate
+                                        onTap: catalogItems == null ||
+                                                widget.isCreate ||
+                                                !canEditRecipe
                                             ? null
                                             : () => _openComponentEditor(
                                                   component: component,
@@ -1536,7 +1844,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       trip.memberPublicLabels,
                                                 ),
                                         leading: _isComponentLockedByOther(
-                                                component)
+                                                    component) ||
+                                                !canEditRecipe
                                             ? const Padding(
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: 4,
@@ -1646,7 +1955,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   color: Colors.orange,
                                                 ),
                                               ),
-                                            if (!isLocked) ...[
+                                            if (!isLocked && canEditRecipe) ...[
                                               IconButton(
                                                 tooltip:
                                                     l10n.mealDeleteComponent,
@@ -1660,8 +1969,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                             _deleteComponent(
                                                               component.id,
                                                             ),
-                                                icon: const Icon(
-                                                    Icons.delete_outline),
+                                                icon: Icon(Icons.delete_outline,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error),
                                               ),
                                               const Icon(Icons.chevron_right),
                                             ],
@@ -1688,6 +1999,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       l10n: l10n,
                                       textTheme: textTheme,
                                       colorScheme: colorScheme,
+                                      canEditMealMode: canEditMealCore,
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
@@ -1701,18 +2013,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             textInputAction:
                                                 TextInputAction.done,
                                             enabled: !_isSavingRestaurantUrl,
+                                            readOnly: !canEditRestaurantLink,
                                             onFieldSubmitted: (_) =>
                                                 _saveRestaurantUrl(),
                                             decoration: InputDecoration(
-                                              labelText: l10n
-                                                  .mealRestaurantLinkLabel,
+                                              labelText:
+                                                  l10n.mealRestaurantLinkLabel,
                                               border:
                                                   const OutlineInputBorder(),
                                             ),
                                           ),
                                         ),
                                         const SizedBox(width: 4),
-                                        _buildRestaurantUrlEditActions(l10n),
+                                        if (canEditRestaurantLink)
+                                          _buildRestaurantUrlEditActions(l10n),
                                       ],
                                     ),
                                     const SizedBox(height: 8),
@@ -1730,6 +2044,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       l10n: l10n,
                                       textTheme: textTheme,
                                       colorScheme: colorScheme,
+                                      canEditMealMode: canEditMealCore,
                                     ),
                                     const SizedBox(height: 12),
                                     Row(
@@ -1748,15 +2063,37 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 )
                                               : LinkPreviewCardFromFirestore(
                                                   url: _restaurantUrl,
-                                                  preview: meal?.restaurantLinkPreview ?? const {},
+                                                  preview:
+                                                      meal?.restaurantLinkPreview ??
+                                                          const {},
                                                 ),
                                         ),
                                         const SizedBox(width: 8),
-                                        IconButton(
-                                          tooltip: l10n.commonEdit,
-                                          onPressed: _startEditRestaurantUrl,
-                                          icon:
-                                              const Icon(Icons.edit_outlined),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (canEditRestaurantLink)
+                                              IconButton(
+                                                tooltip: l10n.commonEdit,
+                                                onPressed:
+                                                    _startEditRestaurantUrl,
+                                                icon: const Icon(
+                                                    Icons.edit_outlined),
+                                              ),
+                                            if (_restaurantUrl.isNotEmpty &&
+                                                canEditRestaurantLink)
+                                              IconButton(
+                                                tooltip: l10n.commonDelete,
+                                                onPressed:
+                                                    _isSavingRestaurantUrl
+                                                        ? null
+                                                        : _clearRestaurantUrl,
+                                                icon: Icon(Icons.delete_outline,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error),
+                                              ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -1775,95 +2112,294 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                 l10n: l10n,
                                 textTheme: textTheme,
                                 colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
                               ),
                               const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      l10n.mealPotluckTitle,
-                                      style: textTheme.titleMedium,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    tooltip: l10n.commonAdd,
-                                    onPressed: _isSavingPotluckItems
-                                        ? null
-                                        : _addPotluckItem,
-                                    icon: const Icon(Icons.add),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              if (_potluckItems.isEmpty)
-                                Text(
-                                  l10n.mealPotluckEmptyHint,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                )
-                              else
-                                ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: _potluckItems.length,
-                                  separatorBuilder: (_, __) =>
-                                      const Divider(height: 1),
-                                  itemBuilder: (context, index) {
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      leading: Builder(
+                              Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (final category
+                                        in _orderedPotluckCategories) ...[
+                                      Builder(
                                         builder: (context) {
-                                          final item = _potluckItems[index];
-                                          final addedBy = item.addedBy.trim();
-                                          final usersData =
-                                              potluckUsersAsync.asData?.value;
-                                          final userData = addedBy.isEmpty
-                                              ? null
-                                              : usersData?[addedBy];
-                                          final label =
-                                              resolveTripMemberDisplayLabel(
-                                            memberId: addedBy,
-                                            userData: userData,
-                                            tripMemberPublicLabels:
-                                                trip.memberPublicLabels,
-                                            currentUserId: FirebaseAuth
-                                                .instance.currentUser?.uid,
-                                            emptyFallback: l10n.roleParticipant,
-                                          );
-                                          return buildProfileBadge(
-                                            context: context,
-                                            displayLabel: label,
-                                            userData: userData,
-                                            size: 26,
+                                          final entries = _potluckItems
+                                              .asMap()
+                                              .entries
+                                              .where(
+                                                (entry) =>
+                                                    entry.value.category ==
+                                                    category,
+                                              )
+                                              .toList(growable: false);
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              if (category !=
+                                                  _orderedPotluckCategories
+                                                      .first)
+                                                const SizedBox(height: 2),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                ),
+                                                child: Theme(
+                                                  data: Theme.of(context)
+                                                      .copyWith(
+                                                        dividerColor:
+                                                            Colors.transparent,
+                                                      ),
+                                                  child: ExpansionTile(
+                                                  initiallyExpanded: true,
+                                                  onExpansionChanged:
+                                                      (isExpanded) {
+                                                    setState(() {
+                                                      if (isExpanded) {
+                                                        _expandedPotluckCategories
+                                                            .add(category);
+                                                      } else {
+                                                        _expandedPotluckCategories
+                                                            .remove(category);
+                                                      }
+                                                    });
+                                                  },
+                                                  tilePadding: EdgeInsets.zero,
+                                                  childrenPadding:
+                                                      EdgeInsets.zero,
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  collapsedBackgroundColor:
+                                                      Colors.transparent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  collapsedShape:
+                                                      RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                  title: Container(
+                                                    width: double.infinity,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 3,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: colorScheme
+                                                          .primaryContainer,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          _expandedPotluckCategories
+                                                                  .contains(
+                                                            category,
+                                                          )
+                                                              ? Icons
+                                                                  .expand_more
+                                                              : Icons
+                                                                  .chevron_right,
+                                                          size: 18,
+                                                          color: colorScheme
+                                                              .onPrimaryContainer,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        SvgPicture.asset(
+                                                          _potluckCategoryAsset(
+                                                            category,
+                                                          ),
+                                                          width: 18,
+                                                          height: 18,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            _potluckCategoryLabel(
+                                                              l10n,
+                                                              category,
+                                                            ),
+                                                            style: textTheme
+                                                                .labelLarge
+                                                                ?.copyWith(
+                                                              color: colorScheme
+                                                                  .onPrimaryContainer,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          entries.length
+                                                              .toString(),
+                                                          style: textTheme
+                                                              .labelLarge
+                                                              ?.copyWith(
+                                                            color: colorScheme
+                                                                .onPrimaryContainer,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                        if (!widget.isCreate &&
+                                                            canAddContribution)
+                                                          IconButton(
+                                                            tooltip:
+                                                                l10n.commonAdd,
+                                                            visualDensity:
+                                                                VisualDensity
+                                                                    .compact,
+                                                            onPressed:
+                                                                _isSavingPotluckItems
+                                                                    ? null
+                                                                    : () => _addPotluckItem(
+                                                                          initialCategory:
+                                                                              category,
+                                                                        ),
+                                                            icon: const Icon(
+                                                              Icons.add,
+                                                              size: 18,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  showTrailingIcon: false,
+                                                  children: [
+                                                    for (var entryIndex = 0;
+                                                        entryIndex <
+                                                            entries.length;
+                                                        entryIndex++) ...[
+                                                      ListTile(
+                                                        dense: true,
+                                                        visualDensity:
+                                                            const VisualDensity(
+                                                          vertical: -3,
+                                                        ),
+                                                        minVerticalPadding: 0,
+                                                        contentPadding:
+                                                            EdgeInsets.zero,
+                                                        onTap: canAddContribution
+                                                            ? _isSavingPotluckItems
+                                                                ? null
+                                                                : () =>
+                                                                    _editPotluckItem(
+                                                                      entries[entryIndex]
+                                                                          .key,
+                                                                    )
+                                                            : null,
+                                                        leading: Builder(
+                                                          builder: (context) {
+                                                            final item = entries[
+                                                                    entryIndex]
+                                                                .value;
+                                                            final addedBy = item
+                                                                .addedBy
+                                                                .trim();
+                                                            final usersData =
+                                                                potluckUsersAsync
+                                                                    .asData
+                                                                    ?.value;
+                                                            final userData =
+                                                                addedBy.isEmpty
+                                                                    ? null
+                                                                    : usersData?[
+                                                                        addedBy];
+                                                            final label =
+                                                                resolveTripMemberDisplayLabel(
+                                                              memberId: addedBy,
+                                                              userData:
+                                                                  userData,
+                                                              tripMemberPublicLabels:
+                                                                  trip.memberPublicLabels,
+                                                              currentUserId: FirebaseAuth
+                                                                  .instance
+                                                                  .currentUser
+                                                                  ?.uid,
+                                                              emptyFallback: l10n
+                                                                  .roleParticipant,
+                                                            );
+                                                            return buildProfileBadge(
+                                                              context: context,
+                                                              displayLabel:
+                                                                  label,
+                                                              userData:
+                                                                  userData,
+                                                              size: 26,
+                                                            );
+                                                          },
+                                                        ),
+                                                        title: Row(
+                                                          children: [
+                                                            Text(
+                                                              'x${entries[entryIndex].value.quantityUnits}',
+                                                              style: textTheme
+                                                                  .bodyMedium
+                                                                  ?.copyWith(
+                                                                color: colorScheme
+                                                                    .onSurfaceVariant,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                width: 10),
+                                                            Expanded(
+                                                              child: Text(
+                                                                entries[
+                                                                        entryIndex]
+                                                                    .value
+                                                                    .label,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        trailing: Wrap(
+                                                          spacing: 4,
+                                                          children: [
+                                                            if (canAddContribution)
+                                                              IconButton(
+                                                                tooltip: l10n
+                                                                    .commonDelete,
+                                                                onPressed: _isSavingPotluckItems
+                                                                    ? null
+                                                                    : () =>
+                                                                        _deletePotluckItem(
+                                                                          entries[entryIndex]
+                                                                              .key,
+                                                                        ),
+                                                                icon: Icon(
+                                                                  Icons
+                                                                      .delete_outline,
+                                                                  color: Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .error,
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           );
                                         },
                                       ),
-                                      title: Text(_potluckItems[index].label),
-                                      trailing: Wrap(
-                                        spacing: 4,
-                                        children: [
-                                          IconButton(
-                                            tooltip: l10n.commonEdit,
-                                            onPressed: _isSavingPotluckItems
-                                                ? null
-                                                : () => _editPotluckItem(index),
-                                            icon:
-                                                const Icon(Icons.edit_outlined),
-                                          ),
-                                          IconButton(
-                                            tooltip: l10n.commonDelete,
-                                            onPressed: _isSavingPotluckItems
-                                                ? null
-                                                : () =>
-                                                    _deletePotluckItem(index),
-                                            icon: const Icon(
-                                                Icons.delete_outline),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                    ],
+                                  ],
                                 ),
                             ],
                           ),
@@ -1873,7 +2409,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                   ],
                 ),
               ),
-              bottomNavigationBar: widget.isCreate
+              bottomNavigationBar: widget.isCreate && canCreateMeal
                   ? SafeArea(
                       top: false,
                       child: Padding(
@@ -1925,4 +2461,49 @@ String _dayPartIconAsset(TripDayPart dayPart) {
     TripDayPart.midday => 'assets/images/meal_lunch.svg',
     TripDayPart.evening => 'assets/images/meal_dinner.svg',
   };
+}
+
+String _potluckCategoryAsset(MealPotluckCategory category) {
+  return switch (category) {
+    MealPotluckCategory.salty => 'assets/images/meal_potluck_salty.svg',
+    MealPotluckCategory.sweet => 'assets/images/meal_potluck_sweet.svg',
+    MealPotluckCategory.soft => 'assets/images/meal_potluck_soft.svg',
+    MealPotluckCategory.alcohol => 'assets/images/meal_potluck_alcohol.svg',
+  };
+}
+
+String _potluckCategoryLabel(
+  AppLocalizations l10n,
+  MealPotluckCategory category,
+) {
+  return switch (category) {
+    MealPotluckCategory.salty => l10n.mealPotluckCategorySalty,
+    MealPotluckCategory.sweet => l10n.mealPotluckCategorySweet,
+    MealPotluckCategory.soft => l10n.mealPotluckCategorySoft,
+    MealPotluckCategory.alcohol => l10n.mealPotluckCategoryAlcohol,
+  };
+}
+
+class _PotluckItemDraft {
+  const _PotluckItemDraft({
+    required this.category,
+    required this.label,
+    required this.quantityUnits,
+  });
+
+  final MealPotluckCategory category;
+  final String label;
+  final int quantityUnits;
+
+  _PotluckItemDraft copyWith({
+    MealPotluckCategory? category,
+    String? label,
+    int? quantityUnits,
+  }) {
+    return _PotluckItemDraft(
+      category: category ?? this.category,
+      label: label ?? this.label,
+      quantityUnits: quantityUnits ?? this.quantityUnits,
+    );
+  }
 }

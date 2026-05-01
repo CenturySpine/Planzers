@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -9,6 +10,7 @@ import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -18,6 +20,11 @@ class TripMealsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = TripScope.of(context);
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim();
+    final canCreateMeal = canCreateMealForTrip(
+      trip: trip,
+      userId: currentUserId,
+    );
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
     return mealsAsync.when(
@@ -25,6 +32,11 @@ class TripMealsPage extends ConsumerWidget {
         tripId: trip.id,
         meals: meals,
         memberPublicLabels: trip.memberPublicLabels,
+        tripMemberIds: trip.memberIds
+            .map((id) => id.trim())
+            .where((id) => id.isNotEmpty)
+            .toSet(),
+        canCreateMeal: canCreateMeal,
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(
@@ -45,11 +57,15 @@ class _MealsList extends StatelessWidget {
     required this.tripId,
     required this.meals,
     required this.memberPublicLabels,
+    required this.tripMemberIds,
+    required this.canCreateMeal,
   });
 
   final String tripId;
   final List<TripMeal> meals;
   final Map<String, String> memberPublicLabels;
+  final Set<String> tripMemberIds;
+  final bool canCreateMeal;
 
   /// Group meals by date key.
   Map<String, List<TripMeal>> _groupMealsByDate() {
@@ -122,23 +138,25 @@ class _MealsList extends StatelessWidget {
                     meals: mealsForDate,
                     tripId: tripId,
                     memberPublicLabels: memberPublicLabels,
+                    tripMemberIds: tripMemberIds,
                   );
                 },
               );
             },
           ),
         ],
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: FloatingActionButton(
-            heroTag: 'add_meal',
-            onPressed: () => context.push(
-              '/trips/$tripId/meals/new',
+        if (canCreateMeal)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'add_meal',
+              onPressed: () => context.push(
+                '/trips/$tripId/meals/new',
+              ),
+              child: const Icon(Icons.add),
             ),
-            child: const Icon(Icons.add),
           ),
-        ),
       ],
     );
   }
@@ -151,6 +169,7 @@ class _MealDateSection extends StatelessWidget {
     required this.meals,
     required this.tripId,
     required this.memberPublicLabels,
+    required this.tripMemberIds,
   });
 
   final String dateKey;
@@ -158,6 +177,7 @@ class _MealDateSection extends StatelessWidget {
   final List<TripMeal> meals;
   final String tripId;
   final Map<String, String> memberPublicLabels;
+  final Set<String> tripMemberIds;
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +201,7 @@ class _MealDateSection extends StatelessWidget {
                 tripId: tripId,
                 meal: meal,
                 memberPublicLabels: memberPublicLabels,
+                tripMemberIds: tripMemberIds,
               )),
         ],
       ),
@@ -193,11 +214,13 @@ class _MealCard extends ConsumerWidget {
     required this.tripId,
     required this.meal,
     required this.memberPublicLabels,
+    required this.tripMemberIds,
   });
 
   final String tripId;
   final TripMeal meal;
   final Map<String, String> memberPublicLabels;
+  final Set<String> tripMemberIds;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -216,9 +239,14 @@ class _MealCard extends ConsumerWidget {
             memberId: chefId,
             userData: chefUserData,
             tripMemberPublicLabels: memberPublicLabels,
-            emptyFallback: l10n.roleParticipant,
+            emptyFallback: l10n.commonUnknown,
           )
         : '';
+    final participantCount = meal.participantIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty && tripMemberIds.contains(id))
+        .toSet()
+        .length;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -231,6 +259,8 @@ class _MealCard extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
+              _MealModeBadge(mealMode: meal.mealMode),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,11 +324,8 @@ class _MealCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
               ],
-              const SizedBox(width: 12),
-              _MealModeBadge(mealMode: meal.mealMode),
-              const SizedBox(width: 12),
               Badge(
-                label: Text(meal.participantCount.toString()),
+                label: Text(participantCount.toString()),
                 child: const Icon(Icons.people_outline),
               ),
             ],

@@ -213,6 +213,7 @@
     }
   },
   "accountDownloadApk": "Télécharger l'APK",
+  "accountAdministration": "Administration",
   "accountSignOut": "Se déconnecter",
   "paletteSaved": "Palette {label} enregistrée",
   "@paletteSaved": {
@@ -246,7 +247,7 @@
       "role": {}
     }
   },
-  "tripRoleHierarchyHint": "Hiérarchie des privilèges : créateur > admin > participant",
+  "tripRoleHierarchyHint": "Hiérarchie des privilèges : créateur > admin > chef > participant",
   "tripSettingsPermissionsSectionTitle": "Permissions",
   "tripSettingsPermissionsSectionDescription": "Définis les rôles minimaux pour chaque domaine du voyage.",
   "tripSettingsGeneralSectionTitle": "Paramètres généraux",
@@ -260,6 +261,7 @@
   "tripSettingsGeneralComingSoonDescription": "Cette section arrive bientôt.",
   "roleOwner": "Créateur",
   "roleAdmin": "Admin",
+  "roleChef": "Chef",
   "roleParticipant": "Participant",
   "tripGeneralPermissionsTitle": "Caractéristiques générales du voyage",
   "tripGeneralPermissionsDescription": "Permissions minimales par défaut pour les actions globales du voyage.",
@@ -295,6 +297,14 @@
   "tripPermissionActivitiesPlan": "Planifier une activité",
   "tripPermissionActivitiesEdit": "Modifier une activité",
   "tripPermissionActivitiesDelete": "Supprimer une activité",
+  "tripPermissionsMealsTitle": "Permissions liées aux repas",
+  "tripPermissionsMealsDescription": "Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.",
+  "tripPermissionMealsCreate": "Créer un repas",
+  "tripPermissionMealsDelete": "Supprimer un repas",
+  "tripPermissionMealsEdit": "Éditer un repas (date, type, participants, chef, catégorie)",
+  "tripPermissionMealsSuggestRestaurant": "Suggérer un restaurant (mode resto)",
+  "tripPermissionMealsAddContribution": "Ajouter un apport (mode auberge)",
+  "tripPermissionMealsManageRecipe": "Créer / supprimer / éditer une recette (mode cuisine)",
   "tripSectionTrip": "Voyage",
   "tripSectionTripDescription": "Règles liées aux informations générales du voyage.",
   "tripSectionExpenses": "Dépenses",
@@ -603,6 +613,21 @@
   "activityCategoryShopping": "Shopping",
   "activityCategoryVisit": "Visite",
   "activityCategoryRestaurant": "Restaurant",
+  "activityCategoryCafe": "Café",
+  "activityCategoryMuseum": "Musée",
+  "activityCategoryShow": "Spectacle",
+  "activityCategoryNightlife": "Soirée",
+  "activityCategoryKaraoke": "Karaoké",
+  "activityCategoryGames": "Jeux",
+  "activityCategoryBeach": "Plage",
+  "activityCategoryPark": "Parc",
+  "activityCategoryTransport": "Transport",
+  "activityCategoryAccommodation": "Hébergement",
+  "activityCategoryWellness": "Bien-être",
+  "activityCategoryCooking": "Cuisine",
+  "activityCategoryWorkshop": "Atelier",
+  "activityCategoryMarket": "Marché",
+  "activityCategoryMeeting": "Réunion",
   "activitiesUpdated": "Activité mise à jour",
   "activitiesDeleteTitle": "Supprimer cette activité ?",
   "activitiesDeleteBody": "« {label} » sera supprimée.",
@@ -689,11 +714,29 @@
   "mealPotluckEmptyHint": "Ajoute des éléments (boisson, entrée, plat, dessert, etc.).",
   "mealPotluckAddItemTitle": "Ajouter un élément",
   "mealPotluckItemLabel": "Élément",
+  "mealPotluckQuantityLabel": "Quantité (unités)",
+  "mealPotluckCategorySalty": "Salé",
+  "mealPotluckCategorySweet": "Sucré",
+  "mealPotluckCategorySoft": "Soft",
+  "mealPotluckCategoryAlcohol": "Alcool",
+  "mealPotluckMaxItemsReached": "Maximum 5 éléments.",
+  "mealPotluckCreateRowsHint": "{currentCount}/{maxCount} éléments ajoutés",
+  "@mealPotluckCreateRowsHint": {
+    "placeholders": {
+      "currentCount": {
+        "type": "int"
+      },
+      "maxCount": {
+        "type": "int"
+      }
+    }
+  },
   "commonSaving": "Enregistrement...",
   "mealComponentKindEntree": "Entrée",
   "mealComponentKindMain": "Plat",
   "mealComponentKindDessert": "Dessert",
   "commonMe": "Moi",
+  "commonUnknown": "Inconnu",
   "commonRequired": "Obligatoire",
   "expenseGroupSelectAtLeastOne": "Coche au moins une personne qui voit ce poste",
   "expenseGroupUpdated": "Poste mis à jour",
@@ -809,6 +852,7 @@
   "tripAnnouncementsEmptyState": "Aucune annonce pour le moment.",
   "tripAnnouncementsInputHint": "Écrire une annonce...",
   "tripAnnouncementsDeleteConfirmBody": "Supprimer cette annonce ?",
+  "tripAnnouncementsEditTitle": "Modifier l'annonce",
   "tripOverviewTopTabExpenses": "Dépenses",
   "tripOverviewTileNoActivitiesToday": "Pas d'activités prévues aujourd'hui",
   "tripOverviewTileNoAssignedRoom": "Aucune chambre attribuée",
@@ -817,5 +861,24 @@
   "tripOverviewMyRooms": "Mes chambres",
   "cupidonPopupTitle": "Tu as un match",
   "cupidonPopupViewMatchesAction": "Voir mes matchs",
-  "cupidonPopupUnknownMember": "Quelqu'un"
+  "cupidonPopupUnknownMember": "Quelqu'un",
+  "accountHelpSupport": "Aide et support",
+  "helpSupportTitle": "Aide et support",
+  "helpSupportIntro": "Merci d'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N'hésite pas à partager tes retours, signaler un bug ou proposer une idée.",
+  "helpSupportContactIntro": "Pour toute question, suggestion ou bug, plusieurs solutions :",
+  "helpSupportVersionLabel": "Version",
+  "helpSupportReleaseNotesLabel": "Notes de version",
+  "helpSupportGithubLabel": "Ouvrir un ticket sur GitHub",
+  "helpSupportEmailLabel": "Envoyer un mail",
+  "helpSupportAboutLinkLabel": "Contacter le développeur",
+  "updateRequiredTitle": "Mise à jour disponible",
+  "updateRequiredBody": "Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l'application pour continuer à l'utiliser.",
+  "updateRequiredCurrentVersion": "Version actuelle",
+  "updateRequiredNewVersion": "Nouvelle version",
+  "updateRequiredDownloadButton": "Télécharger {version}",
+  "@updateRequiredDownloadButton": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  }
 }

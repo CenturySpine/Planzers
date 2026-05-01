@@ -548,6 +548,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountDownloadApk => 'Télécharger l\'APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Se déconnecter';
 
   @override
@@ -612,7 +615,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Hiérarchie des privilèges : créateur > admin > participant';
+      'Hiérarchie des privilèges : créateur > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -660,6 +663,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -781,6 +787,35 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPermissionActivitiesDelete => 'Supprimer une activité';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Permissions liées aux repas';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Créer un repas';
+
+  @override
+  String get tripPermissionMealsDelete => 'Supprimer un repas';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Éditer un repas (date, type, participants, chef, catégorie)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggérer un restaurant (mode resto)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Ajouter un apport (mode auberge)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Créer / supprimer / éditer une recette (mode cuisine)';
 
   @override
   String get tripSectionTrip => 'Voyage';
@@ -1501,6 +1536,51 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activityCategoryRestaurant => 'Restaurant';
 
   @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Musée';
+
+  @override
+  String get activityCategoryShow => 'Spectacle';
+
+  @override
+  String get activityCategoryNightlife => 'Soirée';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoké';
+
+  @override
+  String get activityCategoryGames => 'Jeux';
+
+  @override
+  String get activityCategoryBeach => 'Plage';
+
+  @override
+  String get activityCategoryPark => 'Parc';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Hébergement';
+
+  @override
+  String get activityCategoryWellness => 'Bien-être';
+
+  @override
+  String get activityCategoryCooking => 'Cuisine';
+
+  @override
+  String get activityCategoryWorkshop => 'Atelier';
+
+  @override
+  String get activityCategoryMarket => 'Marché';
+
+  @override
+  String get activityCategoryMeeting => 'Réunion';
+
+  @override
   String get activitiesUpdated => 'Activité mise à jour';
 
   @override
@@ -1756,6 +1836,29 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealPotluckItemLabel => 'Élément';
 
   @override
+  String get mealPotluckQuantityLabel => 'Quantité (unités)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Salé';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sucré';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcool';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 éléments.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount éléments ajoutés';
+  }
+
+  @override
   String get commonSaving => 'Enregistrement...';
 
   @override
@@ -1769,6 +1872,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get commonMe => 'Moi';
+
+  @override
+  String get commonUnknown => 'Inconnu';
 
   @override
   String get commonRequired => 'Obligatoire';
@@ -2116,6 +2222,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripAnnouncementsDeleteConfirmBody => 'Supprimer cette annonce ?';
 
   @override
+  String get tripAnnouncementsEditTitle => 'Modifier l\'annonce';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Dépenses';
 
   @override
@@ -2142,6 +2251,53 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cupidonPopupUnknownMember => 'Quelqu\'un';
+
+  @override
+  String get accountHelpSupport => 'Aide et support';
+
+  @override
+  String get helpSupportTitle => 'Aide et support';
+
+  @override
+  String get helpSupportIntro =>
+      'Merci d\'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N\'hésite pas à partager tes retours, signaler un bug ou proposer une idée.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'Pour toute question, suggestion ou bug, plusieurs solutions :';
+
+  @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Notes de version';
+
+  @override
+  String get helpSupportGithubLabel => 'Ouvrir un ticket sur GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Envoyer un mail';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contacter le développeur';
+
+  @override
+  String get updateRequiredTitle => 'Mise à jour disponible';
+
+  @override
+  String get updateRequiredBody =>
+      'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Version actuelle';
+
+  @override
+  String get updateRequiredNewVersion => 'Nouvelle version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Télécharger $version';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -2688,6 +2844,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get accountDownloadApk => 'Télécharger l\'APK';
 
   @override
+  String get accountAdministration => 'Administration';
+
+  @override
   String get accountSignOut => 'Se déconnecter';
 
   @override
@@ -2752,7 +2911,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripRoleHierarchyHint =>
-      'Hiérarchie des privilèges : créateur > admin > participant';
+      'Hiérarchie des privilèges : créateur > admin > chef > participant';
 
   @override
   String get tripSettingsPermissionsSectionTitle => 'Permissions';
@@ -2800,6 +2959,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get roleAdmin => 'Admin';
+
+  @override
+  String get roleChef => 'Chef';
 
   @override
   String get roleParticipant => 'Participant';
@@ -2921,6 +3083,35 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionActivitiesDelete => 'Supprimer une activité';
+
+  @override
+  String get tripPermissionsMealsTitle => 'Permissions liées aux repas';
+
+  @override
+  String get tripPermissionsMealsDescription =>
+      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+
+  @override
+  String get tripPermissionMealsCreate => 'Créer un repas';
+
+  @override
+  String get tripPermissionMealsDelete => 'Supprimer un repas';
+
+  @override
+  String get tripPermissionMealsEdit =>
+      'Éditer un repas (date, type, participants, chef, catégorie)';
+
+  @override
+  String get tripPermissionMealsSuggestRestaurant =>
+      'Suggérer un restaurant (mode resto)';
+
+  @override
+  String get tripPermissionMealsAddContribution =>
+      'Ajouter un apport (mode auberge)';
+
+  @override
+  String get tripPermissionMealsManageRecipe =>
+      'Créer / supprimer / éditer une recette (mode cuisine)';
 
   @override
   String get tripSectionTrip => 'Voyage';
@@ -3641,6 +3832,51 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get activityCategoryRestaurant => 'Restaurant';
 
   @override
+  String get activityCategoryCafe => 'Café';
+
+  @override
+  String get activityCategoryMuseum => 'Musée';
+
+  @override
+  String get activityCategoryShow => 'Spectacle';
+
+  @override
+  String get activityCategoryNightlife => 'Soirée';
+
+  @override
+  String get activityCategoryKaraoke => 'Karaoké';
+
+  @override
+  String get activityCategoryGames => 'Jeux';
+
+  @override
+  String get activityCategoryBeach => 'Plage';
+
+  @override
+  String get activityCategoryPark => 'Parc';
+
+  @override
+  String get activityCategoryTransport => 'Transport';
+
+  @override
+  String get activityCategoryAccommodation => 'Hébergement';
+
+  @override
+  String get activityCategoryWellness => 'Bien-être';
+
+  @override
+  String get activityCategoryCooking => 'Cuisine';
+
+  @override
+  String get activityCategoryWorkshop => 'Atelier';
+
+  @override
+  String get activityCategoryMarket => 'Marché';
+
+  @override
+  String get activityCategoryMeeting => 'Réunion';
+
+  @override
   String get activitiesUpdated => 'Activité mise à jour';
 
   @override
@@ -3896,6 +4132,29 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get mealPotluckItemLabel => 'Élément';
 
   @override
+  String get mealPotluckQuantityLabel => 'Quantité (unités)';
+
+  @override
+  String get mealPotluckCategorySalty => 'Salé';
+
+  @override
+  String get mealPotluckCategorySweet => 'Sucré';
+
+  @override
+  String get mealPotluckCategorySoft => 'Soft';
+
+  @override
+  String get mealPotluckCategoryAlcohol => 'Alcool';
+
+  @override
+  String get mealPotluckMaxItemsReached => 'Maximum 5 éléments.';
+
+  @override
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
+    return '$currentCount/$maxCount éléments ajoutés';
+  }
+
+  @override
   String get commonSaving => 'Enregistrement...';
 
   @override
@@ -3909,6 +4168,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get commonMe => 'Moi';
+
+  @override
+  String get commonUnknown => 'Inconnu';
 
   @override
   String get commonRequired => 'Obligatoire';
@@ -4256,6 +4518,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripAnnouncementsDeleteConfirmBody => 'Supprimer cette annonce ?';
 
   @override
+  String get tripAnnouncementsEditTitle => 'Modifier l\'annonce';
+
+  @override
   String get tripOverviewTopTabExpenses => 'Dépenses';
 
   @override
@@ -4282,4 +4547,51 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get cupidonPopupUnknownMember => 'Quelqu\'un';
+
+  @override
+  String get accountHelpSupport => 'Aide et support';
+
+  @override
+  String get helpSupportTitle => 'Aide et support';
+
+  @override
+  String get helpSupportIntro =>
+      'Merci d\'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N\'hésite pas à partager tes retours, signaler un bug ou proposer une idée.';
+
+  @override
+  String get helpSupportContactIntro =>
+      'Pour toute question, suggestion ou bug, plusieurs solutions :';
+
+  @override
+  String get helpSupportVersionLabel => 'Version';
+
+  @override
+  String get helpSupportReleaseNotesLabel => 'Notes de version';
+
+  @override
+  String get helpSupportGithubLabel => 'Ouvrir un ticket sur GitHub';
+
+  @override
+  String get helpSupportEmailLabel => 'Envoyer un mail';
+
+  @override
+  String get helpSupportAboutLinkLabel => 'Contacter le développeur';
+
+  @override
+  String get updateRequiredTitle => 'Mise à jour disponible';
+
+  @override
+  String get updateRequiredBody =>
+      'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.';
+
+  @override
+  String get updateRequiredCurrentVersion => 'Version actuelle';
+
+  @override
+  String get updateRequiredNewVersion => 'Nouvelle version';
+
+  @override
+  String updateRequiredDownloadButton(String version) {
+    return 'Télécharger $version';
+  }
 }

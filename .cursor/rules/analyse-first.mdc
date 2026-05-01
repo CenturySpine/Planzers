@@ -1,0 +1,12 @@
+---
+description: Analyse first - start by analyzing before coding
+alwaysApply: false
+---
+
+# Analyse first
+
+Always start by analyzing the request or the problem.
+
+- Do not write any code until the initial analysis is complete.
+- Do not write code until the user has explicitly given the go-ahead.
+- Identify the need, constraints, and expected outcome before any implementation.

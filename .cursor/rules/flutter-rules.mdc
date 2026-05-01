@@ -1,6 +1,7 @@
 ---
 description: Flutter UI and state management guidelines
-alwaysApply: true
+globs: ["**/*.dart"]
+alwaysApply: false
 ---
 
 - Use const constructors wherever possible to optimize widget rebuilds

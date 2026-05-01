@@ -551,8 +551,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                   if (canDeletePlaceholderParticipant)
                                                     IconButton(
                                                       tooltip: l10n.tripParticipantsRemoveAction,
-                                                      icon: const Icon(
-                                                          Icons.delete_outline),
+                                                      icon: Icon(Icons.delete_outline,
+                                                          color: Theme.of(context).colorScheme.error),
                                                       onPressed: () =>
                                                           _confirmRemovePlaceholder(
                                                         placeholderId:
@@ -629,8 +629,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                                 strokeWidth: 2,
                                                               ),
                                                             )
-                                                          : const Icon(Icons
-                                                              .delete_outline),
+                                                          : Icon(Icons.delete_outline,
+                                                              color: Theme.of(context).colorScheme.error),
                                                       onPressed: isRemoving
                                                           ? null
                                                           : () =>

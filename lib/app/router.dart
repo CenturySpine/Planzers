@@ -5,6 +5,8 @@ import 'package:planerz/features/auth/auth_gate.dart';
 import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/auth/sign_in_page.dart';
+import 'package:planerz/features/administration/presentation/administration_page.dart';
+import 'package:planerz/features/help_support/presentation/help_support_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
@@ -23,6 +25,7 @@ import 'package:planerz/features/trips/presentation/trip_participants_permission
 import 'package:planerz/features/trips/presentation/trip_expenses_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_activities_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_general_permissions_page.dart';
+import 'package:planerz/features/trips/presentation/trip_meals_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_permissions_page.dart';
@@ -107,6 +110,14 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const AboutPage(),
     ),
     GoRoute(
+      path: HelpSupportPage.routePath,
+      builder: (context, state) => const HelpSupportPage(),
+    ),
+    GoRoute(
+      path: AdministrationPage.routePath,
+      builder: (context, state) => const AdministrationPage(),
+    ),
+    GoRoute(
       path: '/trips/:tripId',
       redirect: (context, state) {
         final segs = state.uri.pathSegments;
@@ -166,6 +177,12 @@ final GoRouter appRouter = GoRouter(
                   ),
                 ),
                 GoRoute(
+                  path: 'meals',
+                  builder: (context, state) => TripMealsPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
                   path: 'shopping',
                   builder: (context, state) => TripShoppingPermissionsPage(
                     tripId: state.pathParameters['tripId']!,
@@ -198,6 +215,11 @@ final GoRouter appRouter = GoRouter(
               path: 'activities',
               redirect: (context, state) =>
                   '/trips/${state.pathParameters['tripId']!}/settings/permissions/activities',
+            ),
+            GoRoute(
+              path: 'meals',
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/meals',
             ),
             GoRoute(
               path: 'shopping',

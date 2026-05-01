@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
@@ -16,16 +19,46 @@ extension TripActivityCategoryPresentation on TripActivityCategory {
         TripActivityCategory.sport => Icons.sports_soccer_outlined,
         TripActivityCategory.hiking => Icons.hiking_outlined,
         TripActivityCategory.shopping => Icons.shopping_bag_outlined,
-        TripActivityCategory.visit => Icons.museum_outlined,
+        TripActivityCategory.visit => Icons.explore_outlined,
         TripActivityCategory.restaurant => Icons.restaurant_outlined,
+        TripActivityCategory.cafe => Icons.local_cafe_outlined,
+        TripActivityCategory.museum => Icons.museum_outlined,
+        TripActivityCategory.show => Icons.theater_comedy_outlined,
+        TripActivityCategory.nightlife => Icons.nightlife,
+        TripActivityCategory.karaoke => Icons.mic_outlined,
+        TripActivityCategory.games => Icons.sports_esports_outlined,
+        TripActivityCategory.beach => Icons.beach_access,
+        TripActivityCategory.park => Icons.park_outlined,
+        TripActivityCategory.transport => Icons.directions_bus_outlined,
+        TripActivityCategory.accommodation => Icons.hotel_outlined,
+        TripActivityCategory.wellness => Icons.spa_outlined,
+        TripActivityCategory.cooking => Icons.outdoor_grill,
+        TripActivityCategory.workshop => Icons.palette_outlined,
+        TripActivityCategory.market => Icons.storefront_outlined,
+        TripActivityCategory.meeting => Icons.business_center_outlined,
       };
 
   String get categoryLabelFr => switch (this) {
         TripActivityCategory.sport => 'Sport',
-        TripActivityCategory.hiking => 'Randonnee',
+        TripActivityCategory.hiking => 'Randonnée',
         TripActivityCategory.shopping => 'Shopping',
         TripActivityCategory.visit => 'Visite',
         TripActivityCategory.restaurant => 'Restaurant',
+        TripActivityCategory.cafe => 'Café',
+        TripActivityCategory.museum => 'Musée',
+        TripActivityCategory.show => 'Spectacle',
+        TripActivityCategory.nightlife => 'Soirée',
+        TripActivityCategory.karaoke => 'Karaoké',
+        TripActivityCategory.games => 'Jeux',
+        TripActivityCategory.beach => 'Plage',
+        TripActivityCategory.park => 'Parc',
+        TripActivityCategory.transport => 'Transport',
+        TripActivityCategory.accommodation => 'Hébergement',
+        TripActivityCategory.wellness => 'Bien-être',
+        TripActivityCategory.cooking => 'Cuisine',
+        TripActivityCategory.workshop => 'Atelier',
+        TripActivityCategory.market => 'Marché',
+        TripActivityCategory.meeting => 'Réunion',
       };
 
   String label(AppLocalizations l10n) => switch (this) {
@@ -34,6 +67,21 @@ extension TripActivityCategoryPresentation on TripActivityCategory {
         TripActivityCategory.shopping => l10n.activityCategoryShopping,
         TripActivityCategory.visit => l10n.activityCategoryVisit,
         TripActivityCategory.restaurant => l10n.activityCategoryRestaurant,
+        TripActivityCategory.cafe => l10n.activityCategoryCafe,
+        TripActivityCategory.museum => l10n.activityCategoryMuseum,
+        TripActivityCategory.show => l10n.activityCategoryShow,
+        TripActivityCategory.nightlife => l10n.activityCategoryNightlife,
+        TripActivityCategory.karaoke => l10n.activityCategoryKaraoke,
+        TripActivityCategory.games => l10n.activityCategoryGames,
+        TripActivityCategory.beach => l10n.activityCategoryBeach,
+        TripActivityCategory.park => l10n.activityCategoryPark,
+        TripActivityCategory.transport => l10n.activityCategoryTransport,
+        TripActivityCategory.accommodation => l10n.activityCategoryAccommodation,
+        TripActivityCategory.wellness => l10n.activityCategoryWellness,
+        TripActivityCategory.cooking => l10n.activityCategoryCooking,
+        TripActivityCategory.workshop => l10n.activityCategoryWorkshop,
+        TripActivityCategory.market => l10n.activityCategoryMarket,
+        TripActivityCategory.meeting => l10n.activityCategoryMeeting,
       };
 }
 
@@ -323,7 +371,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.delete_outline),
+                        : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                   ),
               ],
               if (canEdit && _editing) ...[
@@ -470,6 +518,10 @@ class _ReadBody extends ConsumerWidget {
             )
           : false,
       orElse: () => false,
+    );
+    final tripMemberPublicLabels = tripAsync.maybeWhen(
+      data: (trip) => trip?.memberPublicLabels ?? const <String, String>{},
+      orElse: () => const <String, String>{},
     );
 
     return ListView(
@@ -635,6 +687,15 @@ class _ReadBody extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 12),
+        _VotersSection(
+          tripId: tripId,
+          activityId: activity.id,
+          votes: activity.votes,
+          myUid: myUid ?? '',
+          currentUserId: myUid,
+          tripMemberPublicLabels: tripMemberPublicLabels,
+        ),
       ],
     );
   }
@@ -781,6 +842,187 @@ class _EditBodyState extends State<_EditBody> {
             minLines: 2,
             maxLines: 6,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VotersSection extends ConsumerStatefulWidget {
+  const _VotersSection({
+    required this.tripId,
+    required this.activityId,
+    required this.votes,
+    required this.myUid,
+    required this.currentUserId,
+    required this.tripMemberPublicLabels,
+  });
+
+  final String tripId;
+  final String activityId;
+  final List<String> votes;
+  final String myUid;
+  final String? currentUserId;
+  final Map<String, String> tripMemberPublicLabels;
+
+  @override
+  ConsumerState<_VotersSection> createState() => _VotersSectionState();
+}
+
+class _VotersSectionState extends ConsumerState<_VotersSection> {
+  bool _loading = false;
+
+  Future<void> _toggle() async {
+    if (_loading || widget.myUid.isEmpty) return;
+    final hasVoted = widget.votes.contains(widget.myUid);
+    setState(() => _loading = true);
+    try {
+      await ref.read(activitiesRepositoryProvider).voteForActivity(
+            tripId: widget.tripId,
+            activityId: widget.activityId,
+            vote: !hasVoted,
+          );
+    } catch (_) {
+      // le stream rétablit l'état
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasVoted = widget.myUid.isNotEmpty && widget.votes.contains(widget.myUid);
+    final scheme = Theme.of(context).colorScheme;
+    final color = hasVoted ? scheme.primary : scheme.onSurfaceVariant;
+    final l10n = AppLocalizations.of(context)!;
+
+    final voterIds = widget.votes;
+    final idsKey = stableUsersIdsKey(voterIds);
+    final usersDataAsync = idsKey.isEmpty
+        ? const AsyncValue<Map<String, Map<String, dynamic>>>.data({})
+        : ref.watch(usersDataByIdsKeyStreamProvider(idsKey));
+    final usersDataById = usersDataAsync.asData?.value ?? const {};
+
+    final voterNames = voterIds.map((id) {
+      return resolveTripMemberDisplayLabel(
+        memberId: id,
+        userData: usersDataById[id],
+        tripMemberPublicLabels: widget.tripMemberPublicLabels,
+        currentUserId: widget.currentUserId,
+        emptyFallback: l10n.roleParticipant,
+      );
+    }).toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Tooltip(
+              message: hasVoted ? l10n.activitiesUnvote : l10n.activitiesVote,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: _loading || widget.myUid.isEmpty ? null : _toggle,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _loading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: color,
+                          ),
+                        )
+                      : Icon(
+                          hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                          size: 20,
+                          color: color,
+                        ),
+                ),
+              ),
+            ),
+            if (voterIds.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              _OverlappingBadges(
+                voterIds: voterIds,
+                usersDataById: usersDataById,
+                tripMemberPublicLabels: widget.tripMemberPublicLabels,
+                currentUserId: widget.currentUserId,
+                fallbackLabel: l10n.roleParticipant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  voterNames.join(', '),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlappingBadges extends StatelessWidget {
+  const _OverlappingBadges({
+    required this.voterIds,
+    required this.usersDataById,
+    required this.tripMemberPublicLabels,
+    required this.currentUserId,
+    required this.fallbackLabel,
+  });
+
+  final List<String> voterIds;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final Map<String, String> tripMemberPublicLabels;
+  final String? currentUserId;
+  final String fallbackLabel;
+
+  static const _badgeSize = 24.0;
+  static const _step = 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = voterIds.length;
+    final totalWidth = _badgeSize + (count - 1) * _step;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    return SizedBox(
+      width: totalWidth,
+      height: _badgeSize + 2,
+      child: Stack(
+        children: [
+          for (var i = 0; i < count; i++)
+            Positioned(
+              left: i * _step,
+              top: 0,
+              child: Container(
+                width: _badgeSize + 2,
+                height: _badgeSize + 2,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: surfaceColor,
+                ),
+                alignment: Alignment.center,
+                child: buildProfileBadge(
+                  context: context,
+                  displayLabel: resolveTripMemberDisplayLabel(
+                    memberId: voterIds[i],
+                    userData: usersDataById[voterIds[i]],
+                    tripMemberPublicLabels: tripMemberPublicLabels,
+                    currentUserId: currentUserId,
+                    emptyFallback: fallbackLabel,
+                  ),
+                  userData: usersDataById[voterIds[i]],
+                  size: _badgeSize,
+                ),
+              ),
+            ),
         ],
       ),
     );

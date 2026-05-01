@@ -1,5 +1,6 @@
 enum TripPermissionRole {
   participant,
+  chef,
   admin,
   owner;
 
@@ -8,6 +9,7 @@ enum TripPermissionRole {
     return switch (value) {
       'owner' => TripPermissionRole.owner,
       'admin' => TripPermissionRole.admin,
+      'chef' => TripPermissionRole.chef,
       _ => TripPermissionRole.participant,
     };
   }
@@ -17,8 +19,9 @@ enum TripPermissionRole {
   int get rank {
     return switch (this) {
       TripPermissionRole.participant => 0,
-      TripPermissionRole.admin => 1,
-      TripPermissionRole.owner => 2,
+      TripPermissionRole.chef => 1,
+      TripPermissionRole.admin => 2,
+      TripPermissionRole.owner => 3,
     };
   }
 
@@ -347,6 +350,82 @@ class TripShoppingPermissions {
   Map<String, dynamic> toFirestore() {
     return <String, dynamic>{
       'deleteCheckedItems': deleteCheckedItemsMinRole.toFirestore(),
+    };
+  }
+}
+
+enum TripMealsPermissionAction {
+  createMeal,
+  deleteMeal,
+  editMeal,
+  suggestRestaurant,
+  addContribution,
+  manageRecipe,
+}
+
+/// Permissions for trip meals.
+///
+/// Firestore: `trips/{id}.permissions.meals`.
+class TripMealsPermissions {
+  const TripMealsPermissions({
+    required this.createMealMinRole,
+    required this.deleteMealMinRole,
+    required this.editMealMinRole,
+    required this.suggestRestaurantMinRole,
+    required this.addContributionMinRole,
+    required this.manageRecipeMinRole,
+  });
+
+  final TripPermissionRole createMealMinRole;
+  final TripPermissionRole deleteMealMinRole;
+  final TripPermissionRole editMealMinRole;
+  final TripPermissionRole suggestRestaurantMinRole;
+  final TripPermissionRole addContributionMinRole;
+  final TripPermissionRole manageRecipeMinRole;
+
+  static const defaults = TripMealsPermissions(
+    createMealMinRole: TripPermissionRole.admin,
+    deleteMealMinRole: TripPermissionRole.admin,
+    editMealMinRole: TripPermissionRole.admin,
+    suggestRestaurantMinRole: TripPermissionRole.admin,
+    addContributionMinRole: TripPermissionRole.participant,
+    manageRecipeMinRole: TripPermissionRole.chef,
+  );
+
+  factory TripMealsPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripMealsPermissions(
+      createMealMinRole: raw['createMeal'] == null
+          ? defaults.createMealMinRole
+          : TripPermissionRole.fromFirestore(raw['createMeal']),
+      deleteMealMinRole: raw['deleteMeal'] == null
+          ? defaults.deleteMealMinRole
+          : TripPermissionRole.fromFirestore(raw['deleteMeal']),
+      editMealMinRole: raw['editMeal'] == null
+          ? defaults.editMealMinRole
+          : TripPermissionRole.fromFirestore(raw['editMeal']),
+      suggestRestaurantMinRole: raw['suggestRestaurant'] == null
+          ? defaults.suggestRestaurantMinRole
+          : TripPermissionRole.fromFirestore(raw['suggestRestaurant']),
+      addContributionMinRole: raw['addContribution'] == null
+          ? defaults.addContributionMinRole
+          : TripPermissionRole.fromFirestore(raw['addContribution']),
+      manageRecipeMinRole: raw['manageRecipe'] == null
+          ? defaults.manageRecipeMinRole
+          : TripPermissionRole.fromFirestore(raw['manageRecipe']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'createMeal': createMealMinRole.toFirestore(),
+      'deleteMeal': deleteMealMinRole.toFirestore(),
+      'editMeal': editMealMinRole.toFirestore(),
+      'suggestRestaurant': suggestRestaurantMinRole.toFirestore(),
+      'addContribution': addContributionMinRole.toFirestore(),
+      'manageRecipe': manageRecipeMinRole.toFirestore(),
     };
   }
 }

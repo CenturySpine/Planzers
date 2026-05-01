@@ -1078,6 +1078,12 @@ abstract class AppLocalizations {
   /// **'Télécharger l\'APK'**
   String get accountDownloadApk;
 
+  /// No description provided for @accountAdministration.
+  ///
+  /// In fr, this message translates to:
+  /// **'Administration'**
+  String get accountAdministration;
+
   /// No description provided for @accountSignOut.
   ///
   /// In fr, this message translates to:
@@ -1189,7 +1195,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripRoleHierarchyHint.
   ///
   /// In fr, this message translates to:
-  /// **'Hiérarchie des privilèges : créateur > admin > participant'**
+  /// **'Hiérarchie des privilèges : créateur > admin > chef > participant'**
   String get tripRoleHierarchyHint;
 
   /// No description provided for @tripSettingsPermissionsSectionTitle.
@@ -1269,6 +1275,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Admin'**
   String get roleAdmin;
+
+  /// No description provided for @roleChef.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chef'**
+  String get roleChef;
 
   /// No description provided for @roleParticipant.
   ///
@@ -1479,6 +1491,54 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Supprimer une activité'**
   String get tripPermissionActivitiesDelete;
+
+  /// No description provided for @tripPermissionsMealsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Permissions liées aux repas'**
+  String get tripPermissionsMealsTitle;
+
+  /// No description provided for @tripPermissionsMealsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.'**
+  String get tripPermissionsMealsDescription;
+
+  /// No description provided for @tripPermissionMealsCreate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un repas'**
+  String get tripPermissionMealsCreate;
+
+  /// No description provided for @tripPermissionMealsDelete.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer un repas'**
+  String get tripPermissionMealsDelete;
+
+  /// No description provided for @tripPermissionMealsEdit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Éditer un repas (date, type, participants, chef, catégorie)'**
+  String get tripPermissionMealsEdit;
+
+  /// No description provided for @tripPermissionMealsSuggestRestaurant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suggérer un restaurant (mode resto)'**
+  String get tripPermissionMealsSuggestRestaurant;
+
+  /// No description provided for @tripPermissionMealsAddContribution.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un apport (mode auberge)'**
+  String get tripPermissionMealsAddContribution;
+
+  /// No description provided for @tripPermissionMealsManageRecipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer / supprimer / éditer une recette (mode cuisine)'**
+  String get tripPermissionMealsManageRecipe;
 
   /// No description provided for @tripSectionTrip.
   ///
@@ -2753,6 +2813,96 @@ abstract class AppLocalizations {
   /// **'Restaurant'**
   String get activityCategoryRestaurant;
 
+  /// No description provided for @activityCategoryCafe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Café'**
+  String get activityCategoryCafe;
+
+  /// No description provided for @activityCategoryMuseum.
+  ///
+  /// In fr, this message translates to:
+  /// **'Musée'**
+  String get activityCategoryMuseum;
+
+  /// No description provided for @activityCategoryShow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Spectacle'**
+  String get activityCategoryShow;
+
+  /// No description provided for @activityCategoryNightlife.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soirée'**
+  String get activityCategoryNightlife;
+
+  /// No description provided for @activityCategoryKaraoke.
+  ///
+  /// In fr, this message translates to:
+  /// **'Karaoké'**
+  String get activityCategoryKaraoke;
+
+  /// No description provided for @activityCategoryGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux'**
+  String get activityCategoryGames;
+
+  /// No description provided for @activityCategoryBeach.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plage'**
+  String get activityCategoryBeach;
+
+  /// No description provided for @activityCategoryPark.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parc'**
+  String get activityCategoryPark;
+
+  /// No description provided for @activityCategoryTransport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Transport'**
+  String get activityCategoryTransport;
+
+  /// No description provided for @activityCategoryAccommodation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get activityCategoryAccommodation;
+
+  /// No description provided for @activityCategoryWellness.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bien-être'**
+  String get activityCategoryWellness;
+
+  /// No description provided for @activityCategoryCooking.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cuisine'**
+  String get activityCategoryCooking;
+
+  /// No description provided for @activityCategoryWorkshop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Atelier'**
+  String get activityCategoryWorkshop;
+
+  /// No description provided for @activityCategoryMarket.
+  ///
+  /// In fr, this message translates to:
+  /// **'Marché'**
+  String get activityCategoryMarket;
+
+  /// No description provided for @activityCategoryMeeting.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réunion'**
+  String get activityCategoryMeeting;
+
   /// No description provided for @activitiesUpdated.
   ///
   /// In fr, this message translates to:
@@ -3203,6 +3353,48 @@ abstract class AppLocalizations {
   /// **'Élément'**
   String get mealPotluckItemLabel;
 
+  /// No description provided for @mealPotluckQuantityLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quantité (unités)'**
+  String get mealPotluckQuantityLabel;
+
+  /// No description provided for @mealPotluckCategorySalty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Salé'**
+  String get mealPotluckCategorySalty;
+
+  /// No description provided for @mealPotluckCategorySweet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sucré'**
+  String get mealPotluckCategorySweet;
+
+  /// No description provided for @mealPotluckCategorySoft.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soft'**
+  String get mealPotluckCategorySoft;
+
+  /// No description provided for @mealPotluckCategoryAlcohol.
+  ///
+  /// In fr, this message translates to:
+  /// **'Alcool'**
+  String get mealPotluckCategoryAlcohol;
+
+  /// No description provided for @mealPotluckMaxItemsReached.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maximum 5 éléments.'**
+  String get mealPotluckMaxItemsReached;
+
+  /// No description provided for @mealPotluckCreateRowsHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'{currentCount}/{maxCount} éléments ajoutés'**
+  String mealPotluckCreateRowsHint(int currentCount, int maxCount);
+
   /// No description provided for @commonSaving.
   ///
   /// In fr, this message translates to:
@@ -3232,6 +3424,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Moi'**
   String get commonMe;
+
+  /// No description provided for @commonUnknown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Inconnu'**
+  String get commonUnknown;
 
   /// No description provided for @commonRequired.
   ///
@@ -3833,6 +4031,12 @@ abstract class AppLocalizations {
   /// **'Supprimer cette annonce ?'**
   String get tripAnnouncementsDeleteConfirmBody;
 
+  /// No description provided for @tripAnnouncementsEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier l\'annonce'**
+  String get tripAnnouncementsEditTitle;
+
   /// No description provided for @tripOverviewTopTabExpenses.
   ///
   /// In fr, this message translates to:
@@ -3886,6 +4090,90 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Quelqu\'un'**
   String get cupidonPopupUnknownMember;
+
+  /// No description provided for @accountHelpSupport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aide et support'**
+  String get accountHelpSupport;
+
+  /// No description provided for @helpSupportTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aide et support'**
+  String get helpSupportTitle;
+
+  /// No description provided for @helpSupportIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Merci d\'utiliser Planerz ! Cette application est développée et maintenue par une seule personne, avec passion. N\'hésite pas à partager tes retours, signaler un bug ou proposer une idée.'**
+  String get helpSupportIntro;
+
+  /// No description provided for @helpSupportContactIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour toute question, suggestion ou bug, plusieurs solutions :'**
+  String get helpSupportContactIntro;
+
+  /// No description provided for @helpSupportVersionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version'**
+  String get helpSupportVersionLabel;
+
+  /// No description provided for @helpSupportReleaseNotesLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notes de version'**
+  String get helpSupportReleaseNotesLabel;
+
+  /// No description provided for @helpSupportGithubLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir un ticket sur GitHub'**
+  String get helpSupportGithubLabel;
+
+  /// No description provided for @helpSupportEmailLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer un mail'**
+  String get helpSupportEmailLabel;
+
+  /// No description provided for @helpSupportAboutLinkLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Contacter le développeur'**
+  String get helpSupportAboutLinkLabel;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mise à jour disponible'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l\'application pour continuer à l\'utiliser.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @updateRequiredCurrentVersion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version actuelle'**
+  String get updateRequiredCurrentVersion;
+
+  /// No description provided for @updateRequiredNewVersion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle version'**
+  String get updateRequiredNewVersion;
+
+  /// No description provided for @updateRequiredDownloadButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Télécharger {version}'**
+  String updateRequiredDownloadButton(String version);
 }
 
 class _AppLocalizationsDelegate

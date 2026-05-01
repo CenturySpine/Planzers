@@ -109,7 +109,22 @@ enum TripActivityCategory {
   hiking,
   shopping,
   visit,
-  restaurant;
+  restaurant,
+  cafe,
+  museum,
+  show,
+  nightlife,
+  karaoke,
+  games,
+  beach,
+  park,
+  transport,
+  accommodation,
+  wellness,
+  cooking,
+  workshop,
+  market,
+  meeting;
 
   static TripActivityCategory fromFirestore(dynamic raw) {
     final s = (raw is String ? raw : raw?.toString() ?? '').trim();
@@ -126,5 +141,20 @@ enum TripActivityCategory {
         TripActivityCategory.shopping => 'shopping',
         TripActivityCategory.visit => 'visit',
         TripActivityCategory.restaurant => 'restaurant',
+        TripActivityCategory.cafe => 'cafe',
+        TripActivityCategory.museum => 'museum',
+        TripActivityCategory.show => 'show',
+        TripActivityCategory.nightlife => 'nightlife',
+        TripActivityCategory.karaoke => 'karaoke',
+        TripActivityCategory.games => 'games',
+        TripActivityCategory.beach => 'beach',
+        TripActivityCategory.park => 'park',
+        TripActivityCategory.transport => 'transport',
+        TripActivityCategory.accommodation => 'accommodation',
+        TripActivityCategory.wellness => 'wellness',
+        TripActivityCategory.cooking => 'cooking',
+        TripActivityCategory.workshop => 'workshop',
+        TripActivityCategory.market => 'market',
+        TripActivityCategory.meeting => 'meeting',
       };
 }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/external_links.dart';
+import 'package:planerz/features/administration/presentation/administration_page.dart';
+import 'package:planerz/features/help_support/presentation/help_support_page.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
@@ -83,23 +85,52 @@ class AccountMenuButton extends ConsumerWidget {
     final cupidonCount =
         ref.watch(cupidonGlobalUnreadCountProvider).asData?.value ?? 0;
 
-    final avatar = userDocStream == null
-        ? _buildAvatar('', displayLabel)
-        : StreamBuilder(
-            stream: userDocStream,
-            builder: (BuildContext context,
-                AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot) {
-              final data = snapshot.data?.data() ?? const <String, dynamic>{};
-              final account =
-                  (data['account'] as Map<String, dynamic>?) ?? const {};
-              final photoUrl =
-                  (account['photoUrl'] as String?)?.trim().isNotEmpty == true
-                      ? (account['photoUrl'] as String).trim()
-                      : (data['photoUrl'] as String?)?.trim() ?? '';
-              return _buildAvatar(photoUrl, displayLabel);
-            },
-          );
+    if (userDocStream == null) {
+      return _buildMenu(
+        context: context,
+        l10n: l10n,
+        showDownloadApkAction: showDownloadApkAction,
+        cupidonCount: cupidonCount,
+        photoUrl: '',
+        displayLabel: displayLabel,
+        isApplicationOwner: false,
+      );
+    }
 
+    return StreamBuilder(
+      stream: userDocStream,
+      builder: (BuildContext context,
+          AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot) {
+        final data = snapshot.data?.data() ?? const <String, dynamic>{};
+        final account = (data['account'] as Map<String, dynamic>?) ?? const {};
+        final photoUrl =
+            (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+                ? (account['photoUrl'] as String).trim()
+                : (data['photoUrl'] as String?)?.trim() ?? '';
+        final isApplicationOwner = data['isApplicationOwner'] == true;
+        return _buildMenu(
+          context: context,
+          l10n: l10n,
+          showDownloadApkAction: showDownloadApkAction,
+          cupidonCount: cupidonCount,
+          photoUrl: photoUrl,
+          displayLabel: displayLabel,
+          isApplicationOwner: isApplicationOwner,
+        );
+      },
+    );
+  }
+
+  Widget _buildMenu({
+    required BuildContext context,
+    required AppLocalizations l10n,
+    required bool showDownloadApkAction,
+    required int cupidonCount,
+    required String photoUrl,
+    required String displayLabel,
+    required bool isApplicationOwner,
+  }) {
+    final avatar = _buildAvatar(photoUrl, displayLabel);
     final avatarWithBadge = cupidonCount > 0
         ? Stack(
             clipBehavior: Clip.none,
@@ -125,6 +156,16 @@ class AccountMenuButton extends ConsumerWidget {
           await _downloadApk(context);
           return;
         }
+        if (value == 'administration') {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          context.push(AdministrationPage.routePath);
+          return;
+        }
+        if (value == 'help_support') {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          context.push(HelpSupportPage.routePath);
+          return;
+        }
         if (value == 'logout') {
           await _logout(context);
         }
@@ -132,16 +173,55 @@ class AccountMenuButton extends ConsumerWidget {
       itemBuilder: (context) => [
         PopupMenuItem<String>(
           value: 'account',
-          child: Text(l10n.accountTitle),
+          child: Row(
+            children: [
+              const Icon(Icons.manage_accounts_outlined, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountTitle),
+            ],
+          ),
         ),
         if (showDownloadApkAction)
           PopupMenuItem<String>(
             value: 'download_apk',
-            child: Text(l10n.accountDownloadApk),
+            child: Row(
+              children: [
+                const Icon(Icons.download_outlined, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.accountDownloadApk),
+              ],
+            ),
+          ),
+        if (isApplicationOwner)
+          PopupMenuItem<String>(
+            value: 'administration',
+            child: Row(
+              children: [
+                const Icon(Icons.admin_panel_settings_outlined, size: 20),
+                const SizedBox(width: 12),
+                Text(l10n.accountAdministration),
+              ],
+            ),
           ),
         PopupMenuItem<String>(
+          value: 'help_support',
+          child: Row(
+            children: [
+              const Icon(Icons.help_outline, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountHelpSupport),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
           value: 'logout',
-          child: Text(l10n.accountSignOut),
+          child: Row(
+            children: [
+              const Icon(Icons.logout, size: 20),
+              const SizedBox(width: 12),
+              Text(l10n.accountSignOut),
+            ],
+          ),
         ),
       ],
       child: Padding(
