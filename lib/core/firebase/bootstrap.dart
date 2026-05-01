@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:planerz/core/firebase/firebase_options_selector.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/notifications/cupidon_match_popup_binder.dart';
@@ -19,6 +21,7 @@ class FirebaseBootstrap extends StatefulWidget {
 
 class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
   late final Future<FirebaseApp> _initialization;
+  bool _appCheckActivated = false;
 
   @override
   void initState() {
@@ -46,14 +49,40 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
     }
 
     try {
-      return await Firebase.initializeApp(
+      final firebaseApp = await Firebase.initializeApp(
         options: options,
       );
+      await _activateAppCheckIfNeeded();
+      return firebaseApp;
     } on FirebaseException catch (error) {
       if (error.code == 'duplicate-app') {
-        return Firebase.app();
+        final firebaseApp = Firebase.app();
+        await _activateAppCheckIfNeeded();
+        return firebaseApp;
       }
       rethrow;
+    }
+  }
+
+  Future<void> _activateAppCheckIfNeeded() async {
+    if (_appCheckActivated || kIsWeb) {
+      return;
+    }
+
+    try {
+      final bool isDebugLikeBuild = !kReleaseMode || widget.target.isPreview;
+      await FirebaseAppCheck.instance.activate(
+        providerAndroid: isDebugLikeBuild
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+        providerApple:
+            isDebugLikeBuild
+                ? const AppleDebugProvider()
+                : const AppleDeviceCheckProvider(),
+      );
+      _appCheckActivated = true;
+    } on FirebaseException {
+      // Keep app startup resilient if App Check cannot initialize on device.
     }
   }
 
