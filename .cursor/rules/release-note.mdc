@@ -32,3 +32,5 @@ Write every release note in two parts, in this strict order.
 - Prioritize clarity and business impact over implementation details.
 - Present information from most important to most detailed.
 - Keep a concise, value-oriented tone.
+- As a .md file, added to the repo root
+- Use french language all the way.
