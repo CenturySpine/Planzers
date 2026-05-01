@@ -25,6 +25,13 @@ final globalAdminAnnouncementsUnreadIndicatorProvider =
       .watchHasUnreadIndicator();
 });
 
+final globalVisibleAnnouncementsForCurrentUserProvider =
+    StreamProvider.autoDispose<List<AdminAnnouncement>>((ref) {
+  return ref
+      .watch(globalAnnouncementsRepositoryProvider)
+      .watchVisibleAnnouncementsForCurrentUser();
+});
+
 class GlobalAnnouncementsRepository {
   GlobalAnnouncementsRepository({
     required this.firestore,

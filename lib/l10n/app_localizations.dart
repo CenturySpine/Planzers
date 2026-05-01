@@ -4150,6 +4150,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Télécharger {version}'**
   String updateRequiredDownloadButton(String version);
+
+  /// No description provided for @globalAnnouncementsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annonces générales'**
+  String get globalAnnouncementsTitle;
+
+  /// No description provided for @globalAnnouncementsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune annonce pour le moment.'**
+  String get globalAnnouncementsEmpty;
+
+  /// No description provided for @globalAnnouncementsBellTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les annonces'**
+  String get globalAnnouncementsBellTooltip;
+
+  /// No description provided for @globalAnnouncementsDismissTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Masquer cette annonce'**
+  String get globalAnnouncementsDismissTooltip;
 }
 
 class _AppLocalizationsDelegate

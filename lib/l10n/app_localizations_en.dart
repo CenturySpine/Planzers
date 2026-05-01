@@ -2267,6 +2267,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String updateRequiredDownloadButton(String version) {
     return 'Download $version';
   }
+
+  @override
+  String get globalAnnouncementsTitle => 'General announcements';
+
+  @override
+  String get globalAnnouncementsEmpty => 'No announcements for now.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'View announcements';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -4532,4 +4544,16 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String updateRequiredDownloadButton(String version) {
     return 'Download $version';
   }
+
+  @override
+  String get globalAnnouncementsTitle => 'General announcements';
+
+  @override
+  String get globalAnnouncementsEmpty => 'No announcements for now.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'View announcements';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
 }

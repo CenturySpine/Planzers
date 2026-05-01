@@ -2282,6 +2282,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String updateRequiredDownloadButton(String version) {
     return 'Télécharger $version';
   }
+
+  @override
+  String get globalAnnouncementsTitle => 'Annonces générales';
+
+  @override
+  String get globalAnnouncementsEmpty => 'Aucune annonce pour le moment.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'Voir les annonces';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -4562,4 +4574,16 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String updateRequiredDownloadButton(String version) {
     return 'Télécharger $version';
   }
+
+  @override
+  String get globalAnnouncementsTitle => 'Annonces générales';
+
+  @override
+  String get globalAnnouncementsEmpty => 'Aucune annonce pour le moment.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'Voir les annonces';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
 }

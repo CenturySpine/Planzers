@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/administration/data/global_announcements_repository.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 class AdminAnnouncementsBellButton extends ConsumerWidget {
   const AdminAnnouncementsBellButton({super.key});
@@ -26,7 +27,10 @@ class AdminAnnouncementsBellButton extends ConsumerWidget {
       orElse: () => false,
     );
 
+    final l10n = AppLocalizations.of(context)!;
+
     return IconButton(
+      tooltip: l10n.globalAnnouncementsBellTooltip,
       style: IconButton.styleFrom(
         padding: const EdgeInsets.only(left: 10, right: 2, top: 8, bottom: 8),
         minimumSize: Size.zero,

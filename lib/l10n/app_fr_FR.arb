@@ -876,5 +876,9 @@
     "placeholders": {
       "version": {"type": "String"}
     }
-  }
+  },
+  "globalAnnouncementsTitle": "Annonces générales",
+  "globalAnnouncementsEmpty": "Aucune annonce pour le moment.",
+  "globalAnnouncementsBellTooltip": "Voir les annonces",
+  "globalAnnouncementsDismissTooltip": "Masquer cette annonce"
 }
