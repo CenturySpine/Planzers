@@ -429,6 +429,11 @@ service cloud.firestore {
       allow create, update, delete: if signedIn() && isApplicationOwner();
     }
 
+    match /applicationLogs/{logId} {
+      allow read: if signedIn() && isApplicationOwner();
+      allow write: if false;
+    }
+
     match /trips/{tripId} {
       // Query used by trips list: where('memberIds', arrayContains: uid).
       allow list: if signedIn()
