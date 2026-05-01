@@ -284,7 +284,6 @@ class TripMeal {
     required this.createdBy,
     required this.createdAt,
     this.updatedAt,
-    this.notes = '',
     this.components = const [],
     this.mealMode = MealMode.cooked,
     this.restaurantUrl = '',
@@ -306,7 +305,6 @@ class TripMeal {
   final String createdBy;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final String notes;
   final List<MealComponent> components;
   final MealMode mealMode;
   final String restaurantUrl;
@@ -376,7 +374,6 @@ class TripMeal {
           (data['chefParticipantId'] as String?)?.trim().isEmpty ?? true
               ? null
               : (data['chefParticipantId'] as String).trim(),
-      notes: (data['notes'] as String?)?.trim() ?? '',
       components: ((data['components'] as List<dynamic>?) ?? const [])
           .whereType<Map>()
           .map((raw) => MealComponent.fromMap(Map<String, dynamic>.from(raw)))
@@ -421,7 +418,6 @@ class TripMeal {
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
-      'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
@@ -442,7 +438,6 @@ class TripMeal {
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
-      'notes': notes.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
       'restaurantUrl': restaurantUrl.trim(),
@@ -464,7 +459,6 @@ class TripMeal {
     String? createdBy,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? notes,
     List<MealComponent>? components,
     MealMode? mealMode,
     String? restaurantUrl,
@@ -484,7 +478,6 @@ class TripMeal {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      notes: notes ?? this.notes,
       components: components ?? this.components,
       mealMode: mealMode ?? this.mealMode,
       restaurantUrl: restaurantUrl ?? this.restaurantUrl,

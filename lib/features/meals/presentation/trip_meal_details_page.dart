@@ -1249,7 +1249,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         mealDayPart: mealDayPart,
         participantIds: participantIds,
         chefParticipantId: _chefParticipantId,
-        notes: '',
         components: _components,
         mealMode: mealMode,
         restaurantUrl: restaurantUrl,
