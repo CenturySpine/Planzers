@@ -83,4 +83,63 @@ Hello in English
 
     expect(resolvedText, 'Bonjour en francais');
   });
+
+  test('assembleAdminAnnouncementMultilingualText builds canonical sections',
+      () {
+    final assembled = assembleAdminAnnouncementMultilingualText(
+      'Salut',
+      'Hi',
+    );
+    expect(
+      assembled,
+      '[fr-FR]\nSalut\n\n[en-US]\nHi',
+    );
+  });
+
+  test(
+      'splitAdminAnnouncementForEditing maps stored sections to editors',
+      () {
+    const rawText = '''
+[fr-FR]
+Ligne fr
+
+[en-US]
+Line en
+''';
+    final split = splitAdminAnnouncementForEditing(rawText);
+    expect(split.frFr, 'Ligne fr');
+    expect(split.enUs, 'Line en');
+  });
+
+  test(
+      'splitAdminAnnouncementForEditing puts raw text in FR when no headers',
+      () {
+    const rawText = 'Pas de balises';
+    final split = splitAdminAnnouncementForEditing(rawText);
+    expect(split.frFr, 'Pas de balises');
+    expect(split.enUs, '');
+  });
+
+  test('assemble then split round-trips fr/en bodies', () {
+    const fr = 'Bonjour';
+    const en = 'Hello';
+    final assembled = assembleAdminAnnouncementMultilingualText(fr, en);
+    final split = splitAdminAnnouncementForEditing(assembled);
+    expect(split.frFr, fr);
+    expect(split.enUs, en);
+  });
+
+  test('splitAdminAnnouncementForEditing uses [fr] and [en] fallback bodies',
+      () {
+    const rawText = '''
+[fr]
+Bonjour
+
+[en-US]
+Hello
+''';
+    final split = splitAdminAnnouncementForEditing(rawText);
+    expect(split.frFr, 'Bonjour');
+    expect(split.enUs, 'Hello');
+  });
 }

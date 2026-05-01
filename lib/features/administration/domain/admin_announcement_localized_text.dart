@@ -112,3 +112,44 @@ class _ParsedLocalizedSection {
   final String normalizedLocale;
   final String text;
 }
+
+/// Builds stored admin announcement text with `[fr-FR]` / `[en-US]` sections.
+String assembleAdminAnnouncementMultilingualText(
+  String frFrBody,
+  String enUsBody,
+) {
+  final trimmedFrenchBody = frFrBody.trim();
+  final trimmedEnglishBody = enUsBody.trim();
+  return '[fr-FR]\n$trimmedFrenchBody\n\n[en-US]\n$trimmedEnglishBody';
+}
+
+/// Fills the two admin editors from stored text (same section rules as [resolveAdminAnnouncementText]).
+({String frFr, String enUs}) splitAdminAnnouncementForEditing(String rawText) {
+  final parsedSections = _parseLocalizedSections(rawText);
+  if (parsedSections.isEmpty) {
+    return (frFr: rawText.trim(), enUs: '');
+  }
+
+  String? frenchExactRegionBody;
+  String? frenchLanguageOnlyBody;
+  String? englishExactRegionBody;
+  String? englishLanguageOnlyBody;
+  for (final parsedSection in parsedSections) {
+    final localeKey = parsedSection.normalizedLocale;
+    if (localeKey == 'fr-fr') {
+      frenchExactRegionBody = parsedSection.text;
+    } else if (localeKey == 'fr') {
+      frenchLanguageOnlyBody ??= parsedSection.text;
+    } else if (localeKey == 'en-us') {
+      englishExactRegionBody = parsedSection.text;
+    } else if (localeKey == 'en') {
+      englishLanguageOnlyBody ??= parsedSection.text;
+    }
+  }
+
+  final frenchSectionBody =
+      frenchExactRegionBody ?? frenchLanguageOnlyBody ?? '';
+  final englishSectionBody =
+      englishExactRegionBody ?? englishLanguageOnlyBody ?? '';
+  return (frFr: frenchSectionBody, enUs: englishSectionBody);
+}

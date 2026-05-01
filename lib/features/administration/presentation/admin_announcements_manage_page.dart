@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/features/administration/data/global_announcements_repository.dart';
 import 'package:planerz/features/administration/domain/admin_announcement.dart';
+import 'package:planerz/features/administration/domain/admin_announcement_localized_text.dart';
 
 class AdminAnnouncementsManagePage extends ConsumerStatefulWidget {
   const AdminAnnouncementsManagePage({super.key});
@@ -19,16 +22,23 @@ class AdminAnnouncementsManagePage extends ConsumerStatefulWidget {
 
 class _AdminAnnouncementsManagePageState
     extends ConsumerState<AdminAnnouncementsManagePage> {
-  final TextEditingController _textController = TextEditingController();
+  final TextEditingController _frFrTextController = TextEditingController();
+  final TextEditingController _enUsTextController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isTranslating = false;
+  bool _translateFrenchToEnglish = true;
   final Set<String> _deletingAnnouncementIds = <String>{};
   String? _editingAnnouncementId;
 
   bool get _isEditing => _editingAnnouncementId != null;
 
+  static const int _maxBodyCharactersPerLocale =
+      (GlobalAnnouncementsRepository.maxTextLength ~/ 2) - 24;
+
   @override
   void dispose() {
-    _textController.dispose();
+    _frFrTextController.dispose();
+    _enUsTextController.dispose();
     super.dispose();
   }
 
@@ -36,15 +46,25 @@ class _AdminAnnouncementsManagePageState
     if (_isSubmitting) {
       return;
     }
+    final assembledMultilingualText = assembleAdminAnnouncementMultilingualText(
+      _frFrTextController.text,
+      _enUsTextController.text,
+    );
+    if (_frFrTextController.text.trim().isEmpty &&
+        _enUsTextController.text.trim().isEmpty) {
+      _showSnackBar('Message vide.');
+      return;
+    }
     setState(() => _isSubmitting = true);
     try {
       await ref
           .read(globalAnnouncementsRepositoryProvider)
-          .sendAnnouncement(_textController.text);
+          .sendAnnouncement(assembledMultilingualText);
       if (!mounted) {
         return;
       }
-      _textController.clear();
+      _frFrTextController.clear();
+      _enUsTextController.clear();
       _showSnackBar('Annonce publiée.');
     } catch (error) {
       if (!mounted) {
@@ -63,15 +83,28 @@ class _AdminAnnouncementsManagePageState
     if (_isSubmitting || announcementId == null) {
       return;
     }
+    final assembledMultilingualText = assembleAdminAnnouncementMultilingualText(
+      _frFrTextController.text,
+      _enUsTextController.text,
+    );
+    if (_frFrTextController.text.trim().isEmpty &&
+        _enUsTextController.text.trim().isEmpty) {
+      _showSnackBar('Message vide.');
+      return;
+    }
     setState(() => _isSubmitting = true);
     try {
       await ref
           .read(globalAnnouncementsRepositoryProvider)
-          .updateAnnouncement(announcementId, _textController.text);
+          .updateAnnouncement(
+            announcementId,
+            assembledMultilingualText,
+          );
       if (!mounted) {
         return;
       }
-      _textController.clear();
+      _frFrTextController.clear();
+      _enUsTextController.clear();
       _editingAnnouncementId = null;
       _showSnackBar('Annonce mise à jour.');
       setState(() {});
@@ -122,7 +155,8 @@ class _AdminAnnouncementsManagePageState
       }
       if (_editingAnnouncementId == announcement.id) {
         _editingAnnouncementId = null;
-        _textController.clear();
+        _frFrTextController.clear();
+        _enUsTextController.clear();
       }
       _showSnackBar('Annonce supprimée.');
       setState(() {});
@@ -140,14 +174,101 @@ class _AdminAnnouncementsManagePageState
 
   void _startEditingAnnouncement(AdminAnnouncement announcement) {
     _editingAnnouncementId = announcement.id;
-    _textController.text = announcement.text;
+    final splitBodies = splitAdminAnnouncementForEditing(announcement.text);
+    _frFrTextController.text = splitBodies.frFr;
+    _enUsTextController.text = splitBodies.enUs;
     setState(() {});
   }
 
   void _cancelEditing() {
     _editingAnnouncementId = null;
-    _textController.clear();
+    _frFrTextController.clear();
+    _enUsTextController.clear();
     setState(() {});
+  }
+
+  Future<void> _translateWithGoogleCloud() async {
+    if (_isTranslating || _isSubmitting) {
+      return;
+    }
+
+    final sourceText = _translateFrenchToEnglish
+        ? _frFrTextController.text.trim()
+        : _enUsTextController.text.trim();
+    if (sourceText.isEmpty) {
+      _showSnackBar('Rien à traduire dans la zone source.');
+      return;
+    }
+
+    const sourceLanguageFrenchToEnglish = 'fr-FR';
+    const targetLanguageFrenchToEnglish = 'en-US';
+    const sourceLanguageEnglishToFrench = 'en-US';
+    const targetLanguageEnglishToFrench = 'fr-FR';
+
+    final sourceLanguageCode = _translateFrenchToEnglish
+        ? sourceLanguageFrenchToEnglish
+        : sourceLanguageEnglishToFrench;
+    final targetLanguageCode = _translateFrenchToEnglish
+        ? targetLanguageFrenchToEnglish
+        : targetLanguageEnglishToFrench;
+
+    setState(() => _isTranslating = true);
+    try {
+      final callable = FirebaseFunctions.instanceFor(
+        region: kFirebaseFunctionsRegion,
+      ).httpsCallable('translateTextWithGoogleCloud');
+
+      final callableResult = await callable.call(<String, dynamic>{
+        'text': sourceText,
+        'sourceLanguage': sourceLanguageCode,
+        'targetLanguage': targetLanguageCode,
+      });
+
+      final responseData = callableResult.data;
+      if (responseData is! Map) {
+        if (!mounted) {
+          return;
+        }
+        _showSnackBar('Réponse de traduction invalide.');
+        return;
+      }
+
+      final translatedRaw = responseData['translatedText'];
+      final translatedText =
+          translatedRaw is String ? translatedRaw.trim() : '';
+
+      if (!mounted) {
+        return;
+      }
+
+      if (translatedText.isEmpty) {
+        _showSnackBar('Traduction vide.');
+        return;
+      }
+
+      setState(() {
+        _enUsTextController.text = _translateFrenchToEnglish
+            ? translatedText
+            : _enUsTextController.text;
+        _frFrTextController.text = _translateFrenchToEnglish
+            ? _frFrTextController.text
+            : translatedText;
+      });
+    } on FirebaseFunctionsException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar('Erreur: ${error.message ?? error.code}');
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar('Erreur: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _isTranslating = false);
+      }
+    }
   }
 
   void _showSnackBar(String message) {
@@ -174,18 +295,71 @@ class _AdminAnnouncementsManagePageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
-                  controller: _textController,
-                  minLines: 8,
-                  maxLines: 12,
-                  maxLength: GlobalAnnouncementsRepository.maxTextLength,
-                  decoration: InputDecoration(
-                    labelText: _isEditing
-                        ? 'Modifier le message'
-                        : 'Nouveau message',
+                  controller: _frFrTextController,
+                  minLines: 4,
+                  maxLines: 8,
+                  maxLength: _maxBodyCharactersPerLocale,
+                  decoration: const InputDecoration(
+                    labelText: 'Message (fr-FR)',
                     alignLabelWithHint: true,
-                    border: const OutlineInputBorder(),
-                    helperText:
-                        'Format multilingue:\n[fr-FR]\\nBonjour...\\n\\n[en-US]\\nHello...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: _isSubmitting || _isTranslating
+                          ? null
+                          : () => unawaited(_translateWithGoogleCloud()),
+                      icon: _isTranslating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.translate_outlined),
+                      label: const Text('Traduire'),
+                    ),
+                    SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment<bool>(
+                          value: true,
+                          label: Text('FR → EN'),
+                          tooltip: 'Français vers anglais',
+                        ),
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text('EN → FR'),
+                          tooltip: 'Anglais vers français',
+                        ),
+                      ],
+                      selected: {_translateFrenchToEnglish},
+                      onSelectionChanged: _isTranslating || _isSubmitting
+                          ? null
+                          : (selection) {
+                              setState(() {
+                                _translateFrenchToEnglish =
+                                    selection.contains(true);
+                              });
+                            },
+                      showSelectedIcon: false,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _enUsTextController,
+                  minLines: 4,
+                  maxLines: 8,
+                  maxLength: _maxBodyCharactersPerLocale,
+                  decoration: const InputDecoration(
+                    labelText: 'Message (en-US)',
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -250,80 +424,107 @@ class _AdminAnnouncementsManagePageState
                       announcement.id,
                     );
                     final isSelected = _editingAnnouncementId == announcement.id;
+                    final colorScheme = Theme.of(context).colorScheme;
+                    final headerBackgroundColor = colorScheme.primaryContainer;
+                    final headerForegroundColor = colorScheme.onPrimaryContainer;
                     return Card(
                       color: isSelected
-                          ? Theme.of(context).colorScheme.secondaryContainer
+                          ? colorScheme.secondaryContainer
                           : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    dateFormat.format(
-                                      announcement.createdAt.toLocal(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 2, 4, 0),
+                            child: Material(
+                              color: headerBackgroundColor,
+                              borderRadius: BorderRadius.circular(10),
+                              clipBehavior: Clip.antiAlias,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      dateFormat.format(
+                                        announcement.createdAt.toLocal(),
+                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: headerForegroundColor,
+                                          ),
                                     ),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                  ),
-                                ),
-                                if (announcement.wasEdited)
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: Icon(
-                                      Icons.edit,
-                                      size: 16,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                    if (announcement.wasEdited) ...[
+                                      const SizedBox(width: 6),
+                                      Icon(
+                                        Icons.edit,
+                                        size: 16,
+                                        color: headerForegroundColor,
+                                      ),
+                                    ],
+                                    const Spacer(),
+                                    IconButton(
+                                      tooltip: 'Modifier',
+                                      visualDensity: VisualDensity.compact,
+                                      iconSize: 20,
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: headerForegroundColor,
+                                      ),
+                                      onPressed: _isSubmitting || isDeleting
+                                          ? null
+                                          : () => _startEditingAnnouncement(
+                                                announcement,
+                                              ),
+                                      icon: const Icon(Icons.edit_outlined),
                                     ),
-                                  ),
-                                IconButton(
-                                  tooltip: 'Modifier',
-                                  onPressed: _isSubmitting || isDeleting
-                                      ? null
-                                      : () => _startEditingAnnouncement(
-                                            announcement,
-                                          ),
-                                  icon: const Icon(Icons.edit_outlined),
+                                    IconButton(
+                                      tooltip: 'Supprimer',
+                                      visualDensity: VisualDensity.compact,
+                                      iconSize: 20,
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: colorScheme.error,
+                                      ),
+                                      onPressed: _isSubmitting || isDeleting
+                                          ? null
+                                          : () => unawaited(
+                                                _deleteAnnouncement(
+                                                  announcement,
+                                                ),
+                                              ),
+                                      icon: isDeleting
+                                          ? SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: colorScheme.error,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.delete_outline,
+                                              size: 20,
+                                            ),
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  tooltip: 'Supprimer',
-                                  onPressed: _isSubmitting || isDeleting
-                                      ? null
-                                      : () => unawaited(
-                                            _deleteAnnouncement(announcement),
-                                          ),
-                                  icon: isDeleting
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Icon(
-                                          Icons.delete_outline,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .error,
-                                        ),
-                                ),
-                              ],
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            LinkifiedText(text: announcement.text),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: LinkifiedText(
+                              text: resolveAdminAnnouncementText(
+                                announcement.text,
+                                Localizations.localeOf(context),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
