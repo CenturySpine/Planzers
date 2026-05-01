@@ -463,17 +463,18 @@ function assertTripInviteToken(data, token) {
 }
 
 /**
- * Rewires [fromId] to [toId] in expense groups, expenses, and room bed data.
+ * Rewires [fromId] to [toId] in expense groups, expenses, rooms, and meals.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} fromId
  * @param {string} toId
  */
 async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
   const db = admin.firestore();
-  const [groupsSnap, expensesSnap, roomsSnap] = await Promise.all([
+  const [groupsSnap, expensesSnap, roomsSnap, mealsSnap] = await Promise.all([
     tripRef.collection('expenseGroups').get(),
     tripRef.collection('expenses').get(),
     tripRef.collection('rooms').get(),
+    tripRef.collection('meals').get(),
   ]);
 
   /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
@@ -566,6 +567,49 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
     if (roomDirty && Object.keys(newData).length > 0) {
       updates.push({ ref: doc.ref, data: newData });
     }
+  }
+
+  for (const doc of mealsSnap.docs) {
+    const meal = doc.data() || {};
+    const participants = (
+      Array.isArray(meal.participantIds) ? meal.participantIds : []
+    )
+      .map((v) => String(v).trim())
+      .filter((id) => id.length > 0);
+    const chefParticipantId = normalizeString(meal.chefParticipantId);
+    let dirty = false;
+
+    let newParticipants = participants;
+    if (participants.includes(fromId)) {
+      newParticipants = [
+        ...new Set(participants.map((id) => (id === fromId ? toId : id))),
+      ];
+      dirty = true;
+    } else {
+      newParticipants = [...new Set(participants)];
+    }
+
+    let newChefParticipantId = chefParticipantId;
+    if (chefParticipantId === fromId) {
+      newChefParticipantId = toId;
+      dirty = true;
+    }
+    if (
+      newChefParticipantId &&
+      !newParticipants.includes(newChefParticipantId)
+    ) {
+      newChefParticipantId = null;
+      dirty = true;
+    }
+
+    if (!dirty) continue;
+    updates.push({
+      ref: doc.ref,
+      data: {
+        participantIds: newParticipants,
+        chefParticipantId: newChefParticipantId || null,
+      },
+    });
   }
 
   let batch = db.batch();
@@ -1793,20 +1837,19 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     const afterIds = memberIdsAsSet(afterSnap.data() || {});
 
     const added = [...afterIds].filter((id) => !beforeIds.has(id));
-    if (added.length === 0) return;
-
     const removed = [...beforeIds].filter((id) => !afterIds.has(id));
+    if (added.length === 0 && removed.length === 0) return;
+    const isPlaceholderClaimSwap =
+      added.length === 1 &&
+      removed.length === 1 &&
+      isPlaceholderMemberId(removed[0]) &&
+      !isPlaceholderMemberId(added[0]);
 
     const tripRef = afterSnap.ref;
     for (const uid of added) {
       // Placeholder claimed by a real account: join callable migrates data;
       // do not union the new uid into every expense like a brand-new member.
-      if (
-        added.length === 1 &&
-        removed.length === 1 &&
-        isPlaceholderMemberId(removed[0]) &&
-        !isPlaceholderMemberId(uid)
-      ) {
+      if (isPlaceholderClaimSwap) {
         continue;
       }
       try {
@@ -1820,6 +1863,58 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
         );
         throw e;
       }
+    }
+
+    // Keep meals consistent when members are removed from trip.memberIds
+    // (manual participant removal or leave-trip flow).
+    // Skip placeholder claim swap: joinTripWithInvite migrates meal IDs itself.
+    if (isPlaceholderClaimSwap || removed.length === 0) {
+      return;
+    }
+
+    const db = admin.firestore();
+    const mealsSnap = await tripRef.collection('meals').get();
+    if (mealsSnap.empty) return;
+    const FieldValue = admin.firestore.FieldValue;
+    const removedSet = new Set(removed);
+    let batch = db.batch();
+    let n = 0;
+    for (const doc of mealsSnap.docs) {
+      const meal = doc.data() || {};
+      const participants = (
+        Array.isArray(meal.participantIds) ? meal.participantIds : []
+      )
+        .map((v) => String(v).trim())
+        .filter((id) => id.length > 0);
+      const chefParticipantId = normalizeString(meal.chefParticipantId);
+      const newParticipants = [
+        ...new Set(participants.filter((id) => !removedSet.has(id))),
+      ];
+      const newChefParticipantId = newParticipants.includes(chefParticipantId)
+        ? chefParticipantId
+        : null;
+      const participantsChanged =
+        newParticipants.length !== participants.length ||
+        newParticipants.some((id, idx) => id !== participants[idx]);
+      const chefChanged = newChefParticipantId !== chefParticipantId;
+      if (!participantsChanged && !chefChanged) {
+        continue;
+      }
+
+      batch.update(doc.ref, {
+        participantIds: newParticipants,
+        chefParticipantId: newChefParticipantId,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      n++;
+      if (n >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        n = 0;
+      }
+    }
+    if (n > 0) {
+      await batch.commit();
     }
   }
 );
@@ -2504,6 +2599,43 @@ function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
   }
 }
 
+/**
+ * Removes [uid] from trip meals: drops them from participantIds and clears chef
+ * assignment if needed.
+ *
+ * @param {FirebaseFirestore.Transaction} tx
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} mealDocs
+ * @param {string} uid
+ */
+function applyLeaveTripMealStripping(tx, mealDocs, uid) {
+  for (const doc of mealDocs) {
+    const meal = doc.data() || {};
+    const participants = (Array.isArray(meal.participantIds)
+      ? meal.participantIds
+      : []
+    )
+      .map((v) => String(v).trim())
+      .filter((id) => id.length > 0);
+    const chefParticipantId = normalizeString(meal.chefParticipantId);
+
+    const hadParticipant = participants.includes(uid);
+    const hadChef = chefParticipantId === uid;
+    if (!hadParticipant && !hadChef) {
+      continue;
+    }
+
+    const newParticipants = [...new Set(participants.filter((id) => id !== uid))];
+    const newChefParticipantId = newParticipants.includes(chefParticipantId)
+      ? chefParticipantId
+      : null;
+
+    tx.update(doc.ref, {
+      participantIds: newParticipants,
+      chefParticipantId: newChefParticipantId,
+    });
+  }
+}
+
 exports.leaveTrip = onCall(
   {
   },
@@ -2549,6 +2681,10 @@ exports.leaveTrip = onCall(
       const expensesQuery = tripRef.collection('expenses');
       const expensesSnap = await tx.get(expensesQuery);
       applyLeaveTripExpenseStripping(tx, expensesSnap.docs, uid);
+
+      const mealsQuery = tripRef.collection('meals');
+      const mealsSnap = await tx.get(mealsQuery);
+      applyLeaveTripMealStripping(tx, mealsSnap.docs, uid);
 
       tx.update(tripRef, {
         memberIds: admin.firestore.FieldValue.arrayRemove(uid),

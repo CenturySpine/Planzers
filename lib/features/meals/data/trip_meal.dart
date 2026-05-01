@@ -318,7 +318,7 @@ class TripMeal {
   final bool componentsUserOrdered;
 
   /// Convenience accessor for participant count.
-  int get participantCount => participantIds.length;
+  int get participantCount => participantIds.toSet().length;
 
   /// Parse meal date string to DateTime at midnight local time.
   DateTime get mealDateAsDateTime {
@@ -368,9 +368,10 @@ class TripMeal {
           ) ??
           TripDayPart.midday,
       participantIds: ((data['participantIds'] as List<dynamic>?) ?? const [])
-          .map((e) => e.toString().trim())
-          .where((id) => id.isNotEmpty)
-          .toList(),
+          .map((participantId) => participantId.toString().trim())
+          .where((participantId) => participantId.isNotEmpty)
+          .toSet()
+          .toList(growable: false),
       chefParticipantId:
           (data['chefParticipantId'] as String?)?.trim().isEmpty ?? true
               ? null
