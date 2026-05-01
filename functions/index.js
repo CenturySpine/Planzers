@@ -663,54 +663,6 @@ async function revertTripMemberClaim(tripRef, uid, phId) {
 }
 
 /**
- * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} phId
- */
-async function assertPlaceholderUnusedInExpensesAndRooms(tripRef, phId) {
-  const [expensesSnap, roomsSnap] = await Promise.all([
-    tripRef.collection('expenses').get(),
-    tripRef.collection('rooms').get(),
-  ]);
-
-  for (const doc of expensesSnap.docs) {
-    const exp = doc.data() || {};
-    const participants = (
-      Array.isArray(exp.participantIds) ? exp.participantIds : []
-    ).map(String);
-    const paidBy = normalizeString(exp.paidBy);
-    const shares = exp.participantShares;
-    const inShares =
-      shares &&
-      typeof shares === 'object' &&
-      !Array.isArray(shares) &&
-      Object.prototype.hasOwnProperty.call(shares, phId);
-    if (participants.includes(phId) || paidBy === phId || inShares) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce voyageur prévu est encore utilisé dans des dépenses. Retire-le des participants avant de le supprimer.'
-      );
-    }
-  }
-
-  for (const doc of roomsSnap.docs) {
-    const data = doc.data() || {};
-    const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
-    for (const bed of bedsRaw) {
-      if (!bed || typeof bed !== 'object') continue;
-      const ids = Array.isArray(bed.assignedMemberIds)
-        ? bed.assignedMemberIds.map(String)
-        : [];
-      if (ids.includes(phId)) {
-        throw new HttpsError(
-          'failed-precondition',
-          'Ce voyageur prévu est encore assigné à une chambre. Retire l\'assignation avant de le supprimer.'
-        );
-      }
-    }
-  }
-}
-
-/**
  * @param {unknown} raw
  * @returns {string[]}
  */
@@ -2692,7 +2644,6 @@ exports.removeTripPlaceholderMember = onCall(
       throw new HttpsError('not-found', 'Voyageur prévu introuvable');
     }
 
-    await assertPlaceholderUnusedInExpensesAndRooms(tripRef, placeholderId);
     await assertMemberRemovalBlockingDependencies({
       tripRef,
       memberId: placeholderId,
