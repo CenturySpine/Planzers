@@ -2809,43 +2809,6 @@ function applyLeaveTripExpenseStripping(tx, expenseDocs, uid) {
   }
 }
 
-/**
- * Removes [uid] from trip meals: drops them from participantIds and clears chef
- * assignment if needed.
- *
- * @param {FirebaseFirestore.Transaction} tx
- * @param {FirebaseFirestore.QueryDocumentSnapshot[]} mealDocs
- * @param {string} uid
- */
-function applyLeaveTripMealStripping(tx, mealDocs, uid) {
-  for (const doc of mealDocs) {
-    const meal = doc.data() || {};
-    const participants = (Array.isArray(meal.participantIds)
-      ? meal.participantIds
-      : []
-    )
-      .map((v) => String(v).trim())
-      .filter((id) => id.length > 0);
-    const chefParticipantId = normalizeString(meal.chefParticipantId);
-
-    const hadParticipant = participants.includes(uid);
-    const hadChef = chefParticipantId === uid;
-    if (!hadParticipant && !hadChef) {
-      continue;
-    }
-
-    const newParticipants = [...new Set(participants.filter((id) => id !== uid))];
-    const newChefParticipantId = newParticipants.includes(chefParticipantId)
-      ? chefParticipantId
-      : null;
-
-    tx.update(doc.ref, {
-      participantIds: newParticipants,
-      chefParticipantId: newChefParticipantId,
-    });
-  }
-}
-
 exports.leaveTrip = onCall(
   {
   },
