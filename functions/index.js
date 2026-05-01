@@ -248,12 +248,14 @@ async function enrichWithGooglePlaces(name, lat, lng) {
     let imageUrl = '';
     if (place.photos && place.photos.length > 0) {
       const photoName = place.photos[0].name;
-      const photoRes = await fetch(
-        `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800&key=${apiKey}`,
-        { redirect: 'follow' }
-      );
+      const photoRes = await fetch(`https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=800`, {
+        headers: { 'X-Goog-Api-Key': apiKey },
+        redirect: 'follow',
+      });
       if (photoRes.ok) {
-        imageUrl = photoRes.url;
+        const resolvedImageUrl = new URL(photoRes.url);
+        resolvedImageUrl.searchParams.delete('key');
+        imageUrl = resolvedImageUrl.toString();
       }
     }
 
