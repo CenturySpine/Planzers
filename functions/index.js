@@ -296,8 +296,9 @@ function isTripAdminUser(data, uid) {
 
 function roleRank(roleName) {
   const role = normalizeString(roleName);
-  if (role === 'owner') return 2;
-  if (role === 'admin') return 1;
+  if (role === 'owner') return 3;
+  if (role === 'admin') return 2;
+  if (role === 'chef') return 1;
   return 0;
 }
 
