@@ -329,20 +329,10 @@ service cloud.firestore {
     }
 
     function mealRecipeUpdateOnlyTouchesAllowedFields() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'components',
           'componentsUserOrdered',
-        ])
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'mealDateKey',
-          'mealDayPart',
-          'participantIds',
-          'chefParticipantId',
-          'mealMode',
-          'restaurantUrl',
-          'potluckItems',
-          'createdBy',
-          'createdAt',
+          'updatedAt',
         ]);
     }
 
