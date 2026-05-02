@@ -4049,6 +4049,30 @@ abstract class AppLocalizations {
   /// **'Mes chambres'**
   String get tripOverviewMyRooms;
 
+  /// No description provided for @tripOverviewTabSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aperçu'**
+  String get tripOverviewTabSummary;
+
+  /// No description provided for @tripOverviewTabAccommodationSuggestions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergements'**
+  String get tripOverviewTabAccommodationSuggestions;
+
+  /// No description provided for @tripOverviewNoAccommodationSuggestions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.'**
+  String get tripOverviewNoAccommodationSuggestions;
+
+  /// No description provided for @tripOverviewNoRestaurantSuggestions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.'**
+  String get tripOverviewNoRestaurantSuggestions;
+
   /// No description provided for @cupidonPopupTitle.
   ///
   /// In fr, this message translates to:

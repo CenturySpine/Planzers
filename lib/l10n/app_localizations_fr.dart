@@ -2228,6 +2228,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewMyRooms => 'Mes chambres';
 
   @override
+  String get tripOverviewTabSummary => 'Aperçu';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Hébergements';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.';
+
+  @override
   String get cupidonPopupTitle => 'Tu as un match';
 
   @override
@@ -4544,6 +4558,20 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewMyRooms => 'Mes chambres';
+
+  @override
+  String get tripOverviewTabSummary => 'Aperçu';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Hébergements';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.';
 
   @override
   String get cupidonPopupTitle => 'Tu as un match';

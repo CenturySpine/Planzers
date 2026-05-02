@@ -2213,6 +2213,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewMyRooms => 'My rooms';
 
   @override
+  String get tripOverviewTabSummary => 'Overview';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Accommodation';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'No accommodation suggestions yet. Add an \"Accommodation\" activity here or from Planning to make it appear.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'No restaurant suggestions yet. Add a \"Restaurant\" activity here or from Planning to make it appear.';
+
+  @override
   String get cupidonPopupTitle => 'You have a match';
 
   @override
@@ -4513,6 +4527,20 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewMyRooms => 'My rooms';
+
+  @override
+  String get tripOverviewTabSummary => 'Overview';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Accommodation';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'No accommodation suggestions yet. Add an \"Accommodation\" activity here or from Planning to make it appear.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'No restaurant suggestions yet. Add a \"Restaurant\" activity here or from Planning to make it appear.';
 
   @override
   String get cupidonPopupTitle => 'You have a match';

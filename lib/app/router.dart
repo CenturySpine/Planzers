@@ -12,6 +12,7 @@ import 'package:planerz/features/help_support/presentation/help_support_page.dar
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
@@ -252,9 +253,17 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: 'activities/new',
-          builder: (context, state) => TripActivityCreatePage(
-            tripId: state.pathParameters['tripId']!,
-          ),
+          builder: (context, state) {
+            final rawCategory =
+                state.uri.queryParameters['initialCategory']?.trim() ?? '';
+            final initialCategory = rawCategory.isEmpty
+                ? null
+                : TripActivityCategory.fromFirestore(rawCategory);
+            return TripActivityCreatePage(
+              tripId: state.pathParameters['tripId']!,
+              initialCategory: initialCategory,
+            );
+          },
         ),
         GoRoute(
           path: 'activities/:activityId',

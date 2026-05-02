@@ -16,6 +16,7 @@ import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_category_suggestions_panel.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
@@ -37,7 +38,8 @@ class TripOverviewPage extends ConsumerStatefulWidget {
   ConsumerState<TripOverviewPage> createState() => _TripOverviewPageState();
 }
 
-class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
+class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
@@ -51,12 +53,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   DateTime? _editEndDate;
   Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
   String? _usersDataStreamKey;
+  late final TabController _overviewTabController;
 
   Trip get _trip => TripScope.of(context);
 
   @override
   void initState() {
     super.initState();
+    _overviewTabController = TabController(length: 2, vsync: this);
     _titleController = TextEditingController();
     _destinationController = TextEditingController();
     _addressController = TextEditingController();
@@ -77,6 +81,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   @override
   void dispose() {
+    _overviewTabController.dispose();
     _titleController.dispose();
     _destinationController.dispose();
     _addressController.dispose();
@@ -579,8 +584,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     .where((activity) => activity.plannedAt != null)
                     .length;
 
-            return ListView(
-              padding: EdgeInsets.zero,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
             Stack(
               children: [
@@ -918,6 +923,20 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     : null,
               ),
             ),
+            TabBar(
+              controller: _overviewTabController,
+              tabs: [
+                Tab(text: l10n.tripOverviewTabSummary),
+                Tab(text: l10n.tripOverviewTabAccommodationSuggestions),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _overviewTabController,
+                children: [
+                  ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Column(
@@ -1265,6 +1284,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     const SizedBox(height: 16),
                     _LeaveTripSection(tripId: _trip.id),
                   ],
+                ],
+              ),
+            ),
+          ],
+                  ),
+                  TripCategorySuggestionsPanel(
+                    trip: _trip,
+                    category: TripActivityCategory.accommodation,
+                    emptyMessage:
+                        l10n.tripOverviewNoAccommodationSuggestions,
+                  ),
                 ],
               ),
             ),

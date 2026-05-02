@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
-import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -14,9 +14,13 @@ class TripActivityCreatePage extends ConsumerStatefulWidget {
   const TripActivityCreatePage({
     super.key,
     required this.tripId,
+    this.initialCategory,
   });
 
   final String tripId;
+
+  /// When set (e.g. deep link), pre-selects this category on the form.
+  final TripActivityCategory? initialCategory;
 
   @override
   ConsumerState<TripActivityCreatePage> createState() =>
@@ -29,13 +33,14 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
-  TripActivityCategory _category = TripActivityCategory.visit;
+  late TripActivityCategory _category;
   bool _saving = false;
   DateTime? _plannedAt;
 
   @override
   void initState() {
     super.initState();
+    _category = widget.initialCategory ?? TripActivityCategory.visit;
     _labelController = TextEditingController();
     _linkController = TextEditingController();
     _addressController = TextEditingController();
