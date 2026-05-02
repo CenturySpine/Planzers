@@ -78,6 +78,7 @@ class _UpdateRequiredScreen extends StatefulWidget {
 
 class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
   _UpdateUiPhase _phase = _UpdateUiPhase.downloading;
+  bool _isAutoUpdateFlowRunning = false;
 
   @override
   void initState() {
@@ -89,31 +90,37 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
 
   Future<void> _runAutoUpdateFlow() async {
     if (!mounted) return;
-    setState(() => _phase = _UpdateUiPhase.downloading);
+    if (_isAutoUpdateFlowRunning) return;
+    _isAutoUpdateFlowRunning = true;
+    try {
+      setState(() => _phase = _UpdateUiPhase.downloading);
 
-    final apkFile = await downloadUpdateApkToCache(
-      apkDownloadUrl: widget.release.apkDownloadUrl,
-      releaseTag: widget.release.tag,
-    );
+      final apkFile = await downloadUpdateApkToCache(
+        apkDownloadUrl: widget.release.apkDownloadUrl,
+        releaseTag: widget.release.tag,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (apkFile == null) {
-      setState(() => _phase = _UpdateUiPhase.errorDownload);
-      return;
-    }
+      if (apkFile == null) {
+        setState(() => _phase = _UpdateUiPhase.errorDownload);
+        return;
+      }
 
-    setState(() => _phase = _UpdateUiPhase.openingInstaller);
+      setState(() => _phase = _UpdateUiPhase.openingInstaller);
 
-    final installOutcome = await promptAndroidApkInstall(apkFile);
+      final installOutcome = await promptAndroidApkInstall(apkFile);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    switch (installOutcome) {
-      case AndroidApkInstallPromptOutcome.installerPromptShown:
-        setState(() => _phase = _UpdateUiPhase.installerLaunched);
-      case AndroidApkInstallPromptOutcome.installerIntentFailed:
-        setState(() => _phase = _UpdateUiPhase.errorInstaller);
+      switch (installOutcome) {
+        case AndroidApkInstallPromptOutcome.installerPromptShown:
+          setState(() => _phase = _UpdateUiPhase.installerLaunched);
+        case AndroidApkInstallPromptOutcome.installerIntentFailed:
+          setState(() => _phase = _UpdateUiPhase.errorInstaller);
+      }
+    } finally {
+      _isAutoUpdateFlowRunning = false;
     }
   }
 
