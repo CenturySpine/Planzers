@@ -109,6 +109,17 @@ class GlobalAnnouncementsRepository {
     StreamSubscription<List<AdminAnnouncement>>? announcementsSubscription;
     StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
         dismissedAnnouncementsSubscription;
+    var combinedStreamErrorForwarded = false;
+
+    void forwardCombinedStreamError(Object error, StackTrace? stackTrace) {
+      if (streamController.isClosed || combinedStreamErrorForwarded) {
+        return;
+      }
+      combinedStreamErrorForwarded = true;
+      announcementsSubscription?.cancel();
+      dismissedAnnouncementsSubscription?.cancel();
+      streamController.addError(error, stackTrace ?? StackTrace.current);
+    }
 
     void emitVisibleAnnouncementsIfReady() {
       if (streamController.isClosed) {
@@ -128,10 +139,13 @@ class GlobalAnnouncementsRepository {
     }
 
     streamController.onListen = () {
-      announcementsSubscription = watchAnnouncements().listen((announcements) {
-        latestAnnouncements = announcements;
-        emitVisibleAnnouncementsIfReady();
-      });
+      announcementsSubscription = watchAnnouncements().listen(
+        (announcements) {
+          latestAnnouncements = announcements;
+          emitVisibleAnnouncementsIfReady();
+        },
+        onError: forwardCombinedStreamError,
+      );
       dismissedAnnouncementsSubscription =
           _dismissedAnnouncementsCollection(currentUid).snapshots().listen(
         (dismissedSnapshot) {
@@ -139,6 +153,7 @@ class GlobalAnnouncementsRepository {
               dismissedSnapshot.docs.map((document) => document.id).toSet();
           emitVisibleAnnouncementsIfReady();
         },
+        onError: forwardCombinedStreamError,
       );
     };
     streamController.onCancel = () async {
@@ -161,8 +176,22 @@ class GlobalAnnouncementsRepository {
         announcementsSubscription;
     StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
         readStateSubscription;
+    var unreadCombinedStreamErrorForwarded = false;
+
+    void forwardUnreadCombinedStreamError(Object error, StackTrace? stackTrace) {
+      if (streamController.isClosed || unreadCombinedStreamErrorForwarded) {
+        return;
+      }
+      unreadCombinedStreamErrorForwarded = true;
+      announcementsSubscription?.cancel();
+      readStateSubscription?.cancel();
+      streamController.addError(error, stackTrace ?? StackTrace.current);
+    }
 
     void emitUnreadStateIfReady() {
+      if (streamController.isClosed) {
+        return;
+      }
       final announcementsSnapshot = latestAnnouncementsSnapshot;
       final readStateSnapshot = latestReadStateSnapshot;
       if (announcementsSnapshot == null || readStateSnapshot == null) {
@@ -195,15 +224,21 @@ class GlobalAnnouncementsRepository {
       announcementsSubscription = _announcementsCollection
           .orderBy('createdAt', descending: true)
           .snapshots()
-          .listen((announcementSnapshot) {
-        latestAnnouncementsSnapshot = announcementSnapshot;
-        emitUnreadStateIfReady();
-      });
+          .listen(
+        (announcementSnapshot) {
+          latestAnnouncementsSnapshot = announcementSnapshot;
+          emitUnreadStateIfReady();
+        },
+        onError: forwardUnreadCombinedStreamError,
+      );
       readStateSubscription =
-          _userReadStateDocument(currentUid).snapshots().listen((readSnapshot) {
-        latestReadStateSnapshot = readSnapshot;
-        emitUnreadStateIfReady();
-      });
+          _userReadStateDocument(currentUid).snapshots().listen(
+        (readSnapshot) {
+          latestReadStateSnapshot = readSnapshot;
+          emitUnreadStateIfReady();
+        },
+        onError: forwardUnreadCombinedStreamError,
+      );
     };
     streamController.onCancel = () async {
       await announcementsSubscription?.cancel();
