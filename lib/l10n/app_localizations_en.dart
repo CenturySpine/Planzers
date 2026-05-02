@@ -2264,9 +2264,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateRequiredNewVersion => 'New version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Download $version';
-  }
+  String get updateRequiredDownloading => 'Downloading…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Opening installer…';
+
+  @override
+  String get updateRequiredRetryButton => 'Try again';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Open link';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Download failed.';
+
+  @override
+  String get updateRequiredInstallerFailed => 'Could not open the installer.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'If automatic updating fails, uninstall the app and continue with the web version at:';
 
   @override
   String get globalAnnouncementsTitle => 'General announcements';
@@ -4541,9 +4558,26 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get updateRequiredNewVersion => 'New version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Download $version';
-  }
+  String get updateRequiredDownloading => 'Downloading…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Opening installer…';
+
+  @override
+  String get updateRequiredRetryButton => 'Try again';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Open link';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Download failed.';
+
+  @override
+  String get updateRequiredInstallerFailed => 'Could not open the installer.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'If automatic updating fails, uninstall the app and continue with the web version at:';
 
   @override
   String get globalAnnouncementsTitle => 'General announcements';

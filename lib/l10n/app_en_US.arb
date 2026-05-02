@@ -871,12 +871,13 @@
   "updateRequiredBody": "A new version of Planerz is available. You must update the app to continue using it.",
   "updateRequiredCurrentVersion": "Current version",
   "updateRequiredNewVersion": "New version",
-  "updateRequiredDownloadButton": "Download {version}",
-  "@updateRequiredDownloadButton": {
-    "placeholders": {
-      "version": {"type": "String"}
-    }
-  },
+  "updateRequiredDownloading": "Downloading…",
+  "updateRequiredOpeningInstaller": "Opening installer…",
+  "updateRequiredRetryButton": "Try again",
+  "updateRequiredOpenLinkButton": "Open link",
+  "updateRequiredDownloadFailed": "Download failed.",
+  "updateRequiredInstallerFailed": "Could not open the installer.",
+  "updateRequiredAutomaticUpdateWarningIntro": "If automatic updating fails, uninstall the app and continue with the web version at:",
   "globalAnnouncementsTitle": "General announcements",
   "globalAnnouncementsEmpty": "No announcements for now.",
   "globalAnnouncementsBellTooltip": "View announcements",

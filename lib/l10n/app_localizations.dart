@@ -4145,11 +4145,47 @@ abstract class AppLocalizations {
   /// **'Nouvelle version'**
   String get updateRequiredNewVersion;
 
-  /// No description provided for @updateRequiredDownloadButton.
+  /// No description provided for @updateRequiredDownloading.
   ///
   /// In fr, this message translates to:
-  /// **'Télécharger {version}'**
-  String updateRequiredDownloadButton(String version);
+  /// **'Téléchargement en cours…'**
+  String get updateRequiredDownloading;
+
+  /// No description provided for @updateRequiredOpeningInstaller.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouverture de l’installation…'**
+  String get updateRequiredOpeningInstaller;
+
+  /// No description provided for @updateRequiredRetryButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayer'**
+  String get updateRequiredRetryButton;
+
+  /// No description provided for @updateRequiredOpenLinkButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le lien'**
+  String get updateRequiredOpenLinkButton;
+
+  /// No description provided for @updateRequiredDownloadFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec du téléchargement.'**
+  String get updateRequiredDownloadFailed;
+
+  /// No description provided for @updateRequiredInstallerFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d’ouvrir l’installateur.'**
+  String get updateRequiredInstallerFailed;
+
+  /// No description provided for @updateRequiredAutomaticUpdateWarningIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :'**
+  String get updateRequiredAutomaticUpdateWarningIntro;
 
   /// No description provided for @globalAnnouncementsTitle.
   ///

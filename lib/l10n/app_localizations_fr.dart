@@ -2279,9 +2279,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get updateRequiredNewVersion => 'Nouvelle version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Télécharger $version';
-  }
+  String get updateRequiredDownloading => 'Téléchargement en cours…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Ouverture de l’installation…';
+
+  @override
+  String get updateRequiredRetryButton => 'Réessayer';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Ouvrir le lien';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Échec du téléchargement.';
+
+  @override
+  String get updateRequiredInstallerFailed =>
+      'Impossible d’ouvrir l’installateur.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :';
 
   @override
   String get globalAnnouncementsTitle => 'Annonces générales';
@@ -4571,9 +4589,27 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get updateRequiredNewVersion => 'Nouvelle version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Télécharger $version';
-  }
+  String get updateRequiredDownloading => 'Téléchargement en cours…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Ouverture de l’installation…';
+
+  @override
+  String get updateRequiredRetryButton => 'Réessayer';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Ouvrir le lien';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Échec du téléchargement.';
+
+  @override
+  String get updateRequiredInstallerFailed =>
+      'Impossible d’ouvrir l’installateur.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :';
 
   @override
   String get globalAnnouncementsTitle => 'Annonces générales';
