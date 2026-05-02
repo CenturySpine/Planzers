@@ -8,7 +8,7 @@ Cote administration, les super-administrateurs disposent d'une zone dediee dans 
 
 Cote utilisateur, une cloche surmontee d'une petite pastille rouge sans compteur apparait a cote du badge de profil sur la page d'accueil (la liste des voyages) des qu'au moins une annonce n'a pas encore ete consultee. Un clic sur cette cloche ouvre une page de lecture dediee, distincte de l'interface d'administration, ou les annonces s'affichent avec leurs liens hypertextes cliquables. La pastille rouge disparait des l'ouverture de cette page.
 
-Chaque utilisateur peut, depuis cette page, masquer individuellement une annonce pour ne plus la voir apparaitre lors de ses prochaines visites, sans que cela n'affecte les autres utilisateurs.
+Lorsque l'admin autorise le masquage pour une annonce, chaque utilisateur peut depuis cette page la masquer individuellement pour ne plus la voir lors de ses prochaines visites, sans que cela n'affecte les autres utilisateurs ; sinon le controle de masquage n'est pas affiche pour cette annonce.
 
 Les annonces sont publiees simultanement dans plusieurs langues au sein d'un meme message ; chaque utilisateur voit automatiquement la version correspondant a la langue configuree dans son application.
 
@@ -54,7 +54,7 @@ Cette section **override explicitement** certaines regles par defaut du repo (`C
 
 - **Droit de publication**: utiliser le flag deja existant `isApplicationOwner` (champ booleen sur `users/{uid}` lu dans [`lib/features/account/presentation/account_menu_button.dart`](../../lib/features/account/presentation/account_menu_button.dart) ligne 110). Pas de nouveau role.
 - **Pastille rouge**: simple point rouge **sans compteur**. Disparait des l'ouverture de la page utilisateur (marquage `lastReadAt` au moment de l'ouverture, comme deja fait pour les annonces de voyage dans [`lib/features/trips/presentation/trip_announcements_page.dart`](../../lib/features/trips/presentation/trip_announcements_page.dart)).
-- **Dismiss**: bouton de dismiss par annonce cote utilisateur. L'annonce dismiss disparait de la liste pour cet utilisateur a la prochaine visite. Le dismiss n'est pas requis pour faire disparaitre la pastille (independant du `lastReadAt`).
+- **Dismiss**: lorsque `userDismissAllowed` est vrai pour l'annonce, bouton de dismiss par annonce cote utilisateur ; sinon pas de controle de masquage. L'annonce dismiss disparait de la liste pour cet utilisateur a la prochaine visite. Le dismiss n'est pas requis pour faire disparaitre la pastille (independant du `lastReadAt`).
 - **Suppression admin**: hard delete du document `adminAnnouncements/{id}`. Les docs `dismissedAdminAnnouncements/{id}` chez les utilisateurs deviennent orphelins; ils sont nettoyes en arriere-plan par une Cloud Function planifiee hebdomadaire (mercredi 03:00 Europe/Paris). Voir Lot F et la section dediee.
 - **Multilingue**: champ texte brut unique avec sections `[locale]` sur leur propre ligne, ex:
 
@@ -78,6 +78,7 @@ Hello everyone, ...
   - `authorId: string`
   - `createdAt: serverTimestamp`
   - `updatedAt: serverTimestamp` (optionnel, pose lors d'un edit)
+  - `userDismissAllowed: bool` (optionnel cote donnees historiques; defaut logique **`true`**) — lorsque `false`, les utilisateurs ne voient pas le controle de masquage individuel sur cette annonce ; l'admin peut repasser a `true` via la meme page de modification.
 - **`users/{uid}/globalNotificationReads/adminAnnouncements`** (1 doc par user):
   - `lastReadAt: timestamp`
   - `updatedAt: serverTimestamp`
@@ -99,11 +100,16 @@ match /users/{userId}/globalNotificationReads/{docId} {
 }
 
 match /users/{userId}/dismissedAdminAnnouncements/{announcementId} {
-  allow read, create, delete: if signedIn() && request.auth.uid == userId;
+  allow read, delete: if signedIn() && request.auth.uid == userId;
+  allow create: if signedIn()
+    && request.auth.uid == userId
+    && adminAnnouncementAllowsUserDismiss(announcementId);
 }
 ```
 
 `isApplicationOwner()` doit etre defini comme: `get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApplicationOwner == true`.
+
+`adminAnnouncementAllowsUserDismiss(announcementId)` (fonction auxiliaire dans les regles) impose que le document `adminAnnouncements/{announcementId}` existe et que `userDismissAllowed` soit absent ou strictement `true`, aligne avec le defaut client pour les annonces historiques.
 
 ### 4. Architecture technique
 
@@ -121,7 +127,7 @@ flowchart LR
 ### 5. Nouveaux fichiers cote Flutter
 
 - **Domain**: `lib/features/administration/domain/admin_announcement.dart`
-  - Modele `AdminAnnouncement(id, text, authorId, createdAt, updatedAt?)`
+  - Modele `AdminAnnouncement(id, text, authorId, createdAt, userDismissAllowed, updatedAt?)`
   - `fromDoc` / `toMap`
 - **Domain**: `lib/features/administration/domain/admin_announcement_localized_text.dart`
   - Fonction pure `String resolveAdminAnnouncementText(String rawText, Locale locale)` avec parseur de sections `[locale]`, fallback selon regle definie. Testable en isolation.

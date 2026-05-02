@@ -6,6 +6,7 @@ class AdminAnnouncement {
     required this.text,
     required this.authorId,
     required this.createdAt,
+    required this.userDismissAllowed,
     this.updatedAt,
   });
 
@@ -15,7 +16,16 @@ class AdminAnnouncement {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
+  /// When `false`, end users do not see the per-announcement dismiss control.
+  final bool userDismissAllowed;
+
   bool get wasEdited => updatedAt != null;
+
+  /// Parses [userDismissAllowed] from Firestore; defaults to `true` when absent or invalid.
+  static bool userDismissAllowedFromFirestoreData(Map<String, dynamic> data) {
+    final raw = data['userDismissAllowed'];
+    return raw is bool ? raw : true;
+  }
 
   factory AdminAnnouncement.fromDoc(
     DocumentSnapshot<Map<String, dynamic>> doc,
@@ -37,6 +47,7 @@ class AdminAnnouncement {
       authorId: (data['authorId'] as String?)?.trim() ?? '',
       createdAt: createdAt,
       updatedAt: updatedAt,
+      userDismissAllowed: userDismissAllowedFromFirestoreData(data),
     );
   }
 
@@ -45,6 +56,7 @@ class AdminAnnouncement {
       'text': text.trim(),
       'authorId': authorId.trim(),
       'createdAt': Timestamp.fromDate(createdAt),
+      'userDismissAllowed': userDismissAllowed,
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
     };
   }

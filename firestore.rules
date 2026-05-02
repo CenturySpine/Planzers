@@ -11,6 +11,14 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApplicationOwner == true;
     }
 
+    function adminAnnouncementAllowsUserDismiss(announcementId) {
+      let announcement = get(/databases/$(database)/documents/adminAnnouncements/$(announcementId));
+      return announcement.exists && (
+        !announcement.data.keys().hasAny(['userDismissAllowed'])
+        || announcement.data.userDismissAllowed == true
+      );
+    }
+
     function tripDoc(tripId) {
       return get(/databases/$(database)/documents/trips/$(tripId));
     }
@@ -420,7 +428,10 @@ service cloud.firestore {
       }
 
       match /dismissedAdminAnnouncements/{announcementId} {
-        allow read, create, delete: if signedIn() && request.auth.uid == userId;
+        allow read, delete: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn()
+          && request.auth.uid == userId
+          && adminAnnouncementAllowsUserDismiss(announcementId);
       }
     }
 

@@ -881,5 +881,7 @@
   "globalAnnouncementsTitle": "General announcements",
   "globalAnnouncementsEmpty": "No announcements for now.",
   "globalAnnouncementsBellTooltip": "View announcements",
-  "globalAnnouncementsDismissTooltip": "Hide this announcement"
+  "globalAnnouncementsDismissTooltip": "Hide this announcement",
+  "globalAnnouncementsRestoreHiddenTooltip": "Show hidden announcements again",
+  "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again."
 }

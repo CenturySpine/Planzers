@@ -32,6 +32,13 @@ final globalVisibleAnnouncementsForCurrentUserProvider =
       .watchVisibleAnnouncementsForCurrentUser();
 });
 
+final globalHasDismissedAdminAnnouncementsProvider =
+    StreamProvider.autoDispose<bool>((ref) {
+  return ref
+      .watch(globalAnnouncementsRepositoryProvider)
+      .watchHasDismissedAdminAnnouncements();
+});
+
 class GlobalAnnouncementsRepository {
   GlobalAnnouncementsRepository({
     required this.firestore,
@@ -78,6 +85,16 @@ class GlobalAnnouncementsRepository {
         .map((querySnapshot) {
       return querySnapshot.docs.map(AdminAnnouncement.fromDoc).toList();
     });
+  }
+
+  Stream<bool> watchHasDismissedAdminAnnouncements() {
+    final currentUid = auth.currentUser?.uid.trim() ?? '';
+    if (currentUid.isEmpty) {
+      return Stream.value(false);
+    }
+    return _dismissedAnnouncementsCollection(currentUid).snapshots().map(
+          (querySnapshot) => querySnapshot.docs.isNotEmpty,
+        );
   }
 
   Stream<List<AdminAnnouncement>> watchVisibleAnnouncementsForCurrentUser() {
@@ -190,7 +207,10 @@ class GlobalAnnouncementsRepository {
     return streamController.stream;
   }
 
-  Future<void> sendAnnouncement(String text) async {
+  Future<void> sendAnnouncement(
+    String text, {
+    bool userDismissAllowed = true,
+  }) async {
     final currentUid = _requireCurrentUid();
     final trimmedText = text.trim();
     if (trimmedText.isEmpty) {
@@ -203,10 +223,15 @@ class GlobalAnnouncementsRepository {
       'text': trimmedText,
       'authorId': currentUid,
       'createdAt': FieldValue.serverTimestamp(),
+      'userDismissAllowed': userDismissAllowed,
     });
   }
 
-  Future<void> updateAnnouncement(String id, String text) async {
+  Future<void> updateAnnouncement(
+    String id,
+    String text, {
+    required bool userDismissAllowed,
+  }) async {
     _requireCurrentUid();
     final cleanedAnnouncementId = id.trim();
     final trimmedText = text.trim();
@@ -223,6 +248,7 @@ class GlobalAnnouncementsRepository {
       <String, dynamic>{
         'text': trimmedText,
         'updatedAt': FieldValue.serverTimestamp(),
+        'userDismissAllowed': userDismissAllowed,
       },
     );
   }
@@ -255,5 +281,23 @@ class GlobalAnnouncementsRepository {
         .set(<String, dynamic>{
       'dismissedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  /// Deletes every doc in [dismissedAdminAnnouncements] for the current user.
+  Future<void> restoreAllDismissedAdminAnnouncements() async {
+    final currentUid = _requireCurrentUid();
+    final dismissedCollection =
+        _dismissedAnnouncementsCollection(currentUid);
+    while (true) {
+      final snapshot = await dismissedCollection.limit(500).get();
+      if (snapshot.docs.isEmpty) {
+        return;
+      }
+      final batch = firestore.batch();
+      for (final documentSnapshot in snapshot.docs) {
+        batch.delete(documentSnapshot.reference);
+      }
+      await batch.commit();
+    }
   }
 }

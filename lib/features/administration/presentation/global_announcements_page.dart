@@ -22,6 +22,7 @@ class GlobalAnnouncementsPage extends ConsumerStatefulWidget {
 class _GlobalAnnouncementsPageState
     extends ConsumerState<GlobalAnnouncementsPage> {
   final Set<String> _dismissingAnnouncementIds = <String>{};
+  bool _isRestoringDismissedAnnouncements = false;
 
   @override
   void initState() {
@@ -67,6 +68,35 @@ class _GlobalAnnouncementsPageState
     }
   }
 
+  Future<void> _restoreDismissedAnnouncements(AppLocalizations l10n) async {
+    if (_isRestoringDismissedAnnouncements) {
+      return;
+    }
+    setState(() => _isRestoringDismissedAnnouncements = true);
+    try {
+      await ref
+          .read(globalAnnouncementsRepositoryProvider)
+          .restoreAllDismissedAdminAnnouncements();
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.globalAnnouncementsRestoreHiddenSnackBar)),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isRestoringDismissedAnnouncements = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -75,9 +105,35 @@ class _GlobalAnnouncementsPageState
     final dateFormat = DateFormat('d MMM yyyy', localeTag);
     final announcementsAsync =
         ref.watch(globalVisibleAnnouncementsForCurrentUserProvider);
+    final hasDismissedAsync =
+        ref.watch(globalHasDismissedAdminAnnouncementsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.globalAnnouncementsTitle)),
+      appBar: AppBar(
+        title: Text(l10n.globalAnnouncementsTitle),
+        actions: [
+          if (hasDismissedAsync.maybeWhen(
+            data: (hasDismissed) => hasDismissed,
+            orElse: () => false,
+          ))
+            IconButton(
+              tooltip: l10n.globalAnnouncementsRestoreHiddenTooltip,
+              onPressed: _isRestoringDismissedAnnouncements
+                  ? null
+                  : () => unawaited(_restoreDismissedAnnouncements(l10n)),
+              icon: _isRestoringDismissedAnnouncements
+                  ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    )
+                  : const Icon(Icons.visibility_outlined),
+            ),
+        ],
+      ),
       body: announcementsAsync.when(
         data: (announcements) {
           if (announcements.isEmpty) {
@@ -144,35 +200,37 @@ class _GlobalAnnouncementsPageState
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: isDismissing
-                            ? null
-                            : () => unawaited(
-                                  _dismissAnnouncement(
-                                    l10n: l10n,
-                                    announcement: announcement,
+                      if (announcement.userDismissAllowed)
+                        IconButton(
+                          onPressed: isDismissing
+                              ? null
+                              : () => unawaited(
+                                    _dismissAnnouncement(
+                                      l10n: l10n,
+                                      announcement: announcement,
+                                    ),
                                   ),
+                          icon: isDismissing
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.close,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
-                        icon: isDismissing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Icon(
-                                Icons.close,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                        tooltip: l10n.globalAnnouncementsDismissTooltip,
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 28,
-                          minHeight: 28,
+                          tooltip: l10n.globalAnnouncementsDismissTooltip,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 28,
+                            minHeight: 28,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

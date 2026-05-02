@@ -2312,6 +2312,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Réafficher les annonces masquées';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Les annonces masquées sont à nouveau visibles.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -4622,4 +4630,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Réafficher les annonces masquées';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Les annonces masquées sont à nouveau visibles.';
 }

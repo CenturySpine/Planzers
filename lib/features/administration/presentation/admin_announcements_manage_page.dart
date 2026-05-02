@@ -29,6 +29,7 @@ class _AdminAnnouncementsManagePageState
   bool _translateFrenchToEnglish = true;
   final Set<String> _deletingAnnouncementIds = <String>{};
   String? _editingAnnouncementId;
+  bool _userDismissAllowed = true;
 
   bool get _isEditing => _editingAnnouncementId != null;
 
@@ -57,14 +58,16 @@ class _AdminAnnouncementsManagePageState
     }
     setState(() => _isSubmitting = true);
     try {
-      await ref
-          .read(globalAnnouncementsRepositoryProvider)
-          .sendAnnouncement(assembledMultilingualText);
+      await ref.read(globalAnnouncementsRepositoryProvider).sendAnnouncement(
+            assembledMultilingualText,
+            userDismissAllowed: _userDismissAllowed,
+          );
       if (!mounted) {
         return;
       }
       _frFrTextController.clear();
       _enUsTextController.clear();
+      _userDismissAllowed = true;
       _showSnackBar('Annonce publiée.');
     } catch (error) {
       if (!mounted) {
@@ -94,11 +97,10 @@ class _AdminAnnouncementsManagePageState
     }
     setState(() => _isSubmitting = true);
     try {
-      await ref
-          .read(globalAnnouncementsRepositoryProvider)
-          .updateAnnouncement(
+      await ref.read(globalAnnouncementsRepositoryProvider).updateAnnouncement(
             announcementId,
             assembledMultilingualText,
+            userDismissAllowed: _userDismissAllowed,
           );
       if (!mounted) {
         return;
@@ -106,6 +108,7 @@ class _AdminAnnouncementsManagePageState
       _frFrTextController.clear();
       _enUsTextController.clear();
       _editingAnnouncementId = null;
+      _userDismissAllowed = true;
       _showSnackBar('Annonce mise à jour.');
       setState(() {});
     } catch (error) {
@@ -157,6 +160,7 @@ class _AdminAnnouncementsManagePageState
         _editingAnnouncementId = null;
         _frFrTextController.clear();
         _enUsTextController.clear();
+        _userDismissAllowed = true;
       }
       _showSnackBar('Annonce supprimée.');
       setState(() {});
@@ -174,6 +178,7 @@ class _AdminAnnouncementsManagePageState
 
   void _startEditingAnnouncement(AdminAnnouncement announcement) {
     _editingAnnouncementId = announcement.id;
+    _userDismissAllowed = announcement.userDismissAllowed;
     final splitBodies = splitAdminAnnouncementForEditing(announcement.text);
     _frFrTextController.text = splitBodies.frFr;
     _enUsTextController.text = splitBodies.enUs;
@@ -184,6 +189,7 @@ class _AdminAnnouncementsManagePageState
     _editingAnnouncementId = null;
     _frFrTextController.clear();
     _enUsTextController.clear();
+    _userDismissAllowed = true;
     setState(() {});
   }
 
@@ -361,6 +367,18 @@ class _AdminAnnouncementsManagePageState
                     alignLabelWithHint: true,
                     border: OutlineInputBorder(),
                   ),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Les utilisateurs peuvent masquer cette annonce',
+                  ),
+                  value: _userDismissAllowed,
+                  onChanged: _isSubmitting || _isTranslating
+                      ? null
+                      : (bool value) {
+                          setState(() => _userDismissAllowed = value);
+                        },
                 ),
                 const SizedBox(height: 8),
                 Row(

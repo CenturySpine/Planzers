@@ -4210,6 +4210,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Masquer cette annonce'**
   String get globalAnnouncementsDismissTooltip;
+
+  /// No description provided for @globalAnnouncementsRestoreHiddenTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réafficher les annonces masquées'**
+  String get globalAnnouncementsRestoreHiddenTooltip;
+
+  /// No description provided for @globalAnnouncementsRestoreHiddenSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les annonces masquées sont à nouveau visibles.'**
+  String get globalAnnouncementsRestoreHiddenSnackBar;
 }
 
 class _AppLocalizationsDelegate

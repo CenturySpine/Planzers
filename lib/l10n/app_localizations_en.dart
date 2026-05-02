@@ -2296,6 +2296,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Show hidden announcements again';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Hidden announcements are visible again.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -4590,4 +4598,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Show hidden announcements again';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Hidden announcements are visible again.';
 }

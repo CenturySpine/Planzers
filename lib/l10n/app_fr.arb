@@ -881,5 +881,7 @@
   "globalAnnouncementsTitle": "Annonces générales",
   "globalAnnouncementsEmpty": "Aucune annonce pour le moment.",
   "globalAnnouncementsBellTooltip": "Voir les annonces",
-  "globalAnnouncementsDismissTooltip": "Masquer cette annonce"
+  "globalAnnouncementsDismissTooltip": "Masquer cette annonce",
+  "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
+  "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles."
 }
