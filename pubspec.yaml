@@ -1,7 +1,7 @@
 name: planerz
 description: Application de gestion de voyage entre amis.
 publish_to: "none"
-version: 0.2.0-beta1+6
+version: 0.2.0-beta2+7
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
