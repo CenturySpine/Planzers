@@ -97,6 +97,54 @@ Hello in English
   });
 
   test(
+      'assembleAdminAnnouncementMultilingualText omits empty locale bodies',
+      () {
+    expect(
+      assembleAdminAnnouncementMultilingualText('Salut', ''),
+      '[fr-FR]\nSalut',
+    );
+    expect(
+      assembleAdminAnnouncementMultilingualText('', 'Hi'),
+      '[en-US]\nHi',
+    );
+    expect(assembleAdminAnnouncementMultilingualText('', ''), '');
+  });
+
+  test(
+      'falls back when matched locale section is empty but another is filled',
+      () {
+    const rawText = '''
+[fr-FR]
+Bonjour
+
+[en-US]
+
+''';
+
+    expect(
+      resolveAdminAnnouncementText(rawText, const Locale('en', 'US')),
+      'Bonjour',
+    );
+  });
+
+  test(
+      'falls back to first non-empty section when locale unmatched and lead '
+      'section is empty',
+      () {
+    const rawText = '''
+[fr-FR]
+
+[en-US]
+Hello
+''';
+
+    expect(
+      resolveAdminAnnouncementText(rawText, const Locale('es', 'ES')),
+      'Hello',
+    );
+  });
+
+  test(
       'splitAdminAnnouncementForEditing maps stored sections to editors',
       () {
     const rawText = '''
@@ -127,6 +175,15 @@ Line en
     final split = splitAdminAnnouncementForEditing(assembled);
     expect(split.frFr, fr);
     expect(split.enUs, en);
+  });
+
+  test('assemble then split round-trips French-only bodies', () {
+    const fr = 'Bonjour';
+    final assembled = assembleAdminAnnouncementMultilingualText(fr, '');
+    expect(assembled, '[fr-FR]\nBonjour');
+    final split = splitAdminAnnouncementForEditing(assembled);
+    expect(split.frFr, fr);
+    expect(split.enUs, '');
   });
 
   test('splitAdminAnnouncementForEditing uses [fr] and [en] fallback bodies',

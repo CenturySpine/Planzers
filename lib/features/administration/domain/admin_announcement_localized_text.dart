@@ -16,16 +16,23 @@ String resolveAdminAnnouncementText(String rawText, Locale locale) {
   );
 
   for (final parsedSection in parsedSections) {
-    if (parsedSection.normalizedLocale == normalizedExactLocale) {
+    if (parsedSection.normalizedLocale == normalizedExactLocale &&
+        parsedSection.text.isNotEmpty) {
       return parsedSection.text;
     }
   }
   for (final parsedSection in parsedSections) {
-    if (parsedSection.normalizedLocale == normalizedLanguageOnlyLocale) {
+    if (parsedSection.normalizedLocale == normalizedLanguageOnlyLocale &&
+        parsedSection.text.isNotEmpty) {
       return parsedSection.text;
     }
   }
-  return parsedSections.first.text;
+  for (final parsedSection in parsedSections) {
+    if (parsedSection.text.isNotEmpty) {
+      return parsedSection.text;
+    }
+  }
+  return '';
 }
 
 List<_ParsedLocalizedSection> _parseLocalizedSections(String rawText) {
@@ -114,13 +121,21 @@ class _ParsedLocalizedSection {
 }
 
 /// Builds stored admin announcement text with `[fr-FR]` / `[en-US]` sections.
+/// Omits a header/body pair when that side's trimmed text is empty.
 String assembleAdminAnnouncementMultilingualText(
   String frFrBody,
   String enUsBody,
 ) {
   final trimmedFrenchBody = frFrBody.trim();
   final trimmedEnglishBody = enUsBody.trim();
-  return '[fr-FR]\n$trimmedFrenchBody\n\n[en-US]\n$trimmedEnglishBody';
+  final segments = <String>[];
+  if (trimmedFrenchBody.isNotEmpty) {
+    segments.add('[fr-FR]\n$trimmedFrenchBody');
+  }
+  if (trimmedEnglishBody.isNotEmpty) {
+    segments.add('[en-US]\n$trimmedEnglishBody');
+  }
+  return segments.join('\n\n');
 }
 
 /// Fills the two admin editors from stored text (same section rules as [resolveAdminAnnouncementText]).
