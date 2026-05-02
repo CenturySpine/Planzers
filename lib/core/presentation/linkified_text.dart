@@ -28,6 +28,8 @@ class _LinkifiedTextState extends State<LinkifiedText> {
   final List<TapGestureRecognizer> _recognizers = [];
   List<InlineSpan> _textSpans = const [];
   String? _spansForText;
+  TextStyle? _spansForBaseStyle;
+  Color? _spansForLinkColor;
 
   @override
   void dispose() {
@@ -43,20 +45,35 @@ class _LinkifiedTextState extends State<LinkifiedText> {
   }
 
   void _ensureTextSpans(BuildContext context) {
-    if (_spansForText == widget.text) return;
+    final baseStyle = widget.style ?? DefaultTextStyle.of(context).style;
+    final linkColor = Theme.of(context).colorScheme.primary;
+    if (_spansForText == widget.text &&
+        _spansForBaseStyle == baseStyle &&
+        _spansForLinkColor == linkColor) {
+      return;
+    }
     _disposeRecognizers();
     _spansForText = widget.text;
-    _textSpans = _buildTextSpans(context);
+    _spansForBaseStyle = baseStyle;
+    _spansForLinkColor = linkColor;
+    _textSpans = _buildTextSpans(
+      context: context,
+      text: widget.text,
+      baseStyle: baseStyle,
+      linkColor: linkColor,
+    );
   }
 
-  List<InlineSpan> _buildTextSpans(BuildContext context) {
-    final text = widget.text;
-    final baseStyle = widget.style ?? DefaultTextStyle.of(context).style;
-    final colorScheme = Theme.of(context).colorScheme;
+  List<InlineSpan> _buildTextSpans({
+    required BuildContext context,
+    required String text,
+    required TextStyle baseStyle,
+    required Color linkColor,
+  }) {
     final linkStyle = baseStyle.copyWith(
-      color: colorScheme.primary,
+      color: linkColor,
       decoration: TextDecoration.underline,
-      decorationColor: colorScheme.primary,
+      decorationColor: linkColor,
     );
 
     final children = <InlineSpan>[];
