@@ -4,17 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/app_version_provider.dart';
-import 'package:planerz/app/update/github_release.dart';
 import 'package:planerz/app/update/latest_release_provider.dart';
+import 'package:planerz/app/update/remote_release.dart';
 import 'package:planerz/app/update/version_comparison.dart';
-import 'package:planerz/core/firebase/firebase_target.dart';
-import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Wraps the app shell and blocks navigation when a newer version is available
-/// on GitHub. Disabled in debug builds, preview environment, and non-Android
-/// platforms.
+/// remotely (GitHub in prod, Storage manifest in preview). Disabled on web and
+/// non-Android platforms.
 class UpdateGate extends ConsumerWidget {
   const UpdateGate({required this.child, super.key});
 
@@ -22,8 +20,7 @@ class UpdateGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPreview = ref.watch(firebaseTargetProvider).isPreview;
-    if (kDebugMode || isPreview || kIsWeb || !Platform.isAndroid) return child;
+    if (kIsWeb || !Platform.isAndroid) return child;
 
     final releaseAsync = ref.watch(latestReleaseProvider);
     final currentAsync = ref.watch(appVersionProvider);
@@ -51,7 +48,7 @@ class _UpdateRequiredScreen extends StatelessWidget {
   });
 
   final String current;
-  final GitHubRelease release;
+  final RemoteRelease release;
 
   Future<void> _download(BuildContext context) async {
     final uri = Uri.parse(release.apkDownloadUrl);
