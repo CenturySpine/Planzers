@@ -109,7 +109,14 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
 
       setState(() => _phase = _UpdateUiPhase.openingInstaller);
 
-      final installOutcome = await promptAndroidApkInstall(apkFile);
+      final AndroidApkInstallPromptOutcome installOutcome;
+      try {
+        installOutcome = await promptAndroidApkInstall(apkFile);
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _phase = _UpdateUiPhase.errorInstaller);
+        return;
+      }
 
       if (!mounted) return;
 
