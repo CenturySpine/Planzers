@@ -1543,7 +1543,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripSectionActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripSectionActivities;
 
   /// No description provided for @tripSectionActivitiesDescription.
@@ -1603,7 +1603,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripTabActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripTabActivities;
 
   /// No description provided for @tripTabExpenses.
@@ -3956,7 +3956,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripOverviewTileActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripOverviewTileActivities;
 
   /// No description provided for @tripOverviewTileRooms.

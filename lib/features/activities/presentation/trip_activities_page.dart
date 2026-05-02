@@ -222,8 +222,15 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             length: 3,
             initialIndex: 2,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    l10n.tripTabActivities,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
                 TabBar(
                   tabs: [
                     Tab(text: l10n.activitiesTabSuggestions),

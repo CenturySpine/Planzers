@@ -816,7 +816,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Gestion des droits sur les dépenses du voyage.';
 
   @override
-  String get tripSectionActivities => 'Activités';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -850,7 +850,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTabMessages => 'Messagerie';
 
   @override
-  String get tripTabActivities => 'Activités';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Dépenses';
@@ -2179,7 +2179,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activités';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Chambres';
@@ -3134,7 +3134,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Gestion des droits sur les dépenses du voyage.';
 
   @override
-  String get tripSectionActivities => 'Activités';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -3168,7 +3168,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripTabMessages => 'Messagerie';
 
   @override
-  String get tripTabActivities => 'Activités';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Dépenses';
@@ -4497,7 +4497,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activités';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Chambres';
