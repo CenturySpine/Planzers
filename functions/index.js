@@ -3718,10 +3718,10 @@ exports.cleanupOrphanAdminAnnouncementDismisses = onSchedule(
 );
 
 /**
- * Inserts a row into applicationLogs ( structured audit / diagnostics ).
+ * Callable: persists to applicationLogs (structured audit / diagnostics).
  * Restricted to users with isApplicationOwner === true in Firestore.
  */
-exports.insertApplicationLog = onCall(async (request) => {
+exports.insertApplicationLogCallable = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
