@@ -12,8 +12,9 @@ service cloud.firestore {
     }
 
     function adminAnnouncementAllowsUserDismiss(announcementId) {
-      let announcement = get(/databases/$(database)/documents/adminAnnouncements/$(announcementId));
-      return announcement.exists && (
+      let announcementPath = /databases/$(database)/documents/adminAnnouncements/$(announcementId);
+      let announcement = get(announcementPath);
+      return exists(announcementPath) && (
         !announcement.data.keys().hasAny(['userDismissAllowed'])
         || announcement.data.userDismissAllowed == true
       );
