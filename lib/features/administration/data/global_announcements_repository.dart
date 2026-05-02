@@ -265,7 +265,7 @@ class GlobalAnnouncementsRepository {
   Future<void> markAsReadNow() async {
     final currentUid = _requireCurrentUid();
     await _userReadStateDocument(currentUid).set(<String, dynamic>{
-      'lastReadAt': Timestamp.now(),
+      'lastReadAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
