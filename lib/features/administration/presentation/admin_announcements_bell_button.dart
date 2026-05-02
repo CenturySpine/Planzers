@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/administration/data/global_announcements_repository.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -11,15 +10,6 @@ class AdminAnnouncementsBellButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isApplicationOwnerAsync = ref.watch(myIsApplicationOwnerProvider);
-    final isApplicationOwner = isApplicationOwnerAsync.maybeWhen(
-      data: (isOwner) => isOwner,
-      orElse: () => false,
-    );
-    if (isApplicationOwner) {
-      return const SizedBox.shrink();
-    }
-
     final unreadIndicatorAsync =
         ref.watch(globalAdminAnnouncementsUnreadIndicatorProvider);
     final showUnreadDot = unreadIndicatorAsync.maybeWhen(
