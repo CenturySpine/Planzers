@@ -104,19 +104,24 @@ class GlobalAnnouncementsRepository {
     }
 
     final streamController = StreamController<List<AdminAnnouncement>>();
-    List<AdminAnnouncement> latestAnnouncements = const <AdminAnnouncement>[];
-    Set<String> latestDismissedIds = const <String>{};
+    List<AdminAnnouncement>? latestAnnouncements;
+    Set<String>? latestDismissedIds;
     StreamSubscription<List<AdminAnnouncement>>? announcementsSubscription;
     StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
         dismissedAnnouncementsSubscription;
 
-    void emitVisibleAnnouncements() {
+    void emitVisibleAnnouncementsIfReady() {
       if (streamController.isClosed) {
         return;
       }
-      final visibleAnnouncements = latestAnnouncements
+      final announcements = latestAnnouncements;
+      final dismissedIds = latestDismissedIds;
+      if (announcements == null || dismissedIds == null) {
+        return;
+      }
+      final visibleAnnouncements = announcements
           .where(
-            (announcement) => !latestDismissedIds.contains(announcement.id),
+            (announcement) => !dismissedIds.contains(announcement.id),
           )
           .toList(growable: false);
       streamController.add(visibleAnnouncements);
@@ -125,14 +130,14 @@ class GlobalAnnouncementsRepository {
     streamController.onListen = () {
       announcementsSubscription = watchAnnouncements().listen((announcements) {
         latestAnnouncements = announcements;
-        emitVisibleAnnouncements();
+        emitVisibleAnnouncementsIfReady();
       });
       dismissedAnnouncementsSubscription =
           _dismissedAnnouncementsCollection(currentUid).snapshots().listen(
         (dismissedSnapshot) {
           latestDismissedIds =
               dismissedSnapshot.docs.map((document) => document.id).toSet();
-          emitVisibleAnnouncements();
+          emitVisibleAnnouncementsIfReady();
         },
       );
     };
