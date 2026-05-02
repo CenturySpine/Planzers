@@ -48,17 +48,6 @@ List<String> foodAllergenCatalogIdsFromUserData(Map<String, dynamic> data) {
   return const [];
 }
 
-bool autoOpenCurrentTripOnLaunchEnabledFromUserData(Map<String, dynamic> data) {
-  final account = (data['account'] as Map<String, dynamic>?) ?? const {};
-  final preferences =
-      (account['preferences'] as Map<String, dynamic>?) ?? const {};
-  final raw = preferences['autoOpenCurrentTripOnLaunch'];
-  if (raw is bool) {
-    return raw;
-  }
-  return true;
-}
-
 bool cupidonEnabledByDefaultFromUserData(Map<String, dynamic> data) {
   final account = (data['account'] as Map<String, dynamic>?) ?? const {};
   final preferences =
@@ -78,12 +67,6 @@ String? phoneNumberFromUserData(Map<String, dynamic> data) {
   }
   return null;
 }
-
-final autoOpenCurrentTripOnLaunchProvider = StreamProvider<bool>((ref) {
-  return ref
-      .watch(accountRepositoryProvider)
-      .watchAutoOpenCurrentTripOnLaunchPreference();
-});
 
 final cupidonEnabledByDefaultProvider = StreamProvider<bool>((ref) {
   return ref
@@ -153,13 +136,6 @@ class AccountRepository {
     return firestore.collection('users').doc(uid).snapshots();
   }
 
-  Stream<bool> watchAutoOpenCurrentTripOnLaunchPreference() {
-    return watchMyUserDocument().map((snapshot) {
-      final data = snapshot.data() ?? const <String, dynamic>{};
-      return autoOpenCurrentTripOnLaunchEnabledFromUserData(data);
-    });
-  }
-
   Stream<bool> watchCupidonEnabledByDefaultPreference() {
     return watchMyUserDocument().map((snapshot) {
       final data = snapshot.data() ?? const <String, dynamic>{};
@@ -172,23 +148,6 @@ class AccountRepository {
       final data = snapshot.data() ?? const <String, dynamic>{};
       return phoneNumberFromUserData(data);
     });
-  }
-
-  Future<void> updateAutoOpenCurrentTripOnLaunchPreference(bool enabled) async {
-    final uid = auth.currentUser?.uid;
-    if (uid == null || uid.trim().isEmpty) {
-      throw StateError('Utilisateur non connecte');
-    }
-    final userRef = firestore.collection('users').doc(uid);
-    await userRef.set({
-      'account': {
-        'preferences': {
-          'autoOpenCurrentTripOnLaunch': enabled,
-        },
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
   }
 
   Future<void> updateCupidonEnabledByDefaultPreference(bool enabled) async {

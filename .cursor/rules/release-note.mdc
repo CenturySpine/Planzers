@@ -7,6 +7,12 @@ alwaysApply: false
 
 Write every release note in two parts, in this strict order.
 
+## Delta analysis (before drafting)
+
+- Take the **full commit set** for the release window (e.g. since the previous release tag), not isolated commits one by one. Several commits may improve, replace, or partially revert others **within the same window**; only the **net shipped state** matters for readers.
+- Describe the **final vision** of features and changes—what users and operators actually get in **this** release—not intermediate steps, churn, or implementation timelines.
+- **Bug fixes**: include fixes that matter when upgrading **from the prior shipped release**. Omit fixes that only correct problems introduced **during this same release cycle** and never existed in that prior release.
+
 ## 1) Priority section for end users (always first)
 
 - Start with changes that have direct impact for end users.
@@ -24,7 +30,7 @@ Write every release note in two parts, in this strict order.
 
 - Then add a more detailed section with a moderate technical level.
 - Include items here that were not listed in the first section.
-- Include bug fixes, technical adjustments, and administrator-oriented changes.
+- Include bug fixes, technical adjustments, and administrator-oriented changes **when they belong in the shipped delta** (see **Delta analysis**).
 - Keep the writing clear and structured without losing product readability.
 
 ## Style rules
@@ -32,3 +38,5 @@ Write every release note in two parts, in this strict order.
 - Prioritize clarity and business impact over implementation details.
 - Present information from most important to most detailed.
 - Keep a concise, value-oriented tone.
+- As a .md file, added to the repo root
+- Use french language all the way.

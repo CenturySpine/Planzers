@@ -5,9 +5,12 @@ const {
   onDocumentUpdated,
 } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const cheerio = require('cheerio');
 
 const { setGlobalOptions } = require('firebase-functions/v2');
+const { insertApplicationLog } = require('./application_logs');
+const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -34,6 +37,13 @@ function pickFirst(...values) {
     if (s) return s;
   }
   return '';
+}
+
+function normalizeLanguageCode(value) {
+  const rawCode = normalizeString(value).replace(/_/g, '-');
+  if (!rawCode) return '';
+  if (!/^[A-Za-z]{2,3}(-[A-Za-z]{2,4})?$/.test(rawCode)) return '';
+  return rawCode;
 }
 
 /** Text before @ for public trip member chips (empty if unusable). */
@@ -3482,4 +3492,264 @@ exports.getAppUsageStats = onCall(
     };
   }
 );
+
+/**
+ * Translates a text from one language to another using Google Cloud Translation.
+ * Restricted to users with isApplicationOwner === true in Firestore.
+ */
+exports.translateTextWithGoogleCloud = onCall(
+  {
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_CLOUD_TRANSLATION_API_KEY'],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    if (userData.isApplicationOwner !== true) {
+      throw new HttpsError('permission-denied', 'Accès réservé aux administrateurs');
+    }
+
+    const input = request.data || {};
+    const text = normalizeString(input.text);
+    const sourceLanguage = normalizeLanguageCode(input.sourceLanguage);
+    const targetLanguage = normalizeLanguageCode(input.targetLanguage);
+
+    if (!text) {
+      throw new HttpsError('invalid-argument', 'Le texte à traduire est requis');
+    }
+    if (!targetLanguage) {
+      throw new HttpsError('invalid-argument', 'La langue cible est invalide');
+    }
+    if (text.length > 8000) {
+      throw new HttpsError(
+        'invalid-argument',
+        'Le texte dépasse la limite autorisée (8000 caractères)'
+      );
+    }
+
+    const apiKey = process.env.GOOGLE_CLOUD_TRANSLATION_API_KEY;
+    if (!apiKey) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Secret GOOGLE_CLOUD_TRANSLATION_API_KEY manquant'
+      );
+    }
+
+    /** @type {Record<string, unknown>} */
+    const payload = {
+      q: text,
+      target: targetLanguage,
+      format: 'text',
+    };
+    if (sourceLanguage) {
+      payload.source = sourceLanguage;
+    }
+
+    let response;
+    try {
+      response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+    } catch {
+      throw new HttpsError('unavailable', 'Service de traduction indisponible');
+    }
+
+    let responseBody;
+    try {
+      responseBody = await response.json();
+    } catch {
+      responseBody = null;
+    }
+
+    if (!response.ok) {
+      const apiMessage = normalizeString(
+        responseBody &&
+          typeof responseBody === 'object' &&
+          responseBody.error &&
+          typeof responseBody.error === 'object'
+          ? responseBody.error.message
+          : ''
+      );
+      throw new HttpsError(
+        'internal',
+        apiMessage || 'La traduction a échoué'
+      );
+    }
+
+    const firstTranslation =
+      responseBody &&
+      typeof responseBody === 'object' &&
+      responseBody.data &&
+      typeof responseBody.data === 'object' &&
+      Array.isArray(responseBody.data.translations) &&
+      responseBody.data.translations.length > 0
+        ? responseBody.data.translations[0]
+        : null;
+
+    const translatedText = normalizeString(
+      firstTranslation && typeof firstTranslation === 'object'
+        ? firstTranslation.translatedText
+        : ''
+    );
+    const detectedSourceLanguage = normalizeString(
+      firstTranslation && typeof firstTranslation === 'object'
+        ? firstTranslation.detectedSourceLanguage
+        : ''
+    );
+
+    if (!translatedText) {
+      throw new HttpsError('internal', 'Réponse de traduction invalide');
+    }
+
+    return {
+      translatedText,
+      sourceLanguage: sourceLanguage || detectedSourceLanguage || null,
+      targetLanguage,
+    };
+  }
+);
+
+const CLEANUP_ORPHAN_ADMIN_DISMISSES_SOURCE =
+  'cleanupOrphanAdminAnnouncementDismisses';
+
+/**
+ * Weekly job: removes each user's dismissedAdminAnnouncements sub-docs when the
+ * matching adminAnnouncements/{id} document no longer exists.
+ *
+ * Region override: Cloud Scheduler has no europe-west9; Gen2 binds the scheduler
+ * job to the function region, so deploy fails if we inherit europe-west9 here.
+ * Cron still runs at 03:00 Europe/Paris via timeZone.
+ */
+exports.cleanupOrphanAdminAnnouncementDismisses = onSchedule(
+  {
+    region: 'europe-west1',
+    schedule: '0 3 * * 3',
+    timeZone: 'Europe/Paris',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    const db = admin.firestore();
+    try {
+      const adminAnnouncementRefs = await db
+        .collection('adminAnnouncements')
+        .listDocuments();
+      const livingIds = new Set(
+        adminAnnouncementRefs.map((documentReference) => documentReference.id)
+      );
+
+      const dismissSnap = await db
+        .collectionGroup('dismissedAdminAnnouncements')
+        .get();
+      const dismissDocs = dismissSnap.docs.map((documentSnapshot) => ({
+        id: documentSnapshot.id,
+        path: documentSnapshot.ref.path,
+      }));
+      const orphans = collectOrphanDismissDocs(livingIds, dismissDocs);
+
+      let writeBatch = db.batch();
+      let batchOperations = 0;
+      for (const orphanEntry of orphans) {
+        writeBatch.delete(db.doc(orphanEntry.refPath));
+        batchOperations++;
+        if (batchOperations >= 500) {
+          await writeBatch.commit();
+          writeBatch = db.batch();
+          batchOperations = 0;
+        }
+      }
+      if (batchOperations > 0) {
+        await writeBatch.commit();
+      }
+
+      const distinctUserIds = new Set(orphans.map((o) => o.userId));
+      await insertApplicationLog(db, {
+        level: 'info',
+        source: CLEANUP_ORPHAN_ADMIN_DISMISSES_SOURCE,
+        message: `Nettoyage des dismiss d'annonces admin orphelins terminé : ${orphans.length} document(s) supprimé(s) chez ${distinctUserIds.size} utilisateur(s).`,
+        details: {
+          orphansDeleted: orphans.length,
+          usersAffected: distinctUserIds.size,
+          livingAnnouncementCount: livingIds.size,
+        },
+      });
+    } catch (err) {
+      const errorMessage =
+        err && typeof err.message === 'string' ? err.message : String(err);
+      const errorStack =
+        err && typeof err.stack === 'string' ? err.stack : '';
+      try {
+        await insertApplicationLog(db, {
+          level: 'error',
+          source: CLEANUP_ORPHAN_ADMIN_DISMISSES_SOURCE,
+          message: `Échec du nettoyage des dismiss d'annonces admin orphelins : ${errorMessage}`,
+          details: {
+            errorMessage:
+              errorMessage.length > 8000
+                ? `${errorMessage.slice(0, 7997)}...`
+                : errorMessage,
+            errorStack:
+              errorStack.length > 8000
+                ? `${errorStack.slice(0, 7997)}...`
+                : errorStack,
+          },
+        });
+      } catch (logErr) {
+        console.error(
+          'cleanupOrphanAdminAnnouncementDismisses: failed to write application log',
+          logErr
+        );
+      }
+      throw err;
+    }
+  }
+);
+
+/**
+ * Callable: persists to applicationLogs (structured audit / diagnostics).
+ * Restricted to users with isApplicationOwner === true in Firestore.
+ */
+exports.insertApplicationLogCallable = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const db = admin.firestore();
+  const userSnap = await db.collection('users').doc(uid).get();
+  const userData = userSnap.exists ? userSnap.data() || {} : {};
+  if (userData.isApplicationOwner !== true) {
+    throw new HttpsError(
+      'permission-denied',
+      'Accès réservé aux administrateurs'
+    );
+  }
+
+  const payload = request.data || {};
+  try {
+    await insertApplicationLog(db, {
+      level: payload.level,
+      source: payload.source,
+      message: payload.message,
+      details: payload.details,
+    });
+  } catch (e) {
+    const msg = e && typeof e.message === 'string' ? e.message : String(e);
+    throw new HttpsError('invalid-argument', msg || 'Payload invalide');
+  }
+
+  return { ok: true };
+});
 

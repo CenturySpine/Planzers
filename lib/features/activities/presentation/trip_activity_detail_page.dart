@@ -454,16 +454,30 @@ class _ReadBody extends ConsumerWidget {
     }
   }
 
-  Future<DateTime?> _pickPlannedDateTime(BuildContext context) async {
+  Future<DateTime?> _pickPlannedDateTime(
+    BuildContext context, {
+    DateTime? tripStartDate,
+  }) async {
     final now = DateTime.now();
     final localPlannedAt = activity.plannedAt?.toLocal();
-    final initialDate = DateUtils.dateOnly(localPlannedAt ?? now);
+    final localTripStartDate = tripStartDate?.toLocal();
+    final initialDate = DateUtils.dateOnly(
+      localPlannedAt ?? localTripStartDate ?? now,
+    );
+    final minSelectableDate = DateTime(now.year - 5);
+    final maxSelectableDate = DateTime(now.year + 5);
+    final firstDate = initialDate.isBefore(minSelectableDate)
+        ? initialDate
+        : minSelectableDate;
+    final lastDate = initialDate.isAfter(maxSelectableDate)
+        ? initialDate
+        : maxSelectableDate;
     final pickedDate = await showDatePicker(
       context: context,
       locale: Localizations.localeOf(context),
       initialDate: initialDate,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 5),
+      firstDate: firstDate,
+      lastDate: lastDate,
       helpText: AppLocalizations.of(context)!.activitiesPlannedDateHelp,
     );
     if (pickedDate == null || !context.mounted) return null;
@@ -653,6 +667,10 @@ class _ReadBody extends ConsumerWidget {
                       ? () async {
                           final pickedDateTime = await _pickPlannedDateTime(
                             context,
+                            tripStartDate: tripAsync.maybeWhen(
+                              data: (trip) => trip?.startDate,
+                              orElse: () => null,
+                            ),
                           );
                           if (pickedDateTime == null) return;
                           if (!context.mounted) return;

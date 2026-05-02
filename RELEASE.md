@@ -68,10 +68,10 @@ firebase deploy --project planerz
 
 ```powershell
 # APK (distribution directe)
-flutter build apk --release --target lib/main_prod.dart
+flutter build apk --release --flavor prod --target lib/main_prod.dart
 
 # AAB (Play Store)
-flutter build appbundle --release --target lib/main_prod.dart
+flutter build appbundle --release --flavor prod --target lib/main_prod.dart
 ```
 
 Sorties :

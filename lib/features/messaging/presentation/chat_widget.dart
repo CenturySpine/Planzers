@@ -3,11 +3,10 @@ import 'dart:math' as math;
 
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
@@ -638,7 +637,7 @@ class _ChatWidgetState extends State<ChatWidget> {
                                               CrossAxisAlignment.end,
                                           children: [
                                             Flexible(
-                                              child: _ChatLinkedText(
+                                              child: LinkifiedText(
                                                 text: m.text,
                                                 style: theme.textTheme.bodyMedium
                                                     ?.copyWith(
@@ -868,135 +867,6 @@ class _ChatWidgetState extends State<ChatWidget> {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Text rendering with URL detection and inline trailing span
-// ---------------------------------------------------------------------------
-
-class _ChatLinkedText extends StatefulWidget {
-  const _ChatLinkedText({
-    required this.text,
-    required this.style,
-  });
-
-  final String text;
-  final TextStyle? style;
-
-  @override
-  State<_ChatLinkedText> createState() => _ChatLinkedTextState();
-}
-
-class _ChatLinkedTextState extends State<_ChatLinkedText> {
-  static final RegExp _urlRegex = RegExp(
-    r'(https?://[^\s]+)|(www\.[^\s]+)',
-    caseSensitive: false,
-  );
-
-  final List<TapGestureRecognizer> _recognizers = [];
-  List<InlineSpan> _textSpans = const [];
-  String? _spansForText;
-
-  @override
-  void dispose() {
-    _disposeRecognizers();
-    super.dispose();
-  }
-
-  void _disposeRecognizers() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    _recognizers.clear();
-  }
-
-  void _ensureTextSpans(BuildContext context) {
-    if (_spansForText == widget.text) return;
-    _disposeRecognizers();
-    _spansForText = widget.text;
-    _textSpans = _buildTextSpans(context);
-  }
-
-  List<InlineSpan> _buildTextSpans(BuildContext context) {
-    final text = widget.text;
-    final baseStyle = widget.style;
-    final scheme = Theme.of(context).colorScheme;
-    final linkStyle = baseStyle?.copyWith(
-      color: scheme.primary,
-      decoration: TextDecoration.underline,
-      decorationColor: scheme.primary,
-    );
-
-    final children = <InlineSpan>[];
-    var start = 0;
-    for (final match in _urlRegex.allMatches(text)) {
-      if (match.start > start) {
-        children.add(
-          TextSpan(text: text.substring(start, match.start), style: baseStyle),
-        );
-      }
-      final raw = match.group(0)!;
-      final trimmed = _trimUrlWrappingPunctuation(raw);
-      final href = trimmed.toLowerCase().startsWith('www.')
-          ? 'https://$trimmed'
-          : trimmed;
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () => unawaited(_openChatUrl(context, href));
-      _recognizers.add(recognizer);
-      children.add(
-        TextSpan(text: raw, style: linkStyle, recognizer: recognizer),
-      );
-      start = match.end;
-    }
-    if (start < text.length) {
-      children.add(TextSpan(text: text.substring(start), style: baseStyle));
-    }
-    if (children.isEmpty) {
-      children.add(TextSpan(text: text, style: baseStyle));
-    }
-    return children;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _ensureTextSpans(context);
-    return Text.rich(TextSpan(style: widget.style, children: _textSpans));
-  }
-}
-
-String _trimUrlWrappingPunctuation(String raw) {
-  var s = raw;
-  while (s.isNotEmpty) {
-    final last = s[s.length - 1];
-    if ('.,;:!?)]}\'"'.contains(last)) {
-      s = s.substring(0, s.length - 1);
-      continue;
-    }
-    break;
-  }
-  return s;
-}
-
-Future<void> _openChatUrl(BuildContext context, String url) async {
-  final parsed = Uri.tryParse(url.trim());
-  if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.linkInvalid)),
-      );
-    }
-    return;
-  }
-  final didLaunch = await launchUrl(
-    parsed,
-    mode: LaunchMode.platformDefault,
-    webOnlyWindowName: '_blank',
-  );
-  if (!didLaunch && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.linkOpenImpossible)),
     );
   }
 }

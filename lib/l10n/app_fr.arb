@@ -104,10 +104,6 @@
   "accountColorPalette": "Palette de couleurs",
   "accountLanguageTitle": "Langue",
   "accountLanguageSubtitle": "Langue de l'application",
-  "accountAutoOpenCurrentTripTitle": "Ouvrir automatiquement le voyage en cours",
-  "accountAutoOpenCurrentTripSubtitle": "Si un seul voyage est en cours aujourd'hui, il s'ouvre au lancement.",
-  "accountAutoOpenCurrentTripEnabled": "Ouverture auto du voyage activée",
-  "accountAutoOpenCurrentTripDisabled": "Ouverture auto du voyage désactivée",
   "accountEnabling": "Activation en cours...",
   "accountEnableNotifications": "Activer les notifications",
   "accountWebPushHelp": "Sur iPhone : installe l'app sur l'écran d'accueil, puis active ici.",
@@ -309,7 +305,7 @@
   "tripSectionTripDescription": "Règles liées aux informations générales du voyage.",
   "tripSectionExpenses": "Dépenses",
   "tripSectionExpensesDescription": "Gestion des droits sur les dépenses du voyage.",
-  "tripSectionActivities": "Activités",
+  "tripSectionActivities": "Planning",
   "tripSectionActivitiesDescription": "Gestion des droits sur les activités proposées.",
   "tripSectionMeals": "Repas",
   "tripSectionMealsDescription": "Gestion des droits sur les repas et menus.",
@@ -319,7 +315,7 @@
   "tripSectionParticipantsDescription": "Gestion des droits liés aux membres du voyage.",
   "tripTabOverview": "Aperçu",
   "tripTabMessages": "Messagerie",
-  "tripTabActivities": "Activités",
+  "tripTabActivities": "Planning",
   "tripTabExpenses": "Dépenses",
   "tripTabMeals": "Repas",
   "tripTabShopping": "Courses",
@@ -843,7 +839,7 @@
   "tripStayFromLabel": "Du",
   "tripStayToLabel": "au",
   "tripOverviewTileParticipants": "Participants",
-  "tripOverviewTileActivities": "Activités",
+  "tripOverviewTileActivities": "Planning",
   "tripOverviewTileRooms": "Chambres",
   "tripOverviewTileCars": "Voitures",
   "tripOverviewTileGames": "Jeux",
@@ -875,10 +871,17 @@
   "updateRequiredBody": "Une nouvelle version de Planerz est disponible. Vous devez mettre à jour l'application pour continuer à l'utiliser.",
   "updateRequiredCurrentVersion": "Version actuelle",
   "updateRequiredNewVersion": "Nouvelle version",
-  "updateRequiredDownloadButton": "Télécharger {version}",
-  "@updateRequiredDownloadButton": {
-    "placeholders": {
-      "version": {"type": "String"}
-    }
-  }
+  "updateRequiredDownloading": "Téléchargement en cours…",
+  "updateRequiredOpeningInstaller": "Ouverture de l’installation…",
+  "updateRequiredRetryButton": "Réessayer",
+  "updateRequiredOpenLinkButton": "Ouvrir le lien",
+  "updateRequiredDownloadFailed": "Échec du téléchargement.",
+  "updateRequiredInstallerFailed": "Impossible d’ouvrir l’installateur.",
+  "updateRequiredAutomaticUpdateWarningIntro": "En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :",
+  "globalAnnouncementsTitle": "Annonces générales",
+  "globalAnnouncementsEmpty": "Aucune annonce pour le moment.",
+  "globalAnnouncementsBellTooltip": "Voir les annonces",
+  "globalAnnouncementsDismissTooltip": "Masquer cette annonce",
+  "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
+  "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles."
 }

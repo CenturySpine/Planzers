@@ -6,6 +6,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isApplicationOwner() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApplicationOwner == true;
+    }
+
+    function adminAnnouncementAllowsUserDismiss(announcementId) {
+      let announcementPath = /databases/$(database)/documents/adminAnnouncements/$(announcementId);
+      let announcement = get(announcementPath);
+      return announcement != null && (
+        !announcement.data.keys().hasAny(['userDismissAllowed'])
+        || announcement.data.userDismissAllowed == true
+      );
+    }
+
     function tripDoc(tripId) {
       return get(/databases/$(database)/documents/trips/$(tripId));
     }
@@ -409,6 +423,27 @@ service cloud.firestore {
       match /cupidonMatches/{matchId} {
         allow read, delete: if signedIn() && request.auth.uid == userId;
       }
+
+      match /globalNotificationReads/{docId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+
+      match /dismissedAdminAnnouncements/{announcementId} {
+        allow read, delete: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn()
+          && request.auth.uid == userId
+          && adminAnnouncementAllowsUserDismiss(announcementId);
+      }
+    }
+
+    match /adminAnnouncements/{announcementId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && isApplicationOwner();
+    }
+
+    match /applicationLogs/{logId} {
+      allow read: if signedIn() && isApplicationOwner();
+      allow write: if false;
     }
 
     match /trips/{tripId} {

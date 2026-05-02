@@ -724,30 +724,6 @@ abstract class AppLocalizations {
   /// **'Langue de l\'application'**
   String get accountLanguageSubtitle;
 
-  /// No description provided for @accountAutoOpenCurrentTripTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouvrir automatiquement le voyage en cours'**
-  String get accountAutoOpenCurrentTripTitle;
-
-  /// No description provided for @accountAutoOpenCurrentTripSubtitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.'**
-  String get accountAutoOpenCurrentTripSubtitle;
-
-  /// No description provided for @accountAutoOpenCurrentTripEnabled.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouverture auto du voyage activée'**
-  String get accountAutoOpenCurrentTripEnabled;
-
-  /// No description provided for @accountAutoOpenCurrentTripDisabled.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouverture auto du voyage désactivée'**
-  String get accountAutoOpenCurrentTripDisabled;
-
   /// No description provided for @accountEnabling.
   ///
   /// In fr, this message translates to:
@@ -1567,7 +1543,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripSectionActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripSectionActivities;
 
   /// No description provided for @tripSectionActivitiesDescription.
@@ -1627,7 +1603,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripTabActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripTabActivities;
 
   /// No description provided for @tripTabExpenses.
@@ -3980,7 +3956,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripOverviewTileActivities.
   ///
   /// In fr, this message translates to:
-  /// **'Activités'**
+  /// **'Planning'**
   String get tripOverviewTileActivities;
 
   /// No description provided for @tripOverviewTileRooms.
@@ -4169,11 +4145,83 @@ abstract class AppLocalizations {
   /// **'Nouvelle version'**
   String get updateRequiredNewVersion;
 
-  /// No description provided for @updateRequiredDownloadButton.
+  /// No description provided for @updateRequiredDownloading.
   ///
   /// In fr, this message translates to:
-  /// **'Télécharger {version}'**
-  String updateRequiredDownloadButton(String version);
+  /// **'Téléchargement en cours…'**
+  String get updateRequiredDownloading;
+
+  /// No description provided for @updateRequiredOpeningInstaller.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouverture de l’installation…'**
+  String get updateRequiredOpeningInstaller;
+
+  /// No description provided for @updateRequiredRetryButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayer'**
+  String get updateRequiredRetryButton;
+
+  /// No description provided for @updateRequiredOpenLinkButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le lien'**
+  String get updateRequiredOpenLinkButton;
+
+  /// No description provided for @updateRequiredDownloadFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec du téléchargement.'**
+  String get updateRequiredDownloadFailed;
+
+  /// No description provided for @updateRequiredInstallerFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d’ouvrir l’installateur.'**
+  String get updateRequiredInstallerFailed;
+
+  /// No description provided for @updateRequiredAutomaticUpdateWarningIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :'**
+  String get updateRequiredAutomaticUpdateWarningIntro;
+
+  /// No description provided for @globalAnnouncementsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annonces générales'**
+  String get globalAnnouncementsTitle;
+
+  /// No description provided for @globalAnnouncementsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune annonce pour le moment.'**
+  String get globalAnnouncementsEmpty;
+
+  /// No description provided for @globalAnnouncementsBellTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les annonces'**
+  String get globalAnnouncementsBellTooltip;
+
+  /// No description provided for @globalAnnouncementsDismissTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Masquer cette annonce'**
+  String get globalAnnouncementsDismissTooltip;
+
+  /// No description provided for @globalAnnouncementsRestoreHiddenTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réafficher les annonces masquées'**
+  String get globalAnnouncementsRestoreHiddenTooltip;
+
+  /// No description provided for @globalAnnouncementsRestoreHiddenSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les annonces masquées sont à nouveau visibles.'**
+  String get globalAnnouncementsRestoreHiddenSnackBar;
 }
 
 class _AppLocalizationsDelegate

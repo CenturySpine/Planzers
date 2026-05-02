@@ -340,21 +340,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountLanguageSubtitle => 'App language';
 
   @override
-  String get accountAutoOpenCurrentTripTitle => 'Auto-open current trip';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'If only one trip is currently active today, it opens at launch.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Auto-open current trip enabled';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Auto-open current trip disabled';
-
-  @override
   String get accountEnabling => 'Enabling...';
 
   @override
@@ -820,7 +805,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Manage permissions on trip expenses.';
 
   @override
-  String get tripSectionActivities => 'Activities';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -854,7 +839,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripTabMessages => 'Messages';
 
   @override
-  String get tripTabActivities => 'Activities';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Expenses';
@@ -2180,7 +2165,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activities';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Rooms';
@@ -2279,9 +2264,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateRequiredNewVersion => 'New version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Download $version';
-  }
+  String get updateRequiredDownloading => 'Downloading…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Opening installer…';
+
+  @override
+  String get updateRequiredRetryButton => 'Try again';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Open link';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Download failed.';
+
+  @override
+  String get updateRequiredInstallerFailed => 'Could not open the installer.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'If automatic updating fails, uninstall the app and continue with the web version at:';
+
+  @override
+  String get globalAnnouncementsTitle => 'General announcements';
+
+  @override
+  String get globalAnnouncementsEmpty => 'No announcements for now.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'View announcements';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Show hidden announcements again';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Hidden announcements are visible again.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -2620,21 +2642,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountLanguageSubtitle => 'App language';
 
   @override
-  String get accountAutoOpenCurrentTripTitle => 'Auto-open current trip';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'If only one trip is currently active today, it opens at launch.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Auto-open current trip enabled';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Auto-open current trip disabled';
-
-  @override
   String get accountEnabling => 'Enabling...';
 
   @override
@@ -3100,7 +3107,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Manage permissions on trip expenses.';
 
   @override
-  String get tripSectionActivities => 'Activities';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -3134,7 +3141,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripTabMessages => 'Messages';
 
   @override
-  String get tripTabActivities => 'Activities';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Expenses';
@@ -4460,7 +4467,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activities';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Rooms';
@@ -4559,7 +4566,44 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get updateRequiredNewVersion => 'New version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Download $version';
-  }
+  String get updateRequiredDownloading => 'Downloading…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Opening installer…';
+
+  @override
+  String get updateRequiredRetryButton => 'Try again';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Open link';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Download failed.';
+
+  @override
+  String get updateRequiredInstallerFailed => 'Could not open the installer.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'If automatic updating fails, uninstall the app and continue with the web version at:';
+
+  @override
+  String get globalAnnouncementsTitle => 'General announcements';
+
+  @override
+  String get globalAnnouncementsEmpty => 'No announcements for now.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'View announcements';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Hide this announcement';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Show hidden announcements again';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Hidden announcements are visible again.';
 }

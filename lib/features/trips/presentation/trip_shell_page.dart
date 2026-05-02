@@ -78,7 +78,7 @@ class TripShellPage extends ConsumerStatefulWidget {
     ),
     _TripNavDestination(
       branchIndex: 6,
-      label: 'Activités',
+      label: 'Planning',
       icon: Icons.event_available_outlined,
       selectedIcon: Icons.event_available,
     ),
@@ -169,14 +169,14 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 
     int unreadForLabel(String label) => switch (label) {
           'Messagerie' => unreadMessages,
-          'Activités' => unreadActivities,
+          'Planning' => unreadActivities,
           _ => 0,
         };
 
     String localizedNavLabel(String label) => switch (label) {
           'Aperçu' => l10n.tripTabOverview,
           'Messagerie' => l10n.tripTabMessages,
-          'Activités' => l10n.tripTabActivities,
+          'Planning' => l10n.tripTabActivities,
           'Dépenses' => l10n.tripTabExpenses,
           'Repas' => l10n.tripTabMeals,
           'Courses' => l10n.tripTabShopping,
@@ -265,13 +265,13 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                                 icon: d.icon,
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Activités',
+                                    d.label == 'Planning',
                               ),
                               selectedIcon: _buildNavIcon(
                                 icon: d.selectedIcon,
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Activités',
+                                    d.label == 'Planning',
                               ),
                               label: Text(localizedNavLabel(d.label)),
                             ),
@@ -292,7 +292,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                         destinations: TripShellPage._destinations,
                         unreadByTabLabel: {
                           'Messagerie': unreadMessages,
-                          'Activités': unreadActivities,
+                          'Planning': unreadActivities,
                         },
                       ),
               );
@@ -395,7 +395,7 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                                 icon: selected ? d.selectedIcon : d.icon,
                                 unreadCount: unreadByTabLabel[d.label] ?? 0,
                                 showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Activités',
+                                    d.label == 'Planning',
                                 color: selected
                                     ? colorScheme.onSecondaryContainer
                                     : colorScheme.onSurfaceVariant,
@@ -406,7 +406,7 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                               switch (d.label) {
                                 'Aperçu' => l10n.tripTabOverview,
                                 'Messagerie' => l10n.tripTabMessages,
-                                'Activités' => l10n.tripTabActivities,
+                                'Planning' => l10n.tripTabActivities,
                                 'Dépenses' => l10n.tripTabExpenses,
                                 'Repas' => l10n.tripTabMeals,
                                 'Courses' => l10n.tripTabShopping,

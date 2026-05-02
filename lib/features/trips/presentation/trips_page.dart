@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
+import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -28,8 +28,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
   static const double _legalLinkFontSize = 12;
   static const double _floatingActionButtonsBottomOffset = 34;
   TabController? _tabController;
-  bool _didHandleAutoOpenCurrentTrip = false;
-
   @override
   void initState() {
     super.initState();
@@ -47,15 +45,13 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
-    final autoOpenCurrentTripOnLaunchAsync = ref.watch(
-      autoOpenCurrentTripOnLaunchProvider,
-    );
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
         title: const _TripsAppBranding(),
         actions: const [
+          AdminAnnouncementsBellButton(),
           AccountAppBarActions(),
         ],
       ),
@@ -134,13 +130,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       final grouped = _groupTripsByTimeline(trips);
                       _ensureTimelineTabController(grouped);
                       final tabController = _tabController!;
-                      _maybeAutoOpenCurrentTrip(
-                        context,
-                        ongoingTrips:
-                            grouped[_TripTimelineCategory.ongoing] ?? const [],
-                        autoOpenCurrentTripOnLaunch:
-                            autoOpenCurrentTripOnLaunchAsync.asData?.value,
-                      );
                       final unreadByTrip = unreadByTripAsync.asData?.value ??
                           const <String, int>{};
                       final pastUnread = _sumUnreadForTrips(
@@ -345,24 +334,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
         ],
       ),
     );
-  }
-
-  void _maybeAutoOpenCurrentTrip(
-    BuildContext context, {
-    required List<Trip> ongoingTrips,
-    required bool? autoOpenCurrentTripOnLaunch,
-  }) {
-    if (_didHandleAutoOpenCurrentTrip) return;
-    if (autoOpenCurrentTripOnLaunch == null) return;
-
-    _didHandleAutoOpenCurrentTrip = true;
-    if (!autoOpenCurrentTripOnLaunch || ongoingTrips.length != 1) return;
-
-    final tripId = ongoingTrips.single.id;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.push('/trips/$tripId/overview');
-    });
   }
 
   void _ensureTimelineTabController(

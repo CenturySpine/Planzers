@@ -339,22 +339,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountLanguageSubtitle => 'Langue de l\'application';
 
   @override
-  String get accountAutoOpenCurrentTripTitle =>
-      'Ouvrir automatiquement le voyage en cours';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Ouverture auto du voyage activée';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Ouverture auto du voyage désactivée';
-
-  @override
   String get accountEnabling => 'Activation en cours...';
 
   @override
@@ -832,7 +816,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Gestion des droits sur les dépenses du voyage.';
 
   @override
-  String get tripSectionActivities => 'Activités';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -866,7 +850,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTabMessages => 'Messagerie';
 
   @override
-  String get tripTabActivities => 'Activités';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Dépenses';
@@ -2195,7 +2179,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activités';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Chambres';
@@ -2295,9 +2279,47 @@ class AppLocalizationsFr extends AppLocalizations {
   String get updateRequiredNewVersion => 'Nouvelle version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Télécharger $version';
-  }
+  String get updateRequiredDownloading => 'Téléchargement en cours…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Ouverture de l’installation…';
+
+  @override
+  String get updateRequiredRetryButton => 'Réessayer';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Ouvrir le lien';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Échec du téléchargement.';
+
+  @override
+  String get updateRequiredInstallerFailed =>
+      'Impossible d’ouvrir l’installateur.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :';
+
+  @override
+  String get globalAnnouncementsTitle => 'Annonces générales';
+
+  @override
+  String get globalAnnouncementsEmpty => 'Aucune annonce pour le moment.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'Voir les annonces';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Réafficher les annonces masquées';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Les annonces masquées sont à nouveau visibles.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -2635,22 +2657,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get accountLanguageSubtitle => 'Langue de l\'application';
 
   @override
-  String get accountAutoOpenCurrentTripTitle =>
-      'Ouvrir automatiquement le voyage en cours';
-
-  @override
-  String get accountAutoOpenCurrentTripSubtitle =>
-      'Si un seul voyage est en cours aujourd\'hui, il s\'ouvre au lancement.';
-
-  @override
-  String get accountAutoOpenCurrentTripEnabled =>
-      'Ouverture auto du voyage activée';
-
-  @override
-  String get accountAutoOpenCurrentTripDisabled =>
-      'Ouverture auto du voyage désactivée';
-
-  @override
   String get accountEnabling => 'Activation en cours...';
 
   @override
@@ -3128,7 +3134,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Gestion des droits sur les dépenses du voyage.';
 
   @override
-  String get tripSectionActivities => 'Activités';
+  String get tripSectionActivities => 'Planning';
 
   @override
   String get tripSectionActivitiesDescription =>
@@ -3162,7 +3168,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripTabMessages => 'Messagerie';
 
   @override
-  String get tripTabActivities => 'Activités';
+  String get tripTabActivities => 'Planning';
 
   @override
   String get tripTabExpenses => 'Dépenses';
@@ -4491,7 +4497,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewTileParticipants => 'Participants';
 
   @override
-  String get tripOverviewTileActivities => 'Activités';
+  String get tripOverviewTileActivities => 'Planning';
 
   @override
   String get tripOverviewTileRooms => 'Chambres';
@@ -4591,7 +4597,45 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get updateRequiredNewVersion => 'Nouvelle version';
 
   @override
-  String updateRequiredDownloadButton(String version) {
-    return 'Télécharger $version';
-  }
+  String get updateRequiredDownloading => 'Téléchargement en cours…';
+
+  @override
+  String get updateRequiredOpeningInstaller => 'Ouverture de l’installation…';
+
+  @override
+  String get updateRequiredRetryButton => 'Réessayer';
+
+  @override
+  String get updateRequiredOpenLinkButton => 'Ouvrir le lien';
+
+  @override
+  String get updateRequiredDownloadFailed => 'Échec du téléchargement.';
+
+  @override
+  String get updateRequiredInstallerFailed =>
+      'Impossible d’ouvrir l’installateur.';
+
+  @override
+  String get updateRequiredAutomaticUpdateWarningIntro =>
+      'En cas de problème avec la mise à jour automatique, désinstallez l’application et repassez par la version web à l’adresse suivante :';
+
+  @override
+  String get globalAnnouncementsTitle => 'Annonces générales';
+
+  @override
+  String get globalAnnouncementsEmpty => 'Aucune annonce pour le moment.';
+
+  @override
+  String get globalAnnouncementsBellTooltip => 'Voir les annonces';
+
+  @override
+  String get globalAnnouncementsDismissTooltip => 'Masquer cette annonce';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenTooltip =>
+      'Réafficher les annonces masquées';
+
+  @override
+  String get globalAnnouncementsRestoreHiddenSnackBar =>
+      'Les annonces masquées sont à nouveau visibles.';
 }

@@ -225,7 +225,7 @@ class AccountMenuButton extends ConsumerWidget {
         ),
       ],
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.only(left: 4, right: 12),
         child: avatarWithBadge,
       ),
     );

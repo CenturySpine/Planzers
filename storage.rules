@@ -38,5 +38,11 @@ service firebase.storage {
     match /users/{uid}/{allPaths=**} {
       allow read, write: if signedIn() && request.auth.uid == uid;
     }
+
+    // Self-managed preview release metadata + APK (see RELEASE.md / preview publishing).
+    match /versions/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }
