@@ -40,7 +40,7 @@ function pickFirst(...values) {
 }
 
 function normalizeLanguageCode(value) {
-  const rawCode = normalizeString(value).replace('_', '-');
+  const rawCode = normalizeString(value).replace(/_/g, '-');
   if (!rawCode) return '';
   if (!/^[A-Za-z]{2,3}(-[A-Za-z]{2,4})?$/.test(rawCode)) return '';
   return rawCode;
