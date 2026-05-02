@@ -135,8 +135,9 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
 
     final showProgress = _phase == _UpdateUiPhase.downloading ||
         _phase == _UpdateUiPhase.openingInstaller;
-    final showErrorActions = _phase == _UpdateUiPhase.errorDownload ||
-        _phase == _UpdateUiPhase.errorInstaller;
+    final showRecoveryActions = _phase == _UpdateUiPhase.errorDownload ||
+        _phase == _UpdateUiPhase.errorInstaller ||
+        _phase == _UpdateUiPhase.installerLaunched;
 
     String? progressLabel;
     if (_phase == _UpdateUiPhase.downloading) {
@@ -220,7 +221,7 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
-                if (showErrorActions) ...[
+                if (showRecoveryActions) ...[
                   FilledButton.icon(
                     onPressed: () {
                       unawaited(_runAutoUpdateFlow());
