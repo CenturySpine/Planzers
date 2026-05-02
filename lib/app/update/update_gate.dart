@@ -14,17 +14,43 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+typedef DownloadUpdateApkToCacheFn = Future<File?> Function({
+  required String apkDownloadUrl,
+  required String releaseTag,
+});
+
+typedef PromptAndroidApkInstallFn = Future<AndroidApkInstallPromptOutcome>
+    Function(File apkFile);
+
+typedef InvalidateCachedUpdateApkFn = Future<void> Function(
+    {required String releaseTag});
+
+typedef IsAndroidCheckFn = bool Function();
+
 /// Wraps the app shell and blocks navigation when a newer version is available
 /// remotely (GitHub in prod, Storage manifest in preview). Disabled on web and
 /// non-Android platforms.
 class UpdateGate extends ConsumerWidget {
-  const UpdateGate({required this.child, super.key});
+  const UpdateGate({
+    required this.child,
+    this.downloadUpdateApkToCacheFn = downloadUpdateApkToCache,
+    this.promptAndroidApkInstallFn = promptAndroidApkInstall,
+    this.invalidateCachedUpdateApkFn = invalidateCachedUpdateApk,
+    this.isAndroidCheck = _defaultIsAndroidCheck,
+    super.key,
+  });
 
   final Widget child;
+  final DownloadUpdateApkToCacheFn downloadUpdateApkToCacheFn;
+  final PromptAndroidApkInstallFn promptAndroidApkInstallFn;
+  final InvalidateCachedUpdateApkFn invalidateCachedUpdateApkFn;
+  final IsAndroidCheckFn isAndroidCheck;
+
+  static bool _defaultIsAndroidCheck() => Platform.isAndroid;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (kIsWeb || !Platform.isAndroid) return child;
+    if (kIsWeb || !isAndroidCheck()) return child;
 
     final releaseAsync = ref.watch(latestReleaseProvider);
     final currentAsync = ref.watch(appVersionProvider);
@@ -44,6 +70,9 @@ class UpdateGate extends ConsumerWidget {
           current: current,
           release: release,
           webAppBaseUri: webAppBaseUri,
+          downloadUpdateApkToCacheFn: downloadUpdateApkToCacheFn,
+          promptAndroidApkInstallFn: promptAndroidApkInstallFn,
+          invalidateCachedUpdateApkFn: invalidateCachedUpdateApkFn,
         ),
       );
     }
@@ -65,12 +94,18 @@ class _UpdateRequiredScreen extends StatefulWidget {
     required this.current,
     required this.release,
     required this.webAppBaseUri,
+    required this.downloadUpdateApkToCacheFn,
+    required this.promptAndroidApkInstallFn,
+    required this.invalidateCachedUpdateApkFn,
     super.key,
   });
 
   final String current;
   final RemoteRelease release;
   final Uri webAppBaseUri;
+  final DownloadUpdateApkToCacheFn downloadUpdateApkToCacheFn;
+  final PromptAndroidApkInstallFn promptAndroidApkInstallFn;
+  final InvalidateCachedUpdateApkFn invalidateCachedUpdateApkFn;
 
   @override
   State<_UpdateRequiredScreen> createState() => _UpdateRequiredScreenState();
@@ -95,7 +130,7 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
     try {
       setState(() => _phase = _UpdateUiPhase.downloading);
 
-      final apkFile = await downloadUpdateApkToCache(
+      final apkFile = await widget.downloadUpdateApkToCacheFn(
         apkDownloadUrl: widget.release.apkDownloadUrl,
         releaseTag: widget.release.tag,
       );
@@ -111,9 +146,11 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
 
       final AndroidApkInstallPromptOutcome installOutcome;
       try {
-        installOutcome = await promptAndroidApkInstall(apkFile);
+        installOutcome = await widget.promptAndroidApkInstallFn(apkFile);
       } catch (_) {
         if (!mounted) return;
+        await widget.invalidateCachedUpdateApkFn(
+            releaseTag: widget.release.tag);
         setState(() => _phase = _UpdateUiPhase.errorInstaller);
         return;
       }
@@ -124,6 +161,8 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
         case AndroidApkInstallPromptOutcome.installerPromptShown:
           setState(() => _phase = _UpdateUiPhase.installerLaunched);
         case AndroidApkInstallPromptOutcome.installerIntentFailed:
+          await widget.invalidateCachedUpdateApkFn(
+              releaseTag: widget.release.tag);
           setState(() => _phase = _UpdateUiPhase.errorInstaller);
       }
     } finally {
@@ -297,16 +336,16 @@ class _UpdateAutomaticWarningBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bodyStyle = theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface,
-          height: 1.45,
-          fontWeight: FontWeight.w500,
-        );
+      color: theme.colorScheme.onSurface,
+      height: 1.45,
+      fontWeight: FontWeight.w500,
+    );
     final linkStyle = bodyStyle?.copyWith(
-          color: theme.colorScheme.primary,
-          decoration: TextDecoration.underline,
-          decorationColor: theme.colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        );
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: theme.colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    );
 
     final urlLabel = webAppUri.toString();
 
