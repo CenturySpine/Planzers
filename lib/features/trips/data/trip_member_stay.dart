@@ -89,9 +89,21 @@ class TripMemberStay {
     final later = end.isBefore(start) ? start : end;
     return TripMemberStay(
       startDateKey: dateKeyFromDateTime(start),
-      startDayPart: TripDayPart.morning,
+      startDayPart: trip.tripStartDayPart ?? TripDayPart.evening,
       endDateKey: dateKeyFromDateTime(later),
-      endDayPart: TripDayPart.evening,
+      endDayPart: trip.tripEndDayPart ?? TripDayPart.morning,
+    );
+  }
+
+  /// Initial bounds when creating a trip: first evening through last morning.
+  static TripMemberStay defaultForNewTripEditor() {
+    final start = DateUtils.dateOnly(DateTime.now());
+    final end = start.add(const Duration(days: 1));
+    return TripMemberStay(
+      startDateKey: dateKeyFromDateTime(start),
+      startDayPart: TripDayPart.evening,
+      endDateKey: dateKeyFromDateTime(end),
+      endDayPart: TripDayPart.morning,
     );
   }
 

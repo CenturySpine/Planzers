@@ -35,6 +35,7 @@ import 'package:planerz/features/trips/presentation/trip_settings_permissions_pa
 import 'package:planerz/features/trips/presentation/trip_settings_general_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
+import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 
@@ -95,6 +96,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/trips',
       builder: (context, state) => const TripsPage(),
+    ),
+    GoRoute(
+      path: TripCreatePage.routePath,
+      builder: (context, state) => const TripCreatePage(),
     ),
     GoRoute(
       path: '/account',

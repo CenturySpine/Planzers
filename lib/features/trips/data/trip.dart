@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 class Trip {
@@ -15,6 +16,8 @@ class Trip {
     required this.createdAt,
     this.startDate,
     this.endDate,
+    this.tripStartDayPart,
+    this.tripEndDayPart,
     this.bannerImageUrl,
     this.bannerImagePath,
     this.linkPreview = const {},
@@ -49,6 +52,14 @@ class Trip {
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
+
+  /// First included day-part for the trip calendar span (Firestore: `tripStartDayPart`).
+  /// Does not change how [startDate] alone is formatted in the UI.
+  final TripDayPart? tripStartDayPart;
+
+  /// Last included day-part for the trip calendar span (Firestore: `tripEndDayPart`).
+  final TripDayPart? tripEndDayPart;
+
   final String? bannerImageUrl;
   final String? bannerImagePath;
 
@@ -124,6 +135,9 @@ class Trip {
       createdAt: createdAt,
       startDate: _parseOptionalDate(data['startDate']),
       endDate: _parseOptionalDate(data['endDate']),
+      tripStartDayPart:
+          tripDayPartFromFirestore(data['tripStartDayPart'] as String?),
+      tripEndDayPart: tripDayPartFromFirestore(data['tripEndDayPart'] as String?),
       bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       linkPreview:
@@ -165,6 +179,10 @@ class Trip {
       'createdAt': createdAt.toIso8601String(),
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
+      if (tripStartDayPart != null)
+        'tripStartDayPart': tripDayPartToFirestore(tripStartDayPart!),
+      if (tripEndDayPart != null)
+        'tripEndDayPart': tripDayPartToFirestore(tripEndDayPart!),
       if ((bannerImageUrl ?? '').trim().isNotEmpty)
         'bannerImageUrl': bannerImageUrl!.trim(),
       if ((bannerImagePath ?? '').trim().isNotEmpty)

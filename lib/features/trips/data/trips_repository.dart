@@ -14,6 +14,7 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -177,6 +178,8 @@ class TripsRepository {
     String linkUrl = '',
     DateTime? startDate,
     DateTime? endDate,
+    TripDayPart? tripStartDayPart,
+    TripDayPart? tripEndDayPart,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -201,10 +204,18 @@ class TripsRepository {
       data['memberPublicLabels'] = <String, dynamic>{user.uid: ownerLabel};
     }
     if (startDate != null) {
-      data['startDate'] = Timestamp.fromDate(startDate);
+      final d = DateTime(startDate.year, startDate.month, startDate.day);
+      data['startDate'] = Timestamp.fromDate(d);
+      data['tripStartDayPart'] = tripDayPartToFirestore(
+        tripStartDayPart ?? TripDayPart.evening,
+      );
     }
     if (endDate != null) {
-      data['endDate'] = Timestamp.fromDate(endDate);
+      final d = DateTime(endDate.year, endDate.month, endDate.day);
+      data['endDate'] = Timestamp.fromDate(d);
+      data['tripEndDayPart'] = tripDayPartToFirestore(
+        tripEndDayPart ?? TripDayPart.morning,
+      );
     }
 
     final doc = firestore.collection('trips').doc();
@@ -289,6 +300,13 @@ class TripsRepository {
           ? Timestamp.fromDate(endDate)
           : FieldValue.delete(),
     };
+
+    if (startDate == null) {
+      update['tripStartDayPart'] = FieldValue.delete();
+    }
+    if (endDate == null) {
+      update['tripEndDayPart'] = FieldValue.delete();
+    }
 
     await docRef.update(update);
   }

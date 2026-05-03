@@ -9,6 +9,7 @@ import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -73,7 +74,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
             FloatingActionButton(
               heroTag: 'trips_create',
               tooltip: l10n.tripsNewTripTooltip,
-              onPressed: () => _openCreateTripDialog(context, ref),
+              onPressed: () => context.push(TripCreatePage.routePath),
               child: const Icon(Icons.add),
             ),
           ],
@@ -423,180 +424,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
         ],
       ),
     );
-  }
-
-  Future<void> _openCreateTripDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final titleController = TextEditingController();
-    final destinationController = TextEditingController();
-    String? error;
-    DateTime? startDate;
-    DateTime? endDate;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> pickStart() async {
-              final picked = await showDatePicker(
-                context: dialogContext,
-                initialDate: startDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setDialogState(() => startDate = picked);
-              }
-            }
-
-            Future<void> pickEnd() async {
-              final picked = await showDatePicker(
-                context: dialogContext,
-                initialDate: endDate ?? startDate ?? DateTime.now(),
-                firstDate: startDate ?? DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setDialogState(() => endDate = picked);
-              }
-            }
-
-            return AlertDialog(
-              title: Text(l10n.tripsCreateDialogTitle),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration:
-                          InputDecoration(labelText: l10n.tripsTitleLabel),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: destinationController,
-                      decoration: InputDecoration(
-                        labelText: l10n.tripsDestinationLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.tripsStartDateLabel),
-                      subtitle:
-                          Text(formatOptionalTripDate(context, startDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (startDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setDialogState(() => startDate = null),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: pickStart,
-                          ),
-                        ],
-                      ),
-                      onTap: pickStart,
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.tripsEndDateLabel),
-                      subtitle: Text(formatOptionalTripDate(context, endDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (endDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setDialogState(() => endDate = null),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: pickEnd,
-                          ),
-                        ],
-                      ),
-                      onTap: pickEnd,
-                    ),
-                    if (error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    final title = titleController.text.trim();
-                    final destination = destinationController.text.trim();
-
-                    if (title.isEmpty || destination.isEmpty) {
-                      setDialogState(() {
-                        error = l10n.tripsCreateValidationRequired;
-                      });
-                      return;
-                    }
-
-                    if (isEndBeforeStart(startDate, endDate)) {
-                      setDialogState(() {
-                        error = l10n.tripsCreateValidationDateOrder;
-                      });
-                      return;
-                    }
-
-                    try {
-                      await ref.read(tripsRepositoryProvider).createTrip(
-                            title: title,
-                            destination: destination,
-                            startDate: startDate,
-                            endDate: endDate,
-                          );
-                      if (dialogContext.mounted) {
-                        Navigator.of(dialogContext).pop();
-                      }
-                    } catch (e) {
-                      setDialogState(() {
-                        error = e.toString();
-                      });
-                    }
-                  },
-                  child: Text(l10n.tripsCreateAction),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    // Same lifecycle issue as the invite dialog: do not dispose until the
-    // route overlay has finished tearing down (async close + animation).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        titleController.dispose();
-        destinationController.dispose();
-      });
-    });
   }
 
   Future<void> _openJoinByInviteCodeDialog(BuildContext parentContext) async {

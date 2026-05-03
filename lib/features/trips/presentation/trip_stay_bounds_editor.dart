@@ -45,6 +45,7 @@ class TripStayBoundsEditor extends StatelessWidget {
         bounds.start;
     final picked = await showDatePicker(
       context: context,
+      locale: Localizations.localeOf(context),
       initialDate: _clampDate(initial, bounds),
       firstDate: bounds.start,
       lastDate: bounds.end,

@@ -483,6 +483,8 @@ service cloud.firestore {
             'linkUrl',
             'startDate',
             'endDate',
+            'tripStartDayPart',
+            'tripEndDayPart',
           ])
         ) ||
         (
