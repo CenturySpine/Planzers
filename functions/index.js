@@ -1,4 +1,5 @@
 ﻿const admin = require('firebase-admin');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const {
   onDocumentCreated,
   onDocumentWritten,
@@ -656,7 +657,6 @@ async function revertTripMemberClaim(tripRef, uid, phId) {
       : [];
     if (!memberIds.includes(uid)) return;
     const newMemberIds = memberIds.map((id) => (id === uid ? phId : id));
-    const FieldValue = admin.firestore.FieldValue;
     /** @type {Record<string, unknown>} */
     const upd = {
       memberIds: newMemberIds,
@@ -819,7 +819,6 @@ async function assertMemberRemovalBlockingDependencies({
  */
 async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
   const db = admin.firestore();
-  const FieldValue = admin.firestore.FieldValue;
   const [activitiesSnap, mealsSnap, shoppingSnap] = await Promise.all([
     tripRef.collection('activities').get(),
     tripRef.collection('meals').get(),
@@ -886,7 +885,6 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
  * @param {string} uid
  */
 async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
-  const FieldValue = admin.firestore.FieldValue;
   const db = admin.firestore();
 
   const [groupsSnap, expensesSnap] = await Promise.all([
@@ -980,7 +978,7 @@ async function recipientsNotActivelyViewingChannel({
       const openChannel = normalizeString(data.openChannel);
       const updatedAt = data.updatedAt;
       const updatedAtMs =
-        updatedAt instanceof admin.firestore.Timestamp
+        updatedAt instanceof Timestamp
           ? updatedAt.toMillis()
           : 0;
       const isFresh = nowMs - updatedAtMs <= CHANNEL_PRESENCE_MAX_AGE_MS;
@@ -999,7 +997,6 @@ async function recipientsNotActivelyViewingChannel({
 
 async function incrementTripUnreadCounters({ tripId, recipients, channel }) {
   if (!Array.isArray(recipients) || recipients.length === 0) return;
-  const FieldValue = admin.firestore.FieldValue;
   let batch = admin.firestore().batch();
   let n = 0;
   for (const uid of recipients) {
@@ -1082,7 +1079,7 @@ async function markFunctionEventProcessedOnce(functionName, eventId) {
     tx.set(lockRef, {
       functionName: cleanFunction,
       eventId: cleanEventId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
     return true;
   });
@@ -1177,7 +1174,7 @@ function tripNotificationShellTotalFromChannels(channels) {
 function channelReadTimestamp(data, channel) {
   const channels = channelsMap(data);
   const raw = channels[channel];
-  if (raw instanceof admin.firestore.Timestamp) {
+  if (raw instanceof Timestamp) {
     return raw;
   }
   return null;
@@ -1222,7 +1219,7 @@ async function setTripChannelCounter({ tripId, uid, channel, value }) {
     {
       channels: nextChannels,
       total,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true }
   );
@@ -1248,7 +1245,7 @@ function buildTripNotificationEventData(event) {
     targetPath: normalizeString(event.targetPath),
     actorId: normalizeString(event.actorId),
     createdAtMs: String(
-      event.createdAt instanceof admin.firestore.Timestamp
+      event.createdAt instanceof Timestamp
         ? event.createdAt.toMillis()
         : Date.now()
     ),
@@ -1347,7 +1344,7 @@ async function reconcileCupidonUnreadCounterForTrip(db, uid, tripId) {
       {
         channels: merged,
         total: nextTotal,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true }
     );
@@ -1486,7 +1483,7 @@ async function sendCupidonMatchPush({
       otherLabel: cleanOtherLabel,
       ...(cleanOtherPhotoUrl ? { otherPhotoUrl: cleanOtherPhotoUrl } : {}),
     },
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 }
 
@@ -1550,7 +1547,7 @@ exports.dispatchNotificationQueue = onDocumentCreated(
     const tokenEntries = await collectRecipientTokenEntries(db, recipients);
     if (tokenEntries.length > 0) {
       const createdAt =
-        data.createdAt instanceof admin.firestore.Timestamp
+        data.createdAt instanceof Timestamp
           ? data.createdAt
           : undefined;
 
@@ -1637,7 +1634,7 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
       skipPresenceCheck: false,
       androidChannelId: ANDROID_CHANNEL_IDS.messages,
       payload: {},
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   }
 );
@@ -1691,7 +1688,7 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
       skipPresenceCheck: false,
       androidChannelId: ANDROID_CHANNEL_IDS.activities,
       payload: {},
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   }
 );
@@ -1745,7 +1742,7 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
       skipPresenceCheck: false,
       androidChannelId: ANDROID_CHANNEL_IDS.announcements,
       payload: {},
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   }
 );
@@ -1781,7 +1778,7 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
         continue;
       }
       const readAfter =
-        afterTs || admin.firestore.Timestamp.fromMillis(0);
+        afterTs || Timestamp.fromMillis(0);
       const unread = await countUnreadForChannel({
         tripId,
         uid: userId,
@@ -1859,7 +1856,7 @@ exports.resyncMyTripUnreadCounters = onCall(
       for (const channel of watchedChannels) {
         const readAfter =
           channelReadTimestamp(readData, channel) ||
-          admin.firestore.Timestamp.fromMillis(0);
+          Timestamp.fromMillis(0);
         const unread = await countUnreadForChannel({
           tripId,
           uid,
@@ -1899,8 +1896,6 @@ exports.reconcileMyCupidonNotificationCounters = onCall(
     }
 
     const db = admin.firestore();
-    const FieldValue = admin.firestore.FieldValue;
-
     const matchesSnap = await db
       .collection('users')
       .doc(uid)
@@ -2044,7 +2039,6 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     const db = admin.firestore();
     const mealsSnap = await tripRef.collection('meals').get();
     if (mealsSnap.empty) return;
-    const FieldValue = admin.firestore.FieldValue;
     const removedSet = new Set(removed);
     let batch = db.batch();
     let n = 0;
@@ -2117,7 +2111,6 @@ exports.disableTripCupidonForAllMembers = onDocumentUpdated(
     }
 
     const db = admin.firestore();
-    const FieldValue = admin.firestore.FieldValue;
     let batch = db.batch();
     let writeCount = 0;
     for (const memberDoc of membersSnap.docs) {
@@ -2154,7 +2147,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
 
   if (!afterUrl) {
     await docRef.set(
-      { [previewField]: admin.firestore.FieldValue.delete() },
+      { [previewField]: FieldValue.delete() },
       { merge: true }
     );
     return;
@@ -2168,7 +2161,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           status: 'error',
           url: afterUrl,
           error: 'invalid_url',
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+          fetchedAt: FieldValue.serverTimestamp(),
         },
       },
       { merge: true }
@@ -2181,7 +2174,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
       [previewField]: {
         status: 'loading',
         url: parsed.toString(),
-        fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+        fetchedAt: FieldValue.serverTimestamp(),
       },
     },
     { merge: true }
@@ -2221,7 +2214,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           description: preview.description,
           siteName: preview.siteName,
           imageUrl: preview.imageUrl,
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+          fetchedAt: FieldValue.serverTimestamp(),
         },
       },
       { merge: true }
@@ -2233,7 +2226,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           status: 'error',
           url: parsed.toString(),
           error: String(e),
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+          fetchedAt: FieldValue.serverTimestamp(),
         },
       },
       { merge: true }
@@ -2345,7 +2338,6 @@ async function completeJoinTripWithInvite(
   placeholderMemberId,
   bypassPlaceholderChoice
 ) {
-  const FieldValue = admin.firestore.FieldValue;
   const placeholderArg = normalizeString(placeholderMemberId);
   const bypassPlaceholder = bypassPlaceholderChoice === true;
   let claimedPh = null;
@@ -2588,7 +2580,6 @@ exports.addTripPlaceholderMember = onCall(
     }
 
     const groupsSnap = await tripRef.collection('expenseGroups').get();
-    const FieldValue = admin.firestore.FieldValue;
     let batch = db.batch();
     let n = 0;
 
@@ -2663,7 +2654,6 @@ exports.removeTripPlaceholderMember = onCall(
     });
     await cleanupNonBlockingMemberReferences(tripRef, placeholderId);
 
-    const FieldValue = admin.firestore.FieldValue;
     const groupsSnap = await tripRef.collection('expenseGroups').get();
 
     let batch = db.batch();
@@ -2778,9 +2768,9 @@ exports.leaveTrip = onCall(
     await cleanupNonBlockingMemberReferences(tripRef, uid);
 
     await tripRef.update({
-      memberIds: admin.firestore.FieldValue.arrayRemove(uid),
-      [`memberPublicLabels.${uid}`]: admin.firestore.FieldValue.delete(),
-      adminMemberIds: admin.firestore.FieldValue.arrayRemove(uid),
+      memberIds: FieldValue.arrayRemove(uid),
+      [`memberPublicLabels.${uid}`]: FieldValue.delete(),
+      adminMemberIds: FieldValue.arrayRemove(uid),
     });
 
     return { ok: true };
@@ -2846,9 +2836,9 @@ exports.removeTripRegisteredMember = onCall(
     await cleanupNonBlockingMemberReferences(tripRef, memberId);
 
     await tripRef.update({
-      memberIds: admin.firestore.FieldValue.arrayRemove(memberId),
-      [`memberPublicLabels.${memberId}`]: admin.firestore.FieldValue.delete(),
-      adminMemberIds: admin.firestore.FieldValue.arrayRemove(memberId),
+      memberIds: FieldValue.arrayRemove(memberId),
+      [`memberPublicLabels.${memberId}`]: FieldValue.delete(),
+      adminMemberIds: FieldValue.arrayRemove(memberId),
     });
 
     return { ok: true };
@@ -2902,7 +2892,6 @@ exports.cycleTripMemberAdminRole = onCall(
     }
 
     const admins = tripAdminMemberIdSet(data);
-    const FieldValue = admin.firestore.FieldValue;
     if (admins.has(memberId)) {
       await tripRef.update({
         adminMemberIds: FieldValue.arrayRemove(memberId),
@@ -3056,7 +3045,7 @@ exports.backfillLegacyTripPermissions = onCall(
 
       tx.update(tripRef, {
         permissions: mergedPermissions,
-        permissionsBackfilledAt: admin.firestore.FieldValue.serverTimestamp(),
+        permissionsBackfilledAt: FieldValue.serverTimestamp(),
         permissionsBackfilledBy: uid,
       });
       return { changed: true, reason: 'backfilled' };
@@ -3109,8 +3098,8 @@ exports.setTripCupidonEnabled = onCall(
       .set(
         {
           cupidonEnabled: enabled,
-          cupidonUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          cupidonUpdatedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -3175,8 +3164,8 @@ exports.toggleTripCupidonLike = onCall(
         {
           likerId: uid,
           targetId: targetMemberId,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
@@ -3216,8 +3205,8 @@ exports.toggleTripCupidonLike = onCall(
         otherMemberId: targetMemberId,
         otherMemberLabel: targetProfile.label,
         otherMemberPhotoUrl: targetProfile.photoUrl,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
       const matchDataForTarget = {
         matchId,
@@ -3226,8 +3215,8 @@ exports.toggleTripCupidonLike = onCall(
         otherMemberId: uid,
         otherMemberLabel: myProfile.label,
         otherMemberPhotoUrl: myProfile.photoUrl,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       };
 
       // Deduplicate match creation in concurrent like scenarios.
@@ -3236,13 +3225,13 @@ exports.toggleTripCupidonLike = onCall(
         if (tripMatchSnap.exists) {
           return false;
         }
-        const matchCreatedAt = admin.firestore.FieldValue.serverTimestamp();
+        const matchCreatedAt = FieldValue.serverTimestamp();
         tx.set(tripMatchRef, {
           matchId,
           tripId,
           memberIds: [uid, targetMemberId],
           createdAt: matchCreatedAt,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         });
         tx.set(
           meMatchRef,
@@ -3274,7 +3263,7 @@ exports.toggleTripCupidonLike = onCall(
           notifiedUid: uid,
           otherLabel: targetProfile.label,
           otherPhotoUrl: targetProfile.photoUrl,
-          createdAt: admin.firestore.Timestamp.now(),
+          createdAt: Timestamp.now(),
         }),
         sendCupidonMatchPush({
           tripId,
@@ -3282,7 +3271,7 @@ exports.toggleTripCupidonLike = onCall(
           notifiedUid: targetMemberId,
           otherLabel: myProfile.label,
           otherPhotoUrl: myProfile.photoUrl,
-          createdAt: admin.firestore.Timestamp.now(),
+          createdAt: Timestamp.now(),
         }),
       ]);
 
@@ -3386,9 +3375,9 @@ exports.getAppUsageStats = onCall(
     for (const doc of tripsSnap.docs) {
       const trip = doc.data() || {};
       totalTrips++;
-      const createdAt = trip.createdAt instanceof admin.firestore.Timestamp
+      const createdAt = trip.createdAt instanceof Timestamp
         ? trip.createdAt.toMillis()
-        : doc.createTime instanceof admin.firestore.Timestamp
+        : doc.createTime instanceof Timestamp
         ? doc.createTime.toMillis()
         : 0;
       if (createdAt > latestTripCreatedAtMs) {
@@ -3398,10 +3387,10 @@ exports.getAppUsageStats = onCall(
       const memberCount = Array.isArray(trip.memberIds) ? trip.memberIds.length : 0;
       if (memberCount > maxParticipants) maxParticipants = memberCount;
 
-      const startDate = trip.startDate instanceof admin.firestore.Timestamp
+      const startDate = trip.startDate instanceof Timestamp
         ? trip.startDate
         : null;
-      const endDate = trip.endDate instanceof admin.firestore.Timestamp
+      const endDate = trip.endDate instanceof Timestamp
         ? trip.endDate
         : null;
 
@@ -3462,7 +3451,7 @@ exports.getAppUsageStats = onCall(
       const category = normalizeString(act.category) || 'unknown';
       activitiesByCategory[category] = (activitiesByCategory[category] || 0) + 1;
 
-      if (act.plannedAt instanceof admin.firestore.Timestamp) {
+      if (act.plannedAt instanceof Timestamp) {
         plannedActivities++;
       }
     }

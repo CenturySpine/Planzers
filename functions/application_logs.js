@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+const { FieldValue } = require('firebase-admin/firestore');
 
 const APPLICATION_LOG_LEVELS = new Set(['debug', 'info', 'warn', 'error']);
 
@@ -59,7 +59,7 @@ async function insertApplicationLog(db, payload) {
 
   /** @type {Record<string, unknown>} */
   const doc = {
-    timestampUtc: admin.firestore.FieldValue.serverTimestamp(),
+    timestampUtc: FieldValue.serverTimestamp(),
     level,
     source,
     message,

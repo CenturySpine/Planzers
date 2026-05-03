@@ -162,6 +162,64 @@ Flux de test minimal:
 - Bouton **Nouveau voyage** -> creation visible dans Firestore (`trips`)
 - Document utilisateur cree/maj dans Firestore (`users/{uid}`)
 
+## Emulateurs Firebase (developpement local)
+
+Le depot est configure pour parler aux emulateurs **Auth**, **Firestore**, **Cloud Functions** et **Storage** sur ta machine, **uniquement** quand tu compiles la cible **preview** avec le flag Dart `USE_FIREBASE_EMULATOR=true` (voir `lib/core/firebase/firebase_emulator_wiring.dart`). Les ports correspondent a `firebase.json` :
+
+| Service    | Port |
+|-----------|------|
+| Auth      | 9099 |
+| Firestore | 8080 |
+| Functions | 5001 |
+| Storage   | 9199 |
+| Emulator UI | 4000 |
+
+### Demarrer les emulateurs
+
+Depuis la racine du repo, apres `cd functions` + `npm install` :
+
+```powershell
+firebase emulators:start
+```
+
+Avec **sauvegarde de l’etat** entre deux sessions (dossier local, a ne pas commiter tel quel si tu y mets des donnees sensibles) :
+
+```powershell
+firebase emulators:start --import=.\emulator-data --export-on-exit=.\emulator-data
+```
+
+- **Sans** `--import` / `--export-on-exit` : au prochain arret des emulateurs, les donnees Firestore / Auth / Storage locales sont en general **perdues** (comportement par defaut en memoire).
+- **Avec** ces flags : un snapshot est ecrit dans `emulator-data` a la fermeture et recharge au demarrage suivant (creer le dossier ou faire un premier run avec export si besoin). Le depot ignore `emulator-data/` et `firestore-debug.log` dans `.gitignore` pour eviter des commits accidentels.
+
+L’**Emulator UI** : `http://127.0.0.1:4000/`.
+
+### Lancer l’app contre les emulateurs
+
+Exemple (Web) :
+
+```powershell
+flutter run -d chrome -t lib/main_preview.dart --dart-define=USE_FIREBASE_EMULATOR=true
+```
+
+- **Android emulateur** : l’app utilise automatiquement l’hote `10.0.2.2` pour joindre la machine (voir `FirebaseEmulatorWiring`).
+- **Appareil physique** : definir l’IP de ta machine, par exemple  
+  `--dart-define=FIREBASE_EMULATOR_HOST=192.168.1.10`.
+
+### Attention : emulateurs partiels et production
+
+Si tu demarres seulement une partie des services, la CLI peut **avertir** que les appels vers les services **non demarres** (ex. Pub/Sub, Hosting, Realtime Database, etc.) peuvent encore partir vers **la vraie infrastructure** du projet configure dans `firebase.json` / `FIREBASE_CONFIG`. Verifie toujours le bandeau de demarrage et ne melange pas comptes / donnees prod par megarde.
+
+Les **extensions** et le **Pub/Sub** emulateur ne sont pas dans la config courante : certaines fonctions planifiees (ex. cleanup dependant de Pub/Sub) peuvent etre **ignorees** en local tant que l’emulateur correspondant n’est pas lance.
+
+### Logs et fichiers locaux
+
+- `firebase-debug.log` (racine) : log CLI Firebase.
+- `firestore-debug.log` : log de l’emulateur Firestore (souvent cree au demarrage Firestore).
+
+### Cloud Functions en local (piege connu de l’emulateur)
+
+Le runtime de l’emulateur Functions remplace `admin.firestore` par une fonction liee avec `.bind()`, ce qui fait **disparaitre** les proprietes statiques comme `FieldValue` sur `admin.firestore`. En consequence, le code des fonctions doit utiliser `FieldValue` via `require('firebase-admin/firestore')` (comme dans `functions/index.js`), sinon certains appels (ex. `arrayUnion`) echouent **uniquement** en emulateur alors que le **deploy preview / prod** fonctionne. Contexte detaille : conversation agent Cursor `e687cf9b-cf83-417b-8ace-c912944da8d8`.
+
 ## Cloud Functions (preview de lien)
 
 Cette app utilise une Cloud Function pour generer les metadonnees de preview (`linkPreview`) a partir de `trips/{tripId}.linkUrl`.
