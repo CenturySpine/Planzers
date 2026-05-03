@@ -157,6 +157,15 @@ bool canDeleteExpenseForTrip({
   );
 }
 
+bool canVoteForActivity({
+  required Trip trip,
+  required String? userId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  return trip.memberIds.contains(uid);
+}
+
 bool canSuggestActivityForTrip({
   required Trip trip,
   required String? userId,

@@ -571,7 +571,7 @@ service cloud.firestore {
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['plannedAt', 'votes'])
         ) || (
-          canSuggestActivity(tripId)
+          isTripMember(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['votes'])
           && request.resource.data.votes is list
