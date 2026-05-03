@@ -66,7 +66,7 @@ void main() {
         [hotel, cafe],
         query: '',
         creatorLabelFor: (_) => 'Bob',
-        categoryFilter: TripActivityCategory.accommodation,
+        categoryFilter: const [TripActivityCategory.accommodation],
       );
       expect(entries.length, 1);
       expect(entries.single.activity?.id, 'h');

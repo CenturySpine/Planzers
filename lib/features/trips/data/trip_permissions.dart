@@ -358,7 +358,6 @@ enum TripMealsPermissionAction {
   createMeal,
   deleteMeal,
   editMeal,
-  suggestRestaurant,
   addContribution,
   manageRecipe,
 }
@@ -371,7 +370,6 @@ class TripMealsPermissions {
     required this.createMealMinRole,
     required this.deleteMealMinRole,
     required this.editMealMinRole,
-    required this.suggestRestaurantMinRole,
     required this.addContributionMinRole,
     required this.manageRecipeMinRole,
   });
@@ -379,7 +377,6 @@ class TripMealsPermissions {
   final TripPermissionRole createMealMinRole;
   final TripPermissionRole deleteMealMinRole;
   final TripPermissionRole editMealMinRole;
-  final TripPermissionRole suggestRestaurantMinRole;
   final TripPermissionRole addContributionMinRole;
   final TripPermissionRole manageRecipeMinRole;
 
@@ -387,7 +384,6 @@ class TripMealsPermissions {
     createMealMinRole: TripPermissionRole.admin,
     deleteMealMinRole: TripPermissionRole.admin,
     editMealMinRole: TripPermissionRole.admin,
-    suggestRestaurantMinRole: TripPermissionRole.admin,
     addContributionMinRole: TripPermissionRole.participant,
     manageRecipeMinRole: TripPermissionRole.chef,
   );
@@ -406,9 +402,6 @@ class TripMealsPermissions {
       editMealMinRole: raw['editMeal'] == null
           ? defaults.editMealMinRole
           : TripPermissionRole.fromFirestore(raw['editMeal']),
-      suggestRestaurantMinRole: raw['suggestRestaurant'] == null
-          ? defaults.suggestRestaurantMinRole
-          : TripPermissionRole.fromFirestore(raw['suggestRestaurant']),
       addContributionMinRole: raw['addContribution'] == null
           ? defaults.addContributionMinRole
           : TripPermissionRole.fromFirestore(raw['addContribution']),
@@ -423,7 +416,6 @@ class TripMealsPermissions {
       'createMeal': createMealMinRole.toFirestore(),
       'deleteMeal': deleteMealMinRole.toFirestore(),
       'editMeal': editMealMinRole.toFirestore(),
-      'suggestRestaurant': suggestRestaurantMinRole.toFirestore(),
       'addContribution': addContributionMinRole.toFirestore(),
       'manageRecipe': manageRecipeMinRole.toFirestore(),
     };

@@ -203,19 +203,6 @@ class _TripMealsPermissionsPageState
                         ),
                       ),
                       TripPermissionItemRow(
-                        title: l10n.tripPermissionMealsSuggestRestaurant,
-                        minRole: trip.mealsPermissions.suggestRestaurantMinRole,
-                        icon: Icons.restaurant_menu_outlined,
-                        busy: _savingActions.contains(
-                          TripMealsPermissionAction.suggestRestaurant,
-                        ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripMealsPermissionAction.suggestRestaurant,
-                          minRole: role,
-                        ),
-                      ),
-                      TripPermissionItemRow(
                         title: l10n.tripPermissionMealsAddContribution,
                         minRole: trip.mealsPermissions.addContributionMinRole,
                         icon: Icons.volunteer_activism_outlined,

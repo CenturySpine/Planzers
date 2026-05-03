@@ -766,7 +766,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+      'Minimum roles to create, delete, and edit meals, add a contribution, and manage a recipe.';
 
   @override
   String get tripPermissionMealsCreate => 'Create a meal';
@@ -777,10 +777,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tripPermissionMealsEdit =>
       'Edit a meal (date, type, participants, chef, category)';
-
-  @override
-  String get tripPermissionMealsSuggestRestaurant =>
-      'Suggest a restaurant (restaurant mode)';
 
   @override
   String get tripPermissionMealsAddContribution =>
@@ -3082,7 +3078,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.';
+      'Minimum roles to create, delete, and edit meals, add a contribution, and manage a recipe.';
 
   @override
   String get tripPermissionMealsCreate => 'Create a meal';
@@ -3093,10 +3089,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripPermissionMealsEdit =>
       'Edit a meal (date, type, participants, chef, category)';
-
-  @override
-  String get tripPermissionMealsSuggestRestaurant =>
-      'Suggest a restaurant (restaurant mode)';
 
   @override
   String get tripPermissionMealsAddContribution =>

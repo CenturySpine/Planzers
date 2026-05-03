@@ -1477,7 +1477,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripPermissionsMealsDescription.
   ///
   /// In fr, this message translates to:
-  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.'**
+  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, ajouter un apport et gérer une recette.'**
   String get tripPermissionsMealsDescription;
 
   /// No description provided for @tripPermissionMealsCreate.
@@ -1497,12 +1497,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Éditer un repas (date, type, participants, chef, catégorie)'**
   String get tripPermissionMealsEdit;
-
-  /// No description provided for @tripPermissionMealsSuggestRestaurant.
-  ///
-  /// In fr, this message translates to:
-  /// **'Suggérer un restaurant (mode resto)'**
-  String get tripPermissionMealsSuggestRestaurant;
 
   /// No description provided for @tripPermissionMealsAddContribution.
   ///

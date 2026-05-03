@@ -1188,7 +1188,6 @@ class TripsRepository {
       TripMealsPermissionAction.createMeal => 'createMeal',
       TripMealsPermissionAction.deleteMeal => 'deleteMeal',
       TripMealsPermissionAction.editMeal => 'editMeal',
-      TripMealsPermissionAction.suggestRestaurant => 'suggestRestaurant',
       TripMealsPermissionAction.addContribution => 'addContribution',
       TripMealsPermissionAction.manageRecipe => 'manageRecipe',
     };
