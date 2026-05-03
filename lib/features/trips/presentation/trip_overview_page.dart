@@ -355,6 +355,46 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
     }
   }
 
+  Future<void> _confirmAndDeleteTrip() async {
+    final l10n = AppLocalizations.of(context)!;
+    final tripId = _trip.id;
+    final tripTitle = _trip.title;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.tripsDeleteDialogTitle),
+          content: Text(l10n.tripsDeleteDialogBody(tripTitle)),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.commonDelete),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(tripsRepositoryProvider).deleteTrip(tripId: tripId);
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      context.go('/trips');
+      messenger.showSnackBar(SnackBar(content: Text(l10n.tripsDeleted)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
+      );
+    }
+  }
+
   String _initialFromLabel(String label) {
     final clean = label.trim();
     if (clean.isEmpty) return '?';
@@ -460,6 +500,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
       currentRole: currentRole,
       minRole: _trip.generalPermissions.editGeneralInfoMinRole,
     );
+    final canDeleteTrip = canEdit;
     final tripDocStream = FirebaseFirestore.instance
         .collection('trips')
         .doc(_trip.id)
@@ -682,6 +723,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                                           context.go('/trips/${_trip.id}/settings');
                                           return;
                                         }
+                                        if (value == 'delete' && canDeleteTrip) {
+                                          _confirmAndDeleteTrip();
+                                          return;
+                                        }
                                       },
                                       itemBuilder: (context) => [
                                         PopupMenuItem(
@@ -741,6 +786,31 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                                               ],
                                             ),
                                           ),
+                                        if (canDeleteTrip) ...[
+                                          const PopupMenuDivider(),
+                                          PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.delete_outline,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .error,
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  l10n.commonDelete,
+                                                  style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ],
                                       icon: canEdit && _inviteClipboardBusy
                                           ? const SizedBox(
@@ -783,6 +853,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                                       if (value == 'settings' &&
                                           canManageTripSettings) {
                                         context.go('/trips/${_trip.id}/settings');
+                                        return;
+                                      }
+                                      if (value == 'delete' && canDeleteTrip) {
+                                        _confirmAndDeleteTrip();
                                         return;
                                       }
                                     },
@@ -843,6 +917,31 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                                             ],
                                           ),
                                         ),
+                                      if (canDeleteTrip) ...[
+                                        const PopupMenuDivider(),
+                                        PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.delete_outline,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .error,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                l10n.commonDelete,
+                                                style: TextStyle(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .error,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                     icon: canEdit && _inviteClipboardBusy
                                         ? const SizedBox(
