@@ -11,12 +11,12 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Suggestions (`plannedAt == null`) for a single activity category, with search and vote.
+/// Suggestions (`plannedAt == null`) for one or more activity categories, with search and vote.
 class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
   const TripCategorySuggestionsPanel({
     super.key,
     required this.trip,
-    required this.category,
+    required this.categories,
     required this.emptyMessage,
     this.showVote = true,
     this.showFab = true,
@@ -25,7 +25,7 @@ class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
   });
 
   final Trip trip;
-  final TripActivityCategory category;
+  final List<TripActivityCategory> categories;
   final String emptyMessage;
   final bool showVote;
   final bool showFab;
@@ -82,7 +82,7 @@ class _TripCategorySuggestionsPanelState
             currentUserId: myUid,
             unknownLabel: l10n.roleParticipant,
           ),
-          categoryFilter: widget.category,
+          categoryFilter: widget.categories,
         );
 
         final showFab =
@@ -112,10 +112,10 @@ class _TripCategorySuggestionsPanelState
                 right: 16,
                 bottom: 16,
                 child: FloatingActionButton(
-                  heroTag: 'trip_category_suggestions_${widget.category.firestoreValue}_${widget.trip.id}',
+                  heroTag: 'trip_category_suggestions_${widget.categories.map((c) => c.firestoreValue).join('_')}_${widget.trip.id}',
                   tooltip: l10n.activitiesSuggestAction,
                   onPressed: () => context.push(
-                    '/trips/${widget.trip.id}/activities/new?initialCategory=${widget.category.firestoreValue}',
+                    '/trips/${widget.trip.id}/activities/new?initialCategory=${widget.categories.map((c) => c.firestoreValue).join(',')}',
                   ),
                   child: const Icon(Icons.add),
                 ),

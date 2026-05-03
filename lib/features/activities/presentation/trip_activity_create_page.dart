@@ -14,13 +14,13 @@ class TripActivityCreatePage extends ConsumerStatefulWidget {
   const TripActivityCreatePage({
     super.key,
     required this.tripId,
-    this.initialCategory,
+    this.allowedCategories,
   });
 
   final String tripId;
 
-  /// When set (e.g. deep link), pre-selects this category on the form.
-  final TripActivityCategory? initialCategory;
+  /// When set, restricts the category picker to these categories and pre-selects the first one.
+  final List<TripActivityCategory>? allowedCategories;
 
   @override
   ConsumerState<TripActivityCreatePage> createState() =>
@@ -40,7 +40,7 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
   @override
   void initState() {
     super.initState();
-    _category = widget.initialCategory ?? TripActivityCategory.visit;
+    _category = widget.allowedCategories?.first ?? TripActivityCategory.visit;
     _labelController = TextEditingController();
     _linkController = TextEditingController();
     _addressController = TextEditingController();
@@ -168,7 +168,7 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final category in TripActivityCategory.values)
+                for (final category in widget.allowedCategories ?? TripActivityCategory.values)
                   FilterChip(
                     avatar: Icon(category.categoryIcon, size: 18),
                     label: Text(category.label(l10n)),

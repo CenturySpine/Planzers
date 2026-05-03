@@ -113,13 +113,13 @@ List<TripActivitiesListEntry> buildTripActivitiesSuggestionEntries(
   List<TripActivity> items, {
   required String query,
   required String Function(TripActivity activity) creatorLabelFor,
-  TripActivityCategory? categoryFilter,
+  List<TripActivityCategory>? categoryFilter,
 }) {
   final suggestions = items
       .where((a) => a.plannedAt == null)
       .where(
         (a) =>
-            categoryFilter == null || a.category == categoryFilter,
+            categoryFilter == null || categoryFilter.isEmpty || categoryFilter.contains(a.category),
       )
       .where(
         (a) => tripActivityMatchesQuery(

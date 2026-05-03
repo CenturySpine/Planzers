@@ -256,12 +256,17 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final rawCategory =
                 state.uri.queryParameters['initialCategory']?.trim() ?? '';
-            final initialCategory = rawCategory.isEmpty
+            final allowedCategories = rawCategory.isEmpty
                 ? null
-                : TripActivityCategory.fromFirestore(rawCategory);
+                : rawCategory
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty)
+                    .map(TripActivityCategory.fromFirestore)
+                    .toList(growable: false);
             return TripActivityCreatePage(
               tripId: state.pathParameters['tripId']!,
-              initialCategory: initialCategory,
+              allowedCategories: allowedCategories,
             );
           },
         ),

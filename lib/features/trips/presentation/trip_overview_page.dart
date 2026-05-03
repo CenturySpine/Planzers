@@ -1291,7 +1291,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                   ),
                   TripCategorySuggestionsPanel(
                     trip: _trip,
-                    category: TripActivityCategory.accommodation,
+                    categories: const [TripActivityCategory.accommodation],
                     emptyMessage:
                         l10n.tripOverviewNoAccommodationSuggestions,
                   ),
