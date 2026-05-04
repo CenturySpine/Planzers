@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/l10n/app_localizations.dart';
-
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
-/// Inclusive stay range: from date+part through date+part (matin / midi / soir).
-class TripStayBoundsEditor extends StatelessWidget {
-  const TripStayBoundsEditor({
+/// Two rows: short from/to labels (l10n), date button, and day part each (no section title above).
+class TripCalendarStayBoundsField extends StatelessWidget {
+  const TripCalendarStayBoundsField({
     super.key,
     required this.tripStartDate,
     required this.tripEndDate,
@@ -15,6 +14,7 @@ class TripStayBoundsEditor extends StatelessWidget {
     required this.onChanged,
   });
 
+  /// When both set, constrains the date pickers to this trip calendar span.
   final DateTime? tripStartDate;
   final DateTime? tripEndDate;
   final TripMemberStay value;
@@ -83,23 +83,11 @@ class TripStayBoundsEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          l10n.tripStayPresenceDatesTitle,
-          style: textTheme.titleSmall,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          l10n.tripStayMealsIncludedHint,
-          style: textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _BoundRow(
+        _TripCalendarBoundRow(
           label: l10n.tripStayFromLabel,
           dateLabel: _dateLabel(context, value.startDateKey),
           part: value.startDayPart,
@@ -108,7 +96,7 @@ class TripStayBoundsEditor extends StatelessWidget {
           onPartChanged: (p) => onChanged(value.copyWith(startDayPart: p)),
         ),
         const SizedBox(height: 12),
-        _BoundRow(
+        _TripCalendarBoundRow(
           label: l10n.tripStayToLabel,
           dateLabel: _dateLabel(context, value.endDateKey),
           part: value.endDayPart,
@@ -121,8 +109,8 @@ class TripStayBoundsEditor extends StatelessWidget {
   }
 }
 
-class _BoundRow extends StatelessWidget {
-  const _BoundRow({
+class _TripCalendarBoundRow extends StatelessWidget {
+  const _TripCalendarBoundRow({
     required this.label,
     required this.dateLabel,
     required this.part,

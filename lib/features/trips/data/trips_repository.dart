@@ -260,6 +260,8 @@ class TripsRepository {
     required String linkUrl,
     DateTime? startDate,
     DateTime? endDate,
+    TripDayPart? tripStartDayPart,
+    TripDayPart? tripEndDayPart,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -294,18 +296,30 @@ class TripsRepository {
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
       'startDate': startDate != null
-          ? Timestamp.fromDate(startDate)
+          ? Timestamp.fromDate(
+              DateTime(startDate.year, startDate.month, startDate.day),
+            )
           : FieldValue.delete(),
       'endDate': endDate != null
-          ? Timestamp.fromDate(endDate)
+          ? Timestamp.fromDate(
+              DateTime(endDate.year, endDate.month, endDate.day),
+            )
           : FieldValue.delete(),
     };
 
     if (startDate == null) {
       update['tripStartDayPart'] = FieldValue.delete();
+    } else {
+      update['tripStartDayPart'] = tripDayPartToFirestore(
+        tripStartDayPart ?? TripDayPart.evening,
+      );
     }
     if (endDate == null) {
       update['tripEndDayPart'] = FieldValue.delete();
+    } else {
+      update['tripEndDayPart'] = tripDayPartToFirestore(
+        tripEndDayPart ?? TripDayPart.morning,
+      );
     }
 
     await docRef.update(update);

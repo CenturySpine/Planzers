@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripCreatePage extends ConsumerStatefulWidget {
@@ -117,7 +117,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             },
           ),
           const SizedBox(height: 16),
-          TripStayBoundsEditor(
+          TripCalendarStayBoundsField(
             tripStartDate: null,
             tripEndDate: null,
             value: _stay,

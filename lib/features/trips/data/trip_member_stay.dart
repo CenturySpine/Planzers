@@ -78,8 +78,11 @@ class TripMemberStay {
     );
   }
 
-  /// Full span: morning of first day through evening of last day.
-  static TripMemberStay defaultForTrip(Trip trip) {
+  /// Draft matching the trip document calendar fields and day parts, chronological.
+  static TripMemberStay stayDraftForTripCalendarEdit(Trip trip) {
+    if (trip.startDate == null && trip.endDate == null) {
+      return defaultForNewTripEditor();
+    }
     final start = trip.startDate != null
         ? DateUtils.dateOnly(trip.startDate!)
         : DateUtils.dateOnly(DateTime.now());
@@ -87,12 +90,34 @@ class TripMemberStay {
         ? DateUtils.dateOnly(trip.endDate!)
         : start;
     final later = end.isBefore(start) ? start : end;
-    return TripMemberStay(
+    var sp = trip.tripStartDayPart ?? TripDayPart.evening;
+    var ep = trip.tripEndDayPart ?? TripDayPart.morning;
+    var stay = TripMemberStay(
       startDateKey: dateKeyFromDateTime(start),
-      startDayPart: trip.tripStartDayPart ?? TripDayPart.evening,
+      startDayPart: sp,
       endDateKey: dateKeyFromDateTime(later),
-      endDayPart: trip.tripEndDayPart ?? TripDayPart.morning,
+      endDayPart: ep,
     );
+    if (!isChronological(stay)) {
+      stay = TripMemberStay(
+        startDateKey: dateKeyFromDateTime(start),
+        startDayPart: TripDayPart.morning,
+        endDateKey: dateKeyFromDateTime(later),
+        endDayPart: TripDayPart.evening,
+      );
+    }
+    return stay;
+  }
+
+  /// When the trip has no calendar dates yet, overview edit keeps bounds unset until the user adds them.
+  static TripMemberStay? stayDraftForTripOverviewEditOrNull(Trip trip) {
+    if (trip.startDate == null && trip.endDate == null) return null;
+    return stayDraftForTripCalendarEdit(trip);
+  }
+
+  /// Default member stay span for a trip (same rules as [stayDraftForTripCalendarEdit]).
+  static TripMemberStay defaultForTrip(Trip trip) {
+    return stayDraftForTripCalendarEdit(trip);
   }
 
   /// Initial bounds when creating a trip: first evening through last morning.

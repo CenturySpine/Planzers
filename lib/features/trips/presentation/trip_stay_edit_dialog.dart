@@ -5,7 +5,7 @@ import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 
 Future<void> showTripStayEditDialog({
   required BuildContext context,
@@ -119,7 +119,7 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
       content: SizedBox(
         width: 420,
         child: SingleChildScrollView(
-          child: TripStayBoundsEditor(
+          child: TripCalendarStayBoundsField(
             tripStartDate: widget.trip.startDate,
             tripEndDate: widget.trip.endDate,
             value: _value,

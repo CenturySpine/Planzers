@@ -508,6 +508,8 @@
   "tripOverviewChangePhoto": "Change photo",
   "tripOverviewCopyCode": "Copy code",
   "tripOverviewEditTrip": "Edit trip",
+  "tripOverviewEditAddTripDates": "Set trip dates",
+  "tripOverviewEditRemoveTripDates": "Remove trip dates",
   "tripOverviewTitleRequired": "Title required",
   "tripOverviewDestinationRequired": "Destination required",
   "tripOverviewAddressLabel": "Address",

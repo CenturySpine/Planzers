@@ -28,6 +28,8 @@ import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
@@ -49,8 +51,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
   bool _isSaving = false;
   bool _inviteClipboardBusy = false;
   bool _isBannerBusy = false;
-  DateTime? _editStartDate;
-  DateTime? _editEndDate;
+  TripMemberStay? _editStayBounds;
   Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
   String? _usersDataStreamKey;
   late final TabController _overviewTabController;
@@ -97,8 +98,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
-      _editStartDate = trip.startDate;
-      _editEndDate = trip.endDate;
+      _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
     });
   }
 
@@ -110,8 +110,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
-      _editStartDate = trip.startDate;
-      _editEndDate = trip.endDate;
+      _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
     });
   }
 
@@ -121,13 +120,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
-    if (isEndBeforeStart(_editStartDate, _editEndDate)) {
+    final bounds = _editStayBounds;
+    if (bounds != null && !TripMemberStay.isChronological(bounds)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.tripsCreateValidationDateOrder,
-          ),
-        ),
+        SnackBar(content: Text(l10n.tripStayInvalidRange)),
       );
       return;
     }
@@ -139,14 +135,23 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
       final address = _addressController.text.trim();
       final linkUrl = _linkController.text.trim();
 
+      DateTime? startDate;
+      DateTime? endDate;
+      if (bounds != null) {
+        startDate = TripMemberStay.parseDateKey(bounds.startDateKey);
+        endDate = TripMemberStay.parseDateKey(bounds.endDateKey);
+      }
+
       await ref.read(tripsRepositoryProvider).updateTrip(
             tripId: _trip.id,
             title: title,
             destination: destination,
             address: address,
             linkUrl: linkUrl,
-            startDate: _editStartDate,
-            endDate: _editEndDate,
+            startDate: startDate,
+            endDate: endDate,
+            tripStartDayPart: bounds?.startDayPart,
+            tripEndDayPart: bounds?.endDayPart,
           );
 
       if (!mounted) return;
@@ -1075,102 +1080,36 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage>
                             },
                           ),
                           const SizedBox(height: 8),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.tripsStartDateLabel),
-                            subtitle:
-                                Text(
-                                  formatOptionalTripDate(context, _editStartDate),
-                                ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_editStartDate != null)
-                                  IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () =>
-                                        setState(() => _editStartDate = null),
-                                  ),
-                                IconButton(
-                                  icon:
-                                      const Icon(Icons.calendar_today_outlined),
-                                  onPressed: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate:
-                                          _editStartDate ?? DateTime.now(),
-                                      firstDate: DateTime(2000),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (picked != null && mounted) {
-                                      setState(() => _editStartDate = picked);
-                                    }
-                                  },
-                                ),
-                              ],
+                          if (_editStayBounds == null)
+                            FilledButton.tonal(
+                              onPressed: _isSaving
+                                  ? null
+                                  : () => setState(() {
+                                        _editStayBounds =
+                                            TripMemberStay.defaultForNewTripEditor();
+                                      }),
+                              child: Text(l10n.tripOverviewEditAddTripDates),
+                            )
+                          else ...[
+                            TripCalendarStayBoundsField(
+                              tripStartDate: null,
+                              tripEndDate: null,
+                              value: _editStayBounds!,
+                              onChanged: (next) =>
+                                  setState(() => _editStayBounds = next),
                             ),
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _editStartDate ?? DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (picked != null && mounted) {
-                                setState(() => _editStartDate = picked);
-                              }
-                            },
-                          ),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(l10n.tripsEndDateLabel),
-                            subtitle:
-                                Text(
-                                  formatOptionalTripDate(context, _editEndDate),
-                                ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (_editEndDate != null)
-                                  IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () =>
-                                        setState(() => _editEndDate = null),
-                                  ),
-                                IconButton(
-                                  icon:
-                                      const Icon(Icons.calendar_today_outlined),
-                                  onPressed: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: _editEndDate ??
-                                          _editStartDate ??
-                                          DateTime.now(),
-                                      firstDate:
-                                          _editStartDate ?? DateTime(2000),
-                                      lastDate: DateTime(2100),
-                                    );
-                                    if (picked != null && mounted) {
-                                      setState(() => _editEndDate = picked);
-                                    }
-                                  },
-                                ),
-                              ],
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: TextButton(
+                                onPressed: _isSaving
+                                    ? null
+                                    : () => setState(
+                                          () => _editStayBounds = null,
+                                        ),
+                                child: Text(l10n.tripOverviewEditRemoveTripDates),
+                              ),
                             ),
-                            onTap: () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: _editEndDate ??
-                                    _editStartDate ??
-                                    DateTime.now(),
-                                firstDate: _editStartDate ?? DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (picked != null && mounted) {
-                                setState(() => _editEndDate = picked);
-                              }
-                            },
-                          ),
+                          ],
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _addressController,

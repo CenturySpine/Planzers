@@ -2231,6 +2231,18 @@ abstract class AppLocalizations {
   /// **'Modifier le voyage'**
   String get tripOverviewEditTrip;
 
+  /// No description provided for @tripOverviewEditAddTripDates.
+  ///
+  /// In fr, this message translates to:
+  /// **'Définir les dates du voyage'**
+  String get tripOverviewEditAddTripDates;
+
+  /// No description provided for @tripOverviewEditRemoveTripDates.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer les dates du voyage'**
+  String get tripOverviewEditRemoveTripDates;
+
   /// No description provided for @tripOverviewTitleRequired.
   ///
   /// In fr, this message translates to:

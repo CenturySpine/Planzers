@@ -1202,6 +1202,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewEditTrip => 'Edit trip';
 
   @override
+  String get tripOverviewEditAddTripDates => 'Set trip dates';
+
+  @override
+  String get tripOverviewEditRemoveTripDates => 'Remove trip dates';
+
+  @override
   String get tripOverviewTitleRequired => 'Title required';
 
   @override
@@ -3512,6 +3518,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewEditTrip => 'Edit trip';
+
+  @override
+  String get tripOverviewEditAddTripDates => 'Set trip dates';
+
+  @override
+  String get tripOverviewEditRemoveTripDates => 'Remove trip dates';
 
   @override
   String get tripOverviewTitleRequired => 'Title required';
