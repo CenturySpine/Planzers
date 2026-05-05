@@ -625,9 +625,26 @@ class _TripCarpoolCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      driverLabel,
-                      style: Theme.of(context).textTheme.titleSmall,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            driverLabel,
+                            style: Theme.of(context).textTheme.titleSmall,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                        if (carpool.goesShopping) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   if (showJoinPassengerAction) ...[
@@ -650,11 +667,6 @@ class _TripCarpoolCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                   ],
-                  if (carpool.goesShopping)
-                    Icon(
-                      Icons.shopping_cart_outlined,
-                      color: colorScheme.primary,
-                    ),
                 ],
               ),
               const SizedBox(height: 10),
