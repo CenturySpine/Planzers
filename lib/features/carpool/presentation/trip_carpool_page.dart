@@ -116,6 +116,15 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
           }
           return carpoolsAsync.when(
             data: (carpools) {
+          final carpoolsForList = [...carpools];
+          if (myUid != null && carpoolsForList.length > 1) {
+            carpoolsForList.sort((a, b) {
+              final aMine = a.assignedParticipantIds.contains(myUid);
+              final bMine = b.assignedParticipantIds.contains(myUid);
+              if (aMine == bMine) return 0;
+              return aMine ? -1 : 1;
+            });
+          }
           final assignedIds = <String>{
             for (final carpool in carpools) ...carpool.assignedParticipantIds,
           };
@@ -250,7 +259,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         child: Text(l10n.tripCarpoolEmptyState),
                       ),
                     ),
-                  for (final carpool in carpools) ...[
+                  for (final carpool in carpoolsForList) ...[
                     _TripCarpoolCard(
                       carpool: carpool,
                       isCurrentUserInCarpool: myUid != null &&
