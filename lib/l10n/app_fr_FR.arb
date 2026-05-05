@@ -859,6 +859,8 @@
   "tripCarpoolShoppingFlag": "Courses",
   "tripCarpoolTileNoAssignment": "Aucune affectation",
   "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
+  "tripCarpoolSelfUnassignedTitle": "Pas de covoiturage pour vous",
+  "tripCarpoolSelfUnassignedBody": "Vous n'êtes affecté à aucun covoiturage pour ce voyage.",
   "tripCarpoolUnassignedWarningBody": "{count} participant(s) n'est/ne sont assigné(s) à aucune voiture.",
   "@tripCarpoolUnassignedWarningBody": {
     "placeholders": {
@@ -871,6 +873,7 @@
   "tripCarpoolGlobalMeetupLabel": "Lien Google Maps",
   "tripCarpoolOpenMapsLink": "Ouvrir le lien Google Maps",
   "tripCarpoolEmptyState": "Aucun covoiturage pour le moment.",
+  "tripCarpoolListTitle": "Covoiturages",
   "tripCarpoolNavigateToMeetingPoint": "Naviguer vers le point de rendez-vous",
   "tripCarpoolCreateAction": "Proposer un covoiturage",
   "tripCarpoolCreateTitle": "Nouveau covoiturage",

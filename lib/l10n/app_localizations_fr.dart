@@ -2239,6 +2239,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
 
   @override
+  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage pour vous';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
   }
@@ -2254,6 +2261,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolListTitle => 'Covoiturages';
 
   @override
   String get tripCarpoolNavigateToMeetingPoint =>
@@ -4691,6 +4701,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
 
   @override
+  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage pour vous';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
   }
@@ -4706,6 +4723,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolListTitle => 'Covoiturages';
 
   @override
   String get tripCarpoolNavigateToMeetingPoint =>

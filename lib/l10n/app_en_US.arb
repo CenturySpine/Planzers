@@ -859,6 +859,8 @@
   "tripCarpoolShoppingFlag": "Shopping",
   "tripCarpoolTileNoAssignment": "No assignment",
   "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
+  "tripCarpoolSelfUnassignedTitle": "You're not in a carpool",
+  "tripCarpoolSelfUnassignedBody": "You are not assigned to any carpool for this trip.",
   "tripCarpoolUnassignedWarningBody": "{count} participant(s) are not assigned to any carpool.",
   "@tripCarpoolUnassignedWarningBody": {
     "placeholders": {
@@ -871,6 +873,7 @@
   "tripCarpoolGlobalMeetupLabel": "Google Maps link",
   "tripCarpoolOpenMapsLink": "Open Google Maps link",
   "tripCarpoolEmptyState": "No carpool yet.",
+  "tripCarpoolListTitle": "Carpools",
   "tripCarpoolNavigateToMeetingPoint": "Navigate to meeting point",
   "tripCarpoolCreateAction": "Propose a carpool",
   "tripCarpoolCreateTitle": "New carpool",

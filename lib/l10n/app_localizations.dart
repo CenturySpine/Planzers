@@ -4073,6 +4073,18 @@ abstract class AppLocalizations {
   /// **'Affectation incomplète'**
   String get tripCarpoolUnassignedWarningTitle;
 
+  /// No description provided for @tripCarpoolSelfUnassignedTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de covoiturage pour vous'**
+  String get tripCarpoolSelfUnassignedTitle;
+
+  /// No description provided for @tripCarpoolSelfUnassignedBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.'**
+  String get tripCarpoolSelfUnassignedBody;
+
   /// No description provided for @tripCarpoolUnassignedWarningBody.
   ///
   /// In fr, this message translates to:
@@ -4102,6 +4114,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Aucun covoiturage pour le moment.'**
   String get tripCarpoolEmptyState;
+
+  /// No description provided for @tripCarpoolListTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Covoiturages'**
+  String get tripCarpoolListTitle;
 
   /// No description provided for @tripCarpoolNavigateToMeetingPoint.
   ///

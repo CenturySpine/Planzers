@@ -8,6 +8,7 @@ import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_form_page.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
@@ -105,6 +106,11 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
       trip: trip,
       userId: myUid,
     );
+    final currentTripRole = resolveTripPermissionRole(trip: trip, userId: myUid);
+    final showUnassignedMembersWarning = isTripRoleAllowed(
+      currentRole: currentTripRole,
+      minRole: TripPermissionRole.admin,
+    );
     return Scaffold(
       body: carpoolSectionAsync.when(
         data: (carpoolSection) {
@@ -132,6 +138,22 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
               .where((memberId) => memberId.trim().isNotEmpty)
               .where((memberId) => !assignedIds.contains(memberId))
               .length;
+          final myUidTrimmed = myUid?.trim() ?? '';
+          final showSelfUnassignedCard = myUidTrimmed.isNotEmpty &&
+              trip.memberIds.any((id) => id.trim() == myUidTrimmed) &&
+              !carpools.any(
+                (carpool) => carpool.assignedParticipantIds.any(
+                  (id) => id.trim() == myUidTrimmed,
+                ),
+              );
+          final showGlobalShoppingMeetupSection = myUidTrimmed.isNotEmpty &&
+              carpools.any(
+                (carpool) =>
+                    carpool.goesShopping &&
+                    carpool.assignedParticipantIds.any(
+                      (id) => id.trim() == myUidTrimmed,
+                    ),
+              );
 
           final labelUserIds = <String>{
             for (final id in trip.memberIds)
@@ -156,7 +178,12 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
                 children: [
-                  if (unassignedMembers > 0) ...[
+                  Text(
+                    l10n.tripCarpoolListTitle,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                  if (showUnassignedMembersWarning && unassignedMembers > 0) ...[
                     Card(
                       color: Theme.of(context).colorScheme.errorContainer,
                       child: ListTile(
@@ -172,86 +199,111 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.tripCarpoolGlobalMeetupTitle,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 10),
-                          if (canEditGlobalMeetup &&
-                              (_isEditingGlobalMeetup ||
-                                  carpoolSection.shoppingMeetupLinkUrl.trim().isEmpty))
-                            TextFormField(
-                              controller: _globalMeetupController,
-                              focusNode: _globalMeetupFocusNode,
-                              decoration: InputDecoration(
-                                labelText: l10n.tripCarpoolGlobalMeetupLabel,
-                                border: const OutlineInputBorder(),
-                                suffixIcon: canEditGlobalMeetup
-                                    ? IconButton(
-                                        tooltip: l10n.commonSave,
-                                        onPressed: _isSavingGlobalMeetup
-                                            ? null
-                                            : () => _saveGlobalMeetupLink(
-                                                  tripId: trip.id,
-                                                  canEditGlobalMeetup:
-                                                      canEditGlobalMeetup,
-                                                ),
-                                        icon: _isSavingGlobalMeetup
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : const Icon(Icons.check),
-                                      )
-                                    : null,
-                              ),
-                            ),
-                          if (!canEditGlobalMeetup &&
-                              carpoolSection.shoppingMeetupLinkUrl.trim().isEmpty)
-                            Text(
-                              l10n.commonNotProvided,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          const SizedBox(height: 10),
-                          if (carpoolSection.shoppingMeetupLinkUrl.trim().isNotEmpty) ...[
-                            LinkPreviewCardFromFirestore(
-                              url: carpoolSection.shoppingMeetupLinkUrl,
-                              preview: carpoolSection.shoppingMeetupLinkPreview,
-                              showCard: true,
-                              showTitleLabel: false,
-                            ),
-                            if (canEditGlobalMeetup) ...[
-                              const SizedBox(height: 8),
-                              Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: IconButton(
-                                  tooltip: l10n.commonEdit,
-                                  onPressed: () {
-                                    setState(() {
-                                      _isEditingGlobalMeetup = true;
-                                      _globalMeetupController.text =
-                                          carpoolSection.shoppingMeetupLinkUrl;
-                                    });
-                                  },
-                                  icon: const Icon(Icons.edit_outlined),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ],
+                  if (showSelfUnassignedCard) ...[
+                    Card(
+                      color: context.planerzColors.warningContainer,
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.directions_car_outlined,
+                          color: context.planerzColors.warning,
+                        ),
+                        title: Text(l10n.tripCarpoolSelfUnassignedTitle),
+                        subtitle: Text(l10n.tripCarpoolSelfUnassignedBody),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
+                  if (showGlobalShoppingMeetupSection) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.tripCarpoolGlobalMeetupTitle,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 10),
+                            if (canEditGlobalMeetup &&
+                                (_isEditingGlobalMeetup ||
+                                    carpoolSection.shoppingMeetupLinkUrl
+                                        .trim()
+                                        .isEmpty))
+                              TextFormField(
+                                controller: _globalMeetupController,
+                                focusNode: _globalMeetupFocusNode,
+                                decoration: InputDecoration(
+                                  labelText: l10n.tripCarpoolGlobalMeetupLabel,
+                                  border: const OutlineInputBorder(),
+                                  suffixIcon: canEditGlobalMeetup
+                                      ? IconButton(
+                                          tooltip: l10n.commonSave,
+                                          onPressed: _isSavingGlobalMeetup
+                                              ? null
+                                              : () => _saveGlobalMeetupLink(
+                                                    tripId: trip.id,
+                                                    canEditGlobalMeetup:
+                                                        canEditGlobalMeetup,
+                                                  ),
+                                          icon: _isSavingGlobalMeetup
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.check),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            if (!canEditGlobalMeetup &&
+                                carpoolSection.shoppingMeetupLinkUrl
+                                    .trim()
+                                    .isEmpty)
+                              Text(
+                                l10n.commonNotProvided,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            const SizedBox(height: 10),
+                            if (carpoolSection.shoppingMeetupLinkUrl
+                                .trim()
+                                .isNotEmpty) ...[
+                              LinkPreviewCardFromFirestore(
+                                url: carpoolSection.shoppingMeetupLinkUrl,
+                                preview:
+                                    carpoolSection.shoppingMeetupLinkPreview,
+                                showCard: true,
+                                showTitleLabel: false,
+                              ),
+                              if (canEditGlobalMeetup) ...[
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: IconButton(
+                                    tooltip: l10n.commonEdit,
+                                    onPressed: () {
+                                      setState(() {
+                                        _isEditingGlobalMeetup = true;
+                                        _globalMeetupController.text =
+                                            carpoolSection
+                                                .shoppingMeetupLinkUrl;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.edit_outlined),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (carpools.isEmpty)
                     Card(
                       child: Padding(
@@ -354,6 +406,10 @@ class _TripCarpoolCard extends StatelessWidget {
     final seatsStatusLabel = remainingSeats > 0
         ? l10n.tripCarpoolRemainingSeats(remainingSeats)
         : l10n.tripCarpoolFull;
+    final meetingLineStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        );
+    final hasMeetingPointAddress = carpool.meetingPointAddress.trim().isNotEmpty;
 
     return Card(
       clipBehavior:
@@ -393,17 +449,6 @@ class _TripCarpoolCard extends StatelessWidget {
                       Icons.shopping_cart_outlined,
                       color: colorScheme.primary,
                     ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    tooltip: l10n.tripCarpoolNavigateToMeetingPoint,
-                    onPressed: carpool.meetingPointAddress.trim().isEmpty
-                        ? null
-                        : () => openAddressInGoogleMaps(
-                              context,
-                              carpool.meetingPointAddress,
-                            ),
-                    icon: const Icon(Icons.navigation_outlined),
-                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -428,11 +473,69 @@ class _TripCarpoolCard extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 4),
-              Text(
-                '$departureTime - $meetingPointLabel',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+              Text.rich(
+                TextSpan(
+                  style: meetingLineStyle,
+                  children: [
+                    TextSpan(text: '$departureTime - '),
+                    TextSpan(text: meetingPointLabel),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 6),
+                        child: Tooltip(
+                          message: l10n.tripCarpoolNavigateToMeetingPoint,
+                          child: hasMeetingPointAddress
+                              ? Material(
+                                  color: Colors.transparent,
+                                  type: MaterialType.transparency,
+                                  child: InkWell(
+                                    onTap: () => openAddressInGoogleMaps(
+                                      context,
+                                      carpool.meetingPointAddress,
+                                    ),
+                                    customBorder: const CircleBorder(),
+                                    overlayColor:
+                                        WidgetStateProperty.resolveWith(
+                                      (states) {
+                                        final base =
+                                            colorScheme.onSurfaceVariant;
+                                        if (states
+                                            .contains(WidgetState.pressed)) {
+                                          return base.withValues(alpha: 0.18);
+                                        }
+                                        if (states
+                                            .contains(WidgetState.hovered)) {
+                                          return base.withValues(alpha: 0.10);
+                                        }
+                                        if (states
+                                            .contains(WidgetState.focused)) {
+                                          return base.withValues(alpha: 0.10);
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2),
+                                      child: Icon(
+                                        Icons.navigation_outlined,
+                                        size: 18,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.navigation_outlined,
+                                  size: 18,
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.38),
+                                ),
+                        ),
+                      ),
                     ),
+                  ],
+                ),
               ),
               const SizedBox(height: 4),
               Text(

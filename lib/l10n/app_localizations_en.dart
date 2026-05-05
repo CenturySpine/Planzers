@@ -2223,6 +2223,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripCarpoolUnassignedWarningTitle => 'Incomplete assignment';
 
   @override
+  String get tripCarpoolSelfUnassignedTitle => 'You\'re not in a carpool';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'You are not assigned to any carpool for this trip.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) are not assigned to any carpool.';
   }
@@ -2238,6 +2245,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripCarpoolEmptyState => 'No carpool yet.';
+
+  @override
+  String get tripCarpoolListTitle => 'Carpools';
 
   @override
   String get tripCarpoolNavigateToMeetingPoint => 'Navigate to meeting point';
@@ -4655,6 +4665,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripCarpoolUnassignedWarningTitle => 'Incomplete assignment';
 
   @override
+  String get tripCarpoolSelfUnassignedTitle => 'You\'re not in a carpool';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'You are not assigned to any carpool for this trip.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) are not assigned to any carpool.';
   }
@@ -4670,6 +4687,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripCarpoolEmptyState => 'No carpool yet.';
+
+  @override
+  String get tripCarpoolListTitle => 'Carpools';
 
   @override
   String get tripCarpoolNavigateToMeetingPoint => 'Navigate to meeting point';
