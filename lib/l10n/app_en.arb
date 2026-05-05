@@ -861,6 +861,12 @@
   "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
   "tripCarpoolSelfUnassignedTitle": "You're not in a carpool",
   "tripCarpoolSelfUnassignedBody": "You are not assigned to any carpool for this trip.",
+  "tripCarpoolJoinTooltip": "Join this carpool",
+  "tripCarpoolLeaveTooltip": "Leave this carpool",
+  "tripCarpoolJoinedSelfSnack": "You are now in this carpool.",
+  "tripCarpoolLeftSelfSnack": "You left this carpool.",
+  "tripCarpoolSelfAssignmentDriverBlocked": "Drivers cannot join or leave a carpool from this list.",
+  "tripCarpoolSelfAssignmentNotMember": "Only trip participants can change their assignment.",
   "tripCarpoolUnassignedWarningBody": "{count} participant(s) are not assigned to any carpool.",
   "@tripCarpoolUnassignedWarningBody": {
     "placeholders": {

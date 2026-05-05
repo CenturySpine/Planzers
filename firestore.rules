@@ -444,16 +444,6 @@ service cloud.firestore {
         );
     }
 
-    function carpoolDataIsStructurallyValid(carpoolData) {
-      return carpoolData.driverUserId is string
-        && carpoolData.createdByUserId is string
-        && carpoolData.assignedParticipantIds is list
-        && carpoolData.availableSeats is int
-        && carpoolData.availableSeats >= 1
-        && carpoolData.assignedParticipantIds.size() <= carpoolData.availableSeats
-        && carpoolData.driverUserId in carpoolData.assignedParticipantIds;
-    }
-
     function canManageTripCarpoolShoppingMeetup(tripId) {
       return isTripMember(tripId)
         && tripCallerRoleRank(tripId) >= roleRank(tripCarpoolUpdateShoppingMeetupPointMinRole(tripId));

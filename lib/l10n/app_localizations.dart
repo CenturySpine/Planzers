@@ -4085,6 +4085,42 @@ abstract class AppLocalizations {
   /// **'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.'**
   String get tripCarpoolSelfUnassignedBody;
 
+  /// No description provided for @tripCarpoolJoinTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre ce covoiturage'**
+  String get tripCarpoolJoinTooltip;
+
+  /// No description provided for @tripCarpoolLeaveTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter ce covoiturage'**
+  String get tripCarpoolLeaveTooltip;
+
+  /// No description provided for @tripCarpoolJoinedSelfSnack.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous êtes affecté à ce covoiturage.'**
+  String get tripCarpoolJoinedSelfSnack;
+
+  /// No description provided for @tripCarpoolLeftSelfSnack.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'êtes plus dans ce covoiturage.'**
+  String get tripCarpoolLeftSelfSnack;
+
+  /// No description provided for @tripCarpoolSelfAssignmentDriverBlocked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.'**
+  String get tripCarpoolSelfAssignmentDriverBlocked;
+
+  /// No description provided for @tripCarpoolSelfAssignmentNotMember.
+  ///
+  /// In fr, this message translates to:
+  /// **'Seuls les participants au voyage peuvent modifier leur affectation.'**
+  String get tripCarpoolSelfAssignmentNotMember;
+
   /// No description provided for @tripCarpoolUnassignedWarningBody.
   ///
   /// In fr, this message translates to:

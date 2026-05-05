@@ -2230,6 +2230,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'You are not assigned to any carpool for this trip.';
 
   @override
+  String get tripCarpoolJoinTooltip => 'Join this carpool';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Leave this carpool';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack => 'You are now in this carpool.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack => 'You left this carpool.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Drivers cannot join or leave a carpool from this list.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Only trip participants can change their assignment.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) are not assigned to any carpool.';
   }
@@ -4670,6 +4690,26 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripCarpoolSelfUnassignedBody =>
       'You are not assigned to any carpool for this trip.';
+
+  @override
+  String get tripCarpoolJoinTooltip => 'Join this carpool';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Leave this carpool';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack => 'You are now in this carpool.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack => 'You left this carpool.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Drivers cannot join or leave a carpool from this list.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Only trip participants can change their assignment.';
 
   @override
   String tripCarpoolUnassignedWarningBody(int count) {

@@ -2901,6 +2901,263 @@ exports.leaveTrip = onCall(
   }
 );
 
+const MAX_TRIP_SECTION_CARPOOL_CARS = 40;
+
+function cloneFirestoreCarsArray(rawCars) {
+  if (!Array.isArray(rawCars)) return [];
+  return rawCars.map((entry) =>
+    entry && typeof entry === 'object' ? { ...entry } : {}
+  );
+}
+
+function uidIsDriverOfAnySerializedCar(cars, uid) {
+  return cars.some((car) => normalizeString(car.driverUserId) === uid);
+}
+
+function stripUidFromEveryCarAssignments(cars, uid) {
+  return cars.map((car) => {
+    const copy = { ...car };
+    const raw = Array.isArray(car.assignedParticipantIds)
+      ? car.assignedParticipantIds
+      : [];
+    copy.assignedParticipantIds = raw
+      .map((x) => String(x).trim())
+      .filter((id) => id.length > 0 && id !== uid);
+    return copy;
+  });
+}
+
+function validateSerializedTripCarOrThrow(car) {
+  const id = normalizeString(car.id);
+  if (!id) return;
+  const driverUserId = normalizeString(car.driverUserId);
+  const seatsRaw = car.availableSeats;
+  const seats =
+    typeof seatsRaw === 'number'
+      ? seatsRaw
+      : Number.parseInt(String(seatsRaw ?? ''), 10);
+  if (!Number.isFinite(seats)) {
+    throw new HttpsError('failed-precondition', 'Carpool misconfigured.');
+  }
+  const rawAssigned = Array.isArray(car.assignedParticipantIds)
+    ? car.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
+    : [];
+  let assigned = [...new Set(rawAssigned)];
+  if (driverUserId && !assigned.includes(driverUserId)) {
+    assigned = [...assigned, driverUserId];
+  }
+  if (seats < 1) {
+    throw new HttpsError('failed-precondition', 'Carpool misconfigured.');
+  }
+  if (assigned.length > seats) {
+    throw new HttpsError('failed-precondition', 'Carpool misconfigured.');
+  }
+}
+
+function validateAllTripSectionCarsOrThrow(cars) {
+  if (cars.length > MAX_TRIP_SECTION_CARPOOL_CARS) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Too many carpools.'
+    );
+  }
+  for (const car of cars) {
+    validateSerializedTripCarOrThrow(car);
+  }
+}
+
+exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+  }
+  const tripId = normalizeString(request.data?.tripId);
+  const targetCarpoolId = normalizeString(request.data?.targetCarpoolId);
+  if (!tripId || !targetCarpoolId) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+
+  const db = admin.firestore();
+  const tripRef = db.collection('trips').doc(tripId);
+  const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  await db.runTransaction(async (tx) => {
+    const [tripSnap, sectionSnap] = await Promise.all([
+      tx.get(tripRef),
+      tx.get(sectionRef),
+    ]);
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+
+    const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
+    let cars = cloneFirestoreCarsArray(sectionData.cars);
+
+    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Drivers cannot join another carpool via self-assignment.'
+      );
+    }
+
+    cars = stripUidFromEveryCarAssignments(cars, uid);
+
+    const targetIndex = cars.findIndex(
+      (c) => normalizeString(c.id) === targetCarpoolId
+    );
+    if (targetIndex < 0) {
+      throw new HttpsError('not-found', 'Carpool not found.');
+    }
+
+    const targetCar = { ...cars[targetIndex] };
+    const seatsRaw = targetCar.availableSeats;
+    const seats =
+      typeof seatsRaw === 'number'
+        ? seatsRaw
+        : Number.parseInt(String(seatsRaw ?? ''), 10);
+    const rawAssigned = Array.isArray(targetCar.assignedParticipantIds)
+      ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
+      : [];
+    const assignedIds = [...new Set(rawAssigned)];
+    const driverUserId = normalizeString(targetCar.driverUserId);
+    if (driverUserId && !assignedIds.includes(driverUserId)) {
+      assignedIds.push(driverUserId);
+    }
+    if (!Number.isFinite(seats) || assignedIds.length >= seats) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Carpool is full.'
+      );
+    }
+    if (assignedIds.includes(uid)) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Carpool misconfigured.'
+      );
+    }
+    assignedIds.push(uid);
+    targetCar.assignedParticipantIds = assignedIds;
+    targetCar.updatedAt = Timestamp.now();
+    cars[targetIndex] = targetCar;
+
+    validateAllTripSectionCarsOrThrow(cars);
+
+    tx.set(
+      sectionRef,
+      {
+        cars,
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+  });
+
+  return { ok: true };
+});
+
+exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+  }
+  const tripId = normalizeString(request.data?.tripId);
+  const carpoolId = normalizeString(request.data?.carpoolId);
+  if (!tripId || !carpoolId) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+
+  const db = admin.firestore();
+  const tripRef = db.collection('trips').doc(tripId);
+  const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  await db.runTransaction(async (tx) => {
+    const [tripSnap, sectionSnap] = await Promise.all([
+      tx.get(tripRef),
+      tx.get(sectionRef),
+    ]);
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+
+    const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
+    const cars = cloneFirestoreCarsArray(sectionData.cars);
+
+    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Drivers cannot leave their carpool via self-assignment.'
+      );
+    }
+
+    const targetIndex = cars.findIndex(
+      (c) => normalizeString(c.id) === carpoolId
+    );
+    if (targetIndex < 0) {
+      throw new HttpsError('not-found', 'Carpool not found.');
+    }
+
+    const targetCar = cars[targetIndex];
+    const driverUserId = normalizeString(targetCar.driverUserId);
+    if (driverUserId === uid) {
+      throw new HttpsError(
+        'permission-denied',
+        'Drivers cannot leave their carpool via self-assignment.'
+      );
+    }
+
+    const rawAssigned = Array.isArray(targetCar.assignedParticipantIds)
+      ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
+      : [];
+    const assignedIds = [...new Set(rawAssigned)];
+    if (!assignedIds.includes(uid)) {
+      return;
+    }
+
+    const nextCars = cars.map((car, idx) => {
+      if (idx !== targetIndex) {
+        return { ...car };
+      }
+      const copy = { ...car };
+      copy.assignedParticipantIds = assignedIds.filter((id) => id !== uid);
+      copy.updatedAt = Timestamp.now();
+      return copy;
+    });
+
+    validateAllTripSectionCarsOrThrow(nextCars);
+
+    tx.set(
+      sectionRef,
+      {
+        cars: nextCars,
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+  });
+
+  return { ok: true };
+});
+
 exports.removeTripRegisteredMember = onCall(
   {
   },

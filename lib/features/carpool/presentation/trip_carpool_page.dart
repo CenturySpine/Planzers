@@ -1,6 +1,8 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -15,6 +17,8 @@ import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
+enum _TripCarpoolSelfAssignmentBusyKind { none, join, leave }
+
 class TripCarpoolPage extends ConsumerStatefulWidget {
   const TripCarpoolPage({super.key});
 
@@ -27,6 +31,9 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
   late final FocusNode _globalMeetupFocusNode;
   bool _isSavingGlobalMeetup = false;
   bool _isEditingGlobalMeetup = false;
+  _TripCarpoolSelfAssignmentBusyKind _selfAssignmentBusyKind =
+      _TripCarpoolSelfAssignmentBusyKind.none;
+  String? _selfAssignmentBusyCarpoolId;
 
   @override
   void initState() {
@@ -90,6 +97,93 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
     } finally {
       if (mounted) {
         setState(() => _isSavingGlobalMeetup = false);
+      }
+    }
+  }
+
+  String _messageForSelfAssignmentError(Object error, AppLocalizations l10n) {
+    if (error is FirebaseFunctionsException && error.code == 'permission-denied') {
+      return l10n.tripCarpoolSelfAssignmentNotMember;
+    }
+    if (error is FirebaseException && error.code == 'permission-denied') {
+      return l10n.tripCarpoolSelfAssignmentNotMember;
+    }
+    final details = error.toString();
+    if (details.contains('Drivers cannot')) {
+      return l10n.tripCarpoolSelfAssignmentDriverBlocked;
+    }
+    if (details.contains('Carpool is full')) {
+      return l10n.tripCarpoolFull;
+    }
+    return l10n.commonErrorWithDetails(details);
+  }
+
+  Future<void> _joinTripCarpoolAsPassenger({
+    required String tripId,
+    required String carpoolId,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_selfAssignmentBusyCarpoolId != null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _selfAssignmentBusyCarpoolId = carpoolId;
+      _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.join;
+    });
+    try {
+      await ref.read(tripCarpoolsRepositoryProvider).joinTripCarpoolAsSelfAssignedPassenger(
+            tripId: tripId,
+            targetCarpoolId: carpoolId,
+          );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.tripCarpoolJoinedSelfSnack)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(_messageForSelfAssignmentError(error, l10n))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _selfAssignmentBusyCarpoolId = null;
+          _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.none;
+        });
+      }
+    }
+  }
+
+  Future<void> _leaveTripCarpoolAsPassenger({
+    required String tripId,
+    required String carpoolId,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_selfAssignmentBusyCarpoolId != null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _selfAssignmentBusyCarpoolId = carpoolId;
+      _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.leave;
+    });
+    try {
+      await ref.read(tripCarpoolsRepositoryProvider).leaveTripCarpoolAsSelfAssignedPassenger(
+            tripId: tripId,
+            carpoolId: carpoolId,
+          );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.tripCarpoolLeftSelfSnack)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(_messageForSelfAssignmentError(error, l10n))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _selfAssignmentBusyCarpoolId = null;
+          _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.none;
+        });
       }
     }
   }
@@ -175,6 +269,15 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                 currentUserId: myUid,
                 emptyFallback: l10n.tripParticipantsTraveler,
               );
+              final viewerIsDriverOnTrip = myUidTrimmed.isNotEmpty &&
+                  carpools.any(
+                    (c) => c.driverUserId.trim() == myUidTrimmed,
+                  );
+              final canUsePassengerSelfAssignment =
+                  myUidTrimmed.isNotEmpty &&
+                      trip.memberIds.any((id) => id.trim() == myUidTrimmed);
+              final passengerSelfAssignmentInteractionLocked =
+                  _selfAssignmentBusyCarpoolId != null;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
                 children: [
@@ -311,25 +414,93 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         child: Text(l10n.tripCarpoolEmptyState),
                       ),
                     ),
-                  for (final carpool in carpoolsForList) ...[
-                    _TripCarpoolCard(
-                      carpool: carpool,
-                      isCurrentUserInCarpool: myUid != null &&
-                          carpool.assignedParticipantIds.contains(myUid),
-                      driverLabel: memberLabels[carpool.driverUserId] ??
-                          l10n.tripParticipantsTraveler,
-                      driverUserData: userDocs[carpool.driverUserId],
-                      passengerLabels: carpool.assignedParticipantIds
-                          .where((id) => id != carpool.driverUserId)
-                          .map(
-                            (id) =>
-                                memberLabels[id] ?? l10n.tripParticipantsTraveler,
-                          )
-                          .toList(growable: false),
-                      onTap: () => _openCarpoolForm(carpool: carpool),
+                  for (final carpool in carpoolsForList)
+                    Builder(
+                      builder: (context) {
+                        final isUidInThisCarpool =
+                            carpool.assignedParticipantIds.any(
+                          (id) => id.trim() == myUidTrimmed,
+                        );
+                        final remainingPassengerSeats =
+                            carpool.availableSeats -
+                                carpool.assignedParticipantIds.length;
+                        final showJoinPassengerAction =
+                            canUsePassengerSelfAssignment &&
+                                !viewerIsDriverOnTrip &&
+                                !isUidInThisCarpool &&
+                                remainingPassengerSeats > 0;
+                        final showLeavePassengerAction =
+                            canUsePassengerSelfAssignment &&
+                                !viewerIsDriverOnTrip &&
+                                isUidInThisCarpool &&
+                                carpool.driverUserId.trim() !=
+                                    myUidTrimmed;
+                        final joinPassengerSpinner =
+                            _selfAssignmentBusyKind ==
+                                    _TripCarpoolSelfAssignmentBusyKind.join &&
+                                _selfAssignmentBusyCarpoolId == carpool.id;
+                        final leavePassengerSpinner =
+                            _selfAssignmentBusyKind ==
+                                    _TripCarpoolSelfAssignmentBusyKind.leave &&
+                                _selfAssignmentBusyCarpoolId == carpool.id;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _TripCarpoolCard(
+                              carpool: carpool,
+                              isCurrentUserInCarpool: myUidTrimmed.isNotEmpty &&
+                                  isUidInThisCarpool,
+                              driverLabel:
+                                  memberLabels[carpool.driverUserId] ??
+                                      l10n.tripParticipantsTraveler,
+                              driverUserData:
+                                  userDocs[carpool.driverUserId],
+                              passengerLabels: carpool
+                                  .assignedParticipantIds
+                                  .where((id) => id != carpool.driverUserId)
+                                  .map(
+                                    (id) =>
+                                        memberLabels[id] ??
+                                        l10n.tripParticipantsTraveler,
+                                  )
+                                  .toList(growable: false),
+                              showJoinPassengerAction:
+                                  showJoinPassengerAction,
+                              showLeavePassengerAction:
+                                  showLeavePassengerAction,
+                              joinPassengerActionSpinner:
+                                  joinPassengerSpinner,
+                              leavePassengerActionSpinner:
+                                  leavePassengerSpinner,
+                              onJoinPassengerPressed:
+                                  showJoinPassengerAction &&
+                                          !passengerSelfAssignmentInteractionLocked
+                                      ? () {
+                                          _joinTripCarpoolAsPassenger(
+                                            tripId: trip.id,
+                                            carpoolId: carpool.id,
+                                          );
+                                        }
+                                      : null,
+                              onLeavePassengerPressed:
+                                  showLeavePassengerAction &&
+                                          !passengerSelfAssignmentInteractionLocked
+                                      ? () {
+                                          _leaveTripCarpoolAsPassenger(
+                                            tripId: trip.id,
+                                            carpoolId: carpool.id,
+                                          );
+                                        }
+                                      : null,
+                              onTap: () =>
+                                  _openCarpoolForm(carpool: carpool),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 10),
-                  ],
                 ],
               );
             },
@@ -379,6 +550,12 @@ class _TripCarpoolCard extends StatelessWidget {
     required this.driverLabel,
     required this.driverUserData,
     required this.passengerLabels,
+    required this.showJoinPassengerAction,
+    required this.showLeavePassengerAction,
+    required this.joinPassengerActionSpinner,
+    required this.leavePassengerActionSpinner,
+    required this.onJoinPassengerPressed,
+    required this.onLeavePassengerPressed,
     required this.onTap,
   });
 
@@ -387,7 +564,16 @@ class _TripCarpoolCard extends StatelessWidget {
   final String driverLabel;
   final Map<String, dynamic>? driverUserData;
   final List<String> passengerLabels;
+  final bool showJoinPassengerAction;
+  final bool showLeavePassengerAction;
+  final bool joinPassengerActionSpinner;
+  final bool leavePassengerActionSpinner;
+  final VoidCallback? onJoinPassengerPressed;
+  final VoidCallback? onLeavePassengerPressed;
   final VoidCallback onTap;
+
+  static const String _stepInAsset = 'assets/images/carpool_step_in.svg';
+  static const String _stepOutAsset = 'assets/images/carpool_step_out.svg';
 
   @override
   Widget build(BuildContext context) {
@@ -444,6 +630,26 @@ class _TripCarpoolCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
+                  if (showJoinPassengerAction) ...[
+                    _CarpoolSelfAssignmentSvgButton(
+                      assetPath: _stepInAsset,
+                      tooltip: l10n.tripCarpoolJoinTooltip,
+                      iconColor: colorScheme.primary,
+                      onPressed: onJoinPassengerPressed,
+                      showSpinner: joinPassengerActionSpinner,
+                    ),
+                    const SizedBox(width: 2),
+                  ],
+                  if (showLeavePassengerAction) ...[
+                    _CarpoolSelfAssignmentSvgButton(
+                      assetPath: _stepOutAsset,
+                      tooltip: l10n.tripCarpoolLeaveTooltip,
+                      iconColor: colorScheme.error,
+                      onPressed: onLeavePassengerPressed,
+                      showSpinner: leavePassengerActionSpinner,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   if (carpool.goesShopping)
                     Icon(
                       Icons.shopping_cart_outlined,
@@ -547,6 +753,75 @@ class _TripCarpoolCard extends StatelessWidget {
                     ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarpoolSelfAssignmentSvgButton extends StatelessWidget {
+  const _CarpoolSelfAssignmentSvgButton({
+    required this.assetPath,
+    required this.tooltip,
+    required this.iconColor,
+    required this.onPressed,
+    required this.showSpinner,
+  });
+
+  final String assetPath;
+  final String tooltip;
+  final Color iconColor;
+  final VoidCallback? onPressed;
+  final bool showSpinner;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null && !showSpinner;
+    final effectiveColor =
+        enabled ? iconColor : iconColor.withValues(alpha: 0.38);
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled ? onPressed : null,
+          customBorder: const CircleBorder(),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            final base = iconColor;
+            if (states.contains(WidgetState.pressed)) {
+              return base.withValues(alpha: 0.18);
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return base.withValues(alpha: 0.10);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return base.withValues(alpha: 0.10);
+            }
+            return null;
+          }),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: showSpinner
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: effectiveColor,
+                    ),
+                  )
+                : SvgPicture.asset(
+                    assetPath,
+                    width: 22,
+                    height: 22,
+                    colorFilter: ColorFilter.mode(
+                      effectiveColor,
+                      BlendMode.srcIn,
+                    ),
+                  ),
           ),
         ),
       ),

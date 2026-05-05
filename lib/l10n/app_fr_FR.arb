@@ -861,6 +861,12 @@
   "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
   "tripCarpoolSelfUnassignedTitle": "Pas de covoiturage pour vous",
   "tripCarpoolSelfUnassignedBody": "Vous n'êtes affecté à aucun covoiturage pour ce voyage.",
+  "tripCarpoolJoinTooltip": "Rejoindre ce covoiturage",
+  "tripCarpoolLeaveTooltip": "Quitter ce covoiturage",
+  "tripCarpoolJoinedSelfSnack": "Vous êtes affecté à ce covoiturage.",
+  "tripCarpoolLeftSelfSnack": "Vous n'êtes plus dans ce covoiturage.",
+  "tripCarpoolSelfAssignmentDriverBlocked": "Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.",
+  "tripCarpoolSelfAssignmentNotMember": "Seuls les participants au voyage peuvent modifier leur affectation.",
   "tripCarpoolUnassignedWarningBody": "{count} participant(s) n'est/ne sont assigné(s) à aucune voiture.",
   "@tripCarpoolUnassignedWarningBody": {
     "placeholders": {

@@ -2246,6 +2246,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
 
   @override
+  String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Quitter ce covoiturage';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack =>
+      'Vous êtes affecté à ce covoiturage.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack =>
+      'Vous n\'êtes plus dans ce covoiturage.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Seuls les participants au voyage peuvent modifier leur affectation.';
+
+  @override
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
   }
@@ -4706,6 +4728,28 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripCarpoolSelfUnassignedBody =>
       'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
+
+  @override
+  String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Quitter ce covoiturage';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack =>
+      'Vous êtes affecté à ce covoiturage.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack =>
+      'Vous n\'êtes plus dans ce covoiturage.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Seuls les participants au voyage peuvent modifier leur affectation.';
 
   @override
   String tripCarpoolUnassignedWarningBody(int count) {

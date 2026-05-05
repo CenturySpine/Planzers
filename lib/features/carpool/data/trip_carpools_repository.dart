@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpool_section.dart';
 
@@ -182,6 +184,45 @@ class TripCarpoolsRepository {
         },
         SetOptions(merge: true),
       );
+    });
+  }
+
+  /// Moves the signed-in trip member into [targetCarpoolId], removing them from
+  /// any other car first (Cloud Function + Admin SDK).
+  Future<void> joinTripCarpoolAsSelfAssignedPassenger({
+    required String tripId,
+    required String targetCarpoolId,
+  }) async {
+    final cleanTripId = tripId.trim();
+    final cleanTargetId = targetCarpoolId.trim();
+    if (cleanTripId.isEmpty || cleanTargetId.isEmpty) {
+      throw ArgumentError('tripId and targetCarpoolId are required');
+    }
+
+    final callable = FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion)
+        .httpsCallable('joinTripCarpoolAsPassenger');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'targetCarpoolId': cleanTargetId,
+    });
+  }
+
+  /// Removes the signed-in member from [carpoolId] only when they are not the driver.
+  Future<void> leaveTripCarpoolAsSelfAssignedPassenger({
+    required String tripId,
+    required String carpoolId,
+  }) async {
+    final cleanTripId = tripId.trim();
+    final cleanCarpoolId = carpoolId.trim();
+    if (cleanTripId.isEmpty || cleanCarpoolId.isEmpty) {
+      throw ArgumentError('tripId and carpoolId are required');
+    }
+
+    final callable = FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion)
+        .httpsCallable('leaveTripCarpoolAsPassenger');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'carpoolId': cleanCarpoolId,
     });
   }
 
