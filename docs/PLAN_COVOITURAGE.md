@@ -6,12 +6,11 @@
 - Cette tuile affiche aussi un rappel personnel: avec quel conducteur l’utilisateur est embarqué, et si ce covoiturage est marqué “va faire les courses”.
 - Sur la page covoiturage, un bouton d’action ouvre un **écran de création** (plein écran), jamais une pop-up ni une modale.
 - La création/édition d’un covoiturage se fait en **saisie libre** pour:
-  - type/marque de la voiture;
   - adresse du point de rendez-vous;
   - point de transport en commun le plus proche.
 - L’utilisateur renseigne aussi:
-  - le nombre de places disponibles pour ce covoiturage.
-  - la date/heure de départ du covoiturage.
+  - le nombre de places disponibles pour ce covoiturage (valeur par défaut: 4).
+  - la date/heure de départ du covoiturage (valeur par défaut: 18h30).
 - Le conducteur est, par défaut, la personne qui crée le covoiturage.
 - Le conducteur peut être changé (ex: un admin crée pour quelqu’un d’autre).
 - Le conducteur est toujours identifié visuellement par une icône volant dans la liste des participants du covoiturage.
@@ -24,7 +23,9 @@
 - En validation, l’utilisateur revient sur la liste covoiturage avec les informations mises à jour.
 - Chaque cartouche covoiturage de la liste affiche:
   - le profil et le nom de la personne qui conduit;
-  - un rappel de la voiture;
+  - l’adresse du point de rendez-vous;
+  - l’heure de RDV;
+  - le statut des places (`x place(s) restante(s)` ou `complet`);
   - le point de transport en commun le plus proche;
   - un indicateur visuel si la voiture est désignée pour les courses.
 - Chaque cartouche propose une action rapide pour ouvrir Google Maps et lancer la navigation vers le point de rendez-vous.
@@ -89,7 +90,7 @@
   - Reprendre les patterns de présentation existants (cards/sections/espacements/titres) en s’alignant sur les écrans “repas” et autres pages de modules du voyage.
   - En tête de page: encart warning (style alerte + icône) quand au moins un participant n’est assigné à aucun covoiturage.
   - FAB visible selon permission “proposer”.
-  - Cartouches covoiturage affichant: badge profil + nom conducteur, marque/type véhicule, arrêt TC le plus proche.
+  - Cartouches covoiturage affichant: badge profil + nom conducteur, adresse point de rendez-vous, heure de RDV, statut des places restantes/complet, arrêt TC le plus proche.
   - Icône “courses” sur cartouche si `goesShopping=true` (même iconographie que le menu courses existant).
   - Icône de navigation sur cartouche pour ouvrir Google Maps en itinéraire vers `meetingPointAddress`.
   - Tap cartouche -> écran d’édition/suppression (pas de bouton supprimer direct dans la liste).
@@ -102,12 +103,11 @@
 - Créer un écran dédié (push route), pas de modal/pop-up, avec formulaire libre:
   - Structurer le formulaire avec le même niveau de qualité visuelle que les écrans de référence (repas): groupements logiques, titres de section, espacements homogènes, composants de saisie cohérents.
   - Contrôle conducteur: réutiliser un composant existant de combobox searchable si disponible; sinon créer un **contrôle réutilisable** (shared UI component) au lieu d’un widget spécifique covoiturage.
-  - champ 1: type + marque voiture (texte libre)
-  - champ 2: adresse point de rendez-vous (texte libre)
-  - champ 3: point transport en commun le plus proche (texte libre)
-  - champ 4: date/heure de départ (sélecteur date + heure)
+  - champ 1: adresse point de rendez-vous (texte libre)
+  - champ 2: point transport en commun le plus proche (texte libre)
+  - champ 3: date/heure de départ (sélecteur date + heure, défaut 18h30)
   - conducteur: combobox avec recherche (préremplie par défaut avec l’utilisateur qui propose le covoiturage)
-  - places disponibles (int)
+  - places disponibles (int, défaut 4)
   - sélection participants transportés sur le modèle des chambres (cases à cocher + nom):
     - personnes non affectées affichées en haut de liste (incluant membres et temporaires/prévus)
     - personnes déjà affectées affichées ensuite avec mention “déjà affecté + voiture/conducteur”

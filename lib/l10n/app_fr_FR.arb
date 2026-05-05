@@ -318,8 +318,8 @@
   "tripTabExpenses": "Dépenses",
   "tripTabMeals": "Repas",
   "tripTabShopping": "Courses",
-  "tripCarsTitle": "Voitures",
-  "tripCarsComingSoon": "Covoiturage et véhicules. Contenu à venir.",
+  "tripCarsTitle": "Covoiturage",
+  "tripCarsComingSoon": "Gestion du covoiturage. Contenu à venir.",
   "tripMealsComingSoon": "Planning des repas. Contenu à venir.",
   "tripThisTrip": "Ce voyage",
   "tripStayDialogTitle": "Mes dates sur le voyage",
@@ -843,6 +843,7 @@
   "tripOverviewTileActivities": "Planning",
   "tripOverviewTileRooms": "Chambres",
   "tripOverviewTileCars": "Voitures",
+  "tripOverviewTileCarpool": "Covoiturage",
   "tripOverviewTileGames": "Jeux",
   "tripOverviewTopTabAnnouncements": "Annonces",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",
@@ -854,6 +855,63 @@
   "tripOverviewTileNoActivitiesToday": "Pas d'activités prévues aujourd'hui",
   "tripOverviewTileNoAssignedRoom": "Aucune chambre attribuée",
   "tripOverviewTileComingSoon": "[À venir]",
+  "tripCarpoolDriverLabel": "Conducteur",
+  "tripCarpoolShoppingFlag": "Courses",
+  "tripCarpoolTileNoAssignment": "Aucune affectation",
+  "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
+  "tripCarpoolUnassignedWarningBody": "{count} participant(s) n'est/ne sont assigné(s) à aucune voiture.",
+  "@tripCarpoolUnassignedWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolGlobalMeetupTitle": "Rendez-vous courses",
+  "tripCarpoolGlobalMeetupLabel": "Lien Google Maps",
+  "tripCarpoolOpenMapsLink": "Ouvrir le lien Google Maps",
+  "tripCarpoolEmptyState": "Aucun covoiturage pour le moment.",
+  "tripCarpoolNavigateToMeetingPoint": "Naviguer vers le point de rendez-vous",
+  "tripCarpoolCreateAction": "Proposer un covoiturage",
+  "tripCarpoolCreateTitle": "Nouveau covoiturage",
+  "tripCarpoolEditTitle": "Modifier le covoiturage",
+  "tripCarpoolMeetingPointLabel": "Adresse du point de rendez-vous",
+  "tripCarpoolNearestTransitStopLabel": "Point transport en commun le plus proche",
+  "tripCarpoolDepartureAtLabel": "Date et heure de départ",
+  "tripCarpoolMeetingHour": "Heure de RDV : {hour}",
+  "@tripCarpoolMeetingHour": {
+    "placeholders": {
+      "hour": {}
+    }
+  },
+  "tripCarpoolAvailableSeatsLabel": "Places disponibles",
+  "tripCarpoolRemainingSeats": "{count} place(s) restante(s)",
+  "@tripCarpoolRemainingSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolFull": "Complet",
+  "tripCarpoolGoesShoppingLabel": "Voiture désignée pour faire les courses",
+  "tripCarpoolPassengersTitle": "Participants transportés",
+  "tripCarpoolTemporaryParticipantLabel": "Voyageur prévu",
+  "tripCarpoolAlreadyAssignedTo": "Déjà affecté à {carpoolLabel}",
+  "@tripCarpoolAlreadyAssignedTo": {
+    "placeholders": {
+      "carpoolLabel": {}
+    }
+  },
+  "tripCarpoolSeatsInvalid": "Le nombre de places doit être au moins 1.",
+  "tripCarpoolSeatsExceeded": "Le nombre de participants dépasse les places disponibles.",
+  "tripCarpoolCreated": "Covoiturage créé",
+  "tripCarpoolUpdated": "Covoiturage mis à jour",
+  "tripCarpoolDeleteTitle": "Supprimer ce covoiturage ?",
+  "tripCarpoolDeleteBody": "Ce covoiturage sera supprimé définitivement.",
+  "tripCarpoolDeleted": "Covoiturage supprimé",
+  "tripCarpoolCreateComingSoon": "Création de covoiturage disponible dans le prochain lot.",
+  "tripCarpoolEditComingSoon": "Édition de covoiturage disponible dans le prochain lot.",
   "tripOverviewMyRoom": "Ma chambre",
   "tripOverviewMyRooms": "Mes chambres",
   "tripOverviewTabSummary": "Aperçu",

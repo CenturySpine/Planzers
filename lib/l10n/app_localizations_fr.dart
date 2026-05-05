@@ -858,10 +858,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTabShopping => 'Courses';
 
   @override
-  String get tripCarsTitle => 'Voitures';
+  String get tripCarsTitle => 'Covoiturage';
 
   @override
-  String get tripCarsComingSoon => 'Covoiturage et véhicules. Contenu à venir.';
+  String get tripCarsComingSoon => 'Gestion du covoiturage. Contenu à venir.';
 
   @override
   String get tripMealsComingSoon => 'Planning des repas. Contenu à venir.';
@@ -2190,6 +2190,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileCars => 'Voitures';
 
   @override
+  String get tripOverviewTileCarpool => 'Covoiturage';
+
+  @override
   String get tripOverviewTileGames => 'Jeux';
 
   @override
@@ -2222,6 +2225,121 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewTileComingSoon => '[À venir]';
+
+  @override
+  String get tripCarpoolDriverLabel => 'Conducteur';
+
+  @override
+  String get tripCarpoolShoppingFlag => 'Courses';
+
+  @override
+  String get tripCarpoolTileNoAssignment => 'Aucune affectation';
+
+  @override
+  String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
+
+  @override
+  String tripCarpoolUnassignedWarningBody(int count) {
+    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  }
+
+  @override
+  String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
+
+  @override
+  String get tripCarpoolGlobalMeetupLabel => 'Lien Google Maps';
+
+  @override
+  String get tripCarpoolOpenMapsLink => 'Ouvrir le lien Google Maps';
+
+  @override
+  String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolNavigateToMeetingPoint =>
+      'Naviguer vers le point de rendez-vous';
+
+  @override
+  String get tripCarpoolCreateAction => 'Proposer un covoiturage';
+
+  @override
+  String get tripCarpoolCreateTitle => 'Nouveau covoiturage';
+
+  @override
+  String get tripCarpoolEditTitle => 'Modifier le covoiturage';
+
+  @override
+  String get tripCarpoolMeetingPointLabel => 'Adresse du point de rendez-vous';
+
+  @override
+  String get tripCarpoolNearestTransitStopLabel =>
+      'Point transport en commun le plus proche';
+
+  @override
+  String get tripCarpoolDepartureAtLabel => 'Date et heure de départ';
+
+  @override
+  String tripCarpoolMeetingHour(Object hour) {
+    return 'Heure de RDV : $hour';
+  }
+
+  @override
+  String get tripCarpoolAvailableSeatsLabel => 'Places disponibles';
+
+  @override
+  String tripCarpoolRemainingSeats(int count) {
+    return '$count place(s) restante(s)';
+  }
+
+  @override
+  String get tripCarpoolFull => 'Complet';
+
+  @override
+  String get tripCarpoolGoesShoppingLabel =>
+      'Voiture désignée pour faire les courses';
+
+  @override
+  String get tripCarpoolPassengersTitle => 'Participants transportés';
+
+  @override
+  String get tripCarpoolTemporaryParticipantLabel => 'Voyageur prévu';
+
+  @override
+  String tripCarpoolAlreadyAssignedTo(Object carpoolLabel) {
+    return 'Déjà affecté à $carpoolLabel';
+  }
+
+  @override
+  String get tripCarpoolSeatsInvalid =>
+      'Le nombre de places doit être au moins 1.';
+
+  @override
+  String get tripCarpoolSeatsExceeded =>
+      'Le nombre de participants dépasse les places disponibles.';
+
+  @override
+  String get tripCarpoolCreated => 'Covoiturage créé';
+
+  @override
+  String get tripCarpoolUpdated => 'Covoiturage mis à jour';
+
+  @override
+  String get tripCarpoolDeleteTitle => 'Supprimer ce covoiturage ?';
+
+  @override
+  String get tripCarpoolDeleteBody =>
+      'Ce covoiturage sera supprimé définitivement.';
+
+  @override
+  String get tripCarpoolDeleted => 'Covoiturage supprimé';
+
+  @override
+  String get tripCarpoolCreateComingSoon =>
+      'Création de covoiturage disponible dans le prochain lot.';
+
+  @override
+  String get tripCarpoolEditComingSoon =>
+      'Édition de covoiturage disponible dans le prochain lot.';
 
   @override
   String get tripOverviewMyRoom => 'Ma chambre';
@@ -3192,10 +3310,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripTabShopping => 'Courses';
 
   @override
-  String get tripCarsTitle => 'Voitures';
+  String get tripCarsTitle => 'Covoiturage';
 
   @override
-  String get tripCarsComingSoon => 'Covoiturage et véhicules. Contenu à venir.';
+  String get tripCarsComingSoon => 'Gestion du covoiturage. Contenu à venir.';
 
   @override
   String get tripMealsComingSoon => 'Planning des repas. Contenu à venir.';
@@ -4524,6 +4642,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewTileCars => 'Voitures';
 
   @override
+  String get tripOverviewTileCarpool => 'Covoiturage';
+
+  @override
   String get tripOverviewTileGames => 'Jeux';
 
   @override
@@ -4556,6 +4677,121 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTileComingSoon => '[À venir]';
+
+  @override
+  String get tripCarpoolDriverLabel => 'Conducteur';
+
+  @override
+  String get tripCarpoolShoppingFlag => 'Courses';
+
+  @override
+  String get tripCarpoolTileNoAssignment => 'Aucune affectation';
+
+  @override
+  String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
+
+  @override
+  String tripCarpoolUnassignedWarningBody(int count) {
+    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  }
+
+  @override
+  String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
+
+  @override
+  String get tripCarpoolGlobalMeetupLabel => 'Lien Google Maps';
+
+  @override
+  String get tripCarpoolOpenMapsLink => 'Ouvrir le lien Google Maps';
+
+  @override
+  String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolNavigateToMeetingPoint =>
+      'Naviguer vers le point de rendez-vous';
+
+  @override
+  String get tripCarpoolCreateAction => 'Proposer un covoiturage';
+
+  @override
+  String get tripCarpoolCreateTitle => 'Nouveau covoiturage';
+
+  @override
+  String get tripCarpoolEditTitle => 'Modifier le covoiturage';
+
+  @override
+  String get tripCarpoolMeetingPointLabel => 'Adresse du point de rendez-vous';
+
+  @override
+  String get tripCarpoolNearestTransitStopLabel =>
+      'Point transport en commun le plus proche';
+
+  @override
+  String get tripCarpoolDepartureAtLabel => 'Date et heure de départ';
+
+  @override
+  String tripCarpoolMeetingHour(Object hour) {
+    return 'Heure de RDV : $hour';
+  }
+
+  @override
+  String get tripCarpoolAvailableSeatsLabel => 'Places disponibles';
+
+  @override
+  String tripCarpoolRemainingSeats(int count) {
+    return '$count place(s) restante(s)';
+  }
+
+  @override
+  String get tripCarpoolFull => 'Complet';
+
+  @override
+  String get tripCarpoolGoesShoppingLabel =>
+      'Voiture désignée pour faire les courses';
+
+  @override
+  String get tripCarpoolPassengersTitle => 'Participants transportés';
+
+  @override
+  String get tripCarpoolTemporaryParticipantLabel => 'Voyageur prévu';
+
+  @override
+  String tripCarpoolAlreadyAssignedTo(Object carpoolLabel) {
+    return 'Déjà affecté à $carpoolLabel';
+  }
+
+  @override
+  String get tripCarpoolSeatsInvalid =>
+      'Le nombre de places doit être au moins 1.';
+
+  @override
+  String get tripCarpoolSeatsExceeded =>
+      'Le nombre de participants dépasse les places disponibles.';
+
+  @override
+  String get tripCarpoolCreated => 'Covoiturage créé';
+
+  @override
+  String get tripCarpoolUpdated => 'Covoiturage mis à jour';
+
+  @override
+  String get tripCarpoolDeleteTitle => 'Supprimer ce covoiturage ?';
+
+  @override
+  String get tripCarpoolDeleteBody =>
+      'Ce covoiturage sera supprimé définitivement.';
+
+  @override
+  String get tripCarpoolDeleted => 'Covoiturage supprimé';
+
+  @override
+  String get tripCarpoolCreateComingSoon =>
+      'Création de covoiturage disponible dans le prochain lot.';
+
+  @override
+  String get tripCarpoolEditComingSoon =>
+      'Édition de covoiturage disponible dans le prochain lot.';
 
   @override
   String get tripOverviewMyRoom => 'Ma chambre';

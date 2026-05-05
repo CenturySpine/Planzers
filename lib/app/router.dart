@@ -30,6 +30,7 @@ import 'package:planerz/features/trips/presentation/trip_activities_permissions_
 import 'package:planerz/features/trips/presentation/trip_general_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_meals_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
+import 'package:planerz/features/trips/presentation/trip_carpool_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_general_page.dart';
@@ -38,6 +39,7 @@ import 'package:planerz/features/trips/presentation/trip_member_preferences_page
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
+import 'package:planerz/features/carpool/presentation/trip_carpool_page.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[
@@ -199,6 +201,12 @@ final GoRouter appRouter = GoRouter(
                   ),
                 ),
                 GoRoute(
+                  path: 'carpool',
+                  builder: (context, state) => TripCarpoolPermissionsPage(
+                    tripId: state.pathParameters['tripId']!,
+                  ),
+                ),
+                GoRoute(
                   path: 'shopping',
                   builder: (context, state) => TripShoppingPermissionsPage(
                     tripId: state.pathParameters['tripId']!,
@@ -236,6 +244,11 @@ final GoRouter appRouter = GoRouter(
               path: 'meals',
               redirect: (context, state) =>
                   '/trips/${state.pathParameters['tripId']!}/settings/permissions/meals',
+            ),
+            GoRoute(
+              path: 'carpool',
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings/permissions/carpool',
             ),
             GoRoute(
               path: 'shopping',
@@ -326,8 +339,8 @@ final GoRouter appRouter = GoRouter(
             StatefulShellBranch(
               routes: <RouteBase>[
                 GoRoute(
-                  path: 'cars',
-                  builder: (context, state) => const TripCarsPage(),
+                  path: 'carpool',
+                  builder: (context, state) => const TripCarpoolPage(),
                 ),
               ],
             ),

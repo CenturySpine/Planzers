@@ -18,6 +18,8 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/carpool/data/trip_carpool.dart';
+import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -460,6 +462,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       ),
     );
     final rooms = roomsAsync.asData?.value ?? const [];
+    final carpools = ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
+        const [];
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final myAssignedRoomNames = myUid == null
@@ -569,6 +573,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   );
                 })
                 .toList();
+            final TripCarpool? myCarpool = myUid == null
+                ? null
+                : carpools.cast<TripCarpool?>().firstWhere(
+                    (entry) => entry?.assignedParticipantIds.contains(myUid) == true,
+                    orElse: () => null,
+                  );
+            final myCarpoolDetailLines = <String>[
+              if (myCarpool != null && myCarpool.driverUserId.trim().isNotEmpty)
+                '${l10n.tripCarpoolDriverLabel}: ${memberLabels[myCarpool.driverUserId] ?? l10n.tripParticipantsTraveler}',
+              if (myCarpool?.goesShopping == true) l10n.tripCarpoolShoppingFlag,
+            ];
             final activitiesCounters = activitiesCountersAsync.asData?.value;
             var unreadActivities = 0;
             var unreadAnnouncements = 0;
@@ -1260,17 +1275,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               SizedBox(
                                 width: halfTileWidth,
                                 child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileCars,
+                                  label: l10n.tripOverviewTileCarpool,
                                   icon: Icons.directions_car_outlined,
-                                  countLabel: '0',
+                                  countLabel: '${carpools.length}',
                                   backgroundColor: cs.secondaryContainer,
                                   iconColor: cs.secondary,
                                   showDetailBullets: false,
                                   wrapDetailLines: true,
-                                  emptyStateMessage:
-                                      l10n.tripOverviewTileComingSoon,
+                                  detailLines: myCarpoolDetailLines,
+                                  emptyStateMessage: l10n.tripCarpoolTileNoAssignment,
                                   onTap: () =>
-                                      context.go('/trips/${_trip.id}/cars'),
+                                      context.go('/trips/${_trip.id}/carpool'),
                                 ),
                               ),
                               SizedBox(

@@ -373,6 +373,11 @@ function defaultTripPermissions() {
     shopping: {
       deleteCheckedItems: 'admin',
     },
+    carpool: {
+      proposeCarpool: 'participant',
+      editCarpools: 'admin',
+      updateShoppingMeetupPoint: 'admin',
+    },
   };
 }
 
@@ -477,18 +482,20 @@ function assertTripInviteToken(data, token) {
 }
 
 /**
- * Rewires [fromId] to [toId] in expense groups, expenses, rooms, and meals.
+ * Rewires [fromId] to [toId] in expense groups, expenses, rooms, meals, and carpool cars.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} fromId
  * @param {string} toId
  */
 async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
   const db = admin.firestore();
-  const [groupsSnap, expensesSnap, roomsSnap, mealsSnap] = await Promise.all([
+  const carpoolDocRef = tripRef.collection('sections').doc('carpool');
+  const [groupsSnap, expensesSnap, roomsSnap, mealsSnap, carpoolDocSnap] = await Promise.all([
     tripRef.collection('expenseGroups').get(),
     tripRef.collection('expenses').get(),
     tripRef.collection('rooms').get(),
     tripRef.collection('meals').get(),
+    carpoolDocRef.get(),
   ]);
 
   /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
@@ -622,6 +629,86 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
       data: {
         participantIds: newParticipants,
         chefParticipantId: newChefParticipantId || null,
+      },
+    });
+  }
+
+  const carpoolDocData = carpoolDocSnap.exists ? (carpoolDocSnap.data() || {}) : {};
+  const cars = Array.isArray(carpoolDocData.cars) ? carpoolDocData.cars : [];
+  const nextCars = [];
+  let carpoolCarsDirty = false;
+  for (const rawCar of cars) {
+    const carpool = rawCar && typeof rawCar === 'object' ? rawCar : {};
+    const carId = normalizeString(carpool.id);
+    const assignedParticipantIds = (
+      Array.isArray(carpool.assignedParticipantIds)
+        ? carpool.assignedParticipantIds
+        : []
+    )
+      .map((value) => String(value).trim())
+      .filter((id) => id.length > 0);
+    const driverUserId = normalizeString(carpool.driverUserId);
+    const availableSeatsRaw = Number(carpool.availableSeats);
+    const availableSeats = Number.isInteger(availableSeatsRaw)
+      ? availableSeatsRaw
+      : 0;
+    let dirty = false;
+
+    let nextAssignedParticipantIds = assignedParticipantIds;
+    if (assignedParticipantIds.includes(fromId)) {
+      nextAssignedParticipantIds = [
+        ...new Set(
+          assignedParticipantIds.map((id) => (id === fromId ? toId : id))
+        ),
+      ];
+      dirty = true;
+    } else {
+      nextAssignedParticipantIds = [...new Set(assignedParticipantIds)];
+    }
+
+    let nextDriverUserId = driverUserId;
+    if (driverUserId === fromId) {
+      nextDriverUserId = toId;
+      dirty = true;
+    }
+
+    if (nextDriverUserId && !nextAssignedParticipantIds.includes(nextDriverUserId)) {
+      nextAssignedParticipantIds = [...nextAssignedParticipantIds, nextDriverUserId];
+      dirty = true;
+    }
+
+    if (
+      nextAssignedParticipantIds.includes(fromId) ||
+      (nextAssignedParticipantIds.includes(toId) && nextAssignedParticipantIds.includes(fromId))
+    ) {
+      throw new Error(
+        `carpool participant migration conflict (${tripRef.id}/${carId || 'unknown'}): ` +
+        `temporary and member ids still coexist`
+      );
+    }
+    if (availableSeats < 1 || nextAssignedParticipantIds.length > availableSeats) {
+      throw new Error(
+        `carpool participant migration exceeds seats (${tripRef.id}/${carId || 'unknown'}): ` +
+        `${nextAssignedParticipantIds.length} assigned for ${availableSeats} seats`
+      );
+    }
+
+    const updatedCar = { ...carpool };
+    if (dirty) {
+      updatedCar.assignedParticipantIds = nextAssignedParticipantIds;
+      updatedCar.driverUserId = nextDriverUserId || null;
+      updatedCar.updatedAt = admin.firestore.Timestamp.now();
+      carpoolCarsDirty = true;
+    }
+    nextCars.push(updatedCar);
+  }
+
+  if (carpoolCarsDirty) {
+    updates.push({
+      ref: carpoolDocRef,
+      data: {
+        cars: nextCars,
+        updatedAt: FieldValue.serverTimestamp(),
       },
     });
   }
@@ -2248,6 +2335,25 @@ exports.generateTripLinkPreview = onDocumentUpdated(
   }
 );
 
+exports.generateTripShoppingMeetupLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/sections/carpool',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.shoppingMeetupLinkUrl,
+      after.shoppingMeetupLinkUrl,
+      'shoppingMeetupLinkPreview'
+    );
+  }
+);
+
 exports.generateActivityLinkPreview = onDocumentUpdated(
   {
     document: 'trips/{tripId}/activities/{activityId}',
@@ -2291,6 +2397,24 @@ exports.generateTripLinkPreviewOnCreate = onDocumentCreated(
   async (event) => {
     const data = event.data.data() || {};
     await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
+exports.generateTripShoppingMeetupLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/sections/carpool',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(
+      event.data.ref,
+      undefined,
+      data.shoppingMeetupLinkUrl,
+      'shoppingMeetupLinkPreview'
+    );
   }
 );
 

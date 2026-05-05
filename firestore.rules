@@ -395,6 +395,70 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripDeleteRegisteredParticipantMinRole(tripId));
     }
 
+    function tripCarpoolProposeMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.carpool is map
+          && tripDoc(tripId).data.permissions.carpool.proposeCarpool is string
+        )
+        ? tripDoc(tripId).data.permissions.carpool.proposeCarpool
+        : 'participant';
+    }
+
+    function tripCarpoolEditCarpoolsMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.carpool is map
+          && tripDoc(tripId).data.permissions.carpool.editCarpools is string
+        )
+        ? tripDoc(tripId).data.permissions.carpool.editCarpools
+        : 'admin';
+    }
+
+    function tripCarpoolUpdateShoppingMeetupPointMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.carpool is map
+          && tripDoc(tripId).data.permissions.carpool.updateShoppingMeetupPoint is string
+        )
+        ? tripDoc(tripId).data.permissions.carpool.updateShoppingMeetupPoint
+        : 'admin';
+    }
+
+    function isCarpoolCreator(carpoolData) {
+      return signedIn()
+        && carpoolData.createdByUserId is string
+        && carpoolData.createdByUserId == request.auth.uid;
+    }
+
+    function canCreateCarpool(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripCarpoolProposeMinRole(tripId));
+    }
+
+    function canEditCarpool(tripId, currentCarpoolData) {
+      return isTripMember(tripId)
+        && (
+          isCarpoolCreator(currentCarpoolData)
+          || tripCallerRoleRank(tripId) >= roleRank(tripCarpoolEditCarpoolsMinRole(tripId))
+        );
+    }
+
+    function carpoolDataIsStructurallyValid(carpoolData) {
+      return carpoolData.driverUserId is string
+        && carpoolData.createdByUserId is string
+        && carpoolData.assignedParticipantIds is list
+        && carpoolData.availableSeats is int
+        && carpoolData.availableSeats >= 1
+        && carpoolData.assignedParticipantIds.size() <= carpoolData.availableSeats
+        && carpoolData.driverUserId in carpoolData.assignedParticipantIds;
+    }
+
+    function canManageTripCarpoolShoppingMeetup(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripCarpoolUpdateShoppingMeetupPointMinRole(tripId));
+    }
+
     function canReadTrip(data) {
       return signedIn()
         && (
@@ -675,6 +739,26 @@ service cloud.firestore {
           allow delete: if isTripMember(tripId)
             && userId == request.auth.uid;
         }
+      }
+
+      match /sections/{sectionId} {
+        allow read: if isTripMember(tripId);
+        allow create: if sectionId == 'carpool'
+          && canManageTripCarpoolShoppingMeetup(tripId)
+          && request.resource.data.keys().hasOnly([
+            'shoppingMeetupLinkUrl',
+            'shoppingMeetupLinkPreview',
+            'cars',
+            'updatedAt',
+          ]);
+        allow update: if sectionId == 'carpool'
+          && canManageTripCarpoolShoppingMeetup(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'shoppingMeetupLinkUrl',
+            'shoppingMeetupLinkPreview',
+            'cars',
+            'updatedAt',
+          ]);
       }
 
       match /announcements/{announcementId} {

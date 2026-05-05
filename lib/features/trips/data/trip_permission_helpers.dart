@@ -291,3 +291,94 @@ bool canManageMealRecipeForTrip({
     minRole: trip.mealsPermissions.manageRecipeMinRole,
   );
 }
+
+bool _canRunCarpoolActionForTrip({
+  required Trip trip,
+  required String? userId,
+  required TripPermissionRole minRole,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  final role = resolveTripPermissionRole(trip: trip, userId: uid);
+  return isTripRoleAllowed(currentRole: role, minRole: minRole);
+}
+
+bool canProposeCarpoolForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  return _canRunCarpoolActionForTrip(
+    trip: trip,
+    userId: userId,
+    minRole: trip.carpoolPermissions.proposeCarpoolMinRole,
+  );
+}
+
+bool canAssignPassengersForCarpool({
+  required Trip trip,
+  required String? userId,
+  required String? carpoolCreatedByUserId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
+    // Owner right: creator always keeps assignment control.
+    return true;
+  }
+  return _canRunCarpoolActionForTrip(
+    trip: trip,
+    userId: uid,
+    minRole: trip.carpoolPermissions.editCarpoolsMinRole,
+  );
+}
+
+bool canMarkCarpoolGoesShopping({
+  required Trip trip,
+  required String? userId,
+  required String? carpoolCreatedByUserId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
+    // Owner right: creator can always mark/unmark shopping.
+    return true;
+  }
+  return _canRunCarpoolActionForTrip(
+    trip: trip,
+    userId: uid,
+    minRole: trip.carpoolPermissions.editCarpoolsMinRole,
+  );
+}
+
+bool canManageCarpool({
+  required Trip trip,
+  required String? userId,
+  required String? carpoolCreatedByUserId,
+}) {
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty) return false;
+  if (!trip.memberIds.contains(uid)) return false;
+  if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
+    // Owner right: creator can always edit/delete own carpool.
+    return true;
+  }
+  return _canRunCarpoolActionForTrip(
+    trip: trip,
+    userId: uid,
+    minRole: trip.carpoolPermissions.editCarpoolsMinRole,
+  );
+}
+
+bool canUpdateCarpoolShoppingMeetupPointForTrip({
+  required Trip trip,
+  required String? userId,
+}) {
+  return _canRunCarpoolActionForTrip(
+    trip: trip,
+    userId: userId,
+    minRole: trip.carpoolPermissions.updateShoppingMeetupPointMinRole,
+  );
+}

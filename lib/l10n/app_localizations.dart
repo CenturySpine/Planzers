@@ -1621,13 +1621,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripCarsTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Voitures'**
+  /// **'Covoiturage'**
   String get tripCarsTitle;
 
   /// No description provided for @tripCarsComingSoon.
   ///
   /// In fr, this message translates to:
-  /// **'Covoiturage et véhicules. Contenu à venir.'**
+  /// **'Gestion du covoiturage. Contenu à venir.'**
   String get tripCarsComingSoon;
 
   /// No description provided for @tripMealsComingSoon.
@@ -3977,6 +3977,12 @@ abstract class AppLocalizations {
   /// **'Voitures'**
   String get tripOverviewTileCars;
 
+  /// No description provided for @tripOverviewTileCarpool.
+  ///
+  /// In fr, this message translates to:
+  /// **'Covoiturage'**
+  String get tripOverviewTileCarpool;
+
   /// No description provided for @tripOverviewTileGames.
   ///
   /// In fr, this message translates to:
@@ -4042,6 +4048,204 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'[À venir]'**
   String get tripOverviewTileComingSoon;
+
+  /// No description provided for @tripCarpoolDriverLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Conducteur'**
+  String get tripCarpoolDriverLabel;
+
+  /// No description provided for @tripCarpoolShoppingFlag.
+  ///
+  /// In fr, this message translates to:
+  /// **'Courses'**
+  String get tripCarpoolShoppingFlag;
+
+  /// No description provided for @tripCarpoolTileNoAssignment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune affectation'**
+  String get tripCarpoolTileNoAssignment;
+
+  /// No description provided for @tripCarpoolUnassignedWarningTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Affectation incomplète'**
+  String get tripCarpoolUnassignedWarningTitle;
+
+  /// No description provided for @tripCarpoolUnassignedWarningBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} participant(s) n\'est/ne sont assigné(s) à aucune voiture.'**
+  String tripCarpoolUnassignedWarningBody(int count);
+
+  /// No description provided for @tripCarpoolGlobalMeetupTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rendez-vous courses'**
+  String get tripCarpoolGlobalMeetupTitle;
+
+  /// No description provided for @tripCarpoolGlobalMeetupLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien Google Maps'**
+  String get tripCarpoolGlobalMeetupLabel;
+
+  /// No description provided for @tripCarpoolOpenMapsLink.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le lien Google Maps'**
+  String get tripCarpoolOpenMapsLink;
+
+  /// No description provided for @tripCarpoolEmptyState.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun covoiturage pour le moment.'**
+  String get tripCarpoolEmptyState;
+
+  /// No description provided for @tripCarpoolNavigateToMeetingPoint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Naviguer vers le point de rendez-vous'**
+  String get tripCarpoolNavigateToMeetingPoint;
+
+  /// No description provided for @tripCarpoolCreateAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Proposer un covoiturage'**
+  String get tripCarpoolCreateAction;
+
+  /// No description provided for @tripCarpoolCreateTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau covoiturage'**
+  String get tripCarpoolCreateTitle;
+
+  /// No description provided for @tripCarpoolEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le covoiturage'**
+  String get tripCarpoolEditTitle;
+
+  /// No description provided for @tripCarpoolMeetingPointLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse du point de rendez-vous'**
+  String get tripCarpoolMeetingPointLabel;
+
+  /// No description provided for @tripCarpoolNearestTransitStopLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Point transport en commun le plus proche'**
+  String get tripCarpoolNearestTransitStopLabel;
+
+  /// No description provided for @tripCarpoolDepartureAtLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date et heure de départ'**
+  String get tripCarpoolDepartureAtLabel;
+
+  /// No description provided for @tripCarpoolMeetingHour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Heure de RDV : {hour}'**
+  String tripCarpoolMeetingHour(Object hour);
+
+  /// No description provided for @tripCarpoolAvailableSeatsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Places disponibles'**
+  String get tripCarpoolAvailableSeatsLabel;
+
+  /// No description provided for @tripCarpoolRemainingSeats.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} place(s) restante(s)'**
+  String tripCarpoolRemainingSeats(int count);
+
+  /// No description provided for @tripCarpoolFull.
+  ///
+  /// In fr, this message translates to:
+  /// **'Complet'**
+  String get tripCarpoolFull;
+
+  /// No description provided for @tripCarpoolGoesShoppingLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voiture désignée pour faire les courses'**
+  String get tripCarpoolGoesShoppingLabel;
+
+  /// No description provided for @tripCarpoolPassengersTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participants transportés'**
+  String get tripCarpoolPassengersTitle;
+
+  /// No description provided for @tripCarpoolTemporaryParticipantLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyageur prévu'**
+  String get tripCarpoolTemporaryParticipantLabel;
+
+  /// No description provided for @tripCarpoolAlreadyAssignedTo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà affecté à {carpoolLabel}'**
+  String tripCarpoolAlreadyAssignedTo(Object carpoolLabel);
+
+  /// No description provided for @tripCarpoolSeatsInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nombre de places doit être au moins 1.'**
+  String get tripCarpoolSeatsInvalid;
+
+  /// No description provided for @tripCarpoolSeatsExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nombre de participants dépasse les places disponibles.'**
+  String get tripCarpoolSeatsExceeded;
+
+  /// No description provided for @tripCarpoolCreated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Covoiturage créé'**
+  String get tripCarpoolCreated;
+
+  /// No description provided for @tripCarpoolUpdated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Covoiturage mis à jour'**
+  String get tripCarpoolUpdated;
+
+  /// No description provided for @tripCarpoolDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce covoiturage ?'**
+  String get tripCarpoolDeleteTitle;
+
+  /// No description provided for @tripCarpoolDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce covoiturage sera supprimé définitivement.'**
+  String get tripCarpoolDeleteBody;
+
+  /// No description provided for @tripCarpoolDeleted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Covoiturage supprimé'**
+  String get tripCarpoolDeleted;
+
+  /// No description provided for @tripCarpoolCreateComingSoon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Création de covoiturage disponible dans le prochain lot.'**
+  String get tripCarpoolCreateComingSoon;
+
+  /// No description provided for @tripCarpoolEditComingSoon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Édition de covoiturage disponible dans le prochain lot.'**
+  String get tripCarpoolEditComingSoon;
 
   /// No description provided for @tripOverviewMyRoom.
   ///

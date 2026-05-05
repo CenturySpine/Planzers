@@ -9,6 +9,7 @@ class Trip {
     required this.destination,
     required this.address,
     required this.linkUrl,
+    this.shoppingMeetupLinkUrl = '',
     required this.photosStorageUrl,
     required this.cupidonModeEnabled,
     required this.ownerId,
@@ -21,6 +22,7 @@ class Trip {
     this.bannerImageUrl,
     this.bannerImagePath,
     this.linkPreview = const {},
+    this.shoppingMeetupLinkPreview = const {},
     this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
     this.generalPermissions = TripGeneralPermissions.defaults,
@@ -29,6 +31,7 @@ class Trip {
     this.activitiesPermissions = TripActivitiesPermissions.defaults,
     this.mealsPermissions = TripMealsPermissions.defaults,
     this.shoppingPermissions = TripShoppingPermissions.defaults,
+    this.carpoolPermissions = TripCarpoolPermissions.defaults,
   });
 
   final String id;
@@ -36,6 +39,7 @@ class Trip {
   final String destination;
   final String address;
   final String linkUrl;
+  final String shoppingMeetupLinkUrl;
   final String photosStorageUrl;
   final bool cupidonModeEnabled;
   final String ownerId;
@@ -49,6 +53,7 @@ class Trip {
   final TripActivitiesPermissions activitiesPermissions;
   final TripMealsPermissions mealsPermissions;
   final TripShoppingPermissions shoppingPermissions;
+  final TripCarpoolPermissions carpoolPermissions;
   final DateTime createdAt;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -65,6 +70,7 @@ class Trip {
 
   /// Open Graph / meta preview data written by Cloud Functions after a [linkUrl] fetch.
   final Map<String, dynamic> linkPreview;
+  final Map<String, dynamic> shoppingMeetupLinkPreview;
 
   /// Public display strings for members (e.g. email local part), readable by all
   /// trip participants; populated by Cloud Functions / client on create.
@@ -126,6 +132,10 @@ class Trip {
       destination: (data['destination'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',
       linkUrl: (data['linkUrl'] as String?) ?? '',
+      shoppingMeetupLinkUrl:
+          (data['shoppingMeetupLinkUrl'] as String?)?.trim().isNotEmpty == true
+              ? (data['shoppingMeetupLinkUrl'] as String).trim()
+              : ((data['carpoolShoppingMeetupLinkUrl'] as String?) ?? ''),
       photosStorageUrl: (data['photosStorageUrl'] as String?) ?? '',
       cupidonModeEnabled: data['cupidonModeEnabled'] != false,
       ownerId: (data['ownerId'] as String?) ?? '',
@@ -142,6 +152,10 @@ class Trip {
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       linkPreview:
           (data['linkPreview'] as Map<String, dynamic>?) ?? const {},
+      shoppingMeetupLinkPreview:
+          (data['shoppingMeetupLinkPreview'] as Map<String, dynamic>?) ??
+              ((data['carpoolShoppingMeetupLinkPreview'] as Map<String, dynamic>?) ??
+                  const {}),
       memberPublicLabels:
           memberPublicLabelsFromFirestore(data['memberPublicLabels']),
       adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),
@@ -163,6 +177,9 @@ class Trip {
       shoppingPermissions: TripShoppingPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['shopping'],
       ),
+      carpoolPermissions: TripCarpoolPermissions.fromFirestore(
+        (data['permissions'] as Map<String, dynamic>?)?['carpool'],
+      ),
     );
   }
 
@@ -172,6 +189,10 @@ class Trip {
       'destination': destination,
       'address': address,
       'linkUrl': linkUrl,
+      if (shoppingMeetupLinkUrl.trim().isNotEmpty)
+        'shoppingMeetupLinkUrl': shoppingMeetupLinkUrl.trim(),
+      if (shoppingMeetupLinkPreview.isNotEmpty)
+        'shoppingMeetupLinkPreview': shoppingMeetupLinkPreview,
       'photosStorageUrl': photosStorageUrl,
       'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': ownerId,
@@ -196,6 +217,7 @@ class Trip {
         'activities': activitiesPermissions.toFirestore(),
         'meals': mealsPermissions.toFirestore(),
         'shopping': shoppingPermissions.toFirestore(),
+        'carpool': carpoolPermissions.toFirestore(),
       },
     };
   }

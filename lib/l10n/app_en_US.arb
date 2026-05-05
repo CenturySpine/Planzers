@@ -318,8 +318,8 @@
   "tripTabExpenses": "Expenses",
   "tripTabMeals": "Meals",
   "tripTabShopping": "Shopping",
-  "tripCarsTitle": "Cars",
-  "tripCarsComingSoon": "Carpooling and vehicles. Content coming soon.",
+  "tripCarsTitle": "Carpool",
+  "tripCarsComingSoon": "Carpool management. Content coming soon.",
   "tripMealsComingSoon": "Meal planning. Content coming soon.",
   "tripThisTrip": "This trip",
   "tripStayDialogTitle": "My dates on this trip",
@@ -843,6 +843,7 @@
   "tripOverviewTileActivities": "Planning",
   "tripOverviewTileRooms": "Rooms",
   "tripOverviewTileCars": "Cars",
+  "tripOverviewTileCarpool": "Carpool",
   "tripOverviewTileGames": "Games",
   "tripOverviewTopTabAnnouncements": "Announcements",
   "tripAnnouncementsPageTitle": "Organizers announcements",
@@ -854,6 +855,63 @@
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
   "tripOverviewTileComingSoon": "[Coming soon]",
+  "tripCarpoolDriverLabel": "Driver",
+  "tripCarpoolShoppingFlag": "Shopping",
+  "tripCarpoolTileNoAssignment": "No assignment",
+  "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
+  "tripCarpoolUnassignedWarningBody": "{count} participant(s) are not assigned to any carpool.",
+  "@tripCarpoolUnassignedWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolGlobalMeetupTitle": "Shopping meetup",
+  "tripCarpoolGlobalMeetupLabel": "Google Maps link",
+  "tripCarpoolOpenMapsLink": "Open Google Maps link",
+  "tripCarpoolEmptyState": "No carpool yet.",
+  "tripCarpoolNavigateToMeetingPoint": "Navigate to meeting point",
+  "tripCarpoolCreateAction": "Propose a carpool",
+  "tripCarpoolCreateTitle": "New carpool",
+  "tripCarpoolEditTitle": "Edit carpool",
+  "tripCarpoolMeetingPointLabel": "Meeting point address",
+  "tripCarpoolNearestTransitStopLabel": "Nearest public transit stop",
+  "tripCarpoolDepartureAtLabel": "Departure date and time",
+  "tripCarpoolMeetingHour": "Meeting time: {hour}",
+  "@tripCarpoolMeetingHour": {
+    "placeholders": {
+      "hour": {}
+    }
+  },
+  "tripCarpoolAvailableSeatsLabel": "Available seats",
+  "tripCarpoolRemainingSeats": "{count} seat(s) left",
+  "@tripCarpoolRemainingSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolFull": "Full",
+  "tripCarpoolGoesShoppingLabel": "Car designated for shopping",
+  "tripCarpoolPassengersTitle": "Assigned passengers",
+  "tripCarpoolTemporaryParticipantLabel": "Planned traveler",
+  "tripCarpoolAlreadyAssignedTo": "Already assigned to {carpoolLabel}",
+  "@tripCarpoolAlreadyAssignedTo": {
+    "placeholders": {
+      "carpoolLabel": {}
+    }
+  },
+  "tripCarpoolSeatsInvalid": "Available seats must be at least 1.",
+  "tripCarpoolSeatsExceeded": "Assigned passengers exceed available seats.",
+  "tripCarpoolCreated": "Carpool created",
+  "tripCarpoolUpdated": "Carpool updated",
+  "tripCarpoolDeleteTitle": "Delete this carpool?",
+  "tripCarpoolDeleteBody": "This carpool will be permanently deleted.",
+  "tripCarpoolDeleted": "Carpool deleted",
+  "tripCarpoolCreateComingSoon": "Carpool creation will be available in the next batch.",
+  "tripCarpoolEditComingSoon": "Carpool editing will be available in the next batch.",
   "tripOverviewMyRoom": "My room",
   "tripOverviewMyRooms": "My rooms",
   "tripOverviewTabSummary": "Overview",
