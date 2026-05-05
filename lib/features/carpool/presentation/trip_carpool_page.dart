@@ -10,6 +10,7 @@ import 'package:planerz/features/carpool/presentation/trip_carpool_form_page.dar
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -252,6 +253,8 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                   for (final carpool in carpools) ...[
                     _TripCarpoolCard(
                       carpool: carpool,
+                      isCurrentUserInCarpool: myUid != null &&
+                          carpool.assignedParticipantIds.contains(myUid),
                       driverLabel: memberLabels[carpool.driverUserId] ??
                           l10n.tripParticipantsTraveler,
                       driverUserData: userDocs[carpool.driverUserId],
@@ -311,6 +314,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
 class _TripCarpoolCard extends StatelessWidget {
   const _TripCarpoolCard({
     required this.carpool,
+    required this.isCurrentUserInCarpool,
     required this.driverLabel,
     required this.driverUserData,
     required this.passengerLabels,
@@ -318,6 +322,7 @@ class _TripCarpoolCard extends StatelessWidget {
   });
 
   final TripCarpool carpool;
+  final bool isCurrentUserInCarpool;
   final String driverLabel;
   final Map<String, dynamic>? driverUserData;
   final List<String> passengerLabels;
@@ -327,6 +332,7 @@ class _TripCarpoolCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final planerzPalette = context.planerzColors;
     final departureTime = MaterialLocalizations.of(context).formatTimeOfDay(
       TimeOfDay.fromDateTime(carpool.departureAt),
       alwaysUse24HourFormat: true,
@@ -341,6 +347,15 @@ class _TripCarpoolCard extends StatelessWidget {
         : l10n.tripCarpoolFull;
 
     return Card(
+      clipBehavior:
+          isCurrentUserInCarpool ? Clip.antiAlias : Clip.none,
+      color: isCurrentUserInCarpool ? planerzPalette.successContainer : null,
+      shape: isCurrentUserInCarpool
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: planerzPalette.success, width: 2),
+            )
+          : null,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
