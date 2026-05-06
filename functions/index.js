@@ -697,7 +697,7 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
     if (dirty) {
       updatedCar.assignedParticipantIds = nextAssignedParticipantIds;
       updatedCar.driverUserId = nextDriverUserId || null;
-      updatedCar.updatedAt = admin.firestore.Timestamp.now();
+      updatedCar.updatedAt = Timestamp.now();
       carpoolCarsDirty = true;
     }
     nextCars.push(updatedCar);
