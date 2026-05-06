@@ -334,12 +334,39 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  l10n.tripCarpoolGlobalMeetupTitle,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        l10n.tripCarpoolGlobalMeetupTitle,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
+                                      ),
+                                    ),
+                                    if (canEditGlobalMeetup &&
+                                        !_isEditingGlobalMeetup)
+                                      IconButton(
+                                        tooltip: l10n.commonEdit,
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 28,
+                                          minHeight: 28,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isEditingGlobalMeetup = true;
+                                            _globalMeetupController.text =
+                                                carpoolSection
+                                                    .shoppingMeetupLinkUrl;
+                                          });
+                                        },
+                                        icon: const Icon(Icons.edit_outlined),
+                                      ),
+                                  ],
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 4),
                                 if (canEditGlobalMeetup &&
                                     (_isEditingGlobalMeetup ||
                                         carpoolSection.shoppingMeetupLinkUrl
@@ -396,24 +423,6 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                     showCard: true,
                                     showTitleLabel: false,
                                   ),
-                                  if (canEditGlobalMeetup) ...[
-                                    const SizedBox(height: 8),
-                                    Align(
-                                      alignment: AlignmentDirectional.centerEnd,
-                                      child: IconButton(
-                                        tooltip: l10n.commonEdit,
-                                        onPressed: () {
-                                          setState(() {
-                                            _isEditingGlobalMeetup = true;
-                                            _globalMeetupController.text =
-                                                carpoolSection
-                                                    .shoppingMeetupLinkUrl;
-                                          });
-                                        },
-                                        icon: const Icon(Icons.edit_outlined),
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ],
                             ),
