@@ -2331,7 +2331,7 @@ exports.generateTripLinkPreview = onDocumentUpdated(
 
 exports.generateTripShoppingMeetupLinkPreview = onDocumentUpdated(
   {
-    document: 'trips/{tripId}/sections/carpool',
+    document: 'trips/{tripId}/sections/carpoolShoppingMeetup',
     timeoutSeconds: 30,
     memory: '256MiB',
     secrets: ['GOOGLE_PLACES_API_KEY'],
@@ -2396,7 +2396,7 @@ exports.generateTripLinkPreviewOnCreate = onDocumentCreated(
 
 exports.generateTripShoppingMeetupLinkPreviewOnCreate = onDocumentCreated(
   {
-    document: 'trips/{tripId}/sections/carpool',
+    document: 'trips/{tripId}/sections/carpoolShoppingMeetup',
     timeoutSeconds: 30,
     memory: '256MiB',
     secrets: ['GOOGLE_PLACES_API_KEY'],

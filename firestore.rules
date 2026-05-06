@@ -712,14 +712,14 @@ service cloud.firestore {
 
       match /sections/{sectionId} {
         allow read: if isTripMember(tripId);
-        allow create: if sectionId == 'carpool'
+        allow create: if sectionId in ['carpool', 'carpoolShoppingMeetup']
           && canManageTripCarpoolShoppingMeetup(tripId)
           && request.resource.data.keys().hasOnly([
             'shoppingMeetupLinkUrl',
             'shoppingMeetupLinkPreview',
             'updatedAt',
           ]);
-        allow update: if sectionId == 'carpool'
+        allow update: if sectionId in ['carpool', 'carpoolShoppingMeetup']
           && canManageTripCarpoolShoppingMeetup(tripId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'shoppingMeetupLinkUrl',

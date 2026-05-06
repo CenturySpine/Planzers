@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,7 @@ class TripCarpoolsRepository {
 
   final FirebaseFirestore firestore;
   static const _carpoolDocId = 'carpool';
+  static const _carpoolShoppingMeetupDocId = 'carpoolShoppingMeetup';
 
   DocumentReference<Map<String, dynamic>> _carpoolDocRef(String tripId) {
     return firestore
@@ -31,6 +34,16 @@ class TripCarpoolsRepository {
         .doc(tripId)
         .collection('sections')
         .doc(_carpoolDocId);
+  }
+
+  DocumentReference<Map<String, dynamic>> _carpoolShoppingMeetupDocRef(
+    String tripId,
+  ) {
+    return firestore
+        .collection('trips')
+        .doc(tripId)
+        .collection('sections')
+        .doc(_carpoolShoppingMeetupDocId);
   }
 
   Stream<List<TripCarpool>> watchTripCarpools(String tripId) {
@@ -65,9 +78,61 @@ class TripCarpoolsRepository {
     if (cleanTripId.isEmpty) {
       return Stream.value(const TripCarpoolSection());
     }
-    return _carpoolDocRef(cleanTripId).snapshots().map((snapshot) {
-      final data = snapshot.data() ?? const <String, dynamic>{};
-      return TripCarpoolSection.fromMap(data);
+    return Stream.multi((controller) {
+      Map<String, dynamic> latestCarpoolData = const <String, dynamic>{};
+      Map<String, dynamic> latestShoppingMeetupData = const <String, dynamic>{};
+      var hasCarpoolSnapshot = false;
+      var hasShoppingMeetupSnapshot = false;
+
+      void emitSectionIfReady() {
+        if (!hasCarpoolSnapshot || !hasShoppingMeetupSnapshot) {
+          return;
+        }
+
+        final shoppingMeetupLinkUrl = _resolvedShoppingMeetupLinkUrl(
+          latestCarpoolData,
+          latestShoppingMeetupData,
+        );
+        final shoppingMeetupLinkPreview = _resolvedShoppingMeetupLinkPreview(
+          latestCarpoolData,
+          latestShoppingMeetupData,
+        );
+        final cars = _resolvedCars(latestCarpoolData);
+
+        controller.add(
+          TripCarpoolSection(
+            shoppingMeetupLinkUrl: shoppingMeetupLinkUrl,
+            shoppingMeetupLinkPreview: shoppingMeetupLinkPreview,
+            cars: cars,
+          ),
+        );
+      }
+
+      final carpoolSubscription = _carpoolDocRef(cleanTripId).snapshots().listen(
+        (snapshot) {
+          latestCarpoolData = snapshot.data() ?? const <String, dynamic>{};
+          hasCarpoolSnapshot = true;
+          emitSectionIfReady();
+        },
+        onError: controller.addError,
+      );
+
+      final shoppingMeetupSubscription = _carpoolShoppingMeetupDocRef(cleanTripId)
+          .snapshots()
+          .listen(
+            (snapshot) {
+              latestShoppingMeetupData =
+                  snapshot.data() ?? const <String, dynamic>{};
+              hasShoppingMeetupSnapshot = true;
+              emitSectionIfReady();
+            },
+            onError: controller.addError,
+          );
+
+      controller.onCancel = () async {
+        await carpoolSubscription.cancel();
+        await shoppingMeetupSubscription.cancel();
+      };
     });
   }
 
@@ -79,7 +144,7 @@ class TripCarpoolsRepository {
     if (cleanTripId.isEmpty) {
       throw ArgumentError('tripId is required');
     }
-    await _carpoolDocRef(cleanTripId).set(<String, dynamic>{
+    await _carpoolShoppingMeetupDocRef(cleanTripId).set(<String, dynamic>{
       'shoppingMeetupLinkUrl': shoppingMeetupLinkUrl.trim(),
       'updatedAt': Timestamp.fromDate(DateTime.now().toUtc()),
     }, SetOptions(merge: true));
@@ -186,4 +251,38 @@ class TripCarpoolsRepository {
       'carpoolId': cleanCarpoolId,
     });
   }
+}
+
+String _resolvedShoppingMeetupLinkUrl(
+  Map<String, dynamic> carpoolData,
+  Map<String, dynamic> shoppingMeetupData,
+) {
+  final shoppingMeetupValue =
+      (shoppingMeetupData['shoppingMeetupLinkUrl'] as String? ?? '').trim();
+  if (shoppingMeetupValue.isNotEmpty) {
+    return shoppingMeetupValue;
+  }
+  return (carpoolData['shoppingMeetupLinkUrl'] as String? ?? '').trim();
+}
+
+Map<String, dynamic> _resolvedShoppingMeetupLinkPreview(
+  Map<String, dynamic> carpoolData,
+  Map<String, dynamic> shoppingMeetupData,
+) {
+  final shoppingMeetupPreview = shoppingMeetupData['shoppingMeetupLinkPreview'];
+  if (shoppingMeetupPreview is Map<String, dynamic>) {
+    return shoppingMeetupPreview;
+  }
+  final fallbackPreview = carpoolData['shoppingMeetupLinkPreview'];
+  if (fallbackPreview is Map<String, dynamic>) {
+    return fallbackPreview;
+  }
+  return const <String, dynamic>{};
+}
+
+List<Map<String, dynamic>> _resolvedCars(Map<String, dynamic> carpoolData) {
+  return ((carpoolData['cars'] as List<dynamic>?) ?? const <dynamic>[])
+      .whereType<Map>()
+      .map((entry) => Map<String, dynamic>.from(entry))
+      .toList(growable: false);
 }
