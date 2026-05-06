@@ -677,15 +677,6 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
       dirty = true;
     }
 
-    if (
-      nextAssignedParticipantIds.includes(fromId) ||
-      (nextAssignedParticipantIds.includes(toId) && nextAssignedParticipantIds.includes(fromId))
-    ) {
-      throw new Error(
-        `carpool participant migration conflict (${tripRef.id}/${carId || 'unknown'}): ` +
-        `temporary and member ids still coexist`
-      );
-    }
     if (availableSeats < 1 || nextAssignedParticipantIds.length > availableSeats) {
       throw new Error(
         `carpool participant migration exceeds seats (${tripRef.id}/${carId || 'unknown'}): ` +
