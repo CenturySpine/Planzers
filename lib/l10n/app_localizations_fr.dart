@@ -2239,11 +2239,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
 
   @override
-  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage pour vous';
+  String get tripCarpoolSelfUnassignedTitle =>
+      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
 
   @override
   String get tripCarpoolSelfUnassignedBody =>
-      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
+      'Cliquer sur l\'icône « rejoindre » pour rejoindre un covoiturage où il y a encore de la place.';
 
   @override
   String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';
@@ -4723,11 +4724,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
 
   @override
-  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage pour vous';
+  String get tripCarpoolSelfUnassignedTitle =>
+      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
 
   @override
   String get tripCarpoolSelfUnassignedBody =>
-      'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.';
+      'Cliquer sur l\'icône « rejoindre » pour rejoindre un covoiturage où il y a encore de la place.';
 
   @override
   String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';

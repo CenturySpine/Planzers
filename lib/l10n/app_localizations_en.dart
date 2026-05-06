@@ -2223,11 +2223,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripCarpoolUnassignedWarningTitle => 'Incomplete assignment';
 
   @override
-  String get tripCarpoolSelfUnassignedTitle => 'You\'re not in a carpool';
+  String get tripCarpoolSelfUnassignedTitle =>
+      'You are not assigned to any carpool for this trip.';
 
   @override
   String get tripCarpoolSelfUnassignedBody =>
-      'You are not assigned to any carpool for this trip.';
+      'Click the \"join\" icon to join a carpool that still has available seats.';
 
   @override
   String get tripCarpoolJoinTooltip => 'Join this carpool';
@@ -4685,11 +4686,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripCarpoolUnassignedWarningTitle => 'Incomplete assignment';
 
   @override
-  String get tripCarpoolSelfUnassignedTitle => 'You\'re not in a carpool';
+  String get tripCarpoolSelfUnassignedTitle =>
+      'You are not assigned to any carpool for this trip.';
 
   @override
   String get tripCarpoolSelfUnassignedBody =>
-      'You are not assigned to any carpool for this trip.';
+      'Click the \"join\" icon to join a carpool that still has available seats.';
 
   @override
   String get tripCarpoolJoinTooltip => 'Join this carpool';

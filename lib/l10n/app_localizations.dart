@@ -4076,13 +4076,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripCarpoolSelfUnassignedTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Pas de covoiturage pour vous'**
+  /// **'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.'**
   String get tripCarpoolSelfUnassignedTitle;
 
   /// No description provided for @tripCarpoolSelfUnassignedBody.
   ///
   /// In fr, this message translates to:
-  /// **'Vous n\'êtes affecté à aucun covoiturage pour ce voyage.'**
+  /// **'Cliquer sur l\'icône « rejoindre » pour rejoindre un covoiturage où il y a encore de la place.'**
   String get tripCarpoolSelfUnassignedBody;
 
   /// No description provided for @tripCarpoolJoinTooltip.

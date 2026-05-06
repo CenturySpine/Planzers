@@ -792,30 +792,43 @@ class _CarpoolSelfAssignmentSvgButton extends StatelessWidget {
     final enabled = onPressed != null && !showSpinner;
     final effectiveColor =
         enabled ? iconColor : iconColor.withValues(alpha: 0.38);
+    final backgroundColor = enabled
+        ? iconColor.withValues(alpha: 0.14)
+        : iconColor.withValues(alpha: 0.08);
+    final borderColor = enabled
+        ? iconColor.withValues(alpha: 0.42)
+        : iconColor.withValues(alpha: 0.18);
+    final roundedRectangleShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+      side: BorderSide(color: borderColor),
+    );
 
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: Colors.transparent,
-        type: MaterialType.transparency,
+        color: backgroundColor,
+        elevation: enabled ? 1 : 0,
+        shadowColor: iconColor.withValues(alpha: 0.22),
+        shape: roundedRectangleShape,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: enabled ? onPressed : null,
-          customBorder: const CircleBorder(),
+          customBorder: roundedRectangleShape,
           overlayColor: WidgetStateProperty.resolveWith((states) {
             final base = iconColor;
             if (states.contains(WidgetState.pressed)) {
-              return base.withValues(alpha: 0.18);
+              return base.withValues(alpha: 0.24);
             }
             if (states.contains(WidgetState.hovered)) {
-              return base.withValues(alpha: 0.10);
+              return base.withValues(alpha: 0.16);
             }
             if (states.contains(WidgetState.focused)) {
-              return base.withValues(alpha: 0.10);
+              return base.withValues(alpha: 0.16);
             }
             return null;
           }),
           child: Padding(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(6),
             child: showSpinner
                 ? SizedBox(
                     width: 22,
