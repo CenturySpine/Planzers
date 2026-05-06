@@ -651,7 +651,7 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
     const availableSeatsRaw = Number(carpool.availableSeats);
     const availableSeats = Number.isInteger(availableSeatsRaw)
       ? availableSeatsRaw
-      : 0;
+      : null;
     let dirty = false;
 
     let nextAssignedParticipantIds = assignedParticipantIds;
@@ -677,7 +677,10 @@ async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
       dirty = true;
     }
 
-    if (availableSeats < 1 || nextAssignedParticipantIds.length > availableSeats) {
+    if (
+      Number.isInteger(availableSeats) &&
+      (availableSeats < 1 || nextAssignedParticipantIds.length > availableSeats)
+    ) {
       throw new Error(
         `carpool participant migration exceeds seats (${tripRef.id}/${carId || 'unknown'}): ` +
         `${nextAssignedParticipantIds.length} assigned for ${availableSeats} seats`
