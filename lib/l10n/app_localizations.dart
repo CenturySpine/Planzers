@@ -4001,6 +4001,30 @@ abstract class AppLocalizations {
   /// **'Jeux de société'**
   String get tripBoardGamesTab;
 
+  /// No description provided for @tripGamesIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"'**
+  String get tripGamesIntro;
+
+  /// No description provided for @tripGamesSearchLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher un jeu'**
+  String get tripGamesSearchLabel;
+
+  /// No description provided for @tripGamesSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Filtrer par nom du jeu'**
+  String get tripGamesSearchHint;
+
+  /// No description provided for @tripGamesNoSearchMatch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun jeu ne correspond à cette recherche.'**
+  String get tripGamesNoSearchMatch;
+
   /// No description provided for @tripGamesEmpty.
   ///
   /// In fr, this message translates to:

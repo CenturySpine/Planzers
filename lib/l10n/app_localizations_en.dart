@@ -2187,6 +2187,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripBoardGamesTab => 'Board games';
 
   @override
+  String get tripGamesIntro =>
+      'Find here the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
+
+  @override
+  String get tripGamesSearchLabel => 'Search for a game';
+
+  @override
+  String get tripGamesSearchHint => 'Filter by game name';
+
+  @override
+  String get tripGamesNoSearchMatch => 'No games match this search.';
+
+  @override
   String get tripGamesEmpty => 'No games yet.';
 
   @override
@@ -4705,6 +4718,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripBoardGamesTab => 'Board games';
+
+  @override
+  String get tripGamesIntro =>
+      'Find here the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
+
+  @override
+  String get tripGamesSearchLabel => 'Search for a game';
+
+  @override
+  String get tripGamesSearchHint => 'Filter by game name';
+
+  @override
+  String get tripGamesNoSearchMatch => 'No games match this search.';
 
   @override
   String get tripGamesEmpty => 'No games yet.';

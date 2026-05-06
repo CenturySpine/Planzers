@@ -25,15 +25,24 @@ class TripGamesPage extends ConsumerStatefulWidget {
 class _TripGamesPageState extends ConsumerState<TripGamesPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
+    _searchController = TextEditingController()
+      ..addListener(() {
+        final nextQuery = _searchController.text.trim();
+        if (nextQuery == _searchQuery) return;
+        setState(() => _searchQuery = nextQuery);
+      });
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -127,6 +136,13 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
 
         return gamesAsync.when(
           data: (games) {
+            final normalizedSearchQuery = _searchQuery.toLowerCase();
+            final filteredGames = normalizedSearchQuery.isEmpty
+                ? games
+                : games
+                    .where((game) =>
+                        game.name.toLowerCase().contains(normalizedSearchQuery))
+                    .toList(growable: false);
             final creatorIds = games
                 .map((game) => game.createdBy.trim())
                 .where((id) => id.isNotEmpty)
@@ -152,58 +168,85 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
               body: TabBarView(
                 controller: _tabController,
                 children: [
-                  games.isEmpty
-                      ? Center(child: Text(l10n.tripGamesEmpty))
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                          itemCount: games.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final game = games[index];
-                            final creatorLabel = resolveTripMemberDisplayLabel(
-                              memberId: game.createdBy,
-                              userData: usersById[game.createdBy],
-                              tripMemberPublicLabels: trip.memberPublicLabels,
-                              currentUserId: currentUserId,
-                              emptyFallback: l10n.tripParticipantsTraveler,
-                            );
-                            final canDelete =
-                                game.createdBy == currentUserId || canAdminEdit;
-                            final canEdit = canDelete;
+                  ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+                    itemCount: filteredGames.length + 2,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Text(
+                          l10n.tripGamesIntro,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        );
+                      }
+                      if (index == 1) {
+                        return TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            labelText: l10n.tripGamesSearchLabel,
+                            hintText: l10n.tripGamesSearchHint,
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: l10n.nameSearchClear,
+                                    onPressed: () => _searchController.clear(),
+                                    icon: const Icon(Icons.clear),
+                                  ),
+                          ),
+                        );
+                      }
+                      if (games.isEmpty) {
+                        return Center(child: Text(l10n.tripGamesEmpty));
+                      }
+                      if (filteredGames.isEmpty) {
+                        return Center(child: Text(l10n.tripGamesNoSearchMatch));
+                      }
 
-                            return Card(
-                              child: ListTile(
-                                leading: buildProfileBadge(
-                                  context: context,
-                                  displayLabel: creatorLabel,
-                                  userData: usersById[game.createdBy],
-                                  size: 30,
+                      final game = filteredGames[index - 2];
+                      final creatorLabel = resolveTripMemberDisplayLabel(
+                        memberId: game.createdBy,
+                        userData: usersById[game.createdBy],
+                        tripMemberPublicLabels: trip.memberPublicLabels,
+                        currentUserId: currentUserId,
+                        emptyFallback: l10n.tripParticipantsTraveler,
+                      );
+                      final canDelete =
+                          game.createdBy == currentUserId || canAdminEdit;
+                      final canEdit = canDelete;
+
+                      return Card(
+                        child: ListTile(
+                          minVerticalPadding: 8,
+                          minTileHeight: 72,
+                          leading: buildProfileBadge(
+                            context: context,
+                            displayLabel: creatorLabel,
+                            userData: usersById[game.createdBy],
+                            size: 30,
+                          ),
+                          title: Text(
+                            game.name.isEmpty ? l10n.activitiesUntitled : game.name,
+                          ),
+                          subtitle: game.linkUrl.trim().isEmpty
+                              ? null
+                              : Text(
+                                  game.linkUrl,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                title: Text(
-                                  game.name.isEmpty
-                                      ? l10n.activitiesUntitled
-                                      : game.name,
-                                ),
-                                subtitle: game.linkUrl.trim().isEmpty
-                                    ? null
-                                    : Text(
-                                        game.linkUrl,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                trailing:
-                                    LinkPreviewThumbnail(preview: game.linkPreview),
-                                onTap: () => _openBoardGameDialog(
-                                  tripId: trip.id,
-                                  game: game,
-                                  canEdit: canEdit,
-                                  canDelete: canDelete,
-                                ),
-                              ),
-                            );
-                          },
+                          trailing: LinkPreviewThumbnail(preview: game.linkPreview),
+                          onTap: () => _openBoardGameDialog(
+                            tripId: trip.id,
+                            game: game,
+                            canEdit: canEdit,
+                            canDelete: canDelete,
+                          ),
                         ),
+                      );
+                    },
+                  ),
                 ],
               ),
               floatingActionButton: FloatingActionButton(
@@ -357,6 +400,50 @@ class _BoardGameDialogState extends State<_BoardGameDialog> {
     setState(() => _isEditingExisting = false);
   }
 
+  Widget _readOnlyLabelValue({
+    required String label,
+    required String value,
+    Widget? trailing,
+  }) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing,
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -364,79 +451,116 @@ class _BoardGameDialogState extends State<_BoardGameDialog> {
     final canEnterEditMode = isEdit && widget.canEdit;
     final isReadOnly = isEdit && !(_isEditingExisting && canEnterEditMode);
     final hasLink = _urlController.text.trim().isNotEmpty;
+    final effectiveName = _nameController.text.trim().isEmpty
+        ? l10n.activitiesUntitled
+        : _nameController.text.trim();
+    final effectiveLink = _urlController.text.trim().isEmpty
+        ? l10n.commonNotProvided
+        : _urlController.text.trim();
     return AlertDialog(
       title: Text(isEdit ? l10n.tripGamesEditTitle : l10n.tripGamesAddTitle),
-      content: Form(
-        key: _formKey,
-        child: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      content: SizedBox(
+        width: 420,
+        child: isReadOnly
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _readOnlyLabelValue(
+                    label: l10n.commonName,
+                    value: effectiveName,
+                  ),
+                  const SizedBox(height: 12),
+                  _readOnlyLabelValue(
+                    label: l10n.tripGamesUrlLabel,
+                    value: effectiveLink,
+                    trailing: hasLink
+                        ? IconButton(
+                            tooltip: l10n.linkLabel,
+                            onPressed: _openLink,
+                            icon: const Icon(Icons.open_in_new),
+                            visualDensity: VisualDensity.compact,
+                          )
+                        : null,
+                  ),
+                ],
+              )
+            : Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      readOnly: isReadOnly,
+                      decoration: InputDecoration(
+                        labelText: l10n.commonName,
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: isReadOnly
+                          ? null
+                          : (value) {
+                              if ((value ?? '').trim().isEmpty) {
+                                return l10n.commonRequired;
+                              }
+                              return null;
+                            },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _urlController,
+                      readOnly: isReadOnly,
+                      decoration: InputDecoration(
+                        labelText: l10n.tripGamesUrlLabel,
+                        border: const OutlineInputBorder(),
+                        hintText: 'https://...',
+                      ),
+                      keyboardType: TextInputType.url,
+                      validator: isReadOnly ? null : _validateUrl,
+                    ),
+                  ],
+                ),
+              ),
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              TextFormField(
-                controller: _nameController,
-                readOnly: isReadOnly,
-                decoration: InputDecoration(
-                  labelText: l10n.commonName,
-                  border: const OutlineInputBorder(),
+              if (isEdit && widget.canDelete)
+                IconButton.outlined(
+                  tooltip: l10n.commonDelete,
+                  onPressed: _confirmDelete,
+                  icon: const Icon(Icons.delete_outline),
                 ),
-                validator: isReadOnly
-                    ? null
-                    : (value) {
-                        if ((value ?? '').trim().isEmpty) {
-                          return l10n.commonRequired;
-                        }
-                        return null;
-                      },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _urlController,
-                readOnly: isReadOnly,
-                decoration: InputDecoration(
-                  labelText: l10n.tripGamesUrlLabel,
-                  border: const OutlineInputBorder(),
-                  hintText: 'https://...',
+              if (isReadOnly && canEnterEditMode)
+                IconButton.outlined(
+                  tooltip: l10n.commonEdit,
+                  onPressed: _enterEditMode,
+                  icon: const Icon(Icons.edit_outlined),
                 ),
-                keyboardType: TextInputType.url,
-                validator: isReadOnly ? null : _validateUrl,
+              OutlinedButton(
+                onPressed: () {
+                  if (!isEdit || isReadOnly) {
+                    Navigator.of(context).pop();
+                    return;
+                  }
+                  _cancelExistingEdit();
+                },
+                child: Text(
+                    (isEdit && !isReadOnly) ? l10n.commonCancel : l10n.commonClose),
               ),
+              if (!isReadOnly)
+                FilledButton.icon(
+                  onPressed: _submit,
+                  icon: const Icon(Icons.check),
+                  label: Text(l10n.commonSave),
+                ),
             ],
           ),
         ),
-      ),
-      actions: [
-        if (hasLink)
-          TextButton.icon(
-            onPressed: _openLink,
-            icon: const Icon(Icons.open_in_new),
-            label: Text(l10n.linkLabel),
-          ),
-        if (isEdit && widget.canDelete)
-          TextButton(
-            onPressed: _confirmDelete,
-            child: Text(l10n.commonDelete),
-          ),
-        if (isReadOnly && canEnterEditMode)
-          TextButton(
-            onPressed: _enterEditMode,
-            child: Text(l10n.commonEdit),
-          ),
-        TextButton(
-          onPressed: () {
-            if (!isEdit || isReadOnly) {
-              Navigator.of(context).pop();
-              return;
-            }
-            _cancelExistingEdit();
-          },
-          child: Text((isEdit && !isReadOnly) ? l10n.commonCancel : l10n.commonClose),
-        ),
-        if (!isReadOnly)
-          FilledButton(
-            onPressed: _submit,
-            child: Text(l10n.commonSave),
-          ),
       ],
     );
   }

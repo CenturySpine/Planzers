@@ -2202,6 +2202,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripBoardGamesTab => 'Jeux de société';
 
   @override
+  String get tripGamesIntro =>
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"';
+
+  @override
+  String get tripGamesSearchLabel => 'Rechercher un jeu';
+
+  @override
+  String get tripGamesSearchHint => 'Filtrer par nom du jeu';
+
+  @override
+  String get tripGamesNoSearchMatch =>
+      'Aucun jeu ne correspond à cette recherche.';
+
+  @override
   String get tripGamesEmpty => 'Aucun jeu pour le moment.';
 
   @override
@@ -4742,6 +4756,20 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripBoardGamesTab => 'Jeux de société';
+
+  @override
+  String get tripGamesIntro =>
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"';
+
+  @override
+  String get tripGamesSearchLabel => 'Rechercher un jeu';
+
+  @override
+  String get tripGamesSearchHint => 'Filtrer par nom du jeu';
+
+  @override
+  String get tripGamesNoSearchMatch =>
+      'Aucun jeu ne correspond à cette recherche.';
 
   @override
   String get tripGamesEmpty => 'Aucun jeu pour le moment.';
