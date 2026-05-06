@@ -155,7 +155,6 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       await ref.read(tripCarpoolsRepositoryProvider).upsertTripCarpool(
             tripId: tripId,
             carpoolId: widget.initialCarpool?.id,
-            createdByUserId: widget.initialCarpool?.createdByUserId ?? myUid,
             driverUserId: driverUserId,
             meetingPointAddress: _meetingController.text,
             nearestTransitStop: _transitController.text,

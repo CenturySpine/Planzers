@@ -2987,6 +2987,306 @@ function validateAllTripSectionCarsOrThrow(cars) {
   }
 }
 
+function tripCarpoolPermissionMinRole(tripData, key, fallbackRole) {
+  const perms =
+    tripData && typeof tripData.permissions === 'object' ? tripData.permissions : {};
+  const carpoolPerms =
+    perms && typeof perms.carpool === 'object' ? perms.carpool : {};
+  const configured = normalizeString(carpoolPerms[key]);
+  return configured || fallbackRole;
+}
+
+function parseCallableDateToTimestamp(rawValue) {
+  if (rawValue instanceof Timestamp) {
+    return rawValue;
+  }
+  if (rawValue instanceof Date && Number.isFinite(rawValue.getTime())) {
+    return Timestamp.fromDate(rawValue);
+  }
+  if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+    return Timestamp.fromMillis(rawValue);
+  }
+  if (typeof rawValue === 'string') {
+    const parsedDate = new Date(rawValue);
+    if (Number.isFinite(parsedDate.getTime())) {
+      return Timestamp.fromDate(parsedDate);
+    }
+  }
+  throw new HttpsError('invalid-argument', 'Parametres invalides');
+}
+
+function parseTimestampOrFallback(rawValue, fallbackTimestamp) {
+  if (rawValue instanceof Timestamp) {
+    return rawValue;
+  }
+  if (rawValue instanceof Date && Number.isFinite(rawValue.getTime())) {
+    return Timestamp.fromDate(rawValue);
+  }
+  if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+    return Timestamp.fromMillis(rawValue);
+  }
+  if (typeof rawValue === 'string') {
+    const parsedDate = new Date(rawValue);
+    if (Number.isFinite(parsedDate.getTime())) {
+      return Timestamp.fromDate(parsedDate);
+    }
+  }
+  return fallbackTimestamp;
+}
+
+exports.upsertTripCarpool = onCall({}, async (request) => {
+  const uid = normalizeString(request.auth?.uid);
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+  }
+
+  const tripId = normalizeString(request.data?.tripId);
+  const requestedCarpoolId = normalizeString(request.data?.carpoolId);
+  const driverUserId = normalizeString(request.data?.driverUserId);
+  const meetingPointAddress = normalizeString(request.data?.meetingPointAddress);
+  const nearestTransitStop = normalizeString(request.data?.nearestTransitStop);
+  const departureAt = parseCallableDateToTimestamp(
+    request.data?.departureAtMillis ?? request.data?.departureAt
+  );
+  const availableSeatsRaw = request.data?.availableSeats;
+  const availableSeats =
+    typeof availableSeatsRaw === 'number'
+      ? availableSeatsRaw
+      : Number.parseInt(String(availableSeatsRaw ?? ''), 10);
+  const assignedParticipantIdsRaw = Array.isArray(request.data?.assignedParticipantIds)
+    ? request.data.assignedParticipantIds
+    : [];
+  const goesShopping = request.data?.goesShopping === true;
+
+  if (!tripId || !driverUserId || !Number.isFinite(availableSeats)) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+  if (!Number.isInteger(availableSeats) || availableSeats < 1) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+
+  const normalizedAssignedParticipantIds = [
+    ...new Set(
+      assignedParticipantIdsRaw
+        .map((entry) => normalizeString(entry))
+        .filter(Boolean)
+        .concat(driverUserId)
+    ),
+  ];
+  if (normalizedAssignedParticipantIds.length > availableSeats) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+
+  const db = admin.firestore();
+  const tripRef = db.collection('trips').doc(tripId);
+  const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  await db.runTransaction(async (tx) => {
+    const [tripSnap, sectionSnap] = await Promise.all([
+      tx.get(tripRef),
+      tx.get(sectionRef),
+    ]);
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((value) => normalizeString(value)).filter(Boolean)
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+    if (!memberIds.includes(driverUserId)) {
+      throw new HttpsError('invalid-argument', 'Parametres invalides');
+    }
+    for (const participantId of normalizedAssignedParticipantIds) {
+      if (!memberIds.includes(participantId)) {
+        throw new HttpsError('invalid-argument', 'Parametres invalides');
+      }
+    }
+
+    const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
+    const cars = cloneFirestoreCarsArray(sectionData.cars);
+
+    const targetCarpoolId = requestedCarpoolId || db.collection('_').doc().id;
+    const targetCarIndex = cars.findIndex(
+      (car) => normalizeString(car.id) === targetCarpoolId
+    );
+    const existingCar = targetCarIndex >= 0 ? cars[targetCarIndex] : null;
+
+    if (existingCar) {
+      const carpoolCreatorUserId = normalizeString(existingCar.createdByUserId);
+      const minEditRole = tripCarpoolPermissionMinRole(
+        tripData,
+        'editCarpools',
+        'admin'
+      );
+      const canEditAsTripRole =
+        tripCallerRoleRank(tripData, uid) >= roleRank(minEditRole);
+      if (uid !== carpoolCreatorUserId && !canEditAsTripRole) {
+        throw new HttpsError(
+          'permission-denied',
+          'Tu n as pas le droit de modifier ce covoiturage'
+        );
+      }
+    } else {
+      const minCreateRole = tripCarpoolPermissionMinRole(
+        tripData,
+        'proposeCarpool',
+        'participant'
+      );
+      const canCreate =
+        tripCallerRoleRank(tripData, uid) >= roleRank(minCreateRole);
+      if (!canCreate) {
+        throw new HttpsError(
+          'permission-denied',
+          'Tu n as pas le droit de proposer un covoiturage'
+        );
+      }
+    }
+
+    const assignedInOtherCars = new Set();
+    for (const car of cars) {
+      const currentCarId = normalizeString(car.id);
+      if (currentCarId === targetCarpoolId) continue;
+      const rawAssigned = Array.isArray(car.assignedParticipantIds)
+        ? car.assignedParticipantIds
+        : [];
+      for (const participantId of rawAssigned) {
+        const normalizedId = normalizeString(participantId);
+        if (normalizedId) {
+          assignedInOtherCars.add(normalizedId);
+        }
+      }
+    }
+    for (const participantId of normalizedAssignedParticipantIds) {
+      if (assignedInOtherCars.has(participantId)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Participant already assigned to another carpool.'
+        );
+      }
+    }
+
+    const createdAt = parseTimestampOrFallback(
+      existingCar?.createdAt,
+      Timestamp.now()
+    );
+    const createdByUserId = normalizeString(existingCar?.createdByUserId) || uid;
+    const updatedCar = {
+      id: targetCarpoolId,
+      createdByUserId,
+      driverUserId,
+      meetingPointAddress,
+      nearestTransitStop,
+      departureAt,
+      availableSeats,
+      assignedParticipantIds: normalizedAssignedParticipantIds,
+      goesShopping,
+      createdAt,
+      updatedAt: Timestamp.now(),
+    };
+
+    const nextCars = cars.filter(
+      (car) => normalizeString(car.id) !== targetCarpoolId
+    );
+    nextCars.push(updatedCar);
+    validateAllTripSectionCarsOrThrow(nextCars);
+
+    tx.set(
+      sectionRef,
+      {
+        cars: nextCars,
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+  });
+
+  return { ok: true };
+});
+
+exports.deleteTripCarpool = onCall({}, async (request) => {
+  const uid = normalizeString(request.auth?.uid);
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+  }
+  const tripId = normalizeString(request.data?.tripId);
+  const carpoolId = normalizeString(request.data?.carpoolId);
+  if (!tripId || !carpoolId) {
+    throw new HttpsError('invalid-argument', 'Parametres invalides');
+  }
+
+  const db = admin.firestore();
+  const tripRef = db.collection('trips').doc(tripId);
+  const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  await db.runTransaction(async (tx) => {
+    const [tripSnap, sectionSnap] = await Promise.all([
+      tx.get(tripRef),
+      tx.get(sectionRef),
+    ]);
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberIds)
+      ? tripData.memberIds.map((value) => normalizeString(value)).filter(Boolean)
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu ne fais pas partie de ce voyage'
+      );
+    }
+    if (!sectionSnap.exists) {
+      return;
+    }
+
+    const sectionData = sectionSnap.data() || {};
+    const cars = cloneFirestoreCarsArray(sectionData.cars);
+    const targetCarIndex = cars.findIndex(
+      (car) => normalizeString(car.id) === carpoolId
+    );
+    if (targetCarIndex < 0) {
+      return;
+    }
+
+    const targetCar = cars[targetCarIndex];
+    const carpoolCreatorUserId = normalizeString(targetCar.createdByUserId);
+    const minEditRole = tripCarpoolPermissionMinRole(
+      tripData,
+      'editCarpools',
+      'admin'
+    );
+    const canEditAsTripRole =
+      tripCallerRoleRank(tripData, uid) >= roleRank(minEditRole);
+    if (uid !== carpoolCreatorUserId && !canEditAsTripRole) {
+      throw new HttpsError(
+        'permission-denied',
+        'Tu n as pas le droit de supprimer ce covoiturage'
+      );
+    }
+
+    const nextCars = cars.filter((car) => normalizeString(car.id) !== carpoolId);
+    validateAllTripSectionCarsOrThrow(nextCars);
+    tx.set(
+      sectionRef,
+      {
+        cars: nextCars,
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+  });
+
+  return { ok: true };
+});
+
 exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {

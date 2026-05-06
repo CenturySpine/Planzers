@@ -88,7 +88,6 @@ class TripCarpoolsRepository {
   Future<void> upsertTripCarpool({
     required String tripId,
     required String? carpoolId,
-    required String createdByUserId,
     required String driverUserId,
     required String meetingPointAddress,
     required String nearestTransitStop,
@@ -99,16 +98,13 @@ class TripCarpoolsRepository {
   }) async {
     final cleanTripId = tripId.trim();
     final cleanCarpoolId = carpoolId?.trim() ?? '';
-    final cleanCreatedByUserId = createdByUserId.trim();
     final cleanDriverUserId = driverUserId.trim();
     final normalizedAssignedIds = <String>{
       ...assignedParticipantIds.map((id) => id.trim()).where((id) => id.isNotEmpty),
       if (cleanDriverUserId.isNotEmpty) cleanDriverUserId,
     }.toList(growable: false);
-    if (cleanTripId.isEmpty ||
-        cleanCreatedByUserId.isEmpty ||
-        cleanDriverUserId.isEmpty) {
-      throw ArgumentError('tripId, createdByUserId and driverUserId are required');
+    if (cleanTripId.isEmpty || cleanDriverUserId.isEmpty) {
+      throw ArgumentError('tripId and driverUserId are required');
     }
     if (availableSeats < 1) {
       throw ArgumentError.value(
@@ -122,68 +118,18 @@ class TripCarpoolsRepository {
         'assignedParticipantIds cannot exceed availableSeats',
       );
     }
-    final now = DateTime.now().toUtc();
-    final targetCarpoolId = cleanCarpoolId.isEmpty
-        ? firestore.collection('_').doc().id
-        : cleanCarpoolId;
-    final sectionRef = _carpoolDocRef(cleanTripId);
-
-    await firestore.runTransaction((tx) async {
-      final snapshot = await tx.get(sectionRef);
-      final sectionData = snapshot.data() ?? const <String, dynamic>{};
-      final existingCars = TripCarpoolSection.fromMap(sectionData).cars;
-
-      final assignedInOtherCars = <String>{};
-      for (final car in existingCars) {
-        final carId = (car['id'] as String? ?? '').trim();
-        if (carId == targetCarpoolId) continue;
-        final rawAssigned = (car['assignedParticipantIds'] as List<dynamic>?) ?? const [];
-        assignedInOtherCars.addAll(
-          rawAssigned.map((entry) => entry.toString().trim()).where((id) => id.isNotEmpty),
-        );
-      }
-      for (final participantId in normalizedAssignedIds) {
-        if (assignedInOtherCars.contains(participantId)) {
-          throw StateError('Participant already assigned to another carpool.');
-        }
-      }
-
-      final currentCar = existingCars.cast<Map<String, dynamic>?>().firstWhere(
-            (car) => (car?['id'] as String? ?? '').trim() == targetCarpoolId,
-            orElse: () => null,
-          );
-      final createdAt = (currentCar?['createdAt'] as Timestamp?)?.toDate().toUtc() ?? now;
-      final existingCreator = (currentCar?['createdByUserId'] as String?)?.trim() ?? '';
-
-      final updatedCar = <String, dynamic>{
-        'id': targetCarpoolId,
-        'createdByUserId': existingCreator.isNotEmpty
-            ? existingCreator
-            : cleanCreatedByUserId,
-        'driverUserId': cleanDriverUserId,
-        'meetingPointAddress': meetingPointAddress.trim(),
-        'nearestTransitStop': nearestTransitStop.trim(),
-        'departureAt': Timestamp.fromDate(departureAt.toUtc()),
-        'availableSeats': availableSeats,
-        'assignedParticipantIds': normalizedAssignedIds,
-        'goesShopping': goesShopping,
-        'createdAt': Timestamp.fromDate(createdAt),
-        'updatedAt': Timestamp.fromDate(now),
-      };
-
-      final nextCars = existingCars
-          .where((car) => (car['id'] as String? ?? '').trim() != targetCarpoolId)
-          .toList(growable: true)
-        ..add(updatedCar);
-
-      tx.set(
-        sectionRef,
-        <String, dynamic>{
-          'cars': nextCars,
-          'updatedAt': Timestamp.fromDate(now),
-        },
-        SetOptions(merge: true),
-      );
+    final callable = FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion)
+        .httpsCallable('upsertTripCarpool');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'carpoolId': cleanCarpoolId.isEmpty ? null : cleanCarpoolId,
+      'driverUserId': cleanDriverUserId,
+      'meetingPointAddress': meetingPointAddress.trim(),
+      'nearestTransitStop': nearestTransitStop.trim(),
+      'departureAtMillis': departureAt.toUtc().millisecondsSinceEpoch,
+      'availableSeats': availableSeats,
+      'assignedParticipantIds': normalizedAssignedIds,
+      'goesShopping': goesShopping,
     });
   }
 
@@ -233,23 +179,11 @@ class TripCarpoolsRepository {
     final cleanTripId = tripId.trim();
     final cleanCarpoolId = carpoolId.trim();
     if (cleanTripId.isEmpty || cleanCarpoolId.isEmpty) return;
-    final now = DateTime.now().toUtc();
-    final sectionRef = _carpoolDocRef(cleanTripId);
-    await firestore.runTransaction((tx) async {
-      final snapshot = await tx.get(sectionRef);
-      final sectionData = snapshot.data() ?? const <String, dynamic>{};
-      final cars = TripCarpoolSection.fromMap(sectionData).cars;
-      final nextCars = cars
-          .where((car) => (car['id'] as String? ?? '').trim() != cleanCarpoolId)
-          .toList(growable: false);
-      tx.set(
-        sectionRef,
-        <String, dynamic>{
-          'cars': nextCars,
-          'updatedAt': Timestamp.fromDate(now),
-        },
-        SetOptions(merge: true),
-      );
+    final callable = FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion)
+        .httpsCallable('deleteTripCarpool');
+    await callable.call(<String, dynamic>{
+      'tripId': cleanTripId,
+      'carpoolId': cleanCarpoolId,
     });
   }
 }
