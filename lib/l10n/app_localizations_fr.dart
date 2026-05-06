@@ -2309,6 +2309,9 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripOverviewCarpoolNoPassengersPlaceholder => '[personne]';
+
+  @override
   String get tripOverviewCarpoolShoppingTeamLine =>
       'Vous faites partie de l\'équipe qui fait les courses !';
 
@@ -4871,6 +4874,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       Object passengerNames, Object departureTime) {
     return 'Tu enmènes $passengerNames, départ à $departureTime';
   }
+
+  @override
+  String get tripOverviewCarpoolNoPassengersPlaceholder => '[personne]';
 
   @override
   String get tripOverviewCarpoolShoppingTeamLine =>

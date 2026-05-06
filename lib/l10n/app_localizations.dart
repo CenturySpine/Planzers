@@ -4190,6 +4190,12 @@ abstract class AppLocalizations {
   String tripOverviewCarpoolDriverSummary(
       Object passengerNames, Object departureTime);
 
+  /// No description provided for @tripOverviewCarpoolNoPassengersPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'[personne]'**
+  String get tripOverviewCarpoolNoPassengersPlaceholder;
+
   /// No description provided for @tripOverviewCarpoolShoppingTeamLine.
   ///
   /// In fr, this message translates to:

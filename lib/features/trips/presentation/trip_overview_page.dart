@@ -616,7 +616,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       )
                       .toList(growable: false);
                   final passengersLabel = passengerLabels.isEmpty
-                      ? l10n.commonNotProvided
+                      ? l10n.tripOverviewCarpoolNoPassengersPlaceholder
                       : passengerLabels.join(', ');
                   final isDriver =
                       myUid.trim() == myCarpool.driverUserId.trim();
