@@ -102,7 +102,8 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
   }
 
   String _messageForSelfAssignmentError(Object error, AppLocalizations l10n) {
-    if (error is FirebaseFunctionsException && error.code == 'permission-denied') {
+    if (error is FirebaseFunctionsException &&
+        error.code == 'permission-denied') {
       return l10n.tripCarpoolSelfAssignmentNotMember;
     }
     if (error is FirebaseException && error.code == 'permission-denied') {
@@ -130,7 +131,9 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
       _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.join;
     });
     try {
-      await ref.read(tripCarpoolsRepositoryProvider).joinTripCarpoolAsSelfAssignedPassenger(
+      await ref
+          .read(tripCarpoolsRepositoryProvider)
+          .joinTripCarpoolAsSelfAssignedPassenger(
             tripId: tripId,
             targetCarpoolId: carpoolId,
           );
@@ -165,7 +168,9 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
       _selfAssignmentBusyKind = _TripCarpoolSelfAssignmentBusyKind.leave;
     });
     try {
-      await ref.read(tripCarpoolsRepositoryProvider).leaveTripCarpoolAsSelfAssignedPassenger(
+      await ref
+          .read(tripCarpoolsRepositoryProvider)
+          .leaveTripCarpoolAsSelfAssignedPassenger(
             tripId: tripId,
             carpoolId: carpoolId,
           );
@@ -193,14 +198,16 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final carpoolsAsync = ref.watch(tripCarpoolsStreamProvider(trip.id));
-    final carpoolSectionAsync = ref.watch(tripCarpoolSectionStreamProvider(trip.id));
+    final carpoolSectionAsync =
+        ref.watch(tripCarpoolSectionStreamProvider(trip.id));
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final canPropose = canProposeCarpoolForTrip(trip: trip, userId: myUid);
     final canEditGlobalMeetup = canUpdateCarpoolShoppingMeetupPointForTrip(
       trip: trip,
       userId: myUid,
     );
-    final currentTripRole = resolveTripPermissionRole(trip: trip, userId: myUid);
+    final currentTripRole =
+        resolveTripPermissionRole(trip: trip, userId: myUid);
     final showUnassignedMembersWarning = isTripRoleAllowed(
       currentRole: currentTripRole,
       minRole: TripPermissionRole.admin,
@@ -216,265 +223,273 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
           }
           return carpoolsAsync.when(
             data: (carpools) {
-          final carpoolsForList = [...carpools];
-          if (myUid != null && carpoolsForList.length > 1) {
-            carpoolsForList.sort((a, b) {
-              final aMine = a.assignedParticipantIds.contains(myUid);
-              final bMine = b.assignedParticipantIds.contains(myUid);
-              if (aMine == bMine) return 0;
-              return aMine ? -1 : 1;
-            });
-          }
-          final assignedIds = <String>{
-            for (final carpool in carpools) ...carpool.assignedParticipantIds,
-          };
-          final unassignedMembers = trip.memberIds
-              .where((memberId) => memberId.trim().isNotEmpty)
-              .where((memberId) => !assignedIds.contains(memberId))
-              .length;
-          final myUidTrimmed = myUid?.trim() ?? '';
-          final showSelfUnassignedCard = myUidTrimmed.isNotEmpty &&
-              trip.memberIds.any((id) => id.trim() == myUidTrimmed) &&
-              !carpools.any(
-                (carpool) => carpool.assignedParticipantIds.any(
-                  (id) => id.trim() == myUidTrimmed,
-                ),
-              );
-          final showGlobalShoppingMeetupSection = myUidTrimmed.isNotEmpty &&
-              carpools.any(
-                (carpool) =>
-                    carpool.goesShopping &&
-                    carpool.assignedParticipantIds.any(
+              final carpoolsForList = [...carpools];
+              if (myUid != null && carpoolsForList.length > 1) {
+                carpoolsForList.sort((a, b) {
+                  final aMine = a.assignedParticipantIds.contains(myUid);
+                  final bMine = b.assignedParticipantIds.contains(myUid);
+                  if (aMine == bMine) return 0;
+                  return aMine ? -1 : 1;
+                });
+              }
+              final assignedIds = <String>{
+                for (final carpool in carpools)
+                  ...carpool.assignedParticipantIds,
+              };
+              final unassignedMembers = trip.memberIds
+                  .where((memberId) => memberId.trim().isNotEmpty)
+                  .where((memberId) => !assignedIds.contains(memberId))
+                  .length;
+              final myUidTrimmed = myUid?.trim() ?? '';
+              final showSelfUnassignedCard = myUidTrimmed.isNotEmpty &&
+                  trip.memberIds.any((id) => id.trim() == myUidTrimmed) &&
+                  !carpools.any(
+                    (carpool) => carpool.assignedParticipantIds.any(
                       (id) => id.trim() == myUidTrimmed,
                     ),
-              );
-
-          final labelUserIds = <String>{
-            for (final id in trip.memberIds)
-              if (id.trim().isNotEmpty) id.trim(),
-            for (final carpool in carpools)
-              if (carpool.driverUserId.trim().isNotEmpty) carpool.driverUserId.trim(),
-          }.toList(growable: false);
-          final usersIdsKey = stableUsersIdsKey(labelUserIds);
-          final usersAsync = ref.watch(
-            usersDataByIdsKeyStreamProvider(usersIdsKey),
-          );
-
-          return usersAsync.when(
-            data: (userDocs) {
-              final memberLabels = tripMemberLabelsFromUserDocsById(
-                userDocs,
-                labelUserIds,
-                tripMemberPublicLabels: trip.memberPublicLabels,
-                currentUserId: myUid,
-                emptyFallback: l10n.tripParticipantsTraveler,
-              );
-              final viewerIsDriverOnTrip = myUidTrimmed.isNotEmpty &&
-                  carpools.any(
-                    (c) => c.driverUserId.trim() == myUidTrimmed,
                   );
-              final canUsePassengerSelfAssignment =
-                  myUidTrimmed.isNotEmpty &&
-                      trip.memberIds.any((id) => id.trim() == myUidTrimmed);
-              final passengerSelfAssignmentInteractionLocked =
-                  _selfAssignmentBusyCarpoolId != null;
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                children: [
-                  Text(
-                    l10n.tripCarpoolListTitle,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 16),
-                  if (showUnassignedMembersWarning && unassignedMembers > 0) ...[
-                    Card(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.warning_amber_rounded,
-                          color: Theme.of(context).colorScheme.error,
+              final showGlobalShoppingMeetupSection = myUidTrimmed.isNotEmpty &&
+                  carpools.any(
+                    (carpool) =>
+                        carpool.goesShopping &&
+                        carpool.assignedParticipantIds.any(
+                          (id) => id.trim() == myUidTrimmed,
                         ),
-                        title: Text(l10n.tripCarpoolUnassignedWarningTitle),
-                        subtitle: Text(
-                          l10n.tripCarpoolUnassignedWarningBody(unassignedMembers),
-                        ),
+                  );
+
+              final labelUserIds = <String>{
+                for (final id in trip.memberIds)
+                  if (id.trim().isNotEmpty) id.trim(),
+                for (final carpool in carpools)
+                  if (carpool.driverUserId.trim().isNotEmpty)
+                    carpool.driverUserId.trim(),
+              }.toList(growable: false);
+              final usersIdsKey = stableUsersIdsKey(labelUserIds);
+              final usersAsync = ref.watch(
+                usersDataByIdsKeyStreamProvider(usersIdsKey),
+              );
+
+              return usersAsync.when(
+                data: (userDocs) {
+                  final memberLabels = tripMemberLabelsFromUserDocsById(
+                    userDocs,
+                    labelUserIds,
+                    tripMemberPublicLabels: trip.memberPublicLabels,
+                    currentUserId: myUid,
+                    emptyFallback: l10n.tripParticipantsTraveler,
+                  );
+                  final viewerIsDriverOnTrip = myUidTrimmed.isNotEmpty &&
+                      carpools.any(
+                        (c) => c.driverUserId.trim() == myUidTrimmed,
+                      );
+                  final canUsePassengerSelfAssignment =
+                      myUidTrimmed.isNotEmpty &&
+                          trip.memberIds.any((id) => id.trim() == myUidTrimmed);
+                  final passengerSelfAssignmentInteractionLocked =
+                      _selfAssignmentBusyCarpoolId != null;
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                    children: [
+                      Text(
+                        l10n.tripCarpoolListTitle,
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (showSelfUnassignedCard) ...[
-                    Card(
-                      color: context.planerzColors.warningContainer,
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.directions_car_outlined,
-                          color: context.planerzColors.warning,
-                        ),
-                        title: Text(l10n.tripCarpoolSelfUnassignedTitle),
-                        subtitle: Text(l10n.tripCarpoolSelfUnassignedBody),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (showGlobalShoppingMeetupSection) ...[
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.tripCarpoolGlobalMeetupTitle,
-                              style: Theme.of(context).textTheme.titleMedium,
+                      const SizedBox(height: 16),
+                      if (showUnassignedMembersWarning &&
+                          unassignedMembers > 0) ...[
+                        Card(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.warning_amber_rounded,
+                              color: Theme.of(context).colorScheme.error,
                             ),
-                            const SizedBox(height: 10),
-                            if (canEditGlobalMeetup &&
-                                (_isEditingGlobalMeetup ||
+                            title: Text(l10n.tripCarpoolUnassignedWarningTitle),
+                            subtitle: Text(
+                              l10n.tripCarpoolUnassignedWarningBody(
+                                  unassignedMembers),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (showSelfUnassignedCard) ...[
+                        Card(
+                          color: context.planerzColors.warningContainer,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.directions_car_outlined,
+                              color: context.planerzColors.warning,
+                            ),
+                            title: Text(l10n.tripCarpoolSelfUnassignedTitle),
+                            subtitle: Text(l10n.tripCarpoolSelfUnassignedBody),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (showGlobalShoppingMeetupSection) ...[
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.tripCarpoolGlobalMeetupTitle,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 10),
+                                if (canEditGlobalMeetup &&
+                                    (_isEditingGlobalMeetup ||
+                                        carpoolSection.shoppingMeetupLinkUrl
+                                            .trim()
+                                            .isEmpty))
+                                  TextFormField(
+                                    controller: _globalMeetupController,
+                                    focusNode: _globalMeetupFocusNode,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          l10n.tripCarpoolGlobalMeetupLabel,
+                                      border: const OutlineInputBorder(),
+                                      suffixIcon: canEditGlobalMeetup
+                                          ? IconButton(
+                                              tooltip: l10n.commonSave,
+                                              onPressed: _isSavingGlobalMeetup
+                                                  ? null
+                                                  : () => _saveGlobalMeetupLink(
+                                                        tripId: trip.id,
+                                                        canEditGlobalMeetup:
+                                                            canEditGlobalMeetup,
+                                                      ),
+                                              icon: _isSavingGlobalMeetup
+                                                  ? const SizedBox(
+                                                      width: 18,
+                                                      height: 18,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : const Icon(Icons.check),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
+                                if (!canEditGlobalMeetup &&
                                     carpoolSection.shoppingMeetupLinkUrl
                                         .trim()
-                                        .isEmpty))
-                              TextFormField(
-                                controller: _globalMeetupController,
-                                focusNode: _globalMeetupFocusNode,
-                                decoration: InputDecoration(
-                                  labelText: l10n.tripCarpoolGlobalMeetupLabel,
-                                  border: const OutlineInputBorder(),
-                                  suffixIcon: canEditGlobalMeetup
-                                      ? IconButton(
-                                          tooltip: l10n.commonSave,
-                                          onPressed: _isSavingGlobalMeetup
-                                              ? null
-                                              : () => _saveGlobalMeetupLink(
-                                                    tripId: trip.id,
-                                                    canEditGlobalMeetup:
-                                                        canEditGlobalMeetup,
-                                                  ),
-                                          icon: _isSavingGlobalMeetup
-                                              ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.check),
-                                        )
-                                      : null,
-                                ),
-                              ),
-                            if (!canEditGlobalMeetup &&
-                                carpoolSection.shoppingMeetupLinkUrl
-                                    .trim()
-                                    .isEmpty)
-                              Text(
-                                l10n.commonNotProvided,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            const SizedBox(height: 10),
-                            if (carpoolSection.shoppingMeetupLinkUrl
-                                .trim()
-                                .isNotEmpty) ...[
-                              LinkPreviewCardFromFirestore(
-                                url: carpoolSection.shoppingMeetupLinkUrl,
-                                preview:
-                                    carpoolSection.shoppingMeetupLinkPreview,
-                                showCard: true,
-                                showTitleLabel: false,
-                              ),
-                              if (canEditGlobalMeetup) ...[
-                                const SizedBox(height: 8),
-                                Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: IconButton(
-                                    tooltip: l10n.commonEdit,
-                                    onPressed: () {
-                                      setState(() {
-                                        _isEditingGlobalMeetup = true;
-                                        _globalMeetupController.text =
-                                            carpoolSection
-                                                .shoppingMeetupLinkUrl;
-                                      });
-                                    },
-                                    icon: const Icon(Icons.edit_outlined),
+                                        .isEmpty)
+                                  Text(
+                                    l10n.commonNotProvided,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                   ),
-                                ),
+                                const SizedBox(height: 10),
+                                if (carpoolSection.shoppingMeetupLinkUrl
+                                    .trim()
+                                    .isNotEmpty) ...[
+                                  LinkPreviewCardFromFirestore(
+                                    url: carpoolSection.shoppingMeetupLinkUrl,
+                                    preview: carpoolSection
+                                        .shoppingMeetupLinkPreview,
+                                    showCard: true,
+                                    showTitleLabel: false,
+                                  ),
+                                  if (canEditGlobalMeetup) ...[
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: AlignmentDirectional.centerEnd,
+                                      child: IconButton(
+                                        tooltip: l10n.commonEdit,
+                                        onPressed: () {
+                                          setState(() {
+                                            _isEditingGlobalMeetup = true;
+                                            _globalMeetupController.text =
+                                                carpoolSection
+                                                    .shoppingMeetupLinkUrl;
+                                          });
+                                        },
+                                        icon: const Icon(Icons.edit_outlined),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ],
-                            ],
-                          ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (carpools.isEmpty)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(l10n.tripCarpoolEmptyState),
-                      ),
-                    ),
-                  for (final carpool in carpoolsForList)
-                    Builder(
-                      builder: (context) {
-                        final isUidInThisCarpool =
-                            carpool.assignedParticipantIds.any(
-                          (id) => id.trim() == myUidTrimmed,
-                        );
-                        final remainingPassengerSeats =
-                            carpool.availableSeats -
-                                carpool.assignedParticipantIds.length;
-                        final showJoinPassengerAction =
-                            canUsePassengerSelfAssignment &&
-                                !viewerIsDriverOnTrip &&
-                                !isUidInThisCarpool &&
-                                remainingPassengerSeats > 0;
-                        final showLeavePassengerAction =
-                            canUsePassengerSelfAssignment &&
-                                !viewerIsDriverOnTrip &&
-                                isUidInThisCarpool &&
-                                carpool.driverUserId.trim() !=
-                                    myUidTrimmed;
-                        final joinPassengerSpinner =
-                            _selfAssignmentBusyKind ==
-                                    _TripCarpoolSelfAssignmentBusyKind.join &&
-                                _selfAssignmentBusyCarpoolId == carpool.id;
-                        final leavePassengerSpinner =
-                            _selfAssignmentBusyKind ==
-                                    _TripCarpoolSelfAssignmentBusyKind.leave &&
-                                _selfAssignmentBusyCarpoolId == carpool.id;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _TripCarpoolCard(
-                              carpool: carpool,
-                              isCurrentUserInCarpool: myUidTrimmed.isNotEmpty &&
-                                  isUidInThisCarpool,
-                              driverLabel:
-                                  memberLabels[carpool.driverUserId] ??
-                                      l10n.tripParticipantsTraveler,
-                              driverUserData:
-                                  userDocs[carpool.driverUserId],
-                              passengerLabels: carpool
-                                  .assignedParticipantIds
-                                  .where((id) => id != carpool.driverUserId)
-                                  .map(
-                                    (id) =>
-                                        memberLabels[id] ??
-                                        l10n.tripParticipantsTraveler,
-                                  )
-                                  .toList(growable: false),
-                              showJoinPassengerAction:
-                                  showJoinPassengerAction,
-                              showLeavePassengerAction:
-                                  showLeavePassengerAction,
-                              joinPassengerActionSpinner:
-                                  joinPassengerSpinner,
-                              leavePassengerActionSpinner:
-                                  leavePassengerSpinner,
-                              onJoinPassengerPressed:
-                                  showJoinPassengerAction &&
+                        const SizedBox(height: 12),
+                      ],
+                      if (carpools.isEmpty)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(l10n.tripCarpoolEmptyState),
+                          ),
+                        ),
+                      for (final carpool in carpoolsForList)
+                        Builder(
+                          builder: (context) {
+                            final isUidInThisCarpool =
+                                carpool.assignedParticipantIds.any(
+                              (id) => id.trim() == myUidTrimmed,
+                            );
+                            final remainingPassengerSeats =
+                                carpool.availableSeats -
+                                    carpool.assignedParticipantIds.length;
+                            final showJoinPassengerAction =
+                                canUsePassengerSelfAssignment &&
+                                    !viewerIsDriverOnTrip &&
+                                    !isUidInThisCarpool &&
+                                    remainingPassengerSeats > 0;
+                            final showLeavePassengerAction =
+                                canUsePassengerSelfAssignment &&
+                                    !viewerIsDriverOnTrip &&
+                                    isUidInThisCarpool &&
+                                    carpool.driverUserId.trim() != myUidTrimmed;
+                            final joinPassengerSpinner =
+                                _selfAssignmentBusyKind ==
+                                        _TripCarpoolSelfAssignmentBusyKind
+                                            .join &&
+                                    _selfAssignmentBusyCarpoolId == carpool.id;
+                            final leavePassengerSpinner =
+                                _selfAssignmentBusyKind ==
+                                        _TripCarpoolSelfAssignmentBusyKind
+                                            .leave &&
+                                    _selfAssignmentBusyCarpoolId == carpool.id;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _TripCarpoolCard(
+                                  carpool: carpool,
+                                  isCurrentUserInCarpool:
+                                      myUidTrimmed.isNotEmpty &&
+                                          isUidInThisCarpool,
+                                  driverLabel:
+                                      memberLabels[carpool.driverUserId] ??
+                                          l10n.tripParticipantsTraveler,
+                                  driverUserData:
+                                      userDocs[carpool.driverUserId],
+                                  passengerLabels: carpool
+                                      .assignedParticipantIds
+                                      .where((id) => id != carpool.driverUserId)
+                                      .map(
+                                        (id) =>
+                                            memberLabels[id] ??
+                                            l10n.tripParticipantsTraveler,
+                                      )
+                                      .toList(growable: false),
+                                  showJoinPassengerAction:
+                                      showJoinPassengerAction,
+                                  showLeavePassengerAction:
+                                      showLeavePassengerAction,
+                                  joinPassengerActionSpinner:
+                                      joinPassengerSpinner,
+                                  leavePassengerActionSpinner:
+                                      leavePassengerSpinner,
+                                  onJoinPassengerPressed: showJoinPassengerAction &&
                                           !passengerSelfAssignmentInteractionLocked
                                       ? () {
                                           _joinTripCarpoolAsPassenger(
@@ -483,35 +498,35 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                           );
                                         }
                                       : null,
-                              onLeavePassengerPressed:
-                                  showLeavePassengerAction &&
-                                          !passengerSelfAssignmentInteractionLocked
-                                      ? () {
-                                          _leaveTripCarpoolAsPassenger(
-                                            tripId: trip.id,
-                                            carpoolId: carpool.id,
-                                          );
-                                        }
-                                      : null,
-                              onTap: () =>
-                                  _openCarpoolForm(carpool: carpool),
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                        );
-                      },
-                    ),
-                ],
+                                  onLeavePassengerPressed:
+                                      showLeavePassengerAction &&
+                                              !passengerSelfAssignmentInteractionLocked
+                                          ? () {
+                                              _leaveTripCarpoolAsPassenger(
+                                                tripId: trip.id,
+                                                carpoolId: carpool.id,
+                                              );
+                                            }
+                                          : null,
+                                  onTap: () =>
+                                      _openCarpoolForm(carpool: carpool),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(l10n.commonErrorWithDetails(error.toString())),
+                  ),
+                ),
               );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(l10n.commonErrorWithDetails(error.toString())),
-              ),
-            ),
-          );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(
@@ -584,7 +599,8 @@ class _TripCarpoolCard extends StatelessWidget {
       TimeOfDay.fromDateTime(carpool.departureAt),
       alwaysUse24HourFormat: true,
     );
-    final remainingSeats = carpool.availableSeats - carpool.assignedParticipantIds.length;
+    final remainingSeats =
+        carpool.availableSeats - carpool.assignedParticipantIds.length;
     final meetingPointLabel = carpool.meetingPointAddress.trim().isEmpty
         ? l10n.commonNotProvided
         : carpool.meetingPointAddress.trim();
@@ -595,11 +611,11 @@ class _TripCarpoolCard extends StatelessWidget {
     final meetingLineStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: colorScheme.onSurfaceVariant,
         );
-    final hasMeetingPointAddress = carpool.meetingPointAddress.trim().isNotEmpty;
+    final hasMeetingPointAddress =
+        carpool.meetingPointAddress.trim().isNotEmpty;
 
     return Card(
-      clipBehavior:
-          isCurrentUserInCarpool ? Clip.antiAlias : Clip.none,
+      clipBehavior: isCurrentUserInCarpool ? Clip.antiAlias : Clip.none,
       color: isCurrentUserInCarpool ? planerzPalette.successContainer : null,
       shape: isCurrentUserInCarpool
           ? RoundedRectangleBorder(
@@ -673,7 +689,8 @@ class _TripCarpoolCard extends StatelessWidget {
               Text.rich(
                 TextSpan(
                   children: [
-                    if (participantsLabel.isNotEmpty) TextSpan(text: participantsLabel),
+                    if (participantsLabel.isNotEmpty)
+                      TextSpan(text: participantsLabel),
                     TextSpan(text: participantsLabel.isNotEmpty ? ' (' : '('),
                     TextSpan(
                       text: seatsStatusLabel,
@@ -736,9 +753,17 @@ class _TripCarpoolCard extends StatelessWidget {
                                     child: Padding(
                                       padding: const EdgeInsets.all(2),
                                       child: Icon(
-                                        Icons.navigation_outlined,
+                                        Icons.navigation,
                                         size: 18,
-                                        color: colorScheme.onSurfaceVariant,
+                                        color: colorScheme.tertiary,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black
+                                                .withValues(alpha: 0.14),
+                                            blurRadius: 1.5,
+                                            offset: Offset(0, 0.8),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
