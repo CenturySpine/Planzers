@@ -157,6 +157,11 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                         ?.value ??
                     const <String, Map<String, dynamic>>{};
 
+            final shouldShowEmptyStateRow =
+                games.isEmpty || filteredGames.isEmpty;
+            final listItemCount =
+                filteredGames.length + 2 + (shouldShowEmptyStateRow ? 1 : 0);
+
             return Scaffold(
               appBar: AppBar(
                 title: Text(l10n.tripGamesTitle),
@@ -170,7 +175,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                 children: [
                   ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                    itemCount: filteredGames.length + 2,
+                    itemCount: listItemCount,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       if (index == 0) {
@@ -197,10 +202,10 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                           ),
                         );
                       }
-                      if (games.isEmpty) {
-                        return Center(child: Text(l10n.tripGamesEmpty));
-                      }
-                      if (filteredGames.isEmpty) {
+                      if (index == 2 && shouldShowEmptyStateRow) {
+                        if (games.isEmpty) {
+                          return Center(child: Text(l10n.tripGamesEmpty));
+                        }
                         return Center(child: Text(l10n.tripGamesNoSearchMatch));
                       }
 
