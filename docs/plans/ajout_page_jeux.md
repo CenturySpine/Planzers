@@ -12,7 +12,7 @@
 - La tuile existe déjà dans l’aperçu, mais son `onTap` est vide dans [`lib/features/trips/presentation/trip_overview_page.dart`](lib/features/trips/presentation/trip_overview_page.dart).
 - Pattern TabBar déjà utilisé sur les dépenses dans [`lib/features/expenses/presentation/trip_expenses_page.dart`](lib/features/expenses/presentation/trip_expenses_page.dart).
 - Pattern d’affichage des previews déjà prêt via:
-  - `LinkPreviewCardFromFirestore` et `LinkPreviewThumbnail` dans [`lib/features/trips/presentation/link_preview_from_firestore.dart`](lib/features/trips/presentation/link_preview_from_firestore.dart).
+  - `LinkPreviewCompact` et `LinkPreviewThumbnail` dans [`lib/features/trips/presentation/link_preview_from_firestore.dart`](lib/features/trips/presentation/link_preview_from_firestore.dart).
 - Pattern Cloud Functions Gen2 + region déjà en place dans [`functions/index.js`](functions/index.js) avec `setGlobalOptions({ region: 'europe-west9' })` et des triggers Firestore `onDocumentCreated/onDocumentUpdated`.
 - Firestore rules: les sous-collections de voyage sont protégées par `isTripMember(tripId)` et des conditions spécifiques dans [`firestore.rules`](firestore.rules).
 

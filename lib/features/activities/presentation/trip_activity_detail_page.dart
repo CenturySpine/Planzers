@@ -472,7 +472,7 @@ class _ReadBody extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (activity.linkUrl.trim().isNotEmpty) ...[
-          LinkPreviewCardFromFirestore(
+          LinkPreviewCompact(
             url: activity.linkUrl.trim(),
             preview: activity.linkPreview,
           ),
@@ -761,7 +761,7 @@ class _EditBodyState extends State<_EditBody> {
           ],
           if (showLivePreview) ...[
             const SizedBox(height: 12),
-            LinkPreviewCardFromFirestore(
+            LinkPreviewCompact(
               url: linkTrimmed,
               preview: widget.activity.linkPreview,
             ),

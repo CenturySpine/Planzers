@@ -3,23 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Renders Open Graph / meta preview data stored on a Firestore document
-/// (`linkPreview` map), same shape as trip overview and trip activities.
-class LinkPreviewCardFromFirestore extends StatelessWidget {
-  const LinkPreviewCardFromFirestore({
+/// Compact visual representation of a `linkPreview` map stored on a Firestore
+/// document. Used everywhere a saved link is shown to the user.
+///
+/// Layout: thumbnail + clickable title (or URL) with the URL as subtext.
+/// The whole row is tappable and opens the link via [launchUrl]. Callers can
+/// supply an optional [trailing] widget (e.g. a "directions" icon button) for
+/// contextual side-actions; that widget receives its own taps independently
+/// from the main link area.
+class LinkPreviewCompact extends StatelessWidget {
+  const LinkPreviewCompact({
     super.key,
     required this.url,
     required this.preview,
-    this.titleLabel,
+    this.trailing,
     this.showCard = true,
-    this.showTitleLabel = true,
   });
 
   final String url;
   final Map<String, dynamic> preview;
-  final String? titleLabel;
+  final Widget? trailing;
   final bool showCard;
-  final bool showTitleLabel;
 
   Future<void> _openLink(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
@@ -46,132 +50,75 @@ class LinkPreviewCardFromFirestore extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final status = (preview['status'] as String?) ?? '';
-    final title = (preview['title'] as String?) ?? '';
-    final description = (preview['description'] as String?) ?? '';
-    final siteName = (preview['siteName'] as String?) ?? '';
-    final imageUrl = (preview['imageUrl'] as String?) ?? '';
+    final cs = Theme.of(context).colorScheme;
+    final previewTitle = ((preview['title'] as String?) ?? '').trim();
+    final primaryText = previewTitle.isNotEmpty ? previewTitle : url;
 
-    final hasPreview = title.trim().isNotEmpty ||
-        description.trim().isNotEmpty ||
-        imageUrl.trim().isNotEmpty ||
-        siteName.trim().isNotEmpty;
-
-    final content = Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showTitleLabel) ...[
-            Text(
-              titleLabel ?? l10n.linkLabel,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-          ],
-          InkWell(
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: InkWell(
             onTap: () => _openLink(context),
-            borderRadius: BorderRadius.circular(6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    url,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          decoration: TextDecoration.underline,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  LinkPreviewThumbnail(preview: preview, size: 48),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          primaryText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: cs.tertiary,
+                                decoration: TextDecoration.underline,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.open_in_new,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (status == 'loading') ...[
-            const SizedBox(
-              height: 120,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ] else if (!hasPreview) ...[
-            Text(
-              l10n.linkPreviewUnavailable,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ] else ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (imageUrl.trim().isNotEmpty) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      imageUrl,
-                      width: 96,
-                      height: 96,
-                      fit: BoxFit.cover,
-                      webHtmlElementStrategy: kIsWeb
-                          ? WebHtmlElementStrategy.prefer
-                          : WebHtmlElementStrategy.never,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 96,
-                        height: 96,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image_outlined),
-                      ),
+                        if (previewTitle.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            url,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
                 ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (siteName.trim().isNotEmpty) ...[
-                        Text(
-                          siteName,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if (title.trim().isNotEmpty) ...[
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ],
-                      if (description.trim().isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          description,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          trailing!,
         ],
-      ),
+      ],
     );
 
-    if (!showCard) return content;
-    return Card(child: content);
+    if (!showCard) return row;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: row,
+      ),
+    );
   }
 }
 

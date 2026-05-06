@@ -416,12 +416,10 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                 if (carpoolSection.shoppingMeetupLinkUrl
                                     .trim()
                                     .isNotEmpty) ...[
-                                  LinkPreviewCardFromFirestore(
+                                  LinkPreviewCompact(
                                     url: carpoolSection.shoppingMeetupLinkUrl,
                                     preview: carpoolSection
                                         .shoppingMeetupLinkPreview,
-                                    showCard: true,
-                                    showTitleLabel: false,
                                   ),
                                 ],
                               ],
