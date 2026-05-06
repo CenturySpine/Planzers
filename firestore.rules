@@ -751,21 +751,43 @@ service cloud.firestore {
       match /sections/{sectionId} {
         allow read: if isTripMember(tripId);
         allow create: if sectionId == 'carpool'
-          && canManageTripCarpoolShoppingMeetup(tripId)
-          && request.resource.data.keys().hasOnly([
-            'shoppingMeetupLinkUrl',
-            'shoppingMeetupLinkPreview',
-            'cars',
-            'updatedAt',
-          ]);
+          && (
+            (
+              canCreateCarpool(tripId)
+              && request.resource.data.keys().hasOnly([
+                'cars',
+                'updatedAt',
+              ])
+            )
+            || (
+              canManageTripCarpoolShoppingMeetup(tripId)
+              && request.resource.data.keys().hasOnly([
+                'shoppingMeetupLinkUrl',
+                'shoppingMeetupLinkPreview',
+                'cars',
+                'updatedAt',
+              ])
+            )
+          );
         allow update: if sectionId == 'carpool'
-          && canManageTripCarpoolShoppingMeetup(tripId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'shoppingMeetupLinkUrl',
-            'shoppingMeetupLinkPreview',
-            'cars',
-            'updatedAt',
-          ]);
+          && (
+            (
+              canCreateCarpool(tripId)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'cars',
+                'updatedAt',
+              ])
+            )
+            || (
+              canManageTripCarpoolShoppingMeetup(tripId)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'shoppingMeetupLinkUrl',
+                'shoppingMeetupLinkPreview',
+                'cars',
+                'updatedAt',
+              ])
+            )
+          );
       }
 
       match /announcements/{announcementId} {
