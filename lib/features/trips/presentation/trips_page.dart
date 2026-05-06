@@ -28,6 +28,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   static const double _legalLinkFontSize = 12;
   static const double _floatingActionButtonsBottomOffset = 34;
   TabController? _tabController;
+  bool _isFabMenuOpen = false;
   @override
   void initState() {
     super.initState();
@@ -62,20 +63,37 @@ class _TripsPageState extends ConsumerState<TripsPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (_isFabMenuOpen) ...[
+              FloatingActionButton.extended(
+                heroTag: 'trips_join_invite',
+                tooltip: l10n.tripsJoinWithInviteTooltip,
+                onPressed: () {
+                  setState(() => _isFabMenuOpen = false);
+                  _openJoinByInviteCodeDialog(context);
+                },
+                icon: const Icon(Icons.vpn_key_outlined),
+                label: Text(l10n.tripsJoinWithInviteTooltip),
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton.extended(
+                heroTag: 'trips_create',
+                tooltip: l10n.tripsNewTripTooltip,
+                onPressed: () {
+                  setState(() => _isFabMenuOpen = false);
+                  context.push(TripCreatePage.routePath);
+                },
+                icon: const Icon(Icons.add),
+                label: Text(l10n.tripsNewTripTooltip),
+              ),
+              const SizedBox(height: 12),
+            ],
             FloatingActionButton(
-              heroTag: 'trips_join_invite',
-              tooltip: l10n.tripsJoinWithInviteTooltip,
-              backgroundColor: Theme.of(context).colorScheme.tertiary,
-              foregroundColor: Theme.of(context).colorScheme.onTertiary,
-              onPressed: () => _openJoinByInviteCodeDialog(context),
-              child: const Icon(Icons.vpn_key_outlined),
-            ),
-            const SizedBox(height: 16),
-            FloatingActionButton(
-              heroTag: 'trips_create',
+              heroTag: 'trips_main_fab',
               tooltip: l10n.tripsNewTripTooltip,
-              onPressed: () => context.push(TripCreatePage.routePath),
-              child: const Icon(Icons.add),
+              onPressed: () {
+                setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+              },
+              child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
             ),
           ],
         ),

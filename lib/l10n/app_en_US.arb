@@ -137,8 +137,8 @@
       "error": {}
     }
   },
-  "tripsJoinWithInviteTooltip": "Join with an invite code",
-  "tripsNewTripTooltip": "New trip",
+  "tripsJoinWithInviteTooltip": "Join a trip",
+  "tripsNewTripTooltip": "Create a new trip",
   "tripsMyTrips": "My trips",
   "tripsEmptyState": "No trips yet.\nCreate your first trip.",
   "tripsTimelinePast": "Past",
@@ -181,7 +181,7 @@
   "tripsJoinCodeUnauthenticated": "Sign in to join a trip.",
   "tripsJoinCodeRequired": "Enter the invite code.",
   "tripsJoinCodeDialogTitle": "Invite code",
-  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer (not the link, only the code).",
+  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer.",
   "tripsJoinCodeLabel": "Code",
   "tripsJoinCodeAction": "Join",
   "commonSave": "Save",

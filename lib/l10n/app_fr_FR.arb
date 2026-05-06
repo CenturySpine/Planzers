@@ -137,8 +137,8 @@
       "error": {}
     }
   },
-  "tripsJoinWithInviteTooltip": "Rejoindre avec un code d'invitation",
-  "tripsNewTripTooltip": "Nouveau voyage",
+  "tripsJoinWithInviteTooltip": "Rejoindre un voyage",
+  "tripsNewTripTooltip": "Créer un nouveau voyage",
   "tripsMyTrips": "Mes voyages",
   "tripsEmptyState": "Aucun voyage pour le moment.\nCrée ton premier voyage.",
   "tripsTimelinePast": "Passés",
@@ -181,7 +181,7 @@
   "tripsJoinCodeUnauthenticated": "Connecte-toi pour rejoindre un voyage.",
   "tripsJoinCodeRequired": "Saisis le code d'invitation.",
   "tripsJoinCodeDialogTitle": "Code d'invitation",
-  "tripsJoinCodeDialogHelp": "Colle le code envoyé par l'organisateur du voyage (pas le lien, uniquement le code).",
+  "tripsJoinCodeDialogHelp": "Colle le code envoyé par l'organisateur du voyage.",
   "tripsJoinCodeLabel": "Code",
   "tripsJoinCodeAction": "Rejoindre",
   "commonSave": "Enregistrer",

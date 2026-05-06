@@ -775,13 +775,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsJoinWithInviteTooltip.
   ///
   /// In fr, this message translates to:
-  /// **'Rejoindre avec un code d\'invitation'**
+  /// **'Rejoindre un voyage'**
   String get tripsJoinWithInviteTooltip;
 
   /// No description provided for @tripsNewTripTooltip.
   ///
   /// In fr, this message translates to:
-  /// **'Nouveau voyage'**
+  /// **'Créer un nouveau voyage'**
   String get tripsNewTripTooltip;
 
   /// No description provided for @tripsMyTrips.
@@ -949,7 +949,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsJoinCodeDialogHelp.
   ///
   /// In fr, this message translates to:
-  /// **'Colle le code envoyé par l\'organisateur du voyage (pas le lien, uniquement le code).'**
+  /// **'Colle le code envoyé par l\'organisateur du voyage.'**
   String get tripsJoinCodeDialogHelp;
 
   /// No description provided for @tripsJoinCodeLabel.

@@ -374,11 +374,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get tripsJoinWithInviteTooltip =>
-      'Rejoindre avec un code d\'invitation';
+  String get tripsJoinWithInviteTooltip => 'Rejoindre un voyage';
 
   @override
-  String get tripsNewTripTooltip => 'Nouveau voyage';
+  String get tripsNewTripTooltip => 'Créer un nouveau voyage';
 
   @override
   String get tripsMyTrips => 'Mes voyages';
@@ -474,7 +473,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage (pas le lien, uniquement le code).';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -2939,11 +2938,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
-  String get tripsJoinWithInviteTooltip =>
-      'Rejoindre avec un code d\'invitation';
+  String get tripsJoinWithInviteTooltip => 'Rejoindre un voyage';
 
   @override
-  String get tripsNewTripTooltip => 'Nouveau voyage';
+  String get tripsNewTripTooltip => 'Créer un nouveau voyage';
 
   @override
   String get tripsMyTrips => 'Mes voyages';
@@ -3039,7 +3037,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage (pas le lien, uniquement le code).';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
