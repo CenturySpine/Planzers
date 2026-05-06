@@ -176,7 +176,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                   ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                     itemCount: listItemCount,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => const SizedBox(height: 4),
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Text(
