@@ -14,6 +14,7 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -65,6 +66,7 @@ class TripsRepository {
       'activities': TripActivitiesPermissions.defaults.toFirestore(),
       'meals': TripMealsPermissions.defaults.toFirestore(),
       'shopping': TripShoppingPermissions.defaults.toFirestore(),
+      'carpool': TripCarpoolPermissions.defaults.toFirestore(),
     };
   }
 
@@ -76,7 +78,8 @@ class TripsRepository {
         raw.containsKey('expenses') &&
         raw.containsKey('activities') &&
         raw.containsKey('meals') &&
-        raw.containsKey('shopping');
+        raw.containsKey('shopping') &&
+        raw.containsKey('carpool');
   }
 
   void _ensurePermissionsBlockOnFirstLoad({
@@ -177,6 +180,8 @@ class TripsRepository {
     String linkUrl = '',
     DateTime? startDate,
     DateTime? endDate,
+    TripDayPart? tripStartDayPart,
+    TripDayPart? tripEndDayPart,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -201,10 +206,18 @@ class TripsRepository {
       data['memberPublicLabels'] = <String, dynamic>{user.uid: ownerLabel};
     }
     if (startDate != null) {
-      data['startDate'] = Timestamp.fromDate(startDate);
+      final d = DateTime(startDate.year, startDate.month, startDate.day);
+      data['startDate'] = Timestamp.fromDate(d);
+      data['tripStartDayPart'] = tripDayPartToFirestore(
+        tripStartDayPart ?? TripDayPart.evening,
+      );
     }
     if (endDate != null) {
-      data['endDate'] = Timestamp.fromDate(endDate);
+      final d = DateTime(endDate.year, endDate.month, endDate.day);
+      data['endDate'] = Timestamp.fromDate(d);
+      data['tripEndDayPart'] = tripDayPartToFirestore(
+        tripEndDayPart ?? TripDayPart.morning,
+      );
     }
 
     final doc = firestore.collection('trips').doc();
@@ -249,6 +262,8 @@ class TripsRepository {
     required String linkUrl,
     DateTime? startDate,
     DateTime? endDate,
+    TripDayPart? tripStartDayPart,
+    TripDayPart? tripEndDayPart,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -283,12 +298,31 @@ class TripsRepository {
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
       'startDate': startDate != null
-          ? Timestamp.fromDate(startDate)
+          ? Timestamp.fromDate(
+              DateTime(startDate.year, startDate.month, startDate.day),
+            )
           : FieldValue.delete(),
       'endDate': endDate != null
-          ? Timestamp.fromDate(endDate)
+          ? Timestamp.fromDate(
+              DateTime(endDate.year, endDate.month, endDate.day),
+            )
           : FieldValue.delete(),
     };
+
+    if (startDate == null) {
+      update['tripStartDayPart'] = FieldValue.delete();
+    } else {
+      update['tripStartDayPart'] = tripDayPartToFirestore(
+        tripStartDayPart ?? TripDayPart.evening,
+      );
+    }
+    if (endDate == null) {
+      update['tripEndDayPart'] = FieldValue.delete();
+    } else {
+      update['tripEndDayPart'] = tripDayPartToFirestore(
+        tripEndDayPart ?? TripDayPart.morning,
+      );
+    }
 
     await docRef.update(update);
   }
@@ -1188,7 +1222,6 @@ class TripsRepository {
       TripMealsPermissionAction.createMeal => 'createMeal',
       TripMealsPermissionAction.deleteMeal => 'deleteMeal',
       TripMealsPermissionAction.editMeal => 'editMeal',
-      TripMealsPermissionAction.suggestRestaurant => 'suggestRestaurant',
       TripMealsPermissionAction.addContribution => 'addContribution',
       TripMealsPermissionAction.manageRecipe => 'manageRecipe',
     };
@@ -1259,6 +1292,79 @@ class TripsRepository {
 
     await tripRef.update(<String, dynamic>{
       'permissions.shopping': TripShoppingPermissions.defaults.toFirestore(),
+    });
+  }
+
+  Future<void> updateTripCarpoolPermission({
+    required String tripId,
+    required TripCarpoolPermissionAction action,
+    required TripPermissionRole minRole,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    final fieldName = switch (action) {
+      TripCarpoolPermissionAction.proposeCarpool => 'proposeCarpool',
+      TripCarpoolPermissionAction.editCarpools => 'editCarpools',
+      TripCarpoolPermissionAction.updateShoppingMeetupPoint =>
+        'updateShoppingMeetupPoint',
+    };
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.carpool.$fieldName': minRole.toFirestore(),
+    });
+  }
+
+  Future<void> resetTripCarpoolPermissionsToDefaults({
+    required String tripId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final tripRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await tripRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final data = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, data);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.manageTripSettingsMinRole,
+    );
+
+    await tripRef.update(<String, dynamic>{
+      'permissions.carpool': TripCarpoolPermissions.defaults.toFirestore(),
     });
   }
 }

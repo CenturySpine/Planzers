@@ -264,7 +264,7 @@ class ActivitiesRepository {
       throw StateError('Voyage introuvable');
     }
     final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
-    final canVote = canSuggestActivityForTrip(
+    final canVote = canVoteForActivity(
       trip: trip,
       userId: user.uid,
     );

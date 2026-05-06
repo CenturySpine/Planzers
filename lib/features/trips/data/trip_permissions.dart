@@ -354,11 +354,73 @@ class TripShoppingPermissions {
   }
 }
 
+enum TripCarpoolPermissionAction {
+  proposeCarpool,
+  editCarpools,
+  updateShoppingMeetupPoint,
+}
+
+/// Permissions for trip carpooling.
+///
+/// Firestore: `trips/{id}.permissions.carpool`.
+class TripCarpoolPermissions {
+  const TripCarpoolPermissions({
+    required this.proposeCarpoolMinRole,
+    required this.editCarpoolsMinRole,
+    required this.updateShoppingMeetupPointMinRole,
+  });
+
+  final TripPermissionRole proposeCarpoolMinRole;
+  final TripPermissionRole editCarpoolsMinRole;
+  final TripPermissionRole updateShoppingMeetupPointMinRole;
+
+  static const defaults = TripCarpoolPermissions(
+    proposeCarpoolMinRole: TripPermissionRole.participant,
+    editCarpoolsMinRole: TripPermissionRole.admin,
+    updateShoppingMeetupPointMinRole: TripPermissionRole.admin,
+  );
+
+  factory TripCarpoolPermissions.fromFirestore(dynamic raw) {
+    if (raw is! Map) {
+      return defaults;
+    }
+    return TripCarpoolPermissions(
+      proposeCarpoolMinRole: raw['proposeCarpool'] == null
+          ? defaults.proposeCarpoolMinRole
+          : TripPermissionRole.fromFirestore(raw['proposeCarpool']),
+      editCarpoolsMinRole: raw['editCarpools'] == null
+          ? (raw['manageOthersCarpool'] == null
+              ? defaults.editCarpoolsMinRole
+              : TripPermissionRole.fromFirestore(raw['manageOthersCarpool']))
+          : TripPermissionRole.fromFirestore(raw['editCarpools']),
+      updateShoppingMeetupPointMinRole: raw['updateShoppingMeetupPoint'] == null
+          ? defaults.updateShoppingMeetupPointMinRole
+          : TripPermissionRole.fromFirestore(raw['updateShoppingMeetupPoint']),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return <String, dynamic>{
+      'proposeCarpool': proposeCarpoolMinRole.toFirestore(),
+      'editCarpools': editCarpoolsMinRole.toFirestore(),
+      'updateShoppingMeetupPoint': updateShoppingMeetupPointMinRole.toFirestore(),
+    };
+  }
+
+  TripPermissionRole minRoleFor(TripCarpoolPermissionAction action) {
+    return switch (action) {
+      TripCarpoolPermissionAction.proposeCarpool => proposeCarpoolMinRole,
+      TripCarpoolPermissionAction.editCarpools => editCarpoolsMinRole,
+      TripCarpoolPermissionAction.updateShoppingMeetupPoint =>
+        updateShoppingMeetupPointMinRole,
+    };
+  }
+}
+
 enum TripMealsPermissionAction {
   createMeal,
   deleteMeal,
   editMeal,
-  suggestRestaurant,
   addContribution,
   manageRecipe,
 }
@@ -371,7 +433,6 @@ class TripMealsPermissions {
     required this.createMealMinRole,
     required this.deleteMealMinRole,
     required this.editMealMinRole,
-    required this.suggestRestaurantMinRole,
     required this.addContributionMinRole,
     required this.manageRecipeMinRole,
   });
@@ -379,7 +440,6 @@ class TripMealsPermissions {
   final TripPermissionRole createMealMinRole;
   final TripPermissionRole deleteMealMinRole;
   final TripPermissionRole editMealMinRole;
-  final TripPermissionRole suggestRestaurantMinRole;
   final TripPermissionRole addContributionMinRole;
   final TripPermissionRole manageRecipeMinRole;
 
@@ -387,7 +447,6 @@ class TripMealsPermissions {
     createMealMinRole: TripPermissionRole.admin,
     deleteMealMinRole: TripPermissionRole.admin,
     editMealMinRole: TripPermissionRole.admin,
-    suggestRestaurantMinRole: TripPermissionRole.admin,
     addContributionMinRole: TripPermissionRole.participant,
     manageRecipeMinRole: TripPermissionRole.chef,
   );
@@ -406,9 +465,6 @@ class TripMealsPermissions {
       editMealMinRole: raw['editMeal'] == null
           ? defaults.editMealMinRole
           : TripPermissionRole.fromFirestore(raw['editMeal']),
-      suggestRestaurantMinRole: raw['suggestRestaurant'] == null
-          ? defaults.suggestRestaurantMinRole
-          : TripPermissionRole.fromFirestore(raw['suggestRestaurant']),
       addContributionMinRole: raw['addContribution'] == null
           ? defaults.addContributionMinRole
           : TripPermissionRole.fromFirestore(raw['addContribution']),
@@ -423,7 +479,6 @@ class TripMealsPermissions {
       'createMeal': createMealMinRole.toFirestore(),
       'deleteMeal': deleteMealMinRole.toFirestore(),
       'editMeal': editMealMinRole.toFirestore(),
-      'suggestRestaurant': suggestRestaurantMinRole.toFirestore(),
       'addContribution': addContributionMinRole.toFirestore(),
       'manageRecipe': manageRecipeMinRole.toFirestore(),
     };

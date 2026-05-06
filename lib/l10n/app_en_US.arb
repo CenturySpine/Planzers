@@ -137,8 +137,8 @@
       "error": {}
     }
   },
-  "tripsJoinWithInviteTooltip": "Join with an invite code",
-  "tripsNewTripTooltip": "New trip",
+  "tripsJoinWithInviteTooltip": "Join a trip",
+  "tripsNewTripTooltip": "Create a new trip",
   "tripsMyTrips": "My trips",
   "tripsEmptyState": "No trips yet.\nCreate your first trip.",
   "tripsTimelinePast": "Past",
@@ -181,7 +181,7 @@
   "tripsJoinCodeUnauthenticated": "Sign in to join a trip.",
   "tripsJoinCodeRequired": "Enter the invite code.",
   "tripsJoinCodeDialogTitle": "Invite code",
-  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer (not the link, only the code).",
+  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer.",
   "tripsJoinCodeLabel": "Code",
   "tripsJoinCodeAction": "Join",
   "commonSave": "Save",
@@ -294,11 +294,10 @@
   "tripPermissionActivitiesEdit": "Edit an activity",
   "tripPermissionActivitiesDelete": "Delete an activity",
   "tripPermissionsMealsTitle": "Meal-related permissions",
-  "tripPermissionsMealsDescription": "Minimum roles to create, delete, and edit meals, suggest a restaurant, add a contribution, and manage a recipe.",
+  "tripPermissionsMealsDescription": "Minimum roles to create, delete, and edit meals, add a contribution, and manage a recipe.",
   "tripPermissionMealsCreate": "Create a meal",
   "tripPermissionMealsDelete": "Delete a meal",
   "tripPermissionMealsEdit": "Edit a meal (date, type, participants, chef, category)",
-  "tripPermissionMealsSuggestRestaurant": "Suggest a restaurant (restaurant mode)",
   "tripPermissionMealsAddContribution": "Add a contribution (lodge mode)",
   "tripPermissionMealsManageRecipe": "Create / delete / edit a recipe (cooking mode)",
   "tripSectionTrip": "Trip",
@@ -319,8 +318,8 @@
   "tripTabExpenses": "Expenses",
   "tripTabMeals": "Meals",
   "tripTabShopping": "Shopping",
-  "tripCarsTitle": "Cars",
-  "tripCarsComingSoon": "Carpooling and vehicles. Content coming soon.",
+  "tripCarsTitle": "Carpool",
+  "tripCarsComingSoon": "Carpool management. Content coming soon.",
   "tripMealsComingSoon": "Meal planning. Content coming soon.",
   "tripThisTrip": "This trip",
   "tripStayDialogTitle": "My dates on this trip",
@@ -509,6 +508,8 @@
   "tripOverviewChangePhoto": "Change photo",
   "tripOverviewCopyCode": "Copy code",
   "tripOverviewEditTrip": "Edit trip",
+  "tripOverviewEditAddTripDates": "Set trip dates",
+  "tripOverviewEditRemoveTripDates": "Remove trip dates",
   "tripOverviewTitleRequired": "Title required",
   "tripOverviewDestinationRequired": "Destination required",
   "tripOverviewAddressLabel": "Address",
@@ -842,7 +843,24 @@
   "tripOverviewTileActivities": "Planning",
   "tripOverviewTileRooms": "Rooms",
   "tripOverviewTileCars": "Cars",
+  "tripOverviewTileCarpool": "Carpool",
   "tripOverviewTileGames": "Games",
+  "tripGamesTitle": "Games",
+  "tripBoardGamesTab": "Board games",
+  "tripGamesIntro": "Here is the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".",
+  "tripGamesSearchLabel": "Search for a game",
+  "tripGamesSearchHint": "Filter by game name",
+  "tripGamesNoSearchMatch": "No games match this search.",
+  "tripGamesEmpty": "No games yet.",
+  "tripGamesAdd": "Add game",
+  "tripGamesAddTitle": "Add game",
+  "tripGamesEditTitle": "Edit game",
+  "tripGamesUrlLabel": "URL",
+  "tripGamesDeleteTitle": "Delete game",
+  "tripGamesDeleteBody": "Delete this board game?",
+  "tripGamesAdded": "Game added",
+  "tripGamesUpdated": "Game updated",
+  "tripGamesDeleted": "Game deleted",
   "tripOverviewTopTabAnnouncements": "Announcements",
   "tripAnnouncementsPageTitle": "Organizers announcements",
   "tripAnnouncementsEmptyState": "No announcements yet.",
@@ -852,9 +870,111 @@
   "tripOverviewTopTabExpenses": "Expenses",
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
+  "tripOverviewTileNoBoardGames": "No board games yet. Tap here to add yours.",
+  "tripOverviewTileGamesAndMore": "({count} more)",
+  "@tripOverviewTileGamesAndMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripOverviewTileComingSoon": "[Coming soon]",
+  "tripCarpoolDriverLabel": "Driver",
+  "tripCarpoolShoppingFlag": "Shopping",
+  "tripOverviewCarpoolPassengerSummary": "You're leaving with {driverName} at {departureTime} from {meetingPointAddress}",
+  "@tripOverviewCarpoolPassengerSummary": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {},
+      "meetingPointAddress": {}
+    }
+  },
+  "tripOverviewCarpoolPassengerSummaryNoMeetingPoint": "You're leaving with {driverName} at {departureTime}",
+  "@tripOverviewCarpoolPassengerSummaryNoMeetingPoint": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolDriverSummary": "You're taking {passengerNames}, departure at {departureTime}",
+  "@tripOverviewCarpoolDriverSummary": {
+    "placeholders": {
+      "passengerNames": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolShoppingTeamLine": "You're part of the shopping team!",
+  "tripCarpoolTileNoAssignment": "No assignment",
+  "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
+  "tripCarpoolSelfUnassignedTitle": "No carpool",
+  "tripCarpoolSelfUnassignedBody": "Join a car as a passenger or offer to drive.",
+  "tripCarpoolJoinTooltip": "Join this carpool",
+  "tripCarpoolLeaveTooltip": "Leave this carpool",
+  "tripCarpoolJoinedSelfSnack": "You are now in this carpool.",
+  "tripCarpoolLeftSelfSnack": "You left this carpool.",
+  "tripCarpoolSelfAssignmentDriverBlocked": "Drivers cannot join or leave a carpool from this list.",
+  "tripCarpoolSelfAssignmentNotMember": "Only trip participants can change their assignment.",
+  "tripCarpoolUnassignedWarningBody": "{count} participant(s) are not assigned to any carpool.",
+  "@tripCarpoolUnassignedWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolGlobalMeetupTitle": "Shopping meetup",
+  "tripCarpoolGlobalMeetupLabel": "Google Maps link",
+  "tripCarpoolOpenMapsLink": "Open Google Maps link",
+  "tripCarpoolEmptyState": "No carpool yet.",
+  "tripCarpoolListTitle": "Carpools",
+  "tripCarpoolNavigateToMeetingPoint": "Navigate to meeting point",
+  "tripCarpoolCreateAction": "Propose a carpool",
+  "tripCarpoolCreateTitle": "New carpool",
+  "tripCarpoolEditTitle": "Edit carpool",
+  "tripCarpoolMeetingPointLabel": "Meeting point address",
+  "tripCarpoolNearestTransitStopLabel": "Nearest public transit stop",
+  "tripCarpoolDepartureAtLabel": "Departure date and time",
+  "tripCarpoolMeetingHour": "Meeting time: {hour}",
+  "@tripCarpoolMeetingHour": {
+    "placeholders": {
+      "hour": {}
+    }
+  },
+  "tripCarpoolAvailableSeatsLabel": "Available seats",
+  "tripCarpoolRemainingSeats": "{count} seat(s) left",
+  "@tripCarpoolRemainingSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolFull": "Full",
+  "tripCarpoolGoesShoppingLabel": "Car designated for shopping",
+  "tripCarpoolPassengersTitle": "Assigned passengers",
+  "tripCarpoolTemporaryParticipantLabel": "Planned traveler",
+  "tripCarpoolAlreadyAssignedTo": "Already assigned to {carpoolLabel}",
+  "@tripCarpoolAlreadyAssignedTo": {
+    "placeholders": {
+      "carpoolLabel": {}
+    }
+  },
+  "tripCarpoolSeatsInvalid": "Available seats must be at least 1.",
+  "tripCarpoolSeatsExceeded": "Assigned passengers exceed available seats.",
+  "tripCarpoolCreated": "Carpool created",
+  "tripCarpoolUpdated": "Carpool updated",
+  "tripCarpoolDeleteTitle": "Delete this carpool?",
+  "tripCarpoolDeleteBody": "This carpool will be permanently deleted.",
+  "tripCarpoolDeleted": "Carpool deleted",
+  "tripCarpoolCreateComingSoon": "Carpool creation will be available in the next batch.",
+  "tripCarpoolEditComingSoon": "Carpool editing will be available in the next batch.",
   "tripOverviewMyRoom": "My room",
   "tripOverviewMyRooms": "My rooms",
+  "tripOverviewTabSummary": "Overview",
+  "tripOverviewTabAccommodationSuggestions": "Accommodation",
+  "tripOverviewNoAccommodationSuggestions": "No accommodation suggestions yet. Add an \"Accommodation\" activity here or from Planning to make it appear.",
+  "tripOverviewNoRestaurantSuggestions": "No restaurant suggestions yet. Add a \"Restaurant\" activity here or from Planning to make it appear.",
   "cupidonPopupTitle": "You have a match",
   "cupidonPopupViewMatchesAction": "See my matches",
   "cupidonPopupUnknownMember": "Someone",

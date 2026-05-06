@@ -137,8 +137,8 @@
       "error": {}
     }
   },
-  "tripsJoinWithInviteTooltip": "Rejoindre avec un code d'invitation",
-  "tripsNewTripTooltip": "Nouveau voyage",
+  "tripsJoinWithInviteTooltip": "Rejoindre un voyage",
+  "tripsNewTripTooltip": "Créer un nouveau voyage",
   "tripsMyTrips": "Mes voyages",
   "tripsEmptyState": "Aucun voyage pour le moment.\nCrée ton premier voyage.",
   "tripsTimelinePast": "Passés",
@@ -181,7 +181,7 @@
   "tripsJoinCodeUnauthenticated": "Connecte-toi pour rejoindre un voyage.",
   "tripsJoinCodeRequired": "Saisis le code d'invitation.",
   "tripsJoinCodeDialogTitle": "Code d'invitation",
-  "tripsJoinCodeDialogHelp": "Colle le code envoyé par l'organisateur du voyage (pas le lien, uniquement le code).",
+  "tripsJoinCodeDialogHelp": "Colle le code envoyé par l'organisateur du voyage.",
   "tripsJoinCodeLabel": "Code",
   "tripsJoinCodeAction": "Rejoindre",
   "commonSave": "Enregistrer",
@@ -294,11 +294,10 @@
   "tripPermissionActivitiesEdit": "Modifier une activité",
   "tripPermissionActivitiesDelete": "Supprimer une activité",
   "tripPermissionsMealsTitle": "Permissions liées aux repas",
-  "tripPermissionsMealsDescription": "Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.",
+  "tripPermissionsMealsDescription": "Rôles minimaux pour créer, supprimer, modifier les repas, ajouter un apport et gérer une recette.",
   "tripPermissionMealsCreate": "Créer un repas",
   "tripPermissionMealsDelete": "Supprimer un repas",
   "tripPermissionMealsEdit": "Éditer un repas (date, type, participants, chef, catégorie)",
-  "tripPermissionMealsSuggestRestaurant": "Suggérer un restaurant (mode resto)",
   "tripPermissionMealsAddContribution": "Ajouter un apport (mode auberge)",
   "tripPermissionMealsManageRecipe": "Créer / supprimer / éditer une recette (mode cuisine)",
   "tripSectionTrip": "Voyage",
@@ -319,8 +318,8 @@
   "tripTabExpenses": "Dépenses",
   "tripTabMeals": "Repas",
   "tripTabShopping": "Courses",
-  "tripCarsTitle": "Voitures",
-  "tripCarsComingSoon": "Covoiturage et véhicules. Contenu à venir.",
+  "tripCarsTitle": "Covoiturage",
+  "tripCarsComingSoon": "Gestion du covoiturage. Contenu à venir.",
   "tripMealsComingSoon": "Planning des repas. Contenu à venir.",
   "tripThisTrip": "Ce voyage",
   "tripStayDialogTitle": "Mes dates sur le voyage",
@@ -509,6 +508,8 @@
   "tripOverviewChangePhoto": "Changer de photo",
   "tripOverviewCopyCode": "Copier le code",
   "tripOverviewEditTrip": "Modifier le voyage",
+  "tripOverviewEditAddTripDates": "Définir les dates du voyage",
+  "tripOverviewEditRemoveTripDates": "Retirer les dates du voyage",
   "tripOverviewTitleRequired": "Titre obligatoire",
   "tripOverviewDestinationRequired": "Destination obligatoire",
   "tripOverviewAddressLabel": "Adresse",
@@ -523,7 +524,7 @@
   "tripOverviewLeaveTripTitle": "Quitter ce voyage ?",
   "tripOverviewLeaveAction": "Quitter",
   "tripOverviewLeaveTripCardTitle": "Quitter le voyage",
-  "tripOverviewLeaveTripDialogBody": "Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.",
+  "tripOverviewLeaveTripDialogBody": "Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).",
   "tripOverviewLeaveTripCardBody": "Tu pourras quitter même si les comptes ne sont pas à zéro. Tu seras alors retiré automatiquement de toutes les dépenses où tu es inclus (les autres voyageurs verront les parts mises à jour)."
   ,
   "inviteTitle": "Invitation",
@@ -842,7 +843,24 @@
   "tripOverviewTileActivities": "Planning",
   "tripOverviewTileRooms": "Chambres",
   "tripOverviewTileCars": "Voitures",
+  "tripOverviewTileCarpool": "Covoiturage",
   "tripOverviewTileGames": "Jeux",
+  "tripGamesTitle": "Jeux",
+  "tripBoardGamesTab": "Jeux de société",
+  "tripGamesIntro": "Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".",
+  "tripGamesSearchLabel": "Rechercher un jeu",
+  "tripGamesSearchHint": "Filtrer par nom du jeu",
+  "tripGamesNoSearchMatch": "Aucun jeu ne correspond à cette recherche.",
+  "tripGamesEmpty": "Aucun jeu pour le moment.",
+  "tripGamesAdd": "Ajouter un jeu",
+  "tripGamesAddTitle": "Ajouter un jeu",
+  "tripGamesEditTitle": "Modifier le jeu",
+  "tripGamesUrlLabel": "URL",
+  "tripGamesDeleteTitle": "Supprimer le jeu",
+  "tripGamesDeleteBody": "Supprimer ce jeu de société ?",
+  "tripGamesAdded": "Jeu ajouté",
+  "tripGamesUpdated": "Jeu mis à jour",
+  "tripGamesDeleted": "Jeu supprimé",
   "tripOverviewTopTabAnnouncements": "Annonces",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",
   "tripAnnouncementsEmptyState": "Aucune annonce pour le moment.",
@@ -852,9 +870,111 @@
   "tripOverviewTopTabExpenses": "Dépenses",
   "tripOverviewTileNoActivitiesToday": "Pas d'activités prévues aujourd'hui",
   "tripOverviewTileNoAssignedRoom": "Aucune chambre attribuée",
+  "tripOverviewTileNoBoardGames": "Aucun jeu de société. Clique ici pour ajouter les tiens.",
+  "tripOverviewTileGamesAndMore": "({count} de plus)",
+  "@tripOverviewTileGamesAndMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripOverviewTileComingSoon": "[À venir]",
+  "tripCarpoolDriverLabel": "Conducteur",
+  "tripCarpoolShoppingFlag": "Courses",
+  "tripOverviewCarpoolPassengerSummary": "Tu pars avec {driverName} à {departureTime} de {meetingPointAddress}",
+  "@tripOverviewCarpoolPassengerSummary": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {},
+      "meetingPointAddress": {}
+    }
+  },
+  "tripOverviewCarpoolPassengerSummaryNoMeetingPoint": "Tu pars avec {driverName} à {departureTime}",
+  "@tripOverviewCarpoolPassengerSummaryNoMeetingPoint": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolDriverSummary": "Tu enmènes {passengerNames}, départ à {departureTime}",
+  "@tripOverviewCarpoolDriverSummary": {
+    "placeholders": {
+      "passengerNames": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolShoppingTeamLine": "Vous faites partie de l'équipe qui fait les courses !",
+  "tripCarpoolTileNoAssignment": "Aucune affectation",
+  "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
+  "tripCarpoolSelfUnassignedTitle": "Pas de covoiturage",
+  "tripCarpoolSelfUnassignedBody": "Rejoignez une voiture en tant que passager ou proposez-vous comme conducteur.",
+  "tripCarpoolJoinTooltip": "Rejoindre ce covoiturage",
+  "tripCarpoolLeaveTooltip": "Quitter ce covoiturage",
+  "tripCarpoolJoinedSelfSnack": "Vous êtes affecté à ce covoiturage.",
+  "tripCarpoolLeftSelfSnack": "Vous n'êtes plus dans ce covoiturage.",
+  "tripCarpoolSelfAssignmentDriverBlocked": "Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.",
+  "tripCarpoolSelfAssignmentNotMember": "Seuls les participants au voyage peuvent modifier leur affectation.",
+  "tripCarpoolUnassignedWarningBody": "{count} participant(s) n'est/ne sont assigné(s) à aucune voiture.",
+  "@tripCarpoolUnassignedWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolGlobalMeetupTitle": "Rendez-vous courses",
+  "tripCarpoolGlobalMeetupLabel": "Lien Google Maps",
+  "tripCarpoolOpenMapsLink": "Ouvrir le lien Google Maps",
+  "tripCarpoolEmptyState": "Aucun covoiturage pour le moment.",
+  "tripCarpoolListTitle": "Covoiturages",
+  "tripCarpoolNavigateToMeetingPoint": "Naviguer vers le point de rendez-vous",
+  "tripCarpoolCreateAction": "Proposer un covoiturage",
+  "tripCarpoolCreateTitle": "Nouveau covoiturage",
+  "tripCarpoolEditTitle": "Modifier le covoiturage",
+  "tripCarpoolMeetingPointLabel": "Adresse du point de rendez-vous",
+  "tripCarpoolNearestTransitStopLabel": "Point transport en commun le plus proche",
+  "tripCarpoolDepartureAtLabel": "Date et heure de départ",
+  "tripCarpoolMeetingHour": "Heure de RDV : {hour}",
+  "@tripCarpoolMeetingHour": {
+    "placeholders": {
+      "hour": {}
+    }
+  },
+  "tripCarpoolAvailableSeatsLabel": "Places disponibles",
+  "tripCarpoolRemainingSeats": "{count} place(s) restante(s)",
+  "@tripCarpoolRemainingSeats": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripCarpoolFull": "Complet",
+  "tripCarpoolGoesShoppingLabel": "Voiture désignée pour faire les courses",
+  "tripCarpoolPassengersTitle": "Participants transportés",
+  "tripCarpoolTemporaryParticipantLabel": "Voyageur prévu",
+  "tripCarpoolAlreadyAssignedTo": "Déjà affecté à {carpoolLabel}",
+  "@tripCarpoolAlreadyAssignedTo": {
+    "placeholders": {
+      "carpoolLabel": {}
+    }
+  },
+  "tripCarpoolSeatsInvalid": "Le nombre de places doit être au moins 1.",
+  "tripCarpoolSeatsExceeded": "Le nombre de participants dépasse les places disponibles.",
+  "tripCarpoolCreated": "Covoiturage créé",
+  "tripCarpoolUpdated": "Covoiturage mis à jour",
+  "tripCarpoolDeleteTitle": "Supprimer ce covoiturage ?",
+  "tripCarpoolDeleteBody": "Ce covoiturage sera supprimé définitivement.",
+  "tripCarpoolDeleted": "Covoiturage supprimé",
+  "tripCarpoolCreateComingSoon": "Création de covoiturage disponible dans le prochain lot.",
+  "tripCarpoolEditComingSoon": "Édition de covoiturage disponible dans le prochain lot.",
   "tripOverviewMyRoom": "Ma chambre",
   "tripOverviewMyRooms": "Mes chambres",
+  "tripOverviewTabSummary": "Aperçu",
+  "tripOverviewTabAccommodationSuggestions": "Hébergements",
+  "tripOverviewNoAccommodationSuggestions": "Aucune suggestion d'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.",
+  "tripOverviewNoRestaurantSuggestions": "Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.",
   "cupidonPopupTitle": "Tu as un match",
   "cupidonPopupViewMatchesAction": "Voir mes matchs",
   "cupidonPopupUnknownMember": "Quelqu'un",

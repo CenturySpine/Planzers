@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
-import 'package:planerz/features/trips/presentation/trip_stay_bounds_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 enum TripMemberStayOptionsEditorMode {
@@ -255,7 +255,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: TripStayBoundsEditor(
+              child: TripCalendarStayBoundsField(
                 tripStartDate: widget.tripStartDate,
                 tripEndDate: widget.tripEndDate,
                 value: _stay,

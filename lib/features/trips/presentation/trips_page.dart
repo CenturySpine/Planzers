@@ -1,5 +1,4 @@
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,7 @@ import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -28,6 +28,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   static const double _legalLinkFontSize = 12;
   static const double _floatingActionButtonsBottomOffset = 34;
   TabController? _tabController;
+  bool _isFabMenuOpen = false;
   @override
   void initState() {
     super.initState();
@@ -45,7 +46,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
@@ -63,20 +63,37 @@ class _TripsPageState extends ConsumerState<TripsPage>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (_isFabMenuOpen) ...[
+              FloatingActionButton.extended(
+                heroTag: 'trips_join_invite',
+                tooltip: l10n.tripsJoinWithInviteTooltip,
+                onPressed: () {
+                  setState(() => _isFabMenuOpen = false);
+                  _openJoinByInviteCodeDialog(context);
+                },
+                icon: const Icon(Icons.vpn_key_outlined),
+                label: Text(l10n.tripsJoinWithInviteTooltip),
+              ),
+              const SizedBox(height: 12),
+              FloatingActionButton.extended(
+                heroTag: 'trips_create',
+                tooltip: l10n.tripsNewTripTooltip,
+                onPressed: () {
+                  setState(() => _isFabMenuOpen = false);
+                  context.push(TripCreatePage.routePath);
+                },
+                icon: const Icon(Icons.add),
+                label: Text(l10n.tripsNewTripTooltip),
+              ),
+              const SizedBox(height: 12),
+            ],
             FloatingActionButton(
-              heroTag: 'trips_join_invite',
-              tooltip: l10n.tripsJoinWithInviteTooltip,
-              backgroundColor: Theme.of(context).colorScheme.tertiary,
-              foregroundColor: Theme.of(context).colorScheme.onTertiary,
-              onPressed: () => _openJoinByInviteCodeDialog(context),
-              child: const Icon(Icons.vpn_key_outlined),
-            ),
-            const SizedBox(height: 16),
-            FloatingActionButton(
-              heroTag: 'trips_create',
+              heroTag: 'trips_main_fab',
               tooltip: l10n.tripsNewTripTooltip,
-              onPressed: () => _openCreateTripDialog(context, ref),
-              child: const Icon(Icons.add),
+              onPressed: () {
+                setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+              },
+              child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
             ),
           ],
         ),
@@ -207,15 +224,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   titleColor: timelineTitleColors[
                                       _TripTimelineCategory.past]!,
                                   emptyMessage: l10n.tripsEmptyPast,
-                                  myUid: myUid,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
-                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                    context,
-                                    ref,
-                                    tripId: trip.id,
-                                    tripTitle: trip.title,
-                                  ),
                                 ),
                                 _TripsTimelineList(
                                   trips:
@@ -226,15 +236,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   titleColor: timelineTitleColors[
                                       _TripTimelineCategory.ongoing]!,
                                   emptyMessage: l10n.tripsEmptyOngoing,
-                                  myUid: myUid,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
-                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                    context,
-                                    ref,
-                                    tripId: trip.id,
-                                    tripTitle: trip.title,
-                                  ),
                                 ),
                                 _TripsTimelineList(
                                   trips:
@@ -245,15 +248,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   titleColor: timelineTitleColors[
                                       _TripTimelineCategory.upcoming]!,
                                   emptyMessage: l10n.tripsEmptyUpcoming,
-                                  myUid: myUid,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
-                                  onDeleteTrip: (trip) => _confirmAndDeleteTrip(
-                                    context,
-                                    ref,
-                                    tripId: trip.id,
-                                    tripTitle: trip.title,
-                                  ),
                                 ),
                               ],
                             ),
@@ -448,180 +444,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
     );
   }
 
-  Future<void> _openCreateTripDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final titleController = TextEditingController();
-    final destinationController = TextEditingController();
-    String? error;
-    DateTime? startDate;
-    DateTime? endDate;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> pickStart() async {
-              final picked = await showDatePicker(
-                context: dialogContext,
-                initialDate: startDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setDialogState(() => startDate = picked);
-              }
-            }
-
-            Future<void> pickEnd() async {
-              final picked = await showDatePicker(
-                context: dialogContext,
-                initialDate: endDate ?? startDate ?? DateTime.now(),
-                firstDate: startDate ?? DateTime(2000),
-                lastDate: DateTime(2100),
-              );
-              if (picked != null) {
-                setDialogState(() => endDate = picked);
-              }
-            }
-
-            return AlertDialog(
-              title: Text(l10n.tripsCreateDialogTitle),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration:
-                          InputDecoration(labelText: l10n.tripsTitleLabel),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: destinationController,
-                      decoration: InputDecoration(
-                        labelText: l10n.tripsDestinationLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.tripsStartDateLabel),
-                      subtitle:
-                          Text(formatOptionalTripDate(context, startDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (startDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setDialogState(() => startDate = null),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: pickStart,
-                          ),
-                        ],
-                      ),
-                      onTap: pickStart,
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(l10n.tripsEndDateLabel),
-                      subtitle: Text(formatOptionalTripDate(context, endDate)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (endDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setDialogState(() => endDate = null),
-                            ),
-                          IconButton(
-                            icon: const Icon(Icons.calendar_today_outlined),
-                            onPressed: pickEnd,
-                          ),
-                        ],
-                      ),
-                      onTap: pickEnd,
-                    ),
-                    if (error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    final title = titleController.text.trim();
-                    final destination = destinationController.text.trim();
-
-                    if (title.isEmpty || destination.isEmpty) {
-                      setDialogState(() {
-                        error = l10n.tripsCreateValidationRequired;
-                      });
-                      return;
-                    }
-
-                    if (isEndBeforeStart(startDate, endDate)) {
-                      setDialogState(() {
-                        error = l10n.tripsCreateValidationDateOrder;
-                      });
-                      return;
-                    }
-
-                    try {
-                      await ref.read(tripsRepositoryProvider).createTrip(
-                            title: title,
-                            destination: destination,
-                            startDate: startDate,
-                            endDate: endDate,
-                          );
-                      if (dialogContext.mounted) {
-                        Navigator.of(dialogContext).pop();
-                      }
-                    } catch (e) {
-                      setDialogState(() {
-                        error = e.toString();
-                      });
-                    }
-                  },
-                  child: Text(l10n.tripsCreateAction),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    // Same lifecycle issue as the invite dialog: do not dispose until the
-    // route overlay has finished tearing down (async close + animation).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        titleController.dispose();
-        destinationController.dispose();
-      });
-    });
-  }
-
   Future<void> _openJoinByInviteCodeDialog(BuildContext parentContext) async {
     await showDialog<void>(
       context: parentContext,
@@ -655,50 +477,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
     return e.toString();
   }
 
-  Future<void> _confirmAndDeleteTrip(
-    BuildContext context,
-    WidgetRef ref, {
-    required String tripId,
-    required String tripTitle,
-  }) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l10n.tripsDeleteDialogTitle),
-          content: Text(
-            l10n.tripsDeleteDialogBody(tripTitle),
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(l10n.commonCancel),
-            ),
-            OutlinedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(l10n.commonDelete),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await ref.read(tripsRepositoryProvider).deleteTrip(tripId: tripId);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripsDeleted)),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripsDeleteError(e.toString()))),
-      );
-    }
-  }
 }
 
 class _FooterSeparator extends StatelessWidget {
@@ -767,18 +545,14 @@ class _TripsTimelineList extends StatelessWidget {
     required this.containerColor,
     required this.titleColor,
     required this.emptyMessage,
-    required this.myUid,
     required this.onOpenTrip,
-    required this.onDeleteTrip,
   });
 
   final List<Trip> trips;
   final Color containerColor;
   final Color titleColor;
   final String emptyMessage;
-  final String? myUid;
   final ValueChanged<String> onOpenTrip;
-  final ValueChanged<Trip> onDeleteTrip;
 
   @override
   Widget build(BuildContext context) {
@@ -803,7 +577,6 @@ class _TripsTimelineList extends StatelessWidget {
       itemCount: trips.length,
       itemBuilder: (context, index) {
         final trip = trips[index];
-        final canDelete = myUid != null && trip.ownerId == myUid;
         final dateLine = formatTripDateRange(
           context,
           trip.startDate,
@@ -815,10 +588,8 @@ class _TripsTimelineList extends StatelessWidget {
             trip: trip,
             containerColor: containerColor,
             titleColor: titleColor,
-            canDelete: canDelete,
             dateLine: dateLine,
             onTap: () => onOpenTrip(trip.id),
-            onDelete: () => onDeleteTrip(trip),
           ),
         );
       },
@@ -831,19 +602,15 @@ class _TripCard extends ConsumerWidget {
     required this.trip,
     required this.containerColor,
     required this.titleColor,
-    required this.canDelete,
     required this.dateLine,
     required this.onTap,
-    required this.onDelete,
   });
 
   final Trip trip;
   final Color containerColor;
   final Color titleColor;
-  final bool canDelete;
   final String dateLine;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -917,12 +684,6 @@ class _TripCard extends ConsumerWidget {
                         count: unreadCount,
                         child: const Icon(Icons.notifications_none_outlined),
                       ),
-                    ),
-                  if (canDelete)
-                    IconButton(
-                      tooltip: AppLocalizations.of(context)!.commonDelete,
-                      onPressed: onDelete,
-                      icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
                     ),
                 ],
               ),

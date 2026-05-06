@@ -120,6 +120,13 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
                     context.push('/trips/$tripId/settings/permissions/meals'),
               ),
               _SettingsSectionCard(
+                title: l10n.tripOverviewTileCarpool,
+                icon: Icons.directions_car_outlined,
+                description: l10n.tripCarpoolCreateAction,
+                onTap: () => context
+                    .push('/trips/$tripId/settings/permissions/carpool'),
+              ),
+              _SettingsSectionCard(
                 title: l10n.tripSectionShopping,
                 icon: Icons.shopping_cart_outlined,
                 description: l10n.tripSectionShoppingDescription,

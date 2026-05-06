@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
-import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -14,9 +14,13 @@ class TripActivityCreatePage extends ConsumerStatefulWidget {
   const TripActivityCreatePage({
     super.key,
     required this.tripId,
+    this.allowedCategories,
   });
 
   final String tripId;
+
+  /// When set, restricts the category picker to these categories and pre-selects the first one.
+  final List<TripActivityCategory>? allowedCategories;
 
   @override
   ConsumerState<TripActivityCreatePage> createState() =>
@@ -29,13 +33,14 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
-  TripActivityCategory _category = TripActivityCategory.visit;
+  late TripActivityCategory _category;
   bool _saving = false;
   DateTime? _plannedAt;
 
   @override
   void initState() {
     super.initState();
+    _category = widget.allowedCategories?.first ?? TripActivityCategory.visit;
     _labelController = TextEditingController();
     _linkController = TextEditingController();
     _addressController = TextEditingController();
@@ -163,7 +168,7 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final category in TripActivityCategory.values)
+                for (final category in widget.allowedCategories ?? TripActivityCategory.values)
                   FilterChip(
                     avatar: Icon(category.categoryIcon, size: 18),
                     label: Text(category.label(l10n)),

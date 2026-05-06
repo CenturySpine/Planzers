@@ -10,8 +10,9 @@ import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_category_suggestions_panel.dart';
 import 'package:planerz/features/meals/presentation/meal_component_editor_page.dart';
-import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -37,14 +38,12 @@ class TripMealDetailsPage extends ConsumerStatefulWidget {
 
 class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _restaurantUrlController;
   bool _isSaving = false;
   bool _isSavingDate = false;
   bool _isSavingMealDayPart = false;
   bool _isSavingMealMode = false;
   bool _isSavingParticipants = false;
   bool _isSavingPotluckItems = false;
-  bool _isSavingRestaurantUrl = false;
   bool _isSavingComponents = false;
   bool _isDeleting = false;
   bool _isHydrated = false;
@@ -62,8 +61,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     MealPotluckCategory.soft,
     MealPotluckCategory.alcohol,
   };
-  bool _isRestaurantLinkEditing = false;
-  String _restaurantUrl = '';
 
   String get _currentUserId =>
       FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
@@ -74,14 +71,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _restaurantUrlController = TextEditingController();
-  }
-
-  @override
   void dispose() {
-    _restaurantUrlController.dispose();
     super.dispose();
   }
 
@@ -519,106 +509,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     );
   }
 
-  Future<void> _saveRestaurantUrl() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_isSavingRestaurantUrl) return;
-    final trimmed = _restaurantUrlController.text.trim();
-    if (trimmed.isNotEmpty) {
-      final parsed = Uri.tryParse(trimmed);
-      if (parsed == null || !parsed.isAbsolute) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.linkInvalid)),
-        );
-        return;
-      }
-    }
-    final previousUrl = _restaurantUrl;
-    final previousEditing = _isRestaurantLinkEditing;
-    setState(() {
-      _restaurantUrl = trimmed;
-      _restaurantUrlController.text = trimmed;
-      _isRestaurantLinkEditing = false;
-      _isSavingRestaurantUrl = true;
-    });
-    if (widget.isCreate || _isSaving) {
-      if (!mounted) return;
-      setState(() => _isSavingRestaurantUrl = false);
-      return;
-    }
-    try {
-      await ref.read(mealsRepositoryProvider).updateMealRestaurantUrl(
-            tripId: widget.tripId,
-            mealId: widget.mealId!,
-            restaurantUrl: _restaurantUrl,
-          );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _restaurantUrl = previousUrl;
-        _restaurantUrlController.text = previousUrl;
-        _isRestaurantLinkEditing = previousEditing;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.commonErrorWithDetails(e.toString()),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSavingRestaurantUrl = false);
-      }
-    }
-  }
-
-  void _startEditRestaurantUrl() {
-    setState(() {
-      _restaurantUrlController.text = _restaurantUrl;
-      _isRestaurantLinkEditing = true;
-    });
-  }
-
-  Future<void> _clearRestaurantUrl() async {
-    _restaurantUrlController.text = '';
-    await _saveRestaurantUrl();
-  }
-
-  void _cancelEditRestaurantUrl() {
-    setState(() {
-      _restaurantUrlController.text = _restaurantUrl;
-      _isRestaurantLinkEditing = false;
-    });
-  }
-
-  Widget _buildRestaurantUrlEditActions(AppLocalizations l10n) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 18,
-          onPressed: _isSavingRestaurantUrl ? null : _saveRestaurantUrl,
-          tooltip: l10n.commonConfirm,
-          icon: _isSavingRestaurantUrl
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.check),
-        ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 18,
-          onPressed: _isSavingRestaurantUrl ? null : _cancelEditRestaurantUrl,
-          tooltip: l10n.commonCancel,
-          icon: const Icon(Icons.undo_rounded),
-        ),
-      ],
-    );
-  }
-
   void _hydrateFromMeal(TripMeal meal) {
     if (widget.isCreate && _isHydrated) return;
     // Keep optimistic local edits while a save is in-flight.
@@ -627,7 +517,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         _isSavingMealDayPart ||
         _isSavingMealMode ||
         _isSavingPotluckItems ||
-        _isSavingRestaurantUrl ||
         _isSavingComponents) {
       return;
     }
@@ -642,8 +531,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       ..sort((a, b) => a.order.compareTo(b.order));
     _componentsUserOrdered = meal.componentsUserOrdered;
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
-    _restaurantUrl = meal.restaurantUrl.trim();
-    _restaurantUrlController.text = _restaurantUrl;
     _potluckItems = meal.potluckItems.toList(growable: false);
     if (widget.isCreate) {
       _isHydrated = true;
@@ -1238,8 +1125,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final mealDayPart = tripDayPartToFirestore(_mealDayPart);
       final participantIds = _participantIds.toList()..sort();
       final mealMode = _dataModeFromMealView(_activeMealView);
-      final restaurantUrl =
-          mealMode == MealMode.restaurant ? _restaurantUrl.trim() : '';
       final potluckItems = mealMode == MealMode.potluck
           ? _potluckItems
           : const <MealPotluckItem>[];
@@ -1251,7 +1136,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         chefParticipantId: _chefParticipantId,
         components: _components,
         mealMode: mealMode,
-        restaurantUrl: restaurantUrl,
+        restaurantUrl: '',
         potluckItems: potluckItems,
       );
       if (!mounted) return;
@@ -1438,10 +1323,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               trip: trip,
               userId: myUid,
             );
-            final canSuggestRestaurant = canSuggestRestaurantForTrip(
-              trip: trip,
-              userId: myUid,
-            );
             final canAddContribution = canAddMealContributionForTrip(
               trip: trip,
               userId: myUid,
@@ -1456,7 +1337,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final canAccessTrip = trip.memberIds.contains(myUid);
             final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
             final canEditParticipants = canEditMealCore;
-            final canEditRestaurantLink = canSuggestRestaurant;
             final canEditRecipe = canManageRecipe || isMealChef;
             if (widget.isCreate && !canAccessMealCreatePage) {
               return Scaffold(
@@ -1991,114 +1871,28 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                       Card.outlined(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                          child: _isRestaurantLinkEditing
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildMealModeSelector(
-                                      l10n: l10n,
-                                      textTheme: textTheme,
-                                      colorScheme: colorScheme,
-                                      canEditMealMode: canEditMealCore,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Expanded(
-                                          child: TextFormField(
-                                            controller:
-                                                _restaurantUrlController,
-                                            textInputAction:
-                                                TextInputAction.done,
-                                            enabled: !_isSavingRestaurantUrl,
-                                            readOnly: !canEditRestaurantLink,
-                                            onFieldSubmitted: (_) =>
-                                                _saveRestaurantUrl(),
-                                            decoration: InputDecoration(
-                                              labelText:
-                                                  l10n.mealRestaurantLinkLabel,
-                                              border:
-                                                  const OutlineInputBorder(),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        if (canEditRestaurantLink)
-                                          _buildRestaurantUrlEditActions(l10n),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      l10n.mealRestaurantLinkHint,
-                                      style: textTheme.bodyMedium?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
+                          child: Column(
+                            children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 400,
+                                child: TripCategorySuggestionsPanel(
+                                  trip: trip,
+                                  categories: const [
+                                    TripActivityCategory.restaurant,
                                   ],
-                                )
-                              : Column(
-                                  children: [
-                                    _buildMealModeSelector(
-                                      l10n: l10n,
-                                      textTheme: textTheme,
-                                      colorScheme: colorScheme,
-                                      canEditMealMode: canEditMealCore,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Expanded(
-                                          child: _restaurantUrl.isEmpty
-                                              ? Text(
-                                                  l10n.mealRestaurantLinkHint,
-                                                  style: textTheme.bodyMedium
-                                                      ?.copyWith(
-                                                    color: colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                                )
-                                              : LinkPreviewCardFromFirestore(
-                                                  url: _restaurantUrl,
-                                                  preview:
-                                                      meal?.restaurantLinkPreview ??
-                                                          const {},
-                                                ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (canEditRestaurantLink)
-                                              IconButton(
-                                                tooltip: l10n.commonEdit,
-                                                onPressed:
-                                                    _startEditRestaurantUrl,
-                                                icon: const Icon(
-                                                    Icons.edit_outlined),
-                                              ),
-                                            if (_restaurantUrl.isNotEmpty &&
-                                                canEditRestaurantLink)
-                                              IconButton(
-                                                tooltip: l10n.commonDelete,
-                                                onPressed:
-                                                    _isSavingRestaurantUrl
-                                                        ? null
-                                                        : _clearRestaurantUrl,
-                                                icon: Icon(Icons.delete_outline,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .error),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                  emptyMessage:
+                                      l10n.tripOverviewNoRestaurantSuggestions,
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ] else ...[

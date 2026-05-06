@@ -374,11 +374,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get tripsJoinWithInviteTooltip =>
-      'Rejoindre avec un code d\'invitation';
+  String get tripsJoinWithInviteTooltip => 'Rejoindre un voyage';
 
   @override
-  String get tripsNewTripTooltip => 'Nouveau voyage';
+  String get tripsNewTripTooltip => 'Créer un nouveau voyage';
 
   @override
   String get tripsMyTrips => 'Mes voyages';
@@ -474,7 +473,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage (pas le lien, uniquement le code).';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -777,7 +776,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+      'Rôles minimaux pour créer, supprimer, modifier les repas, ajouter un apport et gérer une recette.';
 
   @override
   String get tripPermissionMealsCreate => 'Créer un repas';
@@ -788,10 +787,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get tripPermissionMealsEdit =>
       'Éditer un repas (date, type, participants, chef, catégorie)';
-
-  @override
-  String get tripPermissionMealsSuggestRestaurant =>
-      'Suggérer un restaurant (mode resto)';
 
   @override
   String get tripPermissionMealsAddContribution =>
@@ -862,10 +857,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTabShopping => 'Courses';
 
   @override
-  String get tripCarsTitle => 'Voitures';
+  String get tripCarsTitle => 'Covoiturage';
 
   @override
-  String get tripCarsComingSoon => 'Covoiturage et véhicules. Contenu à venir.';
+  String get tripCarsComingSoon => 'Gestion du covoiturage. Contenu à venir.';
 
   @override
   String get tripMealsComingSoon => 'Planning des repas. Contenu à venir.';
@@ -1218,6 +1213,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewEditTrip => 'Modifier le voyage';
 
   @override
+  String get tripOverviewEditAddTripDates => 'Définir les dates du voyage';
+
+  @override
+  String get tripOverviewEditRemoveTripDates => 'Retirer les dates du voyage';
+
+  @override
   String get tripOverviewTitleRequired => 'Titre obligatoire';
 
   @override
@@ -1262,7 +1263,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewLeaveTripDialogBody =>
-      'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.';
+      'Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).';
 
   @override
   String get tripOverviewLeaveTripCardBody =>
@@ -2188,7 +2189,60 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileCars => 'Voitures';
 
   @override
+  String get tripOverviewTileCarpool => 'Covoiturage';
+
+  @override
   String get tripOverviewTileGames => 'Jeux';
+
+  @override
+  String get tripGamesTitle => 'Jeux';
+
+  @override
+  String get tripBoardGamesTab => 'Jeux de société';
+
+  @override
+  String get tripGamesIntro =>
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".';
+
+  @override
+  String get tripGamesSearchLabel => 'Rechercher un jeu';
+
+  @override
+  String get tripGamesSearchHint => 'Filtrer par nom du jeu';
+
+  @override
+  String get tripGamesNoSearchMatch =>
+      'Aucun jeu ne correspond à cette recherche.';
+
+  @override
+  String get tripGamesEmpty => 'Aucun jeu pour le moment.';
+
+  @override
+  String get tripGamesAdd => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesAddTitle => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesEditTitle => 'Modifier le jeu';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Supprimer le jeu';
+
+  @override
+  String get tripGamesDeleteBody => 'Supprimer ce jeu de société ?';
+
+  @override
+  String get tripGamesAdded => 'Jeu ajouté';
+
+  @override
+  String get tripGamesUpdated => 'Jeu mis à jour';
+
+  @override
+  String get tripGamesDeleted => 'Jeu supprimé';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
@@ -2219,13 +2273,205 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileNoAssignedRoom => 'Aucune chambre attribuée';
 
   @override
+  String get tripOverviewTileNoBoardGames =>
+      'Aucun jeu de société. Clique ici pour ajouter les tiens.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count de plus)';
+  }
+
+  @override
   String get tripOverviewTileComingSoon => '[À venir]';
+
+  @override
+  String get tripCarpoolDriverLabel => 'Conducteur';
+
+  @override
+  String get tripCarpoolShoppingFlag => 'Courses';
+
+  @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'Tu pars avec $driverName à $departureTime de $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'Tu pars avec $driverName à $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'Tu enmènes $passengerNames, départ à $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'Vous faites partie de l\'équipe qui fait les courses !';
+
+  @override
+  String get tripCarpoolTileNoAssignment => 'Aucune affectation';
+
+  @override
+  String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
+
+  @override
+  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'Rejoignez une voiture en tant que passager ou proposez-vous comme conducteur.';
+
+  @override
+  String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Quitter ce covoiturage';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack =>
+      'Vous êtes affecté à ce covoiturage.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack =>
+      'Vous n\'êtes plus dans ce covoiturage.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Seuls les participants au voyage peuvent modifier leur affectation.';
+
+  @override
+  String tripCarpoolUnassignedWarningBody(int count) {
+    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  }
+
+  @override
+  String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
+
+  @override
+  String get tripCarpoolGlobalMeetupLabel => 'Lien Google Maps';
+
+  @override
+  String get tripCarpoolOpenMapsLink => 'Ouvrir le lien Google Maps';
+
+  @override
+  String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolListTitle => 'Covoiturages';
+
+  @override
+  String get tripCarpoolNavigateToMeetingPoint =>
+      'Naviguer vers le point de rendez-vous';
+
+  @override
+  String get tripCarpoolCreateAction => 'Proposer un covoiturage';
+
+  @override
+  String get tripCarpoolCreateTitle => 'Nouveau covoiturage';
+
+  @override
+  String get tripCarpoolEditTitle => 'Modifier le covoiturage';
+
+  @override
+  String get tripCarpoolMeetingPointLabel => 'Adresse du point de rendez-vous';
+
+  @override
+  String get tripCarpoolNearestTransitStopLabel =>
+      'Point transport en commun le plus proche';
+
+  @override
+  String get tripCarpoolDepartureAtLabel => 'Date et heure de départ';
+
+  @override
+  String tripCarpoolMeetingHour(Object hour) {
+    return 'Heure de RDV : $hour';
+  }
+
+  @override
+  String get tripCarpoolAvailableSeatsLabel => 'Places disponibles';
+
+  @override
+  String tripCarpoolRemainingSeats(int count) {
+    return '$count place(s) restante(s)';
+  }
+
+  @override
+  String get tripCarpoolFull => 'Complet';
+
+  @override
+  String get tripCarpoolGoesShoppingLabel =>
+      'Voiture désignée pour faire les courses';
+
+  @override
+  String get tripCarpoolPassengersTitle => 'Participants transportés';
+
+  @override
+  String get tripCarpoolTemporaryParticipantLabel => 'Voyageur prévu';
+
+  @override
+  String tripCarpoolAlreadyAssignedTo(Object carpoolLabel) {
+    return 'Déjà affecté à $carpoolLabel';
+  }
+
+  @override
+  String get tripCarpoolSeatsInvalid =>
+      'Le nombre de places doit être au moins 1.';
+
+  @override
+  String get tripCarpoolSeatsExceeded =>
+      'Le nombre de participants dépasse les places disponibles.';
+
+  @override
+  String get tripCarpoolCreated => 'Covoiturage créé';
+
+  @override
+  String get tripCarpoolUpdated => 'Covoiturage mis à jour';
+
+  @override
+  String get tripCarpoolDeleteTitle => 'Supprimer ce covoiturage ?';
+
+  @override
+  String get tripCarpoolDeleteBody =>
+      'Ce covoiturage sera supprimé définitivement.';
+
+  @override
+  String get tripCarpoolDeleted => 'Covoiturage supprimé';
+
+  @override
+  String get tripCarpoolCreateComingSoon =>
+      'Création de covoiturage disponible dans le prochain lot.';
+
+  @override
+  String get tripCarpoolEditComingSoon =>
+      'Édition de covoiturage disponible dans le prochain lot.';
 
   @override
   String get tripOverviewMyRoom => 'Ma chambre';
 
   @override
   String get tripOverviewMyRooms => 'Mes chambres';
+
+  @override
+  String get tripOverviewTabSummary => 'Aperçu';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Hébergements';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.';
 
   @override
   String get cupidonPopupTitle => 'Tu as un match';
@@ -2692,11 +2938,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
-  String get tripsJoinWithInviteTooltip =>
-      'Rejoindre avec un code d\'invitation';
+  String get tripsJoinWithInviteTooltip => 'Rejoindre un voyage';
 
   @override
-  String get tripsNewTripTooltip => 'Nouveau voyage';
+  String get tripsNewTripTooltip => 'Créer un nouveau voyage';
 
   @override
   String get tripsMyTrips => 'Mes voyages';
@@ -2792,7 +3037,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage (pas le lien, uniquement le code).';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -3095,7 +3340,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionsMealsDescription =>
-      'Rôles minimaux pour créer, supprimer, modifier les repas, suggérer un restaurant, ajouter un apport et gérer une recette.';
+      'Rôles minimaux pour créer, supprimer, modifier les repas, ajouter un apport et gérer une recette.';
 
   @override
   String get tripPermissionMealsCreate => 'Créer un repas';
@@ -3106,10 +3351,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPermissionMealsEdit =>
       'Éditer un repas (date, type, participants, chef, catégorie)';
-
-  @override
-  String get tripPermissionMealsSuggestRestaurant =>
-      'Suggérer un restaurant (mode resto)';
 
   @override
   String get tripPermissionMealsAddContribution =>
@@ -3180,10 +3421,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripTabShopping => 'Courses';
 
   @override
-  String get tripCarsTitle => 'Voitures';
+  String get tripCarsTitle => 'Covoiturage';
 
   @override
-  String get tripCarsComingSoon => 'Covoiturage et véhicules. Contenu à venir.';
+  String get tripCarsComingSoon => 'Gestion du covoiturage. Contenu à venir.';
 
   @override
   String get tripMealsComingSoon => 'Planning des repas. Contenu à venir.';
@@ -3536,6 +3777,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewEditTrip => 'Modifier le voyage';
 
   @override
+  String get tripOverviewEditAddTripDates => 'Définir les dates du voyage';
+
+  @override
+  String get tripOverviewEditRemoveTripDates => 'Retirer les dates du voyage';
+
+  @override
   String get tripOverviewTitleRequired => 'Titre obligatoire';
 
   @override
@@ -3580,7 +3827,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewLeaveTripDialogBody =>
-      'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.';
+      'Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).';
 
   @override
   String get tripOverviewLeaveTripCardBody =>
@@ -4506,7 +4753,60 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewTileCars => 'Voitures';
 
   @override
+  String get tripOverviewTileCarpool => 'Covoiturage';
+
+  @override
   String get tripOverviewTileGames => 'Jeux';
+
+  @override
+  String get tripGamesTitle => 'Jeux';
+
+  @override
+  String get tripBoardGamesTab => 'Jeux de société';
+
+  @override
+  String get tripGamesIntro =>
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".';
+
+  @override
+  String get tripGamesSearchLabel => 'Rechercher un jeu';
+
+  @override
+  String get tripGamesSearchHint => 'Filtrer par nom du jeu';
+
+  @override
+  String get tripGamesNoSearchMatch =>
+      'Aucun jeu ne correspond à cette recherche.';
+
+  @override
+  String get tripGamesEmpty => 'Aucun jeu pour le moment.';
+
+  @override
+  String get tripGamesAdd => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesAddTitle => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesEditTitle => 'Modifier le jeu';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Supprimer le jeu';
+
+  @override
+  String get tripGamesDeleteBody => 'Supprimer ce jeu de société ?';
+
+  @override
+  String get tripGamesAdded => 'Jeu ajouté';
+
+  @override
+  String get tripGamesUpdated => 'Jeu mis à jour';
+
+  @override
+  String get tripGamesDeleted => 'Jeu supprimé';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
@@ -4537,13 +4837,205 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewTileNoAssignedRoom => 'Aucune chambre attribuée';
 
   @override
+  String get tripOverviewTileNoBoardGames =>
+      'Aucun jeu de société. Clique ici pour ajouter les tiens.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count de plus)';
+  }
+
+  @override
   String get tripOverviewTileComingSoon => '[À venir]';
+
+  @override
+  String get tripCarpoolDriverLabel => 'Conducteur';
+
+  @override
+  String get tripCarpoolShoppingFlag => 'Courses';
+
+  @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'Tu pars avec $driverName à $departureTime de $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'Tu pars avec $driverName à $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'Tu enmènes $passengerNames, départ à $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'Vous faites partie de l\'équipe qui fait les courses !';
+
+  @override
+  String get tripCarpoolTileNoAssignment => 'Aucune affectation';
+
+  @override
+  String get tripCarpoolUnassignedWarningTitle => 'Affectation incomplète';
+
+  @override
+  String get tripCarpoolSelfUnassignedTitle => 'Pas de covoiturage';
+
+  @override
+  String get tripCarpoolSelfUnassignedBody =>
+      'Rejoignez une voiture en tant que passager ou proposez-vous comme conducteur.';
+
+  @override
+  String get tripCarpoolJoinTooltip => 'Rejoindre ce covoiturage';
+
+  @override
+  String get tripCarpoolLeaveTooltip => 'Quitter ce covoiturage';
+
+  @override
+  String get tripCarpoolJoinedSelfSnack =>
+      'Vous êtes affecté à ce covoiturage.';
+
+  @override
+  String get tripCarpoolLeftSelfSnack =>
+      'Vous n\'êtes plus dans ce covoiturage.';
+
+  @override
+  String get tripCarpoolSelfAssignmentDriverBlocked =>
+      'Les conducteurs ne peuvent pas rejoindre ou quitter un covoiturage depuis cette liste.';
+
+  @override
+  String get tripCarpoolSelfAssignmentNotMember =>
+      'Seuls les participants au voyage peuvent modifier leur affectation.';
+
+  @override
+  String tripCarpoolUnassignedWarningBody(int count) {
+    return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
+  }
+
+  @override
+  String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
+
+  @override
+  String get tripCarpoolGlobalMeetupLabel => 'Lien Google Maps';
+
+  @override
+  String get tripCarpoolOpenMapsLink => 'Ouvrir le lien Google Maps';
+
+  @override
+  String get tripCarpoolEmptyState => 'Aucun covoiturage pour le moment.';
+
+  @override
+  String get tripCarpoolListTitle => 'Covoiturages';
+
+  @override
+  String get tripCarpoolNavigateToMeetingPoint =>
+      'Naviguer vers le point de rendez-vous';
+
+  @override
+  String get tripCarpoolCreateAction => 'Proposer un covoiturage';
+
+  @override
+  String get tripCarpoolCreateTitle => 'Nouveau covoiturage';
+
+  @override
+  String get tripCarpoolEditTitle => 'Modifier le covoiturage';
+
+  @override
+  String get tripCarpoolMeetingPointLabel => 'Adresse du point de rendez-vous';
+
+  @override
+  String get tripCarpoolNearestTransitStopLabel =>
+      'Point transport en commun le plus proche';
+
+  @override
+  String get tripCarpoolDepartureAtLabel => 'Date et heure de départ';
+
+  @override
+  String tripCarpoolMeetingHour(Object hour) {
+    return 'Heure de RDV : $hour';
+  }
+
+  @override
+  String get tripCarpoolAvailableSeatsLabel => 'Places disponibles';
+
+  @override
+  String tripCarpoolRemainingSeats(int count) {
+    return '$count place(s) restante(s)';
+  }
+
+  @override
+  String get tripCarpoolFull => 'Complet';
+
+  @override
+  String get tripCarpoolGoesShoppingLabel =>
+      'Voiture désignée pour faire les courses';
+
+  @override
+  String get tripCarpoolPassengersTitle => 'Participants transportés';
+
+  @override
+  String get tripCarpoolTemporaryParticipantLabel => 'Voyageur prévu';
+
+  @override
+  String tripCarpoolAlreadyAssignedTo(Object carpoolLabel) {
+    return 'Déjà affecté à $carpoolLabel';
+  }
+
+  @override
+  String get tripCarpoolSeatsInvalid =>
+      'Le nombre de places doit être au moins 1.';
+
+  @override
+  String get tripCarpoolSeatsExceeded =>
+      'Le nombre de participants dépasse les places disponibles.';
+
+  @override
+  String get tripCarpoolCreated => 'Covoiturage créé';
+
+  @override
+  String get tripCarpoolUpdated => 'Covoiturage mis à jour';
+
+  @override
+  String get tripCarpoolDeleteTitle => 'Supprimer ce covoiturage ?';
+
+  @override
+  String get tripCarpoolDeleteBody =>
+      'Ce covoiturage sera supprimé définitivement.';
+
+  @override
+  String get tripCarpoolDeleted => 'Covoiturage supprimé';
+
+  @override
+  String get tripCarpoolCreateComingSoon =>
+      'Création de covoiturage disponible dans le prochain lot.';
+
+  @override
+  String get tripCarpoolEditComingSoon =>
+      'Édition de covoiturage disponible dans le prochain lot.';
 
   @override
   String get tripOverviewMyRoom => 'Ma chambre';
 
   @override
   String get tripOverviewMyRooms => 'Mes chambres';
+
+  @override
+  String get tripOverviewTabSummary => 'Aperçu';
+
+  @override
+  String get tripOverviewTabAccommodationSuggestions => 'Hébergements';
+
+  @override
+  String get tripOverviewNoAccommodationSuggestions =>
+      'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.';
+
+  @override
+  String get tripOverviewNoRestaurantSuggestions =>
+      'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.';
 
   @override
   String get cupidonPopupTitle => 'Tu as un match';

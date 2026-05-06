@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/core/firebase/firebase_emulator_wiring.dart';
 import 'package:planerz/core/firebase/firebase_options_selector.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/notifications/cupidon_match_popup_binder.dart';
@@ -36,6 +37,7 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
       final sameProject = existing.options.projectId == options.projectId;
       final sameAppId = existing.options.appId == options.appId;
       if (sameProject && sameAppId) {
+        await FirebaseEmulatorWiring.applyIfEnabled(widget.target);
         return existing;
       }
 
@@ -46,12 +48,16 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
     }
 
     try {
-      return await Firebase.initializeApp(
+      final app = await Firebase.initializeApp(
         options: options,
       );
+      await FirebaseEmulatorWiring.applyIfEnabled(widget.target);
+      return app;
     } on FirebaseException catch (error) {
       if (error.code == 'duplicate-app') {
-        return Firebase.app();
+        final app = Firebase.app();
+        await FirebaseEmulatorWiring.applyIfEnabled(widget.target);
+        return app;
       }
       rethrow;
     }

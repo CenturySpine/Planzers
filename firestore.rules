@@ -395,6 +395,21 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripDeleteRegisteredParticipantMinRole(tripId));
     }
 
+    function tripCarpoolUpdateShoppingMeetupPointMinRole(tripId) {
+      return (
+          tripDoc(tripId).data.permissions is map
+          && tripDoc(tripId).data.permissions.carpool is map
+          && tripDoc(tripId).data.permissions.carpool.updateShoppingMeetupPoint is string
+        )
+        ? tripDoc(tripId).data.permissions.carpool.updateShoppingMeetupPoint
+        : 'admin';
+    }
+
+    function canManageTripCarpoolShoppingMeetup(tripId) {
+      return isTripMember(tripId)
+        && tripCallerRoleRank(tripId) >= roleRank(tripCarpoolUpdateShoppingMeetupPointMinRole(tripId));
+    }
+
     function canReadTrip(data) {
       return signedIn()
         && (
@@ -483,6 +498,8 @@ service cloud.firestore {
             'linkUrl',
             'startDate',
             'endDate',
+            'tripStartDayPart',
+            'tripEndDayPart',
           ])
         ) ||
         (
@@ -571,12 +588,30 @@ service cloud.firestore {
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['plannedAt', 'votes'])
         ) || (
-          canSuggestActivity(tripId)
+          isTripMember(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['votes'])
           && request.resource.data.votes is list
         );
         allow delete: if canDeleteActivity(tripId);
+      }
+
+      match /boardGames/{gameId} {
+        allow read: if isTripMember(tripId);
+        allow create: if isTripMember(tripId)
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isTripMember(tripId)
+          && (resource.data.createdBy == request.auth.uid
+            || tripCallerRoleRank(tripId) >= 2)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'linkUrl',
+            'linkPreview',
+            'updatedAt',
+          ]);
+        allow delete: if isTripMember(tripId)
+          && (resource.data.createdBy == request.auth.uid
+            || tripCallerRoleRank(tripId) >= 2);
       }
 
       match /shoppingItems/{itemId} {
@@ -673,6 +708,24 @@ service cloud.firestore {
           allow delete: if isTripMember(tripId)
             && userId == request.auth.uid;
         }
+      }
+
+      match /sections/{sectionId} {
+        allow read: if isTripMember(tripId);
+        allow create: if sectionId in ['carpool', 'carpoolShoppingMeetup']
+          && canManageTripCarpoolShoppingMeetup(tripId)
+          && request.resource.data.keys().hasOnly([
+            'shoppingMeetupLinkUrl',
+            'shoppingMeetupLinkPreview',
+            'updatedAt',
+          ]);
+        allow update: if sectionId in ['carpool', 'carpoolShoppingMeetup']
+          && canManageTripCarpoolShoppingMeetup(tripId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'shoppingMeetupLinkUrl',
+            'shoppingMeetupLinkPreview',
+            'updatedAt',
+          ]);
       }
 
       match /announcements/{announcementId} {
