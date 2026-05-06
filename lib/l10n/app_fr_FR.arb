@@ -857,6 +857,29 @@
   "tripOverviewTileComingSoon": "[À venir]",
   "tripCarpoolDriverLabel": "Conducteur",
   "tripCarpoolShoppingFlag": "Courses",
+  "tripOverviewCarpoolPassengerSummary": "Tu pars avec {driverName} à {departureTime} de {meetingPointAddress}",
+  "@tripOverviewCarpoolPassengerSummary": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {},
+      "meetingPointAddress": {}
+    }
+  },
+  "tripOverviewCarpoolPassengerSummaryNoMeetingPoint": "Tu pars avec {driverName} à {departureTime}",
+  "@tripOverviewCarpoolPassengerSummaryNoMeetingPoint": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolDriverSummary": "Tu enmènes {passengerNames}, départ à {departureTime}",
+  "@tripOverviewCarpoolDriverSummary": {
+    "placeholders": {
+      "passengerNames": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolShoppingTeamLine": "Vous faites partie de l'équipe qui fait les courses !",
   "tripCarpoolTileNoAssignment": "Aucune affectation",
   "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
   "tripCarpoolSelfUnassignedTitle": "Pas de covoiturage",

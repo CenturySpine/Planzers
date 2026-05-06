@@ -857,6 +857,29 @@
   "tripOverviewTileComingSoon": "[Coming soon]",
   "tripCarpoolDriverLabel": "Driver",
   "tripCarpoolShoppingFlag": "Shopping",
+  "tripOverviewCarpoolPassengerSummary": "You're leaving with {driverName} at {departureTime} from {meetingPointAddress}",
+  "@tripOverviewCarpoolPassengerSummary": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {},
+      "meetingPointAddress": {}
+    }
+  },
+  "tripOverviewCarpoolPassengerSummaryNoMeetingPoint": "You're leaving with {driverName} at {departureTime}",
+  "@tripOverviewCarpoolPassengerSummaryNoMeetingPoint": {
+    "placeholders": {
+      "driverName": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolDriverSummary": "You're taking {passengerNames}, departure at {departureTime}",
+  "@tripOverviewCarpoolDriverSummary": {
+    "placeholders": {
+      "passengerNames": {},
+      "departureTime": {}
+    }
+  },
+  "tripOverviewCarpoolShoppingTeamLine": "You're part of the shopping team!",
   "tripCarpoolTileNoAssignment": "No assignment",
   "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",
   "tripCarpoolSelfUnassignedTitle": "No carpool",

@@ -2233,6 +2233,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripCarpoolShoppingFlag => 'Courses';
 
   @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'Tu pars avec $driverName à $departureTime de $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'Tu pars avec $driverName à $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'Tu enmènes $passengerNames, départ à $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'Vous faites partie de l\'équipe qui fait les courses !';
+
+  @override
   String get tripCarpoolTileNoAssignment => 'Aucune affectation';
 
   @override
@@ -4715,6 +4737,28 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripCarpoolShoppingFlag => 'Courses';
+
+  @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'Tu pars avec $driverName à $departureTime de $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'Tu pars avec $driverName à $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'Tu enmènes $passengerNames, départ à $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'Vous faites partie de l\'équipe qui fait les courses !';
 
   @override
   String get tripCarpoolTileNoAssignment => 'Aucune affectation';

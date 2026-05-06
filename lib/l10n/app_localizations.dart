@@ -4061,6 +4061,33 @@ abstract class AppLocalizations {
   /// **'Courses'**
   String get tripCarpoolShoppingFlag;
 
+  /// No description provided for @tripOverviewCarpoolPassengerSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu pars avec {driverName} à {departureTime} de {meetingPointAddress}'**
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress);
+
+  /// No description provided for @tripOverviewCarpoolPassengerSummaryNoMeetingPoint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu pars avec {driverName} à {departureTime}'**
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime);
+
+  /// No description provided for @tripOverviewCarpoolDriverSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu enmènes {passengerNames}, départ à {departureTime}'**
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime);
+
+  /// No description provided for @tripOverviewCarpoolShoppingTeamLine.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous faites partie de l\'équipe qui fait les courses !'**
+  String get tripOverviewCarpoolShoppingTeamLine;
+
   /// No description provided for @tripCarpoolTileNoAssignment.
   ///
   /// In fr, this message translates to:

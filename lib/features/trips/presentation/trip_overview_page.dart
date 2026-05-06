@@ -580,9 +580,57 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     orElse: () => null,
                   );
             final myCarpoolDetailLines = <String>[
-              if (myCarpool != null && myCarpool.driverUserId.trim().isNotEmpty)
-                '${l10n.tripCarpoolDriverLabel}: ${memberLabels[myCarpool.driverUserId] ?? l10n.tripParticipantsTraveler}',
-              if (myCarpool?.goesShopping == true) l10n.tripCarpoolShoppingFlag,
+              if (myCarpool != null && myUid != null && myUid.trim().isNotEmpty)
+                ...() {
+                  final departureTime =
+                      MaterialLocalizations.of(context).formatTimeOfDay(
+                    TimeOfDay.fromDateTime(myCarpool.departureAt),
+                    alwaysUse24HourFormat: true,
+                  );
+                  final meetingPointLabel =
+                      myCarpool.meetingPointAddress.trim();
+                  final driverLabel =
+                      (memberLabels[myCarpool.driverUserId] ??
+                              l10n.tripParticipantsTraveler)
+                          .trim();
+                  final passengerIds = myCarpool.assignedParticipantIds
+                      .map((id) => id.trim())
+                      .where((id) => id.isNotEmpty)
+                      .where((id) => id != myCarpool.driverUserId.trim())
+                      .toList(growable: false);
+                  final passengerLabels = passengerIds
+                      .map(
+                        (id) =>
+                            (memberLabels[id]?.trim().isNotEmpty == true)
+                                ? memberLabels[id]!.trim()
+                                : l10n.tripParticipantsTraveler,
+                      )
+                      .toList(growable: false);
+                  final passengersLabel = passengerLabels.isEmpty
+                      ? l10n.commonNotProvided
+                      : passengerLabels.join(', ');
+                  final isDriver = myUid.trim() == myCarpool.driverUserId.trim();
+
+                  return <String>[
+                    isDriver
+                        ? l10n.tripOverviewCarpoolDriverSummary(
+                            passengersLabel,
+                            departureTime,
+                          )
+                        : meetingPointLabel.isEmpty
+                            ? l10n.tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+                                driverLabel,
+                                departureTime,
+                              )
+                            : l10n.tripOverviewCarpoolPassengerSummary(
+                                driverLabel,
+                                departureTime,
+                                meetingPointLabel,
+                              ),
+                    if (myCarpool.goesShopping)
+                      l10n.tripOverviewCarpoolShoppingTeamLine,
+                  ];
+                }(),
             ];
             final activitiesCounters = activitiesCountersAsync.asData?.value;
             var unreadActivities = 0;

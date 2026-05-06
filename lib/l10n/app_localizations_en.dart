@@ -2217,6 +2217,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripCarpoolShoppingFlag => 'Shopping';
 
   @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'You\'re leaving with $driverName at $departureTime from $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'You\'re leaving with $driverName at $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'You\'re taking $passengerNames, departure at $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'You\'re part of the shopping team!';
+
+  @override
   String get tripCarpoolTileNoAssignment => 'No assignment';
 
   @override
@@ -4677,6 +4699,28 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripCarpoolShoppingFlag => 'Shopping';
+
+  @override
+  String tripOverviewCarpoolPassengerSummary(
+      Object driverName, Object departureTime, Object meetingPointAddress) {
+    return 'You\'re leaving with $driverName at $departureTime from $meetingPointAddress';
+  }
+
+  @override
+  String tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+      Object driverName, Object departureTime) {
+    return 'You\'re leaving with $driverName at $departureTime';
+  }
+
+  @override
+  String tripOverviewCarpoolDriverSummary(
+      Object passengerNames, Object departureTime) {
+    return 'You\'re taking $passengerNames, departure at $departureTime';
+  }
+
+  @override
+  String get tripOverviewCarpoolShoppingTeamLine =>
+      'You\'re part of the shopping team!';
 
   @override
   String get tripCarpoolTileNoAssignment => 'No assignment';
