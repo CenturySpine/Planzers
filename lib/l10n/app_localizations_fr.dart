@@ -2274,6 +2274,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileNoAssignedRoom => 'Aucune chambre attribuée';
 
   @override
+  String get tripOverviewTileNoBoardGames =>
+      'Aucun jeu de société. Clique ici pour ajouter les tiens.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count de plus)';
+  }
+
+  @override
   String get tripOverviewTileComingSoon => '[À venir]';
 
   @override
@@ -4828,6 +4837,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTileNoAssignedRoom => 'Aucune chambre attribuée';
+
+  @override
+  String get tripOverviewTileNoBoardGames =>
+      'Aucun jeu de société. Clique ici pour ajouter les tiens.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count de plus)';
+  }
 
   @override
   String get tripOverviewTileComingSoon => '[À venir]';

@@ -2257,6 +2257,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTileNoAssignedRoom => 'No room assigned';
 
   @override
+  String get tripOverviewTileNoBoardGames =>
+      'No board games yet. Tap here to add yours.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count more)';
+  }
+
+  @override
   String get tripOverviewTileComingSoon => '[Coming soon]';
 
   @override
@@ -4788,6 +4797,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTileNoAssignedRoom => 'No room assigned';
+
+  @override
+  String get tripOverviewTileNoBoardGames =>
+      'No board games yet. Tap here to add yours.';
+
+  @override
+  String tripOverviewTileGamesAndMore(int count) {
+    return '($count more)';
+  }
 
   @override
   String get tripOverviewTileComingSoon => '[Coming soon]';

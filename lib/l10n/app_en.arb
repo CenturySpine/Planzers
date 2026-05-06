@@ -870,6 +870,15 @@
   "tripOverviewTopTabExpenses": "Expenses",
   "tripOverviewTileNoActivitiesToday": "No activities planned today",
   "tripOverviewTileNoAssignedRoom": "No room assigned",
+  "tripOverviewTileNoBoardGames": "No board games yet. Tap here to add yours.",
+  "tripOverviewTileGamesAndMore": "({count} more)",
+  "@tripOverviewTileGamesAndMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripOverviewTileComingSoon": "[Coming soon]",
   "tripCarpoolDriverLabel": "Driver",
   "tripCarpoolShoppingFlag": "Shopping",

@@ -4139,6 +4139,18 @@ abstract class AppLocalizations {
   /// **'Aucune chambre attribuée'**
   String get tripOverviewTileNoAssignedRoom;
 
+  /// No description provided for @tripOverviewTileNoBoardGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun jeu de société. Clique ici pour ajouter les tiens.'**
+  String get tripOverviewTileNoBoardGames;
+
+  /// No description provided for @tripOverviewTileGamesAndMore.
+  ///
+  /// In fr, this message translates to:
+  /// **'({count} de plus)'**
+  String tripOverviewTileGamesAndMore(int count);
+
   /// No description provided for @tripOverviewTileComingSoon.
   ///
   /// In fr, this message translates to:

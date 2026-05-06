@@ -467,9 +467,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final carpools =
         ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
             const [];
-    final boardGamesCount =
-        ref.watch(tripBoardGamesStreamProvider(_trip.id)).asData?.value.length ??
-            0;
+    final boardGames =
+        ref.watch(tripBoardGamesStreamProvider(_trip.id)).asData?.value ??
+            const [];
+    final boardGamesCount = boardGames.length;
+    final boardGamesDetailLines = boardGames
+        .map((game) => game.name.trim())
+        .where((name) => name.isNotEmpty)
+        .toList()
+      ..shuffle();
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final myAssignedRoomNames = myUid == null
@@ -1379,8 +1385,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       iconColor: cs.primary,
                                       showDetailBullets: false,
                                       wrapDetailLines: true,
+                                      detailLines: boardGamesDetailLines,
+                                      moreDetailsLabelBuilder: (extraCount) =>
+                                          l10n.tripOverviewTileGamesAndMore(
+                                              extraCount),
                                       emptyStateMessage:
-                                          l10n.tripOverviewTileComingSoon,
+                                          l10n.tripOverviewTileNoBoardGames,
                                       onTap: () => context
                                           .push('/trips/${_trip.id}/games'),
                                     ),
@@ -1803,6 +1813,7 @@ class _TripAccessTile extends StatelessWidget {
     this.wrapDetailLines = false,
     this.emphasizedDetailLineIndex,
     this.emptyStateMessage,
+    this.moreDetailsLabelBuilder,
   });
 
   final String label;
@@ -1818,6 +1829,7 @@ class _TripAccessTile extends StatelessWidget {
   final bool wrapDetailLines;
   final int? emphasizedDetailLineIndex;
   final String? emptyStateMessage;
+  final String Function(int count)? moreDetailsLabelBuilder;
   static const double _kTileHeight = 148;
 
   @override
@@ -1917,7 +1929,9 @@ class _TripAccessTile extends StatelessWidget {
                                     ),
                                   if (moreDetailsCount > 0)
                                     Text(
-                                      '+$moreDetailsCount',
+                                      moreDetailsLabelBuilder
+                                              ?.call(moreDetailsCount) ??
+                                          '+$moreDetailsCount',
                                       maxLines: wrapDetailLines ? null : 1,
                                       overflow: wrapDetailLines
                                           ? TextOverflow.visible

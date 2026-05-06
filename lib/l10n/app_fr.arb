@@ -870,6 +870,15 @@
   "tripOverviewTopTabExpenses": "Dépenses",
   "tripOverviewTileNoActivitiesToday": "Pas d'activités prévues aujourd'hui",
   "tripOverviewTileNoAssignedRoom": "Aucune chambre attribuée",
+  "tripOverviewTileNoBoardGames": "Aucun jeu de société. Clique ici pour ajouter les tiens.",
+  "tripOverviewTileGamesAndMore": "({count} de plus)",
+  "@tripOverviewTileGamesAndMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripOverviewTileComingSoon": "[À venir]",
   "tripCarpoolDriverLabel": "Conducteur",
   "tripCarpoolShoppingFlag": "Courses",
