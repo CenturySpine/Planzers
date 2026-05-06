@@ -904,6 +904,7 @@
       "departureTime": {}
     }
   },
+  "tripOverviewCarpoolNoPassengersPlaceholder": "[nobody]",
   "tripOverviewCarpoolShoppingTeamLine": "You're part of the shopping team!",
   "tripCarpoolTileNoAssignment": "No assignment",
   "tripCarpoolUnassignedWarningTitle": "Incomplete assignment",

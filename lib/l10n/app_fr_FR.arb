@@ -904,6 +904,7 @@
       "departureTime": {}
     }
   },
+  "tripOverviewCarpoolNoPassengersPlaceholder": "[personne]",
   "tripOverviewCarpoolShoppingTeamLine": "Vous faites partie de l'équipe qui fait les courses !",
   "tripCarpoolTileNoAssignment": "Aucune affectation",
   "tripCarpoolUnassignedWarningTitle": "Affectation incomplète",
