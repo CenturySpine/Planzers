@@ -524,7 +524,7 @@
   "tripOverviewLeaveTripTitle": "Quitter ce voyage ?",
   "tripOverviewLeaveAction": "Quitter",
   "tripOverviewLeaveTripCardTitle": "Quitter le voyage",
-  "tripOverviewLeaveTripDialogBody": "Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.",
+  "tripOverviewLeaveTripDialogBody": "Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).",
   "tripOverviewLeaveTripCardBody": "Tu pourras quitter même si les comptes ne sont pas à zéro. Tu seras alors retiré automatiquement de toutes les dépenses où tu es inclus (les autres voyageurs verront les parts mises à jour)."
   ,
   "inviteTitle": "Invitation",

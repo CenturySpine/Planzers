@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -777,10 +776,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         PopupMenuButton<String>(
                                           tooltip: l10n.tripOverviewActions,
                                           onSelected: (value) {
-                                            if (value == 'participants') {
-                                              _openParticipantsPage();
-                                              return;
-                                            }
                                             if (value == 'preferences' &&
                                                 isTripMember) {
                                               _openTripUserPreferencesPage();
@@ -809,18 +804,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             }
                                           },
                                           itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'participants',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons
-                                                      .assignment_ind_outlined),
-                                                  SizedBox(width: 10),
-                                                  Text(l10n
-                                                      .tripParticipantsTitle),
-                                                ],
-                                              ),
-                                            ),
                                             if (isTripMember)
                                               PopupMenuItem(
                                                 value: 'preferences',
@@ -921,10 +904,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       PopupMenuButton<String>(
                                         tooltip: l10n.tripOverviewActions,
                                         onSelected: (value) {
-                                          if (value == 'participants') {
-                                            _openParticipantsPage();
-                                            return;
-                                          }
                                           if (value == 'preferences' &&
                                               isTripMember) {
                                             _openTripUserPreferencesPage();
@@ -953,18 +932,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           }
                                         },
                                         itemBuilder: (context) => [
-                                          PopupMenuItem(
-                                            value: 'participants',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons
-                                                    .assignment_ind_outlined),
-                                                SizedBox(width: 10),
-                                                Text(
-                                                    l10n.tripParticipantsTitle),
-                                              ],
-                                            ),
-                                          ),
                                           if (isTripMember)
                                             PopupMenuItem(
                                               value: 'preferences',
@@ -1401,15 +1368,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           );
                         }),
                       ],
-                      if (myUid != null &&
-                          !canEdit &&
-                          liveMemberIds
-                              .map((id) => id.trim())
-                              .where((id) => id.isNotEmpty)
-                              .contains(myUid)) ...[
-                        const SizedBox(height: 16),
-                        _LeaveTripSection(tripId: _trip.id),
-                      ],
                     ],
                   ),
                 ),
@@ -1496,115 +1454,6 @@ class _TripBanner extends StatelessWidget {
                         ],
                       ),
               ),
-      ),
-    );
-  }
-}
-
-class _LeaveTripSection extends ConsumerStatefulWidget {
-  const _LeaveTripSection({required this.tripId});
-
-  final String tripId;
-
-  @override
-  ConsumerState<_LeaveTripSection> createState() => _LeaveTripSectionState();
-}
-
-class _LeaveTripSectionState extends ConsumerState<_LeaveTripSection> {
-  bool _busy = false;
-
-  static String _messageForError(Object e) {
-    if (e is FirebaseFunctionsException) {
-      final m = e.message;
-      if (m != null && m.trim().isNotEmpty) {
-        return m.trim();
-      }
-    }
-    return e.toString();
-  }
-
-  Future<void> _confirmAndLeave() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_busy) return;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.tripOverviewLeaveTripTitle),
-        content: Text(l10n.tripOverviewLeaveTripDialogBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.tripOverviewLeaveAction),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) {
-      return;
-    }
-
-    setState(() => _busy = true);
-    try {
-      await ref.read(tripsRepositoryProvider).leaveTripAsMember(
-            tripId: widget.tripId,
-          );
-      if (!mounted) return;
-      context.go('/trips');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageForError(e))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.tripOverviewLeaveTripCardTitle,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.tripOverviewLeaveTripCardBody,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              onPressed: _busy || myUid == null ? null : _confirmAndLeave,
-              child: _busy
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(l10n.tripOverviewLeaveTripCardTitle),
-            ),
-          ],
-        ),
       ),
     );
   }

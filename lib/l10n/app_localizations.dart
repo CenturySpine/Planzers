@@ -2330,7 +2330,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripOverviewLeaveTripDialogBody.
   ///
   /// In fr, this message translates to:
-  /// **'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.'**
+  /// **'Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).'**
   String get tripOverviewLeaveTripDialogBody;
 
   /// No description provided for @tripOverviewLeaveTripCardBody.

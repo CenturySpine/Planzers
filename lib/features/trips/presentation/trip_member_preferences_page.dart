@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -27,6 +28,17 @@ class TripMemberPreferencesPage extends ConsumerStatefulWidget {
 class _TripMemberPreferencesPageState
     extends ConsumerState<TripMemberPreferencesPage> {
   bool _isSavingCupidon = false;
+  bool _isLeavingTrip = false;
+
+  static String _messageForLeaveError(Object error) {
+    if (error is FirebaseFunctionsException) {
+      final String? message = error.message;
+      if (message != null && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+    }
+    return error.toString();
+  }
 
   Future<void> _toggleCupidon({
     required bool enabled,
@@ -115,6 +127,50 @@ class _TripMemberPreferencesPageState
     }
   }
 
+  Future<void> _confirmAndLeaveTrip() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_isLeavingTrip) return;
+
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.tripOverviewLeaveTripTitle),
+        content: Text(l10n.tripOverviewLeaveTripDialogBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.tripOverviewLeaveAction),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) {
+      return;
+    }
+
+    setState(() => _isLeavingTrip = true);
+    try {
+      await ref.read(tripsRepositoryProvider).leaveTripAsMember(
+            tripId: widget.tripId,
+          );
+      if (!mounted) return;
+      context.go('/trips');
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageForLeaveError(error))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLeavingTrip = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -145,6 +201,7 @@ class _TripMemberPreferencesPageState
           );
         }
         final isTripMember = myUid.isNotEmpty && trip.memberIds.contains(myUid);
+        final isTripOwner = myUid.isNotEmpty && trip.ownerId.trim() == myUid;
         if (!isTripMember) {
           return Scaffold(
             appBar: AppBar(
@@ -203,6 +260,22 @@ class _TripMemberPreferencesPageState
                         ),
                 phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
               ),
+              if (!isTripOwner) ...[
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                  onPressed: _isLeavingTrip ? null : _confirmAndLeaveTrip,
+                  child: _isLeavingTrip
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.tripOverviewLeaveTripCardTitle),
+                ),
+              ],
             ],
           ),
         );

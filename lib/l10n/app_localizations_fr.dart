@@ -1264,7 +1264,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewLeaveTripDialogBody =>
-      'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.';
+      'Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).';
 
   @override
   String get tripOverviewLeaveTripCardBody =>
@@ -3829,7 +3829,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewLeaveTripDialogBody =>
-      'Tu seras retiré de la liste des voyageurs. Sur chaque dépense partagée où tu participes, tu seras enlevé des participants : le partage sera recalculé pour les autres. Si tu étais seul sur une dépense, celle-ci sera supprimée.';
+      'Quitter le voyage échouera si tu es encore attribué à des éléments du voyage (chambres, dépenses, covoiturages, etc.).';
 
   @override
   String get tripOverviewLeaveTripCardBody =>
