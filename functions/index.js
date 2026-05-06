@@ -75,9 +75,12 @@ async function fetchHtml(url) {
 
 function isGoogleMapsUrl(url) {
   const h = url.hostname;
+  const p = url.pathname || '';
   return (
     h === 'maps.google.com' ||
-    (h === 'www.google.com' && url.pathname.startsWith('/maps'))
+    (h === 'www.google.com' && p.startsWith('/maps')) ||
+    h === 'maps.app.goo.gl' ||
+    (h === 'goo.gl' && p.startsWith('/maps'))
   );
 }
 
@@ -2242,6 +2245,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           status: 'error',
           url: afterUrl,
           error: 'invalid_url',
+          isGoogleMaps: false,
           fetchedAt: FieldValue.serverTimestamp(),
         },
       },
@@ -2255,6 +2259,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
       [previewField]: {
         status: 'loading',
         url: parsed.toString(),
+        isGoogleMaps: isGoogleMapsUrl(parsed),
         fetchedAt: FieldValue.serverTimestamp(),
       },
     },
@@ -2295,6 +2300,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           description: preview.description,
           siteName: preview.siteName,
           imageUrl: preview.imageUrl,
+          isGoogleMaps: isGoogleMapsUrl(finalUrl),
           fetchedAt: FieldValue.serverTimestamp(),
         },
       },
@@ -2307,6 +2313,7 @@ async function generateLinkPreview(docRef, beforeUrlRaw, afterUrlRaw, previewFie
           status: 'error',
           url: parsed.toString(),
           error: String(e),
+          isGoogleMaps: isGoogleMapsUrl(parsed),
           fetchedAt: FieldValue.serverTimestamp(),
         },
       },

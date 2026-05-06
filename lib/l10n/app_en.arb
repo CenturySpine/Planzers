@@ -924,6 +924,7 @@
       }
     }
   },
+  "tripCarpoolCarsTitle": "Cars",
   "tripCarpoolGlobalMeetupTitle": "Shopping meetup",
   "tripCarpoolGlobalMeetupLabel": "Google Maps link",
   "tripCarpoolOpenMapsLink": "Open Google Maps link",

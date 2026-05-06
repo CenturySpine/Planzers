@@ -176,7 +176,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                   ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                     itemCount: listItemCount,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, __) => const SizedBox(height: 4),
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Text(
@@ -223,8 +223,8 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
 
                       return Card(
                         child: ListTile(
-                          minVerticalPadding: 8,
-                          minTileHeight: 72,
+                          minVerticalPadding: 4,
+                          minTileHeight: 60,
                           leading: buildProfileBadge(
                             context: context,
                             displayLabel: creatorLabel,
@@ -232,16 +232,12 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                             size: 30,
                           ),
                           title: Text(
-                            game.name.isEmpty ? l10n.activitiesUntitled : game.name,
+                            game.name.isEmpty
+                                ? l10n.activitiesUntitled
+                                : game.name,
                           ),
-                          subtitle: game.linkUrl.trim().isEmpty
-                              ? null
-                              : Text(
-                                  game.linkUrl,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                          trailing: LinkPreviewThumbnail(preview: game.linkPreview),
+                          trailing:
+                              LinkPreviewThumbnail(preview: game.linkPreview),
                           onTap: () => _openBoardGameDialog(
                             tripId: trip.id,
                             game: game,
@@ -255,12 +251,11 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                 ],
               ),
               floatingActionButton: FloatingActionButton(
-                onPressed: () =>
-                    _openBoardGameDialog(
-                      tripId: trip.id,
-                      canEdit: true,
-                      canDelete: false,
-                    ),
+                onPressed: () => _openBoardGameDialog(
+                  tripId: trip.id,
+                  canEdit: true,
+                  canDelete: false,
+                ),
                 tooltip: l10n.tripGamesAdd,
                 child: const Icon(Icons.add),
               ),
@@ -554,8 +549,9 @@ class _BoardGameDialogState extends State<_BoardGameDialog> {
                   }
                   _cancelExistingEdit();
                 },
-                child: Text(
-                    (isEdit && !isReadOnly) ? l10n.commonCancel : l10n.commonClose),
+                child: Text((isEdit && !isReadOnly)
+                    ? l10n.commonCancel
+                    : l10n.commonClose),
               ),
               if (!isReadOnly)
                 FilledButton.icon(

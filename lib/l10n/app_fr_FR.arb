@@ -924,6 +924,7 @@
       }
     }
   },
+  "tripCarpoolCarsTitle": "Voitures",
   "tripCarpoolGlobalMeetupTitle": "Rendez-vous courses",
   "tripCarpoolGlobalMeetupLabel": "Lien Google Maps",
   "tripCarpoolOpenMapsLink": "Ouvrir le lien Google Maps",

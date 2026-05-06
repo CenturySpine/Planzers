@@ -336,6 +336,107 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                   return leftLabel.toLowerCase().compareTo(rightLabel.toLowerCase());
                 });
 
+              if (_isReadOnly) {
+                final colorScheme = Theme.of(context).colorScheme;
+                final textTheme = Theme.of(context).textTheme;
+                final labelStyle = textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                );
+                final valueStyle = textTheme.bodyLarge;
+
+                Widget readOnlyField(String label, String value) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(label, style: labelStyle),
+                        const SizedBox(height: 2),
+                        Text(
+                          value.trim().isEmpty ? l10n.commonNotProvided : value.trim(),
+                          style: valueStyle,
+                        ),
+                      ],
+                    );
+
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  children: [
+                    readOnlyField(
+                      l10n.tripCarpoolMeetingPointLabel,
+                      _meetingController.text,
+                    ),
+                    const Divider(height: 32),
+                    readOnlyField(
+                      l10n.tripCarpoolNearestTransitStopLabel,
+                      _transitController.text,
+                    ),
+                    const Divider(height: 32),
+                    readOnlyField(
+                      l10n.tripCarpoolDepartureAtLabel,
+                      _departureAt == null
+                          ? ''
+                          : '${MaterialLocalizations.of(context).formatMediumDate(_departureAt!)} ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_departureAt!), alwaysUse24HourFormat: true)}',
+                    ),
+                    const Divider(height: 32),
+                    readOnlyField(
+                      l10n.tripCarpoolDriverLabel,
+                      _driverUserId?.trim().isNotEmpty == true
+                          ? (memberLabels[_driverUserId!.trim()] ?? l10n.tripParticipantsTraveler)
+                          : '',
+                    ),
+                    const Divider(height: 32),
+                    readOnlyField(
+                      l10n.tripCarpoolAvailableSeatsLabel,
+                      _seatsController.text.trim(),
+                    ),
+                    const Divider(height: 32),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.tripCarpoolGoesShoppingLabel, style: labelStyle),
+                        const SizedBox(height: 4),
+                        Icon(
+                          _goesShopping
+                              ? Icons.shopping_cart_outlined
+                              : Icons.remove,
+                          size: 20,
+                          color: _goesShopping
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 32),
+                    Text(
+                      l10n.tripCarpoolPassengersTitle,
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final memberId in sortedParticipantIds)
+                            if (_selectedParticipantIds.contains(memberId))
+                              ListTile(
+                                dense: true,
+                                leading: Icon(
+                                  memberId == _driverUserId?.trim()
+                                      ? Icons.drive_eta_outlined
+                                      : Icons.person_outline,
+                                  size: 20,
+                                ),
+                                title: Text(
+                                  memberLabels[memberId] ?? l10n.tripParticipantsTraveler,
+                                ),
+                              ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
               return Form(
                 key: _formKey,
                 child: ListView(

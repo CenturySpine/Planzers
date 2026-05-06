@@ -1231,37 +1231,37 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             ],
                           ),
                         ),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (linkUrlForUi.isNotEmpty) ...[
-                                LinkPreviewCardFromFirestore(
-                                  url: linkUrlForUi,
-                                  preview: livePreview,
-                                  showCard: false,
-                                  showTitleLabel: false,
-                                ),
-                                const SizedBox(height: 12),
-                              ],
-                              _InfoRow(
-                                label: l10n.tripOverviewAddressLabel,
-                                value: _trip.address,
-                                actionIcon: Icons.location_on_outlined,
-                                onActionPressed: _trip.address.trim().isEmpty
-                                    ? null
-                                    : () => openAddressInGoogleMaps(
+                      if (linkUrlForUi.isNotEmpty)
+                        Builder(builder: (context) {
+                          final cs = Theme.of(context).colorScheme;
+                          final isMapsLink =
+                              livePreview['isGoogleMaps'] == true;
+                          final hasAddress = _trip.address.trim().isNotEmpty;
+                          final showDirections = isMapsLink || hasAddress;
+                          return LinkPreviewCompact(
+                            url: linkUrlForUi,
+                            preview: livePreview,
+                            trailing: showDirections
+                                ? IconButton(
+                                    tooltip: l10n.tripOverviewOpenLocation,
+                                    icon: const Icon(
+                                      Icons.directions_outlined,
+                                    ),
+                                    color: cs.tertiary,
+                                    onPressed: () {
+                                      if (isMapsLink) {
+                                        _openLinkUrl(linkUrlForUi);
+                                      } else {
+                                        openAddressInGoogleMaps(
                                           context,
                                           _trip.address,
-                                        ),
-                                actionTooltip: l10n.tripOverviewOpenLocation,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                                        );
+                                      }
+                                    },
+                                  )
+                                : null,
+                          );
+                        }),
                       if (!_isEditing) ...[
                         const SizedBox(height: 12),
                         Builder(builder: (context) {
@@ -1455,57 +1455,6 @@ class _TripBanner extends StatelessWidget {
                       ),
               ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.actionIcon,
-    this.onActionPressed,
-    this.actionTooltip,
-  });
-
-  final String label;
-  final String value;
-  final IconData? actionIcon;
-  final VoidCallback? onActionPressed;
-  final String? actionTooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 110,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value.isEmpty ? '-' : value,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-        if (actionIcon != null)
-          IconButton(
-            tooltip: actionTooltip,
-            onPressed: onActionPressed,
-            icon: Icon(actionIcon),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
-            visualDensity: VisualDensity.compact,
-            splashRadius: 18,
-          ),
-      ],
     );
   }
 }
