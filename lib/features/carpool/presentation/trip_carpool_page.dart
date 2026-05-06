@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -606,6 +607,10 @@ class _TripCarpoolCard extends StatelessWidget {
       TimeOfDay.fromDateTime(carpool.departureAt),
       alwaysUse24HourFormat: true,
     );
+    final departureDateLabel = DateFormat(
+      'd MMM',
+      Localizations.localeOf(context).toString(),
+    ).format(carpool.departureAt);
     final remainingSeats =
         carpool.availableSeats - carpool.assignedParticipantIds.length;
     final meetingPointLabel = carpool.meetingPointAddress.trim().isEmpty
@@ -719,6 +724,7 @@ class _TripCarpoolCard extends StatelessWidget {
                 TextSpan(
                   style: meetingLineStyle,
                   children: [
+                    TextSpan(text: '$departureDateLabel, '),
                     TextSpan(text: '$departureTime - '),
                     TextSpan(text: meetingPointLabel),
                     WidgetSpan(
