@@ -2951,8 +2951,6 @@ function stripUidFromEveryCarAssignments(cars, uid) {
 }
 
 function validateSerializedTripCarOrThrow(car) {
-  const id = normalizeString(car.id);
-  if (!id) return;
   const driverUserId = normalizeString(car.driverUserId);
   const seatsRaw = car.availableSeats;
   const seats =
