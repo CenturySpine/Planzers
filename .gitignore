@@ -46,3 +46,5 @@ macos/Flutter/GeneratedPluginRegistrant.swift
 windows/flutter/generated_plugin_registrant.cc
 windows/flutter/generated_plugins.cmake
 .claude/settings.local.json
+emulator-data
+firestore-debug.log
