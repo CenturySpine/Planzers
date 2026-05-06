@@ -2999,7 +2999,7 @@ function tripCarpoolPermissionMinRole(tripData, key, fallbackRole) {
   return configured || fallbackRole;
 }
 
-function parseCallableDateToTimestamp(rawValue) {
+function parseRawDateToTimestamp(rawValue) {
   if (rawValue instanceof Timestamp) {
     return rawValue;
   }
@@ -3014,27 +3014,20 @@ function parseCallableDateToTimestamp(rawValue) {
     if (Number.isFinite(parsedDate.getTime())) {
       return Timestamp.fromDate(parsedDate);
     }
+  }
+  return null;
+}
+
+function parseCallableDateToTimestamp(rawValue) {
+  const parsedTimestamp = parseRawDateToTimestamp(rawValue);
+  if (parsedTimestamp) {
+    return parsedTimestamp;
   }
   throw new HttpsError('invalid-argument', 'Parametres invalides');
 }
 
 function parseTimestampOrFallback(rawValue, fallbackTimestamp) {
-  if (rawValue instanceof Timestamp) {
-    return rawValue;
-  }
-  if (rawValue instanceof Date && Number.isFinite(rawValue.getTime())) {
-    return Timestamp.fromDate(rawValue);
-  }
-  if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
-    return Timestamp.fromMillis(rawValue);
-  }
-  if (typeof rawValue === 'string') {
-    const parsedDate = new Date(rawValue);
-    if (Number.isFinite(parsedDate.getTime())) {
-      return Timestamp.fromDate(parsedDate);
-    }
-  }
-  return fallbackTimestamp;
+  return parseRawDateToTimestamp(rawValue) ?? fallbackTimestamp;
 }
 
 exports.upsertTripCarpool = onCall({}, async (request) => {
