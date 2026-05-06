@@ -2444,6 +2444,38 @@ exports.generateMealLinkPreviewOnCreate = onDocumentCreated(
   }
 );
 
+exports.generateTripBoardGameLinkPreview = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}/boardGames/{gameId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const before = event.data.before.data() || {};
+    const after = event.data.after.data() || {};
+    await generateLinkPreview(
+      event.data.after.ref,
+      before.linkUrl,
+      after.linkUrl,
+      'linkPreview'
+    );
+  }
+);
+
+exports.generateTripBoardGameLinkPreviewOnCreate = onDocumentCreated(
+  {
+    document: 'trips/{tripId}/boardGames/{gameId}',
+    timeoutSeconds: 30,
+    memory: '256MiB',
+    secrets: ['GOOGLE_PLACES_API_KEY'],
+  },
+  async (event) => {
+    const data = event.data.data() || {};
+    await generateLinkPreview(event.data.ref, undefined, data.linkUrl, 'linkPreview');
+  }
+);
+
 /**
  * Adds [uid] to trip members if [token] matches the trip inviteToken.
  * When the trip still has placeholder members, [placeholderMemberId] must name

@@ -186,7 +186,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewInviteCodeCopyError(e.toString()))),
+        SnackBar(
+            content: Text(l10n.tripOverviewInviteCodeCopyError(e.toString()))),
       );
     } finally {
       if (mounted) {
@@ -462,8 +463,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       ),
     );
     final rooms = roomsAsync.asData?.value ?? const [];
-    final carpools = ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
-        const [];
+    final carpools =
+        ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
+            const [];
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final myAssignedRoomNames = myUid == null
@@ -471,8 +473,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         : rooms
             .where((room) => room.assignedMemberIds.contains(myUid))
             .map(
-              (room) =>
-                  room.name.trim().isEmpty ? l10n.roomsUnnamedRoom : room.name.trim(),
+              (room) => room.name.trim().isEmpty
+                  ? l10n.roomsUnnamedRoom
+                  : room.name.trim(),
             )
             .toList();
     final roomsDetailLines = myAssignedRoomNames.isEmpty
@@ -514,8 +517,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       stream: tripDocStream,
       builder: (context, snapshot) {
         final liveData = snapshot.data?.data();
-        final liveLinkUrl =
-            (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
+        final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
         final liveMemberIds =
@@ -566,19 +568,19 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 .map((id) => id.trim())
                 .where((id) => id.isNotEmpty)
                 .map((id) {
-                  final label = memberLabels[id]?.trim() ?? 'Voyageur';
-                  return _ParticipantBadgePreviewEntry(
-                    initial: _initialFromLabel(label),
-                    photoUrl: _photoUrlFromUserData(usersDataById[id]),
-                  );
-                })
-                .toList();
+              final label = memberLabels[id]?.trim() ?? 'Voyageur';
+              return _ParticipantBadgePreviewEntry(
+                initial: _initialFromLabel(label),
+                photoUrl: _photoUrlFromUserData(usersDataById[id]),
+              );
+            }).toList();
             final TripCarpool? myCarpool = myUid == null
                 ? null
                 : carpools.cast<TripCarpool?>().firstWhere(
-                    (entry) => entry?.assignedParticipantIds.contains(myUid) == true,
-                    orElse: () => null,
-                  );
+                      (entry) =>
+                          entry?.assignedParticipantIds.contains(myUid) == true,
+                      orElse: () => null,
+                    );
             final myCarpoolDetailLines = <String>[
               if (myCarpool != null && myUid != null && myUid.trim().isNotEmpty)
                 ...() {
@@ -589,10 +591,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   );
                   final meetingPointLabel =
                       myCarpool.meetingPointAddress.trim();
-                  final driverLabel =
-                      (memberLabels[myCarpool.driverUserId] ??
-                              l10n.tripParticipantsTraveler)
-                          .trim();
+                  final driverLabel = (memberLabels[myCarpool.driverUserId] ??
+                          l10n.tripParticipantsTraveler)
+                      .trim();
                   final passengerIds = myCarpool.assignedParticipantIds
                       .map((id) => id.trim())
                       .where((id) => id.isNotEmpty)
@@ -600,16 +601,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       .toList(growable: false);
                   final passengerLabels = passengerIds
                       .map(
-                        (id) =>
-                            (memberLabels[id]?.trim().isNotEmpty == true)
-                                ? memberLabels[id]!.trim()
-                                : l10n.tripParticipantsTraveler,
+                        (id) => (memberLabels[id]?.trim().isNotEmpty == true)
+                            ? memberLabels[id]!.trim()
+                            : l10n.tripParticipantsTraveler,
                       )
                       .toList(growable: false);
                   final passengersLabel = passengerLabels.isEmpty
                       ? l10n.commonNotProvided
                       : passengerLabels.join(', ');
-                  final isDriver = myUid.trim() == myCarpool.driverUserId.trim();
+                  final isDriver =
+                      myUid.trim() == myCarpool.driverUserId.trim();
 
                   return <String>[
                     isDriver
@@ -618,7 +619,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             departureTime,
                           )
                         : meetingPointLabel.isEmpty
-                            ? l10n.tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
+                            ? l10n
+                                .tripOverviewCarpoolPassengerSummaryNoMeetingPoint(
                                 driverLabel,
                                 departureTime,
                               )
@@ -670,7 +672,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               }
             }
 
-            final activitiesToday = (activitiesAsync.asData?.value ?? const <TripActivity>[])
+            final activitiesToday = (activitiesAsync.asData?.value ??
+                    const <TripActivity>[])
                 .where((activity) => activity.plannedAt != null)
                 .where((activity) => _dateOnly(activity.plannedAt!) == today)
                 .toList()
@@ -691,685 +694,712 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             return ListView(
               padding: EdgeInsets.zero,
               children: [
-            Stack(
-              children: [
-                _TripBanner(
-                  imageUrl: liveBannerImageUrl,
-                  busy: _isBannerBusy,
-                  onPick: canManageBanner && liveBannerImageUrl.isEmpty
-                      ? _pickAndUploadBannerImage
-                      : null,
-                ),
-                if (!_isEditing)
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Color(0xCC2E206D),
-                            Color(0x662E206D),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _trip.title.isEmpty
-                                  ? l10n.tripOverviewUntitled
-                                  : _trip.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(color: Colors.white),
+                Stack(
+                  children: [
+                    _TripBanner(
+                      imageUrl: liveBannerImageUrl,
+                      busy: _isBannerBusy,
+                      onPick: canManageBanner && liveBannerImageUrl.isEmpty
+                          ? _pickAndUploadBannerImage
+                          : null,
+                    ),
+                    if (!_isEditing)
+                      Positioned(
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                        child: DecoratedBox(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Color(0xCC2E206D),
+                                Color(0x662E206D),
+                                Colors.transparent,
+                              ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              _trip.destination.isEmpty
-                                  ? l10n.tripOverviewUnknownDestination
-                                  : _trip.destination,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(color: Colors.white),
-                            ),
-                            if (tripDateLabel.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.date_range_outlined,
-                                    size: 18,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      tripDateLabel,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(color: Colors.white),
-                                    ),
-                                  ),
-                                  if (canViewParticipants)
-                                    PopupMenuButton<String>(
-                                      tooltip: l10n.tripOverviewActions,
-                                      onSelected: (value) {
-                                        if (value == 'participants') {
-                                          _openParticipantsPage();
-                                          return;
-                                        }
-                                        if (value == 'preferences' &&
-                                            isTripMember) {
-                                          _openTripUserPreferencesPage();
-                                          return;
-                                        }
-                                        if (value == 'copyCode' && canShareAccess) {
-                                          _copyInviteCode();
-                                          return;
-                                        }
-                                        if (value == 'edit' && canEditGeneralInfo) {
-                                          _startEditing();
-                                          return;
-                                        }
-                                        if (value == 'settings' &&
-                                            canManageTripSettings) {
-                                          context.go('/trips/${_trip.id}/settings');
-                                          return;
-                                        }
-                                        if (value == 'delete' && canDeleteTrip) {
-                                          _confirmAndDeleteTrip();
-                                          return;
-                                        }
-                                      },
-                                      itemBuilder: (context) => [
-                                        PopupMenuItem(
-                                          value: 'participants',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons
-                                                  .assignment_ind_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripParticipantsTitle),
-                                            ],
-                                          ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 24, 12, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _trip.title.isEmpty
+                                      ? l10n.tripOverviewUntitled
+                                      : _trip.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _trip.destination.isEmpty
+                                      ? l10n.tripOverviewUnknownDestination
+                                      : _trip.destination,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                                if (tripDateLabel.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.date_range_outlined,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          tripDateLabel,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(color: Colors.white),
                                         ),
-                                        if (isTripMember)
-                                          PopupMenuItem(
-                                            value: 'preferences',
-                                            child: Row(
-                                              children: [
-                                                const Icon(Icons.tune_outlined),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  l10n.tripUserPreferencesMenuAction,
+                                      ),
+                                      if (canViewParticipants)
+                                        PopupMenuButton<String>(
+                                          tooltip: l10n.tripOverviewActions,
+                                          onSelected: (value) {
+                                            if (value == 'participants') {
+                                              _openParticipantsPage();
+                                              return;
+                                            }
+                                            if (value == 'preferences' &&
+                                                isTripMember) {
+                                              _openTripUserPreferencesPage();
+                                              return;
+                                            }
+                                            if (value == 'copyCode' &&
+                                                canShareAccess) {
+                                              _copyInviteCode();
+                                              return;
+                                            }
+                                            if (value == 'edit' &&
+                                                canEditGeneralInfo) {
+                                              _startEditing();
+                                              return;
+                                            }
+                                            if (value == 'settings' &&
+                                                canManageTripSettings) {
+                                              context.go(
+                                                  '/trips/${_trip.id}/settings');
+                                              return;
+                                            }
+                                            if (value == 'delete' &&
+                                                canDeleteTrip) {
+                                              _confirmAndDeleteTrip();
+                                              return;
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: 'participants',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons
+                                                      .assignment_ind_outlined),
+                                                  SizedBox(width: 10),
+                                                  Text(l10n
+                                                      .tripParticipantsTitle),
+                                                ],
+                                              ),
+                                            ),
+                                            if (isTripMember)
+                                              PopupMenuItem(
+                                                value: 'preferences',
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                        Icons.tune_outlined),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      l10n.tripUserPreferencesMenuAction,
+                                                    ),
+                                                  ],
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                        if (canShareAccess)
-                                          PopupMenuItem(
-                                            value: 'copyCode',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.vpn_key_outlined),
-                                                SizedBox(width: 10),
-                                                Text(l10n.tripOverviewCopyCode),
-                                              ],
-                                            ),
-                                          ),
-                                        if (canEditGeneralInfo)
-                                          PopupMenuItem(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit_outlined),
-                                                SizedBox(width: 10),
-                                                Text(l10n.tripOverviewEditTrip),
-                                              ],
-                                            ),
-                                          ),
-                                        if (canManageTripSettings)
-                                          PopupMenuItem(
-                                            value: 'settings',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.settings_outlined),
-                                                SizedBox(width: 10),
-                                                Text(l10n.tripSettingsTitle),
-                                              ],
-                                            ),
-                                          ),
-                                        if (canDeleteTrip) ...[
-                                          const PopupMenuDivider(),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.delete_outline,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .error,
+                                              ),
+                                            if (canShareAccess)
+                                              PopupMenuItem(
+                                                value: 'copyCode',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                        Icons.vpn_key_outlined),
+                                                    SizedBox(width: 10),
+                                                    Text(l10n
+                                                        .tripOverviewCopyCode),
+                                                  ],
                                                 ),
-                                                const SizedBox(width: 10),
+                                              ),
+                                            if (canEditGeneralInfo)
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit_outlined),
+                                                    SizedBox(width: 10),
+                                                    Text(l10n
+                                                        .tripOverviewEditTrip),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (canManageTripSettings)
+                                              PopupMenuItem(
+                                                value: 'settings',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons
+                                                        .settings_outlined),
+                                                    SizedBox(width: 10),
+                                                    Text(
+                                                        l10n.tripSettingsTitle),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (canDeleteTrip) ...[
+                                              const PopupMenuDivider(),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete_outline,
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .error,
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      l10n.commonDelete,
+                                                      style: TextStyle(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .error,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                          icon: canEdit && _inviteClipboardBusy
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white),
+                                                )
+                                              : const Icon(Icons.more_vert,
+                                                  color: Colors.white),
+                                        ),
+                                    ],
+                                  ),
+                                ] else if (canViewParticipants) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Spacer(),
+                                      PopupMenuButton<String>(
+                                        tooltip: l10n.tripOverviewActions,
+                                        onSelected: (value) {
+                                          if (value == 'participants') {
+                                            _openParticipantsPage();
+                                            return;
+                                          }
+                                          if (value == 'preferences' &&
+                                              isTripMember) {
+                                            _openTripUserPreferencesPage();
+                                            return;
+                                          }
+                                          if (value == 'copyCode' &&
+                                              canShareAccess) {
+                                            _copyInviteCode();
+                                            return;
+                                          }
+                                          if (value == 'edit' &&
+                                              canEditGeneralInfo) {
+                                            _startEditing();
+                                            return;
+                                          }
+                                          if (value == 'settings' &&
+                                              canManageTripSettings) {
+                                            context.go(
+                                                '/trips/${_trip.id}/settings');
+                                            return;
+                                          }
+                                          if (value == 'delete' &&
+                                              canDeleteTrip) {
+                                            _confirmAndDeleteTrip();
+                                            return;
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            value: 'participants',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons
+                                                    .assignment_ind_outlined),
+                                                SizedBox(width: 10),
                                                 Text(
-                                                  l10n.commonDelete,
-                                                  style: TextStyle(
+                                                    l10n.tripParticipantsTitle),
+                                              ],
+                                            ),
+                                          ),
+                                          if (isTripMember)
+                                            PopupMenuItem(
+                                              value: 'preferences',
+                                              child: Row(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.tune_outlined),
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    l10n.tripUserPreferencesMenuAction,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          if (canShareAccess)
+                                            PopupMenuItem(
+                                              value: 'copyCode',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.vpn_key_outlined),
+                                                  SizedBox(width: 10),
+                                                  Text(l10n
+                                                      .tripOverviewCopyCode),
+                                                ],
+                                              ),
+                                            ),
+                                          if (canEditGeneralInfo)
+                                            PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit_outlined),
+                                                  SizedBox(width: 10),
+                                                  Text(l10n
+                                                      .tripOverviewEditTrip),
+                                                ],
+                                              ),
+                                            ),
+                                          if (canManageTripSettings)
+                                            PopupMenuItem(
+                                              value: 'settings',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.settings_outlined),
+                                                  SizedBox(width: 10),
+                                                  Text(l10n.tripSettingsTitle),
+                                                ],
+                                              ),
+                                            ),
+                                          if (canDeleteTrip) ...[
+                                            const PopupMenuDivider(),
+                                            PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete_outline,
                                                     color: Theme.of(context)
                                                         .colorScheme
                                                         .error,
                                                   ),
-                                                ),
-                                              ],
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    l10n.commonDelete,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .error,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ],
-                                      icon: canEdit && _inviteClipboardBusy
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: Colors.white),
-                                            )
-                                          : const Icon(Icons.more_vert,
-                                              color: Colors.white),
-                                    ),
-                                ],
-                              ),
-                            ] else if (canViewParticipants) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  const Spacer(),
-                                  PopupMenuButton<String>(
-                                    tooltip: l10n.tripOverviewActions,
-                                    onSelected: (value) {
-                                      if (value == 'participants') {
-                                        _openParticipantsPage();
-                                        return;
-                                      }
-                                      if (value == 'preferences' &&
-                                          isTripMember) {
-                                        _openTripUserPreferencesPage();
-                                        return;
-                                      }
-                                      if (value == 'copyCode' && canShareAccess) {
-                                        _copyInviteCode();
-                                        return;
-                                      }
-                                      if (value == 'edit' && canEditGeneralInfo) {
-                                        _startEditing();
-                                        return;
-                                      }
-                                      if (value == 'settings' &&
-                                          canManageTripSettings) {
-                                        context.go('/trips/${_trip.id}/settings');
-                                        return;
-                                      }
-                                      if (value == 'delete' && canDeleteTrip) {
-                                        _confirmAndDeleteTrip();
-                                        return;
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'participants',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.assignment_ind_outlined),
-                                            SizedBox(width: 10),
-                                            Text(l10n.tripParticipantsTitle),
                                           ],
-                                        ),
-                                      ),
-                                      if (isTripMember)
-                                        PopupMenuItem(
-                                          value: 'preferences',
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.tune_outlined),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                l10n.tripUserPreferencesMenuAction,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      if (canShareAccess)
-                                        PopupMenuItem(
-                                          value: 'copyCode',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.vpn_key_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripOverviewCopyCode),
-                                            ],
-                                          ),
-                                        ),
-                                      if (canEditGeneralInfo)
-                                        PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripOverviewEditTrip),
-                                            ],
-                                          ),
-                                        ),
-                                      if (canManageTripSettings)
-                                        PopupMenuItem(
-                                          value: 'settings',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.settings_outlined),
-                                              SizedBox(width: 10),
-                                              Text(l10n.tripSettingsTitle),
-                                            ],
-                                          ),
-                                        ),
-                                      if (canDeleteTrip) ...[
-                                        const PopupMenuDivider(),
-                                        PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.delete_outline,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .error,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                l10n.commonDelete,
-                                                style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .error,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                    icon: canEdit && _inviteClipboardBusy
-                                        ? const SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2,
+                                        ],
+                                        icon: canEdit && _inviteClipboardBusy
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: Colors.white),
+                                              )
+                                            : const Icon(Icons.more_vert,
                                                 color: Colors.white),
-                                          )
-                                        : const Icon(Icons.more_vert,
-                                            color: Colors.white),
+                                      ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ],
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                if (canManageBanner)
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: Material(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(999),
-                      child: PopupMenuButton<String>(
-                        tooltip: l10n.tripOverviewPhotoActions,
-                        enabled: !_isBannerBusy,
-                        onSelected: (value) {
-                          if (value == 'change') {
-                            _pickAndUploadBannerImage();
-                            return;
-                          }
-                          if (value == 'remove') {
-                            _removeBannerImage();
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'change',
-                            child: Text(l10n.tripOverviewChangePhoto),
-                          ),
-                          if (liveBannerImageUrl.isNotEmpty)
-                            PopupMenuItem(
-                              value: 'remove',
-                              child: Text(l10n.commonDelete),
-                            ),
-                        ],
-                        icon: _isBannerBusy
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.photo_camera_outlined,
-                                color: Colors.white),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-              child: _TripOverviewTopSwitch(
-                leftLabel: l10n.tripOverviewTopTabAnnouncements,
-                rightLabel: l10n.tripOverviewTopTabExpenses,
-                leftAlertCount: unreadAnnouncements,
-                onLeftTap: _openAnnouncementsPage,
-                onRightTap: _openExpensesPage,
-                thirdLabel: photosStorageUrl.isNotEmpty ? 'Photos' : null,
-                onThirdTap: photosStorageUrl.isNotEmpty
-                    ? () => _openLinkUrl(photosStorageUrl)
-                    : null,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: [
-                  if (_isEditing) ...[
-                    Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _titleController,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: l10n.tripsTitleLabel,
-                              border: const OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return l10n.tripOverviewTitleRequired;
+                    if (canManageBanner)
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: Material(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(999),
+                          child: PopupMenuButton<String>(
+                            tooltip: l10n.tripOverviewPhotoActions,
+                            enabled: !_isBannerBusy,
+                            onSelected: (value) {
+                              if (value == 'change') {
+                                _pickAndUploadBannerImage();
+                                return;
                               }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _destinationController,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: l10n.tripsDestinationLabel,
-                              border: const OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return l10n.tripOverviewDestinationRequired;
+                              if (value == 'remove') {
+                                _removeBannerImage();
                               }
-                              return null;
                             },
-                          ),
-                          const SizedBox(height: 8),
-                          if (_editStayBounds == null)
-                            FilledButton.tonal(
-                              onPressed: _isSaving
-                                  ? null
-                                  : () => setState(() {
-                                        _editStayBounds =
-                                            TripMemberStay.defaultForNewTripEditor();
-                                      }),
-                              child: Text(l10n.tripOverviewEditAddTripDates),
-                            )
-                          else ...[
-                            TripCalendarStayBoundsField(
-                              tripStartDate: null,
-                              tripEndDate: null,
-                              value: _editStayBounds!,
-                              onChanged: (next) =>
-                                  setState(() => _editStayBounds = next),
-                            ),
-                            Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: TextButton(
-                                onPressed: _isSaving
-                                    ? null
-                                    : () => setState(
-                                          () => _editStayBounds = null,
-                                        ),
-                                child: Text(l10n.tripOverviewEditRemoveTripDates),
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'change',
+                                child: Text(l10n.tripOverviewChangePhoto),
                               ),
-                            ),
-                          ],
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _addressController,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: l10n.tripOverviewAddressLabel,
-                              hintText: l10n.tripOverviewAddressHint,
-                              border: const OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _linkController,
-                            textInputAction: TextInputAction.done,
-                            decoration: InputDecoration(
-                              labelText: l10n.tripOverviewLinkLabel,
-                              hintText: l10n.tripOverviewLinkHint,
-                              border: const OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.url,
-                            validator: (value) {
-                              final v = (value ?? '').trim();
-                              if (v.isEmpty) return null;
-                              final uri = Uri.tryParse(v);
-                              if (uri == null || !uri.isAbsolute) {
-                                return l10n.tripOverviewLinkInvalid;
-                              }
-                              if (uri.scheme != 'http' &&
-                                  uri.scheme != 'https') {
-                                return l10n.tripOverviewLinkMustStartWithHttp;
-                              }
-                              return null;
-                            },
-                            onFieldSubmitted: (_) => _save(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                  ] else ...[
-                    const SizedBox(height: 10),
-                  ],
-                  if (canEditGeneralInfo && _isEditing)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Wrap(
-                        alignment: WrapAlignment.end,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          if (_isEditing) ...[
-                            IconButton(
-                              tooltip: l10n.commonCancel,
-                              onPressed: _isSaving ? null : _cancelEditing,
-                              icon: const Icon(Icons.close),
-                            ),
-                            IconButton(
-                              tooltip: l10n.commonSave,
-                              onPressed: _isSaving ? null : _save,
-                              icon: _isSaving
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.check),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (linkUrlForUi.isNotEmpty) ...[
-                            LinkPreviewCardFromFirestore(
-                              url: linkUrlForUi,
-                              preview: livePreview,
-                              showCard: false,
-                              showTitleLabel: false,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          _InfoRow(
-                            label: l10n.tripOverviewAddressLabel,
-                            value: _trip.address,
-                            actionIcon: Icons.location_on_outlined,
-                            onActionPressed: _trip.address.trim().isEmpty
-                                ? null
-                                : () => openAddressInGoogleMaps(
-                                      context,
-                                      _trip.address,
+                              if (liveBannerImageUrl.isNotEmpty)
+                                PopupMenuItem(
+                                  value: 'remove',
+                                  child: Text(l10n.commonDelete),
+                                ),
+                            ],
+                            icon: _isBannerBusy
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
                                     ),
-                            actionTooltip: l10n.tripOverviewOpenLocation,
+                                  )
+                                : const Icon(Icons.photo_camera_outlined,
+                                    color: Colors.white),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                  child: _TripOverviewTopSwitch(
+                    leftLabel: l10n.tripOverviewTopTabAnnouncements,
+                    rightLabel: l10n.tripOverviewTopTabExpenses,
+                    leftAlertCount: unreadAnnouncements,
+                    onLeftTap: _openAnnouncementsPage,
+                    onRightTap: _openExpensesPage,
+                    thirdLabel: photosStorageUrl.isNotEmpty ? 'Photos' : null,
+                    onThirdTap: photosStorageUrl.isNotEmpty
+                        ? () => _openLinkUrl(photosStorageUrl)
+                        : null,
                   ),
-                  if (!_isEditing) ...[
-                    const SizedBox(height: 12),
-                    Builder(builder: (context) {
-                      final cs = Theme.of(context).colorScheme;
-                      final pz = context.planerzColors;
-                      const tileSpacing = 10.0;
-                      return LayoutBuilder(
-                        builder: (context, constraints) {
-                          final halfTileWidth =
-                              (constraints.maxWidth - tileSpacing) / 2;
-                          return Wrap(
-                            spacing: tileSpacing,
-                            runSpacing: tileSpacing,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    children: [
+                      if (_isEditing) ...[
+                        Form(
+                          key: _formKey,
+                          child: Column(
                             children: [
-                              SizedBox(
-                                width: constraints.maxWidth,
-                                child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileParticipants,
-                                  icon: Icons.assignment_ind_outlined,
-                                  countLabel: '$participantsCount',
-                                  backgroundColor: cs.tertiaryContainer,
-                                  iconColor: cs.primary,
-                                  previewParticipants: participantsPreview,
-                                  onTap: _openParticipantsPage,
+                              TextFormField(
+                                controller: _titleController,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: l10n.tripsTitleLabel,
+                                  border: const OutlineInputBorder(),
                                 ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return l10n.tripOverviewTitleRequired;
+                                  }
+                                  return null;
+                                },
                               ),
-                              SizedBox(
-                                width: halfTileWidth,
-                                child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileActivities,
-                                  icon: Icons.event_note_outlined,
-                                  countLabel: '$plannedActivitiesCount',
-                                  alertCount: unreadActivities,
-                                  backgroundColor: pz.warningContainer,
-                                  iconColor: cs.tertiary,
-                                  detailLines: activitiesTodayLabels,
-                                  showDetailBullets: false,
-                                  wrapDetailLines: true,
-                                  emptyStateMessage:
-                                      l10n.tripOverviewTileNoActivitiesToday,
-                                  onTap: () => context.go(
-                                    '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _destinationController,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: l10n.tripsDestinationLabel,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return l10n.tripOverviewDestinationRequired;
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              if (_editStayBounds == null)
+                                FilledButton.tonal(
+                                  onPressed: _isSaving
+                                      ? null
+                                      : () => setState(() {
+                                            _editStayBounds = TripMemberStay
+                                                .defaultForNewTripEditor();
+                                          }),
+                                  child:
+                                      Text(l10n.tripOverviewEditAddTripDates),
+                                )
+                              else ...[
+                                TripCalendarStayBoundsField(
+                                  tripStartDate: null,
+                                  tripEndDate: null,
+                                  value: _editStayBounds!,
+                                  onChanged: (next) =>
+                                      setState(() => _editStayBounds = next),
+                                ),
+                                Align(
+                                  alignment: AlignmentDirectional.centerStart,
+                                  child: TextButton(
+                                    onPressed: _isSaving
+                                        ? null
+                                        : () => setState(
+                                              () => _editStayBounds = null,
+                                            ),
+                                    child: Text(
+                                        l10n.tripOverviewEditRemoveTripDates),
                                   ),
                                 ),
-                              ),
-                              SizedBox(
-                                width: halfTileWidth,
-                                child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileRooms,
-                                  icon: Icons.bed_outlined,
-                                  countLabel: '$roomsCount',
-                                  backgroundColor: pz.successContainer,
-                                  iconColor: pz.success,
-                                  detailLines: roomsDetailLines,
-                                  showDetailBullets: false,
-                                  wrapDetailLines: true,
-                                  emphasizedDetailLineIndex: 1,
-                                  emptyStateMessage:
-                                      l10n.tripOverviewTileNoAssignedRoom,
-                                  onTap: () =>
-                                      context.go('/trips/${_trip.id}/rooms'),
+                              ],
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _addressController,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelText: l10n.tripOverviewAddressLabel,
+                                  hintText: l10n.tripOverviewAddressHint,
+                                  border: const OutlineInputBorder(),
                                 ),
                               ),
-                              SizedBox(
-                                width: halfTileWidth,
-                                child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileCarpool,
-                                  icon: Icons.directions_car_outlined,
-                                  countLabel: '${carpools.length}',
-                                  backgroundColor: cs.secondaryContainer,
-                                  iconColor: cs.secondary,
-                                  showDetailBullets: false,
-                                  wrapDetailLines: true,
-                                  detailLines: myCarpoolDetailLines,
-                                  emptyStateMessage: l10n.tripCarpoolTileNoAssignment,
-                                  onTap: () =>
-                                      context.go('/trips/${_trip.id}/carpool'),
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _linkController,
+                                textInputAction: TextInputAction.done,
+                                decoration: InputDecoration(
+                                  labelText: l10n.tripOverviewLinkLabel,
+                                  hintText: l10n.tripOverviewLinkHint,
+                                  border: const OutlineInputBorder(),
                                 ),
-                              ),
-                              SizedBox(
-                                width: halfTileWidth,
-                                child: _TripAccessTile(
-                                  label: l10n.tripOverviewTileGames,
-                                  icon: Icons.sports_esports_outlined,
-                                  countLabel: '0',
-                                  backgroundColor: cs.primaryContainer,
-                                  iconColor: cs.primary,
-                                  showDetailBullets: false,
-                                  wrapDetailLines: true,
-                                  emptyStateMessage:
-                                      l10n.tripOverviewTileComingSoon,
-                                  onTap: () {},
-                                ),
+                                keyboardType: TextInputType.url,
+                                validator: (value) {
+                                  final v = (value ?? '').trim();
+                                  if (v.isEmpty) return null;
+                                  final uri = Uri.tryParse(v);
+                                  if (uri == null || !uri.isAbsolute) {
+                                    return l10n.tripOverviewLinkInvalid;
+                                  }
+                                  if (uri.scheme != 'http' &&
+                                      uri.scheme != 'https') {
+                                    return l10n
+                                        .tripOverviewLinkMustStartWithHttp;
+                                  }
+                                  return null;
+                                },
+                                onFieldSubmitted: (_) => _save(),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ] else ...[
+                        const SizedBox(height: 10),
+                      ],
+                      if (canEditGeneralInfo && _isEditing)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (_isEditing) ...[
+                                IconButton(
+                                  tooltip: l10n.commonCancel,
+                                  onPressed: _isSaving ? null : _cancelEditing,
+                                  icon: const Icon(Icons.close),
+                                ),
+                                IconButton(
+                                  tooltip: l10n.commonSave,
+                                  onPressed: _isSaving ? null : _save,
+                                  icon: _isSaving
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.check),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (linkUrlForUi.isNotEmpty) ...[
+                                LinkPreviewCardFromFirestore(
+                                  url: linkUrlForUi,
+                                  preview: livePreview,
+                                  showCard: false,
+                                  showTitleLabel: false,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              _InfoRow(
+                                label: l10n.tripOverviewAddressLabel,
+                                value: _trip.address,
+                                actionIcon: Icons.location_on_outlined,
+                                onActionPressed: _trip.address.trim().isEmpty
+                                    ? null
+                                    : () => openAddressInGoogleMaps(
+                                          context,
+                                          _trip.address,
+                                        ),
+                                actionTooltip: l10n.tripOverviewOpenLocation,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (!_isEditing) ...[
+                        const SizedBox(height: 12),
+                        Builder(builder: (context) {
+                          final cs = Theme.of(context).colorScheme;
+                          final pz = context.planerzColors;
+                          const tileSpacing = 10.0;
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              final halfTileWidth =
+                                  (constraints.maxWidth - tileSpacing) / 2;
+                              return Wrap(
+                                spacing: tileSpacing,
+                                runSpacing: tileSpacing,
+                                children: [
+                                  SizedBox(
+                                    width: constraints.maxWidth,
+                                    child: _TripAccessTile(
+                                      label: l10n.tripOverviewTileParticipants,
+                                      icon: Icons.assignment_ind_outlined,
+                                      countLabel: '$participantsCount',
+                                      backgroundColor: cs.tertiaryContainer,
+                                      iconColor: cs.primary,
+                                      previewParticipants: participantsPreview,
+                                      onTap: _openParticipantsPage,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: halfTileWidth,
+                                    child: _TripAccessTile(
+                                      label: l10n.tripOverviewTileActivities,
+                                      icon: Icons.event_note_outlined,
+                                      countLabel: '$plannedActivitiesCount',
+                                      alertCount: unreadActivities,
+                                      backgroundColor: pz.warningContainer,
+                                      iconColor: cs.tertiary,
+                                      detailLines: activitiesTodayLabels,
+                                      showDetailBullets: false,
+                                      wrapDetailLines: true,
+                                      emptyStateMessage: l10n
+                                          .tripOverviewTileNoActivitiesToday,
+                                      onTap: () => context.go(
+                                        '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: halfTileWidth,
+                                    child: _TripAccessTile(
+                                      label: l10n.tripOverviewTileRooms,
+                                      icon: Icons.bed_outlined,
+                                      countLabel: '$roomsCount',
+                                      backgroundColor: pz.successContainer,
+                                      iconColor: pz.success,
+                                      detailLines: roomsDetailLines,
+                                      showDetailBullets: false,
+                                      wrapDetailLines: true,
+                                      emphasizedDetailLineIndex: 1,
+                                      emptyStateMessage:
+                                          l10n.tripOverviewTileNoAssignedRoom,
+                                      onTap: () => context
+                                          .go('/trips/${_trip.id}/rooms'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: halfTileWidth,
+                                    child: _TripAccessTile(
+                                      label: l10n.tripOverviewTileCarpool,
+                                      icon: Icons.directions_car_outlined,
+                                      countLabel: '${carpools.length}',
+                                      backgroundColor: cs.secondaryContainer,
+                                      iconColor: cs.secondary,
+                                      showDetailBullets: false,
+                                      wrapDetailLines: true,
+                                      detailLines: myCarpoolDetailLines,
+                                      emptyStateMessage:
+                                          l10n.tripCarpoolTileNoAssignment,
+                                      onTap: () => context
+                                          .go('/trips/${_trip.id}/carpool'),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: halfTileWidth,
+                                    child: _TripAccessTile(
+                                      label: l10n.tripOverviewTileGames,
+                                      icon: Icons.sports_esports_outlined,
+                                      countLabel: '0',
+                                      backgroundColor: cs.primaryContainer,
+                                      iconColor: cs.primary,
+                                      showDetailBullets: false,
+                                      wrapDetailLines: true,
+                                      emptyStateMessage:
+                                          l10n.tripOverviewTileComingSoon,
+                                      onTap: () => context
+                                          .push('/trips/${_trip.id}/games'),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           );
-                        },
-                      );
-                    }),
-                  ],
-                  if (myUid != null &&
-                      !canEdit &&
-                      liveMemberIds
-                          .map((id) => id.trim())
-                          .where((id) => id.isNotEmpty)
-                          .contains(myUid)) ...[
-                    const SizedBox(height: 16),
-                    _LeaveTripSection(tripId: _trip.id),
-                  ],
-                ],
-              ),
-            ),
-          ],
+                        }),
+                      ],
+                      if (myUid != null &&
+                          !canEdit &&
+                          liveMemberIds
+                              .map((id) => id.trim())
+                              .where((id) => id.isNotEmpty)
+                              .contains(myUid)) ...[
+                        const SizedBox(height: 16),
+                        _LeaveTripSection(tripId: _trip.id),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -1828,7 +1858,8 @@ class _TripAccessTile extends StatelessWidget {
                     Badge.count(
                       count: alertCount,
                       isLabelVisible: alertCount > 0,
-                      child: Icon(icon, color: iconColor ?? colorScheme.primary),
+                      child:
+                          Icon(icon, color: iconColor ?? colorScheme.primary),
                     ),
                   ],
                 ),
@@ -1843,7 +1874,9 @@ class _TripAccessTile extends StatelessWidget {
                             ? Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  for (var i = 0; i < visibleDetails.length; i++)
+                                  for (var i = 0;
+                                      i < visibleDetails.length;
+                                      i++)
                                     Text(
                                       showDetailBullets
                                           ? '- ${visibleDetails[i]}'
@@ -1854,30 +1887,29 @@ class _TripAccessTile extends StatelessWidget {
                                           : TextOverflow.ellipsis,
                                       softWrap: true,
                                       textAlign: TextAlign.center,
-                                      style: ((emphasizedDetailLineIndex !=
-                                                      null &&
-                                                  i == 0)
-                                              ? Theme.of(context)
-                                                  .textTheme
-                                                  .titleMedium
-                                              : emphasizedDetailLineIndex !=
-                                                      null
+                                      style:
+                                          ((emphasizedDetailLineIndex != null &&
+                                                      i == 0)
                                                   ? Theme.of(context)
                                                       .textTheme
-                                                      .bodyMedium
-                                                  : Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall)
-                                          ?.copyWith(
-                                            color:
-                                                emphasizedDetailLineIndex == i
-                                                ? colorScheme.primary
-                                                : colorScheme.onSurfaceVariant,
-                                            fontWeight: emphasizedDetailLineIndex ==
-                                                    i
+                                                      .titleMedium
+                                                  : emphasizedDetailLineIndex !=
+                                                          null
+                                                      ? Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium
+                                                      : Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall)
+                                              ?.copyWith(
+                                        color: emphasizedDetailLineIndex == i
+                                            ? colorScheme.primary
+                                            : colorScheme.onSurfaceVariant,
+                                        fontWeight:
+                                            emphasizedDetailLineIndex == i
                                                 ? FontWeight.w700
                                                 : null,
-                                          ),
+                                      ),
                                     ),
                                   if (moreDetailsCount > 0)
                                     Text(
@@ -1909,7 +1941,7 @@ class _TripAccessTile extends StatelessWidget {
                                           color: colorScheme.onSurfaceVariant,
                                         ),
                                   )
-                            : const SizedBox.shrink(),
+                                : const SizedBox.shrink(),
                   ),
                 ),
               ],

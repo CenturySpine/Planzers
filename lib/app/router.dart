@@ -9,6 +9,7 @@ import 'package:planerz/features/administration/presentation/admin_announcements
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
+import 'package:planerz/features/games/presentation/trip_games_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
@@ -256,6 +257,12 @@ final GoRouter appRouter = GoRouter(
                   '/trips/${state.pathParameters['tripId']!}/settings/permissions/shopping',
             ),
           ],
+        ),
+        GoRoute(
+          path: 'games',
+          builder: (context, state) => TripGamesPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
         ),
         GoRoute(
           path: 'participants',

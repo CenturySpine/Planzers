@@ -2196,6 +2196,42 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTileGames => 'Jeux';
 
   @override
+  String get tripGamesTitle => 'Jeux';
+
+  @override
+  String get tripBoardGamesTab => 'Jeux de société';
+
+  @override
+  String get tripGamesEmpty => 'Aucun jeu pour le moment.';
+
+  @override
+  String get tripGamesAdd => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesAddTitle => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesEditTitle => 'Modifier le jeu';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Supprimer le jeu';
+
+  @override
+  String get tripGamesDeleteBody => 'Supprimer ce jeu de société ?';
+
+  @override
+  String get tripGamesAdded => 'Jeu ajouté';
+
+  @override
+  String get tripGamesUpdated => 'Jeu mis à jour';
+
+  @override
+  String get tripGamesDeleted => 'Jeu supprimé';
+
+  @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
 
   @override
@@ -4700,6 +4736,42 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTileGames => 'Jeux';
+
+  @override
+  String get tripGamesTitle => 'Jeux';
+
+  @override
+  String get tripBoardGamesTab => 'Jeux de société';
+
+  @override
+  String get tripGamesEmpty => 'Aucun jeu pour le moment.';
+
+  @override
+  String get tripGamesAdd => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesAddTitle => 'Ajouter un jeu';
+
+  @override
+  String get tripGamesEditTitle => 'Modifier le jeu';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Supprimer le jeu';
+
+  @override
+  String get tripGamesDeleteBody => 'Supprimer ce jeu de société ?';
+
+  @override
+  String get tripGamesAdded => 'Jeu ajouté';
+
+  @override
+  String get tripGamesUpdated => 'Jeu mis à jour';
+
+  @override
+  String get tripGamesDeleted => 'Jeu supprimé';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';

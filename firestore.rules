@@ -635,6 +635,24 @@ service cloud.firestore {
         allow delete: if canDeleteActivity(tripId);
       }
 
+      match /boardGames/{gameId} {
+        allow read: if isTripMember(tripId);
+        allow create: if isTripMember(tripId)
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isTripMember(tripId)
+          && (resource.data.createdBy == request.auth.uid
+            || tripCallerRoleRank(tripId) >= 2)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name',
+            'linkUrl',
+            'linkPreview',
+            'updatedAt',
+          ]);
+        allow delete: if isTripMember(tripId)
+          && (resource.data.createdBy == request.auth.uid
+            || tripCallerRoleRank(tripId) >= 2);
+      }
+
       match /shoppingItems/{itemId} {
         allow read, create, update: if isTripMember(tripId);
         allow delete: if isTripMember(tripId)

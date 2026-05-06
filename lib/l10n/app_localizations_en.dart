@@ -2181,6 +2181,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewTileGames => 'Games';
 
   @override
+  String get tripGamesTitle => 'Games';
+
+  @override
+  String get tripBoardGamesTab => 'Board games';
+
+  @override
+  String get tripGamesEmpty => 'No games yet.';
+
+  @override
+  String get tripGamesAdd => 'Add game';
+
+  @override
+  String get tripGamesAddTitle => 'Add game';
+
+  @override
+  String get tripGamesEditTitle => 'Edit game';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Delete game';
+
+  @override
+  String get tripGamesDeleteBody => 'Delete this board game?';
+
+  @override
+  String get tripGamesAdded => 'Game added';
+
+  @override
+  String get tripGamesUpdated => 'Game updated';
+
+  @override
+  String get tripGamesDeleted => 'Game deleted';
+
+  @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
 
   @override
@@ -4663,6 +4699,42 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTileGames => 'Games';
+
+  @override
+  String get tripGamesTitle => 'Games';
+
+  @override
+  String get tripBoardGamesTab => 'Board games';
+
+  @override
+  String get tripGamesEmpty => 'No games yet.';
+
+  @override
+  String get tripGamesAdd => 'Add game';
+
+  @override
+  String get tripGamesAddTitle => 'Add game';
+
+  @override
+  String get tripGamesEditTitle => 'Edit game';
+
+  @override
+  String get tripGamesUrlLabel => 'URL';
+
+  @override
+  String get tripGamesDeleteTitle => 'Delete game';
+
+  @override
+  String get tripGamesDeleteBody => 'Delete this board game?';
+
+  @override
+  String get tripGamesAdded => 'Game added';
+
+  @override
+  String get tripGamesUpdated => 'Game updated';
+
+  @override
+  String get tripGamesDeleted => 'Game deleted';
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';

@@ -3989,6 +3989,78 @@ abstract class AppLocalizations {
   /// **'Jeux'**
   String get tripOverviewTileGames;
 
+  /// No description provided for @tripGamesTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux'**
+  String get tripGamesTitle;
+
+  /// No description provided for @tripBoardGamesTab.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeux de société'**
+  String get tripBoardGamesTab;
+
+  /// No description provided for @tripGamesEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun jeu pour le moment.'**
+  String get tripGamesEmpty;
+
+  /// No description provided for @tripGamesAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un jeu'**
+  String get tripGamesAdd;
+
+  /// No description provided for @tripGamesAddTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un jeu'**
+  String get tripGamesAddTitle;
+
+  /// No description provided for @tripGamesEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le jeu'**
+  String get tripGamesEditTitle;
+
+  /// No description provided for @tripGamesUrlLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'URL'**
+  String get tripGamesUrlLabel;
+
+  /// No description provided for @tripGamesDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer le jeu'**
+  String get tripGamesDeleteTitle;
+
+  /// No description provided for @tripGamesDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce jeu de société ?'**
+  String get tripGamesDeleteBody;
+
+  /// No description provided for @tripGamesAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeu ajouté'**
+  String get tripGamesAdded;
+
+  /// No description provided for @tripGamesUpdated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeu mis à jour'**
+  String get tripGamesUpdated;
+
+  /// No description provided for @tripGamesDeleted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jeu supprimé'**
+  String get tripGamesDeleted;
+
   /// No description provided for @tripOverviewTopTabAnnouncements.
   ///
   /// In fr, this message translates to:
