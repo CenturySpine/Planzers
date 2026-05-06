@@ -4004,7 +4004,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripGamesIntro.
   ///
   /// In fr, this message translates to:
-  /// **'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"'**
+  /// **'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".'**
   String get tripGamesIntro;
 
   /// No description provided for @tripGamesSearchLabel.

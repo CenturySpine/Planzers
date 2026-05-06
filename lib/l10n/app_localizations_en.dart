@@ -2188,7 +2188,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripGamesIntro =>
-      'Find here the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
+      'Here is the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
 
   @override
   String get tripGamesSearchLabel => 'Search for a game';
@@ -4721,7 +4721,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripGamesIntro =>
-      'Find here the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
+      'Here is the list of board games participants are bringing. Let others know which games you are bringing by tapping \"+\".';
 
   @override
   String get tripGamesSearchLabel => 'Search for a game';

@@ -2203,7 +2203,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripGamesIntro =>
-      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"';
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".';
 
   @override
   String get tripGamesSearchLabel => 'Rechercher un jeu';
@@ -4759,7 +4759,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripGamesIntro =>
-      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apporte en appuyant sur \"+\"';
+      'Retrouve ici la liste des jeux de société que les participants amènent. Préviens les autres des jeux que tu apportes en appuyant sur \"+\".';
 
   @override
   String get tripGamesSearchLabel => 'Rechercher un jeu';
