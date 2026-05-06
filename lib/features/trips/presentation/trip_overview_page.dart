@@ -20,6 +20,7 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
+import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -466,6 +467,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final carpools =
         ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
             const [];
+    final boardGamesCount =
+        ref.watch(tripBoardGamesStreamProvider(_trip.id)).asData?.value.length ??
+            0;
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final myAssignedRoomNames = myUid == null
@@ -1370,7 +1374,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     child: _TripAccessTile(
                                       label: l10n.tripOverviewTileGames,
                                       icon: Icons.sports_esports_outlined,
-                                      countLabel: '0',
+                                      countLabel: '$boardGamesCount',
                                       backgroundColor: cs.primaryContainer,
                                       iconColor: cs.primary,
                                       showDetailBullets: false,
