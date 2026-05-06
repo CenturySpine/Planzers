@@ -4268,6 +4268,12 @@ abstract class AppLocalizations {
   /// **'{count} participant(s) n\'est/ne sont assigné(s) à aucune voiture.'**
   String tripCarpoolUnassignedWarningBody(int count);
 
+  /// No description provided for @tripCarpoolCarsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voitures'**
+  String get tripCarpoolCarsTitle;
+
   /// No description provided for @tripCarpoolGlobalMeetupTitle.
   ///
   /// In fr, this message translates to:

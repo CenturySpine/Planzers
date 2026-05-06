@@ -2356,6 +2356,9 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripCarpoolCarsTitle => 'Voitures';
+
+  @override
   String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
 
   @override
@@ -4921,6 +4924,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String tripCarpoolUnassignedWarningBody(int count) {
     return '$count participant(s) n\'est/ne sont assigné(s) à aucune voiture.';
   }
+
+  @override
+  String get tripCarpoolCarsTitle => 'Voitures';
 
   @override
   String get tripCarpoolGlobalMeetupTitle => 'Rendez-vous courses';
