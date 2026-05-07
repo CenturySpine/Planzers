@@ -81,17 +81,40 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     setState(() => _pendingAutofocusItemId = newItemId);
   }
 
+  Future<void> _showConsolidationDisabledDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Consolidation IA (POC)'),
+          content: const Text(
+            'Fonctionnalité en cours de développement et temporairement désactivée.\n\n'
+            'Chaque appel à l\'IA est facturé, nous évitons donc de lancer '
+            'la consolidation sur l\'environnement de preview.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Fermer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ignore: unused_element
   Future<void> _consolidateWithAi(BuildContext context) async {
     if (_isConsolidating) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _isConsolidating = true);
     try {
-      final items = await ref
+      final result = await ref
           .read(shoppingRepositoryProvider)
           .consolidateWithAi(tripId: widget.tripId);
       if (!context.mounted) return;
-      await _showConsolidatedItemsDialog(context, items);
+      await _showConsolidatedItemsDialog(context, result);
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
@@ -104,37 +127,52 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
 
   Future<void> _showConsolidatedItemsDialog(
     BuildContext context,
-    List<ConsolidatedShoppingItem> items,
+    ConsolidatedShoppingResult result,
   ) async {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        final summary = result.summary;
+        final items = result.items;
         return AlertDialog(
           title: const Text('Consolidation IA (POC)'),
           content: SizedBox(
             width: double.maxFinite,
-            child: items.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Aucun élément consolidé.'),
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final quantity = _formatConsolidatedQuantity(
-                        item.quantityValue,
-                        item.quantityUnit,
-                      );
-                      return ListTile(
-                        dense: true,
-                        title: Text(item.label),
-                        trailing: Text(quantity),
-                      );
-                    },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Ingrédients recettes en entrée: ${summary.recipeOriginalLineCount}\n'
+                    'Ingrédients manuels en entrée: ${summary.manualOriginalLineCount}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
+                ),
+                Flexible(
+                  child: items.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text('Aucun élément consolidé.'),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            color: theme.dividerColor.withValues(alpha: 0.4),
+                          ),
+                          itemBuilder: (context, index) {
+                            return _ConsolidatedItemTile(item: items[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -391,7 +429,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                       tooltip: 'Consolider avec IA (POC)',
                       onPressed: _isConsolidating
                           ? null
-                          : () => _consolidateWithAi(context),
+                          : () => _showConsolidationDisabledDialog(context),
                       child: _isConsolidating
                           ? const SizedBox.square(
                               dimension: 20,
@@ -522,5 +560,125 @@ class _FilterLegendRow extends StatelessWidget {
         Expanded(child: Text(label)),
       ],
     );
+  }
+}
+
+class _ConsolidatedItemTile extends StatelessWidget {
+  const _ConsolidatedItemTile({required this.item});
+
+  final ConsolidatedShoppingItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final quantity = _formatConsolidatedQuantity(
+      item.quantityValue,
+      item.quantityUnit,
+    );
+    final sourceIcon = _consolidatedSourceIcon(item.sourceType);
+    final showSources =
+        item.sourceType == ConsolidatedShoppingSourceType.mixed &&
+            item.sourceItems.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.label,
+                        style: theme.textTheme.bodyMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      sourceIcon,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                quantity,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (showSources)
+            Padding(
+              padding: const EdgeInsets.only(left: 18, top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final source in item.sourceItems)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1),
+                      child: _ConsolidatedSourceLine(source: source),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsolidatedSourceLine extends StatelessWidget {
+  const _ConsolidatedSourceLine({required this.source});
+
+  final ConsolidatedShoppingSourceItem source;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isManual = source.source == 'manual';
+    final icon = isManual ? Icons.edit_note : Icons.restaurant_menu;
+    final quantity = _formatConsolidatedQuantity(
+      source.originalQuantityValue,
+      source.originalQuantityUnit,
+    );
+    final detail = quantity.isEmpty
+        ? source.originalLabel
+        : '${source.originalLabel} — $quantity';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            detail,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+IconData _consolidatedSourceIcon(ConsolidatedShoppingSourceType sourceType) {
+  switch (sourceType) {
+    case ConsolidatedShoppingSourceType.manual:
+      return Icons.edit_note;
+    case ConsolidatedShoppingSourceType.recipe:
+      return Icons.restaurant_menu;
+    case ConsolidatedShoppingSourceType.mixed:
+      return Icons.merge_type;
   }
 }
