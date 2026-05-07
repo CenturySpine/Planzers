@@ -190,30 +190,6 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
     _scheduleAutoSave();
   }
 
-  ShoppingUnit _unitFromCatalogDefault(String rawUnit) {
-    final unit = rawUnit.trim().toLowerCase();
-    switch (unit) {
-      case 'g':
-      case 'gramme':
-      case 'grammes':
-        return ShoppingUnit.grams;
-      case 'kg':
-      case 'kilogramme':
-      case 'kilogrammes':
-        return ShoppingUnit.kilograms;
-      case 'ml':
-      case 'millilitre':
-      case 'millilitres':
-        return ShoppingUnit.milliliters;
-      case 'l':
-      case 'litre':
-      case 'litres':
-        return ShoppingUnit.liters;
-      default:
-        return ShoppingUnit.unit;
-    }
-  }
-
   _MeasurementKind _measurementKindFromUnit(ShoppingUnit unit) {
     return switch (unit) {
       ShoppingUnit.milliliters ||
@@ -231,7 +207,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
       text: suggestion.label,
       selection: TextSelection.collapsed(offset: suggestion.label.length),
     );
-    final suggestedUnit = _unitFromCatalogDefault(suggestion.defaultUnit);
+    final suggestedUnit = ShoppingUnit.fromHumanLabel(suggestion.defaultUnit);
     if (suggestedUnit != _selectedUnit) {
       setState(() {
         _selectedUnit = suggestedUnit;

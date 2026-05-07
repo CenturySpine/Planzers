@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
+import 'package:planerz/features/meals/data/recipe_ingredients_ai_service.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 
@@ -12,12 +14,16 @@ class MealComponentEditorPage extends StatefulWidget {
     required this.component,
     required this.catalogItems,
     required this.participantAllergenIds,
+    required this.defaultServings,
+    required this.canUseAi,
     this.showLockIndicator = false,
   });
 
   final MealComponent component;
   final List<IngredientCatalogItem> catalogItems;
   final Set<String> participantAllergenIds;
+  final int defaultServings;
+  final bool canUseAi;
   final bool showLockIndicator;
 
   @override
@@ -28,6 +34,7 @@ class MealComponentEditorPage extends StatefulWidget {
 class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
   late MealComponent _component;
   late final TextEditingController _titleController;
+  bool _isGenerating = false;
 
   @override
   void initState() {
@@ -77,6 +84,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             quantityUnit: ShoppingUnit.unit.firestoreValue,
           ),
         ],
+        ingredientsGeneratedByAi: false,
       );
     });
   }
@@ -91,7 +99,10 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
       quantityUnit: value.quantityUnit.firestoreValue,
     );
     setState(() {
-      _component = _component.copyWith(ingredients: next);
+      _component = _component.copyWith(
+        ingredients: next,
+        ingredientsGeneratedByAi: false,
+      );
     });
   }
 
@@ -99,8 +110,64 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     if (index < 0 || index >= _component.ingredients.length) return;
     final next = _component.ingredients.toList(growable: true)..removeAt(index);
     setState(() {
-      _component = _component.copyWith(ingredients: next);
+      _component = _component.copyWith(
+        ingredients: next,
+        ingredientsGeneratedByAi: false,
+      );
     });
+  }
+
+  Future<void> _generateIngredientsWithAi() async {
+    if (_isGenerating) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final request = await showDialog<_GenerateRecipeRequest>(
+      context: context,
+      builder: (dialogContext) => _GenerateRecipeDialog(
+        initialRecipeName: _component.title,
+        initialServings: widget.defaultServings,
+        existingIngredientsCount: _component.ingredients.length,
+      ),
+    );
+    if (request == null || !mounted) return;
+
+    setState(() => _isGenerating = true);
+    try {
+      final result = await generateRecipeIngredients(
+        recipeName: request.recipeName,
+        servings: request.servings,
+        catalogItems: widget.catalogItems,
+        mode: request.mode,
+      );
+      if (!mounted) return;
+      if (result.ingredients.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Aucun ingrédient n\'a pu être généré.'),
+          ),
+        );
+        return;
+      }
+      final keepInstructions =
+          request.mode == RecipeAiMode.ingredientsOnly;
+      setState(() {
+        _titleController.text = request.recipeName;
+        _component = _component.copyWith(
+          title: request.recipeName,
+          ingredients: result.ingredients,
+          recipeInstructions: keepInstructions
+              ? _component.recipeInstructions
+              : result.instructions,
+          ingredientsGeneratedByAi: true,
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erreur lors de la génération : $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
   }
 
   @override
@@ -193,6 +260,10 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
+          if (_component.ingredientsGeneratedByAi) ...[
+            _AiQuantityWarningBanner(),
+            const SizedBox(height: 8),
+          ],
           for (var i = 0; i < _component.ingredients.length; i++)
             IngredientLineEditor(
               key: ValueKey('${_component.id}-$i'),
@@ -210,8 +281,229 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             icon: const Icon(Icons.add),
             label: Text(l10n.mealAddIngredient),
           ),
+          if (_component.recipeInstructions.trim().isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Préparation',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SelectableText(
+                  _component.recipeInstructions.trim(),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ),
+          ],
+          if (widget.canUseAi) const SizedBox(height: 88),
         ],
       ),
+      floatingActionButton: widget.canUseAi
+          ? FloatingActionButton(
+              heroTag: 'generate_recipe_ingredients_with_ai',
+              tooltip: 'Générer les ingrédients (POC)',
+              onPressed: _isGenerating ? null : _generateIngredientsWithAi,
+              child: _isGenerating
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_awesome),
+            )
+          : null,
+    );
+  }
+}
+
+class _AiQuantityWarningBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 20,
+            color: colorScheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Ingrédients générés par l\'IA — vérifiez bien les quantités '
+              'avant de valider.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onTertiaryContainer,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenerateRecipeRequest {
+  const _GenerateRecipeRequest({
+    required this.recipeName,
+    required this.servings,
+    required this.mode,
+  });
+
+  final String recipeName;
+  final int servings;
+  final RecipeAiMode mode;
+}
+
+class _GenerateRecipeDialog extends StatefulWidget {
+  const _GenerateRecipeDialog({
+    required this.initialRecipeName,
+    required this.initialServings,
+    required this.existingIngredientsCount,
+  });
+
+  final String initialRecipeName;
+  final int initialServings;
+  final int existingIngredientsCount;
+
+  @override
+  State<_GenerateRecipeDialog> createState() => _GenerateRecipeDialogState();
+}
+
+class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _servingsController;
+  RecipeAiMode _mode = RecipeAiMode.ingredientsAndInstructions;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialRecipeName);
+    final initialServings = widget.initialServings > 0
+        ? widget.initialServings.toString()
+        : '';
+    _servingsController = TextEditingController(text: initialServings);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _servingsController.dispose();
+    super.dispose();
+  }
+
+  int _parsedServings() {
+    final parsed = int.tryParse(_servingsController.text.trim()) ?? 0;
+    return parsed;
+  }
+
+  bool get _isValid =>
+      _nameController.text.trim().isNotEmpty && _parsedServings() > 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Générer les ingrédients (POC)'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nom de la recette',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.next,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _servingsController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre de personnes',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Que souhaites-tu générer ?',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 6),
+            SegmentedButton<RecipeAiMode>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment<RecipeAiMode>(
+                  value: RecipeAiMode.ingredientsOnly,
+                  label: Text('Ingrédients seuls'),
+                ),
+                ButtonSegment<RecipeAiMode>(
+                  value: RecipeAiMode.ingredientsAndInstructions,
+                  label: Text('Ingrédients + recette'),
+                ),
+              ],
+              selected: {_mode},
+              onSelectionChanged: (selection) {
+                if (selection.isEmpty) return;
+                setState(() => _mode = selection.first);
+              },
+            ),
+            if (widget.existingIngredientsCount > 0) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Cela remplacera les ${widget.existingIngredientsCount} '
+                'ingrédient(s) actuels de la recette.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              'Chaque appel à l\'IA est facturé.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: _isValid
+              ? () => Navigator.of(context).pop(
+                    _GenerateRecipeRequest(
+                      recipeName: _nameController.text.trim(),
+                      servings: _parsedServings(),
+                      mode: _mode,
+                    ),
+                  )
+              : null,
+          child: const Text('Générer'),
+        ),
+      ],
     );
   }
 }
