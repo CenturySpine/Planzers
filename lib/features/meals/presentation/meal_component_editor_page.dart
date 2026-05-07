@@ -132,6 +132,8 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         initialRecipeName: _component.title,
         initialServings: widget.defaultServings,
         existingIngredientsCount: _component.ingredients.length,
+        hasExistingRecipeInstructions:
+            _component.recipeInstructions.trim().isNotEmpty,
       ),
     );
     if (request == null || !mounted) return;
@@ -390,11 +392,13 @@ class _GenerateRecipeDialog extends StatefulWidget {
     required this.initialRecipeName,
     required this.initialServings,
     required this.existingIngredientsCount,
+    required this.hasExistingRecipeInstructions,
   });
 
   final String initialRecipeName;
   final int initialServings;
   final int existingIngredientsCount;
+  final bool hasExistingRecipeInstructions;
 
   @override
   State<_GenerateRecipeDialog> createState() => _GenerateRecipeDialogState();
@@ -403,7 +407,7 @@ class _GenerateRecipeDialog extends StatefulWidget {
 class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _servingsController;
-  RecipeAiMode _mode = RecipeAiMode.ingredientsAndInstructions;
+  RecipeAiMode _mode = RecipeAiMode.ingredientsOnly;
 
   @override
   void initState() {
@@ -468,14 +472,15 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
             const SizedBox(height: 6),
             SegmentedButton<RecipeAiMode>(
               showSelectedIcon: false,
-              segments: const [
-                ButtonSegment<RecipeAiMode>(
+              segments: [
+                const ButtonSegment<RecipeAiMode>(
                   value: RecipeAiMode.ingredientsOnly,
                   label: Text('Ingrédients seuls'),
                 ),
                 ButtonSegment<RecipeAiMode>(
                   value: RecipeAiMode.ingredientsAndInstructions,
-                  label: Text('Ingrédients + recette'),
+                  enabled: !widget.hasExistingRecipeInstructions,
+                  label: const Text('Ingrédients + recette'),
                 ),
               ],
               selected: {_mode},
