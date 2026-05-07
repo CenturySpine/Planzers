@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart'
+    show
+        stableUsersIdsKey,
+        usersDataByIdsKeyStreamProvider,
+        usersRepositoryProvider;
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
@@ -81,21 +85,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     setState(() => _pendingAutofocusItemId = newItemId);
   }
 
-  Future<void> _showConsolidationDisabledDialog(BuildContext context) async {
+  Future<void> _showConsolidationNotAvailableForAccountDialog(
+    BuildContext context,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Consolidation IA (POC)'),
-          content: const Text(
-            'Fonctionnalité en cours de développement et temporairement désactivée.\n\n'
-            'Chaque appel à l\'IA est facturé, nous évitons donc de lancer '
-            'la consolidation sur l\'environnement de preview.',
-          ),
+          title: Text(l10n.shoppingConsolidateAiNotAvailableTitle),
+          content: Text(l10n.shoppingConsolidateAiNotAvailableBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Fermer'),
+              child: Text(l10n.commonClose),
             ),
           ],
         );
@@ -103,7 +106,6 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     );
   }
 
-  // ignore: unused_element
   Future<void> _consolidateWithAi(BuildContext context) async {
     if (_isConsolidating) return;
     final l10n = AppLocalizations.of(context)!;
@@ -249,6 +251,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       currentRole: currentRole,
       minRole: TripPermissionRole.admin,
     );
+    final currentUserOwnerAsync = ref.watch(
+      usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
+    );
+    final ownerData = currentUserOwnerAsync.asData?.value;
+    final ownerFlagReady = ownerData != null;
+    final isApplicationOwner =
+        ownerData?[currentUid]?['isApplicationOwner'] == true;
     final searchQuery = _searchController.text;
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
@@ -426,10 +435,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                   if (canConsolidateWithAi) ...[
                     FloatingActionButton(
                       heroTag: 'consolidate_shopping_with_ai',
-                      tooltip: 'Consolider avec IA (POC)',
-                      onPressed: _isConsolidating
+                      tooltip: l10n.shoppingConsolidateAiTooltip,
+                      onPressed: _isConsolidating || !ownerFlagReady
                           ? null
-                          : () => _showConsolidationDisabledDialog(context),
+                          : () {
+                              if (isApplicationOwner) {
+                                _consolidateWithAi(context);
+                              } else {
+                                _showConsolidationNotAvailableForAccountDialog(
+                                  context,
+                                );
+                              }
+                            },
                       child: _isConsolidating
                           ? const SizedBox.square(
                               dimension: 20,

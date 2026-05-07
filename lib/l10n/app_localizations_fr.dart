@@ -1519,6 +1519,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingClaimTake => 'Je m\'en occupe';
 
   @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolider liste de courses et recettes (IA)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'Consolidation liste + recettes';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'Cette fonction n’est pas encore accessible pour votre compte.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4100,6 +4112,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingClaimTake => 'Je m\'en occupe';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolider liste de courses et recettes (IA)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'Consolidation liste + recettes';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'Cette fonction n’est pas encore accessible pour votre compte.';
 
   @override
   String get activityCategorySport => 'Sport';

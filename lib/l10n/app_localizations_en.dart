@@ -1506,6 +1506,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingClaimTake => 'I got this';
 
   @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolidate shopping list and recipes (AI)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'List + recipe consolidation';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'This feature is not yet available for your account.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4065,6 +4077,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingClaimTake => 'I got this';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolidate shopping list and recipes (AI)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'List + recipe consolidation';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'This feature is not yet available for your account.';
 
   @override
   String get activityCategorySport => 'Sport';

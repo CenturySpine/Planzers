@@ -2789,6 +2789,24 @@ abstract class AppLocalizations {
   /// **'Je m\'en occupe'**
   String get shoppingClaimTake;
 
+  /// No description provided for @shoppingConsolidateAiTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolider liste de courses et recettes (IA)'**
+  String get shoppingConsolidateAiTooltip;
+
+  /// No description provided for @shoppingConsolidateAiNotAvailableTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidation liste + recettes'**
+  String get shoppingConsolidateAiNotAvailableTitle;
+
+  /// No description provided for @shoppingConsolidateAiNotAvailableBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette fonction n’est pas encore accessible pour votre compte.'**
+  String get shoppingConsolidateAiNotAvailableBody;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:
