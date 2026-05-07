@@ -626,6 +626,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required Set<String> participantAllergenIds,
     required Map<String, String> tripMemberPublicLabels,
     required bool canUseAi,
+    required bool isApplicationOwner,
   }) async {
     Future<void> openEditor() async {
       final updated = await Navigator.of(context).push<MealComponent>(
@@ -636,6 +637,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             participantAllergenIds: participantAllergenIds,
             defaultServings: _participantIds.length,
             canUseAi: canUseAi,
+            isApplicationOwner: isApplicationOwner,
             showLockIndicator: true,
           ),
         ),
@@ -1350,6 +1352,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                   ),
                   minRole: TripPermissionRole.admin,
                 );
+            final applicationOwnerScopeUid = (myUid ?? '').trim();
+            final isApplicationOwner = applicationOwnerScopeUid.isNotEmpty &&
+                (membersData[applicationOwnerScopeUid]?['isApplicationOwner'] ==
+                    true);
             if (widget.isCreate && !canAccessMealCreatePage) {
               return Scaffold(
                 appBar: AppBar(),
@@ -1739,6 +1745,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   tripMemberPublicLabels:
                                                       trip.memberPublicLabels,
                                                   canUseAi: canUseRecipeAi,
+                                                  isApplicationOwner:
+                                                      isApplicationOwner,
                                                 ),
                                         leading: _isComponentLockedByOther(
                                                     component) ||

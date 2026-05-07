@@ -16,6 +16,7 @@ class MealComponentEditorPage extends StatefulWidget {
     required this.participantAllergenIds,
     required this.defaultServings,
     required this.canUseAi,
+    required this.isApplicationOwner,
     this.showLockIndicator = false,
   });
 
@@ -24,6 +25,7 @@ class MealComponentEditorPage extends StatefulWidget {
   final Set<String> participantAllergenIds;
   final int defaultServings;
   final bool canUseAi;
+  final bool isApplicationOwner;
   final bool showLockIndicator;
 
   @override
@@ -121,6 +123,32 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     setState(() {
       _component = _component.copyWith(recipeInstructions: '');
     });
+  }
+
+  Future<void> _showRecipeAiNotAccessibleDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealRecipeAiNotAccessibleTitle),
+        content: Text(l10n.mealRecipeAiNotAccessibleBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonClose),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onRecipeAiFabPressed() async {
+    if (_isGenerating) return;
+    if (!widget.isApplicationOwner) {
+      await _showRecipeAiNotAccessibleDialog();
+      return;
+    }
+    await _generateIngredientsWithAi();
   }
 
   Future<void> _generateIngredientsWithAi() async {
@@ -327,7 +355,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
           ? FloatingActionButton(
               heroTag: 'generate_recipe_ingredients_with_ai',
               tooltip: 'Générer les ingrédients (POC)',
-              onPressed: _isGenerating ? null : _generateIngredientsWithAi,
+              onPressed: _isGenerating ? null : _onRecipeAiFabPressed,
               child: _isGenerating
                   ? const SizedBox.square(
                       dimension: 20,

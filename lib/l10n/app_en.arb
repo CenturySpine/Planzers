@@ -355,6 +355,8 @@
   "mealAddIngredient": "Add an ingredient",
   "mealRecipePreparationTitle": "Preparation",
   "mealRecipeStepsRemoveTooltip": "Remove recipe steps",
+  "mealRecipeAiNotAccessibleTitle": "AI feature unavailable",
+  "mealRecipeAiNotAccessibleBody": "AI-assisted ingredient generation is not available on your account yet.",
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "No participants.",
   "tripParticipantsTraveler": "Traveler",

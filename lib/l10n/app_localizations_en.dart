@@ -919,6 +919,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
 
   @override
+  String get mealRecipeAiNotAccessibleTitle => 'AI feature unavailable';
+
+  @override
+  String get mealRecipeAiNotAccessibleBody =>
+      'AI-assisted ingredient generation is not available on your account yet.';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -3471,6 +3478,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
+  String get mealRecipeAiNotAccessibleTitle => 'AI feature unavailable';
+
+  @override
+  String get mealRecipeAiNotAccessibleBody =>
+      'AI-assisted ingredient generation is not available on your account yet.';
 
   @override
   String get tripParticipantsTitle => 'Participants';

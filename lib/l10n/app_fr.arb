@@ -355,6 +355,8 @@
   "mealAddIngredient": "Ajouter un ingrédient",
   "mealRecipePreparationTitle": "Préparation",
   "mealRecipeStepsRemoveTooltip": "Retirer les étapes de la recette",
+  "mealRecipeAiNotAccessibleTitle": "Fonctionnalité IA indisponible",
+  "mealRecipeAiNotAccessibleBody": "La génération d'ingrédients par IA n'est pas encore accessible pour ton compte.",
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "Aucun participant.",
   "tripParticipantsTraveler": "Voyageur",

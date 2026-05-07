@@ -1750,6 +1750,18 @@ abstract class AppLocalizations {
   /// **'Retirer les étapes de la recette'**
   String get mealRecipeStepsRemoveTooltip;
 
+  /// No description provided for @mealRecipeAiNotAccessibleTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fonctionnalité IA indisponible'**
+  String get mealRecipeAiNotAccessibleTitle;
+
+  /// No description provided for @mealRecipeAiNotAccessibleBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'La génération d\'ingrédients par IA n\'est pas encore accessible pour ton compte.'**
+  String get mealRecipeAiNotAccessibleBody;
+
   /// No description provided for @tripParticipantsTitle.
   ///
   /// In fr, this message translates to:
