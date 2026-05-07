@@ -353,6 +353,8 @@
   "mealIngredientsTitle": "Ingredients",
   "mealIngredientHint": "Ingredient...",
   "mealAddIngredient": "Add an ingredient",
+  "mealRecipePreparationTitle": "Preparation",
+  "mealRecipeStepsRemoveTooltip": "Remove recipe steps",
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "No participants.",
   "tripParticipantsTraveler": "Traveler",

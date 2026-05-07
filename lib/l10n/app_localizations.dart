@@ -1738,6 +1738,18 @@ abstract class AppLocalizations {
   /// **'Ajouter un ingrédient'**
   String get mealAddIngredient;
 
+  /// No description provided for @mealRecipePreparationTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préparation'**
+  String get mealRecipePreparationTitle;
+
+  /// No description provided for @mealRecipeStepsRemoveTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer les étapes de la recette'**
+  String get mealRecipeStepsRemoveTooltip;
+
   /// No description provided for @tripParticipantsTitle.
   ///
   /// In fr, this message translates to:

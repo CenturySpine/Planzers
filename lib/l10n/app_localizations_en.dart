@@ -913,6 +913,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealAddIngredient => 'Add an ingredient';
 
   @override
+  String get mealRecipePreparationTitle => 'Preparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -3459,6 +3465,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealAddIngredient => 'Add an ingredient';
+
+  @override
+  String get mealRecipePreparationTitle => 'Preparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
 
   @override
   String get tripParticipantsTitle => 'Participants';

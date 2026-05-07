@@ -924,6 +924,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealAddIngredient => 'Ajouter un ingrédient';
 
   @override
+  String get mealRecipePreparationTitle => 'Préparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -3492,6 +3498,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealAddIngredient => 'Ajouter un ingrédient';
+
+  @override
+  String get mealRecipePreparationTitle => 'Préparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
 
   @override
   String get tripParticipantsTitle => 'Participants';

@@ -117,6 +117,12 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     });
   }
 
+  void _clearRecipeInstructions() {
+    setState(() {
+      _component = _component.copyWith(recipeInstructions: '');
+    });
+  }
+
   Future<void> _generateIngredientsWithAi() async {
     if (_isGenerating) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -283,9 +289,21 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
           ),
           if (_component.recipeInstructions.trim().isNotEmpty) ...[
             const SizedBox(height: 24),
-            Text(
-              'Préparation',
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.mealRecipePreparationTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  tooltip: l10n.mealRecipeStepsRemoveTooltip,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _clearRecipeInstructions,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Card(
