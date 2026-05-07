@@ -49,20 +49,71 @@ class UsersRepository {
     return '';
   }
 
+  /// Common ITU-T E.164 country codes used to split [user.phoneNumber] into
+  /// [phoneCountryCode] and local [phoneNumber] when Firebase Auth returns the
+  /// E.164 form without a separator (e.g. `+33783836613`). Unknown prefixes
+  /// fall back to storing the raw E.164 in the number field.
+  static const List<String> _knownE164CountryCodes = <String>[
+    '+1',
+    '+7',
+    '+20',
+    '+27',
+    '+30',
+    '+31',
+    '+32',
+    '+33',
+    '+34',
+    '+36',
+    '+39',
+    '+40',
+    '+41',
+    '+43',
+    '+44',
+    '+45',
+    '+46',
+    '+47',
+    '+48',
+    '+49',
+    '+90',
+    '+212',
+    '+213',
+    '+216',
+    '+352',
+    '+377',
+    '+972',
+  ];
+
   ({String countryCode, String number}) _splitPhoneNumber(String rawPhone) {
     final normalized = rawPhone.trim();
     if (normalized.isEmpty) {
       return (countryCode: '', number: '');
     }
-    final match =
+
+    final spaced =
         RegExp(r'^(\+[0-9]{1,4})\s+([0-9 ]+)$').firstMatch(normalized);
-    if (match == null) {
-      return (countryCode: '', number: normalized);
+    if (spaced != null) {
+      return (
+        countryCode: spaced.group(1)?.trim() ?? '',
+        number: spaced.group(2)?.trim() ?? normalized,
+      );
     }
-    return (
-      countryCode: match.group(1)?.trim() ?? '',
-      number: match.group(2)?.trim() ?? normalized,
-    );
+
+    String? bestPrefix;
+    for (final prefix in _knownE164CountryCodes) {
+      if (normalized.startsWith(prefix)) {
+        if (bestPrefix == null || prefix.length > bestPrefix.length) {
+          bestPrefix = prefix;
+        }
+      }
+    }
+    if (bestPrefix != null) {
+      return (
+        countryCode: bestPrefix,
+        number: normalized.substring(bestPrefix.length),
+      );
+    }
+
+    return (countryCode: '', number: normalized);
   }
 
   Future<void> ensureUserDocument(User user) async {
@@ -110,23 +161,20 @@ class UsersRepository {
         final existingRootPhoto =
             (existing['photoUrl'] as String?)?.trim() ?? '';
         final existingName = (existingAccount['name'] as String?)?.trim() ?? '';
-        final existingPhoneNumber =
-            (existingAccount['phoneNumber'] as String?)?.trim() ?? '';
-        final existingPhoneCountryCode =
-            (existingAccount['phoneCountryCode'] as String?)?.trim() ?? '';
         final hasCustomPhoto =
             existingAccountPhoto.isNotEmpty || existingRootPhoto.isNotEmpty;
 
+        // Never overwrite user-managed profile fields on subsequent sign-ins.
+        // An empty value (e.g. user cleared their phone or email) is an
+        // intentional choice and must survive across reconnections.
         final patch = <String, dynamic>{...baseData};
+        patch.remove('email');
         final patchAccount = (patch['account'] as Map<String, dynamic>);
+        patchAccount.remove('email');
+        patchAccount.remove('phoneNumber');
+        patchAccount.remove('phoneCountryCode');
         if (existingName.isNotEmpty) {
           patchAccount.remove('name');
-        }
-        if (existingPhoneNumber.isNotEmpty) {
-          patchAccount.remove('phoneNumber');
-        }
-        if (existingPhoneCountryCode.isNotEmpty) {
-          patchAccount.remove('phoneCountryCode');
         }
         if (!hasCustomPhoto && googlePhotoUrl.isNotEmpty) {
           patch['photoUrl'] = googlePhotoUrl;
@@ -134,15 +182,17 @@ class UsersRepository {
         }
         transaction.set(userRef, patch, SetOptions(merge: true));
       } else {
+        final initialAccount = Map<String, dynamic>.from(
+          baseData['account'] as Map<String, dynamic>,
+        );
+        if (googlePhotoUrl.isNotEmpty) {
+          initialAccount['photoUrl'] = googlePhotoUrl;
+          initialAccount['googlePhotoUrl'] = googlePhotoUrl;
+        }
         transaction.set(userRef, {
           ...baseData,
           if (googlePhotoUrl.isNotEmpty) 'photoUrl': googlePhotoUrl,
-          'account': {
-            'email': user.email,
-            if (googlePhotoUrl.isNotEmpty) 'photoUrl': googlePhotoUrl,
-            if (googlePhotoUrl.isNotEmpty) 'googlePhotoUrl': googlePhotoUrl,
-
-          },
+          'account': initialAccount,
           'createdAt': now,
         });
       }

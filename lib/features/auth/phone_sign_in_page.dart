@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -189,30 +188,11 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
   Future<void> _seedPhoneProfileAfterSignIn(User? signedUser) async {
     final user = signedUser;
     if (user == null) return;
-    final enteredPhone = _phoneNumber;
-    if (enteredPhone.isEmpty) return;
 
     try {
       await ref.read(usersRepositoryProvider).ensureUserDocument(user);
     } catch (e) {
       debugPrint('ensureUserDocument after phone sign-in failed: $e');
-    }
-
-    try {
-      final userRef = ref
-          .read(usersRepositoryProvider)
-          .firestore
-          .collection('users')
-          .doc(user.uid);
-      await userRef.set({
-        'account': {
-          'name': enteredPhone,
-          'phoneNumber': enteredPhone,
-        },
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('phone profile seed failed: $e');
     }
   }
 
