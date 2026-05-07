@@ -4188,6 +4188,31 @@ exports.getAppUsageStats = onCall(
 );
 
 /**
+ * POC skeleton: consolidates a trip's shopping list with AI-driven merging.
+ * Lot 1 only declares the callable surface; it returns an empty list and
+ * performs no Firestore reads, no AI call, and no permission check beyond auth.
+ */
+exports.consolidateTripShoppingWithAi = onCall(
+  {
+    timeoutSeconds: 30,
+    memory: '256MiB',
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'tripId requis');
+    }
+
+    return { consolidatedItems: [] };
+  }
+);
+
+/**
  * Translates a text from one language to another using Google Cloud Translation.
  * Restricted to users with isApplicationOwner === true in Firestore.
  */

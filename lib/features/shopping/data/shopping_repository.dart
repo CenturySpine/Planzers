@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -165,6 +167,31 @@ class ShoppingRepository {
     await _col(cleanTripId).doc(cleanItemId).delete();
   }
 
+  /// POC skeleton: asks the backend to consolidate the trip shopping list with
+  /// AI-driven merging. Lot 1 returns an empty list; the callable does not
+  /// mutate any data and only validates auth + tripId.
+  Future<List<ConsolidatedShoppingItem>> consolidateWithAi({
+    required String tripId,
+  }) async {
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    ).httpsCallable('consolidateTripShoppingWithAi');
+    final result = await callable.call<Map<String, dynamic>>(<String, dynamic>{
+      'tripId': cleanTripId,
+    });
+    final raw = result.data['consolidatedItems'];
+    if (raw is! List) return const <ConsolidatedShoppingItem>[];
+    return raw
+        .whereType<Map>()
+        .map((row) => ConsolidatedShoppingItem.fromMap(
+              Map<String, dynamic>.from(row),
+            ))
+        .toList(growable: false);
+  }
+
   Future<int> deleteCheckedItems({
     required String tripId,
   }) async {
@@ -199,5 +226,31 @@ class ShoppingRepository {
     }
     await batch.commit();
     return checkedSnapshot.docs.length;
+  }
+}
+
+/// Read-only consolidation row returned by the AI callable for display only.
+class ConsolidatedShoppingItem {
+  const ConsolidatedShoppingItem({
+    required this.label,
+    required this.quantityValue,
+    required this.quantityUnit,
+  });
+
+  final String label;
+  final double quantityValue;
+  final String quantityUnit;
+
+  factory ConsolidatedShoppingItem.fromMap(Map<String, dynamic> map) {
+    final quantityRaw = map['quantityValue'];
+    return ConsolidatedShoppingItem(
+      label: (map['itemLabel'] as String? ?? map['label'] as String? ?? '')
+          .trim(),
+      quantityValue: switch (quantityRaw) {
+        num n => n.toDouble(),
+        _ => 0.0,
+      },
+      quantityUnit: (map['quantityUnit'] as String? ?? '').trim(),
+    );
   }
 }

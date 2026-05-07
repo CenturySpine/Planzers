@@ -7,6 +7,7 @@ import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -55,6 +56,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
   late final TextEditingController _searchController;
   _ShoppingFilter _activeFilter = _ShoppingFilter.all;
   String? _pendingAutofocusItemId;
+  bool _isConsolidating = false;
 
   @override
   void initState() {
@@ -77,6 +79,72 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
         );
     if (!mounted) return;
     setState(() => _pendingAutofocusItemId = newItemId);
+  }
+
+  Future<void> _consolidateWithAi(BuildContext context) async {
+    if (_isConsolidating) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isConsolidating = true);
+    try {
+      final items = await ref
+          .read(shoppingRepositoryProvider)
+          .consolidateWithAi(tripId: widget.tripId);
+      if (!context.mounted) return;
+      await _showConsolidatedItemsDialog(context, items);
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _isConsolidating = false);
+    }
+  }
+
+  Future<void> _showConsolidatedItemsDialog(
+    BuildContext context,
+    List<ConsolidatedShoppingItem> items,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Consolidation IA (POC)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: items.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Aucun élément consolidé.'),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final quantity = _formatConsolidatedQuantity(
+                        item.quantityValue,
+                        item.quantityUnit,
+                      );
+                      return ListTile(
+                        dense: true,
+                        title: Text(item.label),
+                        trailing: Text(quantity),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Fermer'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _confirmAndDeleteChecked(BuildContext context) async {
@@ -138,6 +206,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final canDeleteCheckedItems = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
+    );
+    final canConsolidateWithAi = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: TripPermissionRole.admin,
     );
     final searchQuery = _searchController.text;
     final searchFilteredItems = widget.items
@@ -313,6 +385,22 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (canConsolidateWithAi) ...[
+                    FloatingActionButton(
+                      heroTag: 'consolidate_shopping_with_ai',
+                      tooltip: 'Consolider avec IA (POC)',
+                      onPressed: _isConsolidating
+                          ? null
+                          : () => _consolidateWithAi(context),
+                      child: _isConsolidating
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.auto_awesome),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   FloatingActionButton(
                     heroTag: 'add_shopping_item',
                     onPressed: _addItem,
@@ -389,6 +477,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
 
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
+}
+
+String _formatConsolidatedQuantity(double value, String unit) {
+  final hasInteger = value == value.roundToDouble();
+  final displayValue = hasInteger ? value.toInt().toString() : value.toString();
+  final cleanUnit = unit.trim();
+  if (cleanUnit.isEmpty) return displayValue;
+  return '$displayValue $cleanUnit';
 }
 
 bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
