@@ -1738,6 +1738,24 @@ abstract class AppLocalizations {
   /// **'Ajouter un ingrédient'**
   String get mealAddIngredient;
 
+  /// No description provided for @mealIngredientsRemoveAllTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer tous les ingrédients'**
+  String get mealIngredientsRemoveAllTooltip;
+
+  /// No description provided for @mealIngredientsRemoveAllTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer tous les ingrédients ?'**
+  String get mealIngredientsRemoveAllTitle;
+
+  /// No description provided for @mealIngredientsRemoveAllBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action supprimera toutes les lignes d\'ingrédients de la recette.'**
+  String get mealIngredientsRemoveAllBody;
+
   /// No description provided for @mealRecipePreparationTitle.
   ///
   /// In fr, this message translates to:

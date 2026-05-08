@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
@@ -2291,11 +2292,11 @@ enum _MealDetailsView {
 class _AiCardWarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final planerzColors = context.planerzColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.tertiaryContainer,
+        color: planerzColors.warningContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -2304,14 +2305,14 @@ class _AiCardWarningBanner extends StatelessWidget {
           Icon(
             Icons.warning_amber_rounded,
             size: 16,
-            color: colorScheme.onTertiaryContainer,
+            color: planerzColors.warning,
           ),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               'Ingrédients générés par l\'IA — à vérifier.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onTertiaryContainer,
+                    color: planerzColors.warning,
                   ),
             ),
           ),

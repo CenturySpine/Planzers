@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -66,6 +67,15 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
 
   ShoppingUnit _unitFromRaw(String raw) => ShoppingUnit.fromFirestore(raw);
 
+  bool _shouldKeepAiGeneratedFlag({
+    required List<MealComponentIngredient> ingredients,
+    required String recipeInstructions,
+  }) {
+    final hasIngredients = ingredients.isNotEmpty;
+    final hasRecipeInstructions = recipeInstructions.trim().isNotEmpty;
+    return hasIngredients || hasRecipeInstructions;
+  }
+
   void _syncTitle() {
     final nextTitle = _titleController.text.trim();
     if (nextTitle == _component.title) return;
@@ -86,7 +96,6 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             quantityUnit: ShoppingUnit.unit.firestoreValue,
           ),
         ],
-        ingredientsGeneratedByAi: false,
       );
     });
   }
@@ -103,7 +112,6 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     setState(() {
       _component = _component.copyWith(
         ingredients: next,
-        ingredientsGeneratedByAi: false,
       );
     });
   }
@@ -114,14 +122,58 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     setState(() {
       _component = _component.copyWith(
         ingredients: next,
-        ingredientsGeneratedByAi: false,
+        ingredientsGeneratedByAi: _component.ingredientsGeneratedByAi &&
+            _shouldKeepAiGeneratedFlag(
+              ingredients: next,
+              recipeInstructions: _component.recipeInstructions,
+            ),
       );
     });
   }
 
   void _clearRecipeInstructions() {
     setState(() {
-      _component = _component.copyWith(recipeInstructions: '');
+      _component = _component.copyWith(
+        recipeInstructions: '',
+        ingredientsGeneratedByAi: _component.ingredientsGeneratedByAi &&
+            _shouldKeepAiGeneratedFlag(
+              ingredients: _component.ingredients,
+              recipeInstructions: '',
+            ),
+      );
+    });
+  }
+
+  Future<void> _confirmAndClearAllIngredients() async {
+    if (_component.ingredients.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealIngredientsRemoveAllTitle),
+        content: Text(l10n.mealIngredientsRemoveAllBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _component = _component.copyWith(
+        ingredients: const [],
+        ingredientsGeneratedByAi: _component.ingredientsGeneratedByAi &&
+            _shouldKeepAiGeneratedFlag(
+              ingredients: const [],
+              recipeInstructions: _component.recipeInstructions,
+            ),
+      );
     });
   }
 
@@ -166,7 +218,10 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     );
     if (request == null || !mounted) return;
 
-    setState(() => _isGenerating = true);
+    setState(() {
+      _isGenerating = true;
+      _component = _component.copyWith(ingredientsGeneratedByAi: true);
+    });
     try {
       final result = await generateRecipeIngredients(
         recipeName: request.recipeName,
@@ -268,6 +323,10 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             onChanged: (_) => _syncTitle(),
             onEditingComplete: _syncTitle,
           ),
+          if (_component.ingredientsGeneratedByAi) ...[
+            const SizedBox(height: 8),
+            _AiQuantityWarningBanner(),
+          ],
           const SizedBox(height: 16),
           if (_risk.containsAllergenIds.isNotEmpty ||
               _risk.mayContainAllergenIds.isNotEmpty) ...[
@@ -291,15 +350,24 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
             ),
             const SizedBox(height: 12),
           ],
-          Text(
-            l10n.mealIngredientsTitle,
-            style: Theme.of(context).textTheme.titleMedium,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.mealIngredientsTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              if (_component.ingredients.isNotEmpty)
+                IconButton(
+                  tooltip: l10n.mealIngredientsRemoveAllTooltip,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _confirmAndClearAllIngredients,
+                ),
+            ],
           ),
           const SizedBox(height: 8),
-          if (_component.ingredientsGeneratedByAi) ...[
-            _AiQuantityWarningBanner(),
-            const SizedBox(height: 8),
-          ],
           for (var i = 0; i < _component.ingredients.length; i++)
             IngredientLineEditor(
               key: ValueKey('${_component.id}-$i'),
@@ -371,12 +439,12 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
 class _AiQuantityWarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final planerzColors = context.planerzColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: colorScheme.tertiaryContainer,
+        color: planerzColors.warningContainer,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -385,7 +453,7 @@ class _AiQuantityWarningBanner extends StatelessWidget {
           Icon(
             Icons.warning_amber_rounded,
             size: 20,
-            color: colorScheme.onTertiaryContainer,
+            color: planerzColors.warning,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -393,7 +461,7 @@ class _AiQuantityWarningBanner extends StatelessWidget {
               'Ingrédients générés par l\'IA — vérifiez bien les quantités '
               'avant de valider.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onTertiaryContainer,
+                    color: planerzColors.warning,
                   ),
             ),
           ),

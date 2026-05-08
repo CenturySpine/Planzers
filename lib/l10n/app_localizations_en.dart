@@ -913,6 +913,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealAddIngredient => 'Add an ingredient';
 
   @override
+  String get mealIngredientsRemoveAllTooltip => 'Delete all ingredients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle => 'Delete all ingredients?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'This action will remove every ingredient line from the recipe.';
+
+  @override
   String get mealRecipePreparationTitle => 'Preparation';
 
   @override
@@ -3484,6 +3494,16 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealAddIngredient => 'Add an ingredient';
+
+  @override
+  String get mealIngredientsRemoveAllTooltip => 'Delete all ingredients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle => 'Delete all ingredients?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'This action will remove every ingredient line from the recipe.';
 
   @override
   String get mealRecipePreparationTitle => 'Preparation';
