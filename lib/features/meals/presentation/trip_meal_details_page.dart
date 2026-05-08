@@ -1348,13 +1348,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final canEditParticipants = canEditMealCore;
             final canEditRecipe = canManageRecipe || isMealChef;
             final canUseRecipeAi = canEditRecipe &&
-                isTripRoleAllowed(
-                  currentRole: resolveTripPermissionRole(
-                    trip: trip,
-                    userId: myUid,
-                  ),
-                  minRole: TripPermissionRole.admin,
-                );
+                (isMealChef ||
+                    isTripRoleAllowed(
+                      currentRole: resolveTripPermissionRole(
+                        trip: trip,
+                        userId: myUid,
+                      ),
+                      minRole: TripPermissionRole.admin,
+                    ));
             final applicationOwnerScopeUid = (myUid ?? '').trim();
             final isApplicationOwner = applicationOwnerScopeUid.isNotEmpty &&
                 (membersData[applicationOwnerScopeUid]?['isApplicationOwner'] ==

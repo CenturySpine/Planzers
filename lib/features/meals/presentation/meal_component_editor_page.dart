@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
@@ -181,29 +183,8 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     });
   }
 
-  Future<void> _showRecipeAiNotAccessibleDialog() async {
-    final l10n = AppLocalizations.of(context)!;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.mealRecipeAiNotAccessibleTitle),
-        content: Text(l10n.mealRecipeAiNotAccessibleBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.commonClose),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _onRecipeAiFabPressed() async {
     if (_isGenerating) return;
-    if (!widget.isApplicationOwner) {
-      await _showRecipeAiNotAccessibleDialog();
-      return;
-    }
     await _generateIngredientsWithAi();
   }
 
@@ -218,6 +199,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         existingIngredientsCount: _component.ingredients.length,
         hasExistingRecipeInstructions:
             _component.recipeInstructions.trim().isNotEmpty,
+        isApplicationOwner: widget.isApplicationOwner,
       ),
     );
     if (request == null || !mounted) return;
@@ -493,12 +475,14 @@ class _GenerateRecipeDialog extends StatefulWidget {
     required this.initialServings,
     required this.existingIngredientsCount,
     required this.hasExistingRecipeInstructions,
+    required this.isApplicationOwner,
   });
 
   final String initialRecipeName;
   final int initialServings;
   final int existingIngredientsCount;
   final bool hasExistingRecipeInstructions;
+  final bool isApplicationOwner;
 
   @override
   State<_GenerateRecipeDialog> createState() => _GenerateRecipeDialogState();
@@ -508,6 +492,8 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _servingsController;
   RecipeAiMode _mode = RecipeAiMode.ingredientsOnly;
+  late bool _isReady;
+  Timer? _readyTimer;
 
   @override
   void initState() {
@@ -517,10 +503,17 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
         ? widget.initialServings.toString()
         : '';
     _servingsController = TextEditingController(text: initialServings);
+    _isReady = widget.isApplicationOwner;
+    if (!_isReady) {
+      _readyTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted) setState(() => _isReady = true);
+      });
+    }
   }
 
   @override
   void dispose() {
+    _readyTimer?.cancel();
     _nameController.dispose();
     _servingsController.dispose();
     super.dispose();
@@ -545,83 +538,87 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: l10n.mealRecipeAiRecipeNameLabel,
-                border: const OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.next,
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _servingsController,
-              decoration: InputDecoration(
-                labelText: l10n.mealRecipeAiServingsLabel,
-                border: const OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (_) => setState(() {}),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.mealRecipeAiModeQuestion,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 6),
-            SegmentedButton<RecipeAiMode>(
-              showSelectedIcon: false,
-              segments: [
-                ButtonSegment<RecipeAiMode>(
-                  value: RecipeAiMode.ingredientsOnly,
-                  label: Text(l10n.mealRecipeAiModeIngredientsOnly),
+            const AiBilledSupportBanner(),
+            if (_isReady) ...[
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: l10n.mealRecipeAiRecipeNameLabel,
+                  border: const OutlineInputBorder(),
                 ),
-                ButtonSegment<RecipeAiMode>(
-                  value: RecipeAiMode.ingredientsAndInstructions,
-                  enabled: !widget.hasExistingRecipeInstructions,
-                  label: Text(l10n.mealRecipeAiModeIngredientsAndInstructions),
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _servingsController,
+                decoration: InputDecoration(
+                  labelText: l10n.mealRecipeAiServingsLabel,
+                  border: const OutlineInputBorder(),
                 ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (selection) {
-                if (selection.isEmpty) return;
-                setState(() => _mode = selection.first);
-              },
-            ),
-            if (widget.existingIngredientsCount > 0) ...[
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (_) => setState(() {}),
+              ),
               const SizedBox(height: 16),
               Text(
-                l10n.mealRecipeAiWillReplaceIngredients(widget.existingIngredientsCount),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
+                l10n.mealRecipeAiModeQuestion,
+                style: theme.textTheme.bodyMedium,
               ),
+              const SizedBox(height: 6),
+              SegmentedButton<RecipeAiMode>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment<RecipeAiMode>(
+                    value: RecipeAiMode.ingredientsOnly,
+                    label: Text(l10n.mealRecipeAiModeIngredientsOnly),
+                  ),
+                  ButtonSegment<RecipeAiMode>(
+                    value: RecipeAiMode.ingredientsAndInstructions,
+                    enabled: !widget.hasExistingRecipeInstructions,
+                    label: Text(l10n.mealRecipeAiModeIngredientsAndInstructions),
+                  ),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (selection) {
+                  if (selection.isEmpty) return;
+                  setState(() => _mode = selection.first);
+                },
+              ),
+              if (widget.existingIngredientsCount > 0) ...[
+                const SizedBox(height: 16),
+                Text(
+                  l10n.mealRecipeAiWillReplaceIngredients(widget.existingIngredientsCount),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
             ],
-            const SizedBox(height: 12),
-            const AiBilledSupportBanner(),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        FilledButton(
-          onPressed: _isValid
-              ? () => Navigator.of(context).pop(
-                    _GenerateRecipeRequest(
-                      recipeName: _nameController.text.trim(),
-                      servings: _parsedServings(),
-                      mode: _mode,
-                    ),
-                  )
-              : null,
-          child: Text(l10n.mealRecipeAiGenerateAction),
-        ),
-      ],
+      actions: _isReady
+          ? [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l10n.commonCancel),
+              ),
+              FilledButton(
+                onPressed: _isValid
+                    ? () => Navigator.of(context).pop(
+                          _GenerateRecipeRequest(
+                            recipeName: _nameController.text.trim(),
+                            servings: _parsedServings(),
+                            mode: _mode,
+                          ),
+                        )
+                    : null,
+                child: Text(l10n.mealRecipeAiGenerateAction),
+              ),
+            ]
+          : null,
     );
   }
 }

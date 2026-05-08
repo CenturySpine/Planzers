@@ -942,13 +942,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
 
   @override
-  String get mealRecipeAiNotAccessibleTitle => 'Fonctionnalité IA indisponible';
-
-  @override
-  String get mealRecipeAiNotAccessibleBody =>
-      'La génération d\'ingrédients par IA n\'est pas encore accessible pour ton compte.';
-
-  @override
   String get mealRecipeAiGenerateLabel => 'Générer les ingrédients';
 
   @override
@@ -3590,13 +3583,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
-
-  @override
-  String get mealRecipeAiNotAccessibleTitle => 'Fonctionnalité IA indisponible';
-
-  @override
-  String get mealRecipeAiNotAccessibleBody =>
-      'La génération d\'ingrédients par IA n\'est pas encore accessible pour ton compte.';
 
   @override
   String get tripParticipantsTitle => 'Participants';
