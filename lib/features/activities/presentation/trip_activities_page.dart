@@ -181,9 +181,6 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                       _activeFilters.contains(a.category.filterGroup))
                   .toList();
 
-          int countForGroup(ActivityFilterGroup g) =>
-              items.where((a) => a.category.filterGroup == g).length;
-
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = buildTripActivitiesSuggestionEntries(
@@ -245,7 +242,6 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                             label: filterLabels[group]!,
                             icon: group.filterIcon,
                             color: group.filterColor,
-                            count: countForGroup(group),
                             selected: _activeFilters.contains(group),
                             onToggle: () => setState(() {
                               if (_activeFilters.contains(group)) {
@@ -681,7 +677,6 @@ class _ActivityFilterChip extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.color,
-    required this.count,
     required this.selected,
     required this.onToggle,
   });
@@ -689,7 +684,6 @@ class _ActivityFilterChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
-  final int count;
   final bool selected;
   final VoidCallback onToggle;
 
@@ -700,11 +694,6 @@ class _ActivityFilterChip extends StatelessWidget {
     final labelColor = selected
         ? Colors.white
         : Theme.of(context).colorScheme.onSurface;
-    final badgeBg = selected
-        ? Colors.white.withValues(alpha: 0.25)
-        : color.withValues(alpha: 0.15);
-    final badgeColor = selected ? Colors.white : color;
-
     return GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
@@ -733,22 +722,6 @@ class _ActivityFilterChip extends StatelessWidget {
                     color: labelColor,
                     fontWeight: FontWeight.w600,
                   ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: badgeBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: badgeColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
             ),
           ],
         ),
