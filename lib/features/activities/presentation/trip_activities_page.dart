@@ -332,12 +332,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
         ),
       ),
       floatingActionButton: canSuggestActivity
-          ? FloatingActionButton(
-              heroTag: 'trip_activities_add',
-              tooltip: l10n.activitiesSuggestAction,
-              onPressed: () => context.push('/trips/${trip.id}/activities/new'),
-              child: const Icon(Icons.add),
-            )
+          ? _ActivitiesExpandableFab(tripId: trip.id)
           : null,
     );
   }
@@ -670,6 +665,156 @@ List<_AgendaMonthSpan> _agendaMonthSpans(
 
 String _agendaMonthLabel(DateTime day, String localeTag) {
   return DateFormat('MMMM', localeTag).format(day);
+}
+
+class _ActivitiesExpandableFab extends StatefulWidget {
+  const _ActivitiesExpandableFab({required this.tripId});
+
+  final String tripId;
+
+  @override
+  State<_ActivitiesExpandableFab> createState() =>
+      _ActivitiesExpandableFabState();
+}
+
+class _ActivitiesExpandableFabState extends State<_ActivitiesExpandableFab> {
+  bool _isOpen = false;
+
+  void _toggle() => setState(() => _isOpen = !_isOpen);
+
+  void _openActivityCreate(List<TripActivityCategory> categories) {
+    setState(() => _isOpen = false);
+    final param = categories.map((c) => c.firestoreValue).join(',');
+    context.push(
+        '/trips/${widget.tripId}/activities/new?initialCategory=$param');
+  }
+
+  void _openMealCreate() {
+    setState(() => _isOpen = false);
+    context.push('/trips/${widget.tripId}/meals/new');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final loisirCategories = TripActivityCategory.values
+        .where((c) =>
+            c != TripActivityCategory.accommodation &&
+            c != TripActivityCategory.transport)
+        .toList();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: _isOpen
+                ? [
+                    _FabMenuItem(
+                      heroSuffix: 'nuits',
+                      icon: ActivityFilterGroup.nuits.filterIcon,
+                      color: ActivityFilterGroup.nuits.filterColor,
+                      label: l10n.activitiesFilterNuits,
+                      onTap: () => _openActivityCreate(
+                          [TripActivityCategory.accommodation]),
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'trajets',
+                      icon: ActivityFilterGroup.trajets.filterIcon,
+                      color: ActivityFilterGroup.trajets.filterColor,
+                      label: l10n.activitiesFilterTrajets,
+                      onTap: () => _openActivityCreate(
+                          [TripActivityCategory.transport]),
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'repas',
+                      icon: ActivityFilterGroup.repas.filterIcon,
+                      color: ActivityFilterGroup.repas.filterColor,
+                      label: l10n.activitiesFilterRepas,
+                      onTap: _openMealCreate,
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'loisirs',
+                      icon: ActivityFilterGroup.loisirs.filterIcon,
+                      color: ActivityFilterGroup.loisirs.filterColor,
+                      label: l10n.activitiesFilterLoisirs,
+                      onTap: () => _openActivityCreate(loisirCategories),
+                    ),
+                    const SizedBox(height: 8),
+                  ]
+                : [],
+          ),
+        ),
+        FloatingActionButton(
+          heroTag: 'trip_activities_add',
+          onPressed: _toggle,
+          child: AnimatedRotation(
+            turns: _isOpen ? 0.125 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FabMenuItem extends StatelessWidget {
+  const _FabMenuItem({
+    required this.heroSuffix,
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  final String heroSuffix;
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          borderRadius: BorderRadius.circular(8),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          elevation: 2,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FloatingActionButton.small(
+          heroTag: 'fab_item_$heroSuffix',
+          onPressed: onTap,
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          child: Icon(icon, size: 20),
+        ),
+      ],
+    );
+  }
 }
 
 class _ActivityFilterChip extends StatelessWidget {
