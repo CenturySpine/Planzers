@@ -11,31 +11,136 @@
 - Garder un système **extensible** : un seul mécanisme générique pour la génération d'ingrédients (actif aujourd'hui) **et** les futurs usages IA (consolidation shopping, génération de menu, etc.).
 - Déployer par phases pour limiter le risque et l'effort initial.
 
+## Deux patterns d'appel IA dans la codebase
+
+Les usages IA se répartissent en deux catégories avec des contraintes d'enforcement différentes :
+
+### CF-native (ex. consolidation shopping list)
+
+L'appel IA est entièrement géré par une Cloud Function (clef API serveur, SDK Node.js). Le cycle complet — check quota, appel IA, incrément ou refund — se fait dans la même CF via le gate Node.js.
+
+### CF-assisté (ex. génération de recette/ingrédients)
+
+L'appel IA utilise le SDK Firebase AI Logic côté client (credentials Firebase Auth). La CF ne peut pas proxifier cet appel. L'enforcement se fait via le gate Dart :
+
+1. **Réservation** : avant l'appel IA, le gate appelle la CF `reserveAiQuota` qui vérifie les quotas et les incrémente atomiquement. Si le quota est atteint, une `AiQuotaExceededException` typée est throwée — l'appel IA n'a pas lieu.
+2. **Refund automatique** : si l'appel IA lève une exception, le gate appelle automatiquement `refundAiQuota`. Le call site ne gère pas le refund directement.
+3. **Pas de refund** si l'appel réussit mais que la réponse est inexploitable : risque produit assumé. Le service est fourni à titre gratuit ; une réponse malformée ne justifie pas un mécanisme de remboursement complexe.
+
+> **Pourquoi réserver (check + incrément atomiques) plutôt que check puis incrément séparés ?**
+> Entre un pre-check et l'appel IA, un deuxième appel concurrent pourrait passer sous le quota. La réservation atomique ferme ce trou.
+
+### Garanties comparées
+
+| | CF-native | CF-assisté |
+|---|---|---|
+| Client modifié peut bypasser | Non | Oui (appel SDK direct) |
+| Overuse accidentel bloqué | Oui | Oui |
+| Race condition sur les compteurs | Non | Non |
+| Refund fiable | Oui | Best-effort (exceptions uniquement) |
+
+Pour l'audience actuelle (app invite-only, utilisateurs de confiance), le trou "client modifié" est acceptable. L'objectif est de bloquer l'accident, pas l'attaquant.
+
 ## Architecture globale
 
 ```mermaid
 flowchart TD
-    User["User clique sur le FAB IA"] --> Cooldown["Couche 2: Cooldown 5s en mémoire"]
-    Cooldown -- "OK" --> CircuitBreaker["Couche 3: Disjoncteur global"]
-    Cooldown -- "Trop rapide" --> SnackPatience["SnackBar 'patience...'"]
-    CircuitBreaker -- "tripped=true" --> SnackBreaker["SnackBar 'service IA en pause aujourd''hui'"]
-    CircuitBreaker -- "OK" --> Quotas["Couche 1: Quotas Firestore (transaction)"]
-    Quotas -- "Quota dépassé" --> SnackQuota["SnackBar 'limite quotidienne (X/jour) atteinte'"]
-    Quotas -- "OK + increment" --> CallSite["Couche 4 (optionnelle): Cloud Function gateway"]
-    CallSite --> AI["Appels Firebase AI (chained)"]
-    AI -- "Erreur" --> Refund["Décrément compteur (refund)"]
-    AI -- "Succès" --> Done["Ingrédients générés"]
+    subgraph "CF-assisté (AI Logic client)"
+        User["User clique sur le FAB IA"] --> Cooldown["Cooldown 5s en mémoire\n(call site / présentation)"]
+        Cooldown -- "Trop rapide" --> SnackPatience["SnackBar 'patience...'"]
+        Cooldown -- "OK" --> Gate["AiQuotaGate.call()\n(domaine Dart)"]
+        Gate --> Reserve["CF reserveAiQuota\n(check + incrément atomiques)"]
+        Reserve -- "Quota dépassé / circuit breaker" --> Exception["AiQuotaExceededException\n(typée, traduite en SnackBar par le call site)"]
+        Reserve -- "OK" --> CallAI["Appel SDK Firebase AI Logic"]
+        CallAI -- "Exception" --> Refund["CF refundAiQuota\n(automatique dans le gate)"]
+        CallAI -- "Succès" --> Done["Résultat retourné au call site"]
+        CallAI -- "Réponse inexploitable" --> Accept["Quota consommé\n(risque assumé)"]
+    end
+
+    subgraph "CF-native (ex. shopping consolidation)"
+        UserCF["User déclenche la feature"] --> CF["Cloud Function métier"]
+        CF --> GateNode["withAiQuota()\n(utils/aiQuotaGate.js)"]
+        GateNode --> ReserveCF["Transaction Firestore\n(check + incrément)"]
+        ReserveCF -- "Quota dépassé" --> ErrorCF["Erreur retournée au client"]
+        ReserveCF -- "OK" --> CallAICF["Appel IA (SDK Node.js)"]
+        CallAICF -- "Exception" --> RefundCF["Refund automatique dans le gate"]
+        CallAICF -- "Succès" --> DoneCF["Résultat retourné"]
+    end
 ```
 
-## Abstraction : `AiFeature` (générique pour tous les usages IA)
+## Composant gate — contrat et périmètre
 
-Au cœur du système, un enum extensible :
+Le gate est le **seul point d'entrée** pour tout appel IA soumis à quota. Il gère la mécanique quota (reserve/refund) et rien d'autre : pas de cooldown, pas de SnackBar, pas de logique métier. Ces responsabilités restent au call site.
+
+### Gate Dart — `AiQuotaGate` (couche domain)
+
+Fichier proposé : `lib/features/ai_quotas/domain/ai_quota_gate.dart`
+
+```dart
+class AiQuotaGate {
+  AiQuotaGate(this._repo, this._currentUser);
+  final AiQuotasRepository _repo;
+  final AppUser _currentUser;
+
+  Future<T> call<T>({
+    required AiFeature feature,
+    required String uid,
+    required String tripId,
+    required Future<T> Function() aiCall,
+  }) async {
+    if (_currentUser.isApplicationOwner) return aiCall();
+    await _repo.reserve(feature: feature, uid: uid, tripId: tripId);
+    try {
+      return await aiCall();
+    } catch (e) {
+      await _repo.refund(feature: feature, uid: uid, tripId: tripId);
+      rethrow;
+    }
+  }
+}
+
+// Provider Riverpod
+final aiQuotaGateProvider = Provider(
+  (ref) => AiQuotaGate(ref.read(aiQuotasRepositoryProvider)),
+);
+```
+
+**Contrat :**
+- Throw `AiQuotaExceededException` (typée avec un champ `reason` : `userDaily`, `tripDaily`, `tripLifetime`, `circuitBreaker`) si la réservation échoue.
+- Refund automatique sur toute exception levée par `aiCall`.
+- Pas de gestion UX (SnackBar, cooldown) : responsabilité du call site.
+- **Bypass total pour `isApplicationOwner`** : si l'utilisateur est flagué application owner, le gate ne réserve pas, n'incrémente pas, et ne refund pas — l'appel IA passe directement.
+
+### Gate Node.js — `withAiQuota` (CF-native)
+
+Fichier proposé : `functions/utils/aiQuotaGate.js`
+
+```js
+async function withAiQuota({ featureKey, tripId, uid, isApplicationOwner }, callFn) {
+  if (isApplicationOwner) return callFn();
+  await reserveQuota({ featureKey, tripId, uid }); // transaction Firestore
+  try {
+    return await callFn();
+  } catch (e) {
+    await refundQuota({ featureKey, tripId, uid }); // best-effort
+    throw e;
+  }
+}
+```
+
+**Contrat :** identique au gate Dart — throw si quota dépassé, refund automatique sur exception, bypass total pour `isApplicationOwner`.
+
+Toute nouvelle CF-native appelle `withAiQuota` et n'implémente pas sa propre gestion de quota.
+
+## Abstraction : `AiFeature`
+
+Au cœur du système, un enum extensible côté Dart et sa contrepartie string côté Node.js :
 
 ```dart
 enum AiFeature {
   recipeIngredients,
-  shoppingConsolidation, // futur (déjà esquissé dans la codebase)
-  // mealMenuSuggestion,  // exemple d'extension future
+  shoppingConsolidation, // futur
+  // mealMenuSuggestion, // exemple d'extension future
 }
 ```
 
@@ -60,7 +165,6 @@ const aiQuotaConfigs = <AiFeature, AiQuotaConfig>{
     perTripLifetime: 200,
     cooldown: Duration(seconds: 5),
   ),
-  // Ajouter les autres features quand elles arrivent
 };
 ```
 
@@ -96,110 +200,90 @@ system/aiCircuitBreaker
   - updatedAt: <timestamp>
 ```
 
-Reset paresseux : à chaque lecture/écriture, si `currentDayKey != today` → on remet `currentDayCount: 0` et `groundingCallsToday: 0`. Pas de Cloud Scheduler nécessaire.
+**Reset paresseux :** uniquement dans les transactions d'écriture CF. Jamais dans les lectures client — cela évite une race condition où deux clients détectent simultanément un dayKey périmé et réinitialisent tous les deux à 0 avant d'incrémenter.
 
-## Phases d'implémentation
+## Firestore Rules
 
-### Phase 1 — Couches 1 + 2 (effort ~1 demi-journée)
-
-Objectif : avoir un garde-fou client-side qui couvre 95 % des risques.
-
-#### Fichiers à créer
-
-- `lib/features/ai_quotas/data/ai_quota_config.dart` — config statique des quotas par `AiFeature`.
-- `lib/features/ai_quotas/data/ai_quotas_repository.dart` — repo Firestore avec :
-  - `Future<AiQuotaSnapshot> readQuotas(uid, tripId, feature)` (lecture des deux compteurs en parallèle, reset paresseux si dayKey périmé).
-  - `Future<void> tryConsumeOne(uid, tripId, feature)` (transaction atomique : lit → vérifie 3 seuils → incrémente → throw `AiQuotaExceededException` si ko).
-  - `Future<void> refundOne(uid, tripId, feature)` (decrement, en cas d'échec de l'appel IA).
-- `lib/features/ai_quotas/data/ai_quota_models.dart` — types `AiFeature`, `AiQuotaSnapshot { dailyUserUsed, dailyUserMax, dailyTripUsed, dailyTripMax, lifetimeTripUsed, lifetimeTripMax }`, exception.
-
-#### Fichiers à modifier
-
-- [`lib/features/meals/presentation/meal_component_editor_page.dart`](../../lib/features/meals/presentation/meal_component_editor_page.dart) (méthode `_generateIngredientsWithAi`) :
-  - Ajouter le check **cooldown** local (champ `DateTime? _lastAiCallAt`).
-  - Avant l'appel : `await ref.read(aiQuotasRepositoryProvider).tryConsumeOne(...)`.
-  - Wrap l'appel `generateRecipeIngredients` dans un `try/catch/finally` : si exception après consume, appeler `refundOne`.
-  - Catcher `AiQuotaExceededException` et afficher le SnackBar approprié (« limite perso atteinte » vs « limite voyage atteinte » selon le champ qui a déclenché).
-- [`lib/features/meals/presentation/meal_component_editor_page.dart`](../../lib/features/meals/presentation/meal_component_editor_page.dart) (`_GenerateRecipeDialog`) :
-  - Ajouter une ligne discrète sous les inputs : *« Quotas restants : N/30 (vous) — M/50 (ce voyage) ».* Lecture via `ref.watch(aiQuotasSnapshotProvider(...))`.
-  - Désactiver le bouton « Générer » si quota = 0.
-
-#### Rules Firestore à compléter
-
-Dans [`firestore.rules`](../../firestore.rules), ajouter :
+Les règles sont simplifiées : le client **lit** les quotas (pour afficher les quotas restants dans le dialog), la CF **écrit**. Pas de validation d'incrément côté règles.
 
 ```
 match /users/{userId}/aiQuotas/{featureKey} {
   allow read: if signedIn() && request.auth.uid == userId;
-  allow create, update: if signedIn()
-    && request.auth.uid == userId
-    && aiQuotaWriteIsValidIncrement(resource, request.resource);
+  // writes: CF only (service account)
 }
 
 match /trips/{tripId}/aiQuotas/{featureKey} {
   allow read: if signedIn() && isTripMember(tripId);
-  allow create, update: if signedIn()
-    && isTripMember(tripId)
-    && aiQuotaWriteIsValidIncrement(resource, request.resource);
+  // writes: CF only (service account)
 }
-```
 
-La fonction `aiQuotaWriteIsValidIncrement` valide :
-- Soit reset (nouveau dayKey, `currentDayCount == 1`).
-- Soit increment d'exactement +1 sur `currentDayCount` et `lifetimeCount`.
-- Soit decrement d'exactement -1 (refund).
-- Pas d'autre champ écrit en dehors de la liste autorisée.
-
-Cela bloque tout reset arbitraire ou écriture frauduleuse côté client.
-
-#### Tests
-- Test unitaire du repo (mock Firestore) : check, refund, reset paresseux.
-- Test manuel : forcer un quota à 30/30, vérifier le SnackBar et le bouton désactivé.
-
-### Phase 2 — Couche 3 : disjoncteur global (effort ~2-3 heures)
-
-Objectif : ne jamais dépasser 80 % du free tier grounding sans en être conscient.
-
-#### Choix d'architecture
-
-Le disjoncteur **doit être incrémenté de manière fiable** à chaque appel grounded. Deux options :
-
-- **Option A (client)** : à chaque appel IA réussi côté client, on increment `system/aiCircuitBreaker.groundingCallsToday`. Rules autorisent tout user authentifié à incrémenter de +1.
-- **Option B (Cloud Function dédiée)** : `incrementAiCircuitBreaker` callable, appelée par le client après succès.
-
-**Recommandation : option A**, plus simple, suffisamment fiable pour un compteur soft cap. Le risque d'un user qui spamme cet increment pour fermer artificiellement le service est limité (admin role déjà gaté en amont).
-
-#### Fichiers
-
-- `lib/features/ai_quotas/data/ai_circuit_breaker_repository.dart` — repo avec :
-  - `Future<bool> isTripped()` (lecture).
-  - `Future<void> recordGroundingCall()` (transaction increment + auto-trip à 1200, reset paresseux).
-- Provider Riverpod `aiCircuitBreakerStateProvider` (stream) pour réactivité dans l'UI.
-- Modif de `_generateIngredientsWithAi` : check `isTripped` avant les autres couches, `recordGroundingCall` après chaque succès du `_callGroundedRecipe` (le 1er appel chaîné, qui consomme le free tier grounding).
-- UI : si `tripped`, masquer le FAB IA (ou l'afficher mais désactivé avec tooltip explicatif). À discuter — masquer est plus propre.
-
-#### Rules Firestore à ajouter
-
-```
 match /system/aiCircuitBreaker {
   allow read: if signedIn();
-  allow create, update: if signedIn() && (
-    aiCircuitBreakerWriteIsValidIncrement(resource, request.resource)
-    || isApplicationOwner()  // override manuel
-  );
+  allow update: if isApplicationOwner();  // override manuel uniquement
+  // increments: CF only (service account)
 }
 ```
 
-`isApplicationOwner()` existe déjà dans [`firestore.rules`](../../firestore.rules) — réutilisable pour le `manualOverride`.
+## Phases d'implémentation
 
-#### Note sur les seuils
+### Phase 1 — Gate + quotas + cooldown (effort ~1 demi-journée)
 
-- Trip à 1200/jour (= 80 % du free tier de 1500). Marge de sécurité de 300 calls.
-- Pour une appli avec ~120 calls/jour estimés, on est à 8 % du free tier. Le disjoncteur ne se déclenchera jamais en pratique. C'est une **assurance**, pas un mécanisme régulier.
+Objectif : avoir un garde-fou robuste qui couvre 95 % des risques sans migration de l'appel IA.
 
-### Phase 3 — Couche 4 : Cloud Function gateway (effort ~1 jour, optionnelle)
+#### Cloud Functions à créer
 
-Objectif : passer en enforcement serveur strict, impossible à bypasser depuis un client modifié.
+Dans [`functions/index.js`](../../functions/index.js), deux callables région `europe-west9` :
+
+- **`reserveAiQuota`** — reçoit `{ featureKey, tripId }`. Transaction Firestore :
+  - Reset paresseux si `currentDayKey != today` (user + trip).
+  - Vérifie les 3 seuils (`perUserPerDay`, `perTripPerDay`, `perTripLifetime`).
+  - Vérifie le disjoncteur (`tripped == true`).
+  - Si OK : incrémente les deux compteurs, incrémente `groundingCallsToday`, auto-trip à 1200.
+  - Retourne `{ ok: true }` ou throw avec un code d'erreur typé (`quota-user`, `quota-trip`, `quota-trip-lifetime`, `circuit-breaker`).
+
+- **`refundAiQuota`** — reçoit `{ featureKey, tripId }`. Décrémente les compteurs user et trip (plancher à 0). Pas de decrement sur `groundingCallsToday` (conservative).
+
+#### Utilitaire Node.js à créer
+
+- `functions/utils/aiQuotaGate.js` — `withAiQuota({ featureKey, tripId, uid }, callFn)`. Utilisé dès maintenant par les CF-native existantes ou futures.
+
+#### Fichiers Dart à créer
+
+- `lib/features/ai_quotas/data/ai_quota_config.dart` — config statique des quotas par `AiFeature`.
+- `lib/features/ai_quotas/data/ai_quota_models.dart` — types `AiFeature`, `AiQuotaSnapshot`, `AiQuotaExceededException` (avec champ `reason`).
+- `lib/features/ai_quotas/data/ai_quotas_repository.dart` — repo avec :
+  - `Future<void> reserve(...)` — appelle CF `reserveAiQuota`, traduit les codes d'erreur en `AiQuotaExceededException`.
+  - `Future<void> refund(...)` — appelle CF `refundAiQuota` (best-effort, fire-and-forget acceptable).
+  - `Stream<AiQuotaSnapshot> watchQuotas(...)` — stream Firestore lecture seule pour l'affichage.
+- `lib/features/ai_quotas/domain/ai_quota_gate.dart` — `AiQuotaGate` + `aiQuotaGateProvider`.
+
+#### Fichiers à modifier
+
+- [`lib/features/meals/presentation/meal_component_editor_page.dart`](../../lib/features/meals/presentation/meal_component_editor_page.dart) (méthode `_generateIngredientsWithAi`) :
+  - Ajouter le check **cooldown** local (champ `DateTime? _lastAiCallAt`) — responsabilité du call site, pas du gate.
+  - Remplacer l'appel direct au service IA par `ref.read(aiQuotaGateProvider).call(feature: ..., aiCall: () => ...)`.
+  - Catcher `AiQuotaExceededException` et afficher le SnackBar approprié selon `exception.reason`.
+- [`lib/features/meals/presentation/meal_component_editor_page.dart`](../../lib/features/meals/presentation/meal_component_editor_page.dart) (`_GenerateRecipeDialog`) :
+  - Ligne discrète sous les inputs : *« Quotas restants : N/30 (vous) — M/50 (ce voyage) »*. Via `ref.watch(aiQuotasSnapshotProvider(...))`.
+  - Désactiver le bouton « Générer » si quota = 0.
+
+#### Tests
+- Test unitaire du gate Dart (mock repo) : reserve OK, reserve quota dépassé, refund automatique sur exception.
+- Test unitaire du gate Node.js (mock Firestore) : même cas.
+- Test de la CF `reserveAiQuota` (émulateur Firebase) : transaction atomique, reset paresseux, auto-trip disjoncteur.
+- Test manuel : forcer un quota à 30/30, vérifier le SnackBar et le bouton désactivé.
+
+### Phase 2 — Disjoncteur : exposition UI (effort ~1-2 heures)
+
+> Le disjoncteur est déjà câblé dans `reserveAiQuota` (Phase 1). Cette phase couvre uniquement l'**exposition UI** et la **supervision manuelle**.
+
+- Ajouter un stream `aiCircuitBreakerStateProvider` (lecture Firestore `system/aiCircuitBreaker`).
+- Si `tripped`, masquer le FAB IA (cohérent avec la guideline "hide > disable").
+- Documenter le `manualOverride` pour permettre à l'admin de forcer l'état sans redéployer.
+
+### Phase 3 — Migration CF-native pour les appels IA client (effort ~1 jour, optionnelle)
+
+Objectif : enforcement strict, impossible à bypasser par un client modifié.
 
 #### Quand l'envisager
 - À l'ouverture publique (utilisateurs non-amis).
@@ -208,38 +292,34 @@ Objectif : passer en enforcement serveur strict, impossible à bypasser depuis u
 
 #### Refactor
 
-- Créer `exports.generateRecipeIngredientsWithAi` dans [`functions/index.js`](../../functions/index.js), suivant le même pattern que `consolidateTripShoppingWithAi`.
-  - Région : `europe-west9` (déjà imposé par `setGlobalOptions`).
-  - Auth check : caller est admin du voyage.
-  - Quotas check : transaction Firestore (lecture compteurs user + voyage + disjoncteur).
-  - Appel chaîné Firebase AI côté serveur (utiliser `@google/generative-ai` ou Genkit Node).
-  - Increment compteurs après succès, refund après échec.
-  - Retour : `RecipeAiResult` sérialisé.
-- Modifier [`lib/features/meals/data/recipe_ingredients_ai_service.dart`](../../lib/features/meals/data/recipe_ingredients_ai_service.dart) pour appeler la Cloud Function via `FirebaseFunctions.httpsCallable` au lieu de `FirebaseAI` directement.
-- Ne pas supprimer le repo de quotas Phase 1 : il reste utile pour afficher les quotas restants dans le dialog (lecture seule côté client). Seul l'**enforcement** passe côté serveur.
+- Créer `exports.generateRecipeIngredientsWithAi` dans [`functions/index.js`](../../functions/index.js) :
+  - Utilise `withAiQuota()` (gate Node.js, déjà en place depuis Phase 1).
+  - Appelle Firebase AI via SDK Node.js (`@google/generative-ai` ou Genkit Node).
+  - Retourne `RecipeAiResult` sérialisé.
+- Modifier [`lib/features/meals/data/recipe_ingredients_ai_service.dart`](../../lib/features/meals/data/recipe_ingredients_ai_service.dart) pour appeler la CF via `FirebaseFunctions.httpsCallable` au lieu du SDK Firebase AI Logic.
+- Le gate Dart (`AiQuotaGate`) n'est plus utilisé pour cette feature en Phase 3 (l'enforcement est entièrement dans la CF). Il reste actif pour d'éventuels autres usages CF-assistés.
 - IAM check obligatoire après déploiement (`gcloud run services get-iam-policy ...` avec `allUsers` `roles/run.invoker`), conformément à la guideline de la repo.
 
 #### Bonus côté serveur
 
-- Logging structuré des usages IA dans `applicationLogs/` (pattern déjà existant dans la codebase) : feature, uid, tripId, durée, succès/échec, tokens consommés.
-- Cela ouvre la porte à un dashboard admin d'usage IA (hors scope plan).
+- Logging structuré des usages IA dans `applicationLogs/` (pattern déjà existant) : feature, uid, tripId, durée, succès/échec, tokens consommés.
 
 ## UX / Wording
 
-Tous les textes en français hardcodé (cohérent avec le pattern POC actuel, pas d'l10n pour cette phase). Wordings proposés :
+Tous les textes en français hardcodé. Les valeurs de quota sont interpolées depuis `AiQuotaConfig` (pas hardcodées dans le wording).
 
 - Cooldown : *« Patience, l'appel précédent vient juste d'être lancé. »*
-- Quota user atteint : *« Vous avez atteint votre limite quotidienne de générations IA (30/jour). Réessayez demain. »*
-- Quota voyage atteint : *« Ce voyage a atteint sa limite quotidienne de générations IA (50/jour). Réessayez demain. »*
-- Quota voyage lifetime atteint : *« Ce voyage a atteint sa limite totale de générations IA (200). Contactez le support si nécessaire. »*
+- Quota user atteint : *« Vous avez atteint votre limite quotidienne de générations IA ({{perUserPerDay}}/jour). Réessayez demain. »*
+- Quota voyage atteint : *« Ce voyage a atteint sa limite quotidienne de générations IA ({{perTripPerDay}}/jour). Réessayez demain. »*
+- Quota voyage lifetime atteint : *« Ce voyage a atteint sa limite totale de générations IA ({{perTripLifetime}}). Contactez le support si nécessaire. »*
 - Disjoncteur tripped : *« Le service IA est en pause pour aujourd'hui (quotas globaux atteints). Il sera de nouveau disponible demain. »*
-- Quotas restants dans le dialog : *« Quotas restants : 18/30 (vous) — 42/50 (ce voyage). »*
+- Quotas restants dans le dialog : *« Quotas restants : 18/{{perUserPerDay}} (vous) — 42/{{perTripPerDay}} (ce voyage). »*
 
 ## Ordre d'exécution recommandé
 
-1. **Aujourd'hui/cette semaine** : Phase 1 complète. Tu es protégé contre 95 % des dérapages.
-2. **Avant ouverture publique** : Phase 2. Tu es protégé contre une viralité non anticipée.
-3. **Si volume réel ou abus avéré** : Phase 3. Pas avant.
+1. **Aujourd'hui/cette semaine** : Phase 1 complète. Tu es protégé contre 95 % des dérapages (overuse accidentel). Le gate est en place pour toutes les futures features IA.
+2. **Avant ouverture publique** : Phase 2 (exposition UI du disjoncteur, déjà câblé en Phase 1). Phase 3 si tu veux l'enforcement strict contre un client modifié.
+3. **Si volume réel ou abus avéré** : Phase 3 si pas encore fait.
 
 ## Hors scope (à mentionner pour traçabilité)
 
