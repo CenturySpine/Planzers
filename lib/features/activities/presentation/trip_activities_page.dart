@@ -293,14 +293,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    l10n.tripTabActivities,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: Row(
                     children: [
                       for (final group in ActivityFilterGroup.values) ...[

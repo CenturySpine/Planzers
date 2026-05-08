@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
@@ -52,83 +53,102 @@ class TripMealCard extends ConsumerWidget {
         .toSet()
         .length;
 
+    final repasColor = ActivityFilterGroup.repas.filterColor;
+    final surface = Theme.of(context).colorScheme.surface;
+    final cardBg = Color.lerp(surface, repasColor, 0.08)!;
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
+      clipBehavior: Clip.antiAlias,
+      surfaceTintColor: Colors.transparent,
+      color: cardBg,
       child: InkWell(
         onTap: () => context.push('/trips/$tripId/meals/${meal.id}'),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: IntrinsicHeight(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _MealModeBadge(mealMode: meal.mealMode),
-              const SizedBox(width: 12),
+              Container(width: 4, color: repasColor),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dayPartLabel,
-                      style: Theme.of(context).textTheme.titleSmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Text(
-                        mealPreviewLabel,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color:
-                                  Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              if (hasChef) ...[
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Stack(
-                    clipBehavior: Clip.none,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  child: Row(
                     children: [
-                      buildProfileBadge(
-                        context: context,
-                        displayLabel: chefLabel,
-                        userData: chefUserData,
-                        size: 24,
+                      _MealModeBadge(mealMode: meal.mealMode),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dayPartLabel,
+                              style: Theme.of(context).textTheme.titleSmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              mealPreviewLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                      Positioned(
-                        top: -3,
-                        right: -3,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          padding: const EdgeInsets.all(1),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            shape: BoxShape.circle,
-                          ),
-                          child: SvgPicture.asset(
-                            'assets/images/chef_hat.svg',
-                            width: 10,
-                            height: 10,
+                      const SizedBox(width: 12),
+                      if (hasChef) ...[
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              buildProfileBadge(
+                                context: context,
+                                displayLabel: chefLabel,
+                                userData: chefUserData,
+                                size: 24,
+                              ),
+                              Positioned(
+                                top: -3,
+                                right: -3,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  padding: const EdgeInsets.all(1),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: SvgPicture.asset(
+                                    'assets/images/chef_hat.svg',
+                                    width: 10,
+                                    height: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        const SizedBox(width: 12),
+                      ],
+                      Badge(
+                        label: Text(participantCount.toString()),
+                        child: const Icon(Icons.people_outline),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
-              ],
-              Badge(
-                label: Text(participantCount.toString()),
-                child: const Icon(Icons.people_outline),
               ),
             ],
           ),
@@ -183,6 +203,7 @@ class _MealModeBadge extends StatelessWidget {
       MealMode.restaurant => 'assets/images/hand_meal.svg',
       MealMode.potluck => 'assets/images/tapas.svg',
     };
+    final color = ActivityFilterGroup.repas.filterColor;
     return SizedBox(
       width: 18,
       height: 18,
@@ -190,6 +211,7 @@ class _MealModeBadge extends StatelessWidget {
         asset,
         width: 18,
         height: 18,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
       ),
     );
   }

@@ -159,7 +159,7 @@ class TripActivityCard extends StatelessWidget {
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8),
+                            horizontal: 10, vertical: 6),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -173,12 +173,39 @@ class TripActivityCard extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    label,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      if (activity.plannedAt != null) ...[
+                                        Text(
+                                          DateFormat.Hm(
+                                            Localizations.localeOf(context)
+                                                .toString(),
+                                          ).format(
+                                              activity.plannedAt!.toLocal()),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: categoryColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                      ],
+                                      Expanded(
+                                        child: Text(
+                                          label,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -207,29 +234,12 @@ class TripActivityCard extends StatelessWidget {
                                               .onSurfaceVariant,
                                         ),
                                   ),
-                                  if (activity.plannedAt != null) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      DateFormat.Hm(
-                                        Localizations.localeOf(context)
-                                            .toString(),
-                                      ).format(activity.plannedAt!.toLocal()),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: categoryColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
                             const SizedBox(width: 8),
-                            LinkPreviewThumbnail(preview: activity.linkPreview),
+                            LinkPreviewThumbnail(
+                                preview: activity.linkPreview, size: 36),
                           ],
                         ),
                       ),
