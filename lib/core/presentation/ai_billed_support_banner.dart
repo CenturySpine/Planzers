@@ -26,19 +26,11 @@ class AiBilledSupportBanner extends StatelessWidget {
         color: planerzColors.successContainer,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Text(
-              AppLocalizations.of(context)!.mealRecipeAiBilledWarning,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: planerzColors.success,
-                  ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          InkWell(
+      child: Builder(
+        builder: (context) {
+          final screenWidth = MediaQuery.of(context).size.width;
+          final stacked = screenWidth < 600;
+          final kofiButton = InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: () => _openKofi(context),
             child: Image.network(
@@ -47,8 +39,32 @@ class AiBilledSupportBanner extends StatelessWidget {
               fit: BoxFit.contain,
               semanticLabel: 'Buy Me a Coffee at ko-fi.com',
             ),
-          ),
-        ],
+          );
+          final warningText = Text(
+            AppLocalizations.of(context)!.mealRecipeAiBilledWarning,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: planerzColors.success,
+                ),
+          );
+          if (stacked) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                warningText,
+                const SizedBox(height: 10),
+                kofiButton,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: warningText),
+              const SizedBox(width: 12),
+              kofiButton,
+            ],
+          );
+        },
       ),
     );
   }
