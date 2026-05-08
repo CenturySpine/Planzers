@@ -386,57 +386,65 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                     builder: (context) {
                       final d = destinations[index];
                       final selected = selectedIndex == index;
-                      return InkWell(
+                      return GestureDetector(
                         onTap: () => onDestinationSelected(index),
-                        borderRadius: BorderRadius.circular(16),
+                        behavior: HitTestBehavior.opaque,
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
+                              height: 3,
                               decoration: BoxDecoration(
                                 color: selected
-                                    ? colorScheme.secondaryContainer
+                                    ? colorScheme.primary
                                     : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: _buildNavIcon(
-                                icon: selected ? d.selectedIcon : d.icon,
-                                unreadCount: unreadByTabLabel[d.label] ?? 0,
-                                showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Planning',
-                                color: selected
-                                    ? colorScheme.onSecondaryContainer
-                                    : colorScheme.onSurfaceVariant,
-                                svgAsset: d.svgAsset,
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(2),
+                                  bottomRight: Radius.circular(2),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              switch (d.label) {
-                                'Aperçu' => l10n.tripTabOverview,
-                                'Messagerie' => l10n.tripTabMessages,
-                                'Planning' => l10n.tripTabActivities,
-                                'Dépenses' => l10n.tripTabExpenses,
-                                'Repas' => l10n.tripTabMeals,
-                                'Courses' => l10n.tripTabShopping,
-                                _ => d.label,
-                              },
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _buildNavIcon(
+                                    icon: selected ? d.selectedIcon : d.icon,
+                                    unreadCount:
+                                        unreadByTabLabel[d.label] ?? 0,
+                                    showBadge: d.label == 'Messagerie' ||
+                                        d.label == 'Planning',
                                     color: selected
-                                        ? colorScheme.onSurface
+                                        ? colorScheme.primary
                                         : colorScheme.onSurfaceVariant,
+                                    svgAsset: d.svgAsset,
                                   ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    switch (d.label) {
+                                      'Aperçu' => l10n.tripTabOverview,
+                                      'Messagerie' => l10n.tripTabMessages,
+                                      'Planning' => l10n.tripTabActivities,
+                                      'Dépenses' => l10n.tripTabExpenses,
+                                      'Repas' => l10n.tripTabMeals,
+                                      'Courses' => l10n.tripTabShopping,
+                                      _ => d.label,
+                                    },
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: selected
+                                              ? colorScheme.primary
+                                              : colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
