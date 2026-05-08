@@ -6,20 +6,20 @@ const { HttpsError } = require('firebase-functions/v2/https');
 // Mirrors lib/features/ai_quotas/data/ai_quota_config.dart — keep in sync.
 const QUOTA_CONFIGS = {
   recipeIngredients: {
-    perUserPerDay: 30,
-    perTripPerDay: 50,
-    perTripLifetime: 200,
+    perUserPerDay: 5,
+    perTripPerDay: 10,
+    perTripLifetime: 30,
     usesGrounding: true,
   },
   shoppingConsolidation: {
-    perUserPerDay: 10,
-    perTripPerDay: 20,
-    perTripLifetime: 100,
+    perUserPerDay: 2,
+    perTripPerDay: 3,
+    perTripLifetime: 10,
     usesGrounding: false,
   },
 };
 
-const CIRCUIT_BREAKER_THRESHOLD = 1200;
+const CIRCUIT_BREAKER_THRESHOLD = 50;
 
 function todayUtcKey() {
   return new Date().toISOString().slice(0, 10);

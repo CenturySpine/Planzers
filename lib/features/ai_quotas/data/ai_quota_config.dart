@@ -17,13 +17,13 @@ class AiQuotaConfig {
 
 const aiQuotaConfigs = <AiFeature, AiQuotaConfig>{
   AiFeature.recipeIngredients: AiQuotaConfig(
-    perUserPerDay: 30,
-    perTripPerDay: 50,
-    perTripLifetime: 200,
+    perUserPerDay: 5,
+    perTripPerDay: 10,
+    perTripLifetime: 30,
   ),
   AiFeature.shoppingConsolidation: AiQuotaConfig(
-    perUserPerDay: 10,
-    perTripPerDay: 20,
-    perTripLifetime: 100,
+    perUserPerDay: 2,
+    perTripPerDay: 3,
+    perTripLifetime: 10,
   ),
 };
