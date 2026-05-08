@@ -180,6 +180,7 @@ List<TripActivitiesListEntry> buildTripActivitiesPlannedEntries(
 }) {
   final dated = items
       .where((a) => a.plannedAt != null)
+      .where((a) => a.category != TripActivityCategory.restaurant)
       .where(
         (a) => tripActivityMatchesQuery(
           a,
@@ -191,13 +192,13 @@ List<TripActivitiesListEntry> buildTripActivitiesPlannedEntries(
     ..sort((a, b) {
       final aDate = tripActivityDateForGrouping(a);
       final bDate = tripActivityDateForGrouping(b);
-      final byDay = bDate.compareTo(aDate);
+      final byDay = aDate.compareTo(bDate);
       if (byDay != 0) return byDay;
       final byTime = tripActivityPlannedMinutesSinceMidnight(a).compareTo(
         tripActivityPlannedMinutesSinceMidnight(b),
       );
       if (byTime != 0) return byTime;
-      return b.createdAt.compareTo(a.createdAt);
+      return a.createdAt.compareTo(b.createdAt);
     });
 
   final entries = <TripActivitiesListEntry>[];
@@ -249,6 +250,7 @@ List<TripActivitiesListEntry> buildTripActivitiesPlannedEntriesMixed({
 }) {
   final plannedActivities = activities
       .where((activity) => activity.plannedAt != null)
+      .where((activity) => activity.category != TripActivityCategory.restaurant)
       .where(
         (activity) => tripActivityMatchesQuery(
           activity,
@@ -265,11 +267,11 @@ List<TripActivitiesListEntry> buildTripActivitiesPlannedEntriesMixed({
     ...plannedActivities.map(_PlannedTimelineItem.fromActivity),
     ...plannedMeals.map(_PlannedTimelineItem.fromMeal),
   ]..sort((a, b) {
-      final byDay = b.day.compareTo(a.day);
+      final byDay = a.day.compareTo(b.day);
       if (byDay != 0) return byDay;
       final byTime = a.minutesSinceMidnight.compareTo(b.minutesSinceMidnight);
       if (byTime != 0) return byTime;
-      return b.createdAt.compareTo(a.createdAt);
+      return a.createdAt.compareTo(b.createdAt);
     });
 
   final entries = <TripActivitiesListEntry>[];
@@ -291,6 +293,7 @@ List<TripActivitiesListEntry> tripActivitiesAgendaEntriesForDayMixed({
 }) {
   final dayActivities = activities
       .where((activity) => activity.plannedAt != null)
+      .where((activity) => activity.category != TripActivityCategory.restaurant)
       .where(
         (activity) => tripActivitiesSameDay(
           tripActivityDateOnly(activity.plannedAt!),

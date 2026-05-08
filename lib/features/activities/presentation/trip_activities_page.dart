@@ -225,6 +225,20 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                             .contains(activity.category.filterGroup),
                       )
                       .toList(growable: false);
+          // For suggestions: repas filter includes restaurant activities.
+          final activeSuggestionFilters = mealFilterActive
+              ? {...activeActivityFilters, ActivityFilterGroup.repas}
+              : activeActivityFilters;
+          final filteredActivitiesForSuggestions = !hasAnyFilter
+              ? items
+              : activeSuggestionFilters.isEmpty
+                  ? const <TripActivity>[]
+                  : items
+                      .where(
+                        (activity) => activeSuggestionFilters
+                            .contains(activity.category.filterGroup),
+                      )
+                      .toList(growable: false);
           final filteredMeals = _activeFilters.isEmpty || mealFilterActive
               ? meals
               : const <TripMeal>[];
@@ -232,7 +246,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = buildTripActivitiesSuggestionEntries(
-            filteredActivities,
+            filteredActivitiesForSuggestions,
             query: suggestionsQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,

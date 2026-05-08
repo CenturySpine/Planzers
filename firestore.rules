@@ -643,6 +643,7 @@ service cloud.firestore {
             .hasOnly([
               'mealDateKey',
               'mealDayPart',
+              'mealTimeHHMM',
               'participantIds',
               'chefParticipantId',
               'mealMode',
