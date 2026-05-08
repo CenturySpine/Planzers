@@ -2294,6 +2294,7 @@ enum _MealDetailsView {
 class _AiCardWarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final planerzColors = context.planerzColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -2312,7 +2313,7 @@ class _AiCardWarningBanner extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Ingrédients générés par l\'IA — à vérifier.',
+              l10n.mealRecipeAiCardWarning,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: planerzColors.warning,
                   ),
@@ -2342,7 +2343,7 @@ class _RecipeInstructionsExpansion extends StatelessWidget {
           color: theme.colorScheme.onSurfaceVariant,
         ),
         title: Text(
-          'Préparation',
+          AppLocalizations.of(context)!.mealRecipePreparationTitle,
           style: theme.textTheme.titleSmall,
         ),
         children: [

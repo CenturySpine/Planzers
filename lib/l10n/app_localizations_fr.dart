@@ -949,6 +949,48 @@ class AppLocalizationsFr extends AppLocalizations {
       'La génération d\'ingrédients par IA n\'est pas encore accessible pour ton compte.';
 
   @override
+  String get mealRecipeAiGenerateLabel => 'Générer les ingrédients';
+
+  @override
+  String get mealRecipeAiNoIngredientGenerated =>
+      'Aucun ingrédient n\'a pu être généré.';
+
+  @override
+  String get mealRecipeAiQuantityWarning =>
+      'Ingrédients générés par l\'IA — vérifiez bien les quantités avant de valider.';
+
+  @override
+  String get mealRecipeAiCardWarning =>
+      'Ingrédients générés par l\'IA — à vérifier.';
+
+  @override
+  String get mealRecipeAiRecipeNameLabel => 'Nom de la recette';
+
+  @override
+  String get mealRecipeAiServingsLabel => 'Nombre de personnes';
+
+  @override
+  String get mealRecipeAiModeQuestion => 'Que souhaites-tu générer ?';
+
+  @override
+  String get mealRecipeAiModeIngredientsOnly => 'Ingrédients seuls';
+
+  @override
+  String get mealRecipeAiModeIngredientsAndInstructions =>
+      'Ingrédients + recette';
+
+  @override
+  String mealRecipeAiWillReplaceIngredients(Object count) {
+    return 'Cela remplacera les $count ingrédient(s) actuels de la recette.';
+  }
+
+  @override
+  String get mealRecipeAiBilledWarning => 'Chaque appel à l\'IA est facturé.';
+
+  @override
+  String get mealRecipeAiGenerateAction => 'Générer';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override

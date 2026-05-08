@@ -236,8 +236,8 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
       if (!mounted) return;
       if (result.ingredients.isEmpty) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Aucun ingrédient n\'a pu être généré.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.mealRecipeAiNoIngredientGenerated),
           ),
         );
         return;
@@ -258,7 +258,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Erreur lors de la génération : $e')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -426,7 +426,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
       floatingActionButton: widget.canUseAi
           ? FloatingActionButton(
               heroTag: 'generate_recipe_ingredients_with_ai',
-              tooltip: 'Générer les ingrédients (POC)',
+              tooltip: l10n.mealRecipeAiGenerateLabel,
               onPressed: _isGenerating ? null : _onRecipeAiFabPressed,
               child: _isGenerating
                   ? const SizedBox.square(
@@ -462,8 +462,7 @@ class _AiQuantityWarningBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Ingrédients générés par l\'IA — vérifiez bien les quantités '
-              'avant de valider.',
+              AppLocalizations.of(context)!.mealRecipeAiQuantityWarning,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: planerzColors.warning,
                   ),
@@ -536,9 +535,10 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return AlertDialog(
-      title: const Text('Générer les ingrédients (POC)'),
+      title: Text(l10n.mealRecipeAiGenerateLabel),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -546,9 +546,9 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nom de la recette',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.mealRecipeAiRecipeNameLabel,
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.next,
               onChanged: (_) => setState(() {}),
@@ -556,9 +556,9 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _servingsController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de personnes',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.mealRecipeAiServingsLabel,
+                border: const OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -566,21 +566,21 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Que souhaites-tu générer ?',
+              l10n.mealRecipeAiModeQuestion,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 6),
             SegmentedButton<RecipeAiMode>(
               showSelectedIcon: false,
               segments: [
-                const ButtonSegment<RecipeAiMode>(
+                ButtonSegment<RecipeAiMode>(
                   value: RecipeAiMode.ingredientsOnly,
-                  label: Text('Ingrédients seuls'),
+                  label: Text(l10n.mealRecipeAiModeIngredientsOnly),
                 ),
                 ButtonSegment<RecipeAiMode>(
                   value: RecipeAiMode.ingredientsAndInstructions,
                   enabled: !widget.hasExistingRecipeInstructions,
-                  label: const Text('Ingrédients + recette'),
+                  label: Text(l10n.mealRecipeAiModeIngredientsAndInstructions),
                 ),
               ],
               selected: {_mode},
@@ -592,8 +592,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
             if (widget.existingIngredientsCount > 0) ...[
               const SizedBox(height: 16),
               Text(
-                'Cela remplacera les ${widget.existingIngredientsCount} '
-                'ingrédient(s) actuels de la recette.',
+                l10n.mealRecipeAiWillReplaceIngredients(widget.existingIngredientsCount),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.error,
                 ),
@@ -601,7 +600,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
             ],
             const SizedBox(height: 12),
             Text(
-              'Chaque appel à l\'IA est facturé.',
+              l10n.mealRecipeAiBilledWarning,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -612,7 +611,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: _isValid
@@ -624,7 +623,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
                     ),
                   )
               : null,
-          child: const Text('Générer'),
+          child: Text(l10n.mealRecipeAiGenerateAction),
         ),
       ],
     );

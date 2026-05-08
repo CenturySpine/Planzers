@@ -936,6 +936,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI-assisted ingredient generation is not available on your account yet.';
 
   @override
+  String get mealRecipeAiGenerateLabel => 'Generate ingredients';
+
+  @override
+  String get mealRecipeAiNoIngredientGenerated =>
+      'No ingredients could be generated.';
+
+  @override
+  String get mealRecipeAiQuantityWarning =>
+      'AI-generated ingredients — please check quantities before confirming.';
+
+  @override
+  String get mealRecipeAiCardWarning =>
+      'AI-generated ingredients — verify before use.';
+
+  @override
+  String get mealRecipeAiRecipeNameLabel => 'Recipe name';
+
+  @override
+  String get mealRecipeAiServingsLabel => 'Number of servings';
+
+  @override
+  String get mealRecipeAiModeQuestion => 'What would you like to generate?';
+
+  @override
+  String get mealRecipeAiModeIngredientsOnly => 'Ingredients only';
+
+  @override
+  String get mealRecipeAiModeIngredientsAndInstructions =>
+      'Ingredients + recipe';
+
+  @override
+  String mealRecipeAiWillReplaceIngredients(Object count) {
+    return 'This will replace the current $count ingredient(s) in the recipe.';
+  }
+
+  @override
+  String get mealRecipeAiBilledWarning => 'Each AI call is billed.';
+
+  @override
+  String get mealRecipeAiGenerateAction => 'Generate';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override

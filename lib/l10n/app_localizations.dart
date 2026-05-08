@@ -1780,6 +1780,78 @@ abstract class AppLocalizations {
   /// **'La génération d\'ingrédients par IA n\'est pas encore accessible pour ton compte.'**
   String get mealRecipeAiNotAccessibleBody;
 
+  /// No description provided for @mealRecipeAiGenerateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Générer les ingrédients'**
+  String get mealRecipeAiGenerateLabel;
+
+  /// No description provided for @mealRecipeAiNoIngredientGenerated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun ingrédient n\'a pu être généré.'**
+  String get mealRecipeAiNoIngredientGenerated;
+
+  /// No description provided for @mealRecipeAiQuantityWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients générés par l\'IA — vérifiez bien les quantités avant de valider.'**
+  String get mealRecipeAiQuantityWarning;
+
+  /// No description provided for @mealRecipeAiCardWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients générés par l\'IA — à vérifier.'**
+  String get mealRecipeAiCardWarning;
+
+  /// No description provided for @mealRecipeAiRecipeNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la recette'**
+  String get mealRecipeAiRecipeNameLabel;
+
+  /// No description provided for @mealRecipeAiServingsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nombre de personnes'**
+  String get mealRecipeAiServingsLabel;
+
+  /// No description provided for @mealRecipeAiModeQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Que souhaites-tu générer ?'**
+  String get mealRecipeAiModeQuestion;
+
+  /// No description provided for @mealRecipeAiModeIngredientsOnly.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients seuls'**
+  String get mealRecipeAiModeIngredientsOnly;
+
+  /// No description provided for @mealRecipeAiModeIngredientsAndInstructions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients + recette'**
+  String get mealRecipeAiModeIngredientsAndInstructions;
+
+  /// No description provided for @mealRecipeAiWillReplaceIngredients.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cela remplacera les {count} ingrédient(s) actuels de la recette.'**
+  String mealRecipeAiWillReplaceIngredients(Object count);
+
+  /// No description provided for @mealRecipeAiBilledWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque appel à l\'IA est facturé.'**
+  String get mealRecipeAiBilledWarning;
+
+  /// No description provided for @mealRecipeAiGenerateAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Générer'**
+  String get mealRecipeAiGenerateAction;
+
   /// No description provided for @tripParticipantsTitle.
   ///
   /// In fr, this message translates to:
