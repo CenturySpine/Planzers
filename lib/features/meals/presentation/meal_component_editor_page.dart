@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -18,6 +19,7 @@ class MealComponentEditorPage extends StatefulWidget {
     required this.defaultServings,
     required this.canUseAi,
     required this.isApplicationOwner,
+    required this.language,
     this.showLockIndicator = false,
   });
 
@@ -27,6 +29,7 @@ class MealComponentEditorPage extends StatefulWidget {
   final int defaultServings;
   final bool canUseAi;
   final bool isApplicationOwner;
+  final AppLanguage language;
   final bool showLockIndicator;
 
   @override
@@ -228,6 +231,7 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         servings: request.servings,
         catalogItems: widget.catalogItems,
         mode: request.mode,
+        language: widget.language,
       );
       if (!mounted) return;
       if (result.ingredients.isEmpty) {

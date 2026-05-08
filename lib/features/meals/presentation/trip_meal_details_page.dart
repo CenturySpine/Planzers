@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
@@ -639,6 +640,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             defaultServings: _participantIds.length,
             canUseAi: canUseAi,
             isApplicationOwner: isApplicationOwner,
+            language: ref.read(currentAppLanguageProvider),
             showLockIndicator: true,
           ),
         ),
