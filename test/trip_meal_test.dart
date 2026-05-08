@@ -11,6 +11,7 @@ TripMeal _meal({
     id: id,
     mealDateKey: dateKey,
     mealDayPart: part,
+    mealTimeHHMM: TripMeal.defaultTimeHHMMForDayPart(part),
     participantIds: const [],
     createdBy: 'u1',
     createdAt: DateTime(2026, 1, 1),

@@ -680,6 +680,7 @@
   "mealUnsavedChangesBody": "You have unsaved changes. Leave without saving?",
   "commonStay": "Stay",
   "mealDateHelp": "Meal date",
+  "mealTimeHelp": "Meal time",
   "mealCreated": "Meal created",
   "mealUpdated": "Meal updated",
   "mealDeleteTitle": "Delete this meal?",

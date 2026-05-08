@@ -680,6 +680,7 @@
   "mealUnsavedChangesBody": "Tu as des changements non enregistrés. Quitter sans enregistrer ?",
   "commonStay": "Rester",
   "mealDateHelp": "Date du repas",
+  "mealTimeHelp": "Heure du repas",
   "mealCreated": "Repas créé",
   "mealUpdated": "Repas mis à jour",
   "mealDeleteTitle": "Supprimer ce repas ?",

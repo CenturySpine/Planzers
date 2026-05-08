@@ -302,6 +302,7 @@ class TripMeal {
     required this.id,
     required this.mealDateKey,
     required this.mealDayPart,
+    required this.mealTimeHHMM,
     required this.participantIds,
     this.chefParticipantId,
     required this.createdBy,
@@ -320,6 +321,30 @@ class TripMeal {
   /// Date in YYYY-MM-DD format (must be consistent with [TripMemberStay.dateKeyFromDateTime]).
   final String mealDateKey;
   final TripDayPart mealDayPart;
+
+  /// Time in HH:MM format (24h). Defaults per day part: morning=09:00, midday=12:30, evening=19:30.
+  final String mealTimeHHMM;
+
+  static String defaultTimeHHMMForDayPart(TripDayPart part) {
+    return switch (part) {
+      TripDayPart.morning => '09:00',
+      TripDayPart.midday => '12:30',
+      TripDayPart.evening => '19:30',
+    };
+  }
+
+  static String? _parseTimeHHMM(dynamic raw) {
+    if (raw is! String) return null;
+    final trimmed = raw.trim();
+    final parts = trimmed.split(':');
+    if (parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      return null;
+    }
+    return trimmed;
+  }
 
   /// List of participant user IDs. Auto-calculated from [TripMemberStay]
   /// but can be manually overridden.
@@ -381,13 +406,16 @@ class TripMeal {
 
   factory TripMeal.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
+    final dayPart = tripDayPartFromFirestore(
+          data['mealDayPart'] as String?,
+        ) ??
+        TripDayPart.midday;
     return TripMeal(
       id: doc.id,
       mealDateKey: (data['mealDateKey'] as String?)?.trim() ?? '',
-      mealDayPart: tripDayPartFromFirestore(
-            data['mealDayPart'] as String?,
-          ) ??
-          TripDayPart.midday,
+      mealDayPart: dayPart,
+      mealTimeHHMM: _parseTimeHHMM(data['mealTimeHHMM']) ??
+          defaultTimeHHMMForDayPart(dayPart),
       participantIds: ((data['participantIds'] as List<dynamic>?) ?? const [])
           .map((participantId) => participantId.toString().trim())
           .where((participantId) => participantId.isNotEmpty)
@@ -439,6 +467,7 @@ class TripMeal {
     return {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
+      'mealTimeHHMM': mealTimeHHMM,
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
@@ -459,6 +488,7 @@ class TripMeal {
     return {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
+      'mealTimeHHMM': mealTimeHHMM,
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
@@ -477,6 +507,7 @@ class TripMeal {
     String? id,
     String? mealDateKey,
     TripDayPart? mealDayPart,
+    String? mealTimeHHMM,
     List<String>? participantIds,
     Object? chefParticipantId = _noChefParticipantIdChange,
     String? createdBy,
@@ -493,6 +524,7 @@ class TripMeal {
       id: id ?? this.id,
       mealDateKey: mealDateKey ?? this.mealDateKey,
       mealDayPart: mealDayPart ?? this.mealDayPart,
+      mealTimeHHMM: mealTimeHHMM ?? this.mealTimeHHMM,
       participantIds: participantIds ?? this.participantIds,
       chefParticipantId:
           identical(chefParticipantId, _noChefParticipantIdChange)

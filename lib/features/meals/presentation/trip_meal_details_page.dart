@@ -44,6 +44,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _isSaving = false;
   bool _isSavingDate = false;
   bool _isSavingMealDayPart = false;
+  bool _isSavingMealTime = false;
   bool _isSavingMealMode = false;
   bool _isSavingParticipants = false;
   bool _isSavingPotluckItems = false;
@@ -52,6 +53,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _isHydrated = false;
   DateTime _mealDate = DateUtils.dateOnly(DateTime.now());
   TripDayPart _mealDayPart = TripDayPart.midday;
+  TimeOfDay _mealTime = const TimeOfDay(hour: 12, minute: 30);
   Set<String> _participantIds = <String>{};
   String? _chefParticipantId;
   List<MealComponent> _components = const [];
@@ -79,6 +81,27 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   }
 
   String get _mealDateKey => TripMemberStay.dateKeyFromDateTime(_mealDate);
+
+  static TimeOfDay _defaultTimeForDayPart(TripDayPart part) {
+    return switch (part) {
+      TripDayPart.morning => const TimeOfDay(hour: 9, minute: 0),
+      TripDayPart.midday => const TimeOfDay(hour: 12, minute: 30),
+      TripDayPart.evening => const TimeOfDay(hour: 19, minute: 30),
+    };
+  }
+
+  static String _timeToHHMM(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  static TimeOfDay _parseHHMMToTimeOfDay(String hhmm) {
+    final parts = hhmm.split(':');
+    if (parts.length == 2) {
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h != null && m != null) return TimeOfDay(hour: h, minute: m);
+    }
+    return const TimeOfDay(hour: 12, minute: 30);
+  }
 
   String _componentKindLabel(AppLocalizations l10n, MealComponentKind kind) {
     return switch (kind) {
@@ -518,6 +541,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     if (_isSavingParticipants ||
         _isSavingDate ||
         _isSavingMealDayPart ||
+        _isSavingMealTime ||
         _isSavingMealMode ||
         _isSavingPotluckItems ||
         _isSavingComponents) {
@@ -525,6 +549,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
     _mealDate = meal.mealDateAsDateTime;
     _mealDayPart = meal.mealDayPart;
+    _mealTime = _parseHHMMToTimeOfDay(meal.mealTimeHHMM);
     _participantIds = meal.participantIds.toSet();
     _chefParticipantId = meal.chefParticipantId != null &&
             _participantIds.contains(meal.chefParticipantId)
@@ -1087,6 +1112,50 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _mealTime,
+      helpText: AppLocalizations.of(context)!.mealTimeHelp,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final previousTime = _mealTime;
+    setState(() => _mealTime = picked);
+    await _saveMealTime(previousTime: previousTime);
+  }
+
+  Future<void> _saveMealTime({required TimeOfDay previousTime}) async {
+    if (widget.isCreate || _isSavingMealTime || _isSaving) return;
+    setState(() => _isSavingMealTime = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealTime(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            mealTimeHHMM: _timeToHHMM(_mealTime),
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.mealUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _mealTime = previousTime);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingMealTime = false);
+    }
+  }
+
   Future<void> _saveMealMode({
     required _MealDetailsView previousMealView,
   }) async {
@@ -1142,6 +1211,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         tripId: widget.tripId,
         mealDateKey: _mealDateKey,
         mealDayPart: mealDayPart,
+        mealTimeHHMM: _timeToHHMM(_mealTime),
         participantIds: participantIds,
         chefParticipantId: _chefParticipantId,
         components: _components,
@@ -1435,6 +1505,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                     _mealDayPart;
                                                 setState(() {
                                                   _mealDayPart = part;
+                                                  if (widget.isCreate) {
+                                                    _mealTime =
+                                                        _defaultTimeForDayPart(
+                                                            part);
+                                                  }
                                                 });
                                                 await _saveMealDayPart(
                                                   previousDayPart:
@@ -1487,6 +1562,30 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     ).format(_mealDate),
                                     style: textTheme.bodyLarge,
                                   ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: l10n.mealTimeHelp,
+                                  onPressed:
+                                      (_isSavingMealTime || !canEditMealCore)
+                                          ? null
+                                          : _pickTime,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: _isSavingMealTime
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.access_time_outlined),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _timeToHHMM(_mealTime),
+                                  style: textTheme.bodyLarge,
                                 ),
                               ],
                             ),

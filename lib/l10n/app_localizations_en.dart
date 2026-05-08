@@ -1790,6 +1790,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealDateHelp => 'Meal date';
 
   @override
+  String get mealTimeHelp => 'Meal time';
+
+  @override
   String get mealCreated => 'Meal created';
 
   @override
@@ -4376,6 +4379,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealDateHelp => 'Meal date';
+
+  @override
+  String get mealTimeHelp => 'Meal time';
 
   @override
   String get mealCreated => 'Meal created';

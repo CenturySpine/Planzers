@@ -3282,6 +3282,12 @@ abstract class AppLocalizations {
   /// **'Date du repas'**
   String get mealDateHelp;
 
+  /// No description provided for @mealTimeHelp.
+  ///
+  /// In fr, this message translates to:
+  /// **'Heure du repas'**
+  String get mealTimeHelp;
+
   /// No description provided for @mealCreated.
   ///
   /// In fr, this message translates to:

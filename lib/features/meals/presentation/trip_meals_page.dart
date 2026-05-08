@@ -81,6 +81,7 @@ class _MealsList extends StatelessWidget {
       id: '',
       mealDateKey: dateKey,
       mealDayPart: TripDayPart.morning,
+      mealTimeHHMM: TripMeal.defaultTimeHHMMForDayPart(TripDayPart.morning),
       participantIds: const [],
       createdBy: '',
       createdAt: DateTime.now(),
