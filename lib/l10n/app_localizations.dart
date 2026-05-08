@@ -2682,6 +2682,30 @@ abstract class AppLocalizations {
   /// **'Agenda'**
   String get activitiesTabAgenda;
 
+  /// No description provided for @activitiesFilterRepas.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas'**
+  String get activitiesFilterRepas;
+
+  /// No description provided for @activitiesFilterNuits.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nuits'**
+  String get activitiesFilterNuits;
+
+  /// No description provided for @activitiesFilterLoisirs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Loisirs'**
+  String get activitiesFilterLoisirs;
+
+  /// No description provided for @activitiesFilterTrajets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajets'**
+  String get activitiesFilterTrajets;
+
   /// No description provided for @activitiesVote.
   ///
   /// In fr, this message translates to:

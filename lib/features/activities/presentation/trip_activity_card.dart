@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
@@ -133,84 +134,106 @@ class TripActivityCard extends StatelessWidget {
         ? AppLocalizations.of(context)!.activitiesUntitled
         : activity.label.trim();
 
+    final categoryColor = activity.category.filterGroup.filterColor;
+    final surface = Theme.of(context).colorScheme.surface;
+    final cardBg = activity.done
+        ? context.planerzColors.successContainer
+        : Color.lerp(surface, categoryColor, 0.08)!;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Card(
-            color:
-                activity.done ? context.planerzColors.successContainer : null,
+            clipBehavior: Clip.antiAlias,
+            surfaceTintColor: Colors.transparent,
+            color: cardBg,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
               onTap: () => _openDetail(context),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      activity.category.categoryIcon,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.tertiary,
-                    ),
-                    const SizedBox(width: 8),
+                    Container(width: 4, color: categoryColor),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            label,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AppLocalizations.of(
-                              context,
-                            )!.activitiesProposedBy(
-                              creatorLabelForActivity(
-                                activity,
-                                tripMemberPublicLabels,
-                                usersDataById: usersDataById,
-                                currentUserId: currentUserId,
-                                unknownLabel:
-                                    AppLocalizations.of(context)!.roleParticipant,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              activity.category.categoryIcon,
+                              size: 20,
+                              color: categoryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    label,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.activitiesProposedBy(
+                                      creatorLabelForActivity(
+                                        activity,
+                                        tripMemberPublicLabels,
+                                        usersDataById: usersDataById,
+                                        currentUserId: currentUserId,
+                                        unknownLabel: AppLocalizations.of(
+                                                context)!
+                                            .roleParticipant,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                  if (activity.plannedAt != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat.Hm(
+                                        Localizations.localeOf(context)
+                                            .toString(),
+                                      ).format(activity.plannedAt!.toLocal()),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: categoryColor,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontStyle: FontStyle.italic,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                          ),
-                          if (activity.plannedAt != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              DateFormat.Hm(
-                                Localizations.localeOf(context).toString(),
-                              ).format(activity.plannedAt!.toLocal()),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
+                            const SizedBox(width: 8),
+                            LinkPreviewThumbnail(preview: activity.linkPreview),
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    LinkPreviewThumbnail(preview: activity.linkPreview),
                   ],
                 ),
               ),

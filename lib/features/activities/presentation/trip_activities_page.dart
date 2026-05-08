@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -43,6 +44,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       TextEditingController();
   final TextEditingController _plannedSearchController =
       TextEditingController();
+  final Set<ActivityFilterGroup> _activeFilters = {};
   late DateTime _agendaCenterDay;
   late DateTime _agendaSelectedDay;
   bool _agendaDayFromRouteApplied = false;
@@ -172,10 +174,20 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               : ref.watch(tripActivityCreatorsDataProvider(creatorIdsKey));
           final creatorsDataById =
               creatorsDataAsync.asData?.value ?? const <String, Map<String, dynamic>>{};
+          final filteredItems = _activeFilters.isEmpty
+              ? items
+              : items
+                  .where((a) =>
+                      _activeFilters.contains(a.category.filterGroup))
+                  .toList();
+
+          int countForGroup(ActivityFilterGroup g) =>
+              items.where((a) => a.category.filterGroup == g).length;
+
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = buildTripActivitiesSuggestionEntries(
-            items,
+            filteredItems,
             query: suggestionsQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,
@@ -186,7 +198,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             ),
           );
           final plannedEntries = buildTripActivitiesPlannedEntries(
-            items,
+            filteredItems,
             query: plannedQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,
@@ -198,10 +210,17 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
           );
           final agendaItems = tripActivitiesAgendaItemsForDay(
-            items,
+            filteredItems,
             selectedDay: _agendaSelectedDay,
           );
           final plannedDays = tripActivitiesPlannedDaysSet(items);
+
+          final filterLabels = {
+            ActivityFilterGroup.repas: l10n.activitiesFilterRepas,
+            ActivityFilterGroup.nuits: l10n.activitiesFilterNuits,
+            ActivityFilterGroup.loisirs: l10n.activitiesFilterLoisirs,
+            ActivityFilterGroup.trajets: l10n.activitiesFilterTrajets,
+          };
 
           return DefaultTabController(
             length: 3,
@@ -214,6 +233,33 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                   child: Text(
                     l10n.tripTabActivities,
                     style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      for (final group in ActivityFilterGroup.values) ...[
+                        Expanded(
+                          child: _ActivityFilterChip(
+                            label: filterLabels[group]!,
+                            icon: group.filterIcon,
+                            color: group.filterColor,
+                            count: countForGroup(group),
+                            selected: _activeFilters.contains(group),
+                            onToggle: () => setState(() {
+                              if (_activeFilters.contains(group)) {
+                                _activeFilters.remove(group);
+                              } else {
+                                _activeFilters.add(group);
+                              }
+                            }),
+                          ),
+                        ),
+                        if (group != ActivityFilterGroup.values.last)
+                          const SizedBox(width: 8),
+                      ],
+                    ],
                   ),
                 ),
                 TabBar(
@@ -628,4 +674,85 @@ List<_AgendaMonthSpan> _agendaMonthSpans(
 
 String _agendaMonthLabel(DateTime day, String localeTag) {
   return DateFormat('MMMM', localeTag).format(day);
+}
+
+class _ActivityFilterChip extends StatelessWidget {
+  const _ActivityFilterChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.count,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final int count;
+  final bool selected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? color : Colors.transparent;
+    final iconColor = selected ? Colors.white : color;
+    final labelColor = selected
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
+    final badgeBg = selected
+        ? Colors.white.withValues(alpha: 0.25)
+        : color.withValues(alpha: 0.15);
+    final badgeColor = selected ? Colors.white : color;
+
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? color
+                : Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24, color: iconColor),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: labelColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: badgeColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -1459,6 +1459,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesTabAgenda => 'Agenda';
 
   @override
+  String get activitiesFilterRepas => 'Meals';
+
+  @override
+  String get activitiesFilterNuits => 'Nights';
+
+  @override
+  String get activitiesFilterLoisirs => 'Activities';
+
+  @override
+  String get activitiesFilterTrajets => 'Transport';
+
+  @override
   String get activitiesVote => 'Vote';
 
   @override
@@ -4033,6 +4045,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activitiesTabAgenda => 'Agenda';
+
+  @override
+  String get activitiesFilterRepas => 'Meals';
+
+  @override
+  String get activitiesFilterNuits => 'Nights';
+
+  @override
+  String get activitiesFilterLoisirs => 'Activities';
+
+  @override
+  String get activitiesFilterTrajets => 'Transport';
 
   @override
   String get activitiesVote => 'Vote';

@@ -204,10 +204,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     context.push('/trips/${_trip.id}/announcements');
   }
 
-  void _openExpensesPage() {
-    context.push('/trips/${_trip.id}/expenses');
-  }
-
   void _openTripUserPreferencesPage() {
     context.push('/trips/${_trip.id}/preferences');
   }
@@ -1077,10 +1073,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                   child: _TripOverviewTopSwitch(
                     leftLabel: l10n.tripOverviewTopTabAnnouncements,
-                    rightLabel: l10n.tripOverviewTopTabExpenses,
                     leftAlertCount: unreadAnnouncements,
                     onLeftTap: _openAnnouncementsPage,
-                    onRightTap: _openExpensesPage,
                     thirdLabel: photosStorageUrl.isNotEmpty ? 'Photos' : null,
                     onThirdTap: photosStorageUrl.isNotEmpty
                         ? () => _openLinkUrl(photosStorageUrl)
@@ -1462,19 +1456,15 @@ class _TripBanner extends StatelessWidget {
 class _TripOverviewTopSwitch extends StatelessWidget {
   const _TripOverviewTopSwitch({
     required this.leftLabel,
-    required this.rightLabel,
     this.leftAlertCount = 0,
     required this.onLeftTap,
-    required this.onRightTap,
     this.thirdLabel,
     this.onThirdTap,
   });
 
   final String leftLabel;
-  final String rightLabel;
   final int leftAlertCount;
   final VoidCallback onLeftTap;
-  final VoidCallback onRightTap;
   final String? thirdLabel;
   final VoidCallback? onThirdTap;
 
@@ -1498,18 +1488,6 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
               onTap: onLeftTap,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _TripOverviewTopSwitchItem(
-              label: rightLabel,
-              icon: Icons.payments_outlined,
-              color: cs.secondaryContainer,
-              foregroundColor: cs.onSecondaryContainer,
-              borderColor: cs.outlineVariant,
-              textStyle: labelStyle,
-              onTap: onRightTap,
             ),
           ),
           if (thirdLabel != null && onThirdTap != null) ...[

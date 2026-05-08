@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -43,14 +44,21 @@ Widget _buildNavIcon({
   required int unreadCount,
   required bool showBadge,
   Color? color,
+  String? svgAsset,
 }) {
-  if (!showBadge || unreadCount <= 0) {
-    return Icon(icon, color: color);
-  }
-  return Badge.count(
-    count: unreadCount,
-    child: Icon(icon, color: color),
-  );
+  final iconWidget = svgAsset != null
+      ? SvgPicture.asset(
+          svgAsset,
+          width: 24,
+          height: 24,
+          colorFilter: color != null
+              ? ColorFilter.mode(color, BlendMode.srcIn)
+              : null,
+        )
+      : Icon(icon, color: color);
+
+  if (!showBadge || unreadCount <= 0) return iconWidget;
+  return Badge.count(count: unreadCount, child: iconWidget);
 }
 
 class TripShellPage extends ConsumerStatefulWidget {
@@ -83,10 +91,11 @@ class TripShellPage extends ConsumerStatefulWidget {
       selectedIcon: Icons.event_available,
     ),
     _TripNavDestination(
-      branchIndex: 5,
-      label: 'Repas',
-      icon: Icons.restaurant_outlined,
-      selectedIcon: Icons.restaurant,
+      branchIndex: 2,
+      label: 'Dépenses',
+      icon: Icons.pie_chart_outline,
+      selectedIcon: Icons.pie_chart,
+      svgAsset: 'assets/images/pie_chart_exploded.svg',
     ),
     _TripNavDestination(
       branchIndex: 7,
@@ -266,12 +275,14 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
                                     d.label == 'Planning',
+                                svgAsset: d.svgAsset,
                               ),
                               selectedIcon: _buildNavIcon(
                                 icon: d.selectedIcon,
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
                                     d.label == 'Planning',
+                                svgAsset: d.svgAsset,
                               ),
                               label: Text(localizedNavLabel(d.label)),
                             ),
@@ -325,12 +336,15 @@ class _TripNavDestination {
     required this.label,
     required this.icon,
     required this.selectedIcon,
+    this.svgAsset,
   });
 
   final int branchIndex;
   final String label;
   final IconData icon;
   final IconData selectedIcon;
+  /// Optional SVG asset path — overrides [icon]/[selectedIcon] when provided.
+  final String? svgAsset;
 }
 
 /// Material 3–style bottom destinations equally distributed across width.
@@ -399,6 +413,7 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                                 color: selected
                                     ? colorScheme.onSecondaryContainer
                                     : colorScheme.onSurfaceVariant,
+                                svgAsset: d.svgAsset,
                               ),
                             ),
                             const SizedBox(height: 4),
