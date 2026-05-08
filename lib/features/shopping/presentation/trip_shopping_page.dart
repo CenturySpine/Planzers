@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart'
     show
         stableUsersIdsKey,
@@ -247,10 +248,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       currentRole: currentRole,
       minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
     );
-    final canConsolidateWithAi = isTripRoleAllowed(
-      currentRole: currentRole,
-      minRole: TripPermissionRole.admin,
-    );
+    final circuitBreakerTripped =
+        ref.watch(aiCircuitBreakerTrippedProvider).asData?.value ?? false;
+    final canConsolidateWithAi = !circuitBreakerTripped &&
+        isTripRoleAllowed(
+          currentRole: currentRole,
+          minRole: TripPermissionRole.admin,
+        );
     final currentUserOwnerAsync = ref.watch(
       usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
     );

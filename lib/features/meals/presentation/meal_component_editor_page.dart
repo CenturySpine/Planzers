@@ -303,7 +303,9 @@ class _MealComponentEditorPageState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final showAiFab = widget.canUseAi;
+    final circuitTripped =
+        ref.watch(aiCircuitBreakerTrippedProvider).asData?.value ?? false;
+    final showAiFab = widget.canUseAi && !circuitTripped;
 
     final allergenLabelById = <String, String>{
       for (final item
