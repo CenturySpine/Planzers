@@ -373,6 +373,29 @@
   },
   "mealRecipeAiBilledWarning": "Each AI call is billed personally to the app creator and is limited per user and per trip. Use these features sparingly. If you enjoy this app, support its creator.",
   "mealRecipeAiGenerateAction": "Generate",
+  "aiQuotaCooldown": "Hold on, the previous request was just sent.",
+  "aiQuotaUserExceeded": "You have reached your daily AI generation limit ({limit}/day). Try again tomorrow.",
+  "@aiQuotaUserExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripExceeded": "This trip has reached its daily AI generation limit ({limit}/day). Try again tomorrow.",
+  "@aiQuotaTripExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripLifetimeExceeded": "This trip has reached its total AI generation limit ({limit}). Contact support if needed.",
+  "@aiQuotaTripLifetimeExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaCircuitBreakerTripped": "The AI service is paused for today (global quota reached). It will be available again tomorrow.",
+  "aiQuotaRemaining": "Remaining quota: {userRemaining}/{userLimit} (you) — {tripRemaining}/{tripLimit} (this trip)",
+  "@aiQuotaRemaining": {
+    "placeholders": {
+      "userRemaining": {"type": "int"},
+      "userLimit": {"type": "int"},
+      "tripRemaining": {"type": "int"},
+      "tripLimit": {"type": "int"}
+    }
+  },
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "No participants.",
   "tripParticipantsTraveler": "Traveler",

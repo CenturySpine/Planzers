@@ -1840,6 +1840,43 @@ abstract class AppLocalizations {
   /// **'Générer'**
   String get mealRecipeAiGenerateAction;
 
+  /// No description provided for @aiQuotaCooldown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Patience, l\'appel précédent vient juste d\'être lancé.'**
+  String get aiQuotaCooldown;
+
+  /// No description provided for @aiQuotaUserExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous avez atteint votre limite quotidienne de générations IA ({limit}/jour). Réessayez demain.'**
+  String aiQuotaUserExceeded(int limit);
+
+  /// No description provided for @aiQuotaTripExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce voyage a atteint sa limite quotidienne de générations IA ({limit}/jour). Réessayez demain.'**
+  String aiQuotaTripExceeded(int limit);
+
+  /// No description provided for @aiQuotaTripLifetimeExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce voyage a atteint sa limite totale de générations IA ({limit}). Contactez le support si nécessaire.'**
+  String aiQuotaTripLifetimeExceeded(int limit);
+
+  /// No description provided for @aiQuotaCircuitBreakerTripped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.'**
+  String get aiQuotaCircuitBreakerTripped;
+
+  /// No description provided for @aiQuotaRemaining.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quotas restants : {userRemaining}/{userLimit} (vous) — {tripRemaining}/{tripLimit} (ce voyage)'**
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit);
+
   /// No description provided for @tripParticipantsTitle.
   ///
   /// In fr, this message translates to:

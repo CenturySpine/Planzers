@@ -373,6 +373,29 @@
   },
   "mealRecipeAiBilledWarning": "Chaque appel à l'IA est facturé personnellement au créateur de l'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.",
   "mealRecipeAiGenerateAction": "Générer",
+  "aiQuotaCooldown": "Patience, l'appel précédent vient juste d'être lancé.",
+  "aiQuotaUserExceeded": "Vous avez atteint votre limite quotidienne de générations IA ({limit}/jour). Réessayez demain.",
+  "@aiQuotaUserExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripExceeded": "Ce voyage a atteint sa limite quotidienne de générations IA ({limit}/jour). Réessayez demain.",
+  "@aiQuotaTripExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripLifetimeExceeded": "Ce voyage a atteint sa limite totale de générations IA ({limit}). Contactez le support si nécessaire.",
+  "@aiQuotaTripLifetimeExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaCircuitBreakerTripped": "Le service IA est en pause pour aujourd'hui (quotas globaux atteints). Il sera de nouveau disponible demain.",
+  "aiQuotaRemaining": "Quotas restants : {userRemaining}/{userLimit} (vous) — {tripRemaining}/{tripLimit} (ce voyage)",
+  "@aiQuotaRemaining": {
+    "placeholders": {
+      "userRemaining": {"type": "int"},
+      "userLimit": {"type": "int"},
+      "tripRemaining": {"type": "int"},
+      "tripLimit": {"type": "int"}
+    }
+  },
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "Aucun participant.",
   "tripParticipantsTraveler": "Voyageur",

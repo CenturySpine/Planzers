@@ -1,10 +1,16 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
+import 'package:planerz/features/ai_quotas/domain/ai_quota_gate.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -13,7 +19,7 @@ import 'package:planerz/features/meals/data/recipe_ingredients_ai_service.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 
-class MealComponentEditorPage extends StatefulWidget {
+class MealComponentEditorPage extends ConsumerStatefulWidget {
   const MealComponentEditorPage({
     super.key,
     required this.component,
@@ -22,6 +28,7 @@ class MealComponentEditorPage extends StatefulWidget {
     required this.defaultServings,
     required this.canUseAi,
     required this.isApplicationOwner,
+    required this.tripId,
     required this.language,
     this.showLockIndicator = false,
   });
@@ -32,18 +39,21 @@ class MealComponentEditorPage extends StatefulWidget {
   final int defaultServings;
   final bool canUseAi;
   final bool isApplicationOwner;
+  final String tripId;
   final AppLanguage language;
   final bool showLockIndicator;
 
   @override
-  State<MealComponentEditorPage> createState() =>
+  ConsumerState<MealComponentEditorPage> createState() =>
       _MealComponentEditorPageState();
 }
 
-class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
+class _MealComponentEditorPageState
+    extends ConsumerState<MealComponentEditorPage> {
   late MealComponent _component;
   late final TextEditingController _titleController;
   bool _isGenerating = false;
+  DateTime? _lastAiCallAt;
 
   @override
   void initState() {
@@ -185,12 +195,28 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
 
   Future<void> _onRecipeAiFabPressed() async {
     if (_isGenerating) return;
+
+    // Cooldown: 5 s between calls for non-owners.
+    if (!widget.isApplicationOwner && _lastAiCallAt != null) {
+      final elapsed = DateTime.now().difference(_lastAiCallAt!);
+      if (elapsed < const Duration(seconds: 5)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.aiQuotaCooldown)),
+        );
+        return;
+      }
+    }
+
     await _generateIngredientsWithAi();
   }
 
   Future<void> _generateIngredientsWithAi() async {
     if (_isGenerating) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     final request = await showDialog<_GenerateRecipeRequest>(
       context: context,
       builder: (dialogContext) => _GenerateRecipeDialog(
@@ -200,6 +226,8 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
         hasExistingRecipeInstructions:
             _component.recipeInstructions.trim().isNotEmpty,
         isApplicationOwner: widget.isApplicationOwner,
+        tripId: widget.tripId,
+        uid: uid,
       ),
     );
     if (request == null || !mounted) return;
@@ -208,25 +236,34 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
       _isGenerating = true;
       _component = _component.copyWith(ingredientsGeneratedByAi: true);
     });
+
+    _lastAiCallAt = DateTime.now();
+
     try {
-      final result = await generateRecipeIngredients(
-        recipeName: request.recipeName,
-        servings: request.servings,
-        catalogItems: widget.catalogItems,
-        mode: request.mode,
-        language: widget.language,
+      final result = await ref.read(aiQuotaGateProvider).call(
+        feature: AiFeature.recipeIngredients,
+        uid: uid,
+        tripId: widget.tripId,
+        isApplicationOwner: widget.isApplicationOwner,
+        aiCall: () => generateRecipeIngredients(
+          recipeName: request.recipeName,
+          servings: request.servings,
+          catalogItems: widget.catalogItems,
+          mode: request.mode,
+          language: widget.language,
+        ),
       );
       if (!mounted) return;
       if (result.ingredients.isEmpty) {
         messenger.showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.mealRecipeAiNoIngredientGenerated),
+            content:
+                Text(AppLocalizations.of(context)!.mealRecipeAiNoIngredientGenerated),
           ),
         );
         return;
       }
-      final keepInstructions =
-          request.mode == RecipeAiMode.ingredientsOnly;
+      final keepInstructions = request.mode == RecipeAiMode.ingredientsOnly;
       setState(() {
         _titleController.text = request.recipeName;
         _component = _component.copyWith(
@@ -238,10 +275,25 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
           ingredientsGeneratedByAi: true,
         );
       });
+    } on AiQuotaExceededException catch (e) {
+      if (!mounted) return;
+      final config = aiQuotaConfigs[AiFeature.recipeIngredients]!;
+      final message = switch (e.reason) {
+        AiQuotaExceededReason.userDaily =>
+          l10n.aiQuotaUserExceeded(config.perUserPerDay),
+        AiQuotaExceededReason.tripDaily =>
+          l10n.aiQuotaTripExceeded(config.perTripPerDay),
+        AiQuotaExceededReason.tripLifetime =>
+          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
+        AiQuotaExceededReason.circuitBreaker =>
+          l10n.aiQuotaCircuitBreakerTripped,
+      };
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()))),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -251,6 +303,8 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final showAiFab = widget.canUseAi;
+
     final allergenLabelById = <String, String>{
       for (final item
           in widget.catalogItems.where((it) => it.type == 'allergen'))
@@ -403,10 +457,10 @@ class _MealComponentEditorPageState extends State<MealComponentEditorPage> {
               ),
             ),
           ],
-          if (widget.canUseAi) const SizedBox(height: 88),
+          if (showAiFab) const SizedBox(height: 88),
         ],
       ),
-      floatingActionButton: widget.canUseAi
+      floatingActionButton: showAiFab
           ? FloatingActionButton(
               heroTag: 'generate_recipe_ingredients_with_ai',
               tooltip: l10n.mealRecipeAiGenerateLabel,
@@ -469,13 +523,15 @@ class _GenerateRecipeRequest {
   final RecipeAiMode mode;
 }
 
-class _GenerateRecipeDialog extends StatefulWidget {
+class _GenerateRecipeDialog extends ConsumerStatefulWidget {
   const _GenerateRecipeDialog({
     required this.initialRecipeName,
     required this.initialServings,
     required this.existingIngredientsCount,
     required this.hasExistingRecipeInstructions,
     required this.isApplicationOwner,
+    required this.tripId,
+    required this.uid,
   });
 
   final String initialRecipeName;
@@ -483,12 +539,15 @@ class _GenerateRecipeDialog extends StatefulWidget {
   final int existingIngredientsCount;
   final bool hasExistingRecipeInstructions;
   final bool isApplicationOwner;
+  final String tripId;
+  final String uid;
 
   @override
-  State<_GenerateRecipeDialog> createState() => _GenerateRecipeDialogState();
+  ConsumerState<_GenerateRecipeDialog> createState() =>
+      _GenerateRecipeDialogState();
 }
 
-class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
+class _GenerateRecipeDialogState extends ConsumerState<_GenerateRecipeDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _servingsController;
   RecipeAiMode _mode = RecipeAiMode.ingredientsOnly;
@@ -499,9 +558,8 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialRecipeName);
-    final initialServings = widget.initialServings > 0
-        ? widget.initialServings.toString()
-        : '';
+    final initialServings =
+        widget.initialServings > 0 ? widget.initialServings.toString() : '';
     _servingsController = TextEditingController(text: initialServings);
     _isReady = widget.isApplicationOwner;
     if (!_isReady) {
@@ -531,6 +589,23 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final config = aiQuotaConfigs[AiFeature.recipeIngredients]!;
+
+    final quotaAsync = ref.watch(
+      aiQuotaSnapshotProvider((
+        uid: widget.uid,
+        tripId: widget.tripId,
+        featureKey: AiFeature.recipeIngredients.firestoreKey,
+      )),
+    );
+    final snapshot = quotaAsync.asData?.value ?? const AiQuotaSnapshot.zero();
+    final userRemaining =
+        (config.perUserPerDay - snapshot.userDayCount).clamp(0, config.perUserPerDay).toInt();
+    final tripRemaining =
+        (config.perTripPerDay - snapshot.tripDayCount).clamp(0, config.perTripPerDay).toInt();
+    final quotaBlocked =
+        !widget.isApplicationOwner && (userRemaining == 0 || tripRemaining == 0);
+
     return AlertDialog(
       title: Text(l10n.mealRecipeAiGenerateLabel),
       content: SingleChildScrollView(
@@ -589,9 +664,24 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
               if (widget.existingIngredientsCount > 0) ...[
                 const SizedBox(height: 16),
                 Text(
-                  l10n.mealRecipeAiWillReplaceIngredients(widget.existingIngredientsCount),
+                  l10n.mealRecipeAiWillReplaceIngredients(
+                      widget.existingIngredientsCount),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+              if (!widget.isApplicationOwner) ...[
+                const SizedBox(height: 12),
+                Text(
+                  l10n.aiQuotaRemaining(
+                    userRemaining,
+                    config.perUserPerDay,
+                    tripRemaining,
+                    config.perTripPerDay,
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -606,7 +696,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
                 child: Text(l10n.commonCancel),
               ),
               FilledButton(
-                onPressed: _isValid
+                onPressed: (_isValid && !quotaBlocked)
                     ? () => Navigator.of(context).pop(
                           _GenerateRecipeRequest(
                             recipeName: _nameController.text.trim(),

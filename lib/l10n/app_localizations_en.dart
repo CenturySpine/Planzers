@@ -972,6 +972,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealRecipeAiGenerateAction => 'Generate';
 
   @override
+  String get aiQuotaCooldown => 'Hold on, the previous request was just sent.';
+
+  @override
+  String aiQuotaUserExceeded(int limit) {
+    return 'You have reached your daily AI generation limit ($limit/day). Try again tomorrow.';
+  }
+
+  @override
+  String aiQuotaTripExceeded(int limit) {
+    return 'This trip has reached its daily AI generation limit ($limit/day). Try again tomorrow.';
+  }
+
+  @override
+  String aiQuotaTripLifetimeExceeded(int limit) {
+    return 'This trip has reached its total AI generation limit ($limit). Contact support if needed.';
+  }
+
+  @override
+  String get aiQuotaCircuitBreakerTripped =>
+      'The AI service is paused for today (global quota reached). It will be available again tomorrow.';
+
+  @override
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
+    return 'Remaining quota: $userRemaining/$userLimit (you) — $tripRemaining/$tripLimit (this trip)';
+  }
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override

@@ -12,6 +12,7 @@ const cheerio = require('cheerio');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
+const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -4529,6 +4530,9 @@ exports.consolidateTripShoppingWithAi = onCall(
     }
 
     const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
+
     const tripRef = db.collection('trips').doc(tripId);
 
     const [shoppingSnap, mealsSnap] = await Promise.all([
@@ -4579,13 +4583,73 @@ exports.consolidateTripShoppingWithAi = onCall(
       };
     }
 
-    const { summary, consolidatedItems } = await consolidateShoppingListWithAi({
-      model: 'gemini-2.5-flash',
-      manualShoppingItems,
-      recipeIngredients,
-    });
+    return withAiQuota(
+      { featureKey: 'shoppingConsolidation', tripId, uid, isApplicationOwner },
+      async () => {
+        const { summary, consolidatedItems } = await consolidateShoppingListWithAi({
+          model: 'gemini-2.5-flash',
+          manualShoppingItems,
+          recipeIngredients,
+        });
+        return { summary, consolidatedItems };
+      }
+    );
+  }
+);
 
-    return { summary, consolidatedItems };
+// ============================================================
+// AI quota management callables (used by CF-assisted features)
+// ============================================================
+
+/**
+ * Atomically checks and increments AI usage quota for the calling user and
+ * the given trip. Throws resource-exhausted if any quota is exceeded.
+ *
+ * Request: { featureKey: string, tripId: string }
+ * Response: { ok: true }
+ */
+exports.reserveAiQuota = onCall(
+  { timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const featureKey = normalizeString(request.data?.featureKey);
+    const tripId = normalizeString(request.data?.tripId);
+    if (!featureKey || !tripId) {
+      throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
+    }
+
+    await reserveQuota({ featureKey, tripId, uid });
+    return { ok: true };
+  }
+);
+
+/**
+ * Decrements AI usage quota counters (floor at 0) after a failed AI call.
+ * Best-effort: always returns ok regardless of internal errors.
+ *
+ * Request: { featureKey: string, tripId: string }
+ * Response: { ok: true }
+ */
+exports.refundAiQuota = onCall(
+  { timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const featureKey = normalizeString(request.data?.featureKey);
+    const tripId = normalizeString(request.data?.tripId);
+    if (!featureKey || !tripId) {
+      throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
+    }
+
+    await refundQuota({ featureKey, tripId, uid }).catch(() => {});
+    return { ok: true };
   }
 );
 

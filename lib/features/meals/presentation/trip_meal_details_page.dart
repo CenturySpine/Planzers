@@ -640,6 +640,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             defaultServings: _participantIds.length,
             canUseAi: canUseAi,
             isApplicationOwner: isApplicationOwner,
+            tripId: widget.tripId,
             language: ref.read(currentAppLanguageProvider),
             showLockIndicator: true,
           ),

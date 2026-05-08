@@ -985,6 +985,35 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealRecipeAiGenerateAction => 'Générer';
 
   @override
+  String get aiQuotaCooldown =>
+      'Patience, l\'appel précédent vient juste d\'être lancé.';
+
+  @override
+  String aiQuotaUserExceeded(int limit) {
+    return 'Vous avez atteint votre limite quotidienne de générations IA ($limit/jour). Réessayez demain.';
+  }
+
+  @override
+  String aiQuotaTripExceeded(int limit) {
+    return 'Ce voyage a atteint sa limite quotidienne de générations IA ($limit/jour). Réessayez demain.';
+  }
+
+  @override
+  String aiQuotaTripLifetimeExceeded(int limit) {
+    return 'Ce voyage a atteint sa limite totale de générations IA ($limit). Contactez le support si nécessaire.';
+  }
+
+  @override
+  String get aiQuotaCircuitBreakerTripped =>
+      'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.';
+
+  @override
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
+    return 'Quotas restants : $userRemaining/$userLimit (vous) — $tripRemaining/$tripLimit (ce voyage)';
+  }
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
