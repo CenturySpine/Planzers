@@ -423,6 +423,11 @@ service cloud.firestore {
       allow create, update: if signedIn() && request.auth.uid == userId;
       allow delete: if signedIn() && request.auth.uid == userId;
 
+      match /aiQuotas/{featureKey} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        // writes: CF only (Admin SDK)
+      }
+
       match /fcmTokens/{tokenDocId} {
         allow read, write: if signedIn() && request.auth.uid == userId;
       }
@@ -623,6 +628,11 @@ service cloud.firestore {
           );
       }
 
+      match /aiQuotas/{featureKey} {
+        allow read: if isTripMember(tripId);
+        // writes: CF only (Admin SDK)
+      }
+
       match /meals/{mealId} {
         allow read: if isTripMember(tripId);
         allow create: if canCreateMeal(tripId)
@@ -754,6 +764,12 @@ service cloud.firestore {
       match /cupidonLikes/{likeId} {
         allow read: if isTripMember(tripId);
       }
+    }
+
+    match /system/{docId} {
+      allow read: if signedIn();
+      allow update: if docId == 'aiCircuitBreaker' && isApplicationOwner();
+      // increments and auto-trip: CF only (Admin SDK)
     }
 
     // Written exclusively by Cloud Functions (Admin SDK). Clients have no access.

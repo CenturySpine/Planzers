@@ -353,6 +353,49 @@
   "mealIngredientsTitle": "Ingredients",
   "mealIngredientHint": "Ingredient...",
   "mealAddIngredient": "Add an ingredient",
+  "mealIngredientsRemoveAllTooltip": "Delete all ingredients",
+  "mealIngredientsRemoveAllTitle": "Delete all ingredients?",
+  "mealIngredientsRemoveAllBody": "This action will remove every ingredient line from the recipe.",
+  "mealRecipePreparationTitle": "Preparation",
+  "mealRecipeStepsRemoveTooltip": "Remove recipe steps",
+"mealRecipeAiGenerateLabel": "Generate ingredients",
+  "mealRecipeAiNoIngredientGenerated": "No ingredients could be generated.",
+  "mealRecipeAiQuantityWarning": "AI-generated ingredients — please check quantities before confirming.",
+  "mealRecipeAiCardWarning": "AI-generated ingredients — verify before use.",
+  "mealRecipeAiRecipeNameLabel": "Recipe name",
+  "mealRecipeAiServingsLabel": "Number of servings",
+  "mealRecipeAiModeQuestion": "What would you like to generate?",
+  "mealRecipeAiModeIngredientsOnly": "Ingredients only",
+  "mealRecipeAiModeIngredientsAndInstructions": "Ingredients + recipe",
+  "mealRecipeAiWillReplaceIngredients": "This will replace the current {count} ingredient(s) in the recipe.",
+  "@mealRecipeAiWillReplaceIngredients": {
+    "placeholders": {"count": {}}
+  },
+  "mealRecipeAiBilledWarning": "Each AI call is billed personally to the app creator and is limited per user and per trip. Use these features sparingly. If you enjoy this app, support its creator.",
+  "mealRecipeAiGenerateAction": "Generate",
+  "aiQuotaCooldown": "Hold on, the previous request was just sent.",
+  "aiQuotaUserExceeded": "You have reached your daily AI generation limit ({limit}/day). Try again tomorrow.",
+  "@aiQuotaUserExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripExceeded": "This trip has reached its daily AI generation limit ({limit}/day). Try again tomorrow.",
+  "@aiQuotaTripExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripLifetimeExceeded": "This trip has reached its total AI generation limit ({limit}). Contact support if needed.",
+  "@aiQuotaTripLifetimeExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaCircuitBreakerTripped": "The AI service is paused for today (global quota reached). It will be available again tomorrow.",
+  "aiQuotaRemaining": "Remaining quota: {userRemaining}/{userLimit} (you) — {tripRemaining}/{tripLimit} (this trip)",
+  "@aiQuotaRemaining": {
+    "placeholders": {
+      "userRemaining": {"type": "int"},
+      "userLimit": {"type": "int"},
+      "tripRemaining": {"type": "int"},
+      "tripLimit": {"type": "int"}
+    }
+  },
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "No participants.",
   "tripParticipantsTraveler": "Traveler",
@@ -605,6 +648,9 @@
   "shoppingClaimAlreadyBy": "Already claimed by {name}",
   "@shoppingClaimAlreadyBy": {"placeholders": {"name": {}}},
   "shoppingClaimTake": "I got this",
+  "shoppingConsolidateAiTooltip": "Consolidate shopping list and recipes (AI)",
+  "shoppingConsolidateAiNotAvailableTitle": "List + recipe consolidation",
+  "shoppingConsolidateAiNotAvailableBody": "This feature is not yet available for your account.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Hiking",
   "activityCategoryShopping": "Shopping",

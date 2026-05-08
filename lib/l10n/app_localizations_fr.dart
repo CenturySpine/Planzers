@@ -924,6 +924,96 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealAddIngredient => 'Ajouter un ingrédient';
 
   @override
+  String get mealIngredientsRemoveAllTooltip =>
+      'Supprimer tous les ingrédients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle =>
+      'Supprimer tous les ingrédients ?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'Cette action supprimera toutes les lignes d\'ingrédients de la recette.';
+
+  @override
+  String get mealRecipePreparationTitle => 'Préparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
+
+  @override
+  String get mealRecipeAiGenerateLabel => 'Générer les ingrédients';
+
+  @override
+  String get mealRecipeAiNoIngredientGenerated =>
+      'Aucun ingrédient n\'a pu être généré.';
+
+  @override
+  String get mealRecipeAiQuantityWarning =>
+      'Ingrédients générés par l\'IA — vérifiez bien les quantités avant de valider.';
+
+  @override
+  String get mealRecipeAiCardWarning =>
+      'Ingrédients générés par l\'IA — à vérifier.';
+
+  @override
+  String get mealRecipeAiRecipeNameLabel => 'Nom de la recette';
+
+  @override
+  String get mealRecipeAiServingsLabel => 'Nombre de personnes';
+
+  @override
+  String get mealRecipeAiModeQuestion => 'Que souhaites-tu générer ?';
+
+  @override
+  String get mealRecipeAiModeIngredientsOnly => 'Ingrédients seuls';
+
+  @override
+  String get mealRecipeAiModeIngredientsAndInstructions =>
+      'Ingrédients + recette';
+
+  @override
+  String mealRecipeAiWillReplaceIngredients(Object count) {
+    return 'Cela remplacera les $count ingrédient(s) actuels de la recette.';
+  }
+
+  @override
+  String get mealRecipeAiBilledWarning =>
+      'Chaque appel à l\'IA est facturé personnellement au créateur de l\'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.';
+
+  @override
+  String get mealRecipeAiGenerateAction => 'Générer';
+
+  @override
+  String get aiQuotaCooldown =>
+      'Patience, l\'appel précédent vient juste d\'être lancé.';
+
+  @override
+  String aiQuotaUserExceeded(int limit) {
+    return 'Vous avez atteint votre limite quotidienne de générations IA ($limit/jour). Réessayez demain.';
+  }
+
+  @override
+  String aiQuotaTripExceeded(int limit) {
+    return 'Ce voyage a atteint sa limite quotidienne de générations IA ($limit/jour). Réessayez demain.';
+  }
+
+  @override
+  String aiQuotaTripLifetimeExceeded(int limit) {
+    return 'Ce voyage a atteint sa limite totale de générations IA ($limit). Contactez le support si nécessaire.';
+  }
+
+  @override
+  String get aiQuotaCircuitBreakerTripped =>
+      'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.';
+
+  @override
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
+    return 'Quotas restants : $userRemaining/$userLimit (vous) — $tripRemaining/$tripLimit (ce voyage)';
+  }
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -1504,6 +1594,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shoppingClaimTake => 'Je m\'en occupe';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolider liste de courses et recettes (IA)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'Consolidation liste + recettes';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'Cette fonction n’est pas encore accessible pour votre compte.';
 
   @override
   String get activityCategorySport => 'Sport';
@@ -3494,6 +3596,24 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get mealAddIngredient => 'Ajouter un ingrédient';
 
   @override
+  String get mealIngredientsRemoveAllTooltip =>
+      'Supprimer tous les ingrédients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle =>
+      'Supprimer tous les ingrédients ?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'Cette action supprimera toutes les lignes d\'ingrédients de la recette.';
+
+  @override
+  String get mealRecipePreparationTitle => 'Préparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -4074,6 +4194,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingClaimTake => 'Je m\'en occupe';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolider liste de courses et recettes (IA)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'Consolidation liste + recettes';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'Cette fonction n’est pas encore accessible pour votre compte.';
 
   @override
   String get activityCategorySport => 'Sport';

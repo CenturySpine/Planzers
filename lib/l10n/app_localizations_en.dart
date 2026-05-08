@@ -913,6 +913,93 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealAddIngredient => 'Add an ingredient';
 
   @override
+  String get mealIngredientsRemoveAllTooltip => 'Delete all ingredients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle => 'Delete all ingredients?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'This action will remove every ingredient line from the recipe.';
+
+  @override
+  String get mealRecipePreparationTitle => 'Preparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
+  String get mealRecipeAiGenerateLabel => 'Generate ingredients';
+
+  @override
+  String get mealRecipeAiNoIngredientGenerated =>
+      'No ingredients could be generated.';
+
+  @override
+  String get mealRecipeAiQuantityWarning =>
+      'AI-generated ingredients — please check quantities before confirming.';
+
+  @override
+  String get mealRecipeAiCardWarning =>
+      'AI-generated ingredients — verify before use.';
+
+  @override
+  String get mealRecipeAiRecipeNameLabel => 'Recipe name';
+
+  @override
+  String get mealRecipeAiServingsLabel => 'Number of servings';
+
+  @override
+  String get mealRecipeAiModeQuestion => 'What would you like to generate?';
+
+  @override
+  String get mealRecipeAiModeIngredientsOnly => 'Ingredients only';
+
+  @override
+  String get mealRecipeAiModeIngredientsAndInstructions =>
+      'Ingredients + recipe';
+
+  @override
+  String mealRecipeAiWillReplaceIngredients(Object count) {
+    return 'This will replace the current $count ingredient(s) in the recipe.';
+  }
+
+  @override
+  String get mealRecipeAiBilledWarning =>
+      'Each AI call is billed personally to the app creator and is limited per user and per trip. Use these features sparingly. If you enjoy this app, support its creator.';
+
+  @override
+  String get mealRecipeAiGenerateAction => 'Generate';
+
+  @override
+  String get aiQuotaCooldown => 'Hold on, the previous request was just sent.';
+
+  @override
+  String aiQuotaUserExceeded(int limit) {
+    return 'You have reached your daily AI generation limit ($limit/day). Try again tomorrow.';
+  }
+
+  @override
+  String aiQuotaTripExceeded(int limit) {
+    return 'This trip has reached its daily AI generation limit ($limit/day). Try again tomorrow.';
+  }
+
+  @override
+  String aiQuotaTripLifetimeExceeded(int limit) {
+    return 'This trip has reached its total AI generation limit ($limit). Contact support if needed.';
+  }
+
+  @override
+  String get aiQuotaCircuitBreakerTripped =>
+      'The AI service is paused for today (global quota reached). It will be available again tomorrow.';
+
+  @override
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
+    return 'Remaining quota: $userRemaining/$userLimit (you) — $tripRemaining/$tripLimit (this trip)';
+  }
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -1491,6 +1578,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shoppingClaimTake => 'I got this';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolidate shopping list and recipes (AI)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'List + recipe consolidation';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'This feature is not yet available for your account.';
 
   @override
   String get activityCategorySport => 'Sport';
@@ -3461,6 +3560,22 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealAddIngredient => 'Add an ingredient';
 
   @override
+  String get mealIngredientsRemoveAllTooltip => 'Delete all ingredients';
+
+  @override
+  String get mealIngredientsRemoveAllTitle => 'Delete all ingredients?';
+
+  @override
+  String get mealIngredientsRemoveAllBody =>
+      'This action will remove every ingredient line from the recipe.';
+
+  @override
+  String get mealRecipePreparationTitle => 'Preparation';
+
+  @override
+  String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
   String get tripParticipantsTitle => 'Participants';
 
   @override
@@ -4039,6 +4154,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingClaimTake => 'I got this';
+
+  @override
+  String get shoppingConsolidateAiTooltip =>
+      'Consolidate shopping list and recipes (AI)';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableTitle =>
+      'List + recipe consolidation';
+
+  @override
+  String get shoppingConsolidateAiNotAvailableBody =>
+      'This feature is not yet available for your account.';
 
   @override
   String get activityCategorySport => 'Sport';

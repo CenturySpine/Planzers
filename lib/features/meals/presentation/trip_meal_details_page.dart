@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
@@ -16,6 +18,7 @@ import 'package:planerz/features/meals/presentation/meal_component_editor_page.d
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -624,6 +627,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required List<IngredientCatalogItem> catalogItems,
     required Set<String> participantAllergenIds,
     required Map<String, String> tripMemberPublicLabels,
+    required bool canUseAi,
+    required bool isApplicationOwner,
   }) async {
     Future<void> openEditor() async {
       final updated = await Navigator.of(context).push<MealComponent>(
@@ -632,6 +637,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             component: component,
             catalogItems: catalogItems,
             participantAllergenIds: participantAllergenIds,
+            defaultServings: _participantIds.length,
+            canUseAi: canUseAi,
+            isApplicationOwner: isApplicationOwner,
+            tripId: widget.tripId,
+            language: ref.read(currentAppLanguageProvider),
             showLockIndicator: true,
           ),
         ),
@@ -1338,6 +1348,19 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
             final canEditParticipants = canEditMealCore;
             final canEditRecipe = canManageRecipe || isMealChef;
+            final canUseRecipeAi = canEditRecipe &&
+                (isMealChef ||
+                    isTripRoleAllowed(
+                      currentRole: resolveTripPermissionRole(
+                        trip: trip,
+                        userId: myUid,
+                      ),
+                      minRole: TripPermissionRole.admin,
+                    ));
+            final applicationOwnerScopeUid = (myUid ?? '').trim();
+            final isApplicationOwner = applicationOwnerScopeUid.isNotEmpty &&
+                (membersData[applicationOwnerScopeUid]?['isApplicationOwner'] ==
+                    true);
             if (widget.isCreate && !canAccessMealCreatePage) {
               return Scaffold(
                 appBar: AppBar(),
@@ -1710,7 +1733,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           .colorScheme
                                           .surfaceContainerHighest,
                                       margin: const EdgeInsets.only(bottom: 12),
-                                      child: ListTile(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                      ListTile(
                                         onTap: catalogItems == null ||
                                                 widget.isCreate ||
                                                 !canEditRecipe
@@ -1722,6 +1749,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       participantAllergenIds,
                                                   tripMemberPublicLabels:
                                                       trip.memberPublicLabels,
+                                                  canUseAi: canUseRecipeAi,
+                                                  isApplicationOwner:
+                                                      isApplicationOwner,
                                                 ),
                                         leading: _isComponentLockedByOther(
                                                     component) ||
@@ -1858,6 +1888,29 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             ],
                                           ],
                                         ),
+                                      ),
+                                          if (component
+                                              .ingredientsGeneratedByAi)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                12,
+                                                0,
+                                                12,
+                                                8,
+                                              ),
+                                              child:
+                                                  _AiCardWarningBanner(),
+                                            ),
+                                          if (component.recipeInstructions
+                                              .trim()
+                                              .isNotEmpty)
+                                            _RecipeInstructionsExpansion(
+                                              instructions: component
+                                                  .recipeInstructions
+                                                  .trim(),
+                                            ),
+                                        ],
                                       ),
                                     );
                                   },
@@ -2238,6 +2291,75 @@ enum _MealDetailsView {
   cooked,
   restaurant,
   potluck,
+}
+
+class _AiCardWarningBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final planerzColors = context.planerzColors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: planerzColors.warningContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 16,
+            color: planerzColors.warning,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              l10n.mealRecipeAiCardWarning,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: planerzColors.warning,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeInstructionsExpansion extends StatelessWidget {
+  const _RecipeInstructionsExpansion({required this.instructions});
+
+  final String instructions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        leading: Icon(
+          Icons.menu_book_outlined,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        title: Text(
+          AppLocalizations.of(context)!.mealRecipePreparationTitle,
+          style: theme.textTheme.titleSmall,
+        ),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SelectableText(
+              instructions,
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String _dayPartLabel(BuildContext context, TripDayPart dayPart) {

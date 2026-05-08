@@ -1738,6 +1738,145 @@ abstract class AppLocalizations {
   /// **'Ajouter un ingrédient'**
   String get mealAddIngredient;
 
+  /// No description provided for @mealIngredientsRemoveAllTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer tous les ingrédients'**
+  String get mealIngredientsRemoveAllTooltip;
+
+  /// No description provided for @mealIngredientsRemoveAllTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer tous les ingrédients ?'**
+  String get mealIngredientsRemoveAllTitle;
+
+  /// No description provided for @mealIngredientsRemoveAllBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action supprimera toutes les lignes d\'ingrédients de la recette.'**
+  String get mealIngredientsRemoveAllBody;
+
+  /// No description provided for @mealRecipePreparationTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préparation'**
+  String get mealRecipePreparationTitle;
+
+  /// No description provided for @mealRecipeStepsRemoveTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer les étapes de la recette'**
+  String get mealRecipeStepsRemoveTooltip;
+
+  /// No description provided for @mealRecipeAiGenerateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Générer les ingrédients'**
+  String get mealRecipeAiGenerateLabel;
+
+  /// No description provided for @mealRecipeAiNoIngredientGenerated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun ingrédient n\'a pu être généré.'**
+  String get mealRecipeAiNoIngredientGenerated;
+
+  /// No description provided for @mealRecipeAiQuantityWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients générés par l\'IA — vérifiez bien les quantités avant de valider.'**
+  String get mealRecipeAiQuantityWarning;
+
+  /// No description provided for @mealRecipeAiCardWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients générés par l\'IA — à vérifier.'**
+  String get mealRecipeAiCardWarning;
+
+  /// No description provided for @mealRecipeAiRecipeNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la recette'**
+  String get mealRecipeAiRecipeNameLabel;
+
+  /// No description provided for @mealRecipeAiServingsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nombre de personnes'**
+  String get mealRecipeAiServingsLabel;
+
+  /// No description provided for @mealRecipeAiModeQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Que souhaites-tu générer ?'**
+  String get mealRecipeAiModeQuestion;
+
+  /// No description provided for @mealRecipeAiModeIngredientsOnly.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients seuls'**
+  String get mealRecipeAiModeIngredientsOnly;
+
+  /// No description provided for @mealRecipeAiModeIngredientsAndInstructions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ingrédients + recette'**
+  String get mealRecipeAiModeIngredientsAndInstructions;
+
+  /// No description provided for @mealRecipeAiWillReplaceIngredients.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cela remplacera les {count} ingrédient(s) actuels de la recette.'**
+  String mealRecipeAiWillReplaceIngredients(Object count);
+
+  /// No description provided for @mealRecipeAiBilledWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque appel à l\'IA est facturé personnellement au créateur de l\'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.'**
+  String get mealRecipeAiBilledWarning;
+
+  /// No description provided for @mealRecipeAiGenerateAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Générer'**
+  String get mealRecipeAiGenerateAction;
+
+  /// No description provided for @aiQuotaCooldown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Patience, l\'appel précédent vient juste d\'être lancé.'**
+  String get aiQuotaCooldown;
+
+  /// No description provided for @aiQuotaUserExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous avez atteint votre limite quotidienne de générations IA ({limit}/jour). Réessayez demain.'**
+  String aiQuotaUserExceeded(int limit);
+
+  /// No description provided for @aiQuotaTripExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce voyage a atteint sa limite quotidienne de générations IA ({limit}/jour). Réessayez demain.'**
+  String aiQuotaTripExceeded(int limit);
+
+  /// No description provided for @aiQuotaTripLifetimeExceeded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce voyage a atteint sa limite totale de générations IA ({limit}). Contactez le support si nécessaire.'**
+  String aiQuotaTripLifetimeExceeded(int limit);
+
+  /// No description provided for @aiQuotaCircuitBreakerTripped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.'**
+  String get aiQuotaCircuitBreakerTripped;
+
+  /// No description provided for @aiQuotaRemaining.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quotas restants : {userRemaining}/{userLimit} (vous) — {tripRemaining}/{tripLimit} (ce voyage)'**
+  String aiQuotaRemaining(
+      int userRemaining, int userLimit, int tripRemaining, int tripLimit);
+
   /// No description provided for @tripParticipantsTitle.
   ///
   /// In fr, this message translates to:
@@ -2764,6 +2903,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Je m\'en occupe'**
   String get shoppingClaimTake;
+
+  /// No description provided for @shoppingConsolidateAiTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolider liste de courses et recettes (IA)'**
+  String get shoppingConsolidateAiTooltip;
+
+  /// No description provided for @shoppingConsolidateAiNotAvailableTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidation liste + recettes'**
+  String get shoppingConsolidateAiNotAvailableTitle;
+
+  /// No description provided for @shoppingConsolidateAiNotAvailableBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette fonction n’est pas encore accessible pour votre compte.'**
+  String get shoppingConsolidateAiNotAvailableBody;
 
   /// No description provided for @activityCategorySport.
   ///

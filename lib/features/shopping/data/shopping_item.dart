@@ -31,6 +31,37 @@ enum ShoppingUnit {
     }
     return ShoppingUnit.unit;
   }
+
+  /// Best-effort mapping from a free-form unit label (e.g. catalog defaults
+  /// or AI-generated values like "g", "kg", "ml", "l", "gramme(s)",
+  /// "millilitre(s)", "pièce(s)") to a [ShoppingUnit]. Falls back to
+  /// [ShoppingUnit.unit] for empty or unrecognized inputs.
+  static ShoppingUnit fromHumanLabel(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    switch (normalized) {
+      case 'g':
+      case 'gr':
+      case 'gramme':
+      case 'grammes':
+        return ShoppingUnit.grams;
+      case 'kg':
+      case 'kilo':
+      case 'kilos':
+      case 'kilogramme':
+      case 'kilogrammes':
+        return ShoppingUnit.kilograms;
+      case 'ml':
+      case 'millilitre':
+      case 'millilitres':
+        return ShoppingUnit.milliliters;
+      case 'l':
+      case 'litre':
+      case 'litres':
+        return ShoppingUnit.liters;
+      default:
+        return ShoppingUnit.unit;
+    }
+  }
 }
 
 /// A shopping list item for a trip

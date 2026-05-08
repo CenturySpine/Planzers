@@ -353,6 +353,49 @@
   "mealIngredientsTitle": "Ingrédients",
   "mealIngredientHint": "Ingrédient...",
   "mealAddIngredient": "Ajouter un ingrédient",
+  "mealIngredientsRemoveAllTooltip": "Supprimer tous les ingrédients",
+  "mealIngredientsRemoveAllTitle": "Supprimer tous les ingrédients ?",
+  "mealIngredientsRemoveAllBody": "Cette action supprimera toutes les lignes d'ingrédients de la recette.",
+  "mealRecipePreparationTitle": "Préparation",
+  "mealRecipeStepsRemoveTooltip": "Retirer les étapes de la recette",
+"mealRecipeAiGenerateLabel": "Générer les ingrédients",
+  "mealRecipeAiNoIngredientGenerated": "Aucun ingrédient n'a pu être généré.",
+  "mealRecipeAiQuantityWarning": "Ingrédients générés par l'IA — vérifiez bien les quantités avant de valider.",
+  "mealRecipeAiCardWarning": "Ingrédients générés par l'IA — à vérifier.",
+  "mealRecipeAiRecipeNameLabel": "Nom de la recette",
+  "mealRecipeAiServingsLabel": "Nombre de personnes",
+  "mealRecipeAiModeQuestion": "Que souhaites-tu générer ?",
+  "mealRecipeAiModeIngredientsOnly": "Ingrédients seuls",
+  "mealRecipeAiModeIngredientsAndInstructions": "Ingrédients + recette",
+  "mealRecipeAiWillReplaceIngredients": "Cela remplacera les {count} ingrédient(s) actuels de la recette.",
+  "@mealRecipeAiWillReplaceIngredients": {
+    "placeholders": {"count": {}}
+  },
+  "mealRecipeAiBilledWarning": "Chaque appel à l'IA est facturé personnellement au créateur de l'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.",
+  "mealRecipeAiGenerateAction": "Générer",
+  "aiQuotaCooldown": "Patience, l'appel précédent vient juste d'être lancé.",
+  "aiQuotaUserExceeded": "Vous avez atteint votre limite quotidienne de générations IA ({limit}/jour). Réessayez demain.",
+  "@aiQuotaUserExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripExceeded": "Ce voyage a atteint sa limite quotidienne de générations IA ({limit}/jour). Réessayez demain.",
+  "@aiQuotaTripExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaTripLifetimeExceeded": "Ce voyage a atteint sa limite totale de générations IA ({limit}). Contactez le support si nécessaire.",
+  "@aiQuotaTripLifetimeExceeded": {
+    "placeholders": {"limit": {"type": "int"}}
+  },
+  "aiQuotaCircuitBreakerTripped": "Le service IA est en pause pour aujourd'hui (quotas globaux atteints). Il sera de nouveau disponible demain.",
+  "aiQuotaRemaining": "Quotas restants : {userRemaining}/{userLimit} (vous) — {tripRemaining}/{tripLimit} (ce voyage)",
+  "@aiQuotaRemaining": {
+    "placeholders": {
+      "userRemaining": {"type": "int"},
+      "userLimit": {"type": "int"},
+      "tripRemaining": {"type": "int"},
+      "tripLimit": {"type": "int"}
+    }
+  },
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "Aucun participant.",
   "tripParticipantsTraveler": "Voyageur",
@@ -605,6 +648,9 @@
   "shoppingClaimAlreadyBy": "Déjà claimé par {name}",
   "@shoppingClaimAlreadyBy": {"placeholders": {"name": {}}},
   "shoppingClaimTake": "Je m'en occupe",
+  "shoppingConsolidateAiTooltip": "Consolider liste de courses et recettes (IA)",
+  "shoppingConsolidateAiNotAvailableTitle": "Consolidation liste + recettes",
+  "shoppingConsolidateAiNotAvailableBody": "Cette fonction n’est pas encore accessible pour votre compte.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Randonnée",
   "activityCategoryShopping": "Shopping",

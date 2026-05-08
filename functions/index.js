@@ -12,6 +12,7 @@ const cheerio = require('cheerio');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
+const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -4184,6 +4185,471 @@ exports.getAppUsageStats = onCall(
         byCategory: activitiesByCategory,
       },
     };
+  }
+);
+
+// ============================================================
+// AI-driven shopping list consolidation (POC)
+// ============================================================
+// Source of truth: scripts/ia/antropic_shopping_consolidate.ps1
+// - Same system/user prompts.
+// - Same JSON tool schema (summary + consolidatedItems[ + sourceItems ]).
+// - Same per-provider request shapes (Anthropic v1/messages,
+//   Gemini generateContent with thinkingBudget = 0).
+// ============================================================
+
+const AI_CONSOLIDATION_TOOL_NAME = 'consolidate_shopping_list';
+const AI_CONSOLIDATION_TOOL_DESCRIPTION =
+  'Retourne la liste de courses consolidee a partir des deux tableaux fournis.';
+
+const AI_CONSOLIDATION_SYSTEM_PROMPT =
+  "Tu es un assistant specialise dans la consolidation de listes d ingredients culinaires.\n" +
+  "Regles de fusion :\n" +
+  "- Fusionner uniquement si le nom de base est identique ou quasi-identique.\n" +
+  "- Ne pas fusionner des ingredients semantiquement differents.\n" +
+  "- Convertir les unites compatibles avant addition (g/kg, ml/l).\n" +
+  "- Si les unites sont incompatibles, garder des lignes separees.\n" +
+  "- sourceType doit valoir manual, recipe, ou mixed selon l origine consolidee.";
+
+function buildAiConsolidationToolSchema() {
+  return {
+    type: 'object',
+    required: ['summary', 'consolidatedItems'],
+    properties: {
+      summary: {
+        type: 'object',
+        required: ['manualOriginalLineCount', 'recipeOriginalLineCount'],
+        properties: {
+          manualOriginalLineCount: {
+            type: 'integer',
+            description: 'Nombre total de lignes en entree dans manualShoppingItems',
+          },
+          recipeOriginalLineCount: {
+            type: 'integer',
+            description: 'Nombre total de lignes en entree dans recipeIngredients',
+          },
+        },
+      },
+      consolidatedItems: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: [
+            'itemLabel',
+            'quantityValue',
+            'quantityUnit',
+            'sourceType',
+            'manualOriginalLineCount',
+            'recipeOriginalLineCount',
+          ],
+          properties: {
+            itemLabel: { type: 'string', description: 'Nom consolide de l ingredient' },
+            quantityValue: { type: 'number', description: 'Quantite totale consolidee' },
+            quantityUnit: { type: 'string', description: 'Unite apres conversion eventuelle' },
+            sourceType: { type: 'string', enum: ['manual', 'recipe', 'mixed'] },
+            manualOriginalLineCount: {
+              type: 'integer',
+              description: 'Nombre de lignes manual fusionnees dans cette entree',
+            },
+            recipeOriginalLineCount: {
+              type: 'integer',
+              description: 'Nombre de lignes recipe fusionnees dans cette entree',
+            },
+            sourceItems: {
+              type: 'array',
+              description:
+                'Lignes d entree ayant contribue a la consolidation. Renseigne uniquement si sourceType est mixed.',
+              items: {
+                type: 'object',
+                required: [
+                  'source',
+                  'originalLabel',
+                  'originalQuantityValue',
+                  'originalQuantityUnit',
+                ],
+                properties: {
+                  source: {
+                    type: 'string',
+                    enum: ['manual', 'recipe'],
+                    description: 'Tableau d origine de la ligne',
+                  },
+                  originalLabel: {
+                    type: 'string',
+                    description: 'Label original de la ligne d entree',
+                  },
+                  originalQuantityValue: {
+                    type: 'number',
+                    description: 'Quantite originale avant consolidation',
+                  },
+                  originalQuantityUnit: {
+                    type: 'string',
+                    description: 'Unite originale avant conversion',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
+function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients) {
+  return [
+    'Consolide les deux tableaux suivants.',
+    'summary.*OriginalLineCount doit correspondre au nombre de lignes d entree utilisees.',
+    'Pour chaque ligne consolidee, renseigne les compteurs manualOriginalLineCount et recipeOriginalLineCount utilises pour cette ligne.',
+    '',
+    'manualShoppingItems:',
+    JSON.stringify(manualShoppingItems),
+    '',
+    'recipeIngredients:',
+    JSON.stringify(recipeIngredients),
+  ].join('\n');
+}
+
+function detectAiProvider(model) {
+  return normalizeString(model).toLowerCase().startsWith('gemini') ? 'gemini' : 'anthropic';
+}
+
+async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema }) {
+  const body = {
+    model,
+    max_tokens: 5000,
+    temperature: 0.1,
+    system: systemPrompt,
+    tools: [
+      {
+        name: AI_CONSOLIDATION_TOOL_NAME,
+        description: AI_CONSOLIDATION_TOOL_DESCRIPTION,
+        input_schema: toolSchema,
+      },
+    ],
+    tool_choice: { type: 'tool', name: AI_CONSOLIDATION_TOOL_NAME },
+    messages: [{ role: 'user', content: userPrompt }],
+  };
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HttpsError(
+      'unavailable',
+      `Service IA indisponible (Anthropic ${response.status})`,
+      { upstream: text.slice(0, 500) }
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    throw new HttpsError('internal', 'Réponse IA non JSON', { upstream: text.slice(0, 500) });
+  }
+
+  const toolBlock = Array.isArray(parsed.content)
+    ? parsed.content.find((block) => block && block.type === 'tool_use')
+    : null;
+  if (!toolBlock || !toolBlock.input || typeof toolBlock.input !== 'object') {
+    throw new HttpsError('internal', 'Réponse IA invalide (tool_use absent)');
+  }
+  return toolBlock.input;
+}
+
+async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema }) {
+  const endpoint =
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+    tools: [
+      {
+        function_declarations: [
+          {
+            name: AI_CONSOLIDATION_TOOL_NAME,
+            description: AI_CONSOLIDATION_TOOL_DESCRIPTION,
+            parameters: toolSchema,
+          },
+        ],
+      },
+    ],
+    tool_config: { function_calling_config: { mode: 'ANY' } },
+    generation_config: {
+      temperature: 0.1,
+      maxOutputTokens: 5000,
+      thinkingConfig: { thinkingBudget: 0 },
+    },
+  };
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new HttpsError(
+      'unavailable',
+      `Service IA indisponible (Gemini ${response.status})`,
+      { upstream: text.slice(0, 500) }
+    );
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    throw new HttpsError('internal', 'Réponse IA non JSON', { upstream: text.slice(0, 500) });
+  }
+
+  const parts = parsed?.candidates?.[0]?.content?.parts;
+  const funcPart = Array.isArray(parts)
+    ? parts.find((p) => p && p.functionCall && p.functionCall.args)
+    : null;
+  if (!funcPart) {
+    throw new HttpsError('internal', 'Réponse IA invalide (functionCall absent)');
+  }
+  return funcPart.functionCall.args;
+}
+
+/**
+ * Core helper: consolidates a manual shopping list with recipe ingredients
+ * using either an Anthropic Claude model or a Google Gemini model.
+ *
+ * Mirrors `scripts/ia/antropic_shopping_consolidate.ps1` exactly:
+ *   - Same system prompt, user prompt and JSON Schema.
+ *   - Same per-provider request body (tools / tool_choice / generation_config).
+ *
+ * @param {Object} params
+ * @param {string} params.model - e.g. 'gemini-2.5-flash' or 'claude-haiku-4-5-20251001'.
+ * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.manualShoppingItems
+ * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.recipeIngredients
+ * @returns {Promise<{summary:object, consolidatedItems:Array<object>}>}
+ */
+async function consolidateShoppingListWithAi({
+  model,
+  manualShoppingItems,
+  recipeIngredients,
+}) {
+  const cleanModel = normalizeString(model);
+  if (!cleanModel) {
+    throw new HttpsError('invalid-argument', 'Modèle IA requis');
+  }
+  const provider = detectAiProvider(cleanModel);
+  const apiKey =
+    provider === 'anthropic'
+      ? normalizeString(process.env.ANTHROPIC_API_KEY)
+      : normalizeString(process.env.GOOGLE_AI_API_KEY);
+  if (!apiKey) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Clé API ${provider === 'anthropic' ? 'Anthropic' : 'Google AI'} non configurée`
+    );
+  }
+
+  const toolSchema = buildAiConsolidationToolSchema();
+  const userPrompt = buildAiConsolidationUserPrompt(
+    manualShoppingItems,
+    recipeIngredients
+  );
+
+  const result =
+    provider === 'anthropic'
+      ? await callAnthropicConsolidation({
+          apiKey,
+          model: cleanModel,
+          systemPrompt: AI_CONSOLIDATION_SYSTEM_PROMPT,
+          userPrompt,
+          toolSchema,
+        })
+      : await callGeminiConsolidation({
+          apiKey,
+          model: cleanModel,
+          systemPrompt: AI_CONSOLIDATION_SYSTEM_PROMPT,
+          userPrompt,
+          toolSchema,
+        });
+
+  const summary = result?.summary && typeof result.summary === 'object' ? result.summary : {};
+  const consolidatedItems = Array.isArray(result?.consolidatedItems)
+    ? result.consolidatedItems
+    : [];
+  return { summary, consolidatedItems };
+}
+
+function toFiniteQuantity(value) {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function buildAiInputRow(rawLabel, rawQuantityValue, rawQuantityUnit) {
+  const label = normalizeString(rawLabel);
+  if (!label) return null;
+  return {
+    label,
+    quantityValue: toFiniteQuantity(rawQuantityValue),
+    quantityUnit: normalizeString(rawQuantityUnit) || 'unit',
+  };
+}
+
+/**
+ * POC callable: consolidates a trip's shopping list with AI-driven merging.
+ *
+ * Reads from Firestore (no writes):
+ *   - Manual items: `trips/{tripId}/shoppingItems` where `checked == false`.
+ *   - Recipe items: `trips/{tripId}/meals` where `mealMode == 'cooked'`,
+ *     flattened from each component's `ingredients` array.
+ *
+ * The chosen model is hard-coded to `gemini-2.5-flash` for this POC.
+ */
+exports.consolidateTripShoppingWithAi = onCall(
+  {
+    timeoutSeconds: 120,
+    memory: '512MiB',
+    secrets: ['ANTHROPIC_API_KEY', 'GOOGLE_AI_API_KEY'],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'tripId requis');
+    }
+
+    const db = admin.firestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
+
+    const tripRef = db.collection('trips').doc(tripId);
+
+    const [shoppingSnap, mealsSnap] = await Promise.all([
+      tripRef
+        .collection('shoppingItems')
+        .where('checked', '==', false)
+        .select('label', 'quantityValue', 'quantityUnit')
+        .get(),
+      tripRef
+        .collection('meals')
+        .where('mealMode', '==', 'cooked')
+        .select('components')
+        .get(),
+    ]);
+
+    const manualShoppingItems = [];
+    for (const doc of shoppingSnap.docs) {
+      const data = doc.data() || {};
+      const row = buildAiInputRow(data.label, data.quantityValue, data.quantityUnit);
+      if (row) manualShoppingItems.push(row);
+    }
+
+    const recipeIngredients = [];
+    for (const doc of mealsSnap.docs) {
+      const components = (doc.data() || {}).components;
+      if (!Array.isArray(components)) continue;
+      for (const component of components) {
+        const ingredients = component && Array.isArray(component.ingredients)
+          ? component.ingredients
+          : null;
+        if (!ingredients) continue;
+        for (const ingredient of ingredients) {
+          if (!ingredient || typeof ingredient !== 'object') continue;
+          const row = buildAiInputRow(
+            ingredient.label,
+            ingredient.quantityValue,
+            ingredient.quantityUnit
+          );
+          if (row) recipeIngredients.push(row);
+        }
+      }
+    }
+
+    if (manualShoppingItems.length === 0 && recipeIngredients.length === 0) {
+      return {
+        summary: { manualOriginalLineCount: 0, recipeOriginalLineCount: 0 },
+        consolidatedItems: [],
+      };
+    }
+
+    return withAiQuota(
+      { featureKey: 'shoppingConsolidation', tripId, uid, isApplicationOwner },
+      async () => {
+        const { summary, consolidatedItems } = await consolidateShoppingListWithAi({
+          model: 'gemini-2.5-flash',
+          manualShoppingItems,
+          recipeIngredients,
+        });
+        return { summary, consolidatedItems };
+      }
+    );
+  }
+);
+
+// ============================================================
+// AI quota management callables (used by CF-assisted features)
+// ============================================================
+
+/**
+ * Atomically checks and increments AI usage quota for the calling user and
+ * the given trip. Throws resource-exhausted if any quota is exceeded.
+ *
+ * Request: { featureKey: string, tripId: string }
+ * Response: { ok: true }
+ */
+exports.reserveAiQuota = onCall(
+  { timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const featureKey = normalizeString(request.data?.featureKey);
+    const tripId = normalizeString(request.data?.tripId);
+    if (!featureKey || !tripId) {
+      throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
+    }
+
+    await reserveQuota({ featureKey, tripId, uid });
+    return { ok: true };
+  }
+);
+
+/**
+ * Decrements AI usage quota counters (floor at 0) after a failed AI call.
+ * Best-effort: always returns ok regardless of internal errors.
+ *
+ * Request: { featureKey: string, tripId: string }
+ * Response: { ok: true }
+ */
+exports.refundAiQuota = onCall(
+  { timeoutSeconds: 30, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+    }
+
+    const featureKey = normalizeString(request.data?.featureKey);
+    const tripId = normalizeString(request.data?.tripId);
+    if (!featureKey || !tripId) {
+      throw new HttpsError('invalid-argument', 'featureKey et tripId requis');
+    }
+
+    await refundQuota({ featureKey, tripId, uid }).catch(() => {});
+    return { ok: true };
   }
 );
 

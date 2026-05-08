@@ -206,6 +206,8 @@ class MealComponent {
     required this.order,
     required this.ingredients,
     this.title = '',
+    this.recipeInstructions = '',
+    this.ingredientsGeneratedByAi = false,
     this.lockedBy,
   });
 
@@ -214,6 +216,18 @@ class MealComponent {
   final String title;
   final int order;
   final List<MealComponentIngredient> ingredients;
+
+  /// Optional cooking instructions (free-form text, may include newlines).
+  /// Currently populated by the AI generation flow but the field is generic
+  /// and could be authored manually in the future.
+  final String recipeInstructions;
+
+  /// Whether the current ingredients list was last produced by the AI
+  /// generation flow. Reset to `false` as soon as the user manually edits,
+  /// adds or deletes any ingredient. Used to drive the "verify quantities"
+  /// warning banner.
+  final bool ingredientsGeneratedByAi;
+
   final String? lockedBy;
 
   factory MealComponent.fromMap(Map<String, dynamic> map) {
@@ -235,6 +249,8 @@ class MealComponent {
               ))
           .where((i) => i.label.isNotEmpty)
           .toList(growable: false),
+      recipeInstructions: (map['recipeInstructions'] as String? ?? '').trim(),
+      ingredientsGeneratedByAi: map['ingredientsGeneratedByAi'] == true,
       lockedBy: (map['lockedBy'] as String?)?.trim().isEmpty ?? true
           ? null
           : (map['lockedBy'] as String).trim(),
@@ -248,6 +264,8 @@ class MealComponent {
       'title': title.trim(),
       'order': order,
       'ingredients': ingredients.map((i) => i.toMap()).toList(growable: false),
+      'recipeInstructions': recipeInstructions.trim(),
+      'ingredientsGeneratedByAi': ingredientsGeneratedByAi,
       'lockedBy': lockedBy?.trim(),
     };
   }
@@ -258,6 +276,8 @@ class MealComponent {
     String? title,
     int? order,
     List<MealComponentIngredient>? ingredients,
+    String? recipeInstructions,
+    bool? ingredientsGeneratedByAi,
     Object? lockedBy = _noLockedByChange,
   }) {
     return MealComponent(
@@ -266,6 +286,9 @@ class MealComponent {
       title: title ?? this.title,
       order: order ?? this.order,
       ingredients: ingredients ?? this.ingredients,
+      recipeInstructions: recipeInstructions ?? this.recipeInstructions,
+      ingredientsGeneratedByAi:
+          ingredientsGeneratedByAi ?? this.ingredientsGeneratedByAi,
       lockedBy: identical(lockedBy, _noLockedByChange)
           ? this.lockedBy
           : lockedBy as String?,

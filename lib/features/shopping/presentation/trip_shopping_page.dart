@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
-import 'package:planerz/features/auth/data/users_repository.dart';
-import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart'
+    show
+        stableUsersIdsKey,
+        usersDataByIdsKeyStreamProvider,
+        usersRepositoryProvider;
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
+import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -56,6 +61,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
   late final TextEditingController _searchController;
   _ShoppingFilter _activeFilter = _ShoppingFilter.all;
   String? _pendingAutofocusItemId;
+  bool _isConsolidating = false;
 
   @override
   void initState() {
@@ -78,6 +84,108 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
         );
     if (!mounted) return;
     setState(() => _pendingAutofocusItemId = newItemId);
+  }
+
+  Future<void> _showConsolidationNotAvailableForAccountDialog(
+    BuildContext context,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.shoppingConsolidateAiNotAvailableTitle),
+          content: Text(l10n.shoppingConsolidateAiNotAvailableBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.commonClose),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _consolidateWithAi(BuildContext context) async {
+    if (_isConsolidating) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isConsolidating = true);
+    try {
+      final result = await ref
+          .read(shoppingRepositoryProvider)
+          .consolidateWithAi(tripId: widget.tripId);
+      if (!context.mounted) return;
+      await _showConsolidatedItemsDialog(context, result);
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _isConsolidating = false);
+    }
+  }
+
+  Future<void> _showConsolidatedItemsDialog(
+    BuildContext context,
+    ConsolidatedShoppingResult result,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        final summary = result.summary;
+        final items = result.items;
+        return AlertDialog(
+          title: const Text('Consolidation IA (POC)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Ingrédients recettes en entrée: ${summary.recipeOriginalLineCount}\n'
+                    'Ingrédients manuels en entrée: ${summary.manualOriginalLineCount}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: items.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Text('Aucun élément consolidé.'),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: items.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            color: theme.dividerColor.withValues(alpha: 0.4),
+                          ),
+                          itemBuilder: (context, index) {
+                            return _ConsolidatedItemTile(item: items[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Fermer'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _confirmAndDeleteChecked(BuildContext context) async {
@@ -140,6 +248,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       currentRole: currentRole,
       minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
     );
+    final circuitBreakerTripped =
+        ref.watch(aiCircuitBreakerTrippedProvider).asData?.value ?? false;
+    final canConsolidateWithAi = !circuitBreakerTripped &&
+        isTripRoleAllowed(
+          currentRole: currentRole,
+          minRole: TripPermissionRole.admin,
+        );
+    final currentUserOwnerAsync = ref.watch(
+      usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
+    );
+    final ownerData = currentUserOwnerAsync.asData?.value;
+    final ownerFlagReady = ownerData != null;
+    final isApplicationOwner =
+        ownerData?[currentUid]?['isApplicationOwner'] == true;
     final searchQuery = _searchController.text;
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
@@ -289,7 +411,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                           ),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
-                            return _ShoppingItemRow(
+                            return ShoppingItemRow(
                               key: ValueKey(item.id),
                               tripId: widget.tripId,
                               item: item,
@@ -314,6 +436,30 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (canConsolidateWithAi) ...[
+                    FloatingActionButton(
+                      heroTag: 'consolidate_shopping_with_ai',
+                      tooltip: l10n.shoppingConsolidateAiTooltip,
+                      onPressed: _isConsolidating || !ownerFlagReady
+                          ? null
+                          : () {
+                              if (isApplicationOwner) {
+                                _consolidateWithAi(context);
+                              } else {
+                                _showConsolidationNotAvailableForAccountDialog(
+                                  context,
+                                );
+                              }
+                            },
+                      child: _isConsolidating
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.auto_awesome),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   FloatingActionButton(
                     heroTag: 'add_shopping_item',
                     onPressed: _addItem,
@@ -392,6 +538,14 @@ String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
 }
 
+String _formatConsolidatedQuantity(double value, String unit) {
+  final hasInteger = value == value.roundToDouble();
+  final displayValue = hasInteger ? value.toInt().toString() : value.toString();
+  final cleanUnit = unit.trim();
+  if (cleanUnit.isEmpty) return displayValue;
+  return '$displayValue $cleanUnit';
+}
+
 bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
   final claimedBy = item.claimedBy?.trim() ?? '';
   return switch (filter) {
@@ -430,137 +584,108 @@ class _FilterLegendRow extends StatelessWidget {
   }
 }
 
-class _ShoppingItemRow extends ConsumerStatefulWidget {
-  const _ShoppingItemRow({
-    super.key,
-    required this.tripId,
-    required this.item,
-    required this.usersDataById,
-    required this.normalizedLabelCounts,
-    this.autoFocusLabel = false,
-    this.onAutoFocusHandled,
-  });
+class _ConsolidatedItemTile extends StatelessWidget {
+  const _ConsolidatedItemTile({required this.item});
 
-  final String tripId;
-  final ShoppingItem item;
-  final Map<String, Map<String, dynamic>> usersDataById;
-  final Map<String, int> normalizedLabelCounts;
-  final bool autoFocusLabel;
-  final VoidCallback? onAutoFocusHandled;
-
-  @override
-  ConsumerState<_ShoppingItemRow> createState() => _ShoppingItemRowState();
-}
-
-class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
-  String _photoUrlFromUserData(Map<String, dynamic>? userData) {
-    if (userData == null) return '';
-    final account = (userData['account'] as Map<String, dynamic>?) ?? const {};
-    final accountPhoto = (account['photoUrl'] as String?)?.trim() ?? '';
-    if (accountPhoto.isNotEmpty) return accountPhoto;
-    return (userData['photoUrl'] as String?)?.trim() ?? '';
-  }
-
-  bool _isDuplicateLabel(String value) {
-    final normalized = _normalizeItemLabel(value);
-    if (normalized.isEmpty) return false;
-    final totalCount = widget.normalizedLabelCounts[normalized] ?? 0;
-    final ownMatches =
-        _normalizeItemLabel(widget.item.label) == normalized ? 1 : 0;
-    return (totalCount - ownMatches) > 0;
-  }
-
-  Future<void> _toggleChecked(bool? value) async {
-    await ref.read(shoppingRepositoryProvider).setChecked(
-          tripId: widget.tripId,
-          itemId: widget.item.id,
-          checked: value ?? false,
-        );
-  }
-
-  Future<void> _delete() async {
-    await ref.read(shoppingRepositoryProvider).deleteItem(
-          tripId: widget.tripId,
-          itemId: widget.item.id,
-        );
-  }
-
-  Future<void> _toggleClaim() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid.trim() ?? '';
-    if (uid.isEmpty) return;
-    final claimedBy = widget.item.claimedBy?.trim() ?? '';
-    if (claimedBy.isNotEmpty && claimedBy != uid) return;
-
-    final nextClaimedBy = claimedBy == uid ? null : uid;
-    await ref.read(shoppingRepositoryProvider).setClaimedBy(
-          tripId: widget.tripId,
-          itemId: widget.item.id,
-          claimedBy: nextClaimedBy,
-        );
-  }
+  final ConsolidatedShoppingItem item;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isChecked = widget.item.checked;
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final currentUid = currentUser?.uid.trim() ?? '';
-    final claimedBy = widget.item.claimedBy?.trim() ?? '';
-    final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
-    final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
-    final claimedByUserData =
-        claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
-    final claimedByLabel = resolveTripMemberDisplayLabel(
-      memberId: claimedBy,
-      userData: claimedByUserData,
-      tripMemberPublicLabels: const {},
-      currentUserId: currentUid,
-      emptyFallback: AppLocalizations.of(context)!.shoppingTravelerFallback,
+    final theme = Theme.of(context);
+    final quantity = _formatConsolidatedQuantity(
+      item.quantityValue,
+      item.quantityUnit,
     );
-    final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);
-    final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
-          decoration:
-              isChecked ? TextDecoration.lineThrough : TextDecoration.none,
-          color:
-              isChecked ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
-        );
+    final sourceIcon = _consolidatedSourceIcon(item.sourceType);
+    final showSources =
+        item.sourceType == ConsolidatedShoppingSourceType.mixed &&
+            item.sourceItems.isNotEmpty;
 
-    return IngredientLineEditor(
-      label: widget.item.label,
-      quantityValue: widget.item.quantityValue,
-      quantityUnit: widget.item.quantityUnit,
-      onSave: (value) async {
-        await ref.read(shoppingRepositoryProvider).updateItem(
-              tripId: widget.tripId,
-              itemId: widget.item.id,
-              label: value.label,
-              checked: widget.item.checked,
-              quantityValue: value.quantityValue,
-              quantityUnit: value.quantityUnit,
-            );
-      },
-      onDelete: _delete,
-      autoFocusLabel: widget.autoFocusLabel,
-      onAutoFocusHandled: widget.onAutoFocusHandled,
-      isDuplicateLabel: _isDuplicateLabel,
-      labelStyle: labelStyle,
-      prefixWidgets: [
-        Checkbox(
-          value: isChecked,
-          onChanged: _toggleChecked,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-        ),
-        Transform.translate(
-          offset: const Offset(-4, 0),
-          child: _ClaimButton(
-            isClaimedByMe: isClaimedByMe,
-            isClaimedByOther: isClaimedByOther,
-            claimedByLabel: claimedByLabel,
-            claimedByPhotoUrl: claimedByPhotoUrl,
-            onTap: _toggleClaim,
-            l10n: AppLocalizations.of(context)!,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.label,
+                        style: theme.textTheme.bodyMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      sourceIcon,
+                      size: 16,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                quantity,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (showSources)
+            Padding(
+              padding: const EdgeInsets.only(left: 18, top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final source in item.sourceItems)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1),
+                      child: _ConsolidatedSourceLine(source: source),
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsolidatedSourceLine extends StatelessWidget {
+  const _ConsolidatedSourceLine({required this.source});
+
+  final ConsolidatedShoppingSourceItem source;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isManual = source.source == 'manual';
+    final icon = isManual ? Icons.edit_note : Icons.restaurant_menu;
+    final quantity = _formatConsolidatedQuantity(
+      source.originalQuantityValue,
+      source.originalQuantityUnit,
+    );
+    final detail = quantity.isEmpty
+        ? source.originalLabel
+        : '${source.originalLabel} — $quantity';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            detail,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -568,90 +693,13 @@ class _ShoppingItemRowState extends ConsumerState<_ShoppingItemRow> {
   }
 }
 
-class _ClaimButton extends StatelessWidget {
-  const _ClaimButton({
-    required this.isClaimedByMe,
-    required this.isClaimedByOther,
-    required this.claimedByLabel,
-    required this.claimedByPhotoUrl,
-    required this.onTap,
-    required this.l10n,
-  });
-
-  final bool isClaimedByMe;
-  final bool isClaimedByOther;
-  final String claimedByLabel;
-  final String claimedByPhotoUrl;
-  final Future<void> Function() onTap;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    const badgeSize = 26.0;
-    const badgeRadius = 11.0;
-
-    Widget claimAvatar({
-      required String label,
-      required String photoUrl,
-      required Color backgroundColor,
-      required Color foregroundColor,
-    }) {
-      final cleanUrl = photoUrl.trim();
-      return CircleAvatar(
-        radius: badgeRadius,
-        backgroundColor: backgroundColor,
-        foregroundColor: foregroundColor,
-        foregroundImage: cleanUrl.isNotEmpty ? NetworkImage(cleanUrl) : null,
-        child: Text(
-          avatarInitialFromDisplayLabel(label),
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-        ),
-      );
-    }
-
-    final compactStyle = IconButton.styleFrom(
-      padding: const EdgeInsets.all(2),
-      minimumSize: const Size(badgeSize, badgeSize),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-    if (isClaimedByMe) {
-      final avatar = claimAvatar(
-        label: claimedByLabel,
-        photoUrl: claimedByPhotoUrl,
-        backgroundColor: colorScheme.primaryContainer,
-        foregroundColor: colorScheme.onPrimaryContainer,
-      );
-      return IconButton(
-        style: compactStyle,
-        tooltip: l10n.shoppingClaimRemoveMine,
-        onPressed: () => onTap(),
-        icon: avatar,
-      );
-    }
-
-    if (isClaimedByOther) {
-      final avatar = claimAvatar(
-        label: claimedByLabel,
-        photoUrl: claimedByPhotoUrl,
-        backgroundColor: colorScheme.secondaryContainer,
-        foregroundColor: colorScheme.onSecondaryContainer,
-      );
-      return Tooltip(
-        message: l10n.shoppingClaimAlreadyBy(claimedByLabel),
-        child: SizedBox(
-          width: badgeSize,
-          height: badgeSize,
-          child: Center(child: avatar),
-        ),
-      );
-    }
-
-    return IconButton(
-      style: compactStyle,
-      tooltip: l10n.shoppingClaimTake,
-      onPressed: () => onTap(),
-      icon: const Icon(Icons.accessibility_new_outlined, size: 17),
-    );
+IconData _consolidatedSourceIcon(ConsolidatedShoppingSourceType sourceType) {
+  switch (sourceType) {
+    case ConsolidatedShoppingSourceType.manual:
+      return Icons.edit_note;
+    case ConsolidatedShoppingSourceType.recipe:
+      return Icons.restaurant_menu;
+    case ConsolidatedShoppingSourceType.mixed:
+      return Icons.merge_type;
   }
 }
