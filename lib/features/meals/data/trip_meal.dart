@@ -310,8 +310,8 @@ class TripMeal {
     this.updatedAt,
     this.components = const [],
     this.mealMode = MealMode.cooked,
-    this.restaurantUrl = '',
-    this.restaurantLinkPreview = const {},
+    this.restaurantActivityId = '',
+    this.restaurantName = '',
     this.potluckItems = const [],
     this.componentsUserOrdered = false,
   });
@@ -355,10 +355,12 @@ class TripMeal {
   final DateTime? updatedAt;
   final List<MealComponent> components;
   final MealMode mealMode;
-  final String restaurantUrl;
 
-  /// Same shape as trip/activity `linkPreview` (filled by Cloud Function).
-  final Map<String, dynamic> restaurantLinkPreview;
+  /// Firestore document ID of the selected restaurant activity suggestion.
+  final String restaurantActivityId;
+
+  /// Denormalized name of the selected restaurant activity (for card display).
+  final String restaurantName;
 
   final List<MealPotluckItem> potluckItems;
   final bool componentsUserOrdered;
@@ -399,11 +401,6 @@ class TripMeal {
     return sorted;
   }
 
-  static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
-    if (raw is! Map) return const {};
-    return Map<String, dynamic>.from(raw);
-  }
-
   factory TripMeal.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
     final dayPart = tripDayPartFromFirestore(
@@ -431,9 +428,9 @@ class TripMeal {
           .toList(growable: false)
         ..sort((a, b) => a.order.compareTo(b.order)),
       mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
-      restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
-      restaurantLinkPreview:
-          _previewFromFirestore(data['restaurantLinkPreview']),
+      restaurantActivityId:
+          (data['restaurantActivityId'] as String? ?? '').trim(),
+      restaurantName: (data['restaurantName'] as String? ?? '').trim(),
       potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
           .map(MealPotluckItem.fromDynamic)
           .where((item) => item.label.isNotEmpty)
@@ -472,7 +469,8 @@ class TripMeal {
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -493,7 +491,8 @@ class TripMeal {
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -515,8 +514,8 @@ class TripMeal {
     DateTime? updatedAt,
     List<MealComponent>? components,
     MealMode? mealMode,
-    String? restaurantUrl,
-    Map<String, dynamic>? restaurantLinkPreview,
+    String? restaurantActivityId,
+    String? restaurantName,
     List<MealPotluckItem>? potluckItems,
     bool? componentsUserOrdered,
   }) {
@@ -535,9 +534,8 @@ class TripMeal {
       updatedAt: updatedAt ?? this.updatedAt,
       components: components ?? this.components,
       mealMode: mealMode ?? this.mealMode,
-      restaurantUrl: restaurantUrl ?? this.restaurantUrl,
-      restaurantLinkPreview:
-          restaurantLinkPreview ?? this.restaurantLinkPreview,
+      restaurantActivityId: restaurantActivityId ?? this.restaurantActivityId,
+      restaurantName: restaurantName ?? this.restaurantName,
       potluckItems: potluckItems ?? this.potluckItems,
       componentsUserOrdered:
           componentsUserOrdered ?? this.componentsUserOrdered,

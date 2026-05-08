@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
@@ -21,6 +22,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
     this.showVoteButton = false,
     this.myUid,
     this.bottomListPadding = 88,
+    this.activityLeadingBuilder,
   });
 
   final TextEditingController searchController;
@@ -35,6 +37,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
   final bool showVoteButton;
   final String? myUid;
   final double bottomListPadding;
+  final Widget? Function(TripActivity)? activityLeadingBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +90,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                         tripMemberIds: tripMemberIds,
                       );
                     }
-                    return TripActivityCard(
+                    final card = TripActivityCard(
                       tripId: tripId,
                       activity: activity,
                       tripMemberPublicLabels: tripMemberPublicLabels,
@@ -96,6 +99,17 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                       showVoteButton: showVoteButton,
                       myUid: myUid,
                     );
+                    final leading = activityLeadingBuilder?.call(activity);
+                    if (leading != null) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          leading,
+                          Expanded(child: card),
+                        ],
+                      );
+                    }
+                    return card;
                   },
                 ),
         ),

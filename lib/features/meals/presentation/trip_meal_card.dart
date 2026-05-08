@@ -179,15 +179,8 @@ String _cookedMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
 }
 
 String _restaurantMealPreviewLabel(TripMeal meal, AppLocalizations l10n) {
-  final previewTitle =
-      (meal.restaurantLinkPreview['title'] as String? ?? '').trim();
-  if (previewTitle.isNotEmpty) {
-    return previewTitle;
-  }
-  final restaurantUrl = meal.restaurantUrl.trim();
-  if (restaurantUrl.isNotEmpty) {
-    return restaurantUrl;
-  }
+  final name = meal.restaurantName.trim();
+  if (name.isNotEmpty) return name;
   return l10n.mealModeRestaurantLabel;
 }
 

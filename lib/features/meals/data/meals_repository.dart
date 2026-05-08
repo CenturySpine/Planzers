@@ -138,7 +138,6 @@ class MealsRepository {
     String? chefParticipantId,
     List<MealComponent> components = const [],
     MealMode mealMode = MealMode.cooked,
-    String restaurantUrl = '',
     List<MealPotluckItem> potluckItems = const [],
     bool componentsUserOrdered = false,
   }) async {
@@ -162,7 +161,8 @@ class MealsRepository {
           : chefParticipantId!.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': '',
+      'restaurantName': '',
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -363,10 +363,11 @@ class MealsRepository {
     });
   }
 
-  Future<void> updateMealRestaurantUrl({
+  Future<void> updateMealRestaurantActivity({
     required String tripId,
     required String mealId,
-    required String restaurantUrl,
+    required String restaurantActivityId,
+    required String restaurantName,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -386,7 +387,8 @@ class MealsRepository {
     }
 
     await docRef.update({
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

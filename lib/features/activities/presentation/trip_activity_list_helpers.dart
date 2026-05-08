@@ -222,21 +222,16 @@ bool tripMealMatchesQuery(TripMeal meal, String rawQuery) {
   final componentTitles = meal.components
       .map((component) => component.title.trim())
       .where((title) => title.isNotEmpty);
-  final previewValues = meal.restaurantLinkPreview.values
-      .whereType<String>()
-      .map((value) => value.trim())
-      .where((value) => value.isNotEmpty);
   final haystack = <String>[
     meal.id,
     meal.mealDateKey,
     meal.mealTimeHHMM,
     meal.mealDayPart.name,
     meal.mealMode.name,
-    meal.restaurantUrl,
+    meal.restaurantName,
     meal.createdBy,
     ...meal.participantIds,
     ...componentTitles,
-    ...previewValues,
   ].join(' ').toLowerCase();
   return haystack.contains(query);
 }

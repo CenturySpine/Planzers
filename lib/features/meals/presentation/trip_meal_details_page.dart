@@ -49,6 +49,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _isSavingParticipants = false;
   bool _isSavingPotluckItems = false;
   bool _isSavingComponents = false;
+  bool _isSavingRestaurantActivity = false;
   bool _isDeleting = false;
   bool _isHydrated = false;
   DateTime _mealDate = DateUtils.dateOnly(DateTime.now());
@@ -1156,6 +1157,30 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
+  Future<void> _saveRestaurantActivity(TripActivity? activity) async {
+    if (widget.isCreate || _isSavingRestaurantActivity) return;
+    setState(() => _isSavingRestaurantActivity = true);
+    try {
+      await ref.read(mealsRepositoryProvider).updateMealRestaurantActivity(
+            tripId: widget.tripId,
+            mealId: widget.mealId!,
+            restaurantActivityId: activity?.id.trim() ?? '',
+            restaurantName: activity?.label.trim() ?? '',
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingRestaurantActivity = false);
+    }
+  }
+
   Future<void> _saveMealMode({
     required _MealDetailsView previousMealView,
   }) async {
@@ -1216,7 +1241,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         chefParticipantId: _chefParticipantId,
         components: _components,
         mealMode: mealMode,
-        restaurantUrl: '',
         potluckItems: potluckItems,
       );
       if (!mounted) return;
@@ -2020,33 +2044,46 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                       ),
                     ] else if (_activeMealView ==
                         _MealDetailsView.restaurant) ...[
-                      Card.outlined(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                          child: Column(
-                            children: [
-                              _buildMealModeSelector(
-                                l10n: l10n,
-                                textTheme: textTheme,
-                                colorScheme: colorScheme,
-                                canEditMealMode: canEditMealCore,
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                height: 400,
-                                child: TripCategorySuggestionsPanel(
-                                  trip: trip,
-                                  categories: const [
-                                    TripActivityCategory.restaurant,
-                                  ],
-                                  emptyMessage:
-                                      l10n.tripOverviewNoRestaurantSuggestions,
+                      Builder(builder: (context) {
+                        final canSelectRestaurant =
+                            canSuggestMealRestaurantForTrip(
+                          trip: trip,
+                          userId: myUid,
+                        );
+                        return Card.outlined(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                            child: Column(
+                              children: [
+                                _buildMealModeSelector(
+                                  l10n: l10n,
+                                  textTheme: textTheme,
+                                  colorScheme: colorScheme,
+                                  canEditMealMode: canEditMealCore,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 400,
+                                  child: TripCategorySuggestionsPanel(
+                                    trip: trip,
+                                    categories: const [
+                                      TripActivityCategory.restaurant,
+                                    ],
+                                    emptyMessage: l10n
+                                        .tripOverviewNoRestaurantSuggestions,
+                                    onActivitySelected: canSelectRestaurant
+                                        ? _saveRestaurantActivity
+                                        : null,
+                                    preSelectedActivityId:
+                                        meal?.restaurantActivityId,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ] else ...[
                       Card.outlined(
                         child: Padding(

@@ -1224,6 +1224,7 @@ class TripsRepository {
       TripMealsPermissionAction.editMeal => 'editMeal',
       TripMealsPermissionAction.addContribution => 'addContribution',
       TripMealsPermissionAction.manageRecipe => 'manageRecipe',
+      TripMealsPermissionAction.suggestRestaurant => 'suggestRestaurant',
     };
 
     await tripRef.update(<String, dynamic>{

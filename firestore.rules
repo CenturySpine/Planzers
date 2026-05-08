@@ -653,7 +653,8 @@ service cloud.firestore {
           canSuggestMealRestaurant(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly([
-              'restaurantUrl',
+              'restaurantActivityId',
+              'restaurantName',
               'updatedAt',
             ])
         ) || (
