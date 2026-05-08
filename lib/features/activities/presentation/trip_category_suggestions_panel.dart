@@ -99,6 +99,10 @@ class _TripCategorySuggestionsPanelState
                 entries: entries,
                 tripId: widget.trip.id,
                 tripMemberPublicLabels: widget.trip.memberPublicLabels,
+                tripMemberIds: widget.trip.memberIds
+                    .map((id) => id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .toSet(),
                 usersDataById: creatorsDataById,
                 currentUserId: myUid,
                 emptyMessage: widget.emptyMessage,

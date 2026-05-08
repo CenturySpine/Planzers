@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 
 /// Search field + scrollable list of [TripActivitiesListEntry] rows (activity cards
@@ -13,6 +14,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
     required this.entries,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.emptyMessage,
@@ -26,6 +28,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
   final List<TripActivitiesListEntry> entries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final String emptyMessage;
@@ -73,7 +76,16 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                     }
                     final activity = entry.activity;
                     if (activity == null) {
-                      return const SizedBox.shrink();
+                      final meal = entry.meal;
+                      if (meal == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return TripMealCard(
+                        tripId: tripId,
+                        meal: meal,
+                        memberPublicLabels: tripMemberPublicLabels,
+                        tripMemberIds: tripMemberIds,
+                      );
                     }
                     return TripActivityCard(
                       tripId: tripId,

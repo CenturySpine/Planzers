@@ -14,6 +14,9 @@ import 'package:planerz/features/activities/presentation/trip_activity_card.dart
 import 'package:planerz/features/activities/presentation/trip_activity_creators_provider.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
+import 'package:planerz/features/meals/data/meals_repository.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -155,12 +158,45 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       trip: trip,
       userId: myUid,
     );
+    final tripMemberIds = trip.memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
+    final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
-    return Scaffold(
-      body: activitiesAsync.when(
-        data: (items) {
+    final activitiesError = activitiesAsync.error;
+    final mealsError = mealsAsync.error;
+    final activities = activitiesAsync.asData?.value;
+    final meals = mealsAsync.asData?.value;
+
+    Widget body;
+    if (activitiesError != null) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.commonErrorWithDetails(activitiesError.toString()),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else if (mealsError != null) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.commonErrorWithDetails(mealsError.toString()),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else if (activities == null || meals == null) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = Builder(builder: (context) {
+          final items = activities;
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
           final creatorIds = items
               .map((activity) => activity.createdBy.trim())
@@ -174,17 +210,29 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               : ref.watch(tripActivityCreatorsDataProvider(creatorIdsKey));
           final creatorsDataById =
               creatorsDataAsync.asData?.value ?? const <String, Map<String, dynamic>>{};
-          final filteredItems = _activeFilters.isEmpty
+          final mealFilterActive = _activeFilters.contains(ActivityFilterGroup.repas);
+          final activeActivityFilters = _activeFilters
+              .where((group) => group != ActivityFilterGroup.repas)
+              .toSet();
+          final hasAnyFilter = _activeFilters.isNotEmpty;
+          final filteredActivities = !hasAnyFilter
               ? items
-              : items
-                  .where((a) =>
-                      _activeFilters.contains(a.category.filterGroup))
-                  .toList();
+              : activeActivityFilters.isEmpty
+                  ? const <TripActivity>[]
+                  : items
+                      .where(
+                        (activity) => activeActivityFilters
+                            .contains(activity.category.filterGroup),
+                      )
+                      .toList(growable: false);
+          final filteredMeals = _activeFilters.isEmpty || mealFilterActive
+              ? meals
+              : const <TripMeal>[];
 
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = buildTripActivitiesSuggestionEntries(
-            filteredItems,
+            filteredActivities,
             query: suggestionsQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,
@@ -194,23 +242,28 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               unknownLabel: l10n.roleParticipant,
             ),
           );
-          final plannedEntries = buildTripActivitiesPlannedEntries(
-            filteredItems,
+          final plannedEntries = buildTripActivitiesPlannedEntriesMixed(
+            activities: filteredActivities,
+            meals: filteredMeals,
             query: plannedQuery,
-            creatorLabelFor: (activity) => creatorLabelForActivity(
-              activity,
-              trip.memberPublicLabels,
-              usersDataById: creatorsDataById,
-              currentUserId: myUid,
-              unknownLabel: l10n.roleParticipant,
-            ),
+            creatorLabelForActivity: (activity) => creatorLabelForActivity(
+                  activity,
+                  trip.memberPublicLabels,
+                  usersDataById: creatorsDataById,
+                  currentUserId: myUid,
+                  unknownLabel: l10n.roleParticipant,
+                ),
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
           );
-          final agendaItems = tripActivitiesAgendaItemsForDay(
-            filteredItems,
+          final agendaEntries = tripActivitiesAgendaEntriesForDayMixed(
+            activities: filteredActivities,
+            meals: filteredMeals,
             selectedDay: _agendaSelectedDay,
           );
-          final plannedDays = tripActivitiesPlannedDaysSet(items);
+          final plannedDays = tripActivitiesPlannedDaysSetMixed(
+            activities: items,
+            meals: meals,
+          );
 
           final filterLabels = {
             ActivityFilterGroup.repas: l10n.activitiesFilterRepas,
@@ -274,6 +327,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: suggestionsEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoSuggestion,
@@ -286,6 +340,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: plannedEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoPlanned,
@@ -294,9 +349,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         centerDay: _agendaCenterDay,
                         selectedDay: _agendaSelectedDay,
                         plannedDays: plannedDays,
-                        agendaItems: agendaItems,
+                        agendaEntries: agendaEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         onMoveBackward: () => setState(
@@ -319,18 +375,11 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               ],
             ),
           );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              l10n.commonErrorWithDetails(e.toString()),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
+      });
+    }
+
+    return Scaffold(
+      body: body,
       floatingActionButton: canSuggestActivity
           ? _ActivitiesExpandableFab(tripId: trip.id)
           : null,
@@ -343,9 +392,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.centerDay,
     required this.selectedDay,
     required this.plannedDays,
-    required this.agendaItems,
+    required this.agendaEntries,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.onMoveBackward,
@@ -356,9 +406,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final DateTime centerDay;
   final DateTime selectedDay;
   final Set<DateTime> plannedDays;
-  final List<TripActivity> agendaItems;
+  final List<TripActivitiesListEntry> agendaEntries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final VoidCallback onMoveBackward;
@@ -392,7 +443,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: agendaItems.isEmpty
+          child: agendaEntries.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -408,15 +459,29 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                  itemCount: agendaItems.length,
+                  itemCount: agendaEntries.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    return TripActivityCard(
+                    final entry = agendaEntries[index];
+                    final activity = entry.activity;
+                    if (activity != null) {
+                      return TripActivityCard(
+                        tripId: tripId,
+                        activity: activity,
+                        tripMemberPublicLabels: tripMemberPublicLabels,
+                        usersDataById: usersDataById,
+                        currentUserId: currentUserId,
+                      );
+                    }
+                    final meal = entry.meal;
+                    if (meal == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return TripMealCard(
                       tripId: tripId,
-                      activity: agendaItems[index],
-                      tripMemberPublicLabels: tripMemberPublicLabels,
-                      usersDataById: usersDataById,
-                      currentUserId: currentUserId,
+                      meal: meal,
+                      memberPublicLabels: tripMemberPublicLabels,
+                      tripMemberIds: tripMemberIds,
                     );
                   },
                 ),
