@@ -373,7 +373,7 @@
   "@mealRecipeAiWillReplaceIngredients": {
     "placeholders": {"count": {}}
   },
-  "mealRecipeAiBilledWarning": "Each AI call is billed.",
+  "mealRecipeAiBilledWarning": "Each AI call is billed personally to the app creator and is limited per user and per trip. Use these features sparingly. If you enjoy this app, support its creator.",
   "mealRecipeAiGenerateAction": "Generate",
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "No participants.",

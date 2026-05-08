@@ -1843,7 +1843,7 @@ abstract class AppLocalizations {
   /// No description provided for @mealRecipeAiBilledWarning.
   ///
   /// In fr, this message translates to:
-  /// **'Chaque appel à l\'IA est facturé.'**
+  /// **'Chaque appel à l\'IA est facturé personnellement au créateur de l\'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.'**
   String get mealRecipeAiBilledWarning;
 
   /// No description provided for @mealRecipeAiGenerateAction.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/intl/app_language.dart';
+import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -599,12 +600,7 @@ class _GenerateRecipeDialogState extends State<_GenerateRecipeDialog> {
               ),
             ],
             const SizedBox(height: 12),
-            Text(
-              l10n.mealRecipeAiBilledWarning,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            const AiBilledSupportBanner(),
           ],
         ),
       ),

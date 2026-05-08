@@ -373,7 +373,7 @@
   "@mealRecipeAiWillReplaceIngredients": {
     "placeholders": {"count": {}}
   },
-  "mealRecipeAiBilledWarning": "Chaque appel à l'IA est facturé.",
+  "mealRecipeAiBilledWarning": "Chaque appel à l'IA est facturé personnellement au créateur de l'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.",
   "mealRecipeAiGenerateAction": "Générer",
   "tripParticipantsTitle": "Participants",
   "tripParticipantsEmpty": "Aucun participant.",

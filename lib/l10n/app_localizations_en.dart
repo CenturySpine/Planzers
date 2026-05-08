@@ -972,7 +972,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mealRecipeAiBilledWarning => 'Each AI call is billed.';
+  String get mealRecipeAiBilledWarning =>
+      'Each AI call is billed personally to the app creator and is limited per user and per trip. Use these features sparingly. If you enjoy this app, support its creator.';
 
   @override
   String get mealRecipeAiGenerateAction => 'Generate';

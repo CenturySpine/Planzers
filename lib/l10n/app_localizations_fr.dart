@@ -985,7 +985,8 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get mealRecipeAiBilledWarning => 'Chaque appel à l\'IA est facturé.';
+  String get mealRecipeAiBilledWarning =>
+      'Chaque appel à l\'IA est facturé personnellement au créateur de l\'application et est limité par utilisateur et par voyage. Utilisez ces fonctions avec parcimonie. Si vous aimez cette application, soutenez son créateur.';
 
   @override
   String get mealRecipeAiGenerateAction => 'Générer';
