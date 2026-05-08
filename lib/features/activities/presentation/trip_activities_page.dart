@@ -33,7 +33,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     if (day == today) return l10n.commonToday;
     if (day == yesterday) return l10n.commonYesterday;
     final localeTag = Localizations.localeOf(context).toString();
-    return DateFormat('d MMM yyyy', localeTag).format(day);
+    return DateFormat('EEEE d MMM yyyy', localeTag).format(day);
   }
 
   late final NotificationCenterRepository _notificationCenter;
