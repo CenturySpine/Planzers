@@ -348,8 +348,8 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
 
   static const double _barHeight = 62;
   static const double _planningButtonSize = 56;
-  // How many pixels the Planning button floats above the bar's top edge.
-  static const double _planningOverflow = 32;
+  // Target visual pixels the Planning button floats above the bar's visible top edge.
+  static const double _planningFloat = 8;
   // Index of the Planning tab inside [destinations].
   static const int _planningIdx = 2;
 
@@ -361,9 +361,14 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
     final planningSelected = selectedIndex == _planningIdx;
     final planningDest = destinations[_planningIdx];
     final planningUnread = unreadByTabLabel['Planning'] ?? 0;
+    // Flutter web does not relay OS window insets to MediaQuery.padding, so
+    // padding.bottom is 0 on all web variants. Computing the overflow from the
+    // inset keeps the visual float consistent across native and web.
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final planningOverflow = _planningFloat + bottomInset;
 
     return SizedBox(
-      height: _barHeight + _planningOverflow,
+      height: _barHeight + planningOverflow,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
