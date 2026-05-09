@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
+import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -906,7 +907,7 @@ class _ActivityFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? color : Colors.transparent;
+    final bg = selected ? color : StaticColors.cardBackground;
     final iconColor = selected ? Colors.white : color;
     final labelColor = selected
         ? Colors.white
@@ -921,10 +922,17 @@ class _ActivityFilterChip extends StatelessWidget {
           color: bg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected
-                ? color
-                : Theme.of(context).colorScheme.outlineVariant,
+            color: selected ? color : StaticColors.cardBorder,
           ),
+          boxShadow: selected
+              ? null
+              : [
+                  BoxShadow(
+                    color: StaticColors.cardShadowColor,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
