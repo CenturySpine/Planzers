@@ -117,7 +117,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
+                    color: StaticColors.lightBackground,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Padding(
