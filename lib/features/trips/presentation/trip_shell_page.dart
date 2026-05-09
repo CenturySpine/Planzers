@@ -398,7 +398,26 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                               ? GestureDetector(
                                   onTap: () => onDestinationSelected(index),
                                   behavior: HitTestBehavior.opaque,
-                                  child: const SizedBox.expand(),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      AnimatedContainer(
+                                        duration: const Duration(
+                                            milliseconds: 200),
+                                        curve: Curves.easeOutCubic,
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(
+                                            bottom: 4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: planningSelected
+                                              ? colorScheme.primary
+                                              : Colors.transparent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 )
                               : Builder(
                                   builder: (context) {
@@ -449,6 +468,21 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                                                           .onSurfaceVariant,
                                                 ),
                                               ],
+                                            ),
+                                          ),
+                                          AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            curve: Curves.easeOutCubic,
+                                            width: 6,
+                                            height: 6,
+                                            margin: const EdgeInsets.only(
+                                                bottom: 4),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: selected
+                                                  ? colorScheme.primary
+                                                  : Colors.transparent,
                                             ),
                                           ),
                                         ],
