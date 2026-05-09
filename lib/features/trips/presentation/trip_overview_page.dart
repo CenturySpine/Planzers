@@ -1311,11 +1311,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           viewLabel:
                                               l10n.tripOverviewViewActivities,
                                           primaryColor: ActivityFilterGroup
-                                              .loisirs.filterColor,
+                                              .repas.filterColor,
                                           lightBgColor: ActivityFilterGroup
-                                              .loisirs.filterLightBgColor,
+                                              .repas.filterLightBgColor,
                                           borderColor: ActivityFilterGroup
-                                              .loisirs.filterBorderColor,
+                                              .repas.filterBorderColor,
                                           alertCount: unreadActivities,
                                           detailLines: activitiesTodayLabels,
                                           wrapDetailLines: true,
