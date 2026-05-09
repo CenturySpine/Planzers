@@ -32,7 +32,7 @@ extension ActivityFilterGroupColors on ActivityFilterGroup {
   Color get filterBorderColor => switch (this) {
         ActivityFilterGroup.repas => const Color(0xFFF8D9A0),
         ActivityFilterGroup.nuits => const Color(0xFFDCCEFF),
-        ActivityFilterGroup.loisirs => const Color(0xFFBCEDB8),
+        ActivityFilterGroup.loisirs => const Color(0xFFBCE8D8),
         ActivityFilterGroup.trajets => const Color(0xFFC9DEFF),
       };
 
