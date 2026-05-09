@@ -263,6 +263,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       body: Stack(
         children: [
           Positioned.fill(
+            child: Image.asset(
+              'assets/images/app_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(

@@ -49,6 +49,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const _TripsAppBranding(),
         actions: const [
@@ -101,7 +102,15 @@ class _TripsPageState extends ConsumerState<TripsPage>
       ),
       body: Stack(
         children: [
-          Column(
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/app_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
@@ -247,6 +256,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 ),
               ),
             ],
+          ),
           ),
           SafeArea(
             top: false,
