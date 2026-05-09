@@ -1532,7 +1532,7 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               label: leftLabel,
               icon: Icons.campaign_outlined,
               alertCount: leftAlertCount,
-              color: cs.primaryContainer,
+              color: StaticColors.lightBackground,
               foregroundColor: cs.onPrimaryContainer,
               borderColor: cs.outlineVariant,
               textStyle: labelStyle,
@@ -1545,7 +1545,7 @@ class _TripOverviewTopSwitch extends StatelessWidget {
               child: _TripOverviewTopSwitchItem(
                 label: thirdLabel!,
                 icon: Icons.photo_library_outlined,
-                color: cs.tertiaryContainer,
+                color: StaticColors.lightBackground,
                 foregroundColor: cs.onTertiaryContainer,
                 borderColor: cs.outlineVariant,
                 textStyle: labelStyle,
@@ -1659,7 +1659,7 @@ class _TripAccessTile extends StatelessWidget {
                     countLabel,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w400,
                         ),
                   ),
                   Expanded(
@@ -1745,7 +1745,7 @@ class _CategoryAccessTile extends StatelessWidget {
                 children: [
                   Text(
                     countLabel,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: primaryColor,
                           fontWeight: FontWeight.w700,
                           height: 1.0,
@@ -1868,7 +1868,7 @@ class _ParticipantBadgesPreview extends StatelessWidget {
   static const double _diameter = _radius * 2;
   static const double _minStep = 18;
   static const double _maxStep = _diameter + 6;
-  static const int _maxVisible = 14;
+  static const int _maxVisible = 12;
 
   @override
   Widget build(BuildContext context) {

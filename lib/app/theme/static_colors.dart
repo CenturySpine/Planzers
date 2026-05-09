@@ -8,4 +8,6 @@ abstract final class StaticColors {
   static const Color cardBorder = Color(0xFFECEBFA);
   // rgba(63, 70, 247, 0.08)
   static const Color cardShadowColor = Color(0x143F46F7);
+
+  static const Color lightBackground = Color(0xFFEEF0FF);
 }
