@@ -22,6 +22,7 @@ import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -1262,7 +1263,22 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           final cs = Theme.of(context).colorScheme;
                           final pz = context.planerzColors;
                           const tileSpacing = 10.0;
-                          return LayoutBuilder(
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              cardTheme: CardThemeData(
+                                color: StaticColors.cardBackground,
+                                elevation: 4,
+                                shadowColor: StaticColors.cardShadowColor,
+                                surfaceTintColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: const BorderSide(
+                                    color: StaticColors.cardBorder,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: LayoutBuilder(
                             builder: (context, constraints) {
                               final halfTileWidth =
                                   (constraints.maxWidth - tileSpacing) / 2;
@@ -1276,7 +1292,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       label: l10n.tripOverviewTileParticipants,
                                       icon: Icons.assignment_ind_outlined,
                                       countLabel: '$participantsCount',
-                                      backgroundColor: cs.tertiaryContainer,
                                       iconColor: cs.primary,
                                       previewParticipants: participantsPreview,
                                       onTap: _openParticipantsPage,
@@ -1289,7 +1304,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       icon: Icons.event_note_outlined,
                                       countLabel: '$plannedActivitiesCount',
                                       alertCount: unreadActivities,
-                                      backgroundColor: pz.warningContainer,
                                       iconColor: cs.tertiary,
                                       detailLines: activitiesTodayLabels,
                                       showDetailBullets: false,
@@ -1307,7 +1321,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       label: l10n.tripOverviewTileRooms,
                                       icon: Icons.bed_outlined,
                                       countLabel: '$roomsCount',
-                                      backgroundColor: pz.successContainer,
                                       iconColor: pz.success,
                                       detailLines: roomsDetailLines,
                                       showDetailBullets: false,
@@ -1325,7 +1338,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       label: l10n.tripOverviewTileCarpool,
                                       icon: Icons.directions_car_outlined,
                                       countLabel: '${carpools.length}',
-                                      backgroundColor: cs.secondaryContainer,
                                       iconColor: cs.secondary,
                                       showDetailBullets: false,
                                       wrapDetailLines: true,
@@ -1342,7 +1354,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       label: l10n.tripOverviewTileGames,
                                       icon: Icons.sports_esports_outlined,
                                       countLabel: '$boardGamesCount',
-                                      backgroundColor: cs.primaryContainer,
                                       iconColor: cs.primary,
                                       showDetailBullets: false,
                                       wrapDetailLines: true,
@@ -1359,6 +1370,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                 ],
                               );
                             },
+                          ),
                           );
                         }),
                       ],
@@ -1581,7 +1593,6 @@ class _TripAccessTile extends StatelessWidget {
     required this.countLabel,
     required this.onTap,
     this.alertCount = 0,
-    this.backgroundColor,
     this.iconColor,
     this.previewParticipants = const [],
     this.detailLines = const [],
@@ -1597,7 +1608,6 @@ class _TripAccessTile extends StatelessWidget {
   final String countLabel;
   final int alertCount;
   final VoidCallback onTap;
-  final Color? backgroundColor;
   final Color? iconColor;
   final List<_ParticipantBadgePreviewEntry> previewParticipants;
   final List<String> detailLines;
@@ -1614,7 +1624,6 @@ class _TripAccessTile extends StatelessWidget {
     final visibleDetails = detailLines.take(3).toList();
     final moreDetailsCount = detailLines.length - visibleDetails.length;
     return Card(
-      color: backgroundColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
