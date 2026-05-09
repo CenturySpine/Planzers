@@ -1606,8 +1606,6 @@ class _TripAccessTile extends StatelessWidget {
   final int? emphasizedDetailLineIndex;
   final String? emptyStateMessage;
   final String Function(int count)? moreDetailsLabelBuilder;
-  static const double _kTileHeight = 148;
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1622,11 +1620,10 @@ class _TripAccessTile extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(14),
-          child: SizedBox(
-            height: _kTileHeight,
-            child: Column(
-              children: [
-                Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
@@ -1655,91 +1652,84 @@ class _TripAccessTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: Center(
-                    child: hasPreview
-                        ? _ParticipantBadgesPreview(
-                            participants: previewParticipants,
-                          )
-                        : hasDetails
-                            ? Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (var i = 0;
-                                      i < visibleDetails.length;
-                                      i++)
-                                    Text(
-                                      showDetailBullets
-                                          ? '- ${visibleDetails[i]}'
-                                          : visibleDetails[i],
-                                      maxLines: wrapDetailLines ? null : 1,
-                                      overflow: wrapDetailLines
-                                          ? TextOverflow.visible
-                                          : TextOverflow.ellipsis,
-                                      softWrap: true,
-                                      textAlign: TextAlign.center,
-                                      style:
-                                          ((emphasizedDetailLineIndex != null &&
-                                                      i == 0)
-                                                  ? Theme.of(context)
-                                                      .textTheme
-                                                      .titleMedium
-                                                  : emphasizedDetailLineIndex !=
-                                                          null
-                                                      ? Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                      : Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall)
-                                              ?.copyWith(
-                                        color: emphasizedDetailLineIndex == i
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant,
-                                        fontWeight:
-                                            emphasizedDetailLineIndex == i
-                                                ? FontWeight.w700
-                                                : null,
+              const SizedBox(height: 10),
+              if (hasPreview)
+                _ParticipantBadgesPreview(
+                  participants: previewParticipants,
+                )
+              else
+                Center(
+                  child: hasDetails
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (var i = 0; i < visibleDetails.length; i++)
+                                Text(
+                                  showDetailBullets
+                                      ? '- ${visibleDetails[i]}'
+                                      : visibleDetails[i],
+                                  maxLines: wrapDetailLines ? null : 1,
+                                  overflow: wrapDetailLines
+                                      ? TextOverflow.visible
+                                      : TextOverflow.ellipsis,
+                                  softWrap: true,
+                                  textAlign: TextAlign.center,
+                                  style: ((emphasizedDetailLineIndex != null &&
+                                              i == 0)
+                                          ? Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                          : emphasizedDetailLineIndex != null
+                                              ? Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                              : Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall)
+                                      ?.copyWith(
+                                    color: emphasizedDetailLineIndex == i
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurfaceVariant,
+                                    fontWeight: emphasizedDetailLineIndex == i
+                                        ? FontWeight.w700
+                                        : null,
+                                  ),
+                                ),
+                              if (moreDetailsCount > 0)
+                                Text(
+                                  moreDetailsLabelBuilder
+                                          ?.call(moreDetailsCount) ??
+                                      '+$moreDetailsCount',
+                                  maxLines: wrapDetailLines ? null : 1,
+                                  overflow: wrapDetailLines
+                                      ? TextOverflow.visible
+                                      : TextOverflow.ellipsis,
+                                  softWrap: true,
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
+                                ),
+                            ],
+                          )
+                        : emptyStateMessage != null
+                            ? Text(
+                                emptyStateMessage!,
+                                textAlign: TextAlign.center,
+                                softWrap: true,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
-                                  if (moreDetailsCount > 0)
-                                    Text(
-                                      moreDetailsLabelBuilder
-                                              ?.call(moreDetailsCount) ??
-                                          '+$moreDetailsCount',
-                                      maxLines: wrapDetailLines ? null : 1,
-                                      overflow: wrapDetailLines
-                                          ? TextOverflow.visible
-                                          : TextOverflow.ellipsis,
-                                      softWrap: true,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall
-                                          ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                    ),
-                                ],
                               )
-                            : emptyStateMessage != null
-                                ? Text(
-                                    emptyStateMessage!,
-                                    textAlign: TextAlign.center,
-                                    softWrap: true,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                        ),
-                                  )
-                                : const SizedBox.shrink(),
-                  ),
-                ),
-              ],
-            ),
+                            : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ),
       ),
@@ -1752,42 +1742,80 @@ class _ParticipantBadgesPreview extends StatelessWidget {
 
   final List<_ParticipantBadgePreviewEntry> participants;
 
-  static const int _maxVisible = 10;
+  static const double _radius = 13;
+  static const double _diameter = _radius * 2;
+  static const double _minStep = 18;
+  static const double _maxStep = _diameter + 6;
+  static const int _maxVisible = 14;
 
   @override
   Widget build(BuildContext context) {
-    final visible = participants.take(_maxVisible).toList();
-    final remaining = participants.length - visible.length;
     final colorScheme = Theme.of(context).colorScheme;
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 6,
-      runSpacing: 4,
-      children: [
-        for (final participant in visible)
-          CircleAvatar(
-            radius: 13,
-            backgroundColor: colorScheme.secondaryContainer,
-            foregroundColor: colorScheme.onSecondaryContainer,
-            foregroundImage: participant.photoUrl.isEmpty
-                ? null
-                : NetworkImage(participant.photoUrl),
-            child: Text(
-              participant.initial,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth;
+        final total = participants.length;
+        if (total == 0) return const SizedBox.shrink();
+
+        // Max badges that can fit without going below minStep, capped at _maxVisible
+        final maxFit = total == 1
+            ? 1
+            : (((available - _diameter) / _minStep).floor() + 1)
+                .clamp(1, _maxVisible);
+
+        final int visibleCount;
+        final int remaining;
+        if (total <= maxFit) {
+          visibleCount = total;
+          remaining = 0;
+        } else {
+          visibleCount = maxFit - 1; // reserve last slot for +X
+          remaining = total - visibleCount;
+        }
+
+        final n = visibleCount + (remaining > 0 ? 1 : 0);
+        final double step = n <= 1
+            ? 0
+            : ((available - _diameter) / (n - 1)).clamp(_minStep, _maxStep);
+        final double rowWidth = n <= 1 ? _diameter : (n - 1) * step + _diameter;
+        final bool centered = remaining == 0 && rowWidth < available;
+
+        return Align(
+          alignment: centered ? Alignment.center : Alignment.centerLeft,
+          child: SizedBox(
+            width: rowWidth,
+            height: _diameter,
+            child: Stack(
+              children: [
+              for (int i = 0; i < visibleCount; i++)
+                Positioned(
+                  left: i * step,
+                  child: CircleAvatar(
+                    radius: _radius,
+                    backgroundColor: colorScheme.secondaryContainer,
+                    foregroundColor: colorScheme.onSecondaryContainer,
+                    foregroundImage: participants[i].photoUrl.isEmpty
+                        ? null
+                        : NetworkImage(participants[i].photoUrl),
+                    child: Text(participants[i].initial, style: labelStyle),
+                  ),
+                ),
+              if (remaining > 0)
+                Positioned(
+                  left: visibleCount * step,
+                  child: CircleAvatar(
+                    radius: _radius,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    foregroundColor: colorScheme.onSurfaceVariant,
+                    child: Text('+$remaining', style: labelStyle),
+                  ),
+                ),
+            ],
           ),
-        if (remaining > 0)
-          CircleAvatar(
-            radius: 13,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            foregroundColor: colorScheme.onSurfaceVariant,
-            child: Text(
-              '+$remaining',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
           ),
-      ],
+        );
+      },
     );
   }
 }
