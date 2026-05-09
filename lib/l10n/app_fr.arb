@@ -930,6 +930,10 @@
       }
     }
   },
+  "tripOverviewViewActivities": "Voir le planning",
+  "tripOverviewViewRooms": "Voir les chambres",
+  "tripOverviewViewCarpool": "Voir le covoiturage",
+  "tripOverviewViewGames": "Voir les jeux",
   "tripOverviewTileComingSoon": "[À venir]",
   "tripCarpoolDriverLabel": "Conducteur",
   "tripCarpoolShoppingFlag": "Courses",

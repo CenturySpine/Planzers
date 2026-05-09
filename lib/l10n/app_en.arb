@@ -930,6 +930,10 @@
       }
     }
   },
+  "tripOverviewViewActivities": "View schedule",
+  "tripOverviewViewRooms": "View rooms",
+  "tripOverviewViewCarpool": "View carpool",
+  "tripOverviewViewGames": "View games",
   "tripOverviewTileComingSoon": "[Coming soon]",
   "tripCarpoolDriverLabel": "Driver",
   "tripCarpoolShoppingFlag": "Shopping",

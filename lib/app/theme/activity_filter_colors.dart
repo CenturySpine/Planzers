@@ -22,6 +22,20 @@ extension ActivityFilterGroupColors on ActivityFilterGroup {
         ActivityFilterGroup.trajets => const Color(0xFF3B82F6),
       };
 
+  Color get filterLightBgColor => switch (this) {
+        ActivityFilterGroup.repas => const Color(0xFFFFF6E7),
+        ActivityFilterGroup.nuits => const Color(0xFFF4EEFF),
+        ActivityFilterGroup.loisirs => const Color(0xFFEAFBF4),
+        ActivityFilterGroup.trajets => const Color(0xFFEEF5FF),
+      };
+
+  Color get filterBorderColor => switch (this) {
+        ActivityFilterGroup.repas => const Color(0xFFF8D9A0),
+        ActivityFilterGroup.nuits => const Color(0xFFDCCEFF),
+        ActivityFilterGroup.loisirs => const Color(0xFFBCEDB8),
+        ActivityFilterGroup.trajets => const Color(0xFFC9DEFF),
+      };
+
   IconData get filterIcon => switch (this) {
         ActivityFilterGroup.repas => Icons.restaurant_outlined,
         ActivityFilterGroup.nuits => Icons.hotel_outlined,

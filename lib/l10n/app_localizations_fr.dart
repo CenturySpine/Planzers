@@ -2399,6 +2399,18 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripOverviewViewActivities => 'Voir le planning';
+
+  @override
+  String get tripOverviewViewRooms => 'Voir les chambres';
+
+  @override
+  String get tripOverviewViewCarpool => 'Voir le covoiturage';
+
+  @override
+  String get tripOverviewViewGames => 'Voir les jeux';
+
+  @override
   String get tripOverviewTileComingSoon => '[À venir]';
 
   @override
@@ -5012,6 +5024,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count de plus)';
   }
+
+  @override
+  String get tripOverviewViewActivities => 'Voir le planning';
+
+  @override
+  String get tripOverviewViewRooms => 'Voir les chambres';
+
+  @override
+  String get tripOverviewViewCarpool => 'Voir le covoiturage';
+
+  @override
+  String get tripOverviewViewGames => 'Voir les jeux';
 
   @override
   String get tripOverviewTileComingSoon => '[À venir]';
