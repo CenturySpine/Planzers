@@ -62,7 +62,17 @@ class _PlanerzThemedApp extends ConsumerWidget {
             // the two queues never interfere.
             child: ScaffoldMessenger(
               child: UpdateGate(
-                child: child ?? const SizedBox.shrink(),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.asset(
+                        'assets/images/app_background.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child ?? const SizedBox.shrink(),
+                  ],
+                ),
               ),
             ),
           ),

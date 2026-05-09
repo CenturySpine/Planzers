@@ -440,6 +440,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     return '${local.year}-$month-$dayStr';
   }
 
+  DateTime _resolvedAgendaDay(DateTime today) {
+    final start = _trip.startDate != null ? _dateOnly(_trip.startDate!) : null;
+    final end = _trip.endDate != null ? _dateOnly(_trip.endDate!) : null;
+    if (start == null && end == null) return today;
+    if (end != null && today.isAfter(end)) return end;
+    if (start != null && today.isBefore(start)) return start;
+    return today;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1313,7 +1322,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           emptyStateMessage: l10n
                                               .tripOverviewTileNoActivitiesToday,
                                           onTap: () => context.go(
-                                            '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(today)}',
+                                            '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(_resolvedAgendaDay(today))}',
                                           ),
                                         ),
                                       ),
