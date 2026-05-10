@@ -2012,15 +2012,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesAddExpenseTooltip => 'Add expense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Create an expense section first (folder icon in the header).';
+  String get expensesFabTooltip => 'Expense actions';
 
   @override
-  String get expensesPostsTitle => 'Expense sections';
+  String get expensesFabAddExpensePost => 'Add expense section';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Create an expense section first using the + button.';
 
   @override
   String get expensesNoPostYet =>
-      'No expense sections yet. Use the folder icon at the top to create one.';
+      'No expense sections yet. Use the + button to create one.';
 
   @override
   String get expensesBalancesTab => 'Balances';
@@ -4627,15 +4630,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesAddExpenseTooltip => 'Add expense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Create an expense section first (folder icon in the header).';
+  String get expensesFabTooltip => 'Expense actions';
 
   @override
-  String get expensesPostsTitle => 'Expense sections';
+  String get expensesFabAddExpensePost => 'Add expense section';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Create an expense section first using the + button.';
 
   @override
   String get expensesNoPostYet =>
-      'No expense sections yet. Use the folder icon at the top to create one.';
+      'No expense sections yet. Use the + button to create one.';
 
   @override
   String get expensesBalancesTab => 'Balances';

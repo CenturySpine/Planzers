@@ -3696,22 +3696,28 @@ abstract class AppLocalizations {
   /// **'Ajouter une dépense'**
   String get expensesAddExpenseTooltip;
 
+  /// No description provided for @expensesFabTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Actions sur les dépenses'**
+  String get expensesFabTooltip;
+
+  /// No description provided for @expensesFabAddExpensePost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un poste de dépense'**
+  String get expensesFabAddExpensePost;
+
   /// No description provided for @expensesCreatePostFirst.
   ///
   /// In fr, this message translates to:
-  /// **'Crée d\'abord un poste de dépenses (icône dossier dans l\'en-tête).'**
+  /// **'Crée d\'abord un poste de dépenses via le bouton +.'**
   String get expensesCreatePostFirst;
-
-  /// No description provided for @expensesPostsTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Postes de dépenses'**
-  String get expensesPostsTitle;
 
   /// No description provided for @expensesNoPostYet.
   ///
   /// In fr, this message translates to:
-  /// **'Aucun poste de dépenses pour l\'instant. Utilise l\'icône dossier en haut pour en créer un.'**
+  /// **'Aucun poste de dépenses pour l\'instant. Utilise le bouton + pour en créer un.'**
   String get expensesNoPostYet;
 
   /// No description provided for @expensesBalancesTab.

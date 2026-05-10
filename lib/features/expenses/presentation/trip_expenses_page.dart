@@ -63,16 +63,24 @@ class TripExpensesPage extends ConsumerStatefulWidget {
 }
 
 class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
+  static const double _floatingActionButtonsBottomOffset = 34;
+
   String? _activeGroupId;
+  bool _isFabMenuOpen = false;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final settledTransfersAsync =
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final canCreateExpensePost = canCreateExpensePostForTrip(
+      trip: trip,
+      userId: viewerId,
+    );
     final canCreateExpense = groupsAsync.maybeWhen(
       data: (groups) {
         final visibleGroups = groups
@@ -88,6 +96,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
+    final showExpensesFab = canCreateExpense || canCreateExpensePost;
 
     return Scaffold(
       body: groupsAsync.when(
@@ -106,19 +115,6 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                   if (_activeGroupId == groupId) return;
                   setState(() => _activeGroupId = groupId);
                 },
-                onCreateExpensePost: canCreateExpensePostForTrip(
-                  trip: trip,
-                  userId: viewerId,
-                )
-                    ? () => _openExpenseGroupEditor(
-                          context,
-                          ref,
-                          trip.id,
-                          trip.memberIds,
-                          trip.memberPublicLabels,
-                          existing: null,
-                        )
-                    : null,
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -154,19 +150,67 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           ),
         ),
       ),
-      floatingActionButton: canCreateExpense
-          ? FloatingActionButton(
-              heroTag: 'trip_expenses_add',
-              tooltip: AppLocalizations.of(context)!.expensesAddExpenseTooltip,
-              onPressed: () => _openAddExpenseSheetFromFab(
-                context,
-                ref,
-                trip.id,
-                trip.memberIds,
-                trip.memberPublicLabels,
-                _activeGroupId,
+      floatingActionButton: showExpensesFab
+          ? Padding(
+              padding: const EdgeInsets.only(
+                bottom: _floatingActionButtonsBottomOffset,
               ),
-              child: const Icon(Icons.add),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (_isFabMenuOpen) ...[
+                    if (canCreateExpensePost) ...[
+                      FloatingActionButton.extended(
+                        heroTag: 'trip_expenses_add_post',
+                        tooltip: l10n.expensesFabAddExpensePost,
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                        label: Text(l10n.expensesFabAddExpensePost),
+                        onPressed: () {
+                          setState(() => _isFabMenuOpen = false);
+                          _openExpenseGroupEditor(
+                            context,
+                            ref,
+                            trip.id,
+                            trip.memberIds,
+                            trip.memberPublicLabels,
+                            existing: null,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (canCreateExpense) ...[
+                      FloatingActionButton.extended(
+                        heroTag: 'trip_expenses_add_expense',
+                        tooltip: l10n.expensesAddExpenseTooltip,
+                        icon: const Icon(Icons.add_card_outlined),
+                        label: Text(l10n.expensesAddExpenseTooltip),
+                        onPressed: () {
+                          setState(() => _isFabMenuOpen = false);
+                          _openAddExpenseSheetFromFab(
+                            context,
+                            ref,
+                            trip.id,
+                            trip.memberIds,
+                            trip.memberPublicLabels,
+                            _activeGroupId,
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                  FloatingActionButton(
+                    heroTag: 'trip_expenses_main_fab',
+                    tooltip: l10n.expensesFabTooltip,
+                    onPressed: () {
+                      setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+                    },
+                    child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
+                  ),
+                ],
+              ),
             )
           : null,
     );
@@ -277,7 +321,6 @@ class _TripExpensesBody extends StatelessWidget {
     required this.settledTransfers,
     required this.activeGroupId,
     required this.onActiveGroupChanged,
-    required this.onCreateExpensePost,
   });
 
   final Trip trip;
@@ -288,7 +331,6 @@ class _TripExpensesBody extends StatelessWidget {
   final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
-  final VoidCallback? onCreateExpensePost;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +357,6 @@ class _TripExpensesBody extends StatelessWidget {
         viewerId,
         memberPublicLabels,
         trip,
-        onCreateExpensePost,
       );
     }
 
@@ -340,7 +381,6 @@ class _TripExpensesBody extends StatelessWidget {
           viewerId,
           memberPublicLabels,
           trip,
-          onCreateExpensePost,
         );
       },
     );
@@ -353,51 +393,11 @@ class _TripExpensesBody extends StatelessWidget {
     String? viewerId,
     Map<String, String> memberPublicLabels,
     Trip trip,
-    VoidCallback? onCreateExpensePost,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [cs.primary, cs.inverseSurface],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  l10n.expensesPostsTitle,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: cs.onInverseSurface,
-                      ),
-                ),
-              ),
-              if (onCreateExpensePost != null)
-                IconButton(
-                  tooltip: l10n.expenseGroupNewTitle,
-                  icon: Icon(
-                    Icons.create_new_folder_outlined,
-                    color: cs.onInverseSurface,
-                  ),
-                  onPressed: onCreateExpensePost,
-                )
-              else
-                // Même emprise qu’un IconButton (hauteur du cartouche inchangée).
-                const SizedBox(
-                  width: kMinInteractiveDimension,
-                  height: kMinInteractiveDimension,
-                ),
-            ],
-          ),
-        ),
         if (visibleGroups.isEmpty)
           Expanded(
             child: SingleChildScrollView(

@@ -2029,15 +2029,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesAddExpenseTooltip => 'Ajouter une dépense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Crée d\'abord un poste de dépenses (icône dossier dans l\'en-tête).';
+  String get expensesFabTooltip => 'Actions sur les dépenses';
 
   @override
-  String get expensesPostsTitle => 'Postes de dépenses';
+  String get expensesFabAddExpensePost => 'Ajouter un poste de dépense';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Crée d\'abord un poste de dépenses via le bouton +.';
 
   @override
   String get expensesNoPostYet =>
-      'Aucun poste de dépenses pour l\'instant. Utilise l\'icône dossier en haut pour en créer un.';
+      'Aucun poste de dépenses pour l\'instant. Utilise le bouton + pour en créer un.';
 
   @override
   String get expensesBalancesTab => 'Équilibres';
@@ -4669,15 +4672,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get expensesAddExpenseTooltip => 'Ajouter une dépense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Crée d\'abord un poste de dépenses (icône dossier dans l\'en-tête).';
+  String get expensesFabTooltip => 'Actions sur les dépenses';
 
   @override
-  String get expensesPostsTitle => 'Postes de dépenses';
+  String get expensesFabAddExpensePost => 'Ajouter un poste de dépense';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Crée d\'abord un poste de dépenses via le bouton +.';
 
   @override
   String get expensesNoPostYet =>
-      'Aucun poste de dépenses pour l\'instant. Utilise l\'icône dossier en haut pour en créer un.';
+      'Aucun poste de dépenses pour l\'instant. Utilise le bouton + pour en créer un.';
 
   @override
   String get expensesBalancesTab => 'Équilibres';
