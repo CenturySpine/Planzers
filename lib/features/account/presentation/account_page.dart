@@ -12,7 +12,6 @@ import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
-import 'package:planerz/features/account/presentation/palette_picker_button.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -844,11 +843,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.accountColorPalette),
-                trailing: const PalettePickerButton(),
-              ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(l10n.accountLanguageTitle),
