@@ -173,7 +173,8 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
                     avatar: Icon(category.categoryIcon, size: 18),
                     label: Text(category.label(l10n)),
                     selected: _category == category,
-                    onSelected: _saving
+                    onSelected: _saving ||
+                            (widget.allowedCategories?.length == 1)
                         ? null
                         : (_) => setState(() => _category = category),
                   ),

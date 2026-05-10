@@ -1459,6 +1459,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesTabAgenda => 'Agenda';
 
   @override
+  String get activitiesFilterRepas => 'Meals';
+
+  @override
+  String get activitiesFilterNuits => 'Nights';
+
+  @override
+  String get activitiesFilterLoisirs => 'Activities';
+
+  @override
+  String get activitiesFilterTrajets => 'Transport';
+
+  @override
   String get activitiesVote => 'Vote';
 
   @override
@@ -1544,7 +1556,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingEmptyTitle => 'Shopping list is empty';
 
   @override
-  String get shoppingEmptySubtitle => 'Press + to add an item.';
+  String get shoppingEmptySubtitle => 'Use the cart button to add an item.';
+
+  @override
+  String get shoppingFabTooltip => 'Shopping list actions';
+
+  @override
+  String get shoppingActionAddItem => 'Add item';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolidate with AI';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Delete checked items';
 
   @override
   String get shoppingFiltersTitle => 'List filters';
@@ -1778,6 +1802,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealDateHelp => 'Meal date';
 
   @override
+  String get mealTimeHelp => 'Meal time';
+
+  @override
   String get mealCreated => 'Meal created';
 
   @override
@@ -1985,15 +2012,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesAddExpenseTooltip => 'Add expense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Create an expense section first (folder icon in the header).';
+  String get expensesFabTooltip => 'Expense actions';
 
   @override
-  String get expensesPostsTitle => 'Expense sections';
+  String get expensesFabAddExpensePost => 'Add expense section';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Create an expense section first using the + button.';
 
   @override
   String get expensesNoPostYet =>
-      'No expense sections yet. Use the folder icon at the top to create one.';
+      'No expense sections yet. Use the + button to create one.';
 
   @override
   String get expensesBalancesTab => 'Balances';
@@ -2363,6 +2393,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
+
+  @override
+  String get tripOverviewViewActivities => 'View schedule';
+
+  @override
+  String get tripOverviewViewRooms => 'View rooms';
+
+  @override
+  String get tripOverviewViewCarpool => 'View carpool';
+
+  @override
+  String get tripOverviewViewGames => 'View games';
 
   @override
   String get tripOverviewTileComingSoon => '[Coming soon]';
@@ -4035,6 +4077,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesTabAgenda => 'Agenda';
 
   @override
+  String get activitiesFilterRepas => 'Meals';
+
+  @override
+  String get activitiesFilterNuits => 'Nights';
+
+  @override
+  String get activitiesFilterLoisirs => 'Activities';
+
+  @override
+  String get activitiesFilterTrajets => 'Transport';
+
+  @override
   String get activitiesVote => 'Vote';
 
   @override
@@ -4120,7 +4174,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get shoppingEmptyTitle => 'Shopping list is empty';
 
   @override
-  String get shoppingEmptySubtitle => 'Press + to add an item.';
+  String get shoppingEmptySubtitle => 'Use the cart button to add an item.';
+
+  @override
+  String get shoppingFabTooltip => 'Shopping list actions';
+
+  @override
+  String get shoppingActionAddItem => 'Add item';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolidate with AI';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Delete checked items';
 
   @override
   String get shoppingFiltersTitle => 'List filters';
@@ -4354,6 +4420,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealDateHelp => 'Meal date';
 
   @override
+  String get mealTimeHelp => 'Meal time';
+
+  @override
   String get mealCreated => 'Meal created';
 
   @override
@@ -4561,15 +4630,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesAddExpenseTooltip => 'Add expense';
 
   @override
-  String get expensesCreatePostFirst =>
-      'Create an expense section first (folder icon in the header).';
+  String get expensesFabTooltip => 'Expense actions';
 
   @override
-  String get expensesPostsTitle => 'Expense sections';
+  String get expensesFabAddExpensePost => 'Add expense section';
+
+  @override
+  String get expensesCreatePostFirst =>
+      'Create an expense section first using the + button.';
 
   @override
   String get expensesNoPostYet =>
-      'No expense sections yet. Use the folder icon at the top to create one.';
+      'No expense sections yet. Use the + button to create one.';
 
   @override
   String get expensesBalancesTab => 'Balances';
@@ -4939,6 +5011,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
+
+  @override
+  String get tripOverviewViewActivities => 'View schedule';
+
+  @override
+  String get tripOverviewViewRooms => 'View rooms';
+
+  @override
+  String get tripOverviewViewCarpool => 'View carpool';
+
+  @override
+  String get tripOverviewViewGames => 'View games';
 
   @override
   String get tripOverviewTileComingSoon => '[Coming soon]';

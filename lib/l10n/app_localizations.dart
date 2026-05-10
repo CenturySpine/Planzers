@@ -2682,6 +2682,30 @@ abstract class AppLocalizations {
   /// **'Agenda'**
   String get activitiesTabAgenda;
 
+  /// No description provided for @activitiesFilterRepas.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas'**
+  String get activitiesFilterRepas;
+
+  /// No description provided for @activitiesFilterNuits.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nuits'**
+  String get activitiesFilterNuits;
+
+  /// No description provided for @activitiesFilterLoisirs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Loisirs'**
+  String get activitiesFilterLoisirs;
+
+  /// No description provided for @activitiesFilterTrajets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajets'**
+  String get activitiesFilterTrajets;
+
   /// No description provided for @activitiesVote.
   ///
   /// In fr, this message translates to:
@@ -2841,8 +2865,32 @@ abstract class AppLocalizations {
   /// No description provided for @shoppingEmptySubtitle.
   ///
   /// In fr, this message translates to:
-  /// **'Appuyez sur + pour ajouter un article.'**
+  /// **'Utilisez le bouton panier pour ajouter un article.'**
   String get shoppingEmptySubtitle;
+
+  /// No description provided for @shoppingFabTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Actions sur la liste de courses'**
+  String get shoppingFabTooltip;
+
+  /// No description provided for @shoppingActionAddItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un article'**
+  String get shoppingActionAddItem;
+
+  /// No description provided for @shoppingActionConsolidateAi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolider avec l’IA'**
+  String get shoppingActionConsolidateAi;
+
+  /// No description provided for @shoppingActionDeleteChecked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer les éléments cochés'**
+  String get shoppingActionDeleteChecked;
 
   /// No description provided for @shoppingFiltersTitle.
   ///
@@ -3258,6 +3306,12 @@ abstract class AppLocalizations {
   /// **'Date du repas'**
   String get mealDateHelp;
 
+  /// No description provided for @mealTimeHelp.
+  ///
+  /// In fr, this message translates to:
+  /// **'Heure du repas'**
+  String get mealTimeHelp;
+
   /// No description provided for @mealCreated.
   ///
   /// In fr, this message translates to:
@@ -3642,22 +3696,28 @@ abstract class AppLocalizations {
   /// **'Ajouter une dépense'**
   String get expensesAddExpenseTooltip;
 
+  /// No description provided for @expensesFabTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Actions sur les dépenses'**
+  String get expensesFabTooltip;
+
+  /// No description provided for @expensesFabAddExpensePost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un poste de dépense'**
+  String get expensesFabAddExpensePost;
+
   /// No description provided for @expensesCreatePostFirst.
   ///
   /// In fr, this message translates to:
-  /// **'Crée d\'abord un poste de dépenses (icône dossier dans l\'en-tête).'**
+  /// **'Crée d\'abord un poste de dépenses via le bouton +.'**
   String get expensesCreatePostFirst;
-
-  /// No description provided for @expensesPostsTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Postes de dépenses'**
-  String get expensesPostsTitle;
 
   /// No description provided for @expensesNoPostYet.
   ///
   /// In fr, this message translates to:
-  /// **'Aucun poste de dépenses pour l\'instant. Utilise l\'icône dossier en haut pour en créer un.'**
+  /// **'Aucun poste de dépenses pour l\'instant. Utilise le bouton + pour en créer un.'**
   String get expensesNoPostYet;
 
   /// No description provided for @expensesBalancesTab.
@@ -4307,6 +4367,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'({count} de plus)'**
   String tripOverviewTileGamesAndMore(int count);
+
+  /// No description provided for @tripOverviewViewActivities.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir le planning'**
+  String get tripOverviewViewActivities;
+
+  /// No description provided for @tripOverviewViewRooms.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les chambres'**
+  String get tripOverviewViewRooms;
+
+  /// No description provided for @tripOverviewViewCarpool.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir le covoiturage'**
+  String get tripOverviewViewCarpool;
+
+  /// No description provided for @tripOverviewViewGames.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les jeux'**
+  String get tripOverviewViewGames;
 
   /// No description provided for @tripOverviewTileComingSoon.
   ///

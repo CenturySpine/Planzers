@@ -423,6 +423,7 @@ enum TripMealsPermissionAction {
   editMeal,
   addContribution,
   manageRecipe,
+  suggestRestaurant,
 }
 
 /// Permissions for trip meals.
@@ -435,6 +436,7 @@ class TripMealsPermissions {
     required this.editMealMinRole,
     required this.addContributionMinRole,
     required this.manageRecipeMinRole,
+    required this.suggestRestaurantMinRole,
   });
 
   final TripPermissionRole createMealMinRole;
@@ -442,6 +444,7 @@ class TripMealsPermissions {
   final TripPermissionRole editMealMinRole;
   final TripPermissionRole addContributionMinRole;
   final TripPermissionRole manageRecipeMinRole;
+  final TripPermissionRole suggestRestaurantMinRole;
 
   static const defaults = TripMealsPermissions(
     createMealMinRole: TripPermissionRole.admin,
@@ -449,6 +452,7 @@ class TripMealsPermissions {
     editMealMinRole: TripPermissionRole.admin,
     addContributionMinRole: TripPermissionRole.participant,
     manageRecipeMinRole: TripPermissionRole.chef,
+    suggestRestaurantMinRole: TripPermissionRole.admin,
   );
 
   factory TripMealsPermissions.fromFirestore(dynamic raw) {
@@ -471,6 +475,9 @@ class TripMealsPermissions {
       manageRecipeMinRole: raw['manageRecipe'] == null
           ? defaults.manageRecipeMinRole
           : TripPermissionRole.fromFirestore(raw['manageRecipe']),
+      suggestRestaurantMinRole: raw['suggestRestaurant'] == null
+          ? defaults.suggestRestaurantMinRole
+          : TripPermissionRole.fromFirestore(raw['suggestRestaurant']),
     );
   }
 
@@ -481,6 +488,7 @@ class TripMealsPermissions {
       'editMeal': editMealMinRole.toFirestore(),
       'addContribution': addContributionMinRole.toFirestore(),
       'manageRecipe': manageRecipeMinRole.toFirestore(),
+      'suggestRestaurant': suggestRestaurantMinRole.toFirestore(),
     };
   }
 }

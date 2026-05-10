@@ -133,11 +133,11 @@ class MealsRepository {
     required String tripId,
     required String mealDateKey,
     required String mealDayPart, // 'morning', 'midday', 'evening'
+    required String mealTimeHHMM,
     required List<String> participantIds,
     String? chefParticipantId,
     List<MealComponent> components = const [],
     MealMode mealMode = MealMode.cooked,
-    String restaurantUrl = '',
     List<MealPotluckItem> potluckItems = const [],
     bool componentsUserOrdered = false,
   }) async {
@@ -154,13 +154,15 @@ class MealsRepository {
     final docRef = await _mealsCol(cleanTripId).add({
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': mealDayPart.trim(),
+      'mealTimeHHMM': mealTimeHHMM.trim(),
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId?.trim().isEmpty ?? true
           ? null
           : chefParticipantId!.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': '',
+      'restaurantName': '',
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -225,6 +227,34 @@ class MealsRepository {
 
     await docRef.update({
       'mealDayPart': mealDayPart.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateMealTime({
+    required String tripId,
+    required String mealId,
+    required String mealTimeHHMM,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMealId = mealId.trim();
+    if (cleanTripId.isEmpty || cleanMealId.isEmpty) {
+      throw StateError('Repas invalide');
+    }
+
+    final docRef = _mealsCol(cleanTripId).doc(cleanMealId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw StateError('Repas introuvable');
+    }
+
+    await docRef.update({
+      'mealTimeHHMM': mealTimeHHMM.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -333,10 +363,11 @@ class MealsRepository {
     });
   }
 
-  Future<void> updateMealRestaurantUrl({
+  Future<void> updateMealRestaurantActivity({
     required String tripId,
     required String mealId,
-    required String restaurantUrl,
+    required String restaurantActivityId,
+    required String restaurantName,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -356,7 +387,8 @@ class MealsRepository {
     }
 
     await docRef.update({
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

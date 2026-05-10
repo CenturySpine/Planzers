@@ -314,6 +314,20 @@ class ActivitiesRepository {
       throw StateError('Droits insuffisants pour supprimer une activite');
     }
 
+    final mealsUsingActivity =
+        await firestore
+            .collection('trips')
+            .doc(cleanTripId)
+            .collection('meals')
+            .where('restaurantActivityId', isEqualTo: cleanActivityId)
+            .limit(1)
+            .get();
+    if (mealsUsingActivity.docs.isNotEmpty) {
+      throw StateError(
+        'Ce restaurant est associé à un repas et ne peut pas être supprimé.',
+      );
+    }
+
     await docRef.delete();
   }
 }

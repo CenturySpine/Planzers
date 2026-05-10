@@ -43,14 +43,11 @@ Widget _buildNavIcon({
   required int unreadCount,
   required bool showBadge,
   Color? color,
+  double size = 28,
 }) {
-  if (!showBadge || unreadCount <= 0) {
-    return Icon(icon, color: color);
-  }
-  return Badge.count(
-    count: unreadCount,
-    child: Icon(icon, color: color),
-  );
+  final iconWidget = Icon(icon, color: color, size: size);
+  if (!showBadge || unreadCount <= 0) return iconWidget;
+  return Badge.count(count: unreadCount, child: iconWidget);
 }
 
 class TripShellPage extends ConsumerStatefulWidget {
@@ -83,10 +80,10 @@ class TripShellPage extends ConsumerStatefulWidget {
       selectedIcon: Icons.event_available,
     ),
     _TripNavDestination(
-      branchIndex: 5,
-      label: 'Repas',
-      icon: Icons.restaurant_outlined,
-      selectedIcon: Icons.restaurant,
+      branchIndex: 2,
+      label: 'Dépenses',
+      icon: Icons.payments_outlined,
+      selectedIcon: Icons.payments,
     ),
     _TripNavDestination(
       branchIndex: 7,
@@ -334,6 +331,8 @@ class _TripNavDestination {
 }
 
 /// Material 3–style bottom destinations equally distributed across width.
+/// The Planning tab (center) is rendered as a floating FAB-style button that
+/// visually rises above the bar surface.
 class _TripMobileScrollableNavBar extends StatelessWidget {
   const _TripMobileScrollableNavBar({
     required this.selectedIndex,
@@ -347,91 +346,213 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
   final List<_TripNavDestination> destinations;
   final Map<String, int> unreadByTabLabel;
 
-  static const double _barHeight = 80;
+  static const double _barHeight = 62;
+  static const double _planningButtonSize = 56;
+  // Target visual pixels the Planning button floats above the bar's visible top edge.
+  static const double _planningFloat = 8;
+  // Index of the Planning tab inside [destinations].
+  static const int _planningIdx = 2;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final bg = NavigationBarTheme.of(context).backgroundColor ??
         colorScheme.surfaceContainer;
+    final planningSelected = selectedIndex == _planningIdx;
+    final planningDest = destinations[_planningIdx];
+    final planningUnread = unreadByTabLabel['Planning'] ?? 0;
+    // Flutter web does not relay OS window insets to MediaQuery.padding, so
+    // padding.bottom is 0 on all web variants. Computing the overflow from the
+    // inset keeps the visual float consistent across native and web.
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final planningOverflow = _planningFloat + bottomInset;
 
-    return Material(
-      color: bg,
-      elevation: 3,
-      shadowColor: Colors.transparent,
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: _barHeight,
-          child: Row(
-            children: [
-              for (var index = 0; index < destinations.length; index++)
-                Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      final d = destinations[index];
-                      final selected = selectedIndex == index;
-                      return InkWell(
-                        onTap: () => onDestinationSelected(index),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? colorScheme.secondaryContainer
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: _buildNavIcon(
-                                icon: selected ? d.selectedIcon : d.icon,
-                                unreadCount: unreadByTabLabel[d.label] ?? 0,
-                                showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Planning',
-                                color: selected
-                                    ? colorScheme.onSecondaryContainer
-                                    : colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              switch (d.label) {
-                                'Aperçu' => l10n.tripTabOverview,
-                                'Messagerie' => l10n.tripTabMessages,
-                                'Planning' => l10n.tripTabActivities,
-                                'Dépenses' => l10n.tripTabExpenses,
-                                'Repas' => l10n.tripTabMeals,
-                                'Courses' => l10n.tripTabShopping,
-                                _ => d.label,
-                              },
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(
-                                    color: selected
-                                        ? colorScheme.onSurface
-                                        : colorScheme.onSurfaceVariant,
+    return SizedBox(
+      height: _barHeight + planningOverflow,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          // ── Bar surface ──────────────────────────────────────────────────
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: bg,
+              elevation: 3,
+              shadowColor: Colors.transparent,
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: _barHeight,
+                  child: Row(
+                    children: [
+                      for (var index = 0;
+                          index < destinations.length;
+                          index++)
+                        Expanded(
+                          child: index == _planningIdx
+                              // Centre slot: just the selection dot, taps handled
+                              // by the floating button above.
+                              ? GestureDetector(
+                                  onTap: () => onDestinationSelected(index),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      AnimatedContainer(
+                                        duration: const Duration(
+                                            milliseconds: 200),
+                                        curve: Curves.easeOutCubic,
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.only(
+                                            bottom: 4),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: planningSelected
+                                              ? colorScheme.primary
+                                              : Colors.transparent,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                            ),
-                          ],
+                                )
+                              : Builder(
+                                  builder: (context) {
+                                    final d = destinations[index];
+                                    final selected = selectedIndex == index;
+                                    return GestureDetector(
+                                      onTap: () =>
+                                          onDestinationSelected(index),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Column(
+                                        children: [
+                                          AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            curve: Curves.easeOutCubic,
+                                            height: 3,
+                                            decoration: BoxDecoration(
+                                              color: selected
+                                                  ? colorScheme.primary
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                bottomLeft:
+                                                    Radius.circular(2),
+                                                bottomRight:
+                                                    Radius.circular(2),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                _buildNavIcon(
+                                                  icon: selected
+                                                      ? d.selectedIcon
+                                                      : d.icon,
+                                                  unreadCount:
+                                                      unreadByTabLabel[
+                                                              d.label] ??
+                                                          0,
+                                                  showBadge:
+                                                      d.label == 'Messagerie',
+                                                  color: selected
+                                                      ? colorScheme.primary
+                                                      : colorScheme
+                                                          .onSurfaceVariant,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 200),
+                                            curve: Curves.easeOutCubic,
+                                            width: 6,
+                                            height: 6,
+                                            margin: const EdgeInsets.only(
+                                                bottom: 4),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: selected
+                                                  ? colorScheme.primary
+                                                  : Colors.transparent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                         ),
-                      );
-                    },
+                    ],
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
+
+          // ── Planning floating button ──────────────────────────────────────
+          Positioned(
+            top: 0,
+            child: GestureDetector(
+              onTap: () => onDestinationSelected(_planningIdx),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                width: _planningButtonSize,
+                height: _planningButtonSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.primary,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x28000000),
+                      blurRadius: 6,
+                      spreadRadius: 0,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      planningSelected
+                          ? planningDest.selectedIcon
+                          : planningDest.icon,
+                      color: colorScheme.onPrimary,
+                      size: 26,
+                    ),
+                    if (planningUnread > 0)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colorScheme.error,
+                            border: Border.all(
+                              color: colorScheme.primary,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

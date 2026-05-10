@@ -591,46 +591,48 @@ class _ReadBody extends ConsumerWidget {
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                 ),
-                const SizedBox(height: 4),
-                TextButton.icon(
-                  onPressed: canPlanActivity
-                      ? () async {
-                          final pickedDateTime = await _pickPlannedDateTime(
-                            context,
-                            tripStartDate: tripAsync.maybeWhen(
-                              data: (trip) => trip?.startDate,
-                              orElse: () => null,
-                            ),
-                          );
-                          if (pickedDateTime == null) return;
-                          if (!context.mounted) return;
-                          await _setPlannedDate(
-                            ref,
-                            context,
-                            pickedDateTime,
-                          );
-                        }
-                      : null,
-                  icon: const Icon(Icons.calendar_month_outlined),
-                  label: Text(
-                    activity.plannedAt == null
-                        ? AppLocalizations.of(context)!.activitiesPlannedUnset
-                        : AppLocalizations.of(context)!.activitiesPlannedOn(
-                            DateFormat.yMMMMd(
-                              Localizations.localeOf(context).toString(),
-                            ).add_Hm().format(activity.plannedAt!.toLocal()),
-                          ),
-                  ),
-                ),
-                if (activity.plannedAt != null)
-                  TextButton(
+                if (activity.category != TripActivityCategory.restaurant) ...[
+                  const SizedBox(height: 4),
+                  TextButton.icon(
                     onPressed: canPlanActivity
-                        ? () => _setPlannedDate(ref, context, null)
+                        ? () async {
+                            final pickedDateTime = await _pickPlannedDateTime(
+                              context,
+                              tripStartDate: tripAsync.maybeWhen(
+                                data: (trip) => trip?.startDate,
+                                orElse: () => null,
+                              ),
+                            );
+                            if (pickedDateTime == null) return;
+                            if (!context.mounted) return;
+                            await _setPlannedDate(
+                              ref,
+                              context,
+                              pickedDateTime,
+                            );
+                          }
                         : null,
-                    child: Text(
-                      AppLocalizations.of(context)!.activitiesRemovePlannedDate,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text(
+                      activity.plannedAt == null
+                          ? AppLocalizations.of(context)!.activitiesPlannedUnset
+                          : AppLocalizations.of(context)!.activitiesPlannedOn(
+                              DateFormat.yMMMMd(
+                                Localizations.localeOf(context).toString(),
+                              ).add_Hm().format(activity.plannedAt!.toLocal()),
+                            ),
                     ),
                   ),
+                  if (activity.plannedAt != null)
+                    TextButton(
+                      onPressed: canPlanActivity
+                          ? () => _setPlannedDate(ref, context, null)
+                          : null,
+                      child: Text(
+                        AppLocalizations.of(context)!.activitiesRemovePlannedDate,
+                      ),
+                    ),
+                ],
               ],
             ),
           ),

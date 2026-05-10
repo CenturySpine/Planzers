@@ -302,6 +302,7 @@ class TripMeal {
     required this.id,
     required this.mealDateKey,
     required this.mealDayPart,
+    required this.mealTimeHHMM,
     required this.participantIds,
     this.chefParticipantId,
     required this.createdBy,
@@ -309,8 +310,8 @@ class TripMeal {
     this.updatedAt,
     this.components = const [],
     this.mealMode = MealMode.cooked,
-    this.restaurantUrl = '',
-    this.restaurantLinkPreview = const {},
+    this.restaurantActivityId = '',
+    this.restaurantName = '',
     this.potluckItems = const [],
     this.componentsUserOrdered = false,
   });
@@ -321,6 +322,30 @@ class TripMeal {
   final String mealDateKey;
   final TripDayPart mealDayPart;
 
+  /// Time in HH:MM format (24h). Defaults per day part: morning=09:00, midday=12:30, evening=19:30.
+  final String mealTimeHHMM;
+
+  static String defaultTimeHHMMForDayPart(TripDayPart part) {
+    return switch (part) {
+      TripDayPart.morning => '09:00',
+      TripDayPart.midday => '12:30',
+      TripDayPart.evening => '19:30',
+    };
+  }
+
+  static String? _parseTimeHHMM(dynamic raw) {
+    if (raw is! String) return null;
+    final trimmed = raw.trim();
+    final parts = trimmed.split(':');
+    if (parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      return null;
+    }
+    return trimmed;
+  }
+
   /// List of participant user IDs. Auto-calculated from [TripMemberStay]
   /// but can be manually overridden.
   final List<String> participantIds;
@@ -330,10 +355,12 @@ class TripMeal {
   final DateTime? updatedAt;
   final List<MealComponent> components;
   final MealMode mealMode;
-  final String restaurantUrl;
 
-  /// Same shape as trip/activity `linkPreview` (filled by Cloud Function).
-  final Map<String, dynamic> restaurantLinkPreview;
+  /// Firestore document ID of the selected restaurant activity suggestion.
+  final String restaurantActivityId;
+
+  /// Denormalized name of the selected restaurant activity (for card display).
+  final String restaurantName;
 
   final List<MealPotluckItem> potluckItems;
   final bool componentsUserOrdered;
@@ -374,20 +401,18 @@ class TripMeal {
     return sorted;
   }
 
-  static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
-    if (raw is! Map) return const {};
-    return Map<String, dynamic>.from(raw);
-  }
-
   factory TripMeal.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
+    final dayPart = tripDayPartFromFirestore(
+          data['mealDayPart'] as String?,
+        ) ??
+        TripDayPart.midday;
     return TripMeal(
       id: doc.id,
       mealDateKey: (data['mealDateKey'] as String?)?.trim() ?? '',
-      mealDayPart: tripDayPartFromFirestore(
-            data['mealDayPart'] as String?,
-          ) ??
-          TripDayPart.midday,
+      mealDayPart: dayPart,
+      mealTimeHHMM: _parseTimeHHMM(data['mealTimeHHMM']) ??
+          defaultTimeHHMMForDayPart(dayPart),
       participantIds: ((data['participantIds'] as List<dynamic>?) ?? const [])
           .map((participantId) => participantId.toString().trim())
           .where((participantId) => participantId.isNotEmpty)
@@ -403,9 +428,9 @@ class TripMeal {
           .toList(growable: false)
         ..sort((a, b) => a.order.compareTo(b.order)),
       mealMode: MealMode.fromFirestore(data['mealMode'] as String?),
-      restaurantUrl: (data['restaurantUrl'] as String? ?? '').trim(),
-      restaurantLinkPreview:
-          _previewFromFirestore(data['restaurantLinkPreview']),
+      restaurantActivityId:
+          (data['restaurantActivityId'] as String? ?? '').trim(),
+      restaurantName: (data['restaurantName'] as String? ?? '').trim(),
       potluckItems: ((data['potluckItems'] as List<dynamic>?) ?? const [])
           .map(MealPotluckItem.fromDynamic)
           .where((item) => item.label.isNotEmpty)
@@ -439,11 +464,13 @@ class TripMeal {
     return {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
+      'mealTimeHHMM': mealTimeHHMM,
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -459,11 +486,13 @@ class TripMeal {
     return {
       'mealDateKey': mealDateKey.trim(),
       'mealDayPart': tripDayPartToFirestore(mealDayPart),
+      'mealTimeHHMM': mealTimeHHMM,
       'participantIds': participantIds,
       'chefParticipantId': chefParticipantId,
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantUrl': restaurantUrl.trim(),
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)
@@ -477,6 +506,7 @@ class TripMeal {
     String? id,
     String? mealDateKey,
     TripDayPart? mealDayPart,
+    String? mealTimeHHMM,
     List<String>? participantIds,
     Object? chefParticipantId = _noChefParticipantIdChange,
     String? createdBy,
@@ -484,8 +514,8 @@ class TripMeal {
     DateTime? updatedAt,
     List<MealComponent>? components,
     MealMode? mealMode,
-    String? restaurantUrl,
-    Map<String, dynamic>? restaurantLinkPreview,
+    String? restaurantActivityId,
+    String? restaurantName,
     List<MealPotluckItem>? potluckItems,
     bool? componentsUserOrdered,
   }) {
@@ -493,6 +523,7 @@ class TripMeal {
       id: id ?? this.id,
       mealDateKey: mealDateKey ?? this.mealDateKey,
       mealDayPart: mealDayPart ?? this.mealDayPart,
+      mealTimeHHMM: mealTimeHHMM ?? this.mealTimeHHMM,
       participantIds: participantIds ?? this.participantIds,
       chefParticipantId:
           identical(chefParticipantId, _noChefParticipantIdChange)
@@ -503,9 +534,8 @@ class TripMeal {
       updatedAt: updatedAt ?? this.updatedAt,
       components: components ?? this.components,
       mealMode: mealMode ?? this.mealMode,
-      restaurantUrl: restaurantUrl ?? this.restaurantUrl,
-      restaurantLinkPreview:
-          restaurantLinkPreview ?? this.restaurantLinkPreview,
+      restaurantActivityId: restaurantActivityId ?? this.restaurantActivityId,
+      restaurantName: restaurantName ?? this.restaurantName,
       potluckItems: potluckItems ?? this.potluckItems,
       componentsUserOrdered:
           componentsUserOrdered ?? this.componentsUserOrdered,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 
 /// Search field + scrollable list of [TripActivitiesListEntry] rows (activity cards
@@ -13,12 +15,14 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
     required this.entries,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.emptyMessage,
     this.showVoteButton = false,
     this.myUid,
     this.bottomListPadding = 88,
+    this.activityLeadingBuilder,
   });
 
   final TextEditingController searchController;
@@ -26,12 +30,14 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
   final List<TripActivitiesListEntry> entries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final String emptyMessage;
   final bool showVoteButton;
   final String? myUid;
   final double bottomListPadding;
+  final Widget? Function(TripActivity)? activityLeadingBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +79,18 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                     }
                     final activity = entry.activity;
                     if (activity == null) {
-                      return const SizedBox.shrink();
+                      final meal = entry.meal;
+                      if (meal == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return TripMealCard(
+                        tripId: tripId,
+                        meal: meal,
+                        memberPublicLabels: tripMemberPublicLabels,
+                        tripMemberIds: tripMemberIds,
+                      );
                     }
-                    return TripActivityCard(
+                    final card = TripActivityCard(
                       tripId: tripId,
                       activity: activity,
                       tripMemberPublicLabels: tripMemberPublicLabels,
@@ -84,6 +99,17 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                       showVoteButton: showVoteButton,
                       myUid: myUid,
                     );
+                    final leading = activityLeadingBuilder?.call(activity);
+                    if (leading != null) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          leading,
+                          Expanded(child: card),
+                        ],
+                      );
+                    }
+                    return card;
                   },
                 ),
         ),

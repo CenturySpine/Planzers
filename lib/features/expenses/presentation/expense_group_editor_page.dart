@@ -10,28 +10,26 @@ import 'package:planerz/l10n/app_localizations.dart';
 const double _kGroupVisibilityColumnWidth = 48;
 
 /// Create a new expense post or edit title + who can see it.
-class ExpenseGroupEditorSheet extends ConsumerStatefulWidget {
-  const ExpenseGroupEditorSheet({
+class ExpenseGroupEditorPage extends ConsumerStatefulWidget {
+  const ExpenseGroupEditorPage({
     super.key,
     required this.tripId,
     required this.memberIds,
     required this.memberPublicLabels,
     this.existing,
-    required this.onDone,
   });
 
   final String tripId;
   final List<String> memberIds;
   final Map<String, String> memberPublicLabels;
   final TripExpenseGroup? existing;
-  final VoidCallback onDone;
 
   @override
-  ConsumerState<ExpenseGroupEditorSheet> createState() =>
-      _ExpenseGroupEditorSheetState();
+  ConsumerState<ExpenseGroupEditorPage> createState() =>
+      _ExpenseGroupEditorPageState();
 }
 
-class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorSheet> {
+class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late Set<String> _visibleToIds;
@@ -50,10 +48,21 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
     final members = _cleanMembers.toSet();
     final ex = widget.existing;
     _titleController = TextEditingController(text: ex?.title ?? '');
-    final raw = ex?.visibleToMemberIds.toSet() ?? {};
-    _visibleToIds = raw.isEmpty ? {...members} : raw.intersection(members);
-    if (_visibleToIds.isEmpty && members.isNotEmpty) {
-      _visibleToIds = {...members};
+    if (ex == null) {
+      final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+      if (myUid != null &&
+          myUid.isNotEmpty &&
+          members.contains(myUid)) {
+        _visibleToIds = {myUid};
+      } else {
+        _visibleToIds = {};
+      }
+    } else {
+      final raw = ex.visibleToMemberIds.toSet();
+      _visibleToIds = raw.isEmpty ? {...members} : raw.intersection(members);
+      if (_visibleToIds.isEmpty && members.isNotEmpty) {
+        _visibleToIds = {...members};
+      }
     }
   }
 
@@ -101,7 +110,7 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
           SnackBar(content: Text(AppLocalizations.of(context)!.expenseGroupCreated)),
         );
       }
-      widget.onDone();
+      Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -121,42 +130,18 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final members = _cleanMembers;
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isEdit ? l10n.expenseGroupEditTitle : l10n.expenseGroupNewTitle),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      _isEdit
-                          ? Icons.edit_outlined
-                          : Icons.create_new_folder_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    _isEdit ? l10n.expenseGroupEditTitle : l10n.expenseGroupNewTitle,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
@@ -288,7 +273,11 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                 ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _saving || members.isEmpty ? null : _save,
+                onPressed: _saving ||
+                        members.isEmpty ||
+                        _visibleToIds.isEmpty
+                    ? null
+                    : _save,
                 child: _saving
                     ? const SizedBox(
                         height: 22,

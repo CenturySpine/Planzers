@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/app/theme/static_colors.dart';
 
 class AppTheme {
   const AppTheme._();
@@ -42,9 +43,9 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: GoogleFonts.geistTextTheme(),
-      scaffoldBackgroundColor: p.scaffoldBackground,
+      scaffoldBackgroundColor: StaticColors.background,
       appBarTheme: AppBarTheme(
-        backgroundColor: p.appBarBackground,
+        backgroundColor: Colors.transparent,
         foregroundColor: p.deep,
         elevation: 0,
         scrolledUnderElevation: 0,

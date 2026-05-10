@@ -13,7 +13,6 @@ import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
-import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/app/app_version_provider.dart';
@@ -263,6 +262,12 @@ class _SignInPageState extends ConsumerState<SignInPage> {
       body: Stack(
         children: [
           Positioned.fill(
+            child: Image.asset(
+              'assets/images/app_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) => SingleChildScrollView(
@@ -442,70 +447,6 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                                 ),
                                               ],
                                             ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        OutlinedButton(
-                                          onPressed: _isLoading
-                                              ? null
-                                              : () => context.push(
-                                                    EmailLinkSignInPage
-                                                        .routePath,
-                                                  ),
-                                          style: OutlinedButton.styleFrom(
-                                            backgroundColor: Colors.white,
-                                            foregroundColor: _googleSignInText,
-                                            disabledForegroundColor:
-                                                _googleSignInText.withValues(
-                                                  alpha: 0.55,
-                                                ),
-                                            side: const BorderSide(
-                                              color: _googleSignInBorder,
-                                              width: 1,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 28,
-                                              vertical: 14,
-                                            ),
-                                            minimumSize:
-                                                const Size.fromHeight(50),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.mail_outline,
-                                                size: 20,
-                                                color: _googleSignInText,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Text(
-                                                l10n
-                                                    .signInContinueWithEmailLink,
-                                                style: TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: _googleSignInText,
-                                                  letterSpacing: 0.15,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: -6,
-                                          right: -6,
-                                          child: _buildAuthBetaPill(l10n),
-                                        ),
-                                      ],
                                     ),
                                     const SizedBox(height: 10),
                                     Stack(

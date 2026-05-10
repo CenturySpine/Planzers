@@ -12,6 +12,7 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/app/app_version_provider.dart';
+import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const _TripsAppBranding(),
         actions: const [
@@ -100,14 +102,25 @@ class _TripsPageState extends ConsumerState<TripsPage>
       ),
       body: Stack(
         children: [
-          Column(
+          const Positioned.fill(child: ColoredBox(color: Colors.white)),
+          Positioned.fill(
+            top: 240,
+            child: Image.asset(
+              'assets/images/app_background.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
+                    color: StaticColors.lightBackground,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Padding(
@@ -163,21 +176,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       );
                       final colorScheme = Theme.of(context).colorScheme;
 
-                      final timelineContainerColors =
-                          <_TripTimelineCategory, Color>{
-                        _TripTimelineCategory.past:
-                            Theme.of(context).scaffoldBackgroundColor,
-                        _TripTimelineCategory.ongoing:
-                            colorScheme.surfaceContainerHighest,
-                        _TripTimelineCategory.upcoming:
-                            colorScheme.tertiaryContainer,
-                      };
-                      final timelineTitleColors =
-                          <_TripTimelineCategory, Color>{
-                        _TripTimelineCategory.past: colorScheme.primary,
-                        _TripTimelineCategory.ongoing: colorScheme.primary,
-                        _TripTimelineCategory.upcoming: colorScheme.primary,
-                      };
+                      final titleColor = colorScheme.primary;
 
                       return Column(
                         children: [
@@ -219,10 +218,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                 _TripsTimelineList(
                                   trips: grouped[_TripTimelineCategory.past] ??
                                       const [],
-                                  containerColor: timelineContainerColors[
-                                      _TripTimelineCategory.past]!,
-                                  titleColor: timelineTitleColors[
-                                      _TripTimelineCategory.past]!,
+                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyPast,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
@@ -231,10 +227,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   trips:
                                       grouped[_TripTimelineCategory.ongoing] ??
                                           const [],
-                                  containerColor: timelineContainerColors[
-                                      _TripTimelineCategory.ongoing]!,
-                                  titleColor: timelineTitleColors[
-                                      _TripTimelineCategory.ongoing]!,
+                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyOngoing,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
@@ -243,10 +236,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                   trips:
                                       grouped[_TripTimelineCategory.upcoming] ??
                                           const [],
-                                  containerColor: timelineContainerColors[
-                                      _TripTimelineCategory.upcoming]!,
-                                  titleColor: timelineTitleColors[
-                                      _TripTimelineCategory.upcoming]!,
+                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyUpcoming,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
@@ -269,6 +259,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 ),
               ),
             ],
+          ),
           ),
           SafeArea(
             top: false,
@@ -542,14 +533,12 @@ class _TripsAppBranding extends ConsumerWidget {
 class _TripsTimelineList extends StatelessWidget {
   const _TripsTimelineList({
     required this.trips,
-    required this.containerColor,
     required this.titleColor,
     required this.emptyMessage,
     required this.onOpenTrip,
   });
 
   final List<Trip> trips;
-  final Color containerColor;
   final Color titleColor;
   final String emptyMessage;
   final ValueChanged<String> onOpenTrip;
@@ -557,9 +546,10 @@ class _TripsTimelineList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (trips.isEmpty) {
-      return Center(
+      return Align(
+        alignment: Alignment.topCenter,
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
           child: Text(
             emptyMessage,
             textAlign: TextAlign.center,
@@ -571,28 +561,41 @@ class _TripsTimelineList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      clipBehavior: Clip.none,
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 96),
-      itemCount: trips.length,
-      itemBuilder: (context, index) {
-        final trip = trips[index];
-        final dateLine = formatTripDateRange(
-          context,
-          trip.startDate,
-          trip.endDate,
-        );
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _TripCard(
-            trip: trip,
-            containerColor: containerColor,
-            titleColor: titleColor,
-            dateLine: dateLine,
-            onTap: () => onOpenTrip(trip.id),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardThemeData(
+          color: StaticColors.cardBackground,
+          elevation: 4,
+          shadowColor: StaticColors.cardShadowColor,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: StaticColors.cardBorder),
           ),
-        );
-      },
+        ),
+      ),
+      child: ListView.builder(
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 96),
+        itemCount: trips.length,
+        itemBuilder: (context, index) {
+          final trip = trips[index];
+          final dateLine = formatTripDateRange(
+            context,
+            trip.startDate,
+            trip.endDate,
+          );
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _TripCard(
+              trip: trip,
+              titleColor: titleColor,
+              dateLine: dateLine,
+              onTap: () => onOpenTrip(trip.id),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -600,14 +603,12 @@ class _TripsTimelineList extends StatelessWidget {
 class _TripCard extends ConsumerWidget {
   const _TripCard({
     required this.trip,
-    required this.containerColor,
     required this.titleColor,
     required this.dateLine,
     required this.onTap,
   });
 
   final Trip trip;
-  final Color containerColor;
   final Color titleColor;
   final String dateLine;
   final VoidCallback onTap;
@@ -618,7 +619,6 @@ class _TripCard extends ConsumerWidget {
     final unreadCount = countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
     return Card(
       margin: EdgeInsets.zero,
-      color: containerColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,

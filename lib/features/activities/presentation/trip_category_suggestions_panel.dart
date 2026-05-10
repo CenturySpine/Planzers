@@ -12,6 +12,12 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// Suggestions (`plannedAt == null`) for one or more activity categories, with search and vote.
+///
+/// When [onActivitySelected] is provided the panel enters **selection mode**:
+/// a checkbox appears on each row, selecting one hides all others, and the
+/// chosen [TripActivity] (or `null` when deselected) is reported via the
+/// callback. Pass [preSelectedActivityId] to pre-select the activity whose
+/// [TripActivity.id] matches on first data load.
 class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
   const TripCategorySuggestionsPanel({
     super.key,
@@ -22,6 +28,8 @@ class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
     this.showFab = true,
     this.bottomListPaddingWhenFab = 88,
     this.bottomListPaddingWhenNoFab = 24,
+    this.onActivitySelected,
+    this.preSelectedActivityId,
   });
 
   final Trip trip;
@@ -31,6 +39,8 @@ class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
   final bool showFab;
   final double bottomListPaddingWhenFab;
   final double bottomListPaddingWhenNoFab;
+  final ValueChanged<TripActivity?>? onActivitySelected;
+  final String? preSelectedActivityId;
 
   @override
   ConsumerState<TripCategorySuggestionsPanel> createState() =>
@@ -40,11 +50,24 @@ class TripCategorySuggestionsPanel extends ConsumerStatefulWidget {
 class _TripCategorySuggestionsPanelState
     extends ConsumerState<TripCategorySuggestionsPanel> {
   final TextEditingController _searchController = TextEditingController();
+  TripActivity? _selectedActivity;
+  bool _preSelectionApplied = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _applyPreSelection(List<TripActivity> items) {
+    if (_preSelectionApplied) return;
+    _preSelectionApplied = true;
+    final id = (widget.preSelectedActivityId ?? '').trim();
+    if (id.isEmpty) return;
+    final match = items.where((a) => a.id.trim() == id).firstOrNull;
+    if (match != null) {
+      _selectedActivity = match;
+    }
   }
 
   @override
@@ -55,11 +78,14 @@ class _TripCategorySuggestionsPanelState
       trip: widget.trip,
       userId: myUid,
     );
+    final selectionMode = widget.onActivitySelected != null;
     final activitiesAsync =
         ref.watch(tripActivitiesStreamProvider(widget.trip.id));
 
     return activitiesAsync.when(
       data: (items) {
+        _applyPreSelection(items);
+
         final creatorIds = items
             .map((activity) => activity.createdBy.trim())
             .where((id) => id.isNotEmpty)
@@ -72,7 +98,8 @@ class _TripCategorySuggestionsPanelState
             : ref.watch(tripActivityCreatorsDataProvider(creatorIdsKey));
         final creatorsDataById =
             creatorsDataAsync.asData?.value ?? const <String, Map<String, dynamic>>{};
-        final entries = buildTripActivitiesSuggestionEntries(
+
+        final allEntries = buildTripActivitiesSuggestionEntries(
           items,
           query: _searchController.text,
           creatorLabelFor: (activity) => creatorLabelForActivity(
@@ -85,10 +112,32 @@ class _TripCategorySuggestionsPanelState
           categoryFilter: widget.categories,
         );
 
+        // In selection mode, hide all others once one is chosen.
+        final entries = (selectionMode && _selectedActivity != null)
+            ? allEntries
+                .where((e) => e.activity?.id == _selectedActivity!.id)
+                .toList(growable: false)
+            : allEntries;
+
         final showFab =
             widget.showFab && canSuggestActivity && myUid != null && myUid.isNotEmpty;
         final bottomPad =
             showFab ? widget.bottomListPaddingWhenFab : widget.bottomListPaddingWhenNoFab;
+
+        Widget? Function(TripActivity)? leadingBuilder;
+        if (selectionMode) {
+          leadingBuilder = (activity) => Checkbox(
+                value: _selectedActivity?.id == activity.id,
+                onChanged: (checked) {
+                  setState(() {
+                    _selectedActivity = (checked == true) ? activity : null;
+                  });
+                  widget.onActivitySelected!(
+                    (checked == true) ? activity : null,
+                  );
+                },
+              );
+        }
 
         return Stack(
           children: [
@@ -99,12 +148,17 @@ class _TripCategorySuggestionsPanelState
                 entries: entries,
                 tripId: widget.trip.id,
                 tripMemberPublicLabels: widget.trip.memberPublicLabels,
+                tripMemberIds: widget.trip.memberIds
+                    .map((id) => id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .toSet(),
                 usersDataById: creatorsDataById,
                 currentUserId: myUid,
                 emptyMessage: widget.emptyMessage,
-                showVoteButton: widget.showVote,
+                showVoteButton: widget.showVote && !selectionMode,
                 myUid: myUid,
                 bottomListPadding: bottomPad,
+                activityLeadingBuilder: leadingBuilder,
               ),
             ),
             if (showFab)

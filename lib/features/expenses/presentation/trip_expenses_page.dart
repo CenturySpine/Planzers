@@ -11,7 +11,7 @@ import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
 import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
-import 'package:planerz/features/expenses/presentation/expense_group_editor_sheet.dart';
+import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -64,15 +64,21 @@ class TripExpensesPage extends ConsumerStatefulWidget {
 
 class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
   String? _activeGroupId;
+  bool _isFabMenuOpen = false;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final settledTransfersAsync =
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final canCreateExpensePost = canCreateExpensePostForTrip(
+      trip: trip,
+      userId: viewerId,
+    );
     final canCreateExpense = groupsAsync.maybeWhen(
       data: (groups) {
         final visibleGroups = groups
@@ -88,6 +94,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
+    final showExpensesFab = canCreateExpense || canCreateExpensePost;
 
     return Scaffold(
       body: groupsAsync.when(
@@ -106,19 +113,6 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                   if (_activeGroupId == groupId) return;
                   setState(() => _activeGroupId = groupId);
                 },
-                onCreateExpensePost: canCreateExpensePostForTrip(
-                  trip: trip,
-                  userId: viewerId,
-                )
-                    ? () => _openExpenseGroupEditor(
-                          context,
-                          ref,
-                          trip.id,
-                          trip.memberIds,
-                          trip.memberPublicLabels,
-                          existing: null,
-                        )
-                    : null,
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -154,19 +148,61 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           ),
         ),
       ),
-      floatingActionButton: canCreateExpense
-          ? FloatingActionButton(
-              heroTag: 'trip_expenses_add',
-              tooltip: AppLocalizations.of(context)!.expensesAddExpenseTooltip,
-              onPressed: () => _openAddExpenseSheetFromFab(
-                context,
-                ref,
-                trip.id,
-                trip.memberIds,
-                trip.memberPublicLabels,
-                _activeGroupId,
-              ),
-              child: const Icon(Icons.add),
+      floatingActionButton: showExpensesFab
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_isFabMenuOpen) ...[
+                  if (canCreateExpensePost) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'trip_expenses_add_post',
+                      tooltip: l10n.expensesFabAddExpensePost,
+                      icon: const Icon(Icons.create_new_folder_outlined),
+                      label: Text(l10n.expensesFabAddExpensePost),
+                      onPressed: () {
+                        setState(() => _isFabMenuOpen = false);
+                        _openExpenseGroupEditor(
+                          context,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          existing: null,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (canCreateExpense) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'trip_expenses_add_expense',
+                      tooltip: l10n.expensesAddExpenseTooltip,
+                      icon: const Icon(Icons.add_card_outlined),
+                      label: Text(l10n.expensesAddExpenseTooltip),
+                      onPressed: () {
+                        setState(() => _isFabMenuOpen = false);
+                        _openAddExpensePageFromFab(
+                          context,
+                          ref,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          _activeGroupId,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+                FloatingActionButton(
+                  heroTag: 'trip_expenses_main_fab',
+                  tooltip: l10n.expensesFabTooltip,
+                  onPressed: () {
+                    setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+                  },
+                  child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
+                ),
+              ],
             )
           : null,
     );
@@ -174,27 +210,24 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
 
   static Future<void> _openExpenseGroupEditor(
     BuildContext context,
-    WidgetRef ref,
     String tripId,
     List<String> memberIds,
     Map<String, String> memberPublicLabels, {
     required TripExpenseGroup? existing,
   }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => ExpenseGroupEditorSheet(
-        tripId: tripId,
-        memberIds: memberIds,
-        memberPublicLabels: memberPublicLabels,
-        existing: existing,
-        onDone: () => Navigator.of(ctx).pop(),
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (ctx) => ExpenseGroupEditorPage(
+          tripId: tripId,
+          memberIds: memberIds,
+          memberPublicLabels: memberPublicLabels,
+          existing: existing,
+        ),
       ),
     );
   }
 
-  static Future<void> _openAddExpenseSheetFromFab(
+  static Future<void> _openAddExpensePageFromFab(
     BuildContext context,
     WidgetRef ref,
     String tripId,
@@ -228,39 +261,14 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     }
     final group = chosenGroup ?? visible.first;
     if (!context.mounted) return;
-    await _openAddExpenseSheet(
-      context,
-      tripId,
-      memberIds,
-      memberPublicLabels,
-      groupId: group.id,
-      participantScopeMemberIds:
-          participantScopeMemberIdsForGroup(group, memberIds),
-    );
-  }
-
-  static Future<void> _openAddExpenseSheet(
-    BuildContext context,
-    String tripId,
-    List<String> memberIds,
-    Map<String, String> memberPublicLabels, {
-    required String groupId,
-    required List<String> participantScopeMemberIds,
-  }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: _AddExpenseSheet(
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => _AddExpensePage(
           tripId: tripId,
-          groupId: groupId,
-          participantScopeMemberIds: participantScopeMemberIds,
+          groupId: group.id,
+          participantScopeMemberIds:
+              participantScopeMemberIdsForGroup(group, memberIds),
           memberPublicLabels: memberPublicLabels,
-          onSubmit: () => Navigator.of(context).pop(),
         ),
       ),
     );
@@ -277,7 +285,6 @@ class _TripExpensesBody extends StatelessWidget {
     required this.settledTransfers,
     required this.activeGroupId,
     required this.onActiveGroupChanged,
-    required this.onCreateExpensePost,
   });
 
   final Trip trip;
@@ -288,7 +295,6 @@ class _TripExpensesBody extends StatelessWidget {
   final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
-  final VoidCallback? onCreateExpensePost;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +321,6 @@ class _TripExpensesBody extends StatelessWidget {
         viewerId,
         memberPublicLabels,
         trip,
-        onCreateExpensePost,
       );
     }
 
@@ -340,7 +345,6 @@ class _TripExpensesBody extends StatelessWidget {
           viewerId,
           memberPublicLabels,
           trip,
-          onCreateExpensePost,
         );
       },
     );
@@ -353,51 +357,11 @@ class _TripExpensesBody extends StatelessWidget {
     String? viewerId,
     Map<String, String> memberPublicLabels,
     Trip trip,
-    VoidCallback? onCreateExpensePost,
   ) {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [cs.primary, cs.inverseSurface],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  l10n.expensesPostsTitle,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: cs.onInverseSurface,
-                      ),
-                ),
-              ),
-              if (onCreateExpensePost != null)
-                IconButton(
-                  tooltip: l10n.expenseGroupNewTitle,
-                  icon: Icon(
-                    Icons.create_new_folder_outlined,
-                    color: cs.onInverseSurface,
-                  ),
-                  onPressed: onCreateExpensePost,
-                )
-              else
-                // Même emprise qu’un IconButton (hauteur du cartouche inchangée).
-                const SizedBox(
-                  width: kMinInteractiveDimension,
-                  height: kMinInteractiveDimension,
-                ),
-            ],
-          ),
-        ),
         if (visibleGroups.isEmpty)
           Expanded(
             child: SingleChildScrollView(
@@ -759,7 +723,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   setState(() => _activeView = selection.first);
                 },
               ),
-              if (canEditPost || canDeletePost)
+              if (!widget.group.isDefault && (canEditPost || canDeletePost))
                 Positioned(
                   right: -6,
                   child: PopupMenuButton<_ExpensePostMenuAction>(
@@ -774,7 +738,6 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       if (action == _ExpensePostMenuAction.edit) {
                         await _TripExpensesPageState._openExpenseGroupEditor(
                           context,
-                          ref,
                           widget.trip.id,
                           widget.memberIds,
                           widget.memberPublicLabels,
@@ -2250,26 +2213,24 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
   }
 }
 
-class _AddExpenseSheet extends ConsumerStatefulWidget {
-  const _AddExpenseSheet({
+class _AddExpensePage extends ConsumerStatefulWidget {
+  const _AddExpensePage({
     required this.tripId,
     required this.groupId,
     required this.participantScopeMemberIds,
     required this.memberPublicLabels,
-    required this.onSubmit,
   });
 
   final String tripId;
   final String groupId;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberPublicLabels;
-  final VoidCallback onSubmit;
 
   @override
-  ConsumerState<_AddExpenseSheet> createState() => _AddExpenseSheetState();
+  ConsumerState<_AddExpensePage> createState() => _AddExpensePageState();
 }
 
-class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
+class _AddExpensePageState extends ConsumerState<_AddExpensePage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
@@ -2361,7 +2322,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.expensesExpenseSaved)),
       );
-      widget.onSubmit();
+      Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2383,35 +2344,18 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
     final members = _scopeMemberIds;
     final cs = Theme.of(context).colorScheme;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.add_card_outlined,
-                    size: 20,
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  l10n.expensesNewExpenseTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.expensesNewExpenseTitle),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             if (members.isEmpty) ...[
               const SizedBox(height: 12),
               Text(
@@ -2604,6 +2548,7 @@ class _AddExpenseSheetState extends ConsumerState<_AddExpenseSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

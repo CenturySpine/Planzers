@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
+import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -13,6 +15,9 @@ import 'package:planerz/features/activities/presentation/trip_activity_card.dart
 import 'package:planerz/features/activities/presentation/trip_activity_creators_provider.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
+import 'package:planerz/features/meals/data/meals_repository.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -32,7 +37,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
     if (day == today) return l10n.commonToday;
     if (day == yesterday) return l10n.commonYesterday;
     final localeTag = Localizations.localeOf(context).toString();
-    return DateFormat('d MMM yyyy', localeTag).format(day);
+    return DateFormat('EEEE d MMM yyyy', localeTag).format(day);
   }
 
   late final NotificationCenterRepository _notificationCenter;
@@ -43,6 +48,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       TextEditingController();
   final TextEditingController _plannedSearchController =
       TextEditingController();
+  final Set<ActivityFilterGroup> _activeFilters = {};
   late DateTime _agendaCenterDay;
   late DateTime _agendaSelectedDay;
   bool _agendaDayFromRouteApplied = false;
@@ -153,12 +159,45 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       trip: trip,
       userId: myUid,
     );
+    final tripMemberIds = trip.memberIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
+    final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
 
-    return Scaffold(
-      body: activitiesAsync.when(
-        data: (items) {
+    final activitiesError = activitiesAsync.error;
+    final mealsError = mealsAsync.error;
+    final activities = activitiesAsync.asData?.value;
+    final meals = mealsAsync.asData?.value;
+
+    Widget body;
+    if (activitiesError != null) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.commonErrorWithDetails(activitiesError.toString()),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else if (mealsError != null) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.commonErrorWithDetails(mealsError.toString()),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    } else if (activities == null || meals == null) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = Builder(builder: (context) {
+          final items = activities;
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
           final creatorIds = items
               .map((activity) => activity.createdBy.trim())
@@ -172,10 +211,43 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               : ref.watch(tripActivityCreatorsDataProvider(creatorIdsKey));
           final creatorsDataById =
               creatorsDataAsync.asData?.value ?? const <String, Map<String, dynamic>>{};
+          final mealFilterActive = _activeFilters.contains(ActivityFilterGroup.repas);
+          final activeActivityFilters = _activeFilters
+              .where((group) => group != ActivityFilterGroup.repas)
+              .toSet();
+          final hasAnyFilter = _activeFilters.isNotEmpty;
+          final filteredActivities = !hasAnyFilter
+              ? items
+              : activeActivityFilters.isEmpty
+                  ? const <TripActivity>[]
+                  : items
+                      .where(
+                        (activity) => activeActivityFilters
+                            .contains(activity.category.filterGroup),
+                      )
+                      .toList(growable: false);
+          // For suggestions: repas filter includes restaurant activities.
+          final activeSuggestionFilters = mealFilterActive
+              ? {...activeActivityFilters, ActivityFilterGroup.repas}
+              : activeActivityFilters;
+          final filteredActivitiesForSuggestions = !hasAnyFilter
+              ? items
+              : activeSuggestionFilters.isEmpty
+                  ? const <TripActivity>[]
+                  : items
+                      .where(
+                        (activity) => activeSuggestionFilters
+                            .contains(activity.category.filterGroup),
+                      )
+                      .toList(growable: false);
+          final filteredMeals = _activeFilters.isEmpty || mealFilterActive
+              ? meals
+              : const <TripMeal>[];
+
           final suggestionsQuery = _suggestionsSearchController.text;
           final plannedQuery = _plannedSearchController.text;
           final suggestionsEntries = buildTripActivitiesSuggestionEntries(
-            items,
+            filteredActivitiesForSuggestions,
             query: suggestionsQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,
@@ -185,23 +257,35 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               unknownLabel: l10n.roleParticipant,
             ),
           );
-          final plannedEntries = buildTripActivitiesPlannedEntries(
-            items,
+          final plannedEntries = buildTripActivitiesPlannedEntriesMixed(
+            activities: filteredActivities,
+            meals: filteredMeals,
             query: plannedQuery,
-            creatorLabelFor: (activity) => creatorLabelForActivity(
-              activity,
-              trip.memberPublicLabels,
-              usersDataById: creatorsDataById,
-              currentUserId: myUid,
-              unknownLabel: l10n.roleParticipant,
-            ),
+            creatorLabelForActivity: (activity) => creatorLabelForActivity(
+                  activity,
+                  trip.memberPublicLabels,
+                  usersDataById: creatorsDataById,
+                  currentUserId: myUid,
+                  unknownLabel: l10n.roleParticipant,
+                ),
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
           );
-          final agendaItems = tripActivitiesAgendaItemsForDay(
-            items,
+          final agendaEntries = tripActivitiesAgendaEntriesForDayMixed(
+            activities: filteredActivities,
+            meals: filteredMeals,
             selectedDay: _agendaSelectedDay,
           );
-          final plannedDays = tripActivitiesPlannedDaysSet(items);
+          final plannedDays = tripActivitiesPlannedDaysSetMixed(
+            activities: items,
+            meals: meals,
+          );
+
+          final filterLabels = {
+            ActivityFilterGroup.repas: l10n.activitiesFilterRepas,
+            ActivityFilterGroup.nuits: l10n.activitiesFilterNuits,
+            ActivityFilterGroup.loisirs: l10n.activitiesFilterLoisirs,
+            ActivityFilterGroup.trajets: l10n.activitiesFilterTrajets,
+          };
 
           return DefaultTabController(
             length: 3,
@@ -210,10 +294,29 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    l10n.tripTabActivities,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Row(
+                    children: [
+                      for (final group in ActivityFilterGroup.values) ...[
+                        Expanded(
+                          child: _ActivityFilterChip(
+                            label: filterLabels[group]!,
+                            icon: group.filterIcon,
+                            color: group.filterColor,
+                            selected: _activeFilters.contains(group),
+                            onToggle: () => setState(() {
+                              if (_activeFilters.contains(group)) {
+                                _activeFilters.remove(group);
+                              } else {
+                                _activeFilters.add(group);
+                              }
+                            }),
+                          ),
+                        ),
+                        if (group != ActivityFilterGroup.values.last)
+                          const SizedBox(width: 8),
+                      ],
+                    ],
                   ),
                 ),
                 TabBar(
@@ -232,6 +335,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: suggestionsEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoSuggestion,
@@ -244,6 +348,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         entries: plannedEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoPlanned,
@@ -252,9 +357,10 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         centerDay: _agendaCenterDay,
                         selectedDay: _agendaSelectedDay,
                         plannedDays: plannedDays,
-                        agendaItems: agendaItems,
+                        agendaEntries: agendaEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: trip.memberPublicLabels,
+                        tripMemberIds: tripMemberIds,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         onMoveBackward: () => setState(
@@ -277,25 +383,13 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
               ],
             ),
           );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              l10n.commonErrorWithDetails(e.toString()),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
+      });
+    }
+
+    return Scaffold(
+      body: body,
       floatingActionButton: canSuggestActivity
-          ? FloatingActionButton(
-              heroTag: 'trip_activities_add',
-              tooltip: l10n.activitiesSuggestAction,
-              onPressed: () => context.push('/trips/${trip.id}/activities/new'),
-              child: const Icon(Icons.add),
-            )
+          ? _ActivitiesExpandableFab(tripId: trip.id)
           : null,
     );
   }
@@ -306,9 +400,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.centerDay,
     required this.selectedDay,
     required this.plannedDays,
-    required this.agendaItems,
+    required this.agendaEntries,
     required this.tripId,
     required this.tripMemberPublicLabels,
+    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.onMoveBackward,
@@ -319,9 +414,10 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final DateTime centerDay;
   final DateTime selectedDay;
   final Set<DateTime> plannedDays;
-  final List<TripActivity> agendaItems;
+  final List<TripActivitiesListEntry> agendaEntries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
+  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final VoidCallback onMoveBackward;
@@ -355,7 +451,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: agendaItems.isEmpty
+          child: agendaEntries.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -371,15 +467,29 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                  itemCount: agendaItems.length,
+                  itemCount: agendaEntries.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    return TripActivityCard(
+                    final entry = agendaEntries[index];
+                    final activity = entry.activity;
+                    if (activity != null) {
+                      return TripActivityCard(
+                        tripId: tripId,
+                        activity: activity,
+                        tripMemberPublicLabels: tripMemberPublicLabels,
+                        usersDataById: usersDataById,
+                        currentUserId: currentUserId,
+                      );
+                    }
+                    final meal = entry.meal;
+                    if (meal == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return TripMealCard(
                       tripId: tripId,
-                      activity: agendaItems[index],
-                      tripMemberPublicLabels: tripMemberPublicLabels,
-                      usersDataById: usersDataById,
-                      currentUserId: currentUserId,
+                      meal: meal,
+                      memberPublicLabels: tripMemberPublicLabels,
+                      tripMemberIds: tripMemberIds,
                     );
                   },
                 ),
@@ -628,4 +738,219 @@ List<_AgendaMonthSpan> _agendaMonthSpans(
 
 String _agendaMonthLabel(DateTime day, String localeTag) {
   return DateFormat('MMMM', localeTag).format(day);
+}
+
+class _ActivitiesExpandableFab extends StatefulWidget {
+  const _ActivitiesExpandableFab({required this.tripId});
+
+  final String tripId;
+
+  @override
+  State<_ActivitiesExpandableFab> createState() =>
+      _ActivitiesExpandableFabState();
+}
+
+class _ActivitiesExpandableFabState extends State<_ActivitiesExpandableFab> {
+  bool _isOpen = false;
+
+  void _toggle() => setState(() => _isOpen = !_isOpen);
+
+  void _openActivityCreate(List<TripActivityCategory> categories) {
+    setState(() => _isOpen = false);
+    final param = categories.map((c) => c.firestoreValue).join(',');
+    context.push(
+        '/trips/${widget.tripId}/activities/new?initialCategory=$param');
+  }
+
+  void _openMealCreate() {
+    setState(() => _isOpen = false);
+    context.push('/trips/${widget.tripId}/meals/new');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final loisirCategories = TripActivityCategory.values
+        .where((c) =>
+            c != TripActivityCategory.accommodation &&
+            c != TripActivityCategory.transport)
+        .toList();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: _isOpen
+                ? [
+                    _FabMenuItem(
+                      heroSuffix: 'nuits',
+                      icon: ActivityFilterGroup.nuits.filterIcon,
+                      color: ActivityFilterGroup.nuits.filterColor,
+                      label: l10n.activitiesFilterNuits,
+                      onTap: () => _openActivityCreate(
+                          [TripActivityCategory.accommodation]),
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'trajets',
+                      icon: ActivityFilterGroup.trajets.filterIcon,
+                      color: ActivityFilterGroup.trajets.filterColor,
+                      label: l10n.activitiesFilterTrajets,
+                      onTap: () => _openActivityCreate(
+                          [TripActivityCategory.transport]),
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'repas',
+                      icon: ActivityFilterGroup.repas.filterIcon,
+                      color: ActivityFilterGroup.repas.filterColor,
+                      label: l10n.activitiesFilterRepas,
+                      onTap: _openMealCreate,
+                    ),
+                    const SizedBox(height: 8),
+                    _FabMenuItem(
+                      heroSuffix: 'loisirs',
+                      icon: ActivityFilterGroup.loisirs.filterIcon,
+                      color: ActivityFilterGroup.loisirs.filterColor,
+                      label: l10n.activitiesFilterLoisirs,
+                      onTap: () => _openActivityCreate(loisirCategories),
+                    ),
+                    const SizedBox(height: 8),
+                  ]
+                : [],
+          ),
+        ),
+        FloatingActionButton(
+          heroTag: 'trip_activities_add',
+          onPressed: _toggle,
+          child: AnimatedRotation(
+            turns: _isOpen ? 0.125 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FabMenuItem extends StatelessWidget {
+  const _FabMenuItem({
+    required this.heroSuffix,
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.onTap,
+  });
+
+  final String heroSuffix;
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          borderRadius: BorderRadius.circular(8),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          elevation: 2,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FloatingActionButton.small(
+          heroTag: 'fab_item_$heroSuffix',
+          onPressed: onTap,
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          child: Icon(icon, size: 20),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivityFilterChip extends StatelessWidget {
+  const _ActivityFilterChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.onToggle,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? color : StaticColors.cardBackground;
+    final iconColor = selected ? Colors.white : color;
+    final labelColor = selected
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
+    return GestureDetector(
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? color : StaticColors.cardBorder,
+          ),
+          boxShadow: selected
+              ? null
+              : [
+                  BoxShadow(
+                    color: StaticColors.cardShadowColor,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24, color: iconColor),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: labelColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
