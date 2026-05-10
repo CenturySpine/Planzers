@@ -1572,7 +1572,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingEmptyTitle => 'Liste de courses vide';
 
   @override
-  String get shoppingEmptySubtitle => 'Appuyez sur + pour ajouter un article.';
+  String get shoppingEmptySubtitle =>
+      'Utilisez le bouton panier pour ajouter un article.';
+
+  @override
+  String get shoppingFabTooltip => 'Actions sur la liste de courses';
+
+  @override
+  String get shoppingActionAddItem => 'Ajouter un article';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolider avec l’IA';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Supprimer les éléments cochés';
 
   @override
   String get shoppingFiltersTitle => 'Filtres de la liste';
@@ -4199,7 +4212,20 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get shoppingEmptyTitle => 'Liste de courses vide';
 
   @override
-  String get shoppingEmptySubtitle => 'Appuyez sur + pour ajouter un article.';
+  String get shoppingEmptySubtitle =>
+      'Utilisez le bouton panier pour ajouter un article.';
+
+  @override
+  String get shoppingFabTooltip => 'Actions sur la liste de courses';
+
+  @override
+  String get shoppingActionAddItem => 'Ajouter un article';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolider avec l’IA';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Supprimer les éléments cochés';
 
   @override
   String get shoppingFiltersTitle => 'Filtres de la liste';

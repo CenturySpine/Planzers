@@ -62,6 +62,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
   _ShoppingFilter _activeFilter = _ShoppingFilter.all;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
+  bool _isFabMenuOpen = false;
 
   @override
   void initState() {
@@ -435,48 +436,77 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
               bottom: 16,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (canConsolidateWithAi) ...[
-                    FloatingActionButton(
-                      heroTag: 'consolidate_shopping_with_ai',
-                      tooltip: l10n.shoppingConsolidateAiTooltip,
-                      onPressed: _isConsolidating || !ownerFlagReady
-                          ? null
-                          : () {
-                              if (isApplicationOwner) {
-                                _consolidateWithAi(context);
-                              } else {
-                                _showConsolidationNotAvailableForAccountDialog(
-                                  context,
-                                );
-                              }
-                            },
-                      child: _isConsolidating
-                          ? const SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome),
+                  if (_isFabMenuOpen) ...[
+                    if (canDeleteCheckedItems) ...[
+                      FloatingActionButton.extended(
+                        heroTag: 'shopping_delete_checked_submenu',
+                        tooltip: l10n.shoppingActionDeleteChecked,
+                        backgroundColor:
+                            Theme.of(context).colorScheme.error,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onError,
+                        onPressed: checkedCount == 0
+                            ? null
+                            : () {
+                                setState(() => _isFabMenuOpen = false);
+                                _confirmAndDeleteChecked(context);
+                              },
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(l10n.shoppingActionDeleteChecked),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (canConsolidateWithAi) ...[
+                      FloatingActionButton.extended(
+                        heroTag: 'shopping_consolidate_ai_submenu',
+                        tooltip: l10n.shoppingConsolidateAiTooltip,
+                        onPressed: _isConsolidating || !ownerFlagReady
+                            ? null
+                            : () {
+                                setState(() => _isFabMenuOpen = false);
+                                if (isApplicationOwner) {
+                                  _consolidateWithAi(context);
+                                } else {
+                                  _showConsolidationNotAvailableForAccountDialog(
+                                    context,
+                                  );
+                                }
+                              },
+                        icon: _isConsolidating
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.auto_awesome),
+                        label: Text(l10n.shoppingActionConsolidateAi),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    FloatingActionButton.extended(
+                      heroTag: 'shopping_add_item_submenu',
+                      tooltip: l10n.shoppingActionAddItem,
+                      onPressed: () {
+                        setState(() => _isFabMenuOpen = false);
+                        _addItem();
+                      },
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.shoppingActionAddItem),
                     ),
                     const SizedBox(height: 12),
                   ],
                   FloatingActionButton(
-                    heroTag: 'add_shopping_item',
-                    onPressed: _addItem,
-                    child: const Icon(Icons.add),
-                  ),
-                  if (canDeleteCheckedItems) ...[
-                    const SizedBox(height: 12),
-                    FloatingActionButton(
-                      heroTag: 'delete_checked_shopping_items',
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      foregroundColor: Theme.of(context).colorScheme.onError,
-                      onPressed: checkedCount == 0
-                          ? null
-                          : () => _confirmAndDeleteChecked(context),
-                      child: const Icon(Icons.delete_outline),
+                    heroTag: 'shopping_list_main_fab',
+                    tooltip: l10n.shoppingFabTooltip,
+                    onPressed: () {
+                      setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+                    },
+                    child: Icon(
+                      _isFabMenuOpen ? Icons.close : Icons.shopping_cart,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),

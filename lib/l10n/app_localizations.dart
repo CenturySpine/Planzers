@@ -2865,8 +2865,32 @@ abstract class AppLocalizations {
   /// No description provided for @shoppingEmptySubtitle.
   ///
   /// In fr, this message translates to:
-  /// **'Appuyez sur + pour ajouter un article.'**
+  /// **'Utilisez le bouton panier pour ajouter un article.'**
   String get shoppingEmptySubtitle;
+
+  /// No description provided for @shoppingFabTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Actions sur la liste de courses'**
+  String get shoppingFabTooltip;
+
+  /// No description provided for @shoppingActionAddItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un article'**
+  String get shoppingActionAddItem;
+
+  /// No description provided for @shoppingActionConsolidateAi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolider avec l’IA'**
+  String get shoppingActionConsolidateAi;
+
+  /// No description provided for @shoppingActionDeleteChecked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer les éléments cochés'**
+  String get shoppingActionDeleteChecked;
 
   /// No description provided for @shoppingFiltersTitle.
   ///

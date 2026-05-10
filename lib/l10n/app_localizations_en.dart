@@ -1556,7 +1556,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingEmptyTitle => 'Shopping list is empty';
 
   @override
-  String get shoppingEmptySubtitle => 'Press + to add an item.';
+  String get shoppingEmptySubtitle => 'Use the cart button to add an item.';
+
+  @override
+  String get shoppingFabTooltip => 'Shopping list actions';
+
+  @override
+  String get shoppingActionAddItem => 'Add item';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolidate with AI';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Delete checked items';
 
   @override
   String get shoppingFiltersTitle => 'List filters';
@@ -4159,7 +4171,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get shoppingEmptyTitle => 'Shopping list is empty';
 
   @override
-  String get shoppingEmptySubtitle => 'Press + to add an item.';
+  String get shoppingEmptySubtitle => 'Use the cart button to add an item.';
+
+  @override
+  String get shoppingFabTooltip => 'Shopping list actions';
+
+  @override
+  String get shoppingActionAddItem => 'Add item';
+
+  @override
+  String get shoppingActionConsolidateAi => 'Consolidate with AI';
+
+  @override
+  String get shoppingActionDeleteChecked => 'Delete checked items';
 
   @override
   String get shoppingFiltersTitle => 'List filters';
