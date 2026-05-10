@@ -86,9 +86,9 @@ class BrandPaletteData {
     onInverseSurface: Color(0xFFFDEEF8),
   );
 
-  /// Source Figma: #3A58F8 #2E206D #FECD55 #F9600F #BDE2F9 #2EB37F #FCCEFC #ACACAE
+  /// Source Figma: #3F46F7 #2E206D #FECD55 #F9600F #BDE2F9 #2EB37F #FCCEFC #ACACAE
   static const BrandPaletteData oligarch = BrandPaletteData(
-    primary: Color(0xFF3A58F8),
+    primary: Color(0xFF3F46F7),
     primaryLight: Color(0xFFBDE2F9),
     primarySoft: Color(0xFFE5F2FD),
     accent: Color(0xFFD44D00),
