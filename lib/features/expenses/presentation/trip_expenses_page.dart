@@ -11,7 +11,7 @@ import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
 import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
-import 'package:planerz/features/expenses/presentation/expense_group_editor_sheet.dart';
+import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -164,7 +164,6 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                         setState(() => _isFabMenuOpen = false);
                         _openExpenseGroupEditor(
                           context,
-                          ref,
                           trip.id,
                           trip.memberIds,
                           trip.memberPublicLabels,
@@ -211,22 +210,19 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
 
   static Future<void> _openExpenseGroupEditor(
     BuildContext context,
-    WidgetRef ref,
     String tripId,
     List<String> memberIds,
     Map<String, String> memberPublicLabels, {
     required TripExpenseGroup? existing,
   }) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => ExpenseGroupEditorSheet(
-        tripId: tripId,
-        memberIds: memberIds,
-        memberPublicLabels: memberPublicLabels,
-        existing: existing,
-        onDone: () => Navigator.of(ctx).pop(),
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (ctx) => ExpenseGroupEditorPage(
+          tripId: tripId,
+          memberIds: memberIds,
+          memberPublicLabels: memberPublicLabels,
+          existing: existing,
+        ),
       ),
     );
   }
@@ -742,7 +738,6 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       if (action == _ExpensePostMenuAction.edit) {
                         await _TripExpensesPageState._openExpenseGroupEditor(
                           context,
-                          ref,
                           widget.trip.id,
                           widget.memberIds,
                           widget.memberPublicLabels,
