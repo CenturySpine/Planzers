@@ -10,4 +10,7 @@ abstract final class StaticColors {
   static const Color cardShadowColor = Color(0x143F46F7);
 
   static const Color lightBackground = Color(0xFFEEF0FF);
+
+  /// Top strip of [assets/images/app_background.png]; fills trip timelines behind cards.
+  static const Color tripsPageBackdropTop = Color(0xFFFEFDF8);
 }
