@@ -28,9 +28,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
   static const double _legalLinkFontSize = 12;
   static const double _floatingActionButtonsBottomOffset = 34;
-  static const double _tripsBottomIllustrationOverlap = 224;
-  static const double _tripsBottomIllustrationOverlapEmptyTab = 88;
-  static const double _tripsScrollBottomInset = 96;
   TabController? _tabController;
   bool _isFabMenuOpen = false;
   @override
@@ -52,7 +49,6 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
 
     return Scaffold(
-      backgroundColor: StaticColors.tripsPageBackdropTop,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const _TripsAppBranding(),
@@ -106,158 +102,161 @@ class _TripsPageState extends ConsumerState<TripsPage>
       ),
       body: Stack(
         children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/app_background.png',
+              fit: BoxFit.cover,
+            ),
+          ),
           SafeArea(
             bottom: false,
-            child: tripsAsync.when(
-              data: (trips) {
-                final grouped = _groupTripsByTimeline(trips);
-                _ensureTimelineTabController(grouped);
-                final tabController = _tabController!;
-                final unreadByTrip =
-                    unreadByTripAsync.asData?.value ?? const <String, int>{};
-                final pastUnread = _sumUnreadForTrips(
-                  grouped[_TripTimelineCategory.past] ?? const [],
-                  unreadByTrip,
-                );
-                final ongoingUnread = _sumUnreadForTrips(
-                  grouped[_TripTimelineCategory.ongoing] ?? const [],
-                  unreadByTrip,
-                );
-                final upcomingUnread = _sumUnreadForTrips(
-                  grouped[_TripTimelineCategory.upcoming] ?? const [],
-                  unreadByTrip,
-                );
-                final colorScheme = Theme.of(context).colorScheme;
-                final titleColor = colorScheme.primary;
-
-                return NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: StaticColors.lightBackground,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.explore_outlined,
-                                    size: 20,
-                                    color: colorScheme.onPrimaryContainer,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    l10n.tripsMyTrips,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: colorScheme.onPrimaryContainer,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: StaticColors.lightBackground,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.explore_outlined,
+                          size: 20,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
-                      ),
-                      SliverOverlapAbsorber(
-                        handle: NestedScrollView.sliverOverlapAbsorberHandleFor(
-                            context),
-                        sliver: SliverPersistentHeader(
-                          pinned: true,
-                          delegate: _TripsTabBarDelegate(
-                            color: StaticColors.tripsPageBackdropTop,
-                            tabBar: TabBar(
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.tripsMyTrips,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: tripsAsync.when(
+                    data: (trips) {
+                      final grouped = _groupTripsByTimeline(trips);
+                      _ensureTimelineTabController(grouped);
+                      final tabController = _tabController!;
+                      final unreadByTrip = unreadByTripAsync.asData?.value ??
+                          const <String, int>{};
+                      final pastUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.past] ?? const [],
+                        unreadByTrip,
+                      );
+                      final ongoingUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.ongoing] ?? const [],
+                        unreadByTrip,
+                      );
+                      final upcomingUnread = _sumUnreadForTrips(
+                        grouped[_TripTimelineCategory.upcoming] ?? const [],
+                        unreadByTrip,
+                      );
+                      final colorScheme = Theme.of(context).colorScheme;
+
+                      final titleColor = colorScheme.primary;
+
+                      return Column(
+                        children: [
+                          TabBar(
+                            controller: tabController,
+                            tabs: [
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelinePast,
+                                tripCount: grouped[_TripTimelineCategory.past]
+                                        ?.length ??
+                                    0,
+                                unreadCount: pastUnread,
+                              ),
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelineOngoing,
+                                tripCount:
+                                    grouped[_TripTimelineCategory.ongoing]
+                                            ?.length ??
+                                        0,
+                                unreadCount: ongoingUnread,
+                              ),
+                              _buildTimelineTab(
+                                context,
+                                label: l10n.tripsTimelineUpcoming,
+                                tripCount:
+                                    grouped[_TripTimelineCategory.upcoming]
+                                            ?.length ??
+                                        0,
+                                unreadCount: upcomingUnread,
+                              ),
+                            ],
+                          ),
+                          Expanded(
+                            child: TabBarView(
                               controller: tabController,
-                              tabs: [
-                                _buildTimelineTab(
-                                  context,
-                                  label: l10n.tripsTimelinePast,
-                                  tripCount: grouped[_TripTimelineCategory.past]
-                                          ?.length ??
-                                      0,
-                                  unreadCount: pastUnread,
+                              children: [
+                                _TripsTimelineList(
+                                  trips: grouped[_TripTimelineCategory.past] ??
+                                      const [],
+                                  titleColor: titleColor,
+                                  emptyMessage: l10n.tripsEmptyPast,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
                                 ),
-                                _buildTimelineTab(
-                                  context,
-                                  label: l10n.tripsTimelineOngoing,
-                                  tripCount:
-                                      grouped[_TripTimelineCategory.ongoing]
-                                              ?.length ??
-                                          0,
-                                  unreadCount: ongoingUnread,
+                                _TripsTimelineList(
+                                  trips:
+                                      grouped[_TripTimelineCategory.ongoing] ??
+                                          const [],
+                                  titleColor: titleColor,
+                                  emptyMessage: l10n.tripsEmptyOngoing,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
                                 ),
-                                _buildTimelineTab(
-                                  context,
-                                  label: l10n.tripsTimelineUpcoming,
-                                  tripCount:
-                                      grouped[_TripTimelineCategory.upcoming]
-                                              ?.length ??
-                                          0,
-                                  unreadCount: upcomingUnread,
+                                _TripsTimelineList(
+                                  trips:
+                                      grouped[_TripTimelineCategory.upcoming] ??
+                                          const [],
+                                  titleColor: titleColor,
+                                  emptyMessage: l10n.tripsEmptyUpcoming,
+                                  onOpenTrip: (tripId) =>
+                                      context.push('/trips/$tripId/overview'),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stackTrace) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(l10n.tripsFirestoreError(error.toString())),
                       ),
-                    ];
-                  },
-                  body: Material(
-                    type: MaterialType.transparency,
-                    child: TabBarView(
-                      clipBehavior: Clip.none,
-                      controller: tabController,
-                      children: [
-                      _TripsTimelineScrollBody(
-                        bottomInsetPx: _tripsScrollBottomInset,
-                        trips: grouped[_TripTimelineCategory.past] ?? const [],
-                        titleColor: titleColor,
-                        emptyMessage: l10n.tripsEmptyPast,
-                        onOpenTrip: (tripId) =>
-                            context.push('/trips/$tripId/overview'),
-                      ),
-                      _TripsTimelineScrollBody(
-                        bottomInsetPx: _tripsScrollBottomInset,
-                        trips:
-                            grouped[_TripTimelineCategory.ongoing] ?? const [],
-                        titleColor: titleColor,
-                        emptyMessage: l10n.tripsEmptyOngoing,
-                        onOpenTrip: (tripId) =>
-                            context.push('/trips/$tripId/overview'),
-                      ),
-                      _TripsTimelineScrollBody(
-                        bottomInsetPx: _tripsScrollBottomInset,
-                        trips:
-                            grouped[_TripTimelineCategory.upcoming] ?? const [],
-                        titleColor: titleColor,
-                        emptyMessage: l10n.tripsEmptyUpcoming,
-                        onOpenTrip: (tripId) =>
-                            context.push('/trips/$tripId/overview'),
-                      ),
-                    ],
                     ),
                   ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(l10n.tripsFirestoreError(error.toString())),
                 ),
               ),
-            ),
+            ],
+          ),
           ),
           SafeArea(
             top: false,
@@ -465,156 +464,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
     }
     return e.toString();
   }
-}
 
-class _TripsTabBarDelegate extends SliverPersistentHeaderDelegate {
-  _TripsTabBarDelegate({required this.tabBar, required this.color});
-
-  final TabBar tabBar;
-  final Color color;
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final tabBarHeight = tabBar.preferredSize.height;
-    return Material(
-      color: color,
-      child: SizedBox(
-        height: tabBarHeight,
-        width: double.infinity,
-        child: tabBar,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _TripsTabBarDelegate oldDelegate) {
-    return tabBar != oldDelegate.tabBar || color != oldDelegate.color;
-  }
-}
-
-class _TripsTimelineScrollBody extends StatelessWidget {
-  const _TripsTimelineScrollBody({
-    required this.bottomInsetPx,
-    required this.trips,
-    required this.titleColor,
-    required this.emptyMessage,
-    required this.onOpenTrip,
-  });
-
-  final double bottomInsetPx;
-  final List<Trip> trips;
-  final Color titleColor;
-  final String emptyMessage;
-  final ValueChanged<String> onOpenTrip;
-
-  @override
-  Widget build(BuildContext context) {
-    final tripCardTheme = Theme.of(context).copyWith(
-      cardTheme: CardThemeData(
-        color: StaticColors.cardBackground,
-        elevation: 4,
-        shadowColor: StaticColors.cardShadowColor,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: StaticColors.cardBorder),
-        ),
-      ),
-    );
-
-    final illustrationOverlapPx = trips.isEmpty
-        ? _TripsPageState._tripsBottomIllustrationOverlapEmptyTab
-        : _TripsPageState._tripsBottomIllustrationOverlap;
-
-    Widget illustrationImage() {
-      return Transform.translate(
-        offset: Offset(0, -illustrationOverlapPx),
-        child: Padding(
-          padding: EdgeInsets.only(bottom: bottomInsetPx),
-          child: SizedBox(
-            width: MediaQuery.sizeOf(context).width,
-            child: Image.asset(
-              'assets/images/app_background.png',
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Theme(
-      data: tripCardTheme,
-      child: CustomScrollView(
-        primary: false,
-        clipBehavior: Clip.none,
-        slivers: [
-          SliverOverlapInjector(
-            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-          ),
-          if (trips.isEmpty)
-            SliverToBoxAdapter(
-              child: Stack(
-                alignment: Alignment.topCenter,
-                clipBehavior: Clip.none,
-                children: [
-                  illustrationImage(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
-                    child: Text(
-                      emptyMessage,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16 + 8, 12, 16 + 8, 0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final trip = trips[index];
-                    final dateLine = formatTripDateRange(
-                      context,
-                      trip.startDate,
-                      trip.endDate,
-                    );
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: index == trips.length - 1 ? 0 : 12,
-                      ),
-                      child: _TripCard(
-                        trip: trip,
-                        titleColor: titleColor,
-                        dateLine: dateLine,
-                        onTap: () => onOpenTrip(trip.id),
-                      ),
-                    );
-                  },
-                  childCount: trips.length,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(child: illustrationImage()),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 class _FooterSeparator extends StatelessWidget {
@@ -673,6 +523,75 @@ class _TripsAppBranding extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _TripsTimelineList extends StatelessWidget {
+  const _TripsTimelineList({
+    required this.trips,
+    required this.titleColor,
+    required this.emptyMessage,
+    required this.onOpenTrip,
+  });
+
+  final List<Trip> trips;
+  final Color titleColor;
+  final String emptyMessage;
+  final ValueChanged<String> onOpenTrip;
+
+  @override
+  Widget build(BuildContext context) {
+    if (trips.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            emptyMessage,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      );
+    }
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardThemeData(
+          color: StaticColors.cardBackground,
+          elevation: 4,
+          shadowColor: StaticColors.cardShadowColor,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: StaticColors.cardBorder),
+          ),
+        ),
+      ),
+      child: ListView.builder(
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 96),
+        itemCount: trips.length,
+        itemBuilder: (context, index) {
+          final trip = trips[index];
+          final dateLine = formatTripDateRange(
+            context,
+            trip.startDate,
+            trip.endDate,
+          );
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _TripCard(
+              trip: trip,
+              titleColor: titleColor,
+              dateLine: dateLine,
+              onTap: () => onOpenTrip(trip.id),
+            ),
+          );
+        },
+      ),
     );
   }
 }
