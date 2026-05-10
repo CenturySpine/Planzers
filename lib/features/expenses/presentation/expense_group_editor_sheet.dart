@@ -50,10 +50,22 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
     final members = _cleanMembers.toSet();
     final ex = widget.existing;
     _titleController = TextEditingController(text: ex?.title ?? '');
-    final raw = ex?.visibleToMemberIds.toSet() ?? {};
-    _visibleToIds = raw.isEmpty ? {...members} : raw.intersection(members);
-    if (_visibleToIds.isEmpty && members.isNotEmpty) {
-      _visibleToIds = {...members};
+    if (ex == null) {
+      // New post: opt-out visibility — only the creator is included by default.
+      final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
+      if (myUid != null &&
+          myUid.isNotEmpty &&
+          members.contains(myUid)) {
+        _visibleToIds = {myUid};
+      } else {
+        _visibleToIds = {};
+      }
+    } else {
+      final raw = ex.visibleToMemberIds.toSet();
+      _visibleToIds = raw.isEmpty ? {...members} : raw.intersection(members);
+      if (_visibleToIds.isEmpty && members.isNotEmpty) {
+        _visibleToIds = {...members};
+      }
     }
   }
 
@@ -288,7 +300,11 @@ class _ExpenseGroupEditorSheetState extends ConsumerState<ExpenseGroupEditorShee
                 ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _saving || members.isEmpty ? null : _save,
+                onPressed: _saving ||
+                        members.isEmpty ||
+                        _visibleToIds.isEmpty
+                    ? null
+                    : _save,
                 child: _saving
                     ? const SizedBox(
                         height: 22,
