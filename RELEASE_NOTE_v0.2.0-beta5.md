@@ -1,4 +1,4 @@
-# Notes de version — v0.2.0-beta5
+# Notes de version — v0.2.0-beta5 (redeloyed 10 05 202 15h52)
 
 ## Pour les utilisateurs
 
