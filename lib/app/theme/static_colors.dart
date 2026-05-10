@@ -10,4 +10,6 @@ abstract final class StaticColors {
   static const Color cardShadowColor = Color(0x143F46F7);
 
   static const Color lightBackground = Color(0xFFEEF0FF);
+
+  static const Color primary = Color(0xFF3F46F7);
 }

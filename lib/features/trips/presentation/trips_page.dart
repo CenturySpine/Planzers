@@ -102,10 +102,13 @@ class _TripsPageState extends ConsumerState<TripsPage>
       ),
       body: Stack(
         children: [
+          const Positioned.fill(child: ColoredBox(color: Colors.white)),
           Positioned.fill(
+            top: 240,
             child: Image.asset(
               'assets/images/app_background.png',
               fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
           ),
           SafeArea(
@@ -543,9 +546,10 @@ class _TripsTimelineList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (trips.isEmpty) {
-      return Center(
+      return Align(
+        alignment: Alignment.topCenter,
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
           child: Text(
             emptyMessage,
             textAlign: TextAlign.center,
