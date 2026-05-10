@@ -504,7 +504,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                       setState(() => _isFabMenuOpen = !_isFabMenuOpen);
                     },
                     child: Icon(
-                      _isFabMenuOpen ? Icons.close : Icons.shopping_cart,
+                      _isFabMenuOpen ? Icons.close : Icons.shopping_bag_outlined,
                     ),
                   ),
                 ],
