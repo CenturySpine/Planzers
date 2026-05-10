@@ -63,8 +63,6 @@ class TripExpensesPage extends ConsumerStatefulWidget {
 }
 
 class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
-  static const double _floatingActionButtonsBottomOffset = 34;
-
   String? _activeGroupId;
   bool _isFabMenuOpen = false;
 
@@ -151,66 +149,61 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         ),
       ),
       floatingActionButton: showExpensesFab
-          ? Padding(
-              padding: const EdgeInsets.only(
-                bottom: _floatingActionButtonsBottomOffset,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (_isFabMenuOpen) ...[
-                    if (canCreateExpensePost) ...[
-                      FloatingActionButton.extended(
-                        heroTag: 'trip_expenses_add_post',
-                        tooltip: l10n.expensesFabAddExpensePost,
-                        icon: const Icon(Icons.create_new_folder_outlined),
-                        label: Text(l10n.expensesFabAddExpensePost),
-                        onPressed: () {
-                          setState(() => _isFabMenuOpen = false);
-                          _openExpenseGroupEditor(
-                            context,
-                            ref,
-                            trip.id,
-                            trip.memberIds,
-                            trip.memberPublicLabels,
-                            existing: null,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    if (canCreateExpense) ...[
-                      FloatingActionButton.extended(
-                        heroTag: 'trip_expenses_add_expense',
-                        tooltip: l10n.expensesAddExpenseTooltip,
-                        icon: const Icon(Icons.add_card_outlined),
-                        label: Text(l10n.expensesAddExpenseTooltip),
-                        onPressed: () {
-                          setState(() => _isFabMenuOpen = false);
-                          _openAddExpenseSheetFromFab(
-                            context,
-                            ref,
-                            trip.id,
-                            trip.memberIds,
-                            trip.memberPublicLabels,
-                            _activeGroupId,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (_isFabMenuOpen) ...[
+                  if (canCreateExpensePost) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'trip_expenses_add_post',
+                      tooltip: l10n.expensesFabAddExpensePost,
+                      icon: const Icon(Icons.create_new_folder_outlined),
+                      label: Text(l10n.expensesFabAddExpensePost),
+                      onPressed: () {
+                        setState(() => _isFabMenuOpen = false);
+                        _openExpenseGroupEditor(
+                          context,
+                          ref,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          existing: null,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
                   ],
-                  FloatingActionButton(
-                    heroTag: 'trip_expenses_main_fab',
-                    tooltip: l10n.expensesFabTooltip,
-                    onPressed: () {
-                      setState(() => _isFabMenuOpen = !_isFabMenuOpen);
-                    },
-                    child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
-                  ),
+                  if (canCreateExpense) ...[
+                    FloatingActionButton.extended(
+                      heroTag: 'trip_expenses_add_expense',
+                      tooltip: l10n.expensesAddExpenseTooltip,
+                      icon: const Icon(Icons.add_card_outlined),
+                      label: Text(l10n.expensesAddExpenseTooltip),
+                      onPressed: () {
+                        setState(() => _isFabMenuOpen = false);
+                        _openAddExpenseSheetFromFab(
+                          context,
+                          ref,
+                          trip.id,
+                          trip.memberIds,
+                          trip.memberPublicLabels,
+                          _activeGroupId,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ],
-              ),
+                FloatingActionButton(
+                  heroTag: 'trip_expenses_main_fab',
+                  tooltip: l10n.expensesFabTooltip,
+                  onPressed: () {
+                    setState(() => _isFabMenuOpen = !_isFabMenuOpen);
+                  },
+                  child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
+                ),
+              ],
             )
           : null,
     );
@@ -759,7 +752,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   setState(() => _activeView = selection.first);
                 },
               ),
-              if (canEditPost || canDeletePost)
+              if (!widget.group.isDefault && (canEditPost || canDeletePost))
                 Positioned(
                   right: -6,
                   child: PopupMenuButton<_ExpensePostMenuAction>(
