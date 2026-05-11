@@ -2850,6 +2850,18 @@ abstract class AppLocalizations {
   /// **'{count} élément(s) supprimé(s).'**
   String shoppingDeletedCount(Object count);
 
+  /// No description provided for @shoppingDeleteItemTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cet article ?'**
+  String get shoppingDeleteItemTitle;
+
+  /// No description provided for @shoppingDeleteItemBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'article sera supprimé définitivement. Cette opération est irréversible.'**
+  String get shoppingDeleteItemBody;
+
   /// No description provided for @shoppingFilterHelpTooltip.
   ///
   /// In fr, this message translates to:
