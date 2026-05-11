@@ -12,9 +12,11 @@ import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
 import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
+import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/messaging/presentation/chat_widget.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Trip-scoped text chat; history is visible to all current [Trip] members.
 ///
@@ -28,6 +30,26 @@ class TripMessagingPage extends ConsumerStatefulWidget {
 }
 
 class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
+  @override
+  Widget build(BuildContext context) {
+    return const TripThreadMessagingPage(scope: TripMessageThreadScope.main());
+  }
+}
+
+class TripThreadMessagingPage extends ConsumerStatefulWidget {
+  const TripThreadMessagingPage({
+    super.key,
+    required this.scope,
+  });
+
+  final TripMessageThreadScope scope;
+
+  @override
+  ConsumerState<TripThreadMessagingPage> createState() =>
+      _TripThreadMessagingPageState();
+}
+
+class _TripThreadMessagingPageState extends ConsumerState<TripThreadMessagingPage> {
   static const int _olderPageSize = 50;
 
   late final NotificationCenterRepository _notificationCenter;
@@ -100,7 +122,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   bool _isMessagingTabCurrentlyVisible() {
     try {
       final path = GoRouterState.of(context).uri.path;
-      return path.endsWith('/messages');
+      return path.contains('/messages');
     } catch (_) {
       return false;
     }
@@ -129,6 +151,7 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
         tripId: tripId,
         pageSize: _olderPageSize,
         startAfterDoc: startAfterDoc,
+        scope: widget.scope,
       );
       if (!mounted) return;
       setState(() {
@@ -149,20 +172,49 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
   @override
   Widget build(BuildContext context) {
     final trip = TripScope.of(context);
+    final l10n = AppLocalizations.of(context)!;
     _syncPresenceIfNeeded(trip.id);
 
+    final scope = widget.scope;
     final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
         FirebaseAuth.instance.currentUser?.uid;
-    final chatDataAsync = ref.watch(tripChatDataStreamProvider(trip.id));
+    if (scope.isAdmin && !trip.isTripAdmin(myUid)) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l10n.tripNotFoundOrNoAccess,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+    final chatDataAsync = ref.watch(
+      tripChatDataScopedStreamProvider(
+        TripMessageThreadRequest(tripId: trip.id, scope: scope),
+      ),
+    );
     final repo = ref.read(tripMessagesRepositoryProvider);
+    final canAccessAdminThread = trip.isTripAdmin(myUid);
     if (_activeTripId != trip.id) {
       _resetPaginationForTrip(trip.id);
     }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: chatDataAsync.when(
-        data: (chatData) {
+      body: Column(
+        children: [
+          if (canAccessAdminThread)
+            _TripMessagingThreadTabs(
+              selectedScope: scope,
+              onSelectMain: () => context.go('/trips/${trip.id}/messages'),
+              onSelectAdmin: () => context.go('/trips/${trip.id}/messages/admin'),
+            ),
+          Expanded(
+            child: chatDataAsync.when(
+              data: (chatData) {
           if (_olderCursor == null) {
             _olderCursor = chatData.oldestLoadedDoc;
             _hasMoreOlder = chatData.hasPotentialOlder && _olderCursor != null;
@@ -192,70 +244,138 @@ class _TripMessagingPageState extends ConsumerState<TripMessagingPage> {
           final usersAsync = ref.watch(
             usersDataByIdsKeyStreamProvider(usersIdsKey),
           );
-          return usersAsync.when(
-            data: (userDocs) {
-              final authorLabels = tripMemberLabelsFromUserDocsById(
-                userDocs,
-                labelUserIds,
-                tripMemberPublicLabels: trip.memberPublicLabels,
-                currentUserId: myUid,
-                emptyFallback: 'Participant',
-              );
-              return ChatWidget(
-                currentUserId: myUid,
-                messages: mergedMessages,
-                reactions: mergedReactions,
-                userDocs: userDocs,
-                authorLabels: authorLabels,
-                showUserBadges: true,
-                hasMoreOlder: _hasMoreOlder,
-                loadingOlder: _loadingOlder,
-                onLoadOlder: () => _loadOlderMessages(tripId: trip.id, repo: repo),
-                onSend: (text) => repo.sendMessage(
-                  tripId: trip.id,
-                  text: text,
-                ),
-                onUpdate: (id, text) => repo.updateMessage(
-                  tripId: trip.id,
-                  messageId: id,
-                  text: text,
-                ),
-                onDelete: (id) => repo.deleteMessage(
-                  tripId: trip.id,
-                  messageId: id,
-                ),
-                onSetReaction: (id, emoji) => repo.setMyReaction(
-                  tripId: trip.id,
-                  messageId: id,
-                  emoji: emoji,
-                ),
-                onRemoveReaction: (id) => repo.removeMyReaction(
-                  tripId: trip.id,
-                  messageId: id,
-                ),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'Erreur utilisateurs : $e',
-                  textAlign: TextAlign.center,
+                return usersAsync.when(
+                  data: (userDocs) {
+                    final authorLabels = tripMemberLabelsFromUserDocsById(
+                      userDocs,
+                      labelUserIds,
+                      tripMemberPublicLabels: trip.memberPublicLabels,
+                      currentUserId: myUid,
+                      emptyFallback: 'Participant',
+                    );
+                    return ChatWidget(
+                      currentUserId: myUid,
+                      messages: mergedMessages,
+                      reactions: mergedReactions,
+                      userDocs: userDocs,
+                      authorLabels: authorLabels,
+                      showUserBadges: true,
+                      hasMoreOlder: _hasMoreOlder,
+                      loadingOlder: _loadingOlder,
+                      onLoadOlder: () => _loadOlderMessages(tripId: trip.id, repo: repo),
+                      onSend: (text) => repo.sendMessage(
+                        tripId: trip.id,
+                        text: text,
+                        scope: scope,
+                      ),
+                      onUpdate: (id, text) => repo.updateMessage(
+                        tripId: trip.id,
+                        messageId: id,
+                        text: text,
+                        scope: scope,
+                      ),
+                      onDelete: (id) => repo.deleteMessage(
+                        tripId: trip.id,
+                        messageId: id,
+                        scope: scope,
+                      ),
+                      onSetReaction: (id, emoji) => repo.setMyReaction(
+                        tripId: trip.id,
+                        messageId: id,
+                        emoji: emoji,
+                        scope: scope,
+                      ),
+                      onRemoveReaction: (id) => repo.removeMyReaction(
+                        tripId: trip.id,
+                        messageId: id,
+                        scope: scope,
+                      ),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Erreur utilisateurs : $e',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Erreur : $e',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Erreur : $e',
-              textAlign: TextAlign.center,
-            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripMessagingThreadTabs extends StatelessWidget {
+  const _TripMessagingThreadTabs({
+    required this.selectedScope,
+    required this.onSelectMain,
+    required this.onSelectAdmin,
+  });
+
+  final TripMessageThreadScope selectedScope;
+  final VoidCallback onSelectMain;
+  final VoidCallback onSelectAdmin;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final selectedTabIndex = selectedScope.isAdmin ? 1 : 0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: DefaultTabController(
+        length: 2,
+        initialIndex: selectedTabIndex,
+        child: TabBar(
+          onTap: (index) {
+            if (index == selectedTabIndex) return;
+            if (index == 0) {
+              onSelectMain();
+              return;
+            }
+            onSelectAdmin();
+          },
+          tabs: <Widget>[
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.forum_outlined),
+                  const SizedBox(width: 8),
+                  Text(l10n.tripMessagingChannelMain),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.admin_panel_settings_outlined),
+                  const SizedBox(width: 8),
+                  Text(l10n.tripMessagingChannelAdmin),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

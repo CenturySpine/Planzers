@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
 import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
+import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 
 final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   return TripMessagesRepository(
@@ -11,10 +13,18 @@ final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   );
 });
 
-/// Live messages for a trip, oldest first.
 final tripMessagesStreamProvider =
     StreamProvider.autoDispose.family<List<TripMessage>, String>((ref, tripId) {
-  return ref.watch(tripMessagesRepositoryProvider).watchMessages(tripId);
+  return ref
+      .watch(tripMessagesRepositoryProvider)
+      .watchMessages(tripId, scope: const TripMessageThreadScope.main());
+});
+
+final tripMessagesScopedStreamProvider = StreamProvider.autoDispose
+    .family<List<TripMessage>, TripMessageThreadRequest>((ref, args) {
+  return ref
+      .watch(tripMessagesRepositoryProvider)
+      .watchMessages(args.tripId, scope: args.scope);
 });
 
 final tripMessagesLastReadAtProvider =
@@ -29,10 +39,51 @@ final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
 
 final tripChatDataStreamProvider =
     StreamProvider.autoDispose.family<TripChatData, String>((ref, tripId) {
-  return ref
-      .watch(tripMessagesRepositoryProvider)
-      .watchRecentChatData(tripId, pageSize: 50);
+  return ref.watch(tripMessagesRepositoryProvider).watchRecentChatData(
+        tripId,
+        pageSize: 50,
+        scope: const TripMessageThreadScope.main(),
+      );
 });
+
+final tripChatDataScopedStreamProvider = StreamProvider.autoDispose
+    .family<TripChatData, TripMessageThreadRequest>((ref, args) {
+  return ref.watch(tripMessagesRepositoryProvider).watchRecentChatData(
+        args.tripId,
+        pageSize: 50,
+        scope: args.scope,
+      );
+});
+
+class TripMessageThreadRequest {
+  const TripMessageThreadRequest({
+    required this.tripId,
+    required this.scope,
+  });
+
+  final String tripId;
+  final TripMessageThreadScope scope;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! TripMessageThreadRequest) return false;
+    return other.tripId == tripId &&
+        other.scope.threadType == scope.threadType &&
+        other.scope.threadObjectType == scope.threadObjectType &&
+        other.scope.threadObjectId == scope.threadObjectId &&
+        other.scope.visibilityType == scope.visibilityType;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        tripId,
+        scope.threadType,
+        scope.threadObjectType,
+        scope.threadObjectId,
+        scope.visibilityType,
+      );
+}
 
 class TripChatData {
   const TripChatData({
@@ -70,6 +121,7 @@ class TripMessagesRepository {
   final FirebaseAuth auth;
 
   static const int maxTextLength = 4000;
+  static const String _messagesChannelKey = 'messages';
 
   CollectionReference<Map<String, dynamic>> _messagesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('messages');
@@ -81,8 +133,6 @@ class TripMessagesRepository {
   }) {
     return _messagesCol(tripId).doc(messageId).collection('reactions');
   }
-
-  static const String _messagesChannelKey = 'messages';
 
   DocumentReference<Map<String, dynamic>> _myReadStateDoc(String tripId) {
     final uid = auth.currentUser?.uid.trim() ?? '';
@@ -96,32 +146,37 @@ class TripMessagesRepository {
         .doc(uid);
   }
 
-  Stream<List<TripMessage>> watchMessages(String tripId) {
+  Stream<List<TripMessage>> watchMessages(
+    String tripId, {
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  }) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
       return Stream.value(const <TripMessage>[]);
     }
-
-    return _messagesCol(cleanId)
+    return _messagesQueryForScope(cleanId, scope: scope)
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map(
-          (snap) => snap.docs.map(TripMessage.fromDoc).toList(),
-        );
+        .map((snap) => snap.docs.map(TripMessage.fromDoc).where((message) {
+              return _matchesScope(message: message, scope: scope);
+            }).toList(growable: false));
   }
 
-  Stream<DateTime?> watchMyLastReadAt(String tripId) {
-    final cleanId = tripId.trim();
+  Stream<DateTime?> watchMyLastReadAt(
+    String tripId, {
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  }) {
+    final cleanTripId = tripId.trim();
     final uid = auth.currentUser?.uid.trim() ?? '';
-    if (cleanId.isEmpty || uid.isEmpty) {
+    if (cleanTripId.isEmpty || uid.isEmpty) {
       return Stream.value(null);
     }
-    return _myReadStateDoc(cleanId).snapshots().map((doc) {
+    return _myReadStateDoc(cleanTripId).snapshots().map((doc) {
       final data = doc.data();
       if (data == null) return null;
       final channels = data['channels'];
       final raw = channels is Map<String, dynamic>
-          ? channels[_messagesChannelKey]
+          ? channels[_channelKeyForScope(scope)]
           : null;
       return switch (raw) {
         Timestamp ts => ts.toDate(),
@@ -133,22 +188,27 @@ class TripMessagesRepository {
   Future<void> markMyMessagesAsReadUpTo({
     required String tripId,
     required DateTime readUpTo,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
     }
-    await _myReadStateDoc(cleanTripId).set({
-      'channels': {
-        _messagesChannelKey: Timestamp.fromDate(readUpTo.toUtc()),
+    await _myReadStateDoc(cleanTripId).set(
+      {
+        'channels': {
+          _channelKeyForScope(scope): Timestamp.fromDate(readUpTo.toUtc()),
+        },
+        'updatedAt': FieldValue.serverTimestamp(),
       },
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+      SetOptions(merge: true),
+    );
   }
 
   Future<void> sendMessage({
     required String tripId,
     required String text,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -168,17 +228,31 @@ class TripMessagesRepository {
       throw StateError('Message trop long');
     }
 
-    await _messagesCol(cleanTripId).add({
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+
+    final payload = <String, dynamic>{
       'text': trimmed,
       'authorId': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (!scope.isMain) {
+      payload['threadType'] = scope.threadType.firestoreValue;
+      payload['visibilityType'] = scope.visibilityType.firestoreValue;
+      if (scope.isObject) {
+        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
+      }
+    }
+    await _messagesCol(cleanTripId).add(payload);
   }
 
   Future<void> updateMessage({
     required String tripId,
     required String messageId,
     required String text,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -199,8 +273,16 @@ class TripMessagesRepository {
       throw StateError('Message trop long');
     }
 
-    final ref = _messagesCol(cleanTripId).doc(cleanMessageId);
-    await ref.update({
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+
+    final message = await _loadScopedMessage(
+      tripId: cleanTripId,
+      messageId: cleanMessageId,
+      scope: scope,
+    );
+    await _messagesCol(cleanTripId).doc(message.id).update({
       'text': trimmed,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -209,53 +291,42 @@ class TripMessagesRepository {
   Future<void> deleteMessage({
     required String tripId,
     required String messageId,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
     }
-
     final cleanTripId = tripId.trim();
     final cleanMessageId = messageId.trim();
     if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
       throw StateError('Parametres invalides');
     }
-
-    await _messagesCol(cleanTripId).doc(cleanMessageId).delete();
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+    final message = await _loadScopedMessage(
+      tripId: cleanTripId,
+      messageId: cleanMessageId,
+      scope: scope,
+    );
+    await _messagesCol(cleanTripId).doc(message.id).delete();
   }
 
   Stream<Map<String, List<TripMessageReaction>>> watchReactionsByMessage(
-    String tripId,
-  ) {
+    String tripId, {
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  }) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
       return Stream.value(const <String, List<TripMessageReaction>>{});
     }
-
-    return _messagesCol(cleanId).snapshots().map((snap) {
+    return _messagesQueryForScope(cleanId, scope: scope).snapshots().map((snap) {
       final result = <String, List<TripMessageReaction>>{};
       for (final messageDoc in snap.docs) {
-        final data = messageDoc.data();
-        final reactionsRaw = data['reactionsByUser'];
-        if (reactionsRaw is! Map<String, dynamic> || reactionsRaw.isEmpty) {
-          result[messageDoc.id] = const <TripMessageReaction>[];
-          continue;
-        }
-
-        final reactions = <TripMessageReaction>[];
-        reactionsRaw.forEach((uid, rawValue) {
-          final cleanUid = uid.trim();
-          final emoji = rawValue is String ? rawValue.trim() : '';
-          if (cleanUid.isEmpty || emoji.isEmpty) return;
-          reactions.add(
-            TripMessageReaction(
-              userId: cleanUid,
-              emoji: emoji,
-              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-            ),
-          );
-        });
-        result[messageDoc.id] = reactions;
+        final message = TripMessage.fromDoc(messageDoc);
+        if (!_matchesScope(message: message, scope: scope)) continue;
+        result[messageDoc.id] = _parseReactionsByUser(messageDoc.data());
       }
       return result;
     });
@@ -264,6 +335,7 @@ class TripMessagesRepository {
   Stream<TripChatData> watchRecentChatData(
     String tripId, {
     required int pageSize,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -274,21 +346,24 @@ class TripMessagesRepository {
         ),
       );
     }
-
-    return _messagesCol(cleanId)
+    return _messagesQueryForScope(cleanId, scope: scope)
         .orderBy('createdAt', descending: true)
-        .limit(pageSize)
+        .limit(_queryPageSizeForRequestedPage(pageSize))
         .snapshots()
-        .map((snap) => _chatDataFromDocs(
-              docsDescByCreatedAt: snap.docs,
-              pageSize: pageSize,
-            ));
+        .map((snap) {
+      return _chatDataFromDocs(
+        docsDescByCreatedAt: snap.docs,
+        pageSize: pageSize,
+        scope: scope,
+      );
+    });
   }
 
   Future<TripChatPage> fetchOlderChatPage({
     required String tripId,
     required int pageSize,
     required QueryDocumentSnapshot<Map<String, dynamic>> startAfterDoc,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
   }) async {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -302,14 +377,15 @@ class TripMessagesRepository {
       );
     }
 
-    final snap = await _messagesCol(cleanId)
+    final snap = await _messagesQueryForScope(cleanId, scope: scope)
         .orderBy('createdAt', descending: true)
         .startAfterDocument(startAfterDoc)
-        .limit(pageSize)
+        .limit(_queryPageSizeForRequestedPage(pageSize))
         .get();
     final pageData = _chatDataFromDocs(
       docsDescByCreatedAt: snap.docs,
       pageSize: pageSize,
+      scope: scope,
     );
     return TripChatPage(
       data: pageData,
@@ -318,15 +394,105 @@ class TripMessagesRepository {
     );
   }
 
+  Future<void> setMyReaction({
+    required String tripId,
+    required String messageId,
+    required String emoji,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    final cleanEmoji = emoji.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty || cleanEmoji.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+    await _loadScopedMessage(
+      tripId: cleanTripId,
+      messageId: cleanMessageId,
+      scope: scope,
+    );
+
+    final uid = user.uid.trim();
+    await _messagesCol(cleanTripId).doc(cleanMessageId).set(
+      {
+        'reactionsByUser': {uid: cleanEmoji},
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
+        .doc(uid)
+        .set(
+      {
+        'emoji': cleanEmoji,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> removeMyReaction({
+    required String tripId,
+    required String messageId,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    final cleanMessageId = messageId.trim();
+    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+    await _loadScopedMessage(
+      tripId: cleanTripId,
+      messageId: cleanMessageId,
+      scope: scope,
+    );
+
+    final uid = user.uid.trim();
+    await _messagesCol(cleanTripId).doc(cleanMessageId).set(
+      {
+        'reactionsByUser': {uid: FieldValue.delete()},
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
+        .doc(uid)
+        .delete();
+  }
+
   TripChatData _chatDataFromDocs({
     required List<QueryDocumentSnapshot<Map<String, dynamic>>> docsDescByCreatedAt,
     required int pageSize,
+    required TripMessageThreadScope scope,
   }) {
-    final docsAscByCreatedAt = docsDescByCreatedAt.reversed.toList(growable: false);
+    final filteredDesc = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    for (final doc in docsDescByCreatedAt) {
+      final message = TripMessage.fromDoc(doc);
+      if (!_matchesScope(message: message, scope: scope)) continue;
+      filteredDesc.add(doc);
+      if (filteredDesc.length >= pageSize) break;
+    }
+
+    final docsAsc = filteredDesc.reversed.toList(growable: false);
     final messages = <TripMessage>[];
     final reactionsByMessage = <String, List<TripMessageReaction>>{};
-
-    for (final doc in docsAscByCreatedAt) {
+    for (final doc in docsAsc) {
       messages.add(TripMessage.fromDoc(doc));
       reactionsByMessage[doc.id] = _parseReactionsByUser(doc.data());
     }
@@ -334,8 +500,7 @@ class TripMessagesRepository {
     return TripChatData(
       messages: messages,
       reactionsByMessage: reactionsByMessage,
-      oldestLoadedDoc:
-          docsDescByCreatedAt.isEmpty ? null : docsDescByCreatedAt.last,
+      oldestLoadedDoc: filteredDesc.isEmpty ? null : filteredDesc.last,
       hasPotentialOlder: docsDescByCreatedAt.length >= pageSize,
     );
   }
@@ -361,59 +526,67 @@ class TripMessagesRepository {
     return reactions;
   }
 
-  Future<void> setMyReaction({
+  Future<TripMessage> _loadScopedMessage({
     required String tripId,
     required String messageId,
-    required String emoji,
+    required TripMessageThreadScope scope,
   }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
+    final doc = await _messagesCol(tripId).doc(messageId).get();
+    if (!doc.exists) {
+      throw StateError('Message introuvable');
     }
-
-    final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    final cleanEmoji = emoji.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty || cleanEmoji.isEmpty) {
-      throw StateError('Parametres invalides');
+    final message = TripMessage.fromDoc(doc);
+    if (!_matchesScope(message: message, scope: scope)) {
+      throw StateError('Message hors thread');
     }
-
-    final uid = user.uid.trim();
-    await _messagesCol(cleanTripId).doc(cleanMessageId).set({
-      'reactionsByUser': {uid: cleanEmoji},
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
-        .doc(uid)
-        .set({
-      'emoji': cleanEmoji,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    return message;
   }
 
-  Future<void> removeMyReaction({
-    required String tripId,
-    required String messageId,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
+  bool _matchesScope({
+    required TripMessage message,
+    required TripMessageThreadScope scope,
+  }) {
+    return scope.matchesMessageFields(
+      messageThreadType: message.threadType,
+      messageThreadObjectType: message.threadObjectType,
+      messageThreadObjectId: message.threadObjectId,
+    );
+  }
 
+  Query<Map<String, dynamic>> _messagesQueryForScope(
+    String tripId, {
+    required TripMessageThreadScope scope,
+  }) {
+    // Keep query index-free (orderBy only), then filter by scope in-memory.
+    // This avoids requiring composite indexes for admin/object threads.
+    return _messagesCol(tripId);
+  }
+
+  int _queryPageSizeForRequestedPage(int requestedPageSize) {
+    final buffered = requestedPageSize * 3;
+    return buffered < requestedPageSize ? requestedPageSize : buffered;
+  }
+
+  Future<void> _assertIsTripAdmin(String tripId, String userId) async {
     final cleanTripId = tripId.trim();
-    final cleanMessageId = messageId.trim();
-    if (cleanTripId.isEmpty || cleanMessageId.isEmpty) {
+    final cleanUserId = userId.trim();
+    if (cleanTripId.isEmpty || cleanUserId.isEmpty) {
       throw StateError('Parametres invalides');
     }
+    final doc = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!doc.exists) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(doc.id, doc.data() ?? const <String, dynamic>{});
+    if (!trip.memberHasAdminRole(cleanUserId)) {
+      throw StateError('Acces reserve aux administrateurs');
+    }
+  }
 
-    final uid = user.uid.trim();
-    await _messagesCol(cleanTripId).doc(cleanMessageId).set({
-      'reactionsByUser': {uid: FieldValue.delete()},
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    await _messageReactionsCol(tripId: cleanTripId, messageId: cleanMessageId)
-        .doc(uid)
-        .delete();
+  String _channelKeyForScope(TripMessageThreadScope scope) {
+    if (scope.isMain) {
+      return _messagesChannelKey;
+    }
+    return scope.channelKey;
   }
 }

@@ -307,6 +307,8 @@
   "tripSectionParticipantsDescription": "Manage permissions related to trip members.",
   "tripTabOverview": "Overview",
   "tripTabMessages": "Messages",
+  "tripMessagingChannelMain": "Main",
+  "tripMessagingChannelAdmin": "Admins",
   "tripTabActivities": "Planning",
   "tripTabExpenses": "Expenses",
   "tripTabMeals": "Meals",

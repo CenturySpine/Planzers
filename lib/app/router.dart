@@ -18,6 +18,7 @@ import 'package:planerz/features/activities/presentation/trip_activity_create_pa
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart';
+import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_details_page.dart';
 import 'package:planerz/features/meals/presentation/trip_meals_page.dart';
 import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
@@ -324,6 +325,29 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'messages',
                   builder: (context, state) => const TripMessagingPage(),
+                  routes: <RouteBase>[
+                    GoRoute(
+                      path: 'admin',
+                      builder: (context, state) => const TripThreadMessagingPage(
+                        scope: TripMessageThreadScope.admin(),
+                      ),
+                    ),
+                    GoRoute(
+                      path: 'object/:objectType/:objectId',
+                      builder: (context, state) {
+                        final objectType =
+                            state.pathParameters['objectType']?.trim() ?? '';
+                        final objectId =
+                            state.pathParameters['objectId']?.trim() ?? '';
+                        return TripThreadMessagingPage(
+                          scope: TripMessageThreadScope.object(
+                            objectType: objectType,
+                            objectId: objectId,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
