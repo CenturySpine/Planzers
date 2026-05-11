@@ -1566,6 +1566,13 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Supprimer cet article ?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'L\'article sera supprimé définitivement. Cette opération est irréversible.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Aide des filtres';
 
   @override
@@ -4223,6 +4230,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String shoppingDeletedCount(Object count) {
     return '$count élément(s) supprimé(s).';
   }
+
+  @override
+  String get shoppingDeleteItemTitle => 'Supprimer cet article ?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'L\'article sera supprimé définitivement. Cette opération est irréversible.';
 
   @override
   String get shoppingFilterHelpTooltip => 'Aide des filtres';

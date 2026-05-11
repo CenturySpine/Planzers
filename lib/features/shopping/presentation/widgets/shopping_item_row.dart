@@ -61,6 +61,31 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
         );
   }
 
+  Future<void> _confirmAndDelete() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.shoppingDeleteItemTitle),
+          content: Text(l10n.shoppingDeleteItemBody),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.commonDelete),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirm != true || !mounted) return;
+    await _delete();
+  }
+
   Future<void> _toggleClaim() async {
     final user = FirebaseAuth.instance.currentUser;
     final uid = user?.uid.trim() ?? '';
@@ -113,7 +138,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
               quantityUnit: value.quantityUnit,
             );
       },
-      onDelete: _delete,
+      onDelete: _confirmAndDelete,
       autoFocusLabel: widget.autoFocusLabel,
       onAutoFocusHandled: widget.onAutoFocusHandled,
       isDuplicateLabel: _isDuplicateLabel,

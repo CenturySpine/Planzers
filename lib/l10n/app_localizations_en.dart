@@ -1550,6 +1550,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Delete this item?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'The item will be permanently deleted. This action cannot be undone.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Filter help';
 
   @override
@@ -4182,6 +4189,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String shoppingDeletedCount(Object count) {
     return '$count item(s) deleted.';
   }
+
+  @override
+  String get shoppingDeleteItemTitle => 'Delete this item?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'The item will be permanently deleted. This action cannot be undone.';
 
   @override
   String get shoppingFilterHelpTooltip => 'Filter help';

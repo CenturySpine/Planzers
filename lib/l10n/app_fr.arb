@@ -638,6 +638,8 @@
   "@shoppingDeleteCheckedContent": {"placeholders": {"count": {}}},
   "shoppingDeletedCount": "{count} élément(s) supprimé(s).",
   "@shoppingDeletedCount": {"placeholders": {"count": {}}},
+  "shoppingDeleteItemTitle": "Supprimer cet article ?",
+  "shoppingDeleteItemBody": "L'article sera supprimé définitivement. Cette opération est irréversible.",
   "shoppingFilterHelpTooltip": "Aide des filtres",
   "shoppingEmptyTitle": "Liste de courses vide",
   "shoppingEmptySubtitle": "Utilisez le bouton panier pour ajouter un article.",

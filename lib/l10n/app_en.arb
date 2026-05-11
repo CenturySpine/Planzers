@@ -638,6 +638,8 @@
   "@shoppingDeleteCheckedContent": {"placeholders": {"count": {}}},
   "shoppingDeletedCount": "{count} item(s) deleted.",
   "@shoppingDeletedCount": {"placeholders": {"count": {}}},
+  "shoppingDeleteItemTitle": "Delete this item?",
+  "shoppingDeleteItemBody": "The item will be permanently deleted. This action cannot be undone.",
   "shoppingFilterHelpTooltip": "Filter help",
   "shoppingEmptyTitle": "Shopping list is empty",
   "shoppingEmptySubtitle": "Use the cart button to add an item.",
