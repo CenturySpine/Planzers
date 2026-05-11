@@ -1700,7 +1700,17 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     const memberIds = Array.isArray(trip.memberIds)
       ? trip.memberIds.map((v) => String(v))
       : [];
-    const candidateRecipients = memberIds.filter((id) => id && id !== authorId);
+    const threadType = normalizeString(msg.threadType);
+    const visibilityType = normalizeString(msg.visibilityType);
+    const isAdminsOnlyMessage =
+      threadType === 'admin' || visibilityType === 'admins_only';
+
+    const candidateRecipients = memberIds.filter((id) => {
+      const cleanId = normalizeString(id);
+      if (!cleanId || cleanId === authorId) return false;
+      if (!isAdminsOnlyMessage) return true;
+      return isTripAdminUser(trip, cleanId);
+    });
     if (candidateRecipients.length === 0) return;
 
     const tripTitle = normalizeString(trip.title) || 'Voyage';
@@ -1712,7 +1722,9 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
       type: 'trip_message',
       tripId,
       actorId: authorId,
-      targetPath: `/trips/${tripId}/messages`,
+      targetPath: isAdminsOnlyMessage
+        ? `/trips/${tripId}/messages/admin`
+        : `/trips/${tripId}/messages`,
       title: `Messagerie · ${tripTitle}`,
       body: `${authorLabel} : ${text}`,
       candidateRecipients,
