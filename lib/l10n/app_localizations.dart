@@ -3474,6 +3474,18 @@ abstract class AppLocalizations {
   /// **'Supprimer ce composant'**
   String get mealDeleteComponent;
 
+  /// No description provided for @mealDeleteComponentConfirmTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce composant ?'**
+  String get mealDeleteComponentConfirmTitle;
+
+  /// No description provided for @mealDeleteComponentConfirmBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le composant « {componentKind} » sera retiré de ce repas.'**
+  String mealDeleteComponentConfirmBody(Object componentKind);
+
   /// No description provided for @mealModeCooked.
   ///
   /// In fr, this message translates to:

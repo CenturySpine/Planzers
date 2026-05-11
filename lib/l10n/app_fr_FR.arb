@@ -716,6 +716,13 @@
   "@mealComponentLockedByUser": {"placeholders": {"user": {}}},
   "mealComponentChangedUnsaved": "Composant modifié non enregistré",
   "mealDeleteComponent": "Supprimer ce composant",
+  "mealDeleteComponentConfirmTitle": "Supprimer ce composant ?",
+  "mealDeleteComponentConfirmBody": "Le composant « {componentKind} » sera retiré de ce repas.",
+  "@mealDeleteComponentConfirmBody": {
+    "placeholders": {
+      "componentKind": {}
+    }
+  },
   "mealModeCooked": "Repas cuisiné",
   "mealModeRestaurant": "Restaurant",
   "mealModePotluck": "Auberge espagnole",
