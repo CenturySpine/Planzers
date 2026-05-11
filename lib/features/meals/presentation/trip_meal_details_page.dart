@@ -399,6 +399,36 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     await _savePotluckItems(previousItems: previousItems);
   }
 
+  Future<void> _confirmDeletePotluckItem(int index) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (index < 0 || index >= _potluckItems.length) return;
+    final item = _potluckItems[index];
+    final displayLabel = item.label.trim().isEmpty
+        ? l10n.mealPotluckItemLabel
+        : item.label.trim();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealPotluckDeleteItemTitle),
+        content: Text(l10n.mealPotluckDeleteItemBody(displayLabel)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    final resolvedIndex = _potluckItems.indexWhere((e) => e.id == item.id);
+    if (resolvedIndex < 0) return;
+    await _deletePotluckItem(resolvedIndex);
+  }
+
   Future<void> _deletePotluckItem(int index) async {
     final previousItems = _potluckItems;
     setState(() {
@@ -827,6 +857,33 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       previousComponents: previousComponents,
       previousComponentsUserOrdered: previousComponentsUserOrdered,
     );
+  }
+
+  Future<void> _confirmDeleteComponent(MealComponent component) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealDeleteComponentConfirmTitle),
+        content: Text(
+          l10n.mealDeleteComponentConfirmBody(
+            _componentKindLabel(l10n, component.kind),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    await _deleteComponent(component.id);
   }
 
   Future<void> _reorderComponents(int oldIndex, int newIndex) async {
@@ -1999,8 +2056,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       )
                                                         ? null
                                                         : () =>
-                                                            _deleteComponent(
-                                                              component.id,
+                                                            _confirmDeleteComponent(
+                                                              component,
                                                             ),
                                                 icon: Icon(Icons.delete_outline,
                                                     color: Theme.of(context)
@@ -2356,7 +2413,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                                 onPressed: _isSavingPotluckItems
                                                                     ? null
                                                                     : () =>
-                                                                        _deletePotluckItem(
+                                                                        _confirmDeletePotluckItem(
                                                                           entries[entryIndex]
                                                                               .key,
                                                                         ),

@@ -101,7 +101,6 @@
   "accountCupidonSpace": "Espace Cupidon",
   "accountCupidonHistory": "Historique des matchs",
   "accountPreferencesSectionTitle": "Préférences",
-  "accountColorPalette": "Palette de couleurs",
   "accountLanguageTitle": "Langue",
   "accountLanguageSubtitle": "Langue de l'application",
   "accountEnabling": "Activation en cours...",
@@ -211,12 +210,6 @@
   "accountDownloadApk": "Télécharger l'APK",
   "accountAdministration": "Administration",
   "accountSignOut": "Se déconnecter",
-  "paletteSaved": "Palette {label} enregistrée",
-  "@paletteSaved": {
-    "placeholders": {
-      "label": {}
-    }
-  },
   "tripLabelGeneric": "Voyage",
   "tripNotFoundOrNoAccess": "Voyage introuvable ou accès refusé.",
   "tripBackToTrip": "Retour au voyage",
@@ -600,6 +593,8 @@
   "@shoppingDeleteCheckedContent": {"placeholders": {"count": {}}},
   "shoppingDeletedCount": "{count} élément(s) supprimé(s).",
   "@shoppingDeletedCount": {"placeholders": {"count": {}}},
+  "shoppingDeleteItemTitle": "Supprimer cet article ?",
+  "shoppingDeleteItemBody": "L'article sera supprimé définitivement. Cette opération est irréversible.",
   "shoppingFilterHelpTooltip": "Aide des filtres",
   "shoppingEmptyTitle": "Liste de courses vide",
   "shoppingEmptySubtitle": "Utilisez le bouton panier pour ajouter un article.",
@@ -716,6 +711,13 @@
   "@mealComponentLockedByUser": {"placeholders": {"user": {}}},
   "mealComponentChangedUnsaved": "Composant modifié non enregistré",
   "mealDeleteComponent": "Supprimer ce composant",
+  "mealDeleteComponentConfirmTitle": "Supprimer ce composant ?",
+  "mealDeleteComponentConfirmBody": "Le composant « {componentKind} » sera retiré de ce repas.",
+  "@mealDeleteComponentConfirmBody": {
+    "placeholders": {
+      "componentKind": {}
+    }
+  },
   "mealModeCooked": "Repas cuisiné",
   "mealModeRestaurant": "Restaurant",
   "mealModePotluck": "Auberge espagnole",
@@ -743,6 +745,13 @@
       "maxCount": {
         "type": "int"
       }
+    }
+  },
+  "mealPotluckDeleteItemTitle": "Supprimer cet élément ?",
+  "mealPotluckDeleteItemBody": "« {itemLabel} » sera retiré de la liste des apports.",
+  "@mealPotluckDeleteItemBody": {
+    "placeholders": {
+      "itemLabel": {}
     }
   },
   "commonSaving": "Enregistrement...",

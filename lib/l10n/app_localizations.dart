@@ -706,12 +706,6 @@ abstract class AppLocalizations {
   /// **'Préférences'**
   String get accountPreferencesSectionTitle;
 
-  /// No description provided for @accountColorPalette.
-  ///
-  /// In fr, this message translates to:
-  /// **'Palette de couleurs'**
-  String get accountColorPalette;
-
   /// No description provided for @accountLanguageTitle.
   ///
   /// In fr, this message translates to:
@@ -1065,12 +1059,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Se déconnecter'**
   String get accountSignOut;
-
-  /// No description provided for @paletteSaved.
-  ///
-  /// In fr, this message translates to:
-  /// **'Palette {label} enregistrée'**
-  String paletteSaved(Object label);
 
   /// No description provided for @tripLabelGeneric.
   ///
@@ -2850,6 +2838,18 @@ abstract class AppLocalizations {
   /// **'{count} élément(s) supprimé(s).'**
   String shoppingDeletedCount(Object count);
 
+  /// No description provided for @shoppingDeleteItemTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cet article ?'**
+  String get shoppingDeleteItemTitle;
+
+  /// No description provided for @shoppingDeleteItemBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'article sera supprimé définitivement. Cette opération est irréversible.'**
+  String get shoppingDeleteItemBody;
+
   /// No description provided for @shoppingFilterHelpTooltip.
   ///
   /// In fr, this message translates to:
@@ -3474,6 +3474,18 @@ abstract class AppLocalizations {
   /// **'Supprimer ce composant'**
   String get mealDeleteComponent;
 
+  /// No description provided for @mealDeleteComponentConfirmTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce composant ?'**
+  String get mealDeleteComponentConfirmTitle;
+
+  /// No description provided for @mealDeleteComponentConfirmBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le composant « {componentKind} » sera retiré de ce repas.'**
+  String mealDeleteComponentConfirmBody(Object componentKind);
+
   /// No description provided for @mealModeCooked.
   ///
   /// In fr, this message translates to:
@@ -3587,6 +3599,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{currentCount}/{maxCount} éléments ajoutés'**
   String mealPotluckCreateRowsHint(int currentCount, int maxCount);
+
+  /// No description provided for @mealPotluckDeleteItemTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cet élément ?'**
+  String get mealPotluckDeleteItemTitle;
+
+  /// No description provided for @mealPotluckDeleteItemBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {itemLabel} » sera retiré de la liste des apports.'**
+  String mealPotluckDeleteItemBody(Object itemLabel);
 
   /// No description provided for @commonSaving.
   ///

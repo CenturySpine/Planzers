@@ -331,9 +331,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountPreferencesSectionTitle => 'Preferences';
 
   @override
-  String get accountColorPalette => 'Color palette';
-
-  @override
   String get accountLanguageTitle => 'Language';
 
   @override
@@ -533,11 +530,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSignOut => 'Sign out';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label saved';
-  }
 
   @override
   String get tripLabelGeneric => 'Trip';
@@ -1550,6 +1542,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Delete this item?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'The item will be permanently deleted. This action cannot be undone.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Filter help';
 
   @override
@@ -1896,6 +1895,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealDeleteComponent => 'Delete this component';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Remove this component?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'The \"$componentKind\" course will be removed from this meal.';
+  }
+
+  @override
   String get mealModeCooked => 'Home-cooked meal';
 
   @override
@@ -1954,6 +1961,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount items added';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Remove this item?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return 'The \"$itemLabel\" contribution will be removed from this meal.';
   }
 
   @override
@@ -3020,9 +3035,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountPreferencesSectionTitle => 'Preferences';
 
   @override
-  String get accountColorPalette => 'Color palette';
-
-  @override
   String get accountLanguageTitle => 'Language';
 
   @override
@@ -3222,11 +3234,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountSignOut => 'Sign out';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label saved';
-  }
 
   @override
   String get tripLabelGeneric => 'Trip';
@@ -4168,6 +4175,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Delete this item?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'The item will be permanently deleted. This action cannot be undone.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Filter help';
 
   @override
@@ -4514,6 +4528,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get mealDeleteComponent => 'Delete this component';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Remove this component?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'The \"$componentKind\" course will be removed from this meal.';
+  }
+
+  @override
   String get mealModeCooked => 'Home-cooked meal';
 
   @override
@@ -4572,6 +4594,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount items added';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Remove this item?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return 'The \"$itemLabel\" contribution will be removed from this meal.';
   }
 
   @override

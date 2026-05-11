@@ -101,7 +101,6 @@
   "accountCupidonSpace": "Cupidon space",
   "accountCupidonHistory": "Match history",
   "accountPreferencesSectionTitle": "Preferences",
-  "accountColorPalette": "Color palette",
   "accountLanguageTitle": "Language",
   "accountLanguageSubtitle": "App language",
   "accountEnabling": "Enabling...",
@@ -211,12 +210,6 @@
   "accountDownloadApk": "Download APK",
   "accountAdministration": "Administration",
   "accountSignOut": "Sign out",
-  "paletteSaved": "Palette {label} saved",
-  "@paletteSaved": {
-    "placeholders": {
-      "label": {}
-    }
-  },
   "tripLabelGeneric": "Trip",
   "tripNotFoundOrNoAccess": "Trip not found or access denied.",
   "tripBackToTrip": "Back to trip",
@@ -600,6 +593,8 @@
   "@shoppingDeleteCheckedContent": {"placeholders": {"count": {}}},
   "shoppingDeletedCount": "{count} item(s) deleted.",
   "@shoppingDeletedCount": {"placeholders": {"count": {}}},
+  "shoppingDeleteItemTitle": "Delete this item?",
+  "shoppingDeleteItemBody": "The item will be permanently deleted. This action cannot be undone.",
   "shoppingFilterHelpTooltip": "Filter help",
   "shoppingEmptyTitle": "Shopping list is empty",
   "shoppingEmptySubtitle": "Use the cart button to add an item.",
@@ -716,6 +711,13 @@
   "@mealComponentLockedByUser": {"placeholders": {"user": {}}},
   "mealComponentChangedUnsaved": "Modified component not saved",
   "mealDeleteComponent": "Delete this component",
+  "mealDeleteComponentConfirmTitle": "Remove this component?",
+  "mealDeleteComponentConfirmBody": "The \"{componentKind}\" course will be removed from this meal.",
+  "@mealDeleteComponentConfirmBody": {
+    "placeholders": {
+      "componentKind": {}
+    }
+  },
   "mealModeCooked": "Home-cooked meal",
   "mealModeRestaurant": "Restaurant",
   "mealModePotluck": "Potluck",
@@ -743,6 +745,13 @@
       "maxCount": {
         "type": "int"
       }
+    }
+  },
+  "mealPotluckDeleteItemTitle": "Remove this item?",
+  "mealPotluckDeleteItemBody": "The \"{itemLabel}\" contribution will be removed from this meal.",
+  "@mealPotluckDeleteItemBody": {
+    "placeholders": {
+      "itemLabel": {}
     }
   },
   "commonSaving": "Saving...",

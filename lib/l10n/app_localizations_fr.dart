@@ -330,9 +330,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountPreferencesSectionTitle => 'Préférences';
 
   @override
-  String get accountColorPalette => 'Palette de couleurs';
-
-  @override
   String get accountLanguageTitle => 'Langue';
 
   @override
@@ -535,11 +532,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountSignOut => 'Se déconnecter';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label enregistrée';
-  }
 
   @override
   String get tripLabelGeneric => 'Voyage';
@@ -1566,6 +1558,13 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Supprimer cet article ?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'L\'article sera supprimé définitivement. Cette opération est irréversible.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Aide des filtres';
 
   @override
@@ -1913,6 +1912,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealDeleteComponent => 'Supprimer ce composant';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Supprimer ce composant ?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'Le composant « $componentKind » sera retiré de ce repas.';
+  }
+
+  @override
   String get mealModeCooked => 'Repas cuisiné';
 
   @override
@@ -1971,6 +1978,14 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount éléments ajoutés';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Supprimer cet élément ?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return '« $itemLabel » sera retiré de la liste des apports.';
   }
 
   @override
@@ -3045,9 +3060,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get accountPreferencesSectionTitle => 'Préférences';
 
   @override
-  String get accountColorPalette => 'Palette de couleurs';
-
-  @override
   String get accountLanguageTitle => 'Langue';
 
   @override
@@ -3250,11 +3262,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get accountSignOut => 'Se déconnecter';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label enregistrée';
-  }
 
   @override
   String get tripLabelGeneric => 'Voyage';
@@ -4209,6 +4216,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
+  String get shoppingDeleteItemTitle => 'Supprimer cet article ?';
+
+  @override
+  String get shoppingDeleteItemBody =>
+      'L\'article sera supprimé définitivement. Cette opération est irréversible.';
+
+  @override
   String get shoppingFilterHelpTooltip => 'Aide des filtres';
 
   @override
@@ -4556,6 +4570,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get mealDeleteComponent => 'Supprimer ce composant';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Supprimer ce composant ?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'Le composant « $componentKind » sera retiré de ce repas.';
+  }
+
+  @override
   String get mealModeCooked => 'Repas cuisiné';
 
   @override
@@ -4614,6 +4636,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount éléments ajoutés';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Supprimer cet élément ?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return '« $itemLabel » sera retiré de la liste des apports.';
   }
 
   @override
