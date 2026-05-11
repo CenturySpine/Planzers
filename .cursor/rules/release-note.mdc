@@ -18,12 +18,17 @@ Write every release note in two parts, in this strict order.
 - Start with changes that have direct impact for end users.
 - Avoid technical jargon in this section.
 - Highlight features, user value, and business outcomes.
-- Organize this section by major business domains of the app:
-  - Trips
+- Functional changes must be classified into exactly one of the following sections (do not invent other functional domains):
+  - Trip (general items, settings, permissions, create or join, trip overview)
   - Messaging
-  - Activities
-  - Expenses
+  - Activities & planning
   - Meals
+  - Expenses
+  - Shopping list
+  - Games
+  - Carpooling
+  - Rooms
+
 - Include administrator-oriented items in this section only when they are true feature-level business value.
 
 ## 2) Complementary detailed section (technical / operations)
@@ -38,5 +43,7 @@ Write every release note in two parts, in this strict order.
 - Prioritize clarity and business impact over implementation details.
 - Present information from most important to most detailed.
 - Keep a concise, value-oriented tone.
+- Do not include sections (domains/subsections) that have no functional contributions in the release window. Only write the domains that actually changed.
+- If the “Détails complémentaires (technique et exploitation)” section contains no additional shipped delta beyond what is already listed in section 1, omit it.
 - As a .md file, added to the repo root
 - Use french language all the way.
