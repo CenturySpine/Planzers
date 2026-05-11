@@ -1725,7 +1725,9 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
       targetPath: isAdminsOnlyMessage
         ? `/trips/${tripId}/messages/admin`
         : `/trips/${tripId}/messages`,
-      title: `Messagerie · ${tripTitle}`,
+      title: isAdminsOnlyMessage
+        ? `Messagerie admin · ${tripTitle}`
+        : `Messagerie · ${tripTitle}`,
       body: `${authorLabel} : ${text}`,
       candidateRecipients,
       skipPresenceCheck: false,
