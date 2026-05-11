@@ -4663,6 +4663,8 @@ exports.consolidateTripShoppingWithAi = onCall(
     const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
 
     const tripRef = db.collection('trips').doc(tripId);
+    const mode = normalizeString(request.data?.mode);
+    const manualOnly = mode === 'manual_only';
 
     const [shoppingSnap, mealsSnap] = await Promise.all([
       tripRef
@@ -4670,11 +4672,13 @@ exports.consolidateTripShoppingWithAi = onCall(
         .where('checked', '==', false)
         .select('label', 'quantityValue', 'quantityUnit')
         .get(),
-      tripRef
-        .collection('meals')
-        .where('mealMode', '==', 'cooked')
-        .select('components')
-        .get(),
+      manualOnly
+        ? Promise.resolve({ docs: [] })
+        : tripRef
+            .collection('meals')
+            .where('mealMode', '==', 'cooked')
+            .select('components')
+            .get(),
     ]);
 
     const manualShoppingItems = [];
@@ -4724,7 +4728,7 @@ exports.consolidateTripShoppingWithAi = onCall(
           recipeIngredients,
           lang,
         });
-        return { summary, consolidatedItems };
+        return { summary, consolidatedItems, categories: AI_CONSOLIDATION_CATEGORIES };
       }
     );
   }

@@ -1638,6 +1638,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cette fonction n’est pas encore accessible pour votre compte.';
 
   @override
+  String get shoppingConsolidateOptionsTitle => 'Consolidation IA';
+
+  @override
+  String get shoppingConsolidateOptionFull => 'Recettes + liste';
+
+  @override
+  String get shoppingConsolidateOptionManualOnly => 'Liste uniquement';
+
+  @override
+  String get shoppingTabList => 'Ma liste';
+
+  @override
+  String get shoppingTabConsolidated => 'Consolidée';
+
+  @override
+  String get shoppingConsolidatedEmpty =>
+      'Lancez la consolidation pour voir le résultat ici.';
+
+  @override
+  String get shoppingConsolidatedClear => 'Effacer la consolidation';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4300,6 +4322,28 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get shoppingConsolidateAiNotAvailableBody =>
       'Cette fonction n’est pas encore accessible pour votre compte.';
+
+  @override
+  String get shoppingConsolidateOptionsTitle => 'Consolidation IA';
+
+  @override
+  String get shoppingConsolidateOptionFull => 'Recettes + liste';
+
+  @override
+  String get shoppingConsolidateOptionManualOnly => 'Liste uniquement';
+
+  @override
+  String get shoppingTabList => 'Ma liste';
+
+  @override
+  String get shoppingTabConsolidated => 'Consolidée';
+
+  @override
+  String get shoppingConsolidatedEmpty =>
+      'Lancez la consolidation pour voir le résultat ici.';
+
+  @override
+  String get shoppingConsolidatedClear => 'Effacer la consolidation';
 
   @override
   String get activityCategorySport => 'Sport';

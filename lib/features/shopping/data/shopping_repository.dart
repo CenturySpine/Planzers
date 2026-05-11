@@ -171,6 +171,7 @@ class ShoppingRepository {
   /// merging. The callable is read-only: it does not mutate any data.
   Future<ConsolidatedShoppingResult> consolidateWithAi({
     required String tripId,
+    String mode = 'full',
   }) async {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
@@ -180,6 +181,7 @@ class ShoppingRepository {
     ).httpsCallable('consolidateTripShoppingWithAi');
     final result = await callable.call<Map<String, dynamic>>(<String, dynamic>{
       'tripId': cleanTripId,
+      'mode': mode,
     });
     return ConsolidatedShoppingResult.fromMap(
       Map<String, dynamic>.from(result.data),
@@ -306,6 +308,7 @@ class ConsolidatedShoppingItem {
     required this.quantityValue,
     required this.quantityUnit,
     required this.sourceType,
+    required this.categoryId,
     required this.manualOriginalLineCount,
     required this.recipeOriginalLineCount,
     required this.sourceItems,
@@ -315,6 +318,10 @@ class ConsolidatedShoppingItem {
   final double quantityValue;
   final String quantityUnit;
   final ConsolidatedShoppingSourceType sourceType;
+
+  /// Category identifier from the grocery category reference list.
+  /// Falls back to `'divers'` when absent or empty.
+  final String categoryId;
   final int manualOriginalLineCount;
   final int recipeOriginalLineCount;
 
@@ -332,15 +339,40 @@ class ConsolidatedShoppingItem {
                 ))
             .toList(growable: false)
         : const <ConsolidatedShoppingSourceItem>[];
+    final rawCategoryId = (map['categoryId'] as String? ?? '').trim();
     return ConsolidatedShoppingItem(
       label:
           (map['itemLabel'] as String? ?? map['label'] as String? ?? '').trim(),
       quantityValue: _parseQuantity(map['quantityValue']),
       quantityUnit: (map['quantityUnit'] as String? ?? '').trim(),
       sourceType: _parseSourceType(map['sourceType'] as String?),
+      categoryId: rawCategoryId.isEmpty ? 'divers' : rawCategoryId,
       manualOriginalLineCount: _parseInt(map['manualOriginalLineCount']),
       recipeOriginalLineCount: _parseInt(map['recipeOriginalLineCount']),
       sourceItems: sourceItems,
+    );
+  }
+}
+
+/// A grocery category as returned by the consolidation callable.
+class ConsolidatedShoppingCategory {
+  const ConsolidatedShoppingCategory({
+    required this.id,
+    required this.fr,
+    required this.en,
+  });
+
+  final String id;
+  final String fr;
+  final String en;
+
+  String label(String languageCode) => languageCode == 'fr' ? fr : en;
+
+  factory ConsolidatedShoppingCategory.fromMap(Map<String, dynamic> map) {
+    return ConsolidatedShoppingCategory(
+      id: (map['id'] as String? ?? '').trim(),
+      fr: (map['fr'] as String? ?? '').trim(),
+      en: (map['en'] as String? ?? '').trim(),
     );
   }
 }
@@ -350,10 +382,12 @@ class ConsolidatedShoppingResult {
   const ConsolidatedShoppingResult({
     required this.items,
     required this.summary,
+    required this.categories,
   });
 
   final List<ConsolidatedShoppingItem> items;
   final ConsolidatedShoppingSummary summary;
+  final List<ConsolidatedShoppingCategory> categories;
 
   factory ConsolidatedShoppingResult.fromMap(Map<String, dynamic> map) {
     final rawItems = map['consolidatedItems'];
@@ -373,6 +407,21 @@ class ConsolidatedShoppingResult {
           )
         : ConsolidatedShoppingSummary.empty;
 
-    return ConsolidatedShoppingResult(items: items, summary: summary);
+    final rawCategories = map['categories'];
+    final categories = rawCategories is List
+        ? rawCategories
+            .whereType<Map>()
+            .map((c) => ConsolidatedShoppingCategory.fromMap(
+                  Map<String, dynamic>.from(c),
+                ))
+            .where((c) => c.id.isNotEmpty)
+            .toList(growable: false)
+        : const <ConsolidatedShoppingCategory>[];
+
+    return ConsolidatedShoppingResult(
+      items: items,
+      summary: summary,
+      categories: categories,
+    );
   }
 }

@@ -2982,6 +2982,48 @@ abstract class AppLocalizations {
   /// **'Cette fonction n’est pas encore accessible pour votre compte.'**
   String get shoppingConsolidateAiNotAvailableBody;
 
+  /// No description provided for @shoppingConsolidateOptionsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidation IA'**
+  String get shoppingConsolidateOptionsTitle;
+
+  /// No description provided for @shoppingConsolidateOptionFull.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recettes + liste'**
+  String get shoppingConsolidateOptionFull;
+
+  /// No description provided for @shoppingConsolidateOptionManualOnly.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste uniquement'**
+  String get shoppingConsolidateOptionManualOnly;
+
+  /// No description provided for @shoppingTabList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ma liste'**
+  String get shoppingTabList;
+
+  /// No description provided for @shoppingTabConsolidated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidée'**
+  String get shoppingTabConsolidated;
+
+  /// No description provided for @shoppingConsolidatedEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lancez la consolidation pour voir le résultat ici.'**
+  String get shoppingConsolidatedEmpty;
+
+  /// No description provided for @shoppingConsolidatedClear.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la consolidation'**
+  String get shoppingConsolidatedClear;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:

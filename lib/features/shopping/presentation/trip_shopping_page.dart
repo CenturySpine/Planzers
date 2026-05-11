@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart'
     show
@@ -57,22 +60,27 @@ class _ShoppingList extends ConsumerStatefulWidget {
   ConsumerState<_ShoppingList> createState() => _ShoppingListState();
 }
 
-class _ShoppingListState extends ConsumerState<_ShoppingList> {
+class _ShoppingListState extends ConsumerState<_ShoppingList>
+    with SingleTickerProviderStateMixin {
   late final TextEditingController _searchController;
+  late final TabController _tabController;
   _ShoppingFilter _activeFilter = _ShoppingFilter.all;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
+  ConsolidatedShoppingResult? _consolidationResult;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -87,28 +95,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     setState(() => _pendingAutofocusItemId = newItemId);
   }
 
-  Future<void> _showConsolidationNotAvailableForAccountDialog(
+  Future<void> _consolidateWithAi(
     BuildContext context,
+    _ConsolidationMode mode,
   ) async {
-    final l10n = AppLocalizations.of(context)!;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l10n.shoppingConsolidateAiNotAvailableTitle),
-          content: Text(l10n.shoppingConsolidateAiNotAvailableBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.commonClose),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _consolidateWithAi(BuildContext context) async {
     if (_isConsolidating) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
@@ -116,9 +106,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     try {
       final result = await ref
           .read(shoppingRepositoryProvider)
-          .consolidateWithAi(tripId: widget.tripId);
-      if (!context.mounted) return;
-      await _showConsolidatedItemsDialog(context, result);
+          .consolidateWithAi(
+            tripId: widget.tripId,
+            mode: mode == _ConsolidationMode.full ? 'full' : 'manual_only',
+          );
+      if (!mounted) return;
+      setState(() => _consolidationResult = result);
+      _tabController.animateTo(1);
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
@@ -129,64 +123,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     }
   }
 
-  Future<void> _showConsolidatedItemsDialog(
+  Future<void> _showConsolidateOptionsDialog(
     BuildContext context,
-    ConsolidatedShoppingResult result,
+    bool isApplicationOwner,
   ) async {
-    await showDialog<void>(
+    final mode = await showDialog<_ConsolidationMode>(
       context: context,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final summary = result.summary;
-        final items = result.items;
-        return AlertDialog(
-          title: const Text('Consolidation IA (POC)'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Ingrédients recettes en entrée: ${summary.recipeOriginalLineCount}\n'
-                    'Ingrédients manuels en entrée: ${summary.manualOriginalLineCount}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: items.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Text('Aucun élément consolidé.'),
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: theme.dividerColor.withValues(alpha: 0.4),
-                          ),
-                          itemBuilder: (context, index) {
-                            return _ConsolidatedItemTile(item: items[index]);
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Fermer'),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => _ConsolidationOptionsDialog(
+        isApplicationOwner: isApplicationOwner,
+      ),
     );
+    if (mode == null || !context.mounted) return;
+    await _consolidateWithAi(context, mode);
   }
 
   Future<void> _confirmAndDeleteChecked(BuildContext context) async {
@@ -287,6 +235,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final usersDataStream =
         ref.read(usersRepositoryProvider).watchUsersDataByIds(claimedByIds);
 
+    final languageCode = Localizations.localeOf(context).languageCode;
+
     return StreamBuilder<Map<String, Map<String, dynamic>>>(
       stream: usersDataStream,
       builder: (context, usersSnap) {
@@ -295,142 +245,170 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
           children: [
             Column(
               children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: NameListSearchTextField(
-                controller: _searchController,
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SegmentedButton<_ShoppingFilter>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.all,
-                        icon: const Icon(Icons.apps_outlined),
-                        tooltip: l10n.shoppingFilterAll,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.todo,
-                        icon: const Icon(Icons.radio_button_unchecked),
-                        tooltip: l10n.shoppingFilterTodo,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.done,
-                        icon: const Icon(Icons.check_circle_outline),
-                        tooltip: l10n.shoppingFilterDone,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.claimedByMe,
-                        icon: const Icon(Icons.person_pin_circle_outlined),
-                        tooltip: l10n.shoppingFilterClaimedByMe,
-                      ),
-                    ],
-                    selected: {_activeFilter},
-                    onSelectionChanged: (selection) {
-                      if (selection.isEmpty) return;
-                      setState(() => _activeFilter = selection.first);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: l10n.shoppingFilterHelpTooltip,
-                    icon: const Icon(Icons.help_outline),
-                    onPressed: () => _showFilterHelp(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: widget.items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(text: l10n.shoppingTabList),
+                    Tab(text: l10n.shoppingTabConsolidated),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Tab 0 — manual list
+                      Column(
                         children: [
-                          Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.primary,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                            child: NameListSearchTextField(
+                              controller: _searchController,
+                              onChanged: (_) => setState(() {}),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.shoppingEmptyTitle,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.shoppingEmptySubtitle,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SegmentedButton<_ShoppingFilter>(
+                                  showSelectedIcon: false,
+                                  segments: [
+                                    ButtonSegment<_ShoppingFilter>(
+                                      value: _ShoppingFilter.all,
+                                      icon: const Icon(Icons.apps_outlined),
+                                      tooltip: l10n.shoppingFilterAll,
+                                    ),
+                                    ButtonSegment<_ShoppingFilter>(
+                                      value: _ShoppingFilter.todo,
+                                      icon: const Icon(Icons.radio_button_unchecked),
+                                      tooltip: l10n.shoppingFilterTodo,
+                                    ),
+                                    ButtonSegment<_ShoppingFilter>(
+                                      value: _ShoppingFilter.done,
+                                      icon: const Icon(Icons.check_circle_outline),
+                                      tooltip: l10n.shoppingFilterDone,
+                                    ),
+                                    ButtonSegment<_ShoppingFilter>(
+                                      value: _ShoppingFilter.claimedByMe,
+                                      icon: const Icon(Icons.person_pin_circle_outlined),
+                                      tooltip: l10n.shoppingFilterClaimedByMe,
+                                    ),
+                                  ],
+                                  selected: {_activeFilter},
+                                  onSelectionChanged: (selection) {
+                                    if (selection.isEmpty) return;
+                                    setState(() => _activeFilter = selection.first);
+                                  },
                                 ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  tooltip: l10n.shoppingFilterHelpTooltip,
+                                  icon: const Icon(Icons.help_outline),
+                                  onPressed: () => _showFilterHelp(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: widget.items.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_cart_outlined,
+                                          size: 48,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          l10n.shoppingEmptyTitle,
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          l10n.shoppingEmptySubtitle,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : filteredItems.isEmpty
+                                    ? Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Text(
+                                            nameListSearchEmptyMessage(context),
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ),
+                                      )
+                                    : ListView.separated(
+                                        padding: const EdgeInsets.only(
+                                          left: 4,
+                                          right: 4,
+                                          top: 4,
+                                          bottom: 88,
+                                        ),
+                                        itemCount: filteredItems.length,
+                                        separatorBuilder: (_, __) => Divider(
+                                          height: 1,
+                                          thickness: 1,
+                                          color: Theme.of(context)
+                                              .dividerColor
+                                              .withValues(alpha: 0.35),
+                                        ),
+                                        itemBuilder: (context, index) {
+                                          final item = filteredItems[index];
+                                          return ShoppingItemRow(
+                                            key: ValueKey(item.id),
+                                            tripId: widget.tripId,
+                                            item: item,
+                                            usersDataById: usersDataById,
+                                            normalizedLabelCounts: normalizedLabelCounts,
+                                            autoFocusLabel:
+                                                item.id == _pendingAutofocusItemId,
+                                            onAutoFocusHandled: () {
+                                              if (!mounted) return;
+                                              if (_pendingAutofocusItemId != item.id) return;
+                                              setState(() => _pendingAutofocusItemId = null);
+                                            },
+                                          );
+                                        },
+                                      ),
                           ),
                         ],
                       ),
-                    )
-                  : filteredItems.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              nameListSearchEmptyMessage(context),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.only(
-                            left: 4,
-                            right: 4,
-                            top: 4,
-                            bottom: 88,
-                          ),
-                          itemCount: filteredItems.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: Theme.of(context)
-                                .dividerColor
-                                .withValues(alpha: 0.35),
-                          ),
-                          itemBuilder: (context, index) {
-                            final item = filteredItems[index];
-                            return ShoppingItemRow(
-                              key: ValueKey(item.id),
-                              tripId: widget.tripId,
-                              item: item,
-                              usersDataById: usersDataById,
-                              normalizedLabelCounts: normalizedLabelCounts,
-                              autoFocusLabel:
-                                  item.id == _pendingAutofocusItemId,
-                              onAutoFocusHandled: () {
-                                if (!mounted) return;
-                                if (_pendingAutofocusItemId != item.id) return;
-                                setState(() => _pendingAutofocusItemId = null);
-                              },
-                            );
-                          },
-                        ),
+                      // Tab 1 — consolidated list
+                      _buildConsolidatedTab(context, l10n, languageCode),
+                    ],
+                  ),
                 ),
               ],
             ),
+            if (_isConsolidating)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.45),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
             Positioned(
               right: 16,
               bottom: 16,
@@ -466,13 +444,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                             ? null
                             : () {
                                 setState(() => _isFabMenuOpen = false);
-                                if (isApplicationOwner) {
-                                  _consolidateWithAi(context);
-                                } else {
-                                  _showConsolidationNotAvailableForAccountDialog(
-                                    context,
-                                  );
-                                }
+                                _showConsolidateOptionsDialog(
+                                  context,
+                                  isApplicationOwner,
+                                );
                               },
                         icon: _isConsolidating
                             ? const SizedBox.square(
@@ -513,6 +488,62 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildConsolidatedTab(
+    BuildContext context,
+    AppLocalizations l10n,
+    String languageCode,
+  ) {
+    final result = _consolidationResult;
+    final categories = result?.categories ?? const [];
+    if (result == null || result.items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.shoppingConsolidatedEmpty,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      );
+    }
+
+    final groups = _groupByCategory(result.items, categories);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+          child: Row(
+            children: [
+              Expanded(child: const SizedBox.shrink()),
+              IconButton(
+                tooltip: l10n.shoppingConsolidatedClear,
+                icon: const Icon(Icons.close),
+                onPressed: () => setState(() => _consolidationResult = null),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 88),
+            itemCount: groups.length,
+            itemBuilder: (context, index) {
+              final entry = groups[index];
+              return _ConsolidatedCategorySection(
+                label: _categoryLabel(entry.key, languageCode, categories),
+                items: entry.value,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -593,6 +624,76 @@ enum _ShoppingFilter {
   claimedByMe,
 }
 
+enum _ConsolidationMode { full, manualOnly }
+
+String _categoryLabel(
+  String categoryId,
+  String languageCode,
+  List<ConsolidatedShoppingCategory> categories,
+) {
+  final match = categories.where((c) => c.id == categoryId).firstOrNull;
+  if (match == null) return categoryId;
+  return match.label(languageCode);
+}
+
+List<MapEntry<String, List<ConsolidatedShoppingItem>>> _groupByCategory(
+  List<ConsolidatedShoppingItem> items,
+  List<ConsolidatedShoppingCategory> categories,
+) {
+  final map = <String, List<ConsolidatedShoppingItem>>{};
+  for (final item in items) {
+    final cat = item.categoryId.isEmpty ? 'divers' : item.categoryId;
+    (map[cat] ??= []).add(item);
+  }
+  final ordered = <String>[];
+  for (final cat in categories) {
+    if (map.containsKey(cat.id)) ordered.add(cat.id);
+  }
+  for (final id in map.keys) {
+    if (!ordered.contains(id)) ordered.add(id);
+  }
+  return [for (final id in ordered) MapEntry(id, map[id]!)];
+}
+
+class _ConsolidatedCategorySection extends StatelessWidget {
+  const _ConsolidatedCategorySection({
+    required this.label,
+    required this.items,
+  });
+
+  final String label;
+  final List<ConsolidatedShoppingItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      initiallyExpanded: true,
+      title: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+      childrenPadding: EdgeInsets.zero,
+      children: [
+        for (int i = 0; i < items.length; i++) ...[
+          _ConsolidatedReadOnlyRow(item: items[i]),
+          if (i < items.length - 1)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: 12,
+              endIndent: 12,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
 class _FilterLegendRow extends StatelessWidget {
   const _FilterLegendRow({
     required this.icon,
@@ -614,8 +715,125 @@ class _FilterLegendRow extends StatelessWidget {
   }
 }
 
-class _ConsolidatedItemTile extends StatelessWidget {
-  const _ConsolidatedItemTile({required this.item});
+class _ConsolidationOptionsDialog extends StatefulWidget {
+  const _ConsolidationOptionsDialog({required this.isApplicationOwner});
+
+  final bool isApplicationOwner;
+
+  @override
+  State<_ConsolidationOptionsDialog> createState() =>
+      _ConsolidationOptionsDialogState();
+}
+
+class _ConsolidationOptionsDialogState
+    extends State<_ConsolidationOptionsDialog> {
+  late bool _isReady;
+  Timer? _readyTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _isReady = widget.isApplicationOwner;
+    if (!_isReady) {
+      _readyTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted) setState(() => _isReady = true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _readyTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.shoppingConsolidateOptionsTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AiBilledSupportBanner(),
+            if (_isReady) ...[
+              const SizedBox(height: 16),
+              _OptionTile(
+                title: l10n.shoppingConsolidateOptionFull,
+                icon: Icons.merge_type,
+                onTap: () => Navigator.of(context).pop(_ConsolidationMode.full),
+              ),
+              const SizedBox(height: 8),
+              _OptionTile(
+                title: l10n.shoppingConsolidateOptionManualOnly,
+                icon: Icons.edit_note,
+                onTap: () =>
+                    Navigator.of(context).pop(_ConsolidationMode.manualOnly),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: _isReady
+          ? [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l10n.commonCancel),
+              ),
+            ]
+          : [],
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  const _OptionTile({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConsolidatedReadOnlyRow extends StatelessWidget {
+  const _ConsolidatedReadOnlyRow({required this.item});
 
   final ConsolidatedShoppingItem item;
 
@@ -626,110 +844,53 @@ class _ConsolidatedItemTile extends StatelessWidget {
       item.quantityValue,
       item.quantityUnit,
     );
-    final sourceIcon = _consolidatedSourceIcon(item.sourceType);
-    final showSources =
-        item.sourceType == ConsolidatedShoppingSourceType.mixed &&
-            item.sourceItems.isNotEmpty;
+    final sourceIcon = _sourceIcon(item.sourceType);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        item.label,
-                        style: theme.textTheme.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      sourceIcon,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                quantity,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          const Checkbox(
+            value: false,
+            onChanged: null,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
           ),
-          if (showSources)
-            Padding(
-              padding: const EdgeInsets.only(left: 18, top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final source in item.sourceItems)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 1),
-                      child: _ConsolidatedSourceLine(source: source),
-                    ),
-                ],
+          const SizedBox(width: 30),
+          Expanded(
+            child: Text(
+              item.label,
+              style: theme.textTheme.bodyLarge,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (quantity.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Text(
+              quantity,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
+          ],
+          const SizedBox(width: 4),
+          Icon(
+            sourceIcon,
+            size: 14,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 4),
         ],
       ),
     );
   }
-}
 
-class _ConsolidatedSourceLine extends StatelessWidget {
-  const _ConsolidatedSourceLine({required this.source});
-
-  final ConsolidatedShoppingSourceItem source;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isManual = source.source == 'manual';
-    final icon = isManual ? Icons.edit_note : Icons.restaurant_menu;
-    final quantity = _formatConsolidatedQuantity(
-      source.originalQuantityValue,
-      source.originalQuantityUnit,
-    );
-    final detail = quantity.isEmpty
-        ? source.originalLabel
-        : '${source.originalLabel} — $quantity';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            detail,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-IconData _consolidatedSourceIcon(ConsolidatedShoppingSourceType sourceType) {
-  switch (sourceType) {
-    case ConsolidatedShoppingSourceType.manual:
-      return Icons.edit_note;
-    case ConsolidatedShoppingSourceType.recipe:
-      return Icons.restaurant_menu;
-    case ConsolidatedShoppingSourceType.mixed:
-      return Icons.merge_type;
+  IconData _sourceIcon(ConsolidatedShoppingSourceType type) {
+    return switch (type) {
+      ConsolidatedShoppingSourceType.manual => Icons.edit_note,
+      ConsolidatedShoppingSourceType.recipe => Icons.restaurant_menu,
+      ConsolidatedShoppingSourceType.mixed => Icons.merge_type,
+    };
   }
 }
