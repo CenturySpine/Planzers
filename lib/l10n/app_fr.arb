@@ -790,6 +790,13 @@
       }
     }
   },
+  "mealPotluckDeleteItemTitle": "Supprimer cet élément ?",
+  "mealPotluckDeleteItemBody": "« {itemLabel} » sera retiré de la liste des apports.",
+  "@mealPotluckDeleteItemBody": {
+    "placeholders": {
+      "itemLabel": {}
+    }
+  },
   "commonSaving": "Enregistrement...",
   "mealComponentKindEntree": "Entrée",
   "mealComponentKindMain": "Plat",
