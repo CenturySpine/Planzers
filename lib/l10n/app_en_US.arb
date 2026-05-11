@@ -716,6 +716,13 @@
   "@mealComponentLockedByUser": {"placeholders": {"user": {}}},
   "mealComponentChangedUnsaved": "Modified component not saved",
   "mealDeleteComponent": "Delete this component",
+  "mealDeleteComponentConfirmTitle": "Remove this component?",
+  "mealDeleteComponentConfirmBody": "The \"{componentKind}\" course will be removed from this meal.",
+  "@mealDeleteComponentConfirmBody": {
+    "placeholders": {
+      "componentKind": {}
+    }
+  },
   "mealModeCooked": "Home-cooked meal",
   "mealModeRestaurant": "Restaurant",
   "mealModePotluck": "Potluck",

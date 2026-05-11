@@ -1896,6 +1896,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mealDeleteComponent => 'Delete this component';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Remove this component?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'The \"$componentKind\" course will be removed from this meal.';
+  }
+
+  @override
   String get mealModeCooked => 'Home-cooked meal';
 
   @override
@@ -4512,6 +4520,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealDeleteComponent => 'Delete this component';
+
+  @override
+  String get mealDeleteComponentConfirmTitle => 'Remove this component?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'The \"$componentKind\" course will be removed from this meal.';
+  }
 
   @override
   String get mealModeCooked => 'Home-cooked meal';

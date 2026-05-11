@@ -829,6 +829,33 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     );
   }
 
+  Future<void> _confirmDeleteComponent(MealComponent component) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.mealDeleteComponentConfirmTitle),
+        content: Text(
+          l10n.mealDeleteComponentConfirmBody(
+            _componentKindLabel(l10n, component.kind),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    await _deleteComponent(component.id);
+  }
+
   Future<void> _reorderComponents(int oldIndex, int newIndex) async {
     final previousComponents = _components;
     final previousComponentsUserOrdered = _componentsUserOrdered;
@@ -1999,8 +2026,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       )
                                                         ? null
                                                         : () =>
-                                                            _deleteComponent(
-                                                              component.id,
+                                                            _confirmDeleteComponent(
+                                                              component,
                                                             ),
                                                 icon: Icon(Icons.delete_outline,
                                                     color: Theme.of(context)

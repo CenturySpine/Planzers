@@ -1913,6 +1913,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mealDeleteComponent => 'Supprimer ce composant';
 
   @override
+  String get mealDeleteComponentConfirmTitle => 'Supprimer ce composant ?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'Le composant « $componentKind » sera retiré de ce repas.';
+  }
+
+  @override
   String get mealModeCooked => 'Repas cuisiné';
 
   @override
@@ -4554,6 +4562,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealDeleteComponent => 'Supprimer ce composant';
+
+  @override
+  String get mealDeleteComponentConfirmTitle => 'Supprimer ce composant ?';
+
+  @override
+  String mealDeleteComponentConfirmBody(Object componentKind) {
+    return 'Le composant « $componentKind » sera retiré de ce repas.';
+  }
 
   @override
   String get mealModeCooked => 'Repas cuisiné';
