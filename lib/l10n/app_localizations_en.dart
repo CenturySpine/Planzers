@@ -1965,6 +1965,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mealPotluckDeleteItemTitle => 'Remove this item?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return 'The \"$itemLabel\" contribution will be removed from this meal.';
+  }
+
+  @override
   String get commonSaving => 'Saving...';
 
   @override
@@ -4588,6 +4596,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount items added';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Remove this item?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return 'The \"$itemLabel\" contribution will be removed from this meal.';
   }
 
   @override

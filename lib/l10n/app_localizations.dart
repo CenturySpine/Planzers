@@ -3600,6 +3600,18 @@ abstract class AppLocalizations {
   /// **'{currentCount}/{maxCount} éléments ajoutés'**
   String mealPotluckCreateRowsHint(int currentCount, int maxCount);
 
+  /// No description provided for @mealPotluckDeleteItemTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cet élément ?'**
+  String get mealPotluckDeleteItemTitle;
+
+  /// No description provided for @mealPotluckDeleteItemBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {itemLabel} » sera retiré de la liste des apports.'**
+  String mealPotluckDeleteItemBody(Object itemLabel);
+
   /// No description provided for @commonSaving.
   ///
   /// In fr, this message translates to:

@@ -790,6 +790,13 @@
       }
     }
   },
+  "mealPotluckDeleteItemTitle": "Remove this item?",
+  "mealPotluckDeleteItemBody": "The \"{itemLabel}\" contribution will be removed from this meal.",
+  "@mealPotluckDeleteItemBody": {
+    "placeholders": {
+      "itemLabel": {}
+    }
+  },
   "commonSaving": "Saving...",
   "mealComponentKindEntree": "Starter",
   "mealComponentKindMain": "Main",

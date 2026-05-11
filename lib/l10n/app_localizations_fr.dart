@@ -1982,6 +1982,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get mealPotluckDeleteItemTitle => 'Supprimer cet élément ?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return '« $itemLabel » sera retiré de la liste des apports.';
+  }
+
+  @override
   String get commonSaving => 'Enregistrement...';
 
   @override
@@ -4630,6 +4638,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String mealPotluckCreateRowsHint(int currentCount, int maxCount) {
     return '$currentCount/$maxCount éléments ajoutés';
+  }
+
+  @override
+  String get mealPotluckDeleteItemTitle => 'Supprimer cet élément ?';
+
+  @override
+  String mealPotluckDeleteItemBody(Object itemLabel) {
+    return '« $itemLabel » sera retiré de la liste des apports.';
   }
 
   @override
