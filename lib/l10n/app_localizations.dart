@@ -706,12 +706,6 @@ abstract class AppLocalizations {
   /// **'Préférences'**
   String get accountPreferencesSectionTitle;
 
-  /// No description provided for @accountColorPalette.
-  ///
-  /// In fr, this message translates to:
-  /// **'Palette de couleurs'**
-  String get accountColorPalette;
-
   /// No description provided for @accountLanguageTitle.
   ///
   /// In fr, this message translates to:
@@ -1065,12 +1059,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Se déconnecter'**
   String get accountSignOut;
-
-  /// No description provided for @paletteSaved.
-  ///
-  /// In fr, this message translates to:
-  /// **'Palette {label} enregistrée'**
-  String paletteSaved(Object label);
 
   /// No description provided for @tripLabelGeneric.
   ///

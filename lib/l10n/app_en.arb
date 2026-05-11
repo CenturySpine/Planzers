@@ -101,7 +101,6 @@
   "accountCupidonSpace": "Cupidon space",
   "accountCupidonHistory": "Match history",
   "accountPreferencesSectionTitle": "Preferences",
-  "accountColorPalette": "Color palette",
   "accountLanguageTitle": "Language",
   "accountLanguageSubtitle": "App language",
   "accountEnabling": "Enabling...",
@@ -211,12 +210,6 @@
   "accountDownloadApk": "Download APK",
   "accountAdministration": "Administration",
   "accountSignOut": "Sign out",
-  "paletteSaved": "Palette {label} saved",
-  "@paletteSaved": {
-    "placeholders": {
-      "label": {}
-    }
-  },
   "tripLabelGeneric": "Trip",
   "tripNotFoundOrNoAccess": "Trip not found or access denied.",
   "tripBackToTrip": "Back to trip",

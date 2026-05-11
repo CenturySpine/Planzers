@@ -331,9 +331,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountPreferencesSectionTitle => 'Preferences';
 
   @override
-  String get accountColorPalette => 'Color palette';
-
-  @override
   String get accountLanguageTitle => 'Language';
 
   @override
@@ -533,11 +530,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSignOut => 'Sign out';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label saved';
-  }
 
   @override
   String get tripLabelGeneric => 'Trip';
@@ -3043,9 +3035,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountPreferencesSectionTitle => 'Preferences';
 
   @override
-  String get accountColorPalette => 'Color palette';
-
-  @override
   String get accountLanguageTitle => 'Language';
 
   @override
@@ -3245,11 +3234,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountSignOut => 'Sign out';
-
-  @override
-  String paletteSaved(Object label) {
-    return 'Palette $label saved';
-  }
 
   @override
   String get tripLabelGeneric => 'Trip';
