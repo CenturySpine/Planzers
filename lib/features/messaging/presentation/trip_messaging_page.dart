@@ -354,12 +354,26 @@ class _TripMessagingThreadTabs extends StatelessWidget {
           },
           tabs: <Widget>[
             Tab(
-              text: l10n.tripMessagingChannelMain,
-              icon: const Icon(Icons.forum_outlined),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.forum_outlined),
+                  const SizedBox(width: 8),
+                  Text(l10n.tripMessagingChannelMain),
+                ],
+              ),
             ),
             Tab(
-              text: l10n.tripMessagingChannelAdmin,
-              icon: const Icon(Icons.admin_panel_settings_outlined),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.admin_panel_settings_outlined),
+                  const SizedBox(width: 8),
+                  Text(l10n.tripMessagingChannelAdmin),
+                ],
+              ),
             ),
           ],
         ),
