@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-11",
+  "categories": [
+    {
+      "id": "animaux",
+      "fr": "Animaux",
+      "en": "Pet Supplies"
+    },
+    {
+      "id": "bebe",
+      "fr": "Bébé",
+      "en": "Baby"
+    },
+    {
+      "id": "boissons",
+      "fr": "Boissons",
+      "en": "Beverages"
+    },
+    {
+      "id": "boucherie",
+      "fr": "Boucherie",
+      "en": "Meat & Poultry"
+    },
+    {
+      "id": "boulangerie-viennoiserie",
+      "fr": "Boulangerie & Viennoiserie",
+      "en": "Bakery & Pastries"
+    },
+    {
+      "id": "conserves",
+      "fr": "Conserves",
+      "en": "Canned Goods"
+    },
+    {
+      "id": "cremerie",
+      "fr": "Crémerie",
+      "en": "Dairy"
+    },
+    {
+      "id": "divers",
+      "fr": "Divers",
+      "en": "Miscellaneous"
+    },
+    {
+      "id": "entretien",
+      "fr": "Entretien",
+      "en": "Household Cleaning"
+    },
+    {
+      "id": "epicerie-salee",
+      "fr": "Épicerie salée",
+      "en": "Pantry"
+    },
+    {
+      "id": "epicerie-sucree",
+      "fr": "Épicerie sucrée",
+      "en": "Baking & Sweets"
+    },
+    {
+      "id": "fruits-et-legumes",
+      "fr": "Fruits et légumes",
+      "en": "Fresh Produce"
+    },
+    {
+      "id": "hygiene",
+      "fr": "Hygiène",
+      "en": "Personal Care"
+    },
+    {
+      "id": "maison",
+      "fr": "Maison",
+      "en": "Home & Stationery"
+    },
+    {
+      "id": "petit-dejeuner-et-gouter",
+      "fr": "Petit-déjeuner et goûter",
+      "en": "Breakfast & Snacks"
+    },
+    {
+      "id": "poissonnerie",
+      "fr": "Poissonnerie",
+      "en": "Fish & Seafood"
+    },
+    {
+      "id": "rayon-frais",
+      "fr": "Rayon frais",
+      "en": "Chilled"
+    },
+    {
+      "id": "surgeles",
+      "fr": "Surgelés",
+      "en": "Frozen"
+    }
+  ]
+}
