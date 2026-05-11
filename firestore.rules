@@ -418,6 +418,27 @@ service cloud.firestore {
         );
     }
 
+    function messageThreadType(messageData) {
+      return (messageData.keys().hasAny(['threadType']) && messageData.threadType is string)
+        ? messageData.threadType
+        : 'main';
+    }
+
+    function messageVisibilityType(messageData) {
+      return (messageData.keys().hasAny(['visibilityType']) && messageData.visibilityType is string)
+        ? messageData.visibilityType
+        : 'trip_all';
+    }
+
+    function canReadTripMessage(tripId, messageData) {
+      return isTripMember(tripId)
+        && (
+          messageVisibilityType(messageData) == 'trip_all'
+          || (messageVisibilityType(messageData) == 'admins_only' && tripCallerRoleRank(tripId) >= 2)
+          || messageVisibilityType(messageData) == 'object_participants'
+        );
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == userId;
@@ -674,28 +695,71 @@ service cloud.firestore {
       }
 
       match /messages/{messageId} {
-        allow read: if isTripMember(tripId);
+        allow read: if canReadTripMessage(tripId, resource.data);
         allow create: if isTripMember(tripId)
-          && request.resource.data.keys().hasOnly(['text', 'authorId', 'createdAt'])
+          && request.resource.data.keys().hasOnly([
+            'text',
+            'authorId',
+            'createdAt',
+            'threadType',
+            'threadObjectType',
+            'threadObjectId',
+            'visibilityType',
+          ])
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 4000;
-        allow update: if isTripMember(tripId)
+          && request.resource.data.text.size() <= 4000
+          && (
+            !request.resource.data.keys().hasAny(['threadType'])
+            || request.resource.data.threadType in ['main', 'admin', 'object']
+          )
+          && (
+            !request.resource.data.keys().hasAny(['visibilityType'])
+            || request.resource.data.visibilityType in ['trip_all', 'admins_only', 'object_participants']
+          )
+          && (
+            messageThreadType(request.resource.data) != 'admin'
+            || tripCallerRoleRank(tripId) >= 2
+          );
+        allow update: if canReadTripMessage(tripId, resource.data)
           && (
             (
               resource.data.authorId == request.auth.uid
               && request.resource.data.authorId == resource.data.authorId
               && request.resource.data.createdAt == resource.data.createdAt
+              && messageThreadType(request.resource.data) == messageThreadType(resource.data)
+              && messageVisibilityType(request.resource.data) == messageVisibilityType(resource.data)
+              && (
+                (!resource.data.keys().hasAny(['threadObjectType']) && !request.resource.data.keys().hasAny(['threadObjectType']))
+                || request.resource.data.threadObjectType == resource.data.threadObjectType
+              )
+              && (
+                (!resource.data.keys().hasAny(['threadObjectId']) && !request.resource.data.keys().hasAny(['threadObjectId']))
+                || request.resource.data.threadObjectId == resource.data.threadObjectId
+              )
               && request.resource.data.text is string
               && request.resource.data.text.size() > 0
               && request.resource.data.text.size() <= 4000
               && request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['text', 'updatedAt'])
+                .hasOnly([
+                  'text',
+                  'updatedAt',
+                ])
             )
             || (
               request.resource.data.authorId == resource.data.authorId
               && request.resource.data.createdAt == resource.data.createdAt
+              && messageThreadType(request.resource.data) == messageThreadType(resource.data)
+              && messageVisibilityType(request.resource.data) == messageVisibilityType(resource.data)
+              && (
+                (!resource.data.keys().hasAny(['threadObjectType']) && !request.resource.data.keys().hasAny(['threadObjectType']))
+                || request.resource.data.threadObjectType == resource.data.threadObjectType
+              )
+              && (
+                (!resource.data.keys().hasAny(['threadObjectId']) && !request.resource.data.keys().hasAny(['threadObjectId']))
+                || request.resource.data.threadObjectId == resource.data.threadObjectId
+              )
               && request.resource.data.text == resource.data.text
               && request.resource.data.reactionsByUser is map
               && request.resource.data.diff(resource.data).affectedKeys()
@@ -706,7 +770,7 @@ service cloud.firestore {
                 ])
             )
           );
-        allow delete: if isTripMember(tripId)
+        allow delete: if canReadTripMessage(tripId, resource.data)
           && resource.data.authorId == request.auth.uid;
 
         match /reactions/{userId} {

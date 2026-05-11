@@ -307,6 +307,8 @@
   "tripSectionParticipantsDescription": "Gestion des droits liés aux membres du voyage.",
   "tripTabOverview": "Aperçu",
   "tripTabMessages": "Messagerie",
+  "tripMessagingChannelMain": "Principal",
+  "tripMessagingChannelAdmin": "Admins",
   "tripTabActivities": "Planning",
   "tripTabExpenses": "Dépenses",
   "tripTabMeals": "Repas",

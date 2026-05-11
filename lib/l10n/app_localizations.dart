@@ -1582,6 +1582,18 @@ abstract class AppLocalizations {
   /// **'Messagerie'**
   String get tripTabMessages;
 
+  /// No description provided for @tripMessagingChannelMain.
+  ///
+  /// In fr, this message translates to:
+  /// **'Principal'**
+  String get tripMessagingChannelMain;
+
+  /// No description provided for @tripMessagingChannelAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Admins'**
+  String get tripMessagingChannelAdmin;
+
   /// No description provided for @tripTabActivities.
   ///
   /// In fr, this message translates to:
