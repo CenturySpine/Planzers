@@ -94,12 +94,16 @@ Regles de fusion :
 - Convertir les unites compatibles avant addition (g/kg, ml/l).
 - Si les unites sont incompatibles, garder des lignes separees.
 - sourceType doit valoir manual, recipe, ou mixed selon l origine consolidee.
+- Pour chaque ingredient consolide, assigne un categoryId parmi les identifiants fournis dans le prompt. Choisis la categorie la plus precise. Utilise 'divers' si aucune categorie ne convient.
 "@
+
+$categoriesLine = "animaux (Animaux), bebe (Bebe), boissons (Boissons), boucherie (Boucherie), boulangerie-viennoiserie (Boulangerie & Viennoiserie), conserves (Conserves), cremerie (Cremerie), divers (Divers), entretien (Entretien), epicerie-salee (Epicerie salee), epicerie-sucree (Epicerie sucree), fruits-et-legumes (Fruits et legumes), hygiene (Hygiene), maison (Maison), petit-dejeuner-et-gouter (Petit-dejeuner et gouter), poissonnerie (Poissonnerie), rayon-frais (Rayon frais), surgeles (Surgeles)"
 
 $userPrompt = @"
 Consolide les deux tableaux suivants.
 summary.*OriginalLineCount doit correspondre au nombre de lignes d entree utilisees.
 Pour chaque ligne consolidee, renseigne les compteurs manualOriginalLineCount et recipeOriginalLineCount utilises pour cette ligne.
+Pour chaque ingredient consolide, assigne un categoryId parmi : $categoriesLine.
 
 manualShoppingItems:
 $($manualShoppingItems | ConvertTo-Json -Depth 10 -Compress)
@@ -127,12 +131,22 @@ $toolParameters  = @{
       type  = "array"
       items = @{
         type       = "object"
-        required   = @("itemLabel", "quantityValue", "quantityUnit", "sourceType", "manualOriginalLineCount", "recipeOriginalLineCount")
+        required   = @("itemLabel", "quantityValue", "quantityUnit", "sourceType", "categoryId", "manualOriginalLineCount", "recipeOriginalLineCount")
         properties = @{
           itemLabel               = @{ type = "string";  description = "Nom consolide de l ingredient" }
           quantityValue           = @{ type = "number";  description = "Quantite totale consolidee" }
           quantityUnit            = @{ type = "string";  description = "Unite apres conversion eventuelle" }
           sourceType              = @{ type = "string";  enum = @("manual", "recipe", "mixed") }
+          categoryId              = @{
+            type        = "string"
+            description = "Identifiant de la categorie de course. Utiliser 'divers' si aucune ne convient."
+            enum        = @(
+              "animaux", "bebe", "boissons", "boucherie", "boulangerie-viennoiserie",
+              "conserves", "cremerie", "divers", "entretien", "epicerie-salee",
+              "epicerie-sucree", "fruits-et-legumes", "hygiene", "maison",
+              "petit-dejeuner-et-gouter", "poissonnerie", "rayon-frais", "surgeles"
+            )
+          }
           manualOriginalLineCount = @{ type = "integer"; description = "Nombre de lignes manual fusionnees dans cette entree" }
           recipeOriginalLineCount = @{ type = "integer"; description = "Nombre de lignes recipe fusionnees dans cette entree" }
           sourceItems             = @{
@@ -236,10 +250,12 @@ Write-Output $responseText
 Write-Host "`n--- Extraction resultat consolide ---" -ForegroundColor Green
 $parsed = $responseText | ConvertFrom-Json
 
+$aiResult = $null
 if ($provider -eq "anthropic") {
   $toolBlock = $parsed.content | Where-Object { $_.type -eq "tool_use" } | Select-Object -First 1
   if ($toolBlock) {
     $toolBlock.input | ConvertTo-Json -Depth 10
+    $aiResult = $toolBlock.input
   } else {
     Write-Warning "Aucun bloc tool_use trouve dans la reponse."
   }
@@ -247,7 +263,65 @@ if ($provider -eq "anthropic") {
   $funcBlock = $parsed.candidates[0].content.parts | Where-Object { $_.functionCall } | Select-Object -First 1
   if ($funcBlock) {
     $funcBlock.functionCall.args | ConvertTo-Json -Depth 10
+    $aiResult = $funcBlock.functionCall.args
   } else {
     Write-Warning "Aucun bloc functionCall trouve dans la reponse."
   }
+}
+
+# ============================================================
+# Affichage groupe par categorie
+# ============================================================
+if ($aiResult -and $aiResult.consolidatedItems) {
+  $categoryLabels = @{
+    "animaux"                  = "Animaux"
+    "bebe"                     = "Bebe"
+    "boissons"                 = "Boissons"
+    "boucherie"                = "Boucherie"
+    "boulangerie-viennoiserie" = "Boulangerie & Viennoiserie"
+    "conserves"                = "Conserves"
+    "cremerie"                 = "Cremerie"
+    "divers"                   = "Divers"
+    "entretien"                = "Entretien"
+    "epicerie-salee"           = "Epicerie salee"
+    "epicerie-sucree"          = "Epicerie sucree"
+    "fruits-et-legumes"        = "Fruits et legumes"
+    "hygiene"                  = "Hygiene"
+    "maison"                   = "Maison"
+    "petit-dejeuner-et-gouter" = "Petit-dejeuner et gouter"
+    "poissonnerie"             = "Poissonnerie"
+    "rayon-frais"              = "Rayon frais"
+    "surgeles"                 = "Surgeles"
+  }
+
+  $grouped = $aiResult.consolidatedItems | Group-Object -Property categoryId
+
+  Write-Host "`n=== LISTE DE COURSES PAR CATEGORIE ===" -ForegroundColor Yellow
+
+  $summary = $aiResult.summary
+  if ($summary) {
+    Write-Host ("  Lignes manuel en entree  : {0}" -f $summary.manualOriginalLineCount)
+    Write-Host ("  Lignes recette en entree : {0}" -f $summary.recipeOriginalLineCount)
+    Write-Host ("  Items consolides         : {0}" -f @($aiResult.consolidatedItems).Count)
+  }
+
+  foreach ($group in ($grouped | Sort-Object Name)) {
+    $catId    = $group.Name
+    $catLabel = if ($categoryLabels.ContainsKey($catId)) { $categoryLabels[$catId] } else { $catId }
+    Write-Host ("`n  [{0}]" -f $catLabel.ToUpper()) -ForegroundColor Cyan
+
+    foreach ($item in $group.Group) {
+      $qty      = $item.quantityValue
+      $unit     = $item.quantityUnit
+      $label    = $item.itemLabel
+      $srcBadge = switch ($item.sourceType) {
+        "manual" { "[M]"   }
+        "recipe" { "[R]"   }
+        default  { "[M+R]" }
+      }
+      Write-Host ("    {0}  {1} {2} {3}" -f $srcBadge, $qty, $unit, $label)
+    }
+  }
+
+  Write-Host ""
 }
