@@ -837,6 +837,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTabMessages => 'Messagerie';
 
   @override
+  String get tripMessagingChannelMain => 'Principal';
+
+  @override
+  String get tripMessagingChannelAdmin => 'Admins';
+
+  @override
   String get tripTabActivities => 'Planning';
 
   @override
@@ -3565,6 +3571,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripTabMessages => 'Messagerie';
+
+  @override
+  String get tripMessagingChannelMain => 'Principal';
+
+  @override
+  String get tripMessagingChannelAdmin => 'Admins';
 
   @override
   String get tripTabActivities => 'Planning';
