@@ -1260,6 +1260,11 @@ List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
     ordered.remove(kUnassignedConsolidatedCategoryId);
     ordered.insert(0, kUnassignedConsolidatedCategoryId);
   }
+  for (final list in map.values) {
+    list.sort(
+      (a, b) => _normalizeItemLabel(a.label).compareTo(_normalizeItemLabel(b.label)),
+    );
+  }
   return [for (final id in ordered) MapEntry(id, map[id]!)];
 }
 
