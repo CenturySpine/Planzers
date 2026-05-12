@@ -139,6 +139,8 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
     final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
+    final canToggleChecked =
+        claimedBy.isEmpty || claimedBy == currentUid;
     final claimedByUserData = claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
     final claimedByLabel = resolveTripMemberDisplayLabel(
       memberId: claimedBy,
@@ -182,7 +184,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       prefixWidgets: [
         Checkbox(
           value: isChecked,
-          onChanged: _toggleChecked,
+          onChanged: canToggleChecked ? _toggleChecked : null,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
         ),
