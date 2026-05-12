@@ -657,6 +657,13 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Persisted consolidated shopping list (`meta` + row docs). Reads must work even when empty.
+      match /consolidatedShoppingItems/{docId} {
+        allow read: if isTripMember(tripId);
+        allow create, update, delete: if isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= 2;
+      }
+
       match /aiQuotas/{featureKey} {
         allow read: if isTripMember(tripId);
         // writes: CF only (Admin SDK)
