@@ -32,6 +32,20 @@ final tripShoppingListLocksStreamProvider =
   },
 );
 
+/// Persisted consolidated list rows + category metadata (`consolidatedShoppingItems/meta`).
+final tripConsolidatedShoppingListStreamProvider = StreamProvider.autoDispose
+    .family<ConsolidatedListFirestorePayload, String>(
+  (ref, tripId) {
+    return ref.watch(shoppingRepositoryProvider).watchConsolidatedShoppingList(tripId);
+  },
+);
+
+/// Reserved document id for category/summary metadata inside [kConsolidatedShoppingItemsCollection].
+const String kConsolidatedShoppingMetaDocId = 'meta';
+
+/// Subcollection under each trip for the saved consolidated shopping list.
+const String kConsolidatedShoppingItemsCollection = 'consolidatedShoppingItems';
+
 class ShoppingRepository {
   ShoppingRepository({
     required this.firestore,
@@ -43,6 +57,12 @@ class ShoppingRepository {
 
   CollectionReference<Map<String, dynamic>> _col(String tripId) =>
       firestore.collection('trips').doc(tripId).collection('shoppingItems');
+
+  CollectionReference<Map<String, dynamic>> _consolidatedCol(String tripId) =>
+      firestore
+          .collection('trips')
+          .doc(tripId)
+          .collection(kConsolidatedShoppingItemsCollection);
 
   DocumentReference<Map<String, dynamic>> _locksDoc(String tripId) {
     return firestore
@@ -104,6 +124,203 @@ class ShoppingRepository {
         .orderBy('order', descending: false)
         .snapshots()
         .map((snap) => snap.docs.map(ShoppingItem.fromDoc).toList());
+  }
+
+  Stream<ConsolidatedListFirestorePayload> watchConsolidatedShoppingList(
+    String tripId,
+  ) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(ConsolidatedListFirestorePayload.empty);
+    }
+    return _consolidatedCol(cleanId)
+        .snapshots()
+        .map(_mapConsolidatedShoppingSnapshot);
+  }
+
+  /// Replaces the entire `consolidatedShoppingItems` subcollection (metadata + rows).
+  Future<void> replaceConsolidatedShoppingList({
+    required String tripId,
+    required List<ConsolidatedShoppingCategory> categories,
+    required ConsolidatedShoppingSummary summary,
+    required List<ConsolidatedFirestoreRow> rows,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    final col = _consolidatedCol(cleanTripId);
+    await _deleteAllDocumentsInCollection(col);
+
+    if (rows.isEmpty) {
+      return;
+    }
+
+    final sorted = [...rows]..sort((a, b) => a.item.order.compareTo(b.item.order));
+
+    var batch = firestore.batch();
+    var opCount = 0;
+
+    Future<void> commitBatch() async {
+      await batch.commit();
+      batch = firestore.batch();
+      opCount = 0;
+    }
+
+    batch.set(
+      col.doc(kConsolidatedShoppingMetaDocId),
+      <String, dynamic>{
+        'categories': categories
+            .map((c) => <String, dynamic>{
+                  'id': c.id,
+                  'fr': c.fr,
+                  'en': c.en,
+                })
+            .toList(growable: false),
+        'summary': summary.toMap(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+    );
+    opCount++;
+
+    for (final row in sorted) {
+      final docRef = col.doc();
+      final categoryId = row.categoryId.trim().isEmpty ? 'divers' : row.categoryId.trim();
+      final claimed = row.item.claimedBy?.trim() ?? '';
+      batch.set(
+        docRef,
+        <String, dynamic>{
+          'label': row.item.label.trim(),
+          'checked': row.item.checked,
+          'quantityValue': row.item.quantityValue,
+          'quantityUnit': row.item.quantityUnit.firestoreValue,
+          'order': row.item.order,
+          'categoryId': categoryId,
+          'createdAt': FieldValue.serverTimestamp(),
+          'createdBy': user.uid,
+          if (claimed.isNotEmpty) 'claimedBy': claimed,
+        },
+      );
+      opCount++;
+      if (opCount >= 450) {
+        await commitBatch();
+      }
+    }
+    if (opCount > 0) {
+      await commitBatch();
+    }
+  }
+
+  Future<void> deleteConsolidatedShoppingList(String tripId) async {
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+    await _deleteAllDocumentsInCollection(_consolidatedCol(cleanTripId));
+  }
+
+  Future<void> _deleteAllDocumentsInCollection(
+    CollectionReference<Map<String, dynamic>> col,
+  ) async {
+    const pageSize = 500;
+    while (true) {
+      final snap = await col.limit(pageSize).get();
+      if (snap.docs.isEmpty) {
+        return;
+      }
+      var batch = firestore.batch();
+      var n = 0;
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+        n++;
+        if (n == 500) {
+          await batch.commit();
+          batch = firestore.batch();
+          n = 0;
+        }
+      }
+      if (n > 0) {
+        await batch.commit();
+      }
+    }
+  }
+
+  ConsolidatedListFirestorePayload _mapConsolidatedShoppingSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    Map<String, dynamic>? metaData;
+    final itemDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+    for (final d in snap.docs) {
+      if (d.id == kConsolidatedShoppingMetaDocId) {
+        metaData = d.data();
+      } else {
+        itemDocs.add(d);
+      }
+    }
+
+    if (itemDocs.isEmpty) {
+      return ConsolidatedListFirestorePayload.empty;
+    }
+
+    itemDocs.sort((a, b) {
+      final orderA = _parseOrderField(a.data()['order']);
+      final orderB = _parseOrderField(b.data()['order']);
+      return orderA.compareTo(orderB);
+    });
+
+    final categories = _parseCategoriesFromMeta(metaData);
+    final summary = _parseSummaryFromMeta(metaData);
+
+    final rows = <ConsolidatedFirestoreRow>[
+      for (final doc in itemDocs)
+        ConsolidatedFirestoreRow(
+          categoryId: _parseCategoryIdField(doc.data()['categoryId']),
+          item: ShoppingItem.fromDoc(doc),
+        ),
+    ];
+
+    return ConsolidatedListFirestorePayload(
+      categories: categories,
+      summary: summary,
+      rows: rows,
+    );
+  }
+
+  List<ConsolidatedShoppingCategory> _parseCategoriesFromMeta(
+    Map<String, dynamic>? metaData,
+  ) {
+    if (metaData == null) return const [];
+    final raw = metaData['categories'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((m) => ConsolidatedShoppingCategory.fromMap(
+              Map<String, dynamic>.from(m),
+            ))
+        .where((c) => c.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  ConsolidatedShoppingSummary _parseSummaryFromMeta(Map<String, dynamic>? metaData) {
+    if (metaData == null) return ConsolidatedShoppingSummary.empty;
+    final raw = metaData['summary'];
+    if (raw is! Map) return ConsolidatedShoppingSummary.empty;
+    return ConsolidatedShoppingSummary.fromMap(
+      Map<String, dynamic>.from(raw),
+    );
+  }
+
+  int _parseOrderField(Object? raw) {
+    if (raw is int) return raw;
+    if (raw is num) return raw.toInt();
+    if (raw is String) return int.tryParse(raw.trim()) ?? 0;
+    return 0;
+  }
+
+  String _parseCategoryIdField(Object? raw) {
+    final s = (raw is String ? raw : raw?.toString() ?? '').trim();
+    return s.isEmpty ? 'divers' : s;
   }
 
   Future<String> addItem({
@@ -321,9 +538,45 @@ class ConsolidatedShoppingSummary {
     );
   }
 
+  Map<String, dynamic> toMap() => <String, dynamic>{
+        'manualOriginalLineCount': manualOriginalLineCount,
+        'recipeOriginalLineCount': recipeOriginalLineCount,
+      };
+
   static const empty = ConsolidatedShoppingSummary(
     manualOriginalLineCount: 0,
     recipeOriginalLineCount: 0,
+  );
+}
+
+/// One persisted row in `trips/{tripId}/consolidatedShoppingItems/{docId}` (excluding [kConsolidatedShoppingMetaDocId]).
+class ConsolidatedFirestoreRow {
+  const ConsolidatedFirestoreRow({
+    required this.categoryId,
+    required this.item,
+  });
+
+  final String categoryId;
+  final ShoppingItem item;
+}
+
+/// Snapshot of the consolidated list as stored in Firestore.
+class ConsolidatedListFirestorePayload {
+  const ConsolidatedListFirestorePayload({
+    required this.categories,
+    required this.summary,
+    required this.rows,
+  });
+
+  final List<ConsolidatedShoppingCategory> categories;
+  final ConsolidatedShoppingSummary summary;
+  final List<ConsolidatedFirestoreRow> rows;
+
+  static const ConsolidatedListFirestorePayload empty =
+      ConsolidatedListFirestorePayload(
+    categories: [],
+    summary: ConsolidatedShoppingSummary.empty,
+    rows: [],
   );
 }
 

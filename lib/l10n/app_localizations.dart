@@ -3060,11 +3060,29 @@ abstract class AppLocalizations {
   /// **'Lancez la consolidation pour voir le résultat ici.'**
   String get shoppingConsolidatedEmpty;
 
+  /// No description provided for @shoppingConsolidatedSave.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer la liste consolidée'**
+  String get shoppingConsolidatedSave;
+
   /// No description provided for @shoppingConsolidatedClear.
   ///
   /// In fr, this message translates to:
   /// **'Effacer la consolidation'**
   String get shoppingConsolidatedClear;
+
+  /// No description provided for @shoppingConsolidatedClearConfirmTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la liste consolidée ?'**
+  String get shoppingConsolidatedClearConfirmTitle;
+
+  /// No description provided for @shoppingConsolidatedClearConfirmContent.
+  ///
+  /// In fr, this message translates to:
+  /// **'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.'**
+  String get shoppingConsolidatedClearConfirmContent;
 
   /// No description provided for @activityCategorySport.
   ///

@@ -69,6 +69,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
+  bool _suppressRemoteConsolidatedSync = false;
+  bool _isSavingConsolidated = false;
+  String? _appliedRemoteConsolidatedFingerprint;
   ConsolidatedShoppingResult? _consolidationResult;
   List<_ConsolidatedEditableItem> _consolidatedItems = const [];
 
@@ -77,6 +80,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     super.initState();
     _searchController = TextEditingController();
     _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShoppingList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tripId != widget.tripId) {
+      _suppressRemoteConsolidatedSync = false;
+      _isSavingConsolidated = false;
+      _appliedRemoteConsolidatedFingerprint = null;
+      _consolidationResult = null;
+      _consolidatedItems = const [];
+    }
   }
 
   @override
@@ -114,6 +129,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           );
       if (!mounted) return;
       setState(() {
+        _suppressRemoteConsolidatedSync = true;
         _consolidationResult = result;
         _consolidatedItems = _buildConsolidatedEditableItems(result.items);
       });
@@ -267,6 +283,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final isApplicationOwner =
         ownerData?[currentUid]?['isApplicationOwner'] == true;
     final searchQuery = _searchController.text;
+    final consolidatedRemoteAsync =
+        ref.watch(tripConsolidatedShoppingListStreamProvider(widget.tripId));
+    _ensureRemoteConsolidatedSynced(consolidatedRemoteAsync);
+
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
         .toList(growable: false);
@@ -558,8 +578,15 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         consolidatedLabelCounts,
                         consolidatedStructureLocked:
                             consolidatedLockRestrictsEditing,
-                        showConsolidatedClearButton:
-                            !locks.consolidatedListLocked,
+                        showConsolidatedSaveButton: isAdminOrAbove &&
+                            _consolidatedItems.isNotEmpty,
+                        showConsolidatedClearButton: isAdminOrAbove &&
+                            !locks.consolidatedListLocked &&
+                            _consolidatedItems.isNotEmpty,
+                        isSavingConsolidated: _isSavingConsolidated,
+                        consolidatedRemoteAsync: consolidatedRemoteAsync,
+                        suppressRemoteConsolidatedSync:
+                            _suppressRemoteConsolidatedSync,
                       ),
                     ],
                   ),
@@ -656,6 +683,132 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     );
   }
 
+  String _remoteConsolidatedFingerprint(ConsolidatedListFirestorePayload payload) {
+    if (payload.rows.isEmpty) return 'empty';
+    return payload.rows
+        .map(
+          (r) =>
+              '${r.item.id}|${r.item.label}|${r.item.order}|${r.item.checked}|'
+              '${r.item.quantityValue}|${r.item.quantityUnit.firestoreValue}|'
+              '${r.categoryId}|${r.item.claimedBy ?? ''}',
+        )
+        .join('~');
+  }
+
+  void _ensureRemoteConsolidatedSynced(
+    AsyncValue<ConsolidatedListFirestorePayload> asyncVal,
+  ) {
+    if (_suppressRemoteConsolidatedSync) return;
+    final payload = asyncVal.asData?.value;
+    if (payload == null) return;
+    final key = _remoteConsolidatedFingerprint(payload);
+    if (key == _appliedRemoteConsolidatedFingerprint) return;
+    _appliedRemoteConsolidatedFingerprint = key;
+    final captured = payload;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _suppressRemoteConsolidatedSync) return;
+      if (_remoteConsolidatedFingerprint(captured) != key) return;
+      _applyRemoteConsolidatedPayload(captured);
+    });
+  }
+
+  void _applyRemoteConsolidatedPayload(ConsolidatedListFirestorePayload payload) {
+    if (!mounted) return;
+    setState(() {
+      if (payload.rows.isEmpty) {
+        _consolidationResult = null;
+        _consolidatedItems = const [];
+        return;
+      }
+      _consolidationResult = ConsolidatedShoppingResult(
+        items: const [],
+        summary: payload.summary,
+        categories: payload.categories,
+      );
+      _consolidatedItems = [
+        for (final row in payload.rows)
+          _ConsolidatedEditableItem(
+            categoryId:
+                row.categoryId.trim().isEmpty ? 'divers' : row.categoryId.trim(),
+            item: row.item,
+          ),
+      ];
+    });
+  }
+
+  Future<void> _saveConsolidatedList(BuildContext context) async {
+    if (_isSavingConsolidated || _consolidatedItems.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isSavingConsolidated = true);
+    try {
+      final rows = <ConsolidatedFirestoreRow>[
+        for (final entry in _consolidatedItems)
+          ConsolidatedFirestoreRow(
+            categoryId: entry.categoryId,
+            item: entry.item,
+          ),
+      ];
+      await ref.read(shoppingRepositoryProvider).replaceConsolidatedShoppingList(
+            tripId: widget.tripId,
+            categories: _consolidationResult?.categories ?? const [],
+            summary:
+                _consolidationResult?.summary ?? ConsolidatedShoppingSummary.empty,
+            rows: rows,
+          );
+      if (!mounted) return;
+      setState(() => _suppressRemoteConsolidatedSync = false);
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingConsolidated = false);
+    }
+  }
+
+  Future<void> _confirmAndClearConsolidated(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.shoppingConsolidatedClearConfirmTitle),
+          content: Text(l10n.shoppingConsolidatedClearConfirmContent),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.commonDelete),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirm != true || !context.mounted) return;
+    try {
+      await ref.read(shoppingRepositoryProvider).deleteConsolidatedShoppingList(
+            widget.tripId,
+          );
+      if (!mounted) return;
+      setState(() {
+        _suppressRemoteConsolidatedSync = false;
+        _consolidationResult = null;
+        _consolidatedItems = const [];
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
   Widget _buildConsolidatedTab(
     BuildContext context,
     AppLocalizations l10n,
@@ -663,8 +816,31 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     Map<String, Map<String, dynamic>> usersDataById,
     Map<String, int> normalizedLabelCounts, {
     required bool consolidatedStructureLocked,
+    required bool showConsolidatedSaveButton,
     required bool showConsolidatedClearButton,
+    required bool isSavingConsolidated,
+    required AsyncValue<ConsolidatedListFirestorePayload> consolidatedRemoteAsync,
+    required bool suppressRemoteConsolidatedSync,
   }) {
+    if (!suppressRemoteConsolidatedSync) {
+      if (consolidatedRemoteAsync.isLoading && _consolidatedItems.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (consolidatedRemoteAsync.hasError && _consolidatedItems.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l10n.commonErrorWithDetails(
+                consolidatedRemoteAsync.error.toString(),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      }
+    }
+
     final result = _consolidationResult;
     final categories = result?.categories ?? const [];
     if (result == null || _consolidatedItems.isEmpty) {
@@ -691,14 +867,25 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           child: Row(
             children: [
               Expanded(child: const SizedBox.shrink()),
+              if (showConsolidatedSaveButton)
+                IconButton(
+                  tooltip: l10n.shoppingConsolidatedSave,
+                  icon: isSavingConsolidated
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  onPressed: isSavingConsolidated
+                      ? null
+                      : () => _saveConsolidatedList(context),
+                ),
               if (showConsolidatedClearButton)
                 IconButton(
                   tooltip: l10n.shoppingConsolidatedClear,
                   icon: const Icon(Icons.close),
-                  onPressed: () => setState(() {
-                    _consolidationResult = null;
-                    _consolidatedItems = const [];
-                  }),
+                  onPressed: () => _confirmAndClearConsolidated(context),
                 ),
             ],
           ),

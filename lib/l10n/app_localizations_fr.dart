@@ -1683,7 +1683,18 @@ class AppLocalizationsFr extends AppLocalizations {
       'Lancez la consolidation pour voir le résultat ici.';
 
   @override
+  String get shoppingConsolidatedSave => 'Enregistrer la liste consolidée';
+
+  @override
   String get shoppingConsolidatedClear => 'Effacer la consolidation';
+
+  @override
+  String get shoppingConsolidatedClearConfirmTitle =>
+      'Effacer la liste consolidée ?';
+
+  @override
+  String get shoppingConsolidatedClearConfirmContent =>
+      'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.';
 
   @override
   String get activityCategorySport => 'Sport';
@@ -4395,7 +4406,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Lancez la consolidation pour voir le résultat ici.';
 
   @override
+  String get shoppingConsolidatedSave => 'Enregistrer la liste consolidée';
+
+  @override
   String get shoppingConsolidatedClear => 'Effacer la consolidation';
+
+  @override
+  String get shoppingConsolidatedClearConfirmTitle =>
+      'Effacer la liste consolidée ?';
+
+  @override
+  String get shoppingConsolidatedClearConfirmContent =>
+      'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.';
 
   @override
   String get activityCategorySport => 'Sport';
