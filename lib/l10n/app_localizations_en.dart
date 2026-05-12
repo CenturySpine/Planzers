@@ -1621,6 +1621,87 @@ class AppLocalizationsEn extends AppLocalizations {
       'This feature is not yet available for your account.';
 
   @override
+  String get shoppingConsolidateOptionsTitle => 'AI Consolidation';
+
+  @override
+  String get shoppingConsolidateOptionFull => 'Recipes + list';
+
+  @override
+  String get shoppingConsolidateOptionManualOnly => 'List only';
+
+  @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Combines your unchecked manual list with ingredients from cooked meals on this trip into one consolidated list.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Leaves each list line unchanged and only sorts them into store categories.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Run consolidation';
+
+  @override
+  String get shoppingTabList => 'Free list';
+
+  @override
+  String get shoppingTabConsolidated => 'Consolidated';
+
+  @override
+  String get shoppingTooltipLockManualList => 'Lock the manual list';
+
+  @override
+  String get shoppingTooltipUnlockManualList => 'Unlock the manual list';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Lock the consolidated list';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Unlock the consolidated list';
+
+  @override
+  String get shoppingConsolidatedEmpty =>
+      'Run consolidation to see the result here.';
+
+  @override
+  String get shoppingConsolidatedFilterEmpty => 'No items match this filter.';
+
+  @override
+  String get shoppingConsolidatedSave => 'Save consolidated list';
+
+  @override
+  String get shoppingConsolidatedClear => 'Clear consolidation';
+
+  @override
+  String get shoppingConsolidatedClearConfirmTitle =>
+      'Clear consolidated list?';
+
+  @override
+  String get shoppingConsolidatedClearConfirmContent =>
+      'The saved consolidated list for this trip will be removed. This does not change the manual list.';
+
+  @override
+  String get shoppingChangeCategoryMenu => 'Change category';
+
+  @override
+  String get shoppingChangeCategoryDialogTitle => 'Choose a category';
+
+  @override
+  String get shoppingCategoryDivers => 'Miscellaneous';
+
+  @override
+  String get shoppingCategoryUnassigned => 'Unassigned';
+
+  @override
+  String get shoppingConsolidatedAddBlockedWhenLocked =>
+      'The consolidated list is locked.';
+
+  @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4258,6 +4339,87 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get shoppingConsolidateAiNotAvailableBody =>
       'This feature is not yet available for your account.';
+
+  @override
+  String get shoppingConsolidateOptionsTitle => 'AI Consolidation';
+
+  @override
+  String get shoppingConsolidateOptionFull => 'Recipes + list';
+
+  @override
+  String get shoppingConsolidateOptionManualOnly => 'List only';
+
+  @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Combines your unchecked manual list with ingredients from cooked meals on this trip into one consolidated list.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Leaves each list line unchanged and only sorts them into store categories.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Run consolidation';
+
+  @override
+  String get shoppingTabList => 'Free list';
+
+  @override
+  String get shoppingTabConsolidated => 'Consolidated';
+
+  @override
+  String get shoppingTooltipLockManualList => 'Lock the manual list';
+
+  @override
+  String get shoppingTooltipUnlockManualList => 'Unlock the manual list';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Lock the consolidated list';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Unlock the consolidated list';
+
+  @override
+  String get shoppingConsolidatedEmpty =>
+      'Run consolidation to see the result here.';
+
+  @override
+  String get shoppingConsolidatedFilterEmpty => 'No items match this filter.';
+
+  @override
+  String get shoppingConsolidatedSave => 'Save consolidated list';
+
+  @override
+  String get shoppingConsolidatedClear => 'Clear consolidation';
+
+  @override
+  String get shoppingConsolidatedClearConfirmTitle =>
+      'Clear consolidated list?';
+
+  @override
+  String get shoppingConsolidatedClearConfirmContent =>
+      'The saved consolidated list for this trip will be removed. This does not change the manual list.';
+
+  @override
+  String get shoppingChangeCategoryMenu => 'Change category';
+
+  @override
+  String get shoppingChangeCategoryDialogTitle => 'Choose a category';
+
+  @override
+  String get shoppingCategoryDivers => 'Miscellaneous';
+
+  @override
+  String get shoppingCategoryUnassigned => 'Unassigned';
+
+  @override
+  String get shoppingConsolidatedAddBlockedWhenLocked =>
+      'The consolidated list is locked.';
+
+  @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
 
   @override
   String get activityCategorySport => 'Sport';

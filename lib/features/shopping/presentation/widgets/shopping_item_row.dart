@@ -16,6 +16,13 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     required this.normalizedLabelCounts,
     this.autoFocusLabel = false,
     this.onAutoFocusHandled,
+    this.onToggleCheckedOverride,
+    this.onSetClaimedByOverride,
+    this.onSaveOverride,
+    this.onDeleteOverride,
+    this.structureLocked = false,
+    this.customMenuItems,
+    this.onCustomMenuAction,
   });
 
   final String tripId;
@@ -24,6 +31,16 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
   final Map<String, int> normalizedLabelCounts;
   final bool autoFocusLabel;
   final VoidCallback? onAutoFocusHandled;
+  final Future<void> Function(bool checked)? onToggleCheckedOverride;
+  final Future<void> Function(String? claimedBy)? onSetClaimedByOverride;
+  final Future<void> Function(IngredientLineValue value)? onSaveOverride;
+  final Future<void> Function()? onDeleteOverride;
+
+  /// Non-admins cannot edit label/qty/delete when the parent list is locked.
+  final bool structureLocked;
+
+  final List<IngredientLineCustomMenuItem>? customMenuItems;
+  final void Function(String actionId)? onCustomMenuAction;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -47,6 +64,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _toggleChecked(bool? value) async {
+    if (widget.onToggleCheckedOverride != null) {
+      await widget.onToggleCheckedOverride!(value ?? false);
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).setChecked(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -55,6 +76,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _delete() async {
+    if (widget.onDeleteOverride != null) {
+      await widget.onDeleteOverride!();
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).deleteItem(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -94,6 +119,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     if (claimedBy.isNotEmpty && claimedBy != uid) return;
 
     final nextClaimedBy = claimedBy == uid ? null : uid;
+    if (widget.onSetClaimedByOverride != null) {
+      await widget.onSetClaimedByOverride!(nextClaimedBy);
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).setClaimedBy(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -110,6 +139,8 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
     final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
+    final canToggleChecked =
+        claimedBy.isEmpty || claimedBy == currentUid;
     final claimedByUserData = claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
     final claimedByLabel = resolveTripMemberDisplayLabel(
       memberId: claimedBy,
@@ -128,7 +159,12 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       label: widget.item.label,
       quantityValue: widget.item.quantityValue,
       quantityUnit: widget.item.quantityUnit,
+      structureLocked: widget.structureLocked,
       onSave: (value) async {
+        if (widget.onSaveOverride != null) {
+          await widget.onSaveOverride!(value);
+          return;
+        }
         await ref.read(shoppingRepositoryProvider).updateItem(
               tripId: widget.tripId,
               itemId: widget.item.id,
@@ -143,10 +179,12 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       onAutoFocusHandled: widget.onAutoFocusHandled,
       isDuplicateLabel: _isDuplicateLabel,
       labelStyle: labelStyle,
+      customMenuItems: widget.customMenuItems,
+      onCustomMenuAction: widget.onCustomMenuAction,
       prefixWidgets: [
         Checkbox(
           value: isChecked,
-          onChanged: _toggleChecked,
+          onChanged: canToggleChecked ? _toggleChecked : null,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
         ),

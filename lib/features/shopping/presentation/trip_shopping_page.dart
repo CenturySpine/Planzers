@@ -1,21 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart'
     show
         stableUsersIdsKey,
         usersDataByIdsKeyStreamProvider,
         usersRepositoryProvider;
+import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
+import 'package:planerz/features/shopping/presentation/widgets/shopping_list_status_filter.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+
+/// Reserved Firestore category id for consolidated rows added from the app (manual add).
+const String kUnassignedConsolidatedCategoryId = '999';
+
+const ConsolidatedShoppingCategory kUnassignedConsolidatedCategoryMeta =
+    ConsolidatedShoppingCategory(
+  id: '999',
+  fr: 'Non assigné',
+  en: 'Unassigned',
+);
 
 class TripShoppingPage extends ConsumerWidget {
   const TripShoppingPage({super.key});
@@ -57,26 +73,65 @@ class _ShoppingList extends ConsumerStatefulWidget {
   ConsumerState<_ShoppingList> createState() => _ShoppingListState();
 }
 
-class _ShoppingListState extends ConsumerState<_ShoppingList> {
+class _ShoppingListState extends ConsumerState<_ShoppingList>
+    with SingleTickerProviderStateMixin {
   late final TextEditingController _searchController;
-  _ShoppingFilter _activeFilter = _ShoppingFilter.all;
+  late final TabController _tabController;
+  ShoppingListStatusFilter _manualListStatusFilter = ShoppingListStatusFilter.all;
+  ShoppingListStatusFilter _consolidatedListStatusFilter =
+      ShoppingListStatusFilter.all;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
+  bool _suppressRemoteConsolidatedSync = false;
+  bool _isSavingConsolidated = false;
+  String? _appliedRemoteConsolidatedFingerprint;
+  ConsolidatedShoppingResult? _consolidationResult;
+  List<_ConsolidatedEditableItem> _consolidatedItems = const [];
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ShoppingList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tripId != widget.tripId) {
+      _suppressRemoteConsolidatedSync = false;
+      _isSavingConsolidated = false;
+      _appliedRemoteConsolidatedFingerprint = null;
+      _consolidationResult = null;
+      _consolidatedItems = const [];
+      _manualListStatusFilter = ShoppingListStatusFilter.all;
+      _consolidatedListStatusFilter = ShoppingListStatusFilter.all;
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
-  Future<void> _addItem() async {
+  Future<void> _addFromFabAddItem(
+    BuildContext context, {
+    required bool consolidatedLockRestrictsEditing,
+  }) async {
+    if (_tabController.index == 0) {
+      await _addManualListItem();
+      return;
+    }
+    await _addConsolidatedListItem(
+      context,
+      consolidatedLockRestrictsEditing: consolidatedLockRestrictsEditing,
+    );
+  }
+
+  Future<void> _addManualListItem() async {
     final topOrder = widget.items.isEmpty ? 0 : (widget.items.first.order - 1);
     final newItemId = await ref.read(shoppingRepositoryProvider).addItem(
           tripId: widget.tripId,
@@ -87,28 +142,64 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     setState(() => _pendingAutofocusItemId = newItemId);
   }
 
-  Future<void> _showConsolidationNotAvailableForAccountDialog(
-    BuildContext context,
-  ) async {
+  Future<void> _addConsolidatedListItem(
+    BuildContext context, {
+    required bool consolidatedLockRestrictsEditing,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l10n.shoppingConsolidateAiNotAvailableTitle),
-          content: Text(l10n.shoppingConsolidateAiNotAvailableBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.commonClose),
-            ),
-          ],
-        );
-      },
+    if (consolidatedLockRestrictsEditing) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedAddBlockedWhenLocked)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final now = DateTime.now();
+    final newId = 'consolidated_manual_${now.microsecondsSinceEpoch}';
+    final topOrder = _consolidatedItems.isEmpty
+        ? 0
+        : _consolidatedItems
+                .map((e) => e.item.order)
+                .reduce((a, b) => a < b ? a : b) -
+            1;
+    final newEntry = _ConsolidatedEditableItem(
+      categoryId: kUnassignedConsolidatedCategoryId,
+      item: ShoppingItem(
+        id: newId,
+        label: '',
+        checked: false,
+        quantityValue: 1.0,
+        quantityUnit: ShoppingUnit.unit,
+        createdAt: now,
+        order: topOrder,
+      ),
     );
+    setState(() {
+      _suppressRemoteConsolidatedSync = true;
+      _consolidationResult ??= ConsolidatedShoppingResult(
+        items: const [],
+        summary: ConsolidatedShoppingSummary.empty,
+        categories: const [],
+      );
+      final list = List<_ConsolidatedEditableItem>.from(_consolidatedItems);
+      final insertAt = list.indexWhere(
+        (e) => e.categoryId.trim() == kUnassignedConsolidatedCategoryId,
+      );
+      if (insertAt == -1) {
+        list.add(newEntry);
+      } else {
+        list.insert(insertAt, newEntry);
+      }
+      _consolidatedItems = list;
+      _pendingAutofocusItemId = newId;
+    });
   }
 
-  Future<void> _consolidateWithAi(BuildContext context) async {
+  Future<void> _consolidateWithAi(
+    BuildContext context,
+    _ConsolidationMode mode,
+  ) async {
     if (_isConsolidating) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
@@ -116,9 +207,17 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     try {
       final result = await ref
           .read(shoppingRepositoryProvider)
-          .consolidateWithAi(tripId: widget.tripId);
-      if (!context.mounted) return;
-      await _showConsolidatedItemsDialog(context, result);
+          .consolidateWithAi(
+            tripId: widget.tripId,
+            mode: mode == _ConsolidationMode.full ? 'full' : 'manual_only',
+          );
+      if (!mounted) return;
+      setState(() {
+        _suppressRemoteConsolidatedSync = true;
+        _consolidationResult = result;
+        _consolidatedItems = _buildConsolidatedEditableItems(result.items);
+      });
+      _tabController.animateTo(1);
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
@@ -129,64 +228,53 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     }
   }
 
-  Future<void> _showConsolidatedItemsDialog(
+  Future<void> _setManualListLocked(BuildContext context, bool locked) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setShoppingListLockFlags(
+            tripId: widget.tripId,
+            manualListLocked: locked,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _setConsolidatedListLocked(
     BuildContext context,
-    ConsolidatedShoppingResult result,
+    bool locked,
   ) async {
-    await showDialog<void>(
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setShoppingListLockFlags(
+            tripId: widget.tripId,
+            consolidatedListLocked: locked,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _showConsolidateOptionsDialog(
+    BuildContext context,
+    bool isApplicationOwner,
+  ) async {
+    final mode = await showDialog<_ConsolidationMode>(
       context: context,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final summary = result.summary;
-        final items = result.items;
-        return AlertDialog(
-          title: const Text('Consolidation IA (POC)'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    'Ingrédients recettes en entrée: ${summary.recipeOriginalLineCount}\n'
-                    'Ingrédients manuels en entrée: ${summary.manualOriginalLineCount}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: items.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Text('Aucun élément consolidé.'),
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: items.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: theme.dividerColor.withValues(alpha: 0.4),
-                          ),
-                          itemBuilder: (context, index) {
-                            return _ConsolidatedItemTile(item: items[index]);
-                          },
-                        ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Fermer'),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => _ConsolidationOptionsDialog(
+        isApplicationOwner: isApplicationOwner,
+      ),
     );
+    if (mode == null || !context.mounted) return;
+    await _consolidateWithAi(context, mode);
   }
 
   Future<void> _confirmAndDeleteChecked(BuildContext context) async {
@@ -245,6 +333,19 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       trip: widget.trip,
       userId: currentUid,
     );
+    final isAdminOrAbove = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: TripPermissionRole.admin,
+    );
+    final locks = ref
+            .watch(tripShoppingListLocksStreamProvider(widget.tripId))
+            .asData
+            ?.value ??
+        TripShoppingListLocks.defaults;
+    final manualLockRestrictsEditing =
+        locks.manualListLocked && !isAdminOrAbove;
+    final consolidatedLockRestrictsEditing =
+        locks.consolidatedListLocked && !isAdminOrAbove;
     final canDeleteCheckedItems = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
@@ -252,10 +353,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final circuitBreakerTripped =
         ref.watch(aiCircuitBreakerTrippedProvider).asData?.value ?? false;
     final canConsolidateWithAi = !circuitBreakerTripped &&
+        !locks.consolidatedListLocked &&
         isTripRoleAllowed(
           currentRole: currentRole,
           minRole: TripPermissionRole.admin,
         );
+    final showShoppingFab = isAdminOrAbove || !locks.manualListLocked;
     final currentUserOwnerAsync = ref.watch(
       usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
     );
@@ -264,17 +367,30 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
     final isApplicationOwner =
         ownerData?[currentUid]?['isApplicationOwner'] == true;
     final searchQuery = _searchController.text;
+    final consolidatedRemoteAsync =
+        ref.watch(tripConsolidatedShoppingListStreamProvider(widget.tripId));
+    _ensureRemoteConsolidatedSynced(consolidatedRemoteAsync);
+
     final searchFilteredItems = widget.items
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
         .toList(growable: false);
     final filteredItems = searchFilteredItems
-        .where((item) => _matchesFilter(item, _activeFilter, currentUid))
+        .where(
+          (item) => shoppingItemMatchesStatusFilter(
+            item,
+            _manualListStatusFilter,
+            currentUid,
+          ),
+        )
         .toList(growable: false);
-    final claimedByIds = widget.items
-        .map((item) => item.claimedBy?.trim() ?? '')
-        .where((id) => id.isNotEmpty)
-        .toSet()
-        .toList(growable: false);
+    final claimedByIds = <String>{
+      ...widget.items
+          .map((item) => item.claimedBy?.trim() ?? '')
+          .where((id) => id.isNotEmpty),
+      ..._consolidatedItems
+          .map((entry) => entry.item.claimedBy?.trim() ?? '')
+          .where((id) => id.isNotEmpty),
+    }.toList(growable: false);
 
     final normalizedLabelCounts = <String, int>{};
     for (final item in widget.items) {
@@ -283,9 +399,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       normalizedLabelCounts[normalized] =
           (normalizedLabelCounts[normalized] ?? 0) + 1;
     }
+    final consolidatedLabelCounts = <String, int>{};
+    for (final entry in _consolidatedItems) {
+      final normalized = _normalizeItemLabel(entry.item.label);
+      if (normalized.isEmpty) continue;
+      consolidatedLabelCounts[normalized] =
+          (consolidatedLabelCounts[normalized] ?? 0) + 1;
+    }
 
     final usersDataStream =
         ref.read(usersRepositoryProvider).watchUsersDataByIds(claimedByIds);
+
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     return StreamBuilder<Map<String, Map<String, dynamic>>>(
       stream: usersDataStream,
@@ -295,143 +420,254 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
           children: [
             Column(
               children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-              child: NameListSearchTextField(
-                controller: _searchController,
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SegmentedButton<_ShoppingFilter>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.all,
-                        icon: const Icon(Icons.apps_outlined),
-                        tooltip: l10n.shoppingFilterAll,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.todo,
-                        icon: const Icon(Icons.radio_button_unchecked),
-                        tooltip: l10n.shoppingFilterTodo,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.done,
-                        icon: const Icon(Icons.check_circle_outline),
-                        tooltip: l10n.shoppingFilterDone,
-                      ),
-                      ButtonSegment<_ShoppingFilter>(
-                        value: _ShoppingFilter.claimedByMe,
-                        icon: const Icon(Icons.person_pin_circle_outlined),
-                        tooltip: l10n.shoppingFilterClaimedByMe,
-                      ),
-                    ],
-                    selected: {_activeFilter},
-                    onSelectionChanged: (selection) {
-                      if (selection.isEmpty) return;
-                      setState(() => _activeFilter = selection.first);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: l10n.shoppingFilterHelpTooltip,
-                    icon: const Icon(Icons.help_outline),
-                    onPressed: () => _showFilterHelp(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: widget.items.isEmpty
-                  ? Center(
-                      child: Column(
+                TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.primary,
+                          Flexible(
+                            child: Text(
+                              l10n.shoppingTabList,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.shoppingEmptyTitle,
-                            style: Theme.of(context).textTheme.titleMedium,
+                          const SizedBox(width: 2),
+                          if (isAdminOrAbove)
+                            IconButton(
+                              iconSize: 18,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 30,
+                                minHeight: 30,
+                              ),
+                              tooltip: locks.manualListLocked
+                                  ? l10n.shoppingTooltipUnlockManualList
+                                  : l10n.shoppingTooltipLockManualList,
+                              onPressed: () => _setManualListLocked(
+                                context,
+                                !locks.manualListLocked,
+                              ),
+                              icon: Icon(
+                                locks.manualListLocked
+                                    ? Icons.lock_outline
+                                    : Icons.lock_open_outlined,
+                              ),
+                            )
+                          else if (locks.manualListLocked)
+                            Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l10n.shoppingTabConsolidated,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l10n.shoppingEmptySubtitle,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
+                          const SizedBox(width: 2),
+                          if (isAdminOrAbove)
+                            IconButton(
+                              iconSize: 18,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 30,
+                                minHeight: 30,
+                              ),
+                              tooltip: locks.consolidatedListLocked
+                                  ? l10n.shoppingTooltipUnlockConsolidatedList
+                                  : l10n.shoppingTooltipLockConsolidatedList,
+                              onPressed: () => _setConsolidatedListLocked(
+                                context,
+                                !locks.consolidatedListLocked,
+                              ),
+                              icon: Icon(
+                                locks.consolidatedListLocked
+                                    ? Icons.lock_outline
+                                    : Icons.lock_open_outlined,
+                              ),
+                            )
+                          else if (locks.consolidatedListLocked)
+                            Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Tab 0 — manual list
+                      Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                            child: NameListSearchTextField(
+                              controller: _searchController,
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                            child: ShoppingListStatusFilterBar(
+                              selected: _manualListStatusFilter,
+                              onSelectionChanged: (f) =>
+                                  setState(() => _manualListStatusFilter = f),
+                              onHelpPressed: () => _showFilterHelp(context),
+                            ),
+                          ),
+                          Expanded(
+                            child: widget.items.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_cart_outlined,
+                                          size: 48,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          l10n.shoppingEmptyTitle,
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          l10n.shoppingEmptySubtitle,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : filteredItems.isEmpty
+                                    ? Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Text(
+                                            nameListSearchEmptyMessage(context),
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ),
+                                      )
+                                    : ListView.separated(
+                                        padding: const EdgeInsets.only(
+                                          left: 4,
+                                          right: 4,
+                                          top: 4,
+                                          bottom: 88,
+                                        ),
+                                        itemCount: filteredItems.length,
+                                        separatorBuilder: (_, __) => Divider(
+                                          height: 1,
+                                          thickness: 1,
+                                          color: Theme.of(context)
+                                              .dividerColor
+                                              .withValues(alpha: 0.35),
+                                        ),
+                                        itemBuilder: (context, index) {
+                                          final item = filteredItems[index];
+                                          return ShoppingItemRow(
+                                            key: ValueKey(item.id),
+                                            tripId: widget.tripId,
+                                            item: item,
+                                            usersDataById: usersDataById,
+                                            normalizedLabelCounts: normalizedLabelCounts,
+                                            structureLocked: manualLockRestrictsEditing,
+                                            autoFocusLabel:
+                                                item.id == _pendingAutofocusItemId,
+                                            onAutoFocusHandled: () {
+                                              if (!mounted) return;
+                                              if (_pendingAutofocusItemId != item.id) return;
+                                              setState(() => _pendingAutofocusItemId = null);
+                                            },
+                                          );
+                                        },
+                                      ),
                           ),
                         ],
                       ),
-                    )
-                  : filteredItems.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              nameListSearchEmptyMessage(context),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.only(
-                            left: 4,
-                            right: 4,
-                            top: 4,
-                            bottom: 88,
-                          ),
-                          itemCount: filteredItems.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: Theme.of(context)
-                                .dividerColor
-                                .withValues(alpha: 0.35),
-                          ),
-                          itemBuilder: (context, index) {
-                            final item = filteredItems[index];
-                            return ShoppingItemRow(
-                              key: ValueKey(item.id),
-                              tripId: widget.tripId,
-                              item: item,
-                              usersDataById: usersDataById,
-                              normalizedLabelCounts: normalizedLabelCounts,
-                              autoFocusLabel:
-                                  item.id == _pendingAutofocusItemId,
-                              onAutoFocusHandled: () {
-                                if (!mounted) return;
-                                if (_pendingAutofocusItemId != item.id) return;
-                                setState(() => _pendingAutofocusItemId = null);
-                              },
-                            );
-                          },
-                        ),
+                      // Tab 1 — consolidated list
+                      _buildConsolidatedTab(
+                        context,
+                        l10n,
+                        languageCode,
+                        usersDataById,
+                        consolidatedLabelCounts,
+                        activeStatusFilter: _consolidatedListStatusFilter,
+                        currentUid: currentUid,
+                        onStatusFilterChanged: (f) =>
+                            setState(() => _consolidatedListStatusFilter = f),
+                        onFilterHelp: () => _showFilterHelp(context),
+                        pendingAutofocusItemId: _pendingAutofocusItemId,
+                        onAutofocusItemHandled: (itemId) {
+                          if (!mounted) return;
+                          if (_pendingAutofocusItemId != itemId) return;
+                          setState(() => _pendingAutofocusItemId = null);
+                        },
+                        consolidatedStructureLocked:
+                            consolidatedLockRestrictsEditing,
+                        showConsolidatedSaveButton: isAdminOrAbove &&
+                            _consolidatedItems.isNotEmpty,
+                        showConsolidatedClearButton: isAdminOrAbove &&
+                            !locks.consolidatedListLocked &&
+                            _consolidatedItems.isNotEmpty,
+                        isSavingConsolidated: _isSavingConsolidated,
+                        consolidatedRemoteAsync: consolidatedRemoteAsync,
+                        suppressRemoteConsolidatedSync:
+                            _suppressRemoteConsolidatedSync,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            Positioned(
+            if (_isConsolidating)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.45),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+              ),
+            if (showShoppingFab)
+              Positioned(
               right: 16,
               bottom: 16,
               child: Column(
@@ -466,13 +702,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                             ? null
                             : () {
                                 setState(() => _isFabMenuOpen = false);
-                                if (isApplicationOwner) {
-                                  _consolidateWithAi(context);
-                                } else {
-                                  _showConsolidationNotAvailableForAccountDialog(
-                                    context,
-                                  );
-                                }
+                                _showConsolidateOptionsDialog(
+                                  context,
+                                  isApplicationOwner,
+                                );
                               },
                         icon: _isConsolidating
                             ? const SizedBox.square(
@@ -490,7 +723,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
                       tooltip: l10n.shoppingActionAddItem,
                       onPressed: () {
                         setState(() => _isFabMenuOpen = false);
-                        _addItem();
+                        unawaited(
+                          _addFromFabAddItem(
+                            context,
+                            consolidatedLockRestrictsEditing:
+                                consolidatedLockRestrictsEditing,
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.add),
                       label: Text(l10n.shoppingActionAddItem),
@@ -513,6 +752,390 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
           ],
         );
       },
+    );
+  }
+
+  String _remoteConsolidatedFingerprint(ConsolidatedListFirestorePayload payload) {
+    if (payload.rows.isEmpty) return 'empty';
+    return payload.rows
+        .map(
+          (r) =>
+              '${r.item.id}|${r.item.label}|${r.item.order}|${r.item.checked}|'
+              '${r.item.quantityValue}|${r.item.quantityUnit.firestoreValue}|'
+              '${r.categoryId}|${r.item.claimedBy ?? ''}',
+        )
+        .join('~');
+  }
+
+  void _ensureRemoteConsolidatedSynced(
+    AsyncValue<ConsolidatedListFirestorePayload> asyncVal,
+  ) {
+    if (_suppressRemoteConsolidatedSync) return;
+    final payload = asyncVal.asData?.value;
+    if (payload == null) return;
+    final key = _remoteConsolidatedFingerprint(payload);
+    if (key == _appliedRemoteConsolidatedFingerprint) return;
+    _appliedRemoteConsolidatedFingerprint = key;
+    final captured = payload;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _suppressRemoteConsolidatedSync) return;
+      if (_remoteConsolidatedFingerprint(captured) != key) return;
+      _applyRemoteConsolidatedPayload(captured);
+    });
+  }
+
+  void _applyRemoteConsolidatedPayload(ConsolidatedListFirestorePayload payload) {
+    if (!mounted) return;
+    setState(() {
+      if (payload.rows.isEmpty) {
+        _consolidationResult = null;
+        _consolidatedItems = const [];
+        return;
+      }
+      _consolidationResult = ConsolidatedShoppingResult(
+        items: const [],
+        summary: payload.summary,
+        categories: payload.categories,
+      );
+      _consolidatedItems = [
+        for (final row in payload.rows)
+          _ConsolidatedEditableItem(
+            categoryId:
+                row.categoryId.trim().isEmpty ? 'divers' : row.categoryId.trim(),
+            item: row.item,
+          ),
+      ];
+    });
+  }
+
+  Future<void> _persistConsolidatedToggleChecked(
+    BuildContext context,
+    ShoppingItem item,
+    bool checked,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setConsolidatedItemChecked(
+            tripId: widget.tripId,
+            itemId: item.id,
+            checked: checked,
+          );
+      if (!mounted) return;
+      _updateConsolidatedItem(
+        item.id,
+        (prev) => ShoppingItem(
+          id: prev.id,
+          label: prev.label,
+          checked: checked,
+          quantityValue: prev.quantityValue,
+          quantityUnit: prev.quantityUnit,
+          createdAt: prev.createdAt,
+          order: prev.order,
+          createdBy: prev.createdBy,
+          claimedBy: prev.claimedBy,
+        ),
+      );
+    } on ConsolidatedShoppingRowNotPersistedException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedRowNotPersisted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _persistConsolidatedSetClaimedBy(
+    BuildContext context,
+    ShoppingItem item,
+    String? claimedBy,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setConsolidatedItemClaimedBy(
+            tripId: widget.tripId,
+            itemId: item.id,
+            claimedBy: claimedBy,
+          );
+      if (!mounted) return;
+      _updateConsolidatedItem(
+        item.id,
+        (prev) => ShoppingItem(
+          id: prev.id,
+          label: prev.label,
+          checked: prev.checked,
+          quantityValue: prev.quantityValue,
+          quantityUnit: prev.quantityUnit,
+          createdAt: prev.createdAt,
+          order: prev.order,
+          createdBy: prev.createdBy,
+          claimedBy: claimedBy,
+        ),
+      );
+    } on ConsolidatedShoppingRowNotPersistedException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedRowNotPersisted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _saveConsolidatedList(BuildContext context) async {
+    if (_isSavingConsolidated || _consolidatedItems.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isSavingConsolidated = true);
+    try {
+      final rows = <ConsolidatedFirestoreRow>[
+        for (final entry in _consolidatedItems)
+          ConsolidatedFirestoreRow(
+            categoryId: entry.categoryId,
+            item: entry.item,
+          ),
+      ];
+      final categories = _categoriesPersistedWithUnassigned(
+        _consolidationResult?.categories ?? const [],
+        rows,
+      );
+      await ref.read(shoppingRepositoryProvider).replaceConsolidatedShoppingList(
+            tripId: widget.tripId,
+            categories: categories,
+            summary:
+                _consolidationResult?.summary ?? ConsolidatedShoppingSummary.empty,
+            rows: rows,
+          );
+      if (!mounted) return;
+      setState(() => _suppressRemoteConsolidatedSync = false);
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingConsolidated = false);
+    }
+  }
+
+  Future<void> _confirmAndClearConsolidated(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.shoppingConsolidatedClearConfirmTitle),
+          content: Text(l10n.shoppingConsolidatedClearConfirmContent),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.commonDelete),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirm != true || !context.mounted) return;
+    try {
+      await ref.read(shoppingRepositoryProvider).deleteConsolidatedShoppingList(
+            widget.tripId,
+          );
+      if (!mounted) return;
+      setState(() {
+        _suppressRemoteConsolidatedSync = false;
+        _consolidationResult = null;
+        _consolidatedItems = const [];
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Widget _buildConsolidatedTab(
+    BuildContext context,
+    AppLocalizations l10n,
+    String languageCode,
+    Map<String, Map<String, dynamic>> usersDataById,
+    Map<String, int> normalizedLabelCounts, {
+    required ShoppingListStatusFilter activeStatusFilter,
+    required String currentUid,
+    required ValueChanged<ShoppingListStatusFilter> onStatusFilterChanged,
+    required VoidCallback onFilterHelp,
+    required String? pendingAutofocusItemId,
+    required void Function(String itemId) onAutofocusItemHandled,
+    required bool consolidatedStructureLocked,
+    required bool showConsolidatedSaveButton,
+    required bool showConsolidatedClearButton,
+    required bool isSavingConsolidated,
+    required AsyncValue<ConsolidatedListFirestorePayload> consolidatedRemoteAsync,
+    required bool suppressRemoteConsolidatedSync,
+  }) {
+    if (!suppressRemoteConsolidatedSync) {
+      if (consolidatedRemoteAsync.isLoading && _consolidatedItems.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (consolidatedRemoteAsync.hasError && _consolidatedItems.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              l10n.commonErrorWithDetails(
+                consolidatedRemoteAsync.error.toString(),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      }
+    }
+
+    final result = _consolidationResult;
+    final categories = result?.categories ?? const [];
+    if (result == null || _consolidatedItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            l10n.shoppingConsolidatedEmpty,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+      );
+    }
+
+    final groups = _groupByCategory(_consolidatedItems, categories);
+    final visibleGroups = <MapEntry<String, List<ShoppingItem>>>[];
+    for (final entry in groups) {
+      final filtered = entry.value
+          .where(
+            (item) => shoppingItemMatchesStatusFilter(
+              item,
+              activeStatusFilter,
+              currentUid,
+            ),
+          )
+          .toList(growable: false);
+      if (filtered.isEmpty) continue;
+      visibleGroups.add(MapEntry(entry.key, filtered));
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
+                    child: ShoppingListStatusFilterBar(
+                      selected: activeStatusFilter,
+                      onSelectionChanged: onStatusFilterChanged,
+                      onHelpPressed: onFilterHelp,
+                    ),
+                  ),
+                ),
+              ),
+              if (showConsolidatedSaveButton)
+                IconButton(
+                  tooltip: l10n.shoppingConsolidatedSave,
+                  icon: isSavingConsolidated
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  onPressed: isSavingConsolidated
+                      ? null
+                      : () => _saveConsolidatedList(context),
+                ),
+              if (showConsolidatedClearButton)
+                IconButton(
+                  tooltip: l10n.shoppingConsolidatedClear,
+                  icon: const Icon(Icons.close),
+                  onPressed: () => _confirmAndClearConsolidated(context),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: visibleGroups.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.shoppingConsolidatedFilterEmpty,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 88),
+                  itemCount: visibleGroups.length,
+                  itemBuilder: (context, index) {
+                    final entry = visibleGroups[index];
+                    return _ConsolidatedCategorySection(
+                      l10n: l10n,
+                      label: _categoryLabel(
+                        l10n,
+                        entry.key,
+                        languageCode,
+                        categories,
+                      ),
+                      items: entry.value,
+                      tripId: widget.tripId,
+                      listContext: context,
+                      usersDataById: usersDataById,
+                      normalizedLabelCounts: normalizedLabelCounts,
+                      pendingAutofocusItemId: pendingAutofocusItemId,
+                      onAutofocusItemHandled: onAutofocusItemHandled,
+                      structureLocked: consolidatedStructureLocked,
+                      onConsolidatedToggleChecked: _persistConsolidatedToggleChecked,
+                      onConsolidatedSetClaimedBy: _persistConsolidatedSetClaimedBy,
+                      onItemChanged: (itemId, updatedItem) {
+                        _updateConsolidatedItem(itemId, (_) => updatedItem);
+                      },
+                      onItemDeleted: _deleteConsolidatedItem,
+                      onRequestChangeCategory: (dialogContext, rowItem) =>
+                          _presentChangeConsolidatedCategoryDialog(
+                            dialogContext,
+                            rowItem,
+                            entry.key,
+                          ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -562,35 +1185,326 @@ class _ShoppingListState extends ConsumerState<_ShoppingList> {
       },
     );
   }
+
+  List<_ConsolidatedEditableItem> _buildConsolidatedEditableItems(
+    List<ConsolidatedShoppingItem> sourceItems,
+  ) {
+    final now = DateTime.now();
+    return [
+      for (int index = 0; index < sourceItems.length; index++)
+        _ConsolidatedEditableItem(
+          categoryId: sourceItems[index].categoryId,
+          item: ShoppingItem(
+            id: 'consolidated_$index',
+            label: sourceItems[index].label,
+            checked: false,
+            quantityValue:
+                sourceItems[index].quantityValue > 0 ? sourceItems[index].quantityValue : 1.0,
+            quantityUnit: ShoppingUnit.fromHumanLabel(sourceItems[index].quantityUnit),
+            createdAt: now,
+            order: index,
+          ),
+        ),
+    ];
+  }
+
+  void _updateConsolidatedItem(
+    String itemId,
+    ShoppingItem Function(ShoppingItem item) update,
+  ) {
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .map(
+            (entry) => entry.item.id == itemId
+                ? _ConsolidatedEditableItem(
+                    categoryId: entry.categoryId,
+                    item: update(entry.item),
+                  )
+                : entry,
+          )
+          .toList(growable: false);
+    });
+  }
+
+  void _deleteConsolidatedItem(String itemId) {
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .where((entry) => entry.item.id != itemId)
+          .toList(growable: false);
+    });
+  }
+
+  void _reassignConsolidatedItemCategory(String itemId, String newCategoryId) {
+    final normalized =
+        newCategoryId.trim().isEmpty ? 'divers' : newCategoryId.trim();
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .map(
+            (entry) => entry.item.id == itemId
+                ? _ConsolidatedEditableItem(
+                    categoryId: normalized,
+                    item: entry.item,
+                  )
+                : entry,
+          )
+          .toList(growable: false);
+    });
+  }
+
+  Future<void> _presentChangeConsolidatedCategoryDialog(
+    BuildContext context,
+    ShoppingItem item,
+    String currentCategoryId,
+  ) async {
+    final result = _consolidationResult;
+    if (result == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final categoryIds =
+        _orderedCategoryIdsForPicker(result.categories, _consolidatedItems);
+    if (categoryIds.isEmpty) return;
+    final normalizedCurrent =
+        currentCategoryId.trim().isEmpty ? 'divers' : currentCategoryId.trim();
+    final initialId = categoryIds.contains(normalizedCurrent)
+        ? normalizedCurrent
+        : categoryIds.first;
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _ChangeConsolidatedCategoryDialog(
+        l10n: l10n,
+        categoryIds: categoryIds,
+        categoriesMeta: result.categories,
+        languageCode: languageCode,
+        initialCategoryId: initialId,
+      ),
+    );
+    if (!mounted || chosen == null) return;
+    if (chosen == normalizedCurrent) return;
+    _reassignConsolidatedItemCategory(item.id, chosen);
+  }
 }
 
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
 }
 
-String _formatConsolidatedQuantity(double value, String unit) {
-  final hasInteger = value == value.roundToDouble();
-  final displayValue = hasInteger ? value.toInt().toString() : value.toString();
-  final cleanUnit = unit.trim();
-  if (cleanUnit.isEmpty) return displayValue;
-  return '$displayValue $cleanUnit';
-}
+enum _ConsolidationMode { full, manualOnly }
 
-bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
-  final claimedBy = item.claimedBy?.trim() ?? '';
-  return switch (filter) {
-    _ShoppingFilter.all => true,
-    _ShoppingFilter.todo => !item.checked,
-    _ShoppingFilter.done => item.checked,
-    _ShoppingFilter.claimedByMe => claimedBy.isNotEmpty && claimedBy == currentUid,
+List<String> _orderedCategoryIdsForPicker(
+  List<ConsolidatedShoppingCategory> meta,
+  List<_ConsolidatedEditableItem> items,
+) {
+  final ordered = <String>[];
+  for (final c in meta) {
+    if (c.id.isNotEmpty) ordered.add(c.id);
+  }
+  final usedIds = <String>{
+    for (final e in items)
+      e.categoryId.trim().isEmpty ? 'divers' : e.categoryId.trim(),
   };
+  for (final id in usedIds) {
+    if (!ordered.contains(id)) ordered.add(id);
+  }
+  return ordered;
 }
 
-enum _ShoppingFilter {
-  all,
-  todo,
-  done,
-  claimedByMe,
+String _categoryLabel(
+  AppLocalizations l10n,
+  String categoryId,
+  String languageCode,
+  List<ConsolidatedShoppingCategory> categories,
+) {
+  final key = categoryId.trim().isEmpty ? 'divers' : categoryId.trim();
+  if (key == kUnassignedConsolidatedCategoryId) {
+    final match = categories.where((c) => c.id == key).firstOrNull;
+    if (match != null) return match.label(languageCode);
+    return l10n.shoppingCategoryUnassigned;
+  }
+  final match = categories.where((c) => c.id == key).firstOrNull;
+  if (match != null) return match.label(languageCode);
+  if (key == 'divers') return l10n.shoppingCategoryDivers;
+  return key;
+}
+
+List<ConsolidatedShoppingCategory> _categoriesPersistedWithUnassigned(
+  List<ConsolidatedShoppingCategory> base,
+  List<ConsolidatedFirestoreRow> rows,
+) {
+  final needsUnassigned = rows.any((r) {
+    final id = r.categoryId.trim().isEmpty ? 'divers' : r.categoryId.trim();
+    return id == kUnassignedConsolidatedCategoryId;
+  });
+  if (!needsUnassigned) return List<ConsolidatedShoppingCategory>.from(base);
+  if (base.any((c) => c.id == kUnassignedConsolidatedCategoryId)) {
+    return List<ConsolidatedShoppingCategory>.from(base);
+  }
+  return [...base, kUnassignedConsolidatedCategoryMeta];
+}
+
+List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
+  List<_ConsolidatedEditableItem> items,
+  List<ConsolidatedShoppingCategory> categories,
+) {
+  final map = <String, List<ShoppingItem>>{};
+  for (final item in items) {
+    final cat = item.categoryId.isEmpty ? 'divers' : item.categoryId;
+    (map[cat] ??= []).add(item.item);
+  }
+  final ordered = <String>[];
+  for (final cat in categories) {
+    if (map.containsKey(cat.id)) ordered.add(cat.id);
+  }
+  for (final id in map.keys) {
+    if (!ordered.contains(id)) ordered.add(id);
+  }
+  if (map.containsKey(kUnassignedConsolidatedCategoryId)) {
+    ordered.remove(kUnassignedConsolidatedCategoryId);
+    ordered.insert(0, kUnassignedConsolidatedCategoryId);
+  }
+  for (final list in map.values) {
+    list.sort(
+      (a, b) => _normalizeItemLabel(a.label).compareTo(_normalizeItemLabel(b.label)),
+    );
+  }
+  return [for (final id in ordered) MapEntry(id, map[id]!)];
+}
+
+class _ConsolidatedCategorySection extends StatelessWidget {
+  const _ConsolidatedCategorySection({
+    required this.l10n,
+    required this.label,
+    required this.items,
+    required this.tripId,
+    required this.listContext,
+    required this.usersDataById,
+    required this.normalizedLabelCounts,
+    required this.pendingAutofocusItemId,
+    required this.onAutofocusItemHandled,
+    required this.structureLocked,
+    required this.onConsolidatedToggleChecked,
+    required this.onConsolidatedSetClaimedBy,
+    required this.onItemChanged,
+    required this.onItemDeleted,
+    required this.onRequestChangeCategory,
+  });
+
+  static const String _changeCategoryActionId = 'change_consolidated_category';
+
+  final AppLocalizations l10n;
+  final String label;
+  final List<ShoppingItem> items;
+  final String tripId;
+  final BuildContext listContext;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final Map<String, int> normalizedLabelCounts;
+  final String? pendingAutofocusItemId;
+  final void Function(String itemId) onAutofocusItemHandled;
+  final bool structureLocked;
+  final Future<void> Function(
+    BuildContext context,
+    ShoppingItem item,
+    bool checked,
+  ) onConsolidatedToggleChecked;
+  final Future<void> Function(
+    BuildContext context,
+    ShoppingItem item,
+    String? claimedBy,
+  ) onConsolidatedSetClaimedBy;
+  final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
+  final void Function(String itemId) onItemDeleted;
+  final Future<void> Function(BuildContext context, ShoppingItem item)
+      onRequestChangeCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      initiallyExpanded: true,
+      title: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+      tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+      childrenPadding: EdgeInsets.zero,
+      children: [
+        for (int i = 0; i < items.length; i++) ...[
+          ShoppingItemRow(
+            key: ValueKey(items[i].id),
+            tripId: tripId,
+            item: items[i],
+            usersDataById: usersDataById,
+            normalizedLabelCounts: normalizedLabelCounts,
+            structureLocked: structureLocked,
+            autoFocusLabel: items[i].id == pendingAutofocusItemId,
+            onAutoFocusHandled: () => onAutofocusItemHandled(items[i].id),
+            customMenuItems: structureLocked
+                ? null
+                : [
+                    IngredientLineCustomMenuItem(
+                      actionId: _changeCategoryActionId,
+                      label: l10n.shoppingChangeCategoryMenu,
+                      icon: Icons.drive_file_move_outline,
+                    ),
+                  ],
+            onCustomMenuAction: structureLocked
+                ? null
+                : (actionId) {
+                    if (actionId == _changeCategoryActionId) {
+                      unawaited(
+                        onRequestChangeCategory(context, items[i]),
+                      );
+                    }
+                  },
+            onToggleCheckedOverride: (checked) async {
+              await onConsolidatedToggleChecked(listContext, items[i], checked);
+            },
+            onSetClaimedByOverride: (claimedBy) async {
+              await onConsolidatedSetClaimedBy(listContext, items[i], claimedBy);
+            },
+            onSaveOverride: (value) async {
+              onItemChanged(
+                items[i].id,
+                ShoppingItem(
+                  id: items[i].id,
+                  label: value.label,
+                  checked: items[i].checked,
+                  quantityValue: value.quantityValue,
+                  quantityUnit: value.quantityUnit,
+                  createdAt: items[i].createdAt,
+                  order: items[i].order,
+                  createdBy: items[i].createdBy,
+                  claimedBy: items[i].claimedBy,
+                ),
+              );
+            },
+            onDeleteOverride: () async {
+              onItemDeleted(items[i].id);
+            },
+          ),
+          if (i < items.length - 1)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: 12,
+              endIndent: 12,
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ConsolidatedEditableItem {
+  const _ConsolidatedEditableItem({
+    required this.categoryId,
+    required this.item,
+  });
+
+  final String categoryId;
+  final ShoppingItem item;
 }
 
 class _FilterLegendRow extends StatelessWidget {
@@ -614,122 +1528,249 @@ class _FilterLegendRow extends StatelessWidget {
   }
 }
 
-class _ConsolidatedItemTile extends StatelessWidget {
-  const _ConsolidatedItemTile({required this.item});
+class _ConsolidationOptionsDialog extends StatefulWidget {
+  const _ConsolidationOptionsDialog({required this.isApplicationOwner});
 
-  final ConsolidatedShoppingItem item;
+  final bool isApplicationOwner;
+
+  @override
+  State<_ConsolidationOptionsDialog> createState() =>
+      _ConsolidationOptionsDialogState();
+}
+
+class _ConsolidationOptionsDialogState
+    extends State<_ConsolidationOptionsDialog> {
+  late bool _isReady;
+  Timer? _readyTimer;
+  _ConsolidationMode _selectedMode = _ConsolidationMode.manualOnly;
+
+  @override
+  void initState() {
+    super.initState();
+    _isReady = widget.isApplicationOwner;
+    if (!_isReady) {
+      _readyTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted) setState(() => _isReady = true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _readyTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final quantity = _formatConsolidatedQuantity(
-      item.quantityValue,
-      item.quantityUnit,
-    );
-    final sourceIcon = _consolidatedSourceIcon(item.sourceType);
-    final showSources =
-        item.sourceType == ConsolidatedShoppingSourceType.mixed &&
-            item.sourceItems.isNotEmpty;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.shoppingConsolidateOptionsTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AiBilledSupportBanner(),
+            if (_isReady) ...[
+              const SizedBox(height: 16),
+              RadioGroup<_ConsolidationMode>(
+                groupValue: _selectedMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedMode = value);
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      child: Text(
-                        item.label,
-                        style: theme.textTheme.bodyMedium,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      l10n.shoppingConsolidateOptionManualOnlyDescription,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    _OptionTile(
+                      title: l10n.shoppingConsolidateOptionManualOnly,
+                      icon: Icons.edit_note,
+                      mode: _ConsolidationMode.manualOnly,
+                      selected: _selectedMode == _ConsolidationMode.manualOnly,
+                      onRowTap: () => setState(
+                        () => _selectedMode = _ConsolidationMode.manualOnly,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Icon(
-                      sourceIcon,
-                      size: 16,
-                      color: theme.colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.shoppingConsolidateOptionFullDescription,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    _OptionTile(
+                      title: l10n.shoppingConsolidateOptionFull,
+                      icon: Icons.merge_type,
+                      mode: _ConsolidationMode.full,
+                      selected: _selectedMode == _ConsolidationMode.full,
+                      onRowTap: () =>
+                          setState(() => _selectedMode = _ConsolidationMode.full),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                quantity,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ],
+          ],
+        ),
+      ),
+      actions: _isReady
+          ? [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(l10n.commonCancel),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(_selectedMode),
+                child: Text(l10n.shoppingConsolidateLaunch),
+              ),
+            ]
+          : [],
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  const _OptionTile({
+    required this.title,
+    required this.icon,
+    required this.mode,
+    required this.selected,
+    required this.onRowTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final _ConsolidationMode mode;
+  final bool selected;
+  final VoidCallback onRowTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onRowTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
           ),
-          if (showSources)
-            Padding(
-              padding: const EdgeInsets.only(left: 18, top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final source in item.sourceItems)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 1),
-                      child: _ConsolidatedSourceLine(source: source),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
                     ),
-                ],
               ),
             ),
-        ],
+            Radio<_ConsolidationMode>(value: mode),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ConsolidatedSourceLine extends StatelessWidget {
-  const _ConsolidatedSourceLine({required this.source});
+class _ChangeConsolidatedCategoryDialog extends StatefulWidget {
+  const _ChangeConsolidatedCategoryDialog({
+    required this.l10n,
+    required this.categoryIds,
+    required this.categoriesMeta,
+    required this.languageCode,
+    required this.initialCategoryId,
+  });
 
-  final ConsolidatedShoppingSourceItem source;
+  final AppLocalizations l10n;
+  final List<String> categoryIds;
+  final List<ConsolidatedShoppingCategory> categoriesMeta;
+  final String languageCode;
+  final String initialCategoryId;
+
+  @override
+  State<_ChangeConsolidatedCategoryDialog> createState() =>
+      _ChangeConsolidatedCategoryDialogState();
+}
+
+class _ChangeConsolidatedCategoryDialogState
+    extends State<_ChangeConsolidatedCategoryDialog> {
+  late String _selectedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedId = widget.initialCategoryId;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isManual = source.source == 'manual';
-    final icon = isManual ? Icons.edit_note : Icons.restaurant_menu;
-    final quantity = _formatConsolidatedQuantity(
-      source.originalQuantityValue,
-      source.originalQuantityUnit,
-    );
-    final detail = quantity.isEmpty
-        ? source.originalLabel
-        : '${source.originalLabel} — $quantity';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            detail,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    return AlertDialog(
+      title: Text(widget.l10n.shoppingChangeCategoryDialogTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: RadioGroup<String>(
+          groupValue: _selectedId,
+          onChanged: (value) {
+            if (value != null) {
+              setState(() => _selectedId = value);
+            }
+          },
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final id in widget.categoryIds)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Radio<String>(value: id),
+                    title: Text(
+                      _categoryLabel(
+                        widget.l10n,
+                        id,
+                        widget.languageCode,
+                        widget.categoriesMeta,
+                      ),
+                    ),
+                    onTap: () => setState(() => _selectedId = id),
+                  ),
+              ],
             ),
           ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_selectedId),
+          child: Text(widget.l10n.commonConfirm),
         ),
       ],
     );
   }
 }
 
-IconData _consolidatedSourceIcon(ConsolidatedShoppingSourceType sourceType) {
-  switch (sourceType) {
-    case ConsolidatedShoppingSourceType.manual:
-      return Icons.edit_note;
-    case ConsolidatedShoppingSourceType.recipe:
-      return Icons.restaurant_menu;
-    case ConsolidatedShoppingSourceType.mixed:
-      return Icons.merge_type;
-  }
-}

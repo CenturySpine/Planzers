@@ -649,6 +649,35 @@ service cloud.firestore {
           );
       }
 
+      // Tab lock flags for shopping (UI reads/writes; item-level lock is client-side for now).
+      match /shopping_list_locks/{lockDocId} {
+        allow read: if isTripMember(tripId);
+        allow create, update: if isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= 2;
+        allow delete: if false;
+      }
+
+      // Persisted consolidated shopping list (`meta` + row docs). Reads must work even when empty.
+      match /consolidatedShoppingItems/{docId} {
+        allow read: if isTripMember(tripId);
+        allow create, delete: if isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= 2;
+        // Admins may rewrite rows/meta; any member may sync check/claim on existing row docs only.
+        allow update: if isTripMember(tripId)
+          && (
+            tripCallerRoleRank(tripId) >= 2
+            || (
+              docId != 'meta'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'checked',
+                'claimedBy',
+                'updatedAt',
+                'updatedBy',
+              ])
+            )
+          );
+      }
+
       match /aiQuotas/{featureKey} {
         allow read: if isTripMember(tripId);
         // writes: CF only (Admin SDK)

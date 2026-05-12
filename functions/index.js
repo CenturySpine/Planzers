@@ -4213,19 +4213,40 @@ exports.getAppUsageStats = onCall(
 // ============================================================
 
 const AI_CONSOLIDATION_TOOL_NAME = 'consolidate_shopping_list';
-const AI_CONSOLIDATION_TOOL_DESCRIPTION =
-  'Retourne la liste de courses consolidee a partir des deux tableaux fournis.';
 
-const AI_CONSOLIDATION_SYSTEM_PROMPT =
-  "Tu es un assistant specialise dans la consolidation de listes d ingredients culinaires.\n" +
-  "Regles de fusion :\n" +
-  "- Fusionner uniquement si le nom de base est identique ou quasi-identique.\n" +
-  "- Ne pas fusionner des ingredients semantiquement differents.\n" +
-  "- Convertir les unites compatibles avant addition (g/kg, ml/l).\n" +
-  "- Si les unites sont incompatibles, garder des lignes separees.\n" +
-  "- sourceType doit valoir manual, recipe, ou mixed selon l origine consolidee.";
+function buildAiConsolidationToolDescription(lang) {
+  return lang === 'en'
+    ? 'Returns the consolidated shopping list built from the two input arrays.'
+    : 'Retourne la liste de courses consolidee a partir des deux tableaux fournis.';
+}
 
-function buildAiConsolidationToolSchema() {
+function buildAiConsolidationSystemPrompt(lang) {
+  if (lang === 'en') {
+    return [
+      'You are an assistant specialised in consolidating culinary ingredient lists.',
+      'Merging rules:',
+      '- Merge only when the base name is identical or nearly identical.',
+      '- Do not merge semantically different ingredients.',
+      '- Convert compatible units before adding (g/kg, ml/l).',
+      '- If units are incompatible, keep separate lines.',
+      '- sourceType must be manual, recipe, or mixed according to the consolidated origin.',
+      "- For each consolidated ingredient, assign a categoryId from the identifiers provided in the prompt. Choose the most precise category. Use 'divers' if no category fits.",
+    ].join('\n');
+  }
+  return [
+    'Tu es un assistant specialise dans la consolidation de listes d ingredients culinaires.',
+    'Regles de fusion :',
+    '- Fusionner uniquement si le nom de base est identique ou quasi-identique.',
+    '- Ne pas fusionner des ingredients semantiquement differents.',
+    '- Convertir les unites compatibles avant addition (g/kg, ml/l).',
+    '- Si les unites sont incompatibles, garder des lignes separees.',
+    '- sourceType doit valoir manual, recipe, ou mixed selon l origine consolidee.',
+    "- Pour chaque ingredient consolide, assigne un categoryId parmi les identifiants fournis dans le prompt. Choisis la categorie la plus precise. Utilise 'divers' si aucune categorie ne convient.",
+  ].join('\n');
+}
+
+function buildAiConsolidationToolSchema(lang) {
+  const isFr = lang !== 'en';
   return {
     type: 'object',
     required: ['summary', 'consolidatedItems'],
@@ -4236,11 +4257,15 @@ function buildAiConsolidationToolSchema() {
         properties: {
           manualOriginalLineCount: {
             type: 'integer',
-            description: 'Nombre total de lignes en entree dans manualShoppingItems',
+            description: isFr
+              ? 'Nombre total de lignes en entree dans manualShoppingItems'
+              : 'Total number of input lines in manualShoppingItems',
           },
           recipeOriginalLineCount: {
             type: 'integer',
-            description: 'Nombre total de lignes en entree dans recipeIngredients',
+            description: isFr
+              ? 'Nombre total de lignes en entree dans recipeIngredients'
+              : 'Total number of input lines in recipeIngredients',
           },
         },
       },
@@ -4253,26 +4278,67 @@ function buildAiConsolidationToolSchema() {
             'quantityValue',
             'quantityUnit',
             'sourceType',
+            'categoryId',
             'manualOriginalLineCount',
             'recipeOriginalLineCount',
           ],
           properties: {
-            itemLabel: { type: 'string', description: 'Nom consolide de l ingredient' },
-            quantityValue: { type: 'number', description: 'Quantite totale consolidee' },
-            quantityUnit: { type: 'string', description: 'Unite apres conversion eventuelle' },
+            itemLabel: {
+              type: 'string',
+              description: isFr ? 'Nom consolide de l ingredient' : 'Consolidated ingredient name',
+            },
+            quantityValue: {
+              type: 'number',
+              description: isFr ? 'Quantite totale consolidee' : 'Total consolidated quantity',
+            },
+            quantityUnit: {
+              type: 'string',
+              description: isFr ? 'Unite apres conversion eventuelle' : 'Unit after optional conversion',
+            },
             sourceType: { type: 'string', enum: ['manual', 'recipe', 'mixed'] },
+            categoryId: {
+              type: 'string',
+              description: isFr
+                ? 'Identifiant de la categorie de course (voir liste fournie). Utiliser "divers" si aucune ne convient.'
+                : 'Shopping category identifier (see provided list). Use "divers" if none fits.',
+              enum: [
+                'animaux',
+                'bebe',
+                'boissons',
+                'boucherie',
+                'boulangerie-viennoiserie',
+                'conserves',
+                'cremerie',
+                'divers',
+                'entretien',
+                'epicerie-salee',
+                'epicerie-sucree',
+                'fruits-et-legumes',
+                'hygiene',
+                'maison',
+                'petit-dejeuner-et-gouter',
+                'poissonnerie',
+                'rayon-frais',
+                'surgeles',
+              ],
+            },
             manualOriginalLineCount: {
               type: 'integer',
-              description: 'Nombre de lignes manual fusionnees dans cette entree',
+              description: isFr
+                ? 'Nombre de lignes manual fusionnees dans cette entree'
+                : 'Number of manual lines merged into this entry',
             },
             recipeOriginalLineCount: {
               type: 'integer',
-              description: 'Nombre de lignes recipe fusionnees dans cette entree',
+              description: isFr
+                ? 'Nombre de lignes recipe fusionnees dans cette entree'
+                : 'Number of recipe lines merged into this entry',
             },
             sourceItems: {
               type: 'array',
-              description:
-                'Lignes d entree ayant contribue a la consolidation. Renseigne uniquement si sourceType est mixed.',
+              description: isFr
+                ? 'Lignes d entree ayant contribue a la consolidation. Renseigne uniquement si sourceType est mixed.'
+                : 'Input lines that contributed to this consolidation. Fill only when sourceType is mixed.',
               items: {
                 type: 'object',
                 required: [
@@ -4285,19 +4351,25 @@ function buildAiConsolidationToolSchema() {
                   source: {
                     type: 'string',
                     enum: ['manual', 'recipe'],
-                    description: 'Tableau d origine de la ligne',
+                    description: isFr ? 'Tableau d origine de la ligne' : 'Origin array of the line',
                   },
                   originalLabel: {
                     type: 'string',
-                    description: 'Label original de la ligne d entree',
+                    description: isFr
+                      ? 'Label original de la ligne d entree'
+                      : 'Original label of the input line',
                   },
                   originalQuantityValue: {
                     type: 'number',
-                    description: 'Quantite originale avant consolidation',
+                    description: isFr
+                      ? 'Quantite originale avant consolidation'
+                      : 'Original quantity before consolidation',
                   },
                   originalQuantityUnit: {
                     type: 'string',
-                    description: 'Unite originale avant conversion',
+                    description: isFr
+                      ? 'Unite originale avant conversion'
+                      : 'Original unit before conversion',
                   },
                 },
               },
@@ -4309,11 +4381,54 @@ function buildAiConsolidationToolSchema() {
   };
 }
 
-function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients) {
+const AI_CONSOLIDATION_CATEGORIES = [
+  { id: 'animaux',                  fr: 'Animaux',                    en: 'Pet Supplies'       },
+  { id: 'bebe',                     fr: 'Bébé',                       en: 'Baby'               },
+  { id: 'boissons',                 fr: 'Boissons',                   en: 'Beverages'          },
+  { id: 'boucherie',                fr: 'Boucherie',                  en: 'Meat & Poultry'     },
+  { id: 'boulangerie-viennoiserie', fr: 'Boulangerie & Viennoiserie', en: 'Bakery & Pastries'  },
+  { id: 'conserves',                fr: 'Conserves',                  en: 'Canned Goods'       },
+  { id: 'cremerie',                 fr: 'Crémerie',                   en: 'Dairy'              },
+  { id: 'divers',                   fr: 'Divers',                     en: 'Miscellaneous'      },
+  { id: 'entretien',                fr: 'Entretien',                  en: 'Household Cleaning' },
+  { id: 'epicerie-salee',           fr: 'Épicerie salée',             en: 'Pantry'             },
+  { id: 'epicerie-sucree',          fr: 'Épicerie sucrée',            en: 'Baking & Sweets'    },
+  { id: 'fruits-et-legumes',        fr: 'Fruits et légumes',          en: 'Fresh Produce'      },
+  { id: 'hygiene',                  fr: 'Hygiène',                    en: 'Personal Care'      },
+  { id: 'maison',                   fr: 'Maison',                     en: 'Home & Stationery'  },
+  { id: 'petit-dejeuner-et-gouter', fr: 'Petit-déjeuner et goûter',   en: 'Breakfast & Snacks' },
+  { id: 'poissonnerie',             fr: 'Poissonnerie',               en: 'Fish & Seafood'     },
+  { id: 'rayon-frais',              fr: 'Rayon frais',                en: 'Chilled'            },
+  { id: 'surgeles',                 fr: 'Surgelés',                   en: 'Frozen'             },
+];
+
+function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, lang, manualOnly = false) {
+  const categoriesLine = AI_CONSOLIDATION_CATEGORIES
+    .map((c) => `${c.id} (${lang === 'en' ? c.en : c.fr})`)
+    .join(', ');
+  if (lang === 'en') {
+    return [
+      manualOnly
+        ? 'Manual-only mode: do not alter the input list. Do not merge, split, rename, remove, add, reorder, or change quantities/units. Only classify each input line into the most appropriate categoryId.'
+        : 'Consolidate the two following arrays.',
+      'summary.*OriginalLineCount must match the number of input lines used.',
+      'For each consolidated line, fill in the manualOriginalLineCount and recipeOriginalLineCount counters used for that line.',
+      `For each consolidated ingredient, assign a categoryId from: ${categoriesLine}.`,
+      '',
+      'manualShoppingItems:',
+      JSON.stringify(manualShoppingItems),
+      '',
+      'recipeIngredients:',
+      JSON.stringify(recipeIngredients),
+    ].join('\n');
+  }
   return [
-    'Consolide les deux tableaux suivants.',
+    manualOnly
+      ? 'Mode manuel uniquement : n altere pas la liste d entree. Ne fusionne pas, ne scinde pas, ne renomme pas, ne supprime pas, n ajoute pas, ne reordonne pas, et ne modifie pas les quantites/unites. Classe uniquement chaque ligne d entree dans le categoryId le plus pertinent.'
+      : 'Consolide les deux tableaux suivants.',
     'summary.*OriginalLineCount doit correspondre au nombre de lignes d entree utilisees.',
     'Pour chaque ligne consolidee, renseigne les compteurs manualOriginalLineCount et recipeOriginalLineCount utilises pour cette ligne.',
+    `Pour chaque ingredient consolide, assigne un categoryId parmi : ${categoriesLine}.`,
     '',
     'manualShoppingItems:',
     JSON.stringify(manualShoppingItems),
@@ -4327,7 +4442,7 @@ function detectAiProvider(model) {
   return normalizeString(model).toLowerCase().startsWith('gemini') ? 'gemini' : 'anthropic';
 }
 
-async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema }) {
+async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema, toolDescription }) {
   const body = {
     model,
     max_tokens: 5000,
@@ -4336,7 +4451,7 @@ async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPro
     tools: [
       {
         name: AI_CONSOLIDATION_TOOL_NAME,
-        description: AI_CONSOLIDATION_TOOL_DESCRIPTION,
+        description: toolDescription,
         input_schema: toolSchema,
       },
     ],
@@ -4379,7 +4494,7 @@ async function callAnthropicConsolidation({ apiKey, model, systemPrompt, userPro
   return toolBlock.input;
 }
 
-async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema }) {
+async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt, toolSchema, toolDescription }) {
   const endpoint =
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = {
@@ -4390,7 +4505,7 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
         function_declarations: [
           {
             name: AI_CONSOLIDATION_TOOL_NAME,
-            description: AI_CONSOLIDATION_TOOL_DESCRIPTION,
+            description: toolDescription,
             parameters: toolSchema,
           },
         ],
@@ -4448,12 +4563,15 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
  * @param {string} params.model - e.g. 'gemini-2.5-flash' or 'claude-haiku-4-5-20251001'.
  * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.manualShoppingItems
  * @param {Array<{label:string,quantityValue:number,quantityUnit:string}>} params.recipeIngredients
+ * @param {'fr'|'en'} [params.lang='fr'] - Language for prompts and item labels in the output.
  * @returns {Promise<{summary:object, consolidatedItems:Array<object>}>}
  */
 async function consolidateShoppingListWithAi({
   model,
   manualShoppingItems,
   recipeIngredients,
+  lang = 'fr',
+  manualOnly = false,
 }) {
   const cleanModel = normalizeString(model);
   if (!cleanModel) {
@@ -4471,10 +4589,15 @@ async function consolidateShoppingListWithAi({
     );
   }
 
-  const toolSchema = buildAiConsolidationToolSchema();
+  const validLang = lang === 'en' ? 'en' : 'fr';
+  const systemPrompt = buildAiConsolidationSystemPrompt(validLang);
+  const toolDescription = buildAiConsolidationToolDescription(validLang);
+  const toolSchema = buildAiConsolidationToolSchema(validLang);
   const userPrompt = buildAiConsolidationUserPrompt(
     manualShoppingItems,
-    recipeIngredients
+    recipeIngredients,
+    validLang,
+    manualOnly
   );
 
   const result =
@@ -4482,16 +4605,18 @@ async function consolidateShoppingListWithAi({
       ? await callAnthropicConsolidation({
           apiKey,
           model: cleanModel,
-          systemPrompt: AI_CONSOLIDATION_SYSTEM_PROMPT,
+          systemPrompt,
           userPrompt,
           toolSchema,
+          toolDescription,
         })
       : await callGeminiConsolidation({
           apiKey,
           model: cleanModel,
-          systemPrompt: AI_CONSOLIDATION_SYSTEM_PROMPT,
+          systemPrompt,
           userPrompt,
           toolSchema,
+          toolDescription,
         });
 
   const summary = result?.summary && typeof result.summary === 'object' ? result.summary : {};
@@ -4548,6 +4673,8 @@ exports.consolidateTripShoppingWithAi = onCall(
     const isApplicationOwner = userSnap.exists && userSnap.data()?.isApplicationOwner === true;
 
     const tripRef = db.collection('trips').doc(tripId);
+    const mode = normalizeString(request.data?.mode);
+    const manualOnly = mode === 'manual_only';
 
     const [shoppingSnap, mealsSnap] = await Promise.all([
       tripRef
@@ -4555,11 +4682,13 @@ exports.consolidateTripShoppingWithAi = onCall(
         .where('checked', '==', false)
         .select('label', 'quantityValue', 'quantityUnit')
         .get(),
-      tripRef
-        .collection('meals')
-        .where('mealMode', '==', 'cooked')
-        .select('components')
-        .get(),
+      manualOnly
+        ? Promise.resolve({ docs: [] })
+        : tripRef
+            .collection('meals')
+            .where('mealMode', '==', 'cooked')
+            .select('components')
+            .get(),
     ]);
 
     const manualShoppingItems = [];
@@ -4597,6 +4726,9 @@ exports.consolidateTripShoppingWithAi = onCall(
       };
     }
 
+    const rawLang = normalizeString(request.data?.lang);
+    const lang = rawLang === 'en' ? 'en' : 'fr';
+
     return withAiQuota(
       { featureKey: 'shoppingConsolidation', tripId, uid, isApplicationOwner },
       async () => {
@@ -4604,8 +4736,10 @@ exports.consolidateTripShoppingWithAi = onCall(
           model: 'gemini-2.5-flash',
           manualShoppingItems,
           recipeIngredients,
+          lang,
+          manualOnly,
         });
-        return { summary, consolidatedItems };
+        return { summary, consolidatedItems, categories: AI_CONSOLIDATION_CATEGORIES };
       }
     );
   }

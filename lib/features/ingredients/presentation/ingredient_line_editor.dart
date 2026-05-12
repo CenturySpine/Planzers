@@ -22,6 +22,19 @@ class IngredientLineValue {
   final ShoppingUnit quantityUnit;
 }
 
+/// Extra row in the line overflow menu (before Delete). [actionId] must not be `delete`.
+class IngredientLineCustomMenuItem {
+  const IngredientLineCustomMenuItem({
+    required this.actionId,
+    required this.label,
+    this.icon,
+  });
+
+  final String actionId;
+  final String label;
+  final IconData? icon;
+}
+
 class IngredientLineEditor extends ConsumerStatefulWidget {
   const IngredientLineEditor({
     super.key,
@@ -38,6 +51,9 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
     this.labelStyle,
     this.isDuplicateLabel,
     this.duplicateWarningText = 'Cet élément existe déjà dans la liste.',
+    this.structureLocked = false,
+    this.customMenuItems,
+    this.onCustomMenuAction,
   });
 
   final String catalogItemId;
@@ -53,6 +69,15 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
   final TextStyle? labelStyle;
   final bool Function(String value)? isDuplicateLabel;
   final String duplicateWarningText;
+
+  /// When true, label/quantity/unit cannot be edited and delete is hidden
+  /// (e.g. shopping list locked for non-admins).
+  final bool structureLocked;
+
+  final List<IngredientLineCustomMenuItem>? customMenuItems;
+
+  /// Invoked for each [IngredientLineCustomMenuItem.actionId] when chosen.
+  final void Function(String actionId)? onCustomMenuAction;
 
   @override
   ConsumerState<IngredientLineEditor> createState() =>
@@ -84,7 +109,9 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
     _selectedUnit = widget.quantityUnit;
     _measurementKind = _measurementKindFromUnit(_selectedUnit);
     _labelController.addListener(_onLabelChanged);
-    if (widget.autoFocusLabel && widget.label.trim().isEmpty) {
+    if (widget.autoFocusLabel &&
+        widget.label.trim().isEmpty &&
+        !widget.structureLocked) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _labelFocusNode.requestFocus();
@@ -96,6 +123,11 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
   @override
   void didUpdateWidget(IngredientLineEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.structureLocked && widget.structureLocked) {
+      _autoSaveTimer?.cancel();
+      _labelFocusNode.unfocus();
+      _quantityFocusNode.unfocus();
+    }
     if (!_labelFocusNode.hasFocus && oldWidget.label != widget.label) {
       _labelController.text = widget.label;
     }
@@ -226,7 +258,8 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
     final colorScheme = Theme.of(context).colorScheme;
     final query = _labelController.text.trim();
     final suggestionsAsync = ref.watch(ingredientAutocompleteProvider(query));
-    final showSuggestions = _labelFocusNode.hasFocus &&
+    final showSuggestions = !widget.structureLocked &&
+        _labelFocusNode.hasFocus &&
         query.isNotEmpty &&
         _normalize(query) != _acceptedSuggestionLabel;
     final isDuplicate =
@@ -243,6 +276,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                 child: TextField(
                   controller: _labelController,
                   focusNode: _labelFocusNode,
+                  readOnly: widget.structureLocked,
                   keyboardType: TextInputType.multiline,
                   textInputAction: TextInputAction.done,
                   minLines: 1,
@@ -267,52 +301,86 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                     ),
                   ),
                   style: widget.labelStyle,
-                  onSubmitted: (_) => _save(),
-                  onEditingComplete: _save,
-                  onChanged: (_) => _scheduleAutoSave(),
+                  onSubmitted: (_) {
+                    if (!widget.structureLocked) unawaited(_save());
+                  },
+                  onEditingComplete: () {
+                    if (!widget.structureLocked) unawaited(_save());
+                  },
+                  onChanged: (_) {
+                    if (!widget.structureLocked) _scheduleAutoSave();
+                  },
                 ),
               ),
-              _QuantityControls(
-                quantityController: _quantityController,
-                quantityFocusNode: _quantityFocusNode,
-                selectedUnit: _selectedUnit,
-                measurementKind: _measurementKind,
-                onUnitChanged: (unit) {
-                  setState(() {
-                    _selectedUnit = unit;
-                  });
-                  _scheduleAutoSave();
-                },
-                onDecrement: _decrementQuantity,
-                onIncrement: _incrementQuantity,
-                onSave: _save,
-              ),
-              PopupMenuButton<String>(
-                padding: EdgeInsets.zero,
-                tooltip: l10n.commonMoreActions,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 40),
-                icon: Icon(Icons.more_vert,
-                    size: 20, color: colorScheme.onSurfaceVariant),
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    unawaited(widget.onDelete());
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline,
-                            size: 20, color: colorScheme.error),
-                        const SizedBox(width: 10),
-                        Text(l10n.commonDelete,
-                            style: TextStyle(color: colorScheme.error)),
-                      ],
-                    ),
+              if (widget.structureLocked)
+                _ReadOnlyQuantityDisplay(
+                  quantityText: _formatQuantity(
+                    _parseQuantity(_quantityController.text),
                   ),
-                ],
-              ),
+                  unitLabel: _selectedUnit.label,
+                )
+              else
+                _QuantityControls(
+                  quantityController: _quantityController,
+                  quantityFocusNode: _quantityFocusNode,
+                  selectedUnit: _selectedUnit,
+                  measurementKind: _measurementKind,
+                  onUnitChanged: (unit) {
+                    setState(() {
+                      _selectedUnit = unit;
+                    });
+                    _scheduleAutoSave();
+                  },
+                  onDecrement: _decrementQuantity,
+                  onIncrement: _incrementQuantity,
+                  onSave: _save,
+                ),
+              if (!widget.structureLocked)
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  tooltip: l10n.commonMoreActions,
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 40),
+                  icon: Icon(Icons.more_vert,
+                      size: 20, color: colorScheme.onSurfaceVariant),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      unawaited(widget.onDelete());
+                    } else {
+                      widget.onCustomMenuAction?.call(value);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    for (final entry in widget.customMenuItems ??
+                        const <IngredientLineCustomMenuItem>[])
+                      PopupMenuItem<String>(
+                        value: entry.actionId,
+                        child: Row(
+                          children: [
+                            Icon(
+                              entry.icon ?? Icons.category_outlined,
+                              size: 20,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(entry.label)),
+                          ],
+                        ),
+                      ),
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: colorScheme.error),
+                          const SizedBox(width: 10),
+                          Text(l10n.commonDelete,
+                              style: TextStyle(color: colorScheme.error)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           if (showSuggestions)
@@ -377,6 +445,37 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadOnlyQuantityDisplay extends StatelessWidget {
+  const _ReadOnlyQuantityDisplay({
+    required this.quantityText,
+    required this.unitLabel,
+  });
+
+  final String quantityText;
+  final String unitLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, right: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            quantityText,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            unitLabel,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );

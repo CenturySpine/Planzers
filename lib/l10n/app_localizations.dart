@@ -2982,6 +2982,150 @@ abstract class AppLocalizations {
   /// **'Cette fonction n’est pas encore accessible pour votre compte.'**
   String get shoppingConsolidateAiNotAvailableBody;
 
+  /// No description provided for @shoppingConsolidateOptionsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidation IA'**
+  String get shoppingConsolidateOptionsTitle;
+
+  /// No description provided for @shoppingConsolidateOptionFull.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recettes + liste'**
+  String get shoppingConsolidateOptionFull;
+
+  /// No description provided for @shoppingConsolidateOptionManualOnly.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste uniquement'**
+  String get shoppingConsolidateOptionManualOnly;
+
+  /// No description provided for @shoppingConsolidateOptionFullDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Regroupe la liste manuelle (lignes non cochées) et les ingrédients des repas cuisinés du voyage pour proposer une liste consolidée.'**
+  String get shoppingConsolidateOptionFullDescription;
+
+  /// No description provided for @shoppingConsolidateOptionManualOnlyDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ne modifie pas les lignes de la liste : elles sont seulement classées par rayon.'**
+  String get shoppingConsolidateOptionManualOnlyDescription;
+
+  /// No description provided for @shoppingConsolidateLaunch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lancer la consolidation'**
+  String get shoppingConsolidateLaunch;
+
+  /// No description provided for @shoppingTabList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste libre'**
+  String get shoppingTabList;
+
+  /// No description provided for @shoppingTabConsolidated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consolidée'**
+  String get shoppingTabConsolidated;
+
+  /// No description provided for @shoppingTooltipLockManualList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller la liste manuelle'**
+  String get shoppingTooltipLockManualList;
+
+  /// No description provided for @shoppingTooltipUnlockManualList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller la liste manuelle'**
+  String get shoppingTooltipUnlockManualList;
+
+  /// No description provided for @shoppingTooltipLockConsolidatedList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller la liste consolidée'**
+  String get shoppingTooltipLockConsolidatedList;
+
+  /// No description provided for @shoppingTooltipUnlockConsolidatedList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller la liste consolidée'**
+  String get shoppingTooltipUnlockConsolidatedList;
+
+  /// No description provided for @shoppingConsolidatedEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lancez la consolidation pour voir le résultat ici.'**
+  String get shoppingConsolidatedEmpty;
+
+  /// No description provided for @shoppingConsolidatedFilterEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun article ne correspond à ce filtre.'**
+  String get shoppingConsolidatedFilterEmpty;
+
+  /// No description provided for @shoppingConsolidatedSave.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer la liste consolidée'**
+  String get shoppingConsolidatedSave;
+
+  /// No description provided for @shoppingConsolidatedClear.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la consolidation'**
+  String get shoppingConsolidatedClear;
+
+  /// No description provided for @shoppingConsolidatedClearConfirmTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la liste consolidée ?'**
+  String get shoppingConsolidatedClearConfirmTitle;
+
+  /// No description provided for @shoppingConsolidatedClearConfirmContent.
+  ///
+  /// In fr, this message translates to:
+  /// **'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.'**
+  String get shoppingConsolidatedClearConfirmContent;
+
+  /// No description provided for @shoppingChangeCategoryMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer de catégorie'**
+  String get shoppingChangeCategoryMenu;
+
+  /// No description provided for @shoppingChangeCategoryDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir une catégorie'**
+  String get shoppingChangeCategoryDialogTitle;
+
+  /// No description provided for @shoppingCategoryDivers.
+  ///
+  /// In fr, this message translates to:
+  /// **'Divers'**
+  String get shoppingCategoryDivers;
+
+  /// No description provided for @shoppingCategoryUnassigned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non assigné'**
+  String get shoppingCategoryUnassigned;
+
+  /// No description provided for @shoppingConsolidatedAddBlockedWhenLocked.
+  ///
+  /// In fr, this message translates to:
+  /// **'La liste consolidée est verrouillée.'**
+  String get shoppingConsolidatedAddBlockedWhenLocked;
+
+  /// No description provided for @shoppingConsolidatedRowNotPersisted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.'**
+  String get shoppingConsolidatedRowNotPersisted;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:
