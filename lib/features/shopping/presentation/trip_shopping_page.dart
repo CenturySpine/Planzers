@@ -11,6 +11,7 @@ import 'package:planerz/features/auth/data/users_repository.dart'
         usersDataByIdsKeyStreamProvider,
         usersRepositoryProvider;
 import 'package:planerz/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -127,6 +128,41 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     }
   }
 
+  Future<void> _setManualListLocked(BuildContext context, bool locked) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setShoppingListLockFlags(
+            tripId: widget.tripId,
+            manualListLocked: locked,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _setConsolidatedListLocked(
+    BuildContext context,
+    bool locked,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setShoppingListLockFlags(
+            tripId: widget.tripId,
+            consolidatedListLocked: locked,
+          );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
   Future<void> _showConsolidateOptionsDialog(
     BuildContext context,
     bool isApplicationOwner,
@@ -197,6 +233,19 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       trip: widget.trip,
       userId: currentUid,
     );
+    final isAdminOrAbove = isTripRoleAllowed(
+      currentRole: currentRole,
+      minRole: TripPermissionRole.admin,
+    );
+    final locks = ref
+            .watch(tripShoppingListLocksStreamProvider(widget.tripId))
+            .asData
+            ?.value ??
+        TripShoppingListLocks.defaults;
+    final manualLockRestrictsEditing =
+        locks.manualListLocked && !isAdminOrAbove;
+    final consolidatedLockRestrictsEditing =
+        locks.consolidatedListLocked && !isAdminOrAbove;
     final canDeleteCheckedItems = isTripRoleAllowed(
       currentRole: currentRole,
       minRole: widget.trip.shoppingPermissions.deleteCheckedItemsMinRole,
@@ -204,10 +253,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final circuitBreakerTripped =
         ref.watch(aiCircuitBreakerTrippedProvider).asData?.value ?? false;
     final canConsolidateWithAi = !circuitBreakerTripped &&
+        !locks.consolidatedListLocked &&
         isTripRoleAllowed(
           currentRole: currentRole,
           minRole: TripPermissionRole.admin,
         );
+    final showShoppingFab = isAdminOrAbove || !locks.manualListLocked;
     final currentUserOwnerAsync = ref.watch(
       usersDataByIdsKeyStreamProvider(stableUsersIdsKey([currentUid])),
     );
@@ -262,8 +313,96 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                 TabBar(
                   controller: _tabController,
                   tabs: [
-                    Tab(text: l10n.shoppingTabList),
-                    Tab(text: l10n.shoppingTabConsolidated),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l10n.shoppingTabList,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          if (isAdminOrAbove)
+                            IconButton(
+                              iconSize: 18,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 30,
+                                minHeight: 30,
+                              ),
+                              tooltip: locks.manualListLocked
+                                  ? l10n.shoppingTooltipUnlockManualList
+                                  : l10n.shoppingTooltipLockManualList,
+                              onPressed: () => _setManualListLocked(
+                                context,
+                                !locks.manualListLocked,
+                              ),
+                              icon: Icon(
+                                locks.manualListLocked
+                                    ? Icons.lock_outline
+                                    : Icons.lock_open_outlined,
+                              ),
+                            )
+                          else if (locks.manualListLocked)
+                            Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              l10n.shoppingTabConsolidated,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          if (isAdminOrAbove)
+                            IconButton(
+                              iconSize: 18,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 30,
+                                minHeight: 30,
+                              ),
+                              tooltip: locks.consolidatedListLocked
+                                  ? l10n.shoppingTooltipUnlockConsolidatedList
+                                  : l10n.shoppingTooltipLockConsolidatedList,
+                              onPressed: () => _setConsolidatedListLocked(
+                                context,
+                                !locks.consolidatedListLocked,
+                              ),
+                              icon: Icon(
+                                locks.consolidatedListLocked
+                                    ? Icons.lock_outline
+                                    : Icons.lock_open_outlined,
+                              ),
+                            )
+                          else if (locks.consolidatedListLocked)
+                            Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 Expanded(
@@ -396,6 +535,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                             item: item,
                                             usersDataById: usersDataById,
                                             normalizedLabelCounts: normalizedLabelCounts,
+                                            structureLocked: manualLockRestrictsEditing,
                                             autoFocusLabel:
                                                 item.id == _pendingAutofocusItemId,
                                             onAutoFocusHandled: () {
@@ -416,6 +556,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         languageCode,
                         usersDataById,
                         consolidatedLabelCounts,
+                        consolidatedStructureLocked:
+                            consolidatedLockRestrictsEditing,
+                        showConsolidatedClearButton:
+                            !locks.consolidatedListLocked,
                       ),
                     ],
                   ),
@@ -429,7 +573,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   child: const Center(child: CircularProgressIndicator()),
                 ),
               ),
-            Positioned(
+            if (showShoppingFab)
+              Positioned(
               right: 16,
               bottom: 16,
               child: Column(
@@ -516,8 +661,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     AppLocalizations l10n,
     String languageCode,
     Map<String, Map<String, dynamic>> usersDataById,
-    Map<String, int> normalizedLabelCounts,
-  ) {
+    Map<String, int> normalizedLabelCounts, {
+    required bool consolidatedStructureLocked,
+    required bool showConsolidatedClearButton,
+  }) {
     final result = _consolidationResult;
     final categories = result?.categories ?? const [];
     if (result == null || _consolidatedItems.isEmpty) {
@@ -544,14 +691,15 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           child: Row(
             children: [
               Expanded(child: const SizedBox.shrink()),
-              IconButton(
-                tooltip: l10n.shoppingConsolidatedClear,
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() {
-                  _consolidationResult = null;
-                  _consolidatedItems = const [];
-                }),
-              ),
+              if (showConsolidatedClearButton)
+                IconButton(
+                  tooltip: l10n.shoppingConsolidatedClear,
+                  icon: const Icon(Icons.close),
+                  onPressed: () => setState(() {
+                    _consolidationResult = null;
+                    _consolidatedItems = const [];
+                  }),
+                ),
             ],
           ),
         ),
@@ -567,6 +715,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                 tripId: widget.tripId,
                 usersDataById: usersDataById,
                 normalizedLabelCounts: normalizedLabelCounts,
+                structureLocked: consolidatedStructureLocked,
                 onItemChanged: (itemId, updatedItem) {
                   _updateConsolidatedItem(itemId, (_) => updatedItem);
                 },
@@ -734,6 +883,7 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.tripId,
     required this.usersDataById,
     required this.normalizedLabelCounts,
+    required this.structureLocked,
     required this.onItemChanged,
     required this.onItemDeleted,
   });
@@ -743,6 +893,7 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final String tripId;
   final Map<String, Map<String, dynamic>> usersDataById;
   final Map<String, int> normalizedLabelCounts;
+  final bool structureLocked;
   final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
   final void Function(String itemId) onItemDeleted;
 
@@ -767,6 +918,7 @@ class _ConsolidatedCategorySection extends StatelessWidget {
             item: items[i],
             usersDataById: usersDataById,
             normalizedLabelCounts: normalizedLabelCounts,
+            structureLocked: structureLocked,
             onToggleCheckedOverride: (checked) async {
               onItemChanged(
                 items[i].id,

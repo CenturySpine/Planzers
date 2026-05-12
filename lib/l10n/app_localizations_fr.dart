@@ -1664,6 +1664,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingTabConsolidated => 'Consolidée';
 
   @override
+  String get shoppingTooltipLockManualList => 'Verrouiller la liste manuelle';
+
+  @override
+  String get shoppingTooltipUnlockManualList =>
+      'Déverrouiller la liste manuelle';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Verrouiller la liste consolidée';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Déverrouiller la liste consolidée';
+
+  @override
   String get shoppingConsolidatedEmpty =>
       'Lancez la consolidation pour voir le résultat ici.';
 
@@ -4359,6 +4374,21 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingTabConsolidated => 'Consolidée';
+
+  @override
+  String get shoppingTooltipLockManualList => 'Verrouiller la liste manuelle';
+
+  @override
+  String get shoppingTooltipUnlockManualList =>
+      'Déverrouiller la liste manuelle';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Verrouiller la liste consolidée';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Déverrouiller la liste consolidée';
 
   @override
   String get shoppingConsolidatedEmpty =>

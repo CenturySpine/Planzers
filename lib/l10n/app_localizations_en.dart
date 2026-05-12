@@ -1647,6 +1647,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingTabConsolidated => 'Consolidated';
 
   @override
+  String get shoppingTooltipLockManualList => 'Lock the manual list';
+
+  @override
+  String get shoppingTooltipUnlockManualList => 'Unlock the manual list';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Lock the consolidated list';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Unlock the consolidated list';
+
+  @override
   String get shoppingConsolidatedEmpty =>
       'Run consolidation to see the result here.';
 
@@ -4317,6 +4331,20 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingTabConsolidated => 'Consolidated';
+
+  @override
+  String get shoppingTooltipLockManualList => 'Lock the manual list';
+
+  @override
+  String get shoppingTooltipUnlockManualList => 'Unlock the manual list';
+
+  @override
+  String get shoppingTooltipLockConsolidatedList =>
+      'Lock the consolidated list';
+
+  @override
+  String get shoppingTooltipUnlockConsolidatedList =>
+      'Unlock the consolidated list';
 
   @override
   String get shoppingConsolidatedEmpty =>

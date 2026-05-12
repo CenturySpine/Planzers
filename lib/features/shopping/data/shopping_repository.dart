@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
+import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
@@ -23,6 +24,14 @@ final tripShoppingItemsStreamProvider =
       .watchShoppingItems(tripId);
 });
 
+/// Live lock flags for manual vs consolidated shopping tabs.
+final tripShoppingListLocksStreamProvider =
+    StreamProvider.autoDispose.family<TripShoppingListLocks, String>(
+  (ref, tripId) {
+    return ref.watch(shoppingRepositoryProvider).watchShoppingListLocks(tripId);
+  },
+);
+
 class ShoppingRepository {
   ShoppingRepository({
     required this.firestore,
@@ -34,6 +43,49 @@ class ShoppingRepository {
 
   CollectionReference<Map<String, dynamic>> _col(String tripId) =>
       firestore.collection('trips').doc(tripId).collection('shoppingItems');
+
+  DocumentReference<Map<String, dynamic>> _locksDoc(String tripId) {
+    return firestore
+        .collection('trips')
+        .doc(tripId.trim())
+        .collection('shopping_list_locks')
+        .doc(kTripShoppingListLocksDocId);
+  }
+
+  Stream<TripShoppingListLocks> watchShoppingListLocks(String tripId) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(TripShoppingListLocks.defaults);
+    }
+    return _locksDoc(cleanId).snapshots().map((snap) {
+      if (!snap.exists) return TripShoppingListLocks.defaults;
+      return TripShoppingListLocks.fromMap(snap.data() ?? const {});
+    });
+  }
+
+  Future<void> setShoppingListLockFlags({
+    required String tripId,
+    bool? manualListLocked,
+    bool? consolidatedListLocked,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+    if (manualListLocked == null && consolidatedListLocked == null) return;
+
+    await _locksDoc(cleanTripId).set(
+      <String, dynamic>{
+        if (manualListLocked != null) 'manualListLocked': manualListLocked,
+        if (consolidatedListLocked != null)
+          'consolidatedListLocked': consolidatedListLocked,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+      SetOptions(merge: true),
+    );
+  }
 
   Future<Trip> _loadTrip(String tripId) async {
     final snap = await firestore.collection('trips').doc(tripId).get();

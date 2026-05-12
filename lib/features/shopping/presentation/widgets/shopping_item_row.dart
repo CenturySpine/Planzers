@@ -20,6 +20,7 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     this.onSetClaimedByOverride,
     this.onSaveOverride,
     this.onDeleteOverride,
+    this.structureLocked = false,
   });
 
   final String tripId;
@@ -32,6 +33,9 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
   final Future<void> Function(String? claimedBy)? onSetClaimedByOverride;
   final Future<void> Function(IngredientLineValue value)? onSaveOverride;
   final Future<void> Function()? onDeleteOverride;
+
+  /// Non-admins cannot edit label/qty/delete when the parent list is locked.
+  final bool structureLocked;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -148,6 +152,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       label: widget.item.label,
       quantityValue: widget.item.quantityValue,
       quantityUnit: widget.item.quantityUnit,
+      structureLocked: widget.structureLocked,
       onSave: (value) async {
         if (widget.onSaveOverride != null) {
           await widget.onSaveOverride!(value);

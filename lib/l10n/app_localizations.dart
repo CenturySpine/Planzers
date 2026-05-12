@@ -3030,6 +3030,30 @@ abstract class AppLocalizations {
   /// **'Consolidée'**
   String get shoppingTabConsolidated;
 
+  /// No description provided for @shoppingTooltipLockManualList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller la liste manuelle'**
+  String get shoppingTooltipLockManualList;
+
+  /// No description provided for @shoppingTooltipUnlockManualList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller la liste manuelle'**
+  String get shoppingTooltipUnlockManualList;
+
+  /// No description provided for @shoppingTooltipLockConsolidatedList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller la liste consolidée'**
+  String get shoppingTooltipLockConsolidatedList;
+
+  /// No description provided for @shoppingTooltipUnlockConsolidatedList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller la liste consolidée'**
+  String get shoppingTooltipUnlockConsolidatedList;
+
   /// No description provided for @shoppingConsolidatedEmpty.
   ///
   /// In fr, this message translates to:
