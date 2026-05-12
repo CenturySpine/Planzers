@@ -46,6 +46,22 @@ const String kConsolidatedShoppingMetaDocId = 'meta';
 /// Subcollection under each trip for the saved consolidated shopping list.
 const String kConsolidatedShoppingItemsCollection = 'consolidatedShoppingItems';
 
+/// Thrown when a consolidated row is toggled or claimed but has no matching
+/// Firestore document (list not saved yet, or row removed).
+class ConsolidatedShoppingRowNotPersistedException implements Exception {
+  const ConsolidatedShoppingRowNotPersistedException();
+
+  @override
+  String toString() => 'ConsolidatedShoppingRowNotPersistedException';
+}
+
+bool _isEphemeralConsolidatedShoppingItemId(String itemId) {
+  final id = itemId.trim();
+  if (id.isEmpty) return false;
+  if (id.startsWith('consolidated_manual_')) return true;
+  return RegExp(r'^consolidated_\d+$').hasMatch(id);
+}
+
 class ShoppingRepository {
   ShoppingRepository({
     required this.firestore,
@@ -412,6 +428,83 @@ class ShoppingRepository {
 
     final cleanClaimedBy = claimedBy?.trim();
     await _col(cleanTripId).doc(cleanItemId).update({
+      'claimedBy': (cleanClaimedBy == null || cleanClaimedBy.isEmpty)
+          ? FieldValue.delete()
+          : cleanClaimedBy,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
+  }
+
+  /// Updates [checked] on a saved consolidated row (`consolidatedShoppingItems/{itemId}`).
+  ///
+  /// Fails with [ConsolidatedShoppingRowNotPersistedException] when the id is a local-only
+  /// placeholder or the document does not exist.
+  Future<void> setConsolidatedItemChecked({
+    required String tripId,
+    required String itemId,
+    required bool checked,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanItemId = itemId.trim();
+    if (cleanTripId.isEmpty || cleanItemId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (cleanItemId == kConsolidatedShoppingMetaDocId) {
+      throw StateError('Parametres invalides');
+    }
+    if (_isEphemeralConsolidatedShoppingItemId(cleanItemId)) {
+      throw const ConsolidatedShoppingRowNotPersistedException();
+    }
+
+    final docRef = _consolidatedCol(cleanTripId).doc(cleanItemId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw const ConsolidatedShoppingRowNotPersistedException();
+    }
+
+    await docRef.update({
+      'checked': checked,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    });
+  }
+
+  /// Updates [claimedBy] on a saved consolidated row (`consolidatedShoppingItems/{itemId}`).
+  ///
+  /// Fails with [ConsolidatedShoppingRowNotPersistedException] when the id is a local-only
+  /// placeholder or the document does not exist.
+  Future<void> setConsolidatedItemClaimedBy({
+    required String tripId,
+    required String itemId,
+    String? claimedBy,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    final cleanItemId = itemId.trim();
+    if (cleanTripId.isEmpty || cleanItemId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+    if (cleanItemId == kConsolidatedShoppingMetaDocId) {
+      throw StateError('Parametres invalides');
+    }
+    if (_isEphemeralConsolidatedShoppingItemId(cleanItemId)) {
+      throw const ConsolidatedShoppingRowNotPersistedException();
+    }
+
+    final docRef = _consolidatedCol(cleanTripId).doc(cleanItemId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      throw const ConsolidatedShoppingRowNotPersistedException();
+    }
+
+    final cleanClaimedBy = claimedBy?.trim();
+    await docRef.update({
       'claimedBy': (cleanClaimedBy == null || cleanClaimedBy.isEmpty)
           ? FieldValue.delete()
           : cleanClaimedBy,

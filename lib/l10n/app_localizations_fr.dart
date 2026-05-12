@@ -1717,6 +1717,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'La liste consolidée est verrouillée.';
 
   @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4458,6 +4462,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>
       'La liste consolidée est verrouillée.';
+
+  @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.';
 
   @override
   String get activityCategorySport => 'Sport';

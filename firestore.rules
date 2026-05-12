@@ -660,8 +660,22 @@ service cloud.firestore {
       // Persisted consolidated shopping list (`meta` + row docs). Reads must work even when empty.
       match /consolidatedShoppingItems/{docId} {
         allow read: if isTripMember(tripId);
-        allow create, update, delete: if isTripMember(tripId)
+        allow create, delete: if isTripMember(tripId)
           && tripCallerRoleRank(tripId) >= 2;
+        // Admins may rewrite rows/meta; any member may sync check/claim on existing row docs only.
+        allow update: if isTripMember(tripId)
+          && (
+            tripCallerRoleRank(tripId) >= 2
+            || (
+              docId != 'meta'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'checked',
+                'claimedBy',
+                'updatedAt',
+                'updatedBy',
+              ])
+            )
+          );
       }
 
       match /aiQuotas/{featureKey} {

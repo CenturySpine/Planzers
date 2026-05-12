@@ -1698,6 +1698,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The consolidated list is locked.';
 
   @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4412,6 +4416,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get shoppingConsolidatedAddBlockedWhenLocked =>
       'The consolidated list is locked.';
+
+  @override
+  String get shoppingConsolidatedRowNotPersisted =>
+      'This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.';
 
   @override
   String get activityCategorySport => 'Sport';

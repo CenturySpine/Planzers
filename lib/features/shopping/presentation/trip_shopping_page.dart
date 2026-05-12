@@ -808,6 +808,88 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     });
   }
 
+  Future<void> _persistConsolidatedToggleChecked(
+    BuildContext context,
+    ShoppingItem item,
+    bool checked,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setConsolidatedItemChecked(
+            tripId: widget.tripId,
+            itemId: item.id,
+            checked: checked,
+          );
+      if (!mounted) return;
+      _updateConsolidatedItem(
+        item.id,
+        (prev) => ShoppingItem(
+          id: prev.id,
+          label: prev.label,
+          checked: checked,
+          quantityValue: prev.quantityValue,
+          quantityUnit: prev.quantityUnit,
+          createdAt: prev.createdAt,
+          order: prev.order,
+          createdBy: prev.createdBy,
+          claimedBy: prev.claimedBy,
+        ),
+      );
+    } on ConsolidatedShoppingRowNotPersistedException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedRowNotPersisted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _persistConsolidatedSetClaimedBy(
+    BuildContext context,
+    ShoppingItem item,
+    String? claimedBy,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(shoppingRepositoryProvider).setConsolidatedItemClaimedBy(
+            tripId: widget.tripId,
+            itemId: item.id,
+            claimedBy: claimedBy,
+          );
+      if (!mounted) return;
+      _updateConsolidatedItem(
+        item.id,
+        (prev) => ShoppingItem(
+          id: prev.id,
+          label: prev.label,
+          checked: prev.checked,
+          quantityValue: prev.quantityValue,
+          quantityUnit: prev.quantityUnit,
+          createdAt: prev.createdAt,
+          order: prev.order,
+          createdBy: prev.createdBy,
+          claimedBy: claimedBy,
+        ),
+      );
+    } on ConsolidatedShoppingRowNotPersistedException {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedRowNotPersisted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+    }
+  }
+
   Future<void> _saveConsolidatedList(BuildContext context) async {
     if (_isSavingConsolidated || _consolidatedItems.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
@@ -1031,11 +1113,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       ),
                       items: entry.value,
                       tripId: widget.tripId,
+                      listContext: context,
                       usersDataById: usersDataById,
                       normalizedLabelCounts: normalizedLabelCounts,
                       pendingAutofocusItemId: pendingAutofocusItemId,
                       onAutofocusItemHandled: onAutofocusItemHandled,
                       structureLocked: consolidatedStructureLocked,
+                      onConsolidatedToggleChecked: _persistConsolidatedToggleChecked,
+                      onConsolidatedSetClaimedBy: _persistConsolidatedSetClaimedBy,
                       onItemChanged: (itemId, updatedItem) {
                         _updateConsolidatedItem(itemId, (_) => updatedItem);
                       },
@@ -1290,11 +1375,14 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.label,
     required this.items,
     required this.tripId,
+    required this.listContext,
     required this.usersDataById,
     required this.normalizedLabelCounts,
     required this.pendingAutofocusItemId,
     required this.onAutofocusItemHandled,
     required this.structureLocked,
+    required this.onConsolidatedToggleChecked,
+    required this.onConsolidatedSetClaimedBy,
     required this.onItemChanged,
     required this.onItemDeleted,
     required this.onRequestChangeCategory,
@@ -1306,11 +1394,22 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final String label;
   final List<ShoppingItem> items;
   final String tripId;
+  final BuildContext listContext;
   final Map<String, Map<String, dynamic>> usersDataById;
   final Map<String, int> normalizedLabelCounts;
   final String? pendingAutofocusItemId;
   final void Function(String itemId) onAutofocusItemHandled;
   final bool structureLocked;
+  final Future<void> Function(
+    BuildContext context,
+    ShoppingItem item,
+    bool checked,
+  ) onConsolidatedToggleChecked;
+  final Future<void> Function(
+    BuildContext context,
+    ShoppingItem item,
+    String? claimedBy,
+  ) onConsolidatedSetClaimedBy;
   final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
   final void Function(String itemId) onItemDeleted;
   final Future<void> Function(BuildContext context, ShoppingItem item)
@@ -1359,36 +1458,10 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                     }
                   },
             onToggleCheckedOverride: (checked) async {
-              onItemChanged(
-                items[i].id,
-                ShoppingItem(
-                  id: items[i].id,
-                  label: items[i].label,
-                  checked: checked,
-                  quantityValue: items[i].quantityValue,
-                  quantityUnit: items[i].quantityUnit,
-                  createdAt: items[i].createdAt,
-                  order: items[i].order,
-                  createdBy: items[i].createdBy,
-                  claimedBy: items[i].claimedBy,
-                ),
-              );
+              await onConsolidatedToggleChecked(listContext, items[i], checked);
             },
             onSetClaimedByOverride: (claimedBy) async {
-              onItemChanged(
-                items[i].id,
-                ShoppingItem(
-                  id: items[i].id,
-                  label: items[i].label,
-                  checked: items[i].checked,
-                  quantityValue: items[i].quantityValue,
-                  quantityUnit: items[i].quantityUnit,
-                  createdAt: items[i].createdAt,
-                  order: items[i].order,
-                  createdBy: items[i].createdBy,
-                  claimedBy: claimedBy,
-                ),
-              );
+              await onConsolidatedSetClaimedBy(listContext, items[i], claimedBy);
             },
             onSaveOverride: (value) async {
               onItemChanged(

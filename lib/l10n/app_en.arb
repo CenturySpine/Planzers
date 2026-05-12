@@ -679,6 +679,7 @@
   "shoppingCategoryDivers": "Miscellaneous",
   "shoppingCategoryUnassigned": "Unassigned",
   "shoppingConsolidatedAddBlockedWhenLocked": "The consolidated list is locked.",
+  "shoppingConsolidatedRowNotPersisted": "This item is not on the saved list yet. An administrator must save the consolidated list before this can be shared with everyone.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Hiking",
   "activityCategoryShopping": "Shopping",

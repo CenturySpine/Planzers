@@ -679,6 +679,7 @@
   "shoppingCategoryDivers": "Divers",
   "shoppingCategoryUnassigned": "Non assigné",
   "shoppingConsolidatedAddBlockedWhenLocked": "La liste consolidée est verrouillée.",
+  "shoppingConsolidatedRowNotPersisted": "Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Randonnée",
   "activityCategoryShopping": "Shopping",

@@ -3120,6 +3120,12 @@ abstract class AppLocalizations {
   /// **'La liste consolidée est verrouillée.'**
   String get shoppingConsolidatedAddBlockedWhenLocked;
 
+  /// No description provided for @shoppingConsolidatedRowNotPersisted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cet article ne figure pas encore sur la liste enregistrée. Un administrateur doit enregistrer la consolidation pour partager cette action.'**
+  String get shoppingConsolidatedRowNotPersisted;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:
