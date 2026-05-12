@@ -4514,7 +4514,7 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
     tool_config: { function_calling_config: { mode: 'ANY' } },
     generation_config: {
       temperature: 0.1,
-      maxOutputTokens: 5000,
+      maxOutputTokens: 32000,
       thinkingConfig: { thinkingBudget: 0 },
     },
   };
@@ -4541,11 +4541,19 @@ async function callGeminiConsolidation({ apiKey, model, systemPrompt, userPrompt
     throw new HttpsError('internal', 'Réponse IA non JSON', { upstream: text.slice(0, 500) });
   }
 
-  const parts = parsed?.candidates?.[0]?.content?.parts;
+  const candidate = parsed?.candidates?.[0];
+  const finishReason = candidate?.finishReason;
+  if (finishReason === 'MAX_TOKENS') {
+    console.error('callGeminiConsolidation: MAX_TOKENS reached', { finishReason });
+    throw new HttpsError('internal', 'Réponse IA tronquée (liste trop longue)');
+  }
+
+  const parts = candidate?.content?.parts;
   const funcPart = Array.isArray(parts)
     ? parts.find((p) => p && p.functionCall && p.functionCall.args)
     : null;
   if (!funcPart) {
+    console.error('callGeminiConsolidation: no functionCall', { finishReason, parts: JSON.stringify(parts)?.slice(0, 500) });
     throw new HttpsError('internal', 'Réponse IA invalide (functionCall absent)');
   }
   return funcPart.functionCall.args;
