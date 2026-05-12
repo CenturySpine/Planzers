@@ -1658,7 +1658,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingConsolidateLaunch => 'Lancer la consolidation';
 
   @override
-  String get shoppingTabList => 'Ma liste';
+  String get shoppingTabList => 'Liste libre';
 
   @override
   String get shoppingTabConsolidated => 'Consolidée';
@@ -4390,7 +4390,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get shoppingConsolidateLaunch => 'Lancer la consolidation';
 
   @override
-  String get shoppingTabList => 'Ma liste';
+  String get shoppingTabList => 'Liste libre';
 
   @override
   String get shoppingTabConsolidated => 'Consolidée';

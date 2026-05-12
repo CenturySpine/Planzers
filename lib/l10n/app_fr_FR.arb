@@ -624,7 +624,7 @@
   "shoppingConsolidateOptionFullDescription": "Regroupe la liste manuelle (lignes non cochées) et les ingrédients des repas cuisinés du voyage pour proposer une liste consolidée.",
   "shoppingConsolidateOptionManualOnlyDescription": "Ne modifie pas les lignes de la liste : elles sont seulement classées par rayon.",
   "shoppingConsolidateLaunch": "Lancer la consolidation",
-  "shoppingTabList": "Ma liste",
+  "shoppingTabList": "Liste libre",
   "shoppingTabConsolidated": "Consolidée",
   "shoppingTooltipLockManualList": "Verrouiller la liste manuelle",
   "shoppingTooltipUnlockManualList": "Déverrouiller la liste manuelle",

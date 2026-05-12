@@ -624,7 +624,7 @@
   "shoppingConsolidateOptionFullDescription": "Combines your unchecked manual list with ingredients from cooked meals on this trip into one consolidated list.",
   "shoppingConsolidateOptionManualOnlyDescription": "Leaves each list line unchanged and only sorts them into store categories.",
   "shoppingConsolidateLaunch": "Run consolidation",
-  "shoppingTabList": "My list",
+  "shoppingTabList": "Free list",
   "shoppingTabConsolidated": "Consolidated",
   "shoppingTooltipLockManualList": "Lock the manual list",
   "shoppingTooltipUnlockManualList": "Unlock the manual list",

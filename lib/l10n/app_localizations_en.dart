@@ -1641,7 +1641,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingConsolidateLaunch => 'Run consolidation';
 
   @override
-  String get shoppingTabList => 'My list';
+  String get shoppingTabList => 'Free list';
 
   @override
   String get shoppingTabConsolidated => 'Consolidated';
@@ -4347,7 +4347,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get shoppingConsolidateLaunch => 'Run consolidation';
 
   @override
-  String get shoppingTabList => 'My list';
+  String get shoppingTabList => 'Free list';
 
   @override
   String get shoppingTabConsolidated => 'Consolidated';

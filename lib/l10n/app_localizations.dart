@@ -3021,7 +3021,7 @@ abstract class AppLocalizations {
   /// No description provided for @shoppingTabList.
   ///
   /// In fr, this message translates to:
-  /// **'Ma liste'**
+  /// **'Liste libre'**
   String get shoppingTabList;
 
   /// No description provided for @shoppingTabConsolidated.
