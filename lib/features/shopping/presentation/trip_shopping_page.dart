@@ -1217,7 +1217,7 @@ class _ConsolidationOptionsDialogState
     extends State<_ConsolidationOptionsDialog> {
   late bool _isReady;
   Timer? _readyTimer;
-  _ConsolidationMode _selectedMode = _ConsolidationMode.full;
+  _ConsolidationMode _selectedMode = _ConsolidationMode.manualOnly;
 
   @override
   void initState() {
@@ -1262,22 +1262,6 @@ class _ConsolidationOptionsDialogState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      l10n.shoppingConsolidateOptionFullDescription,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    _OptionTile(
-                      title: l10n.shoppingConsolidateOptionFull,
-                      icon: Icons.merge_type,
-                      mode: _ConsolidationMode.full,
-                      selected: _selectedMode == _ConsolidationMode.full,
-                      onRowTap: () =>
-                          setState(() => _selectedMode = _ConsolidationMode.full),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
                       l10n.shoppingConsolidateOptionManualOnlyDescription,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
@@ -1293,6 +1277,22 @@ class _ConsolidationOptionsDialogState
                       onRowTap: () => setState(
                         () => _selectedMode = _ConsolidationMode.manualOnly,
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.shoppingConsolidateOptionFullDescription,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    _OptionTile(
+                      title: l10n.shoppingConsolidateOptionFull,
+                      icon: Icons.merge_type,
+                      mode: _ConsolidationMode.full,
+                      selected: _selectedMode == _ConsolidationMode.full,
+                      onRowTap: () =>
+                          setState(() => _selectedMode = _ConsolidationMode.full),
                     ),
                   ],
                 ),
