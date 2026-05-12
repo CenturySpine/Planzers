@@ -16,6 +16,10 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     required this.normalizedLabelCounts,
     this.autoFocusLabel = false,
     this.onAutoFocusHandled,
+    this.onToggleCheckedOverride,
+    this.onSetClaimedByOverride,
+    this.onSaveOverride,
+    this.onDeleteOverride,
   });
 
   final String tripId;
@@ -24,6 +28,10 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
   final Map<String, int> normalizedLabelCounts;
   final bool autoFocusLabel;
   final VoidCallback? onAutoFocusHandled;
+  final Future<void> Function(bool checked)? onToggleCheckedOverride;
+  final Future<void> Function(String? claimedBy)? onSetClaimedByOverride;
+  final Future<void> Function(IngredientLineValue value)? onSaveOverride;
+  final Future<void> Function()? onDeleteOverride;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -47,6 +55,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _toggleChecked(bool? value) async {
+    if (widget.onToggleCheckedOverride != null) {
+      await widget.onToggleCheckedOverride!(value ?? false);
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).setChecked(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -55,6 +67,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _delete() async {
+    if (widget.onDeleteOverride != null) {
+      await widget.onDeleteOverride!();
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).deleteItem(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -94,6 +110,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     if (claimedBy.isNotEmpty && claimedBy != uid) return;
 
     final nextClaimedBy = claimedBy == uid ? null : uid;
+    if (widget.onSetClaimedByOverride != null) {
+      await widget.onSetClaimedByOverride!(nextClaimedBy);
+      return;
+    }
     await ref.read(shoppingRepositoryProvider).setClaimedBy(
           tripId: widget.tripId,
           itemId: widget.item.id,
@@ -129,6 +149,10 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       quantityValue: widget.item.quantityValue,
       quantityUnit: widget.item.quantityUnit,
       onSave: (value) async {
+        if (widget.onSaveOverride != null) {
+          await widget.onSaveOverride!(value);
+          return;
+        }
         await ref.read(shoppingRepositoryProvider).updateItem(
               tripId: widget.tripId,
               itemId: widget.item.id,

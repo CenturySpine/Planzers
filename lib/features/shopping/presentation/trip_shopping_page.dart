@@ -69,6 +69,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
   ConsolidatedShoppingResult? _consolidationResult;
+  List<_ConsolidatedEditableItem> _consolidatedItems = const [];
 
   @override
   void initState() {
@@ -111,7 +112,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             mode: mode == _ConsolidationMode.full ? 'full' : 'manual_only',
           );
       if (!mounted) return;
-      setState(() => _consolidationResult = result);
+      setState(() {
+        _consolidationResult = result;
+        _consolidatedItems = _buildConsolidatedEditableItems(result.items);
+      });
       _tabController.animateTo(1);
     } catch (e) {
       if (!context.mounted) return;
@@ -218,11 +222,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     final filteredItems = searchFilteredItems
         .where((item) => _matchesFilter(item, _activeFilter, currentUid))
         .toList(growable: false);
-    final claimedByIds = widget.items
-        .map((item) => item.claimedBy?.trim() ?? '')
-        .where((id) => id.isNotEmpty)
-        .toSet()
-        .toList(growable: false);
+    final claimedByIds = <String>{
+      ...widget.items
+          .map((item) => item.claimedBy?.trim() ?? '')
+          .where((id) => id.isNotEmpty),
+      ..._consolidatedItems
+          .map((entry) => entry.item.claimedBy?.trim() ?? '')
+          .where((id) => id.isNotEmpty),
+    }.toList(growable: false);
 
     final normalizedLabelCounts = <String, int>{};
     for (final item in widget.items) {
@@ -230,6 +237,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       if (normalized.isEmpty) continue;
       normalizedLabelCounts[normalized] =
           (normalizedLabelCounts[normalized] ?? 0) + 1;
+    }
+    final consolidatedLabelCounts = <String, int>{};
+    for (final entry in _consolidatedItems) {
+      final normalized = _normalizeItemLabel(entry.item.label);
+      if (normalized.isEmpty) continue;
+      consolidatedLabelCounts[normalized] =
+          (consolidatedLabelCounts[normalized] ?? 0) + 1;
     }
 
     final usersDataStream =
@@ -396,7 +410,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         ],
                       ),
                       // Tab 1 — consolidated list
-                      _buildConsolidatedTab(context, l10n, languageCode),
+                      _buildConsolidatedTab(
+                        context,
+                        l10n,
+                        languageCode,
+                        usersDataById,
+                        consolidatedLabelCounts,
+                      ),
                     ],
                   ),
                 ),
@@ -495,10 +515,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     BuildContext context,
     AppLocalizations l10n,
     String languageCode,
+    Map<String, Map<String, dynamic>> usersDataById,
+    Map<String, int> normalizedLabelCounts,
   ) {
     final result = _consolidationResult;
     final categories = result?.categories ?? const [];
-    if (result == null || result.items.isEmpty) {
+    if (result == null || _consolidatedItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -513,7 +535,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       );
     }
 
-    final groups = _groupByCategory(result.items, categories);
+    final groups = _groupByCategory(_consolidatedItems, categories);
 
     return Column(
       children: [
@@ -525,7 +547,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               IconButton(
                 tooltip: l10n.shoppingConsolidatedClear,
                 icon: const Icon(Icons.close),
-                onPressed: () => setState(() => _consolidationResult = null),
+                onPressed: () => setState(() {
+                  _consolidationResult = null;
+                  _consolidatedItems = const [];
+                }),
               ),
             ],
           ),
@@ -539,6 +564,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               return _ConsolidatedCategorySection(
                 label: _categoryLabel(entry.key, languageCode, categories),
                 items: entry.value,
+                tripId: widget.tripId,
+                usersDataById: usersDataById,
+                normalizedLabelCounts: normalizedLabelCounts,
+                onItemChanged: (itemId, updatedItem) {
+                  _updateConsolidatedItem(itemId, (_) => updatedItem);
+                },
+                onItemDeleted: _deleteConsolidatedItem,
               );
             },
           ),
@@ -593,18 +625,58 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       },
     );
   }
+
+  List<_ConsolidatedEditableItem> _buildConsolidatedEditableItems(
+    List<ConsolidatedShoppingItem> sourceItems,
+  ) {
+    final now = DateTime.now();
+    return [
+      for (int index = 0; index < sourceItems.length; index++)
+        _ConsolidatedEditableItem(
+          categoryId: sourceItems[index].categoryId,
+          item: ShoppingItem(
+            id: 'consolidated_$index',
+            label: sourceItems[index].label,
+            checked: false,
+            quantityValue:
+                sourceItems[index].quantityValue > 0 ? sourceItems[index].quantityValue : 1.0,
+            quantityUnit: ShoppingUnit.fromHumanLabel(sourceItems[index].quantityUnit),
+            createdAt: now,
+            order: index,
+          ),
+        ),
+    ];
+  }
+
+  void _updateConsolidatedItem(
+    String itemId,
+    ShoppingItem Function(ShoppingItem item) update,
+  ) {
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .map(
+            (entry) => entry.item.id == itemId
+                ? _ConsolidatedEditableItem(
+                    categoryId: entry.categoryId,
+                    item: update(entry.item),
+                  )
+                : entry,
+          )
+          .toList(growable: false);
+    });
+  }
+
+  void _deleteConsolidatedItem(String itemId) {
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .where((entry) => entry.item.id != itemId)
+          .toList(growable: false);
+    });
+  }
 }
 
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
-}
-
-String _formatConsolidatedQuantity(double value, String unit) {
-  final hasInteger = value == value.roundToDouble();
-  final displayValue = hasInteger ? value.toInt().toString() : value.toString();
-  final cleanUnit = unit.trim();
-  if (cleanUnit.isEmpty) return displayValue;
-  return '$displayValue $cleanUnit';
 }
 
 bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
@@ -636,14 +708,14 @@ String _categoryLabel(
   return match.label(languageCode);
 }
 
-List<MapEntry<String, List<ConsolidatedShoppingItem>>> _groupByCategory(
-  List<ConsolidatedShoppingItem> items,
+List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
+  List<_ConsolidatedEditableItem> items,
   List<ConsolidatedShoppingCategory> categories,
 ) {
-  final map = <String, List<ConsolidatedShoppingItem>>{};
+  final map = <String, List<ShoppingItem>>{};
   for (final item in items) {
     final cat = item.categoryId.isEmpty ? 'divers' : item.categoryId;
-    (map[cat] ??= []).add(item);
+    (map[cat] ??= []).add(item.item);
   }
   final ordered = <String>[];
   for (final cat in categories) {
@@ -659,10 +731,20 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   const _ConsolidatedCategorySection({
     required this.label,
     required this.items,
+    required this.tripId,
+    required this.usersDataById,
+    required this.normalizedLabelCounts,
+    required this.onItemChanged,
+    required this.onItemDeleted,
   });
 
   final String label;
-  final List<ConsolidatedShoppingItem> items;
+  final List<ShoppingItem> items;
+  final String tripId;
+  final Map<String, Map<String, dynamic>> usersDataById;
+  final Map<String, int> normalizedLabelCounts;
+  final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
+  final void Function(String itemId) onItemDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -679,7 +761,64 @@ class _ConsolidatedCategorySection extends StatelessWidget {
       childrenPadding: EdgeInsets.zero,
       children: [
         for (int i = 0; i < items.length; i++) ...[
-          _ConsolidatedReadOnlyRow(item: items[i]),
+          ShoppingItemRow(
+            key: ValueKey(items[i].id),
+            tripId: tripId,
+            item: items[i],
+            usersDataById: usersDataById,
+            normalizedLabelCounts: normalizedLabelCounts,
+            onToggleCheckedOverride: (checked) async {
+              onItemChanged(
+                items[i].id,
+                ShoppingItem(
+                  id: items[i].id,
+                  label: items[i].label,
+                  checked: checked,
+                  quantityValue: items[i].quantityValue,
+                  quantityUnit: items[i].quantityUnit,
+                  createdAt: items[i].createdAt,
+                  order: items[i].order,
+                  createdBy: items[i].createdBy,
+                  claimedBy: items[i].claimedBy,
+                ),
+              );
+            },
+            onSetClaimedByOverride: (claimedBy) async {
+              onItemChanged(
+                items[i].id,
+                ShoppingItem(
+                  id: items[i].id,
+                  label: items[i].label,
+                  checked: items[i].checked,
+                  quantityValue: items[i].quantityValue,
+                  quantityUnit: items[i].quantityUnit,
+                  createdAt: items[i].createdAt,
+                  order: items[i].order,
+                  createdBy: items[i].createdBy,
+                  claimedBy: claimedBy,
+                ),
+              );
+            },
+            onSaveOverride: (value) async {
+              onItemChanged(
+                items[i].id,
+                ShoppingItem(
+                  id: items[i].id,
+                  label: value.label,
+                  checked: items[i].checked,
+                  quantityValue: value.quantityValue,
+                  quantityUnit: value.quantityUnit,
+                  createdAt: items[i].createdAt,
+                  order: items[i].order,
+                  createdBy: items[i].createdBy,
+                  claimedBy: items[i].claimedBy,
+                ),
+              );
+            },
+            onDeleteOverride: () async {
+              onItemDeleted(items[i].id);
+            },
+          ),
           if (i < items.length - 1)
             Divider(
               height: 1,
@@ -692,6 +831,16 @@ class _ConsolidatedCategorySection extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ConsolidatedEditableItem {
+  const _ConsolidatedEditableItem({
+    required this.categoryId,
+    required this.item,
+  });
+
+  final String categoryId;
+  final ShoppingItem item;
 }
 
 class _FilterLegendRow extends StatelessWidget {
@@ -832,65 +981,3 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-class _ConsolidatedReadOnlyRow extends StatelessWidget {
-  const _ConsolidatedReadOnlyRow({required this.item});
-
-  final ConsolidatedShoppingItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final quantity = _formatConsolidatedQuantity(
-      item.quantityValue,
-      item.quantityUnit,
-    );
-    final sourceIcon = _sourceIcon(item.sourceType);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-      child: Row(
-        children: [
-          const Checkbox(
-            value: false,
-            onChanged: null,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            visualDensity: VisualDensity.compact,
-          ),
-          const SizedBox(width: 30),
-          Expanded(
-            child: Text(
-              item.label,
-              style: theme.textTheme.bodyLarge,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (quantity.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(
-              quantity,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          const SizedBox(width: 4),
-          Icon(
-            sourceIcon,
-            size: 14,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-    );
-  }
-
-  IconData _sourceIcon(ConsolidatedShoppingSourceType type) {
-    return switch (type) {
-      ConsolidatedShoppingSourceType.manual => Icons.edit_note,
-      ConsolidatedShoppingSourceType.recipe => Icons.restaurant_menu,
-      ConsolidatedShoppingSourceType.mixed => Icons.merge_type,
-    };
-  }
-}
