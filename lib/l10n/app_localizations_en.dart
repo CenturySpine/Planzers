@@ -1688,6 +1688,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingCategoryDivers => 'Miscellaneous';
 
   @override
+  String get shoppingCategoryUnassigned => 'Unassigned';
+
+  @override
+  String get shoppingConsolidatedAddBlockedWhenLocked =>
+      'The consolidated list is locked.';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4392,6 +4399,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingCategoryDivers => 'Miscellaneous';
+
+  @override
+  String get shoppingCategoryUnassigned => 'Unassigned';
+
+  @override
+  String get shoppingConsolidatedAddBlockedWhenLocked =>
+      'The consolidated list is locked.';
 
   @override
   String get activityCategorySport => 'Sport';

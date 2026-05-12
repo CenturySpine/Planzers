@@ -638,6 +638,8 @@
   "shoppingChangeCategoryMenu": "Changer de catégorie",
   "shoppingChangeCategoryDialogTitle": "Choisir une catégorie",
   "shoppingCategoryDivers": "Divers",
+  "shoppingCategoryUnassigned": "Non assigné",
+  "shoppingConsolidatedAddBlockedWhenLocked": "La liste consolidée est verrouillée.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Randonnée",
   "activityCategoryShopping": "Shopping",

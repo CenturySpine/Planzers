@@ -22,6 +22,16 @@ import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
+/// Reserved Firestore category id for consolidated rows added from the app (manual add).
+const String kUnassignedConsolidatedCategoryId = '999';
+
+const ConsolidatedShoppingCategory kUnassignedConsolidatedCategoryMeta =
+    ConsolidatedShoppingCategory(
+  id: '999',
+  fr: 'Non assigné',
+  en: 'Unassigned',
+);
+
 class TripShoppingPage extends ConsumerWidget {
   const TripShoppingPage({super.key});
 
@@ -102,7 +112,21 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     super.dispose();
   }
 
-  Future<void> _addItem() async {
+  Future<void> _addFromFabAddItem(
+    BuildContext context, {
+    required bool consolidatedLockRestrictsEditing,
+  }) async {
+    if (_tabController.index == 0) {
+      await _addManualListItem();
+      return;
+    }
+    await _addConsolidatedListItem(
+      context,
+      consolidatedLockRestrictsEditing: consolidatedLockRestrictsEditing,
+    );
+  }
+
+  Future<void> _addManualListItem() async {
     final topOrder = widget.items.isEmpty ? 0 : (widget.items.first.order - 1);
     final newItemId = await ref.read(shoppingRepositoryProvider).addItem(
           tripId: widget.tripId,
@@ -111,6 +135,60 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         );
     if (!mounted) return;
     setState(() => _pendingAutofocusItemId = newItemId);
+  }
+
+  Future<void> _addConsolidatedListItem(
+    BuildContext context, {
+    required bool consolidatedLockRestrictsEditing,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (consolidatedLockRestrictsEditing) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.shoppingConsolidatedAddBlockedWhenLocked)),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final now = DateTime.now();
+    final newId = 'consolidated_manual_${now.microsecondsSinceEpoch}';
+    final topOrder = _consolidatedItems.isEmpty
+        ? 0
+        : _consolidatedItems
+                .map((e) => e.item.order)
+                .reduce((a, b) => a < b ? a : b) -
+            1;
+    final newEntry = _ConsolidatedEditableItem(
+      categoryId: kUnassignedConsolidatedCategoryId,
+      item: ShoppingItem(
+        id: newId,
+        label: '',
+        checked: false,
+        quantityValue: 1.0,
+        quantityUnit: ShoppingUnit.unit,
+        createdAt: now,
+        order: topOrder,
+      ),
+    );
+    setState(() {
+      _suppressRemoteConsolidatedSync = true;
+      _consolidationResult ??= ConsolidatedShoppingResult(
+        items: const [],
+        summary: ConsolidatedShoppingSummary.empty,
+        categories: const [],
+      );
+      final list = List<_ConsolidatedEditableItem>.from(_consolidatedItems);
+      final insertAt = list.indexWhere(
+        (e) => e.categoryId.trim() == kUnassignedConsolidatedCategoryId,
+      );
+      if (insertAt == -1) {
+        list.add(newEntry);
+      } else {
+        list.insert(insertAt, newEntry);
+      }
+      _consolidatedItems = list;
+      _pendingAutofocusItemId = newId;
+    });
   }
 
   Future<void> _consolidateWithAi(
@@ -577,6 +655,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         languageCode,
                         usersDataById,
                         consolidatedLabelCounts,
+                        pendingAutofocusItemId: _pendingAutofocusItemId,
+                        onAutofocusItemHandled: (itemId) {
+                          if (!mounted) return;
+                          if (_pendingAutofocusItemId != itemId) return;
+                          setState(() => _pendingAutofocusItemId = null);
+                        },
                         consolidatedStructureLocked:
                             consolidatedLockRestrictsEditing,
                         showConsolidatedSaveButton: isAdminOrAbove &&
@@ -658,7 +742,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       tooltip: l10n.shoppingActionAddItem,
                       onPressed: () {
                         setState(() => _isFabMenuOpen = false);
-                        _addItem();
+                        unawaited(
+                          _addFromFabAddItem(
+                            context,
+                            consolidatedLockRestrictsEditing:
+                                consolidatedLockRestrictsEditing,
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.add),
                       label: Text(l10n.shoppingActionAddItem),
@@ -750,9 +840,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             item: entry.item,
           ),
       ];
+      final categories = _categoriesPersistedWithUnassigned(
+        _consolidationResult?.categories ?? const [],
+        rows,
+      );
       await ref.read(shoppingRepositoryProvider).replaceConsolidatedShoppingList(
             tripId: widget.tripId,
-            categories: _consolidationResult?.categories ?? const [],
+            categories: categories,
             summary:
                 _consolidationResult?.summary ?? ConsolidatedShoppingSummary.empty,
             rows: rows,
@@ -816,6 +910,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     String languageCode,
     Map<String, Map<String, dynamic>> usersDataById,
     Map<String, int> normalizedLabelCounts, {
+    required String? pendingAutofocusItemId,
+    required void Function(String itemId) onAutofocusItemHandled,
     required bool consolidatedStructureLocked,
     required bool showConsolidatedSaveButton,
     required bool showConsolidatedClearButton,
@@ -904,6 +1000,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                 tripId: widget.tripId,
                 usersDataById: usersDataById,
                 normalizedLabelCounts: normalizedLabelCounts,
+                pendingAutofocusItemId: pendingAutofocusItemId,
+                onAutofocusItemHandled: onAutofocusItemHandled,
                 structureLocked: consolidatedStructureLocked,
                 onItemChanged: (itemId, updatedItem) {
                   _updateConsolidatedItem(itemId, (_) => updatedItem);
@@ -1116,10 +1214,30 @@ String _categoryLabel(
   List<ConsolidatedShoppingCategory> categories,
 ) {
   final key = categoryId.trim().isEmpty ? 'divers' : categoryId.trim();
+  if (key == kUnassignedConsolidatedCategoryId) {
+    final match = categories.where((c) => c.id == key).firstOrNull;
+    if (match != null) return match.label(languageCode);
+    return l10n.shoppingCategoryUnassigned;
+  }
   final match = categories.where((c) => c.id == key).firstOrNull;
   if (match != null) return match.label(languageCode);
   if (key == 'divers') return l10n.shoppingCategoryDivers;
   return key;
+}
+
+List<ConsolidatedShoppingCategory> _categoriesPersistedWithUnassigned(
+  List<ConsolidatedShoppingCategory> base,
+  List<ConsolidatedFirestoreRow> rows,
+) {
+  final needsUnassigned = rows.any((r) {
+    final id = r.categoryId.trim().isEmpty ? 'divers' : r.categoryId.trim();
+    return id == kUnassignedConsolidatedCategoryId;
+  });
+  if (!needsUnassigned) return List<ConsolidatedShoppingCategory>.from(base);
+  if (base.any((c) => c.id == kUnassignedConsolidatedCategoryId)) {
+    return List<ConsolidatedShoppingCategory>.from(base);
+  }
+  return [...base, kUnassignedConsolidatedCategoryMeta];
 }
 
 List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
@@ -1138,6 +1256,10 @@ List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
   for (final id in map.keys) {
     if (!ordered.contains(id)) ordered.add(id);
   }
+  if (map.containsKey(kUnassignedConsolidatedCategoryId)) {
+    ordered.remove(kUnassignedConsolidatedCategoryId);
+    ordered.insert(0, kUnassignedConsolidatedCategoryId);
+  }
   return [for (final id in ordered) MapEntry(id, map[id]!)];
 }
 
@@ -1149,6 +1271,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.tripId,
     required this.usersDataById,
     required this.normalizedLabelCounts,
+    required this.pendingAutofocusItemId,
+    required this.onAutofocusItemHandled,
     required this.structureLocked,
     required this.onItemChanged,
     required this.onItemDeleted,
@@ -1163,6 +1287,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final String tripId;
   final Map<String, Map<String, dynamic>> usersDataById;
   final Map<String, int> normalizedLabelCounts;
+  final String? pendingAutofocusItemId;
+  final void Function(String itemId) onAutofocusItemHandled;
   final bool structureLocked;
   final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
   final void Function(String itemId) onItemDeleted;
@@ -1191,6 +1317,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
             usersDataById: usersDataById,
             normalizedLabelCounts: normalizedLabelCounts,
             structureLocked: structureLocked,
+            autoFocusLabel: items[i].id == pendingAutofocusItemId,
+            onAutoFocusHandled: () => onAutofocusItemHandled(items[i].id),
             customMenuItems: structureLocked
                 ? null
                 : [

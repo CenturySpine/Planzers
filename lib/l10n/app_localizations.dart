@@ -3102,6 +3102,18 @@ abstract class AppLocalizations {
   /// **'Divers'**
   String get shoppingCategoryDivers;
 
+  /// No description provided for @shoppingCategoryUnassigned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non assigné'**
+  String get shoppingCategoryUnassigned;
+
+  /// No description provided for @shoppingConsolidatedAddBlockedWhenLocked.
+  ///
+  /// In fr, this message translates to:
+  /// **'La liste consolidée est verrouillée.'**
+  String get shoppingConsolidatedAddBlockedWhenLocked;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:

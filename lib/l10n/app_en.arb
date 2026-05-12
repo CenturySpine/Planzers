@@ -676,6 +676,8 @@
   "shoppingChangeCategoryMenu": "Change category",
   "shoppingChangeCategoryDialogTitle": "Choose a category",
   "shoppingCategoryDivers": "Miscellaneous",
+  "shoppingCategoryUnassigned": "Unassigned",
+  "shoppingConsolidatedAddBlockedWhenLocked": "The consolidated list is locked.",
   "activityCategorySport": "Sport",
   "activityCategoryHiking": "Hiking",
   "activityCategoryShopping": "Shopping",
