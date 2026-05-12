@@ -1630,6 +1630,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shoppingConsolidateOptionManualOnly => 'List only';
 
   @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Combines your unchecked manual list with ingredients from cooked meals on this trip into one consolidated list.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Leaves each list line unchanged and only sorts them into store categories.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Run consolidation';
+
+  @override
   String get shoppingTabList => 'My list';
 
   @override
@@ -4289,6 +4300,17 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingConsolidateOptionManualOnly => 'List only';
+
+  @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Combines your unchecked manual list with ingredients from cooked meals on this trip into one consolidated list.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Leaves each list line unchanged and only sorts them into store categories.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Run consolidation';
 
   @override
   String get shoppingTabList => 'My list';

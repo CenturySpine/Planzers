@@ -1647,6 +1647,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get shoppingConsolidateOptionManualOnly => 'Liste uniquement';
 
   @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Regroupe la liste manuelle (lignes non cochées) et les ingrédients des repas cuisinés du voyage pour proposer une liste consolidée.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Ne modifie pas les lignes de la liste : elles sont seulement classées par rayon.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Lancer la consolidation';
+
+  @override
   String get shoppingTabList => 'Ma liste';
 
   @override
@@ -4331,6 +4342,17 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get shoppingConsolidateOptionManualOnly => 'Liste uniquement';
+
+  @override
+  String get shoppingConsolidateOptionFullDescription =>
+      'Regroupe la liste manuelle (lignes non cochées) et les ingrédients des repas cuisinés du voyage pour proposer une liste consolidée.';
+
+  @override
+  String get shoppingConsolidateOptionManualOnlyDescription =>
+      'Ne modifie pas les lignes de la liste : elles sont seulement classées par rayon.';
+
+  @override
+  String get shoppingConsolidateLaunch => 'Lancer la consolidation';
 
   @override
   String get shoppingTabList => 'Ma liste';

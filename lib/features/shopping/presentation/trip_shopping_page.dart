@@ -878,6 +878,7 @@ class _ConsolidationOptionsDialogState
     extends State<_ConsolidationOptionsDialog> {
   late bool _isReady;
   Timer? _readyTimer;
+  _ConsolidationMode _selectedMode = _ConsolidationMode.full;
 
   @override
   void initState() {
@@ -910,17 +911,52 @@ class _ConsolidationOptionsDialogState
             const AiBilledSupportBanner(),
             if (_isReady) ...[
               const SizedBox(height: 16),
-              _OptionTile(
-                title: l10n.shoppingConsolidateOptionFull,
-                icon: Icons.merge_type,
-                onTap: () => Navigator.of(context).pop(_ConsolidationMode.full),
-              ),
-              const SizedBox(height: 8),
-              _OptionTile(
-                title: l10n.shoppingConsolidateOptionManualOnly,
-                icon: Icons.edit_note,
-                onTap: () =>
-                    Navigator.of(context).pop(_ConsolidationMode.manualOnly),
+              RadioGroup<_ConsolidationMode>(
+                groupValue: _selectedMode,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedMode = value);
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.shoppingConsolidateOptionFullDescription,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    _OptionTile(
+                      title: l10n.shoppingConsolidateOptionFull,
+                      icon: Icons.merge_type,
+                      mode: _ConsolidationMode.full,
+                      selected: _selectedMode == _ConsolidationMode.full,
+                      onRowTap: () =>
+                          setState(() => _selectedMode = _ConsolidationMode.full),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.shoppingConsolidateOptionManualOnlyDescription,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    _OptionTile(
+                      title: l10n.shoppingConsolidateOptionManualOnly,
+                      icon: Icons.edit_note,
+                      mode: _ConsolidationMode.manualOnly,
+                      selected: _selectedMode == _ConsolidationMode.manualOnly,
+                      onRowTap: () => setState(
+                        () => _selectedMode = _ConsolidationMode.manualOnly,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
@@ -932,6 +968,11 @@ class _ConsolidationOptionsDialogState
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(l10n.commonCancel),
               ),
+              FilledButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(_selectedMode),
+                child: Text(l10n.shoppingConsolidateLaunch),
+              ),
             ]
           : [],
     );
@@ -942,23 +983,30 @@ class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.title,
     required this.icon,
-    required this.onTap,
+    required this.mode,
+    required this.selected,
+    required this.onRowTap,
   });
 
   final String title;
   final IconData icon;
-  final VoidCallback onTap;
+  final _ConsolidationMode mode;
+  final bool selected;
+  final VoidCallback onRowTap;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
-      onTap: onTap,
+      onTap: onRowTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -973,7 +1021,7 @@ class _OptionTile extends StatelessWidget {
                     ),
               ),
             ),
-            Icon(Icons.chevron_right, size: 18, color: colorScheme.onSurfaceVariant),
+            Radio<_ConsolidationMode>(value: mode),
           ],
         ),
       ),

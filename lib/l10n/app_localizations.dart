@@ -3000,6 +3000,24 @@ abstract class AppLocalizations {
   /// **'Liste uniquement'**
   String get shoppingConsolidateOptionManualOnly;
 
+  /// No description provided for @shoppingConsolidateOptionFullDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Regroupe la liste manuelle (lignes non cochées) et les ingrédients des repas cuisinés du voyage pour proposer une liste consolidée.'**
+  String get shoppingConsolidateOptionFullDescription;
+
+  /// No description provided for @shoppingConsolidateOptionManualOnlyDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ne modifie pas les lignes de la liste : elles sont seulement classées par rayon.'**
+  String get shoppingConsolidateOptionManualOnlyDescription;
+
+  /// No description provided for @shoppingConsolidateLaunch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lancer la consolidation'**
+  String get shoppingConsolidateLaunch;
+
   /// No description provided for @shoppingTabList.
   ///
   /// In fr, this message translates to:
