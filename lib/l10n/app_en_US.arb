@@ -631,6 +631,7 @@
   "shoppingTooltipLockConsolidatedList": "Lock the consolidated list",
   "shoppingTooltipUnlockConsolidatedList": "Unlock the consolidated list",
   "shoppingConsolidatedEmpty": "Run consolidation to see the result here.",
+  "shoppingConsolidatedFilterEmpty": "No items match this filter.",
   "shoppingConsolidatedSave": "Save consolidated list",
   "shoppingConsolidatedClear": "Clear consolidation",
   "shoppingConsolidatedClearConfirmTitle": "Clear consolidated list?",

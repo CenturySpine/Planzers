@@ -3060,6 +3060,12 @@ abstract class AppLocalizations {
   /// **'Lancez la consolidation pour voir le résultat ici.'**
   String get shoppingConsolidatedEmpty;
 
+  /// No description provided for @shoppingConsolidatedFilterEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun article ne correspond à ce filtre.'**
+  String get shoppingConsolidatedFilterEmpty;
+
   /// No description provided for @shoppingConsolidatedSave.
   ///
   /// In fr, this message translates to:

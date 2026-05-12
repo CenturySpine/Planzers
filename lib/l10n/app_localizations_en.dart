@@ -1665,6 +1665,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Run consolidation to see the result here.';
 
   @override
+  String get shoppingConsolidatedFilterEmpty => 'No items match this filter.';
+
+  @override
   String get shoppingConsolidatedSave => 'Save consolidated list';
 
   @override
@@ -4376,6 +4379,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get shoppingConsolidatedEmpty =>
       'Run consolidation to see the result here.';
+
+  @override
+  String get shoppingConsolidatedFilterEmpty => 'No items match this filter.';
 
   @override
   String get shoppingConsolidatedSave => 'Save consolidated list';

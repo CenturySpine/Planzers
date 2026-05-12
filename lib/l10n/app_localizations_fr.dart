@@ -1683,6 +1683,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Lancez la consolidation pour voir le résultat ici.';
 
   @override
+  String get shoppingConsolidatedFilterEmpty =>
+      'Aucun article ne correspond à ce filtre.';
+
+  @override
   String get shoppingConsolidatedSave => 'Enregistrer la liste consolidée';
 
   @override
@@ -4420,6 +4424,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get shoppingConsolidatedEmpty =>
       'Lancez la consolidation pour voir le résultat ici.';
+
+  @override
+  String get shoppingConsolidatedFilterEmpty =>
+      'Aucun article ne correspond à ce filtre.';
 
   @override
   String get shoppingConsolidatedSave => 'Enregistrer la liste consolidée';

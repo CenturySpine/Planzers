@@ -15,6 +15,7 @@ import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
 import 'package:planerz/features/shopping/presentation/widgets/shopping_item_row.dart';
+import 'package:planerz/features/shopping/presentation/widgets/shopping_list_status_filter.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -76,7 +77,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     with SingleTickerProviderStateMixin {
   late final TextEditingController _searchController;
   late final TabController _tabController;
-  _ShoppingFilter _activeFilter = _ShoppingFilter.all;
+  ShoppingListStatusFilter _manualListStatusFilter = ShoppingListStatusFilter.all;
+  ShoppingListStatusFilter _consolidatedListStatusFilter =
+      ShoppingListStatusFilter.all;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
@@ -102,6 +105,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       _appliedRemoteConsolidatedFingerprint = null;
       _consolidationResult = null;
       _consolidatedItems = const [];
+      _manualListStatusFilter = ShoppingListStatusFilter.all;
+      _consolidatedListStatusFilter = ShoppingListStatusFilter.all;
     }
   }
 
@@ -370,7 +375,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         .where((item) => displayNameMatchesNameSearch(item.label, searchQuery))
         .toList(growable: false);
     final filteredItems = searchFilteredItems
-        .where((item) => _matchesFilter(item, _activeFilter, currentUid))
+        .where(
+          (item) => shoppingItemMatchesStatusFilter(
+            item,
+            _manualListStatusFilter,
+            currentUid,
+          ),
+        )
         .toList(growable: false);
     final claimedByIds = <String>{
       ...widget.items
@@ -520,46 +531,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SegmentedButton<_ShoppingFilter>(
-                                  showSelectedIcon: false,
-                                  segments: [
-                                    ButtonSegment<_ShoppingFilter>(
-                                      value: _ShoppingFilter.all,
-                                      icon: const Icon(Icons.apps_outlined),
-                                      tooltip: l10n.shoppingFilterAll,
-                                    ),
-                                    ButtonSegment<_ShoppingFilter>(
-                                      value: _ShoppingFilter.todo,
-                                      icon: const Icon(Icons.radio_button_unchecked),
-                                      tooltip: l10n.shoppingFilterTodo,
-                                    ),
-                                    ButtonSegment<_ShoppingFilter>(
-                                      value: _ShoppingFilter.done,
-                                      icon: const Icon(Icons.check_circle_outline),
-                                      tooltip: l10n.shoppingFilterDone,
-                                    ),
-                                    ButtonSegment<_ShoppingFilter>(
-                                      value: _ShoppingFilter.claimedByMe,
-                                      icon: const Icon(Icons.person_pin_circle_outlined),
-                                      tooltip: l10n.shoppingFilterClaimedByMe,
-                                    ),
-                                  ],
-                                  selected: {_activeFilter},
-                                  onSelectionChanged: (selection) {
-                                    if (selection.isEmpty) return;
-                                    setState(() => _activeFilter = selection.first);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  tooltip: l10n.shoppingFilterHelpTooltip,
-                                  icon: const Icon(Icons.help_outline),
-                                  onPressed: () => _showFilterHelp(context),
-                                ),
-                              ],
+                            child: ShoppingListStatusFilterBar(
+                              selected: _manualListStatusFilter,
+                              onSelectionChanged: (f) =>
+                                  setState(() => _manualListStatusFilter = f),
+                              onHelpPressed: () => _showFilterHelp(context),
                             ),
                           ),
                           Expanded(
@@ -655,6 +631,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         languageCode,
                         usersDataById,
                         consolidatedLabelCounts,
+                        activeStatusFilter: _consolidatedListStatusFilter,
+                        currentUid: currentUid,
+                        onStatusFilterChanged: (f) =>
+                            setState(() => _consolidatedListStatusFilter = f),
+                        onFilterHelp: () => _showFilterHelp(context),
                         pendingAutofocusItemId: _pendingAutofocusItemId,
                         onAutofocusItemHandled: (itemId) {
                           if (!mounted) return;
@@ -910,6 +891,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     String languageCode,
     Map<String, Map<String, dynamic>> usersDataById,
     Map<String, int> normalizedLabelCounts, {
+    required ShoppingListStatusFilter activeStatusFilter,
+    required String currentUid,
+    required ValueChanged<ShoppingListStatusFilter> onStatusFilterChanged,
+    required VoidCallback onFilterHelp,
     required String? pendingAutofocusItemId,
     required void Function(String itemId) onAutofocusItemHandled,
     required bool consolidatedStructureLocked,
@@ -956,6 +941,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     }
 
     final groups = _groupByCategory(_consolidatedItems, categories);
+    final visibleGroups = <MapEntry<String, List<ShoppingItem>>>[];
+    for (final entry in groups) {
+      final filtered = entry.value
+          .where(
+            (item) => shoppingItemMatchesStatusFilter(
+              item,
+              activeStatusFilter,
+              currentUid,
+            ),
+          )
+          .toList(growable: false);
+      if (filtered.isEmpty) continue;
+      visibleGroups.add(MapEntry(entry.key, filtered));
+    }
 
     return Column(
       children: [
@@ -987,35 +986,63 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             ],
           ),
         ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 88),
-            itemCount: groups.length,
-            itemBuilder: (context, index) {
-              final entry = groups[index];
-              return _ConsolidatedCategorySection(
-                l10n: l10n,
-                label: _categoryLabel(l10n, entry.key, languageCode, categories),
-                items: entry.value,
-                tripId: widget.tripId,
-                usersDataById: usersDataById,
-                normalizedLabelCounts: normalizedLabelCounts,
-                pendingAutofocusItemId: pendingAutofocusItemId,
-                onAutofocusItemHandled: onAutofocusItemHandled,
-                structureLocked: consolidatedStructureLocked,
-                onItemChanged: (itemId, updatedItem) {
-                  _updateConsolidatedItem(itemId, (_) => updatedItem);
-                },
-                onItemDeleted: _deleteConsolidatedItem,
-                onRequestChangeCategory: (dialogContext, rowItem) =>
-                    _presentChangeConsolidatedCategoryDialog(
-                      dialogContext,
-                      rowItem,
-                      entry.key,
-                    ),
-              );
-            },
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: ShoppingListStatusFilterBar(
+            selected: activeStatusFilter,
+            onSelectionChanged: onStatusFilterChanged,
+            onHelpPressed: onFilterHelp,
           ),
+        ),
+        Expanded(
+          child: visibleGroups.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      l10n.shoppingConsolidatedFilterEmpty,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 88),
+                  itemCount: visibleGroups.length,
+                  itemBuilder: (context, index) {
+                    final entry = visibleGroups[index];
+                    return _ConsolidatedCategorySection(
+                      l10n: l10n,
+                      label: _categoryLabel(
+                        l10n,
+                        entry.key,
+                        languageCode,
+                        categories,
+                      ),
+                      items: entry.value,
+                      tripId: widget.tripId,
+                      usersDataById: usersDataById,
+                      normalizedLabelCounts: normalizedLabelCounts,
+                      pendingAutofocusItemId: pendingAutofocusItemId,
+                      onAutofocusItemHandled: onAutofocusItemHandled,
+                      structureLocked: consolidatedStructureLocked,
+                      onItemChanged: (itemId, updatedItem) {
+                        _updateConsolidatedItem(itemId, (_) => updatedItem);
+                      },
+                      onItemDeleted: _deleteConsolidatedItem,
+                      onRequestChangeCategory: (dialogContext, rowItem) =>
+                          _presentChangeConsolidatedCategoryDialog(
+                            dialogContext,
+                            rowItem,
+                            entry.key,
+                          ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -1168,23 +1195,6 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
 
 String _normalizeItemLabel(String raw) {
   return raw.trim().toLowerCase();
-}
-
-bool _matchesFilter(ShoppingItem item, _ShoppingFilter filter, String currentUid) {
-  final claimedBy = item.claimedBy?.trim() ?? '';
-  return switch (filter) {
-    _ShoppingFilter.all => true,
-    _ShoppingFilter.todo => !item.checked,
-    _ShoppingFilter.done => item.checked,
-    _ShoppingFilter.claimedByMe => claimedBy.isNotEmpty && claimedBy == currentUid,
-  };
-}
-
-enum _ShoppingFilter {
-  all,
-  todo,
-  done,
-  claimedByMe,
 }
 
 enum _ConsolidationMode { full, manualOnly }
