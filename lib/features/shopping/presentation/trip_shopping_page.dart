@@ -959,10 +959,24 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: const SizedBox.shrink()),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.center,
+                    child: ShoppingListStatusFilterBar(
+                      selected: activeStatusFilter,
+                      onSelectionChanged: onStatusFilterChanged,
+                      onHelpPressed: onFilterHelp,
+                    ),
+                  ),
+                ),
+              ),
               if (showConsolidatedSaveButton)
                 IconButton(
                   tooltip: l10n.shoppingConsolidatedSave,
@@ -984,14 +998,6 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   onPressed: () => _confirmAndClearConsolidated(context),
                 ),
             ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: ShoppingListStatusFilterBar(
-            selected: activeStatusFilter,
-            onSelectionChanged: onStatusFilterChanged,
-            onHelpPressed: onFilterHelp,
           ),
         ),
         Expanded(
