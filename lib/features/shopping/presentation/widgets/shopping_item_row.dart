@@ -21,6 +21,8 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
     this.onSaveOverride,
     this.onDeleteOverride,
     this.structureLocked = false,
+    this.customMenuItems,
+    this.onCustomMenuAction,
   });
 
   final String tripId;
@@ -36,6 +38,9 @@ class ShoppingItemRow extends ConsumerStatefulWidget {
 
   /// Non-admins cannot edit label/qty/delete when the parent list is locked.
   final bool structureLocked;
+
+  final List<IngredientLineCustomMenuItem>? customMenuItems;
+  final void Function(String actionId)? onCustomMenuAction;
 
   @override
   ConsumerState<ShoppingItemRow> createState() => _ShoppingItemRowState();
@@ -172,6 +177,8 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       onAutoFocusHandled: widget.onAutoFocusHandled,
       isDuplicateLabel: _isDuplicateLabel,
       labelStyle: labelStyle,
+      customMenuItems: widget.customMenuItems,
+      onCustomMenuAction: widget.onCustomMenuAction,
       prefixWidgets: [
         Checkbox(
           value: isChecked,

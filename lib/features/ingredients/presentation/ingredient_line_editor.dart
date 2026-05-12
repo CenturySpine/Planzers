@@ -22,6 +22,19 @@ class IngredientLineValue {
   final ShoppingUnit quantityUnit;
 }
 
+/// Extra row in the line overflow menu (before Delete). [actionId] must not be `delete`.
+class IngredientLineCustomMenuItem {
+  const IngredientLineCustomMenuItem({
+    required this.actionId,
+    required this.label,
+    this.icon,
+  });
+
+  final String actionId;
+  final String label;
+  final IconData? icon;
+}
+
 class IngredientLineEditor extends ConsumerStatefulWidget {
   const IngredientLineEditor({
     super.key,
@@ -39,6 +52,8 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
     this.isDuplicateLabel,
     this.duplicateWarningText = 'Cet élément existe déjà dans la liste.',
     this.structureLocked = false,
+    this.customMenuItems,
+    this.onCustomMenuAction,
   });
 
   final String catalogItemId;
@@ -58,6 +73,11 @@ class IngredientLineEditor extends ConsumerStatefulWidget {
   /// When true, label/quantity/unit cannot be edited and delete is hidden
   /// (e.g. shopping list locked for non-admins).
   final bool structureLocked;
+
+  final List<IngredientLineCustomMenuItem>? customMenuItems;
+
+  /// Invoked for each [IngredientLineCustomMenuItem.actionId] when chosen.
+  final void Function(String actionId)? onCustomMenuAction;
 
   @override
   ConsumerState<IngredientLineEditor> createState() =>
@@ -326,9 +346,27 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                   onSelected: (value) {
                     if (value == 'delete') {
                       unawaited(widget.onDelete());
+                    } else {
+                      widget.onCustomMenuAction?.call(value);
                     }
                   },
                   itemBuilder: (context) => [
+                    for (final entry in widget.customMenuItems ??
+                        const <IngredientLineCustomMenuItem>[])
+                      PopupMenuItem<String>(
+                        value: entry.actionId,
+                        child: Row(
+                          children: [
+                            Icon(
+                              entry.icon ?? Icons.category_outlined,
+                              size: 20,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(entry.label)),
+                          ],
+                        ),
+                      ),
                     PopupMenuItem<String>(
                       value: 'delete',
                       child: Row(

@@ -10,6 +10,7 @@ import 'package:planerz/features/auth/data/users_repository.dart'
         stableUsersIdsKey,
         usersDataByIdsKeyStreamProvider,
         usersRepositoryProvider;
+import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_list_locks.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
@@ -897,7 +898,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
             itemBuilder: (context, index) {
               final entry = groups[index];
               return _ConsolidatedCategorySection(
-                label: _categoryLabel(entry.key, languageCode, categories),
+                l10n: l10n,
+                label: _categoryLabel(l10n, entry.key, languageCode, categories),
                 items: entry.value,
                 tripId: widget.tripId,
                 usersDataById: usersDataById,
@@ -907,6 +909,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   _updateConsolidatedItem(itemId, (_) => updatedItem);
                 },
                 onItemDeleted: _deleteConsolidatedItem,
+                onRequestChangeCategory: (dialogContext, rowItem) =>
+                    _presentChangeConsolidatedCategoryDialog(
+                      dialogContext,
+                      rowItem,
+                      entry.key,
+                    ),
               );
             },
           ),
@@ -1009,6 +1017,55 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
           .toList(growable: false);
     });
   }
+
+  void _reassignConsolidatedItemCategory(String itemId, String newCategoryId) {
+    final normalized =
+        newCategoryId.trim().isEmpty ? 'divers' : newCategoryId.trim();
+    setState(() {
+      _consolidatedItems = _consolidatedItems
+          .map(
+            (entry) => entry.item.id == itemId
+                ? _ConsolidatedEditableItem(
+                    categoryId: normalized,
+                    item: entry.item,
+                  )
+                : entry,
+          )
+          .toList(growable: false);
+    });
+  }
+
+  Future<void> _presentChangeConsolidatedCategoryDialog(
+    BuildContext context,
+    ShoppingItem item,
+    String currentCategoryId,
+  ) async {
+    final result = _consolidationResult;
+    if (result == null) return;
+    final l10n = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final categoryIds =
+        _orderedCategoryIdsForPicker(result.categories, _consolidatedItems);
+    if (categoryIds.isEmpty) return;
+    final normalizedCurrent =
+        currentCategoryId.trim().isEmpty ? 'divers' : currentCategoryId.trim();
+    final initialId = categoryIds.contains(normalizedCurrent)
+        ? normalizedCurrent
+        : categoryIds.first;
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _ChangeConsolidatedCategoryDialog(
+        l10n: l10n,
+        categoryIds: categoryIds,
+        categoriesMeta: result.categories,
+        languageCode: languageCode,
+        initialCategoryId: initialId,
+      ),
+    );
+    if (!mounted || chosen == null) return;
+    if (chosen == normalizedCurrent) return;
+    _reassignConsolidatedItemCategory(item.id, chosen);
+  }
 }
 
 String _normalizeItemLabel(String raw) {
@@ -1034,14 +1091,35 @@ enum _ShoppingFilter {
 
 enum _ConsolidationMode { full, manualOnly }
 
+List<String> _orderedCategoryIdsForPicker(
+  List<ConsolidatedShoppingCategory> meta,
+  List<_ConsolidatedEditableItem> items,
+) {
+  final ordered = <String>[];
+  for (final c in meta) {
+    if (c.id.isNotEmpty) ordered.add(c.id);
+  }
+  final usedIds = <String>{
+    for (final e in items)
+      e.categoryId.trim().isEmpty ? 'divers' : e.categoryId.trim(),
+  };
+  for (final id in usedIds) {
+    if (!ordered.contains(id)) ordered.add(id);
+  }
+  return ordered;
+}
+
 String _categoryLabel(
+  AppLocalizations l10n,
   String categoryId,
   String languageCode,
   List<ConsolidatedShoppingCategory> categories,
 ) {
-  final match = categories.where((c) => c.id == categoryId).firstOrNull;
-  if (match == null) return categoryId;
-  return match.label(languageCode);
+  final key = categoryId.trim().isEmpty ? 'divers' : categoryId.trim();
+  final match = categories.where((c) => c.id == key).firstOrNull;
+  if (match != null) return match.label(languageCode);
+  if (key == 'divers') return l10n.shoppingCategoryDivers;
+  return key;
 }
 
 List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
@@ -1065,6 +1143,7 @@ List<MapEntry<String, List<ShoppingItem>>> _groupByCategory(
 
 class _ConsolidatedCategorySection extends StatelessWidget {
   const _ConsolidatedCategorySection({
+    required this.l10n,
     required this.label,
     required this.items,
     required this.tripId,
@@ -1073,8 +1152,12 @@ class _ConsolidatedCategorySection extends StatelessWidget {
     required this.structureLocked,
     required this.onItemChanged,
     required this.onItemDeleted,
+    required this.onRequestChangeCategory,
   });
 
+  static const String _changeCategoryActionId = 'change_consolidated_category';
+
+  final AppLocalizations l10n;
   final String label;
   final List<ShoppingItem> items;
   final String tripId;
@@ -1083,6 +1166,8 @@ class _ConsolidatedCategorySection extends StatelessWidget {
   final bool structureLocked;
   final void Function(String itemId, ShoppingItem updatedItem) onItemChanged;
   final void Function(String itemId) onItemDeleted;
+  final Future<void> Function(BuildContext context, ShoppingItem item)
+      onRequestChangeCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -1106,6 +1191,24 @@ class _ConsolidatedCategorySection extends StatelessWidget {
             usersDataById: usersDataById,
             normalizedLabelCounts: normalizedLabelCounts,
             structureLocked: structureLocked,
+            customMenuItems: structureLocked
+                ? null
+                : [
+                    IngredientLineCustomMenuItem(
+                      actionId: _changeCategoryActionId,
+                      label: l10n.shoppingChangeCategoryMenu,
+                      icon: Icons.drive_file_move_outline,
+                    ),
+                  ],
+            onCustomMenuAction: structureLocked
+                ? null
+                : (actionId) {
+                    if (actionId == _changeCategoryActionId) {
+                      unawaited(
+                        onRequestChangeCategory(context, items[i]),
+                      );
+                    }
+                  },
             onToggleCheckedOverride: (checked) async {
               onItemChanged(
                 items[i].id,
@@ -1364,6 +1467,87 @@ class _OptionTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ChangeConsolidatedCategoryDialog extends StatefulWidget {
+  const _ChangeConsolidatedCategoryDialog({
+    required this.l10n,
+    required this.categoryIds,
+    required this.categoriesMeta,
+    required this.languageCode,
+    required this.initialCategoryId,
+  });
+
+  final AppLocalizations l10n;
+  final List<String> categoryIds;
+  final List<ConsolidatedShoppingCategory> categoriesMeta;
+  final String languageCode;
+  final String initialCategoryId;
+
+  @override
+  State<_ChangeConsolidatedCategoryDialog> createState() =>
+      _ChangeConsolidatedCategoryDialogState();
+}
+
+class _ChangeConsolidatedCategoryDialogState
+    extends State<_ChangeConsolidatedCategoryDialog> {
+  late String _selectedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedId = widget.initialCategoryId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.l10n.shoppingChangeCategoryDialogTitle),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: RadioGroup<String>(
+          groupValue: _selectedId,
+          onChanged: (value) {
+            if (value != null) {
+              setState(() => _selectedId = value);
+            }
+          },
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final id in widget.categoryIds)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Radio<String>(value: id),
+                    title: Text(
+                      _categoryLabel(
+                        widget.l10n,
+                        id,
+                        widget.languageCode,
+                        widget.categoriesMeta,
+                      ),
+                    ),
+                    onTap: () => setState(() => _selectedId = id),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_selectedId),
+          child: Text(widget.l10n.commonConfirm),
+        ),
+      ],
     );
   }
 }

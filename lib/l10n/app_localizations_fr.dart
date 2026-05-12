@@ -1697,6 +1697,15 @@ class AppLocalizationsFr extends AppLocalizations {
       'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.';
 
   @override
+  String get shoppingChangeCategoryMenu => 'Changer de catégorie';
+
+  @override
+  String get shoppingChangeCategoryDialogTitle => 'Choisir une catégorie';
+
+  @override
+  String get shoppingCategoryDivers => 'Divers';
+
+  @override
   String get activityCategorySport => 'Sport';
 
   @override
@@ -4418,6 +4427,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get shoppingConsolidatedClearConfirmContent =>
       'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.';
+
+  @override
+  String get shoppingChangeCategoryMenu => 'Changer de catégorie';
+
+  @override
+  String get shoppingChangeCategoryDialogTitle => 'Choisir une catégorie';
+
+  @override
+  String get shoppingCategoryDivers => 'Divers';
 
   @override
   String get activityCategorySport => 'Sport';

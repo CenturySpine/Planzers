@@ -3084,6 +3084,24 @@ abstract class AppLocalizations {
   /// **'La liste consolidée enregistrée pour ce voyage sera supprimée. Cette action ne modifie pas la liste manuelle.'**
   String get shoppingConsolidatedClearConfirmContent;
 
+  /// No description provided for @shoppingChangeCategoryMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer de catégorie'**
+  String get shoppingChangeCategoryMenu;
+
+  /// No description provided for @shoppingChangeCategoryDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir une catégorie'**
+  String get shoppingChangeCategoryDialogTitle;
+
+  /// No description provided for @shoppingCategoryDivers.
+  ///
+  /// In fr, this message translates to:
+  /// **'Divers'**
+  String get shoppingCategoryDivers;
+
   /// No description provided for @activityCategorySport.
   ///
   /// In fr, this message translates to:
