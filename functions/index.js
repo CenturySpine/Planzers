@@ -4402,13 +4402,15 @@ const AI_CONSOLIDATION_CATEGORIES = [
   { id: 'surgeles',                 fr: 'Surgelés',                   en: 'Frozen'             },
 ];
 
-function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, lang) {
+function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, lang, manualOnly = false) {
   const categoriesLine = AI_CONSOLIDATION_CATEGORIES
     .map((c) => `${c.id} (${lang === 'en' ? c.en : c.fr})`)
     .join(', ');
   if (lang === 'en') {
     return [
-      'Consolidate the two following arrays.',
+      manualOnly
+        ? 'Manual-only mode: do not alter the input list. Do not merge, split, rename, remove, add, reorder, or change quantities/units. Only classify each input line into the most appropriate categoryId.'
+        : 'Consolidate the two following arrays.',
       'summary.*OriginalLineCount must match the number of input lines used.',
       'For each consolidated line, fill in the manualOriginalLineCount and recipeOriginalLineCount counters used for that line.',
       `For each consolidated ingredient, assign a categoryId from: ${categoriesLine}.`,
@@ -4421,7 +4423,9 @@ function buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, 
     ].join('\n');
   }
   return [
-    'Consolide les deux tableaux suivants.',
+    manualOnly
+      ? 'Mode manuel uniquement : n altere pas la liste d entree. Ne fusionne pas, ne scinde pas, ne renomme pas, ne supprime pas, n ajoute pas, ne reordonne pas, et ne modifie pas les quantites/unites. Classe uniquement chaque ligne d entree dans le categoryId le plus pertinent.'
+      : 'Consolide les deux tableaux suivants.',
     'summary.*OriginalLineCount doit correspondre au nombre de lignes d entree utilisees.',
     'Pour chaque ligne consolidee, renseigne les compteurs manualOriginalLineCount et recipeOriginalLineCount utilises pour cette ligne.',
     `Pour chaque ingredient consolide, assigne un categoryId parmi : ${categoriesLine}.`,
@@ -4567,6 +4571,7 @@ async function consolidateShoppingListWithAi({
   manualShoppingItems,
   recipeIngredients,
   lang = 'fr',
+  manualOnly = false,
 }) {
   const cleanModel = normalizeString(model);
   if (!cleanModel) {
@@ -4588,7 +4593,12 @@ async function consolidateShoppingListWithAi({
   const systemPrompt = buildAiConsolidationSystemPrompt(validLang);
   const toolDescription = buildAiConsolidationToolDescription(validLang);
   const toolSchema = buildAiConsolidationToolSchema(validLang);
-  const userPrompt = buildAiConsolidationUserPrompt(manualShoppingItems, recipeIngredients, validLang);
+  const userPrompt = buildAiConsolidationUserPrompt(
+    manualShoppingItems,
+    recipeIngredients,
+    validLang,
+    manualOnly
+  );
 
   const result =
     provider === 'anthropic'
@@ -4727,6 +4737,7 @@ exports.consolidateTripShoppingWithAi = onCall(
           manualShoppingItems,
           recipeIngredients,
           lang,
+          manualOnly,
         });
         return { summary, consolidatedItems, categories: AI_CONSOLIDATION_CATEGORIES };
       }
