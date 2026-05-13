@@ -1062,5 +1062,6 @@
   "globalAnnouncementsBellTooltip": "Voir les annonces",
   "globalAnnouncementsDismissTooltip": "Masquer cette annonce",
   "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
-  "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles."
+  "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles.",
+  "publicProfileTitle": "Profil"
 }

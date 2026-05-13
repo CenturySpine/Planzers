@@ -2793,6 +2793,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get globalAnnouncementsRestoreHiddenSnackBar =>
       'Hidden announcements are visible again.';
+
+  @override
+  String get publicProfileTitle => 'Profile';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5513,4 +5516,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get globalAnnouncementsRestoreHiddenSnackBar =>
       'Hidden announcements are visible again.';
+
+  @override
+  String get publicProfileTitle => 'Profile';
 }

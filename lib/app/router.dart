@@ -40,6 +40,7 @@ import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
+import 'package:planerz/features/account/presentation/public_profile_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_page.dart';
 
@@ -112,6 +113,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/account/cupidon',
       builder: (context, state) => const CupidonSpacePage(),
+    ),
+    GoRoute(
+      path: PublicProfilePage.routePath,
+      builder: (context, state) => PublicProfilePage(
+        userId: state.pathParameters['userId']!,
+        displayLabelHint: state.uri.queryParameters['label'] ?? '',
+      ),
     ),
     GoRoute(
       path: LegalInformationPage.routePath,

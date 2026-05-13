@@ -2821,6 +2821,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get globalAnnouncementsRestoreHiddenSnackBar =>
       'Les annonces masquées sont à nouveau visibles.';
+
+  @override
+  String get publicProfileTitle => 'Profil';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -5568,4 +5571,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get globalAnnouncementsRestoreHiddenSnackBar =>
       'Les annonces masquées sont à nouveau visibles.';
+
+  @override
+  String get publicProfileTitle => 'Profil';
 }
