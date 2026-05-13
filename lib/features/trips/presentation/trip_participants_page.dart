@@ -424,7 +424,9 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                 .toList();
 
             return Scaffold(
-              appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
+              appBar: AppBar(
+                title: Text('${l10n.tripParticipantsTitle} (${rows.length})'),
+              ),
               body: rows.isEmpty
                   ? Center(
                       child: Padding(
