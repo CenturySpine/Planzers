@@ -78,8 +78,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   late final TextEditingController _searchController;
   late final TabController _tabController;
   ShoppingListStatusFilter _manualListStatusFilter = ShoppingListStatusFilter.all;
+  bool _manualOnlyClaimedByMe = false;
   ShoppingListStatusFilter _consolidatedListStatusFilter =
       ShoppingListStatusFilter.all;
+  bool _consolidatedOnlyClaimedByMe = false;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
   bool _isFabMenuOpen = false;
@@ -106,7 +108,9 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
       _consolidationResult = null;
       _consolidatedItems = const [];
       _manualListStatusFilter = ShoppingListStatusFilter.all;
+      _manualOnlyClaimedByMe = false;
       _consolidatedListStatusFilter = ShoppingListStatusFilter.all;
+      _consolidatedOnlyClaimedByMe = false;
     }
   }
 
@@ -376,10 +380,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
         .toList(growable: false);
     final filteredItems = searchFilteredItems
         .where(
-          (item) => shoppingItemMatchesStatusFilter(
+          (item) => shoppingItemMatchesShoppingListFilters(
             item,
-            _manualListStatusFilter,
-            currentUid,
+            statusFilter: _manualListStatusFilter,
+            onlyClaimedByMe: _manualOnlyClaimedByMe,
+            currentUid: currentUid,
           ),
         )
         .toList(growable: false);
@@ -531,10 +536,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                            child: ShoppingListStatusFilterBar(
-                              selected: _manualListStatusFilter,
-                              onSelectionChanged: (f) =>
+                            child: ShoppingListFilterBar(
+                              selectedStatus: _manualListStatusFilter,
+                              onlyClaimedByMe: _manualOnlyClaimedByMe,
+                              onStatusChanged: (f) =>
                                   setState(() => _manualListStatusFilter = f),
+                              onOnlyClaimedByMeChanged: (v) =>
+                                  setState(() => _manualOnlyClaimedByMe = v),
                               onHelpPressed: () => _showFilterHelp(context),
                             ),
                           ),
@@ -632,9 +640,12 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                         usersDataById,
                         consolidatedLabelCounts,
                         activeStatusFilter: _consolidatedListStatusFilter,
+                        onlyClaimedByMe: _consolidatedOnlyClaimedByMe,
                         currentUid: currentUid,
                         onStatusFilterChanged: (f) =>
                             setState(() => _consolidatedListStatusFilter = f),
+                        onOnlyClaimedByMeChanged: (v) =>
+                            setState(() => _consolidatedOnlyClaimedByMe = v),
                         onFilterHelp: () => _showFilterHelp(context),
                         pendingAutofocusItemId: _pendingAutofocusItemId,
                         onAutofocusItemHandled: (itemId) {
@@ -974,8 +985,10 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     Map<String, Map<String, dynamic>> usersDataById,
     Map<String, int> normalizedLabelCounts, {
     required ShoppingListStatusFilter activeStatusFilter,
+    required bool onlyClaimedByMe,
     required String currentUid,
     required ValueChanged<ShoppingListStatusFilter> onStatusFilterChanged,
+    required ValueChanged<bool> onOnlyClaimedByMeChanged,
     required VoidCallback onFilterHelp,
     required String? pendingAutofocusItemId,
     required void Function(String itemId) onAutofocusItemHandled,
@@ -1027,10 +1040,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     for (final entry in groups) {
       final filtered = entry.value
           .where(
-            (item) => shoppingItemMatchesStatusFilter(
+            (item) => shoppingItemMatchesShoppingListFilters(
               item,
-              activeStatusFilter,
-              currentUid,
+              statusFilter: activeStatusFilter,
+              onlyClaimedByMe: onlyClaimedByMe,
+              currentUid: currentUid,
             ),
           )
           .toList(growable: false);
@@ -1051,9 +1065,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
-                    child: ShoppingListStatusFilterBar(
-                      selected: activeStatusFilter,
-                      onSelectionChanged: onStatusFilterChanged,
+                    child: ShoppingListFilterBar(
+                      selectedStatus: activeStatusFilter,
+                      onlyClaimedByMe: onlyClaimedByMe,
+                      onStatusChanged: onStatusFilterChanged,
+                      onOnlyClaimedByMeChanged: onOnlyClaimedByMeChanged,
                       onHelpPressed: onFilterHelp,
                     ),
                   ),

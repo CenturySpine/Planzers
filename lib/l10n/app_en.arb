@@ -643,7 +643,7 @@
   "shoppingActionConsolidateAi": "Consolidate with AI",
   "shoppingActionDeleteChecked": "Delete checked items",
   "shoppingFiltersTitle": "List filters",
-  "shoppingFiltersHelpBody": "The filter shows only items matching the selected state.",
+  "shoppingFiltersHelpBody": "The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.",
   "shoppingFilterAll": "All items",
   "shoppingFilterTodo": "To buy",
   "shoppingFilterDone": "Already checked",

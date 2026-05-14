@@ -2913,7 +2913,7 @@ abstract class AppLocalizations {
   /// No description provided for @shoppingFiltersHelpBody.
   ///
   /// In fr, this message translates to:
-  /// **'Le filtre affiche uniquement les éléments correspondant à l’état sélectionné.'**
+  /// **'Les filtres « tous », « à acheter » et « déjà achetés » sont exclusifs entre eux. Le filtre « claimés par moi » se cumule avec celui-ci et ne montre que vos lignes claimées parmi le résultat.'**
   String get shoppingFiltersHelpBody;
 
   /// No description provided for @shoppingFilterAll.

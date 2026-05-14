@@ -1580,7 +1580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filter shows only items matching the selected state.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
@@ -4303,7 +4303,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filter shows only items matching the selected state.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
