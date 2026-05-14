@@ -64,6 +64,9 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
   }
 
   Future<void> _toggleChecked(bool? value) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+    final claimedBy = widget.item.claimedBy?.trim() ?? '';
+    if (claimedBy.isEmpty || claimedBy != uid) return;
     if (widget.onToggleCheckedOverride != null) {
       await widget.onToggleCheckedOverride!(value ?? false);
       return;
@@ -139,8 +142,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     final claimedBy = widget.item.claimedBy?.trim() ?? '';
     final isClaimedByMe = claimedBy.isNotEmpty && claimedBy == currentUid;
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
-    final canToggleChecked =
-        claimedBy.isEmpty || claimedBy == currentUid;
+    final canToggleChecked = isClaimedByMe;
     final claimedByUserData = claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
     final claimedByLabel = resolveTripMemberDisplayLabel(
       memberId: claimedBy,
