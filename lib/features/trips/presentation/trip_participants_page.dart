@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
@@ -423,7 +424,9 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                 .toList();
 
             return Scaffold(
-              appBar: AppBar(title: Text(l10n.tripParticipantsTitle)),
+              appBar: AppBar(
+                title: Text('${l10n.tripParticipantsTitle} (${rows.length})'),
+              ),
               body: rows.isEmpty
                   ? Center(
                       child: Padding(
@@ -510,6 +513,11 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
 
                                     return Card(
                                       child: ListTile(
+                                        onTap: row.isPlaceholder
+                                            ? null
+                                            : () => context.push(
+                                                '/users/${row.memberId}/profile?label=${Uri.encodeComponent(row.displayLabel)}',
+                                              ),
                                         leading: _participantRoleLeading(
                                           context: context,
                                           scheme: scheme,

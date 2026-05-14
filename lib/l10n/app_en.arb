@@ -1100,5 +1100,6 @@
   "globalAnnouncementsBellTooltip": "View announcements",
   "globalAnnouncementsDismissTooltip": "Hide this announcement",
   "globalAnnouncementsRestoreHiddenTooltip": "Show hidden announcements again",
-  "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again."
+  "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again.",
+  "publicProfileTitle": "Profile"
 }

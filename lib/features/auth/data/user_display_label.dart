@@ -131,7 +131,7 @@ String resolveTripMemberDisplayLabel({
   final fromTrip = tripMemberPublicLabels[memberId]?.trim() ?? '';
   if (fromTrip.isNotEmpty) return fromTrip;
 
-  return emptyFallback;
+  return "$emptyFallback ($memberId)";
 }
 
 /// Display labels for [userIds] using `users/{id}` data when present,

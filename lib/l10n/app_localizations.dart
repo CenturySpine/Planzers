@@ -5078,6 +5078,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Les annonces masquées sont à nouveau visibles.'**
   String get globalAnnouncementsRestoreHiddenSnackBar;
+
+  /// No description provided for @publicProfileTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil'**
+  String get publicProfileTitle;
 }
 
 class _AppLocalizationsDelegate
