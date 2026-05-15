@@ -205,6 +205,32 @@ Pour chaque règle Firestore supprimée, vérifier que le comportement équivale
 - Supprimer la logique de fallback `memberPublicLabels` dans `user_display_label.dart`
 - Utiliser `TripMember.participantName` directement
 
+**Résolution du badge utilisateur — adaptation de `user_display_label.dart`** :
+
+Le helper actuel résout label + photo à partir de `(memberId, userData, tripMemberPublicLabels)`.
+Avec le nouveau modèle, l'entrée devient un `TripMember`.
+
+Stratégie de résolution :
+
+| Cas | Nom affiché | Photo du badge |
+|-----|------------|----------------|
+| Membre non réclamé (`userId == null`) | `participantName` | Aucune — initiale via `avatarInitialFromDisplayLabel(participantName)` |
+| Membre réclamé (`userId` renseigné) | `participantName` | Lookup `users/{userId}` → `tripMemberStoredProfileBadgeUrl(userData)` |
+
+Fonctions à réécrire dans `user_display_label.dart` :
+
+- `resolveTripMemberDisplayLabel` → signature simplifiée, prend un `TripMember`, retourne `member.participantName` directement (plus de `userData` ni de `tripMemberPublicLabels`)
+- `resolveTripMemberBadgeUrl(TripMember member, Map<String, Map<String, dynamic>> userDocsById)` → retourne `''` si `userId == null`, sinon `tripMemberStoredProfileBadgeUrl(userDocsById[member.userId])`
+- `tripMemberLabelsFromUserDocsById` / `tripMemberLabelsFromUserQuerySnapshot` → remplacer par des helpers prenant `List<TripMember>` ; la map de user docs est désormais indexée par **UID** (pas par memberId)
+
+La requête Firestore pour charger les user docs change en conséquence :
+```dart
+// AVANT : charger users où documentId in memberIds (UIDs + ph_xxx)
+// APRÈS : charger users où documentId in [m.userId for m in participants where m.userId != null]
+```
+
+`tripMemberUserDataWithAuthFallback` reste utile pour l'utilisateur courant dans la fenêtre où son user doc n'est pas encore chargé (badge provisoire à l'entrée dans un voyage).
+
 **`account_repository.dart`** :
 - Ligne 230 : `where('memberIds', arrayContains: uid)` → `where('memberUserIds', arrayContains: uid)`
 - Lignes 241–245 : supprimer les écritures sur `memberPublicLabels`
@@ -220,7 +246,7 @@ Pour chaque règle Firestore supprimée, vérifier que le comportement équivale
 - `lib/features/trips/data/trip_member.dart`
 - `lib/features/trips/data/trip_members_repository.dart`
 
-### Modifiés (Dart — 23 fichiers)
+### Modifiés (Dart — 24 fichiers)
 - `lib/features/trips/data/trip.dart`
 - `lib/features/trips/data/trips_repository.dart`
 - `lib/features/trips/data/trip_permission_helpers.dart`
@@ -247,6 +273,7 @@ Pour chaque règle Firestore supprimée, vérifier que le comportement équivale
 - `lib/features/trips/presentation/trip_overview_page.dart`
 - `lib/features/trips/presentation/trip_shell_page.dart`
 - `lib/features/trips/presentation/trips_page.dart`
+- `lib/features/auth/data/user_display_label.dart`
 
 ### Modifiés (infrastructure)
 - `functions/index.js`
