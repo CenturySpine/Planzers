@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
-import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
-import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -260,12 +258,26 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     final canEditExistingCarpool = _isEdit && canManageCarpoolData;
     final canUseEditControls = canManageCarpoolData && (!_isEdit || !_isReadOnly);
 
-    final labelUserIds = <String>{
-      for (final id in trip.memberIds)
-        if (id.trim().isNotEmpty) id.trim(),
-    }.toList(growable: false);
-    final usersIdsKey = stableUsersIdsKey(labelUserIds);
-    final usersAsync = ref.watch(usersDataByIdsKeyStreamProvider(usersIdsKey));
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
+    final memberIds = participants
+        .where((m) => m.userId != null && m.userId!.trim().isNotEmpty)
+        .map((m) => m.userId!.trim())
+        .toSet()
+        .toList(growable: false);
+    final driverValue = _driverUserId?.trim();
+    if (driverValue == null || !memberIds.contains(driverValue)) {
+      if (memberIds.isNotEmpty) {
+        _driverUserId = memberIds.first;
+        _selectedParticipantIds.add(_driverUserId!);
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -293,29 +305,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
             ),
         ],
       ),
-      body: usersAsync.when(
-        data: (userDocs) {
-          final memberLabels = tripMemberLabelsFromUserDocsById(
-            userDocs,
-            labelUserIds,
-            tripMemberPublicLabels: trip.memberPublicLabels,
-            currentUserId: myUid,
-            emptyFallback: l10n.tripParticipantsTraveler,
-          );
-          final memberIds = trip.memberIds
-              .map((id) => id.trim())
-              .where((id) => id.isNotEmpty)
-              .toSet()
-              .toList(growable: false);
-          final driverValue = _driverUserId?.trim();
-          if (driverValue == null || !memberIds.contains(driverValue)) {
-            if (memberIds.isNotEmpty) {
-              _driverUserId = memberIds.first;
-              _selectedParticipantIds.add(_driverUserId!);
-            }
-          }
-
-          return carpoolsAsync.when(
+      body: carpoolsAsync.when(
             data: (carpools) {
               final assignmentByParticipant = <String, TripCarpool>{};
               for (final carpool in carpools) {
@@ -591,9 +581,6 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                                     l10n.tripCarpoolAlreadyAssignedTo(assignmentDriver),
                                   );
                                 }
-                                if (isTripPlaceholderMemberId(memberId)) {
-                                  return Text(l10n.tripCarpoolTemporaryParticipantLabel);
-                                }
                                 return null;
                               }(),
                             ),
@@ -622,15 +609,6 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                 child: Text(l10n.commonErrorWithDetails(error.toString())),
               ),
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(l10n.commonErrorWithDetails(error.toString())),
-          ),
-        ),
       ),
     );
   }

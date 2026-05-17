@@ -85,7 +85,7 @@ class ExpensesRepository {
       trip: trip,
       userId: userId,
     );
-    final isMember = trip.memberIds.contains(userId);
+    final isMember = trip.memberUserIds.contains(userId);
     if (!isMember ||
         !isTripRoleAllowed(currentRole: callerRole, minRole: minRole)) {
       throw StateError('Droits insuffisants pour cette action');

@@ -8,6 +8,7 @@ import 'package:planerz/features/activities/presentation/trip_activity_creators_
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -79,6 +80,17 @@ class _TripCategorySuggestionsPanelState
       userId: myUid,
     );
     final selectionMode = widget.onActivitySelected != null;
+    final participants = ref
+            .watch(tripParticipantsStreamProvider(widget.trip.id))
+            .asData
+            ?.value ??
+        [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
     final activitiesAsync =
         ref.watch(tripActivitiesStreamProvider(widget.trip.id));
 
@@ -104,9 +116,7 @@ class _TripCategorySuggestionsPanelState
           query: _searchController.text,
           creatorLabelFor: (activity) => creatorLabelForActivity(
             activity,
-            widget.trip.memberPublicLabels,
-            usersDataById: creatorsDataById,
-            currentUserId: myUid,
+            memberLabels,
             unknownLabel: l10n.roleParticipant,
           ),
           categoryFilter: widget.categories,
@@ -147,11 +157,7 @@ class _TripCategorySuggestionsPanelState
                 onSearchChanged: (_) => setState(() {}),
                 entries: entries,
                 tripId: widget.trip.id,
-                tripMemberPublicLabels: widget.trip.memberPublicLabels,
-                tripMemberIds: widget.trip.memberIds
-                    .map((id) => id.trim())
-                    .where((id) => id.isNotEmpty)
-                    .toSet(),
+                tripMemberPublicLabels: memberLabels,
                 usersDataById: creatorsDataById,
                 currentUserId: myUid,
                 emptyMessage: widget.emptyMessage,

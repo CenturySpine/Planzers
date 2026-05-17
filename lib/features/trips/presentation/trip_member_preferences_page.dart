@@ -200,7 +200,7 @@ class _TripMemberPreferencesPageState
             ),
           );
         }
-        final isTripMember = myUid.isNotEmpty && trip.memberIds.contains(myUid);
+        final isTripMember = myUid.isNotEmpty && trip.memberUserIds.contains(myUid);
         final isTripOwner = myUid.isNotEmpty && trip.ownerId.trim() == myUid;
         if (!isTripMember) {
           return Scaffold(

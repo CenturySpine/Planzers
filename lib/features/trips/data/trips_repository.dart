@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,11 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
-import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
@@ -120,7 +118,7 @@ class TripsRepository {
       trip: trip,
       userId: userId,
     );
-    final isMember = trip.memberIds.contains(userId);
+    final isMember = trip.memberUserIds.contains(userId);
     if (!isMember ||
         !isTripRoleAllowed(currentRole: callerRole, minRole: requiredRole)) {
       throw StateError('Droits insuffisants pour cette action');
@@ -160,7 +158,7 @@ class TripsRepository {
 
     return firestore
         .collection('trips')
-        .where('memberIds', arrayContains: user.uid)
+        .where('memberUserIds', arrayContains: user.uid)
         .snapshots()
         .map((snapshot) {
       final trips = snapshot.docs.map((doc) {
@@ -176,6 +174,7 @@ class TripsRepository {
   Future<void> createTrip({
     required String title,
     required String destination,
+    required String creatorName,
     String address = '',
     String linkUrl = '',
     DateTime? startDate,
@@ -188,9 +187,6 @@ class TripsRepository {
       throw StateError('Utilisateur non connecte');
     }
 
-    final ownerEmail = user.email?.trim() ?? '';
-    final ownerLabel = displayLabelFromEmail(ownerEmail);
-
     final data = <String, dynamic>{
       'title': title.trim(),
       'destination': destination.trim(),
@@ -198,13 +194,10 @@ class TripsRepository {
       'linkUrl': linkUrl.trim(),
       'cupidonModeEnabled': true,
       'ownerId': user.uid,
-      'memberIds': <String>[user.uid],
+      'memberUserIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (ownerLabel.isNotEmpty) {
-      data['memberPublicLabels'] = <String, dynamic>{user.uid: ownerLabel};
-    }
     if (startDate != null) {
       final d = DateTime(startDate.year, startDate.month, startDate.day);
       data['startDate'] = Timestamp.fromDate(d);
@@ -232,6 +225,12 @@ class TripsRepository {
       'isDefault': true,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
+    });
+
+    await doc.collection('participants').add({
+      'participantName': creatorName.trim(),
+      'userId': user.uid,
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -286,7 +285,7 @@ class TripsRepository {
     final requiredRole = TripGeneralPermissions.fromFirestore(
       (tripData['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
     ).editGeneralInfoMinRole;
-    final isMember = trip.memberIds.contains(user.uid);
+    final isMember = trip.memberUserIds.contains(user.uid);
     if (!isMember ||
         !isTripRoleAllowed(currentRole: callerRole, minRole: requiredRole)) {
       throw StateError('Droits insuffisants pour modifier le voyage');
@@ -429,17 +428,17 @@ class TripsRepository {
       throw StateError('Reponse serveur invalide');
     }
     final tripTitle = (raw['tripTitle'] as String?)?.trim() ?? 'Voyage';
-    final requires = raw['requiresPlaceholderChoice'] == true;
-    final list = <InviteJoinPlaceholderOption>[];
-    final phRaw = raw['placeholders'];
-    if (phRaw is List) {
-      for (final item in phRaw) {
+    final requires = raw['requiresParticipantChoice'] == true;
+    final list = <InviteJoinParticipantOption>[];
+    final participantsRaw = raw['participants'];
+    if (participantsRaw is List) {
+      for (final item in participantsRaw) {
         if (item is! Map) continue;
         final id = (item['id'] as String?)?.trim() ?? '';
         if (id.isEmpty) continue;
         final name = (item['displayName'] as String?)?.trim() ?? '';
         list.add(
-          InviteJoinPlaceholderOption(
+          InviteJoinParticipantOption(
             id: id,
             displayName: name.isEmpty ? 'Voyageur' : name,
           ),
@@ -458,8 +457,8 @@ class TripsRepository {
     return InviteJoinContext(
       tripId: tripId,
       tripTitle: tripTitle,
-      placeholders: list,
-      requiresPlaceholderChoice: requires,
+      participants: list,
+      requiresParticipantChoice: requires,
       cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
       tripStartDate: parseIso(raw['tripStartDate'] as String?),
       tripEndDate: parseIso(raw['tripEndDate'] as String?),
@@ -469,8 +468,8 @@ class TripsRepository {
   Future<void> joinTripWithInvite({
     required String tripId,
     required String token,
-    String? placeholderMemberId,
-    bool bypassPlaceholderChoice = false,
+    String? participantId,
+    bool bypassParticipantChoice = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -490,21 +489,21 @@ class TripsRepository {
       'tripId': tripId.trim(),
       'token': cleanToken,
     };
-    final ph = placeholderMemberId?.trim();
-    if (ph != null && ph.isNotEmpty) {
-      payload['placeholderMemberId'] = ph;
+    final pid = participantId?.trim();
+    if (pid != null && pid.isNotEmpty) {
+      payload['participantId'] = pid;
     }
-    if (bypassPlaceholderChoice) {
-      payload['bypassPlaceholderChoice'] = true;
+    if (bypassParticipantChoice) {
+      payload['bypassParticipantChoice'] = true;
     }
     await callable.call(payload);
   }
 
-  /// Adds a placeholder traveler. Permission is controlled by
+  /// Adds a participant slot. Permission controlled by
   /// `permissions.participants.createParticipant`.
-  Future<void> addTripPlaceholderMember({
+  Future<void> addTripParticipant({
     required String tripId,
-    required String displayName,
+    required String participantName,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -516,7 +515,7 @@ class TripsRepository {
       throw StateError('Voyage invalide');
     }
 
-    final name = displayName.trim();
+    final name = participantName.trim();
     if (name.isEmpty) {
       throw StateError('Nom obligatoire');
     }
@@ -524,17 +523,17 @@ class TripsRepository {
     final regionFunctions = FirebaseFunctions.instanceFor(
       region: kFirebaseFunctionsRegion,
     );
-    final callable = regionFunctions.httpsCallable('addTripPlaceholderMember');
+    final callable = regionFunctions.httpsCallable('addTripParticipant');
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
-      'displayName': name,
+      'participantName': name,
     });
   }
 
-  Future<void> updateTripPlaceholderMemberName({
+  Future<void> updateTripParticipantName({
     required String tripId,
-    required String placeholderId,
-    required String displayName,
+    required String participantId,
+    required String participantName,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -542,15 +541,12 @@ class TripsRepository {
     }
 
     final cleanTripId = tripId.trim();
-    final cleanPh = placeholderId.trim();
-    if (cleanTripId.isEmpty || cleanPh.isEmpty) {
+    final cleanPid = participantId.trim();
+    if (cleanTripId.isEmpty || cleanPid.isEmpty) {
       throw StateError('Parametres invalides');
     }
-    if (!isTripPlaceholderMemberId(cleanPh)) {
-      throw StateError('Membre invalide');
-    }
 
-    final name = displayName.trim();
+    final name = participantName.trim();
     if (name.isEmpty) {
       throw StateError('Nom obligatoire');
     }
@@ -566,22 +562,20 @@ class TripsRepository {
     _ensureTripGeneralPermissionForAction(
       trip: trip,
       userId: user.uid,
-      requiredRole: trip.participantsPermissions.createParticipantMinRole,
+      requiredRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
     );
 
-    final memberIds = ((data['memberIds'] as List<dynamic>?) ?? const [])
-        .map((e) => e.toString())
-        .toList();
-    if (!memberIds.contains(cleanPh)) {
-      throw StateError('Voyageur prevu introuvable');
-    }
-
-    await tripRef.update(<String, dynamic>{'memberPublicLabels.$cleanPh': name});
+    await firestore
+        .collection('trips')
+        .doc(cleanTripId)
+        .collection('participants')
+        .doc(cleanPid)
+        .update(<String, dynamic>{'participantName': name});
   }
 
-  Future<void> removeTripPlaceholderMember({
+  Future<void> removeTripParticipant({
     required String tripId,
-    required String placeholderId,
+    required String participantId,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -589,58 +583,19 @@ class TripsRepository {
     }
 
     final cleanTripId = tripId.trim();
-    final cleanPh = placeholderId.trim();
-    if (cleanTripId.isEmpty || cleanPh.isEmpty) {
+    final cleanPid = participantId.trim();
+    if (cleanTripId.isEmpty || cleanPid.isEmpty) {
       throw StateError('Parametres invalides');
     }
-    if (!isTripPlaceholderMemberId(cleanPh)) {
-      throw StateError('Membre invalide');
-    }
-
-    final tripRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await tripRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    _ensureTripGeneralPermissionForAction(
-      trip: trip,
-      userId: user.uid,
-      requiredRole:
-          trip.participantsPermissions.deletePlaceholderParticipantMinRole,
-    );
 
     final regionFunctions = FirebaseFunctions.instanceFor(
       region: kFirebaseFunctionsRegion,
     );
-    final callable =
-        regionFunctions.httpsCallable('removeTripPlaceholderMember');
+    final callable = regionFunctions.httpsCallable('removeTripParticipant');
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
-      'placeholderId': cleanPh,
+      'participantId': cleanPid,
     });
-  }
-
-  /// Ensures this user's [memberPublicLabels] entry exists on the trip (email
-  /// local part via Admin SDK). Safe to call after join; no-op if Cloud
-  /// Function is unavailable.
-  Future<void> registerMyTripMemberLabel({required String tripId}) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      return;
-    }
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return;
-    }
-
-    final regionFunctions = FirebaseFunctions.instanceFor(
-      region: kFirebaseFunctionsRegion,
-    );
-    final callable =
-        regionFunctions.httpsCallable('registerMyTripMemberLabel');
-    await callable.call(<String, dynamic>{'tripId': cleanId});
   }
 
   Future<void> removeMemberFromTrip({
@@ -658,12 +613,6 @@ class TripsRepository {
     }
     if (cleanMemberId == user.uid) {
       throw StateError('Le proprietaire ne peut pas se supprimer lui-meme');
-    }
-    if (isTripPlaceholderMemberId(cleanMemberId)) {
-      throw StateError(
-        'Retire un voyageur prévu depuis la liste des participants '
-        '(icône sur l’aperçu du voyage).',
-      );
     }
 
     final cleanTripId = tripId.trim();
@@ -698,10 +647,6 @@ class TripsRepository {
     if (cleanTripId.isEmpty || cleanMemberId.isEmpty) {
       throw StateError('Parametres invalides');
     }
-    if (isTripPlaceholderMemberId(cleanMemberId)) {
-      throw StateError('Membre invalide');
-    }
-
     final tripRef = firestore.collection('trips').doc(cleanTripId);
     final snapshot = await tripRef.get();
     if (!snapshot.exists) {
@@ -727,7 +672,7 @@ class TripsRepository {
   }
 
   /// Leaves a trip as the current user (non-owner only). Server removes the
-  /// user from trip [memberIds] and strips them from all shared expenses
+  /// user from trip [memberUserIds] and strips them from all shared expenses
   /// (participantIds / paidBy) in one transaction.
   Future<void> leaveTripAsMember({required String tripId}) async {
     final user = auth.currentUser;

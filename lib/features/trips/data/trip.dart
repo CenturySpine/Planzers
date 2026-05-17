@@ -13,7 +13,7 @@ class Trip {
     required this.photosStorageUrl,
     required this.cupidonModeEnabled,
     required this.ownerId,
-    required this.memberIds,
+    required this.memberUserIds,
     required this.createdAt,
     this.startDate,
     this.endDate,
@@ -23,7 +23,6 @@ class Trip {
     this.bannerImagePath,
     this.linkPreview = const {},
     this.shoppingMeetupLinkPreview = const {},
-    this.memberPublicLabels = const {},
     this.adminMemberIds = const [],
     this.generalPermissions = TripGeneralPermissions.defaults,
     this.participantsPermissions = TripParticipantsPermissions.defaults,
@@ -43,7 +42,9 @@ class Trip {
   final String photosStorageUrl;
   final bool cupidonModeEnabled;
   final String ownerId;
-  final List<String> memberIds;
+
+  /// Firebase UIDs of all members. Managed server-side for Firestore rules.
+  final List<String> memberUserIds;
 
   /// Co-admins (trip creator is always admin via [ownerId]).
   final List<String> adminMemberIds;
@@ -71,23 +72,6 @@ class Trip {
   /// Open Graph / meta preview data written by Cloud Functions after a [linkUrl] fetch.
   final Map<String, dynamic> linkPreview;
   final Map<String, dynamic> shoppingMeetupLinkPreview;
-
-  /// Public display strings for members (e.g. email local part), readable by all
-  /// trip participants; populated by Cloud Functions / client on create.
-  final Map<String, String> memberPublicLabels;
-
-  static Map<String, String> memberPublicLabelsFromFirestore(dynamic raw) {
-    if (raw is! Map) return const {};
-    final out = <String, String>{};
-    raw.forEach((k, v) {
-      final key = k.toString();
-      final val = (v is String ? v : v?.toString() ?? '').trim();
-      if (key.isNotEmpty && val.isNotEmpty) {
-        out[key] = val;
-      }
-    });
-    return out;
-  }
 
   static List<String> adminMemberIdsFromFirestore(dynamic raw) {
     if (raw is! List) return const [];
@@ -139,7 +123,7 @@ class Trip {
       photosStorageUrl: (data['photosStorageUrl'] as String?) ?? '',
       cupidonModeEnabled: data['cupidonModeEnabled'] != false,
       ownerId: (data['ownerId'] as String?) ?? '',
-      memberIds: ((data['memberIds'] as List<dynamic>?) ?? const [])
+      memberUserIds: ((data['memberUserIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
           .toList(),
       createdAt: createdAt,
@@ -156,8 +140,6 @@ class Trip {
           (data['shoppingMeetupLinkPreview'] as Map<String, dynamic>?) ??
               ((data['carpoolShoppingMeetupLinkPreview'] as Map<String, dynamic>?) ??
                   const {}),
-      memberPublicLabels:
-          memberPublicLabelsFromFirestore(data['memberPublicLabels']),
       adminMemberIds: adminMemberIdsFromFirestore(data['adminMemberIds']),
       generalPermissions: TripGeneralPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
@@ -196,7 +178,7 @@ class Trip {
       'photosStorageUrl': photosStorageUrl,
       'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': ownerId,
-      'memberIds': memberIds,
+      'memberUserIds': memberUserIds,
       'createdAt': createdAt.toIso8601String(),
       if (startDate != null) 'startDate': startDate!.toIso8601String(),
       if (endDate != null) 'endDate': endDate!.toIso8601String(),
@@ -208,7 +190,6 @@ class Trip {
         'bannerImageUrl': bannerImageUrl!.trim(),
       if ((bannerImagePath ?? '').trim().isNotEmpty)
         'bannerImagePath': bannerImagePath!.trim(),
-      if (memberPublicLabels.isNotEmpty) 'memberPublicLabels': memberPublicLabels,
       if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
       'permissions': <String, dynamic>{
         'tripGeneral': generalPermissions.toFirestore(),

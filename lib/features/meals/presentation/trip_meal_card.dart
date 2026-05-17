@@ -1,12 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
-import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -16,40 +13,25 @@ class TripMealCard extends ConsumerWidget {
     super.key,
     required this.tripId,
     required this.meal,
-    required this.memberPublicLabels,
-    required this.tripMemberIds,
+    required this.memberLabels,
   });
 
   final String tripId;
   final TripMeal meal;
-  final Map<String, String> memberPublicLabels;
-  final Set<String> tripMemberIds;
+  final Map<String, String> memberLabels;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim();
     final dayPartLabel = _dayPartLabel(context, meal.mealDayPart);
     final mealPreviewLabel = _mealPreviewLabel(context, meal);
     final chefId = meal.chefParticipantId?.trim();
     final hasChef =
         meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
-    final chefUsersAsync = hasChef
-        ? ref.watch(usersDataByIdsProvider(chefId))
-        : const AsyncValue<Map<String, Map<String, dynamic>>>.data({});
-    final chefUserData = hasChef ? chefUsersAsync.asData?.value[chefId] : null;
-    final chefLabel = hasChef
-        ? resolveTripMemberDisplayLabel(
-            memberId: chefId,
-            userData: chefUserData,
-            tripMemberPublicLabels: memberPublicLabels,
-            currentUserId: currentUserId,
-            emptyFallback: l10n.commonUnknown,
-          )
-        : '';
+    final chefLabel = hasChef ? (memberLabels[chefId] ?? l10n.commonUnknown) : '';
     final participantCount = meal.participantIds
         .map((id) => id.trim())
-        .where((id) => id.isNotEmpty && tripMemberIds.contains(id))
+        .where((id) => id.isNotEmpty)
         .toSet()
         .length;
 
@@ -136,7 +118,7 @@ class TripMealCard extends ConsumerWidget {
                               buildProfileBadge(
                                 context: context,
                                 displayLabel: chefLabel,
-                                userData: chefUserData,
+                                userData: null,
                                 size: 24,
                               ),
                               Positioned(

@@ -25,7 +25,7 @@ bool canCreateExpensePostForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -35,33 +35,30 @@ bool canCreateExpensePostForTrip({
 
 bool _expensePostVisibleToMember({
   required List<String> visibleToMemberIds,
-  required String userId,
+  required String? currentUserMemberId,
 }) {
-  final uid = userId.trim();
-  if (uid.isEmpty) return false;
+  final mid = currentUserMemberId?.trim() ?? '';
+  if (mid.isEmpty) return false;
   if (visibleToMemberIds.isEmpty) return false;
-  final allowed = visibleToMemberIds
-      .map((id) => id.trim())
-      .where((id) => id.isNotEmpty)
-      .toSet();
-  return allowed.contains(uid);
+  return visibleToMemberIds.map((id) => id.trim()).contains(mid);
 }
 
 /// Edit post metadata / visibility: role + must already see this post.
 bool canEditExpensePostForTrip({
   required Trip trip,
   required String? userId,
+  required String? currentUserMemberId,
   required List<String> expensePostVisibleToMemberIds,
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty ||
       !_expensePostVisibleToMember(
         visibleToMemberIds: expensePostVisibleToMemberIds,
-        userId: uid,
+        currentUserMemberId: currentUserMemberId,
       )) {
     return false;
   }
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -73,17 +70,18 @@ bool canEditExpensePostForTrip({
 bool canDeleteExpensePostForTrip({
   required Trip trip,
   required String? userId,
+  required String? currentUserMemberId,
   required List<String> expensePostVisibleToMemberIds,
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty ||
       !_expensePostVisibleToMember(
         visibleToMemberIds: expensePostVisibleToMemberIds,
-        userId: uid,
+        currentUserMemberId: currentUserMemberId,
       )) {
     return false;
   }
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -95,17 +93,18 @@ bool canDeleteExpensePostForTrip({
 bool canCreateExpenseForTrip({
   required Trip trip,
   required String? userId,
+  required String? currentUserMemberId,
   required List<String> expensePostVisibleToMemberIds,
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty ||
       !_expensePostVisibleToMember(
         visibleToMemberIds: expensePostVisibleToMemberIds,
-        userId: uid,
+        currentUserMemberId: currentUserMemberId,
       )) {
     return false;
   }
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -117,17 +116,18 @@ bool canCreateExpenseForTrip({
 bool canEditExpenseForTrip({
   required Trip trip,
   required String? userId,
+  required String? currentUserMemberId,
   required List<String> expensePostVisibleToMemberIds,
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty ||
       !_expensePostVisibleToMember(
         visibleToMemberIds: expensePostVisibleToMemberIds,
-        userId: uid,
+        currentUserMemberId: currentUserMemberId,
       )) {
     return false;
   }
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -139,17 +139,18 @@ bool canEditExpenseForTrip({
 bool canDeleteExpenseForTrip({
   required Trip trip,
   required String? userId,
+  required String? currentUserMemberId,
   required List<String> expensePostVisibleToMemberIds,
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty ||
       !_expensePostVisibleToMember(
         visibleToMemberIds: expensePostVisibleToMemberIds,
-        userId: uid,
+        currentUserMemberId: currentUserMemberId,
       )) {
     return false;
   }
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -163,7 +164,7 @@ bool canVoteForActivity({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  return trip.memberIds.contains(uid);
+  return trip.memberUserIds.contains(uid);
 }
 
 bool canSuggestActivityForTrip({
@@ -172,7 +173,7 @@ bool canSuggestActivityForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -186,7 +187,7 @@ bool canPlanActivityForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -200,7 +201,7 @@ bool canEditActivityForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -214,7 +215,7 @@ bool canDeleteActivityForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -228,7 +229,7 @@ bool canCreateMealForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -242,7 +243,7 @@ bool canDeleteMealForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -256,7 +257,7 @@ bool canEditMealForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -270,7 +271,7 @@ bool canAddMealContributionForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -284,7 +285,7 @@ bool canSuggestMealRestaurantForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -298,7 +299,7 @@ bool canManageMealRecipeForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
@@ -313,7 +314,7 @@ bool _canRunCarpoolActionForTrip({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(currentRole: role, minRole: minRole);
 }
@@ -336,9 +337,8 @@ bool canAssignPassengersForCarpool({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
-    // Owner right: creator always keeps assignment control.
     return true;
   }
   return _canRunCarpoolActionForTrip(
@@ -355,9 +355,8 @@ bool canMarkCarpoolGoesShopping({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
-    // Owner right: creator can always mark/unmark shopping.
     return true;
   }
   return _canRunCarpoolActionForTrip(
@@ -374,9 +373,8 @@ bool canManageCarpool({
 }) {
   final uid = userId?.trim() ?? '';
   if (uid.isEmpty) return false;
-  if (!trip.memberIds.contains(uid)) return false;
+  if (!trip.memberUserIds.contains(uid)) return false;
   if (uid == (carpoolCreatedByUserId?.trim() ?? '')) {
-    // Owner right: creator can always edit/delete own carpool.
     return true;
   }
   return _canRunCarpoolActionForTrip(

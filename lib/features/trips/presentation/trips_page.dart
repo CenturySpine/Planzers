@@ -664,7 +664,7 @@ class _TripCard extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Text(
                       AppLocalizations.of(context)!.tripsMemberCount(
-                        trip.memberIds.length,
+                        trip.memberUserIds.length,
                       ),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color:
