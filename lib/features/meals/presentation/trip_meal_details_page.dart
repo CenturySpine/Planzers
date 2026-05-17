@@ -538,10 +538,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     ),
                   ],
                   selected: {_activeMealView},
-                  onSelectionChanged: (_isSavingMealMode || !canEditMealMode)
+                  onSelectionChanged: _isSavingMealMode
                       ? null
                       : (selection) async {
-                          if (selection.isEmpty) {
+                          if (selection.isEmpty || !canEditMealMode) {
                             return;
                           }
                           if (_activeMealView == selection.first) {
@@ -1486,9 +1486,19 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               trip: trip,
               userId: myUid,
             );
-            final isMealChef = (myUid ?? '').isNotEmpty &&
+            final myTripMemberId = () {
+              final uid = (myUid ?? '').trim();
+              if (uid.isEmpty) return null;
+              for (final member in participants) {
+                if (member.userId?.trim() == uid) {
+                  return member.id;
+                }
+              }
+              return null;
+            }();
+            final isMealChef = myTripMemberId != null &&
                 _chefParticipantId != null &&
-                _chefParticipantId == myUid;
+                _chefParticipantId == myTripMemberId;
             final canAccessTrip = trip.memberUserIds.contains(myUid);
             final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
             final canEditParticipants = canEditMealCore;

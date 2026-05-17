@@ -337,9 +337,25 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripMealManageRecipeMinRole(tripId));
     }
 
-    function isMealChef(mealData) {
+    function tripParticipantDoc(tripId, participantId) {
+      return get(
+        /databases/$(database)/documents/trips/$(tripId)/participants/$(participantId)
+      );
+    }
+
+    function isMealChef(tripId, mealData) {
       return mealData.chefParticipantId is string
-        && mealData.chefParticipantId == request.auth.uid;
+        && mealData.chefParticipantId.size() > 0
+        && (
+          mealData.chefParticipantId == request.auth.uid
+          || (
+            exists(
+              /databases/$(database)/documents/trips/$(tripId)/participants/$(mealData.chefParticipantId)
+            )
+            && tripParticipantDoc(tripId, mealData.chefParticipantId).data.userId
+              == request.auth.uid
+          )
+        );
     }
 
     function mealRecipeUpdateOnlyTouchesAllowedFields() {
@@ -671,7 +687,7 @@ service cloud.firestore {
               'updatedAt',
             ])
         ) || (
-          (canManageMealRecipe(tripId) || isMealChef(resource.data))
+          (canManageMealRecipe(tripId) || isMealChef(tripId, resource.data))
           && mealRecipeUpdateOnlyTouchesAllowedFields()
         );
         allow delete: if canDeleteMeal(tripId);
