@@ -1059,6 +1059,57 @@ function hasCupidonEnabled(memberData) {
   return !!(memberData && memberData.cupidonEnabled === true);
 }
 
+function _dateKey(d) {
+  const y = d.getFullYear().toString().padStart(4, '0');
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function _startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Builds the default stay fields for a new participant slot using the trip's calendar bounds.
+ * Mirrors TripMemberStay.defaultForInviteContext() from the Flutter client.
+ * @param {object} tripData - Firestore trip document data
+ * @returns {object} Firestore-ready stay fields
+ */
+function defaultStayForTrip(tripData) {
+  const parseDate = (raw) => {
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  };
+  const tripStartDate = parseDate(tripData.startDate);
+  const tripEndDate = parseDate(tripData.endDate);
+
+  if (!tripStartDate && !tripEndDate) {
+    const now = new Date();
+    const start = _startOfDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return {
+      stayStartDateKey: _dateKey(start),
+      stayStartDayPart: 'evening',
+      stayEndDateKey: _dateKey(end),
+      stayEndDayPart: 'morning',
+    };
+  }
+
+  const start = tripStartDate ? _startOfDay(tripStartDate) : _startOfDay(new Date());
+  const end = tripEndDate ? _startOfDay(tripEndDate) : start;
+  const later = end < start ? start : end;
+  const isSingleDay = start.getTime() === later.getTime();
+  return {
+    stayStartDateKey: _dateKey(start),
+    stayStartDayPart: isSingleDay ? 'morning' : 'evening',
+    stayEndDateKey: _dateKey(later),
+    stayEndDayPart: isSingleDay ? 'evening' : 'morning',
+  };
+}
+
 /**
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} uid
@@ -1870,7 +1921,7 @@ exports.disableTripCupidonForAllMembers = onDocumentUpdated(
 
     const tripRef = event.data.after.ref;
     const membersSnap = await tripRef
-      .collection('members')
+      .collection('participants')
       .where('cupidonEnabled', '==', true)
       .get();
     if (membersSnap.empty) {
@@ -2240,9 +2291,13 @@ async function completeJoinTripWithInvite(
       console.warn('completeJoinTripWithInvite getUser', e);
     }
     participantName = fallbackName;
+    const defaultStay = defaultStayForTrip(data);
     await tripRef.collection('participants').add({
       participantName: fallbackName,
       userId: uid,
+      ...defaultStay,
+      cupidonEnabled: false,
+      phoneVisibility: 'nobody',
       createdAt: FieldValue.serverTimestamp(),
     });
   }
@@ -2372,8 +2427,12 @@ exports.addTripParticipant = onCall(
       deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
     });
 
+    const defaultStay = defaultStayForTrip(tripData);
     const participantRef = await tripRef.collection('participants').add({
       participantName,
+      ...defaultStay,
+      cupidonEnabled: false,
+      phoneVisibility: 'nobody',
       createdAt: FieldValue.serverTimestamp(),
     });
     const participantId = participantRef.id;
@@ -3454,18 +3513,105 @@ exports.setTripCupidonEnabled = onCall(
       );
     }
 
-    await tripRef
-      .collection('members')
-      .doc(uid)
-      .set(
-        {
-          cupidonEnabled: enabled,
-          cupidonUpdatedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+    const participantSnap = await tripRef
+      .collection('participants')
+      .where('userId', '==', uid)
+      .limit(1)
+      .get();
+    if (participantSnap.empty) {
+      throw new HttpsError('not-found', 'Tu n\'es pas inscrit comme participant');
+    }
+    await participantSnap.docs[0].ref.update({
+      cupidonEnabled: enabled,
+      cupidonUpdatedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 
+    return { ok: true };
+  }
+);
+
+exports.updateParticipantProfile = onCall(
+  {},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const participantId = normalizeString(request.data?.participantId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const stayStartDateKey = normalizeString(request.data?.stayStartDateKey);
+    const stayStartDayPart = normalizeString(request.data?.stayStartDayPart);
+    const stayEndDateKey = normalizeString(request.data?.stayEndDateKey);
+    const stayEndDayPart = normalizeString(request.data?.stayEndDayPart);
+    const phoneVisibility = normalizeString(request.data?.phoneVisibility);
+
+    const hasStay = stayStartDateKey && stayStartDayPart && stayEndDateKey && stayEndDayPart;
+    const hasPhone = !!phoneVisibility;
+    if (!hasStay && !hasPhone) {
+      throw new HttpsError('invalid-argument', 'Aucun champ à mettre à jour');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+    }
+
+    let participantRef;
+    if (participantId) {
+      participantRef = tripRef.collection('participants').doc(participantId);
+      const participantSnap = await participantRef.get();
+      if (!participantSnap.exists) {
+        throw new HttpsError('not-found', 'Participant introuvable');
+      }
+      const participantUserId = normalizeString(participantSnap.data()?.userId);
+      if (participantUserId !== uid) {
+        assertTripParticipantPermission({
+          tripData,
+          uid,
+          permissionKey: 'manageParticipants',
+          fallbackRole: 'owner',
+          deniedMessage: 'Droits insuffisants pour modifier ce participant.',
+        });
+      }
+    } else {
+      const snap = await tripRef
+        .collection('participants')
+        .where('userId', '==', uid)
+        .limit(1)
+        .get();
+      if (snap.empty) {
+        throw new HttpsError('not-found', 'Tu n\'es pas inscrit comme participant');
+      }
+      participantRef = snap.docs[0].ref;
+    }
+
+    const update = { updatedAt: FieldValue.serverTimestamp() };
+    if (hasStay) {
+      update.stayStartDateKey = stayStartDateKey;
+      update.stayStartDayPart = stayStartDayPart;
+      update.stayEndDateKey = stayEndDateKey;
+      update.stayEndDayPart = stayEndDayPart;
+    }
+    if (hasPhone) {
+      update.phoneVisibility = phoneVisibility;
+    }
+
+    await participantRef.update(update);
     return { ok: true };
   }
 );
@@ -3503,17 +3649,18 @@ exports.toggleTripCupidonLike = onCall(
       throw new HttpsError('permission-denied', 'Participants invalides');
     }
 
-    const [myMemberSnap, targetMemberSnap] = await Promise.all([
-      tripRef.collection('members').doc(uid).get(),
-      tripRef.collection('members').doc(targetMemberId).get(),
+    const participantsRef = tripRef.collection('participants');
+    const [myParticipantSnap, targetParticipantSnap] = await Promise.all([
+      participantsRef.where('userId', '==', uid).limit(1).get(),
+      participantsRef.where('userId', '==', targetMemberId).limit(1).get(),
     ]);
-    if (!hasCupidonEnabled(myMemberSnap.data())) {
+    if (!hasCupidonEnabled(myParticipantSnap.docs[0]?.data())) {
       throw new HttpsError(
         'failed-precondition',
         'Active le mode Cupidon pour liker des participants'
       );
     }
-    const targetCupidonEnabled = hasCupidonEnabled(targetMemberSnap.data());
+    const targetCupidonEnabled = hasCupidonEnabled(targetParticipantSnap.docs[0]?.data());
 
     const likeRef = tripRef
       .collection('cupidonLikes')

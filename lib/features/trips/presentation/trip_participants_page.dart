@@ -9,8 +9,6 @@ import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
-import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
-import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';

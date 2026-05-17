@@ -7,8 +7,8 @@ import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
-import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
@@ -392,15 +392,17 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     if (!_joined || !mounted) return;
 
     try {
-      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
-            tripId: widget.tripId,
-            stay: stay,
-          );
-      final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
-      if (myPhoneNumber != null) {
-        await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
+      final myParticipant = await ref
+          .read(tripMembersRepositoryProvider)
+          .watchMyParticipant(widget.tripId)
+          .first;
+      if (myParticipant != null) {
+        final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+        await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
               tripId: widget.tripId,
-              visibility: _phoneVisibilityDraft,
+              participantId: myParticipant.id,
+              stay: stay,
+              phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
             );
       }
       await _persistCupidonPreferenceForTrip();
