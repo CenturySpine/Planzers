@@ -658,6 +658,23 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
 async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   const db = admin.firestore();
 
+  // Resolve the participant document ID for this UID (visibleToMemberIds stores
+  // TripMember doc IDs, not Firebase Auth UIDs).
+  const participantsSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (participantsSnap.empty) {
+    console.warn(
+      'backfillTripMemberInExpenseSubcollections: no participant found for uid',
+      uid,
+      tripRef.id,
+    );
+    return;
+  }
+  const participantId = participantsSnap.docs[0].id;
+
   const [groupsSnap, expensesSnap] = await Promise.all([
     tripRef.collection('expenseGroups').get(),
     tripRef.collection('expenses').get(),
@@ -667,13 +684,13 @@ async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   for (const doc of groupsSnap.docs) {
     updates.push({
       ref: doc.ref,
-      data: { visibleToMemberIds: FieldValue.arrayUnion(uid) },
+      data: { visibleToMemberIds: FieldValue.arrayUnion(participantId) },
     });
   }
   for (const doc of expensesSnap.docs) {
     updates.push({
       ref: doc.ref,
-      data: { participantIds: FieldValue.arrayUnion(uid) },
+      data: { participantIds: FieldValue.arrayUnion(participantId) },
     });
   }
 
