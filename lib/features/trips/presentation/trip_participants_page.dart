@@ -552,20 +552,20 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                             .tripParticipantsLike,
                                                     onPressed: _likingMemberIds
                                                             .contains(
-                                                                row.participantId
-                                                                    .trim())
+                                                                row.userId
+                                                                    ?.trim() ?? '')
                                                         ? null
                                                         : () =>
                                                             _toggleCupidonLike(
                                                               targetMemberId:
-                                                                  row.participantId,
+                                                                  row.userId!,
                                                               currentlyLiked:
                                                                   row.likedByMe,
                                                             ),
                                                     icon: _likingMemberIds
                                                             .contains(row
-                                                                .participantId
-                                                                .trim())
+                                                                .userId
+                                                                ?.trim() ?? '')
                                                         ? const SizedBox(
                                                             width: 22,
                                                             height: 22,
