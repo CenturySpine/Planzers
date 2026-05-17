@@ -28,11 +28,11 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
   late final TextEditingController _transitController;
   late final TextEditingController _seatsController;
   DateTime? _departureAt;
-  String? _driverUserId;
+  String? _driverParticipantId;
   final Set<String> _selectedParticipantIds = <String>{};
   bool _goesShopping = false;
   bool _saving = false;
-  String? _defaultDriverUserId;
+  String? _defaultDriverParticipantId;
   bool _didInitDepartureFromTrip = false;
   bool _isReadOnly = false;
 
@@ -41,7 +41,6 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
   @override
   void initState() {
     super.initState();
-    final currentUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
     final initial = widget.initialCarpool;
     _meetingController = TextEditingController(
       text: initial?.meetingPointAddress ?? '',
@@ -53,13 +52,16 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       text: (initial?.availableSeats ?? 4).toString(),
     );
     _departureAt = initial?.departureAt;
-    _driverUserId = (initial?.driverUserId.trim().isNotEmpty == true)
-        ? initial!.driverUserId.trim()
-        : (currentUid.isNotEmpty ? currentUid : null);
-    _defaultDriverUserId = _driverUserId;
-    _selectedParticipantIds.addAll(initial?.assignedParticipantIds ?? const <String>[]);
-    if (_driverUserId != null && _driverUserId!.isNotEmpty) {
-      _selectedParticipantIds.add(_driverUserId!);
+    _driverParticipantId =
+        (initial?.driverParticipantId.trim().isNotEmpty == true)
+            ? initial!.driverParticipantId.trim()
+            : null;
+    _defaultDriverParticipantId = _driverParticipantId;
+    _selectedParticipantIds.addAll(
+      initial?.assignedParticipantIds ?? const <String>[],
+    );
+    if (_driverParticipantId != null && _driverParticipantId!.isNotEmpty) {
+      _selectedParticipantIds.add(_driverParticipantId!);
     }
     _goesShopping = initial?.goesShopping ?? false;
     _isReadOnly = _isEdit && widget.startReadOnly;
@@ -123,8 +125,8 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
     final departureAt = _departureAt;
-    final driverUserId = _driverUserId?.trim() ?? '';
-    if (departureAt == null || driverUserId.isEmpty) {
+    final driverParticipantId = _driverParticipantId?.trim() ?? '';
+    if (departureAt == null || driverParticipantId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.commonRequired)),
       );
@@ -139,7 +141,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     }
     final assignedIds = <String>{
       ..._selectedParticipantIds.map((id) => id.trim()).where((id) => id.isNotEmpty),
-      driverUserId,
+      driverParticipantId,
     }.toList(growable: false);
     if (assignedIds.length > seats) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,7 +155,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       await ref.read(tripCarpoolsRepositoryProvider).upsertTripCarpool(
             tripId: tripId,
             carpoolId: widget.initialCarpool?.id,
-            driverUserId: driverUserId,
+            driverParticipantId: driverParticipantId,
             meetingPointAddress: _meetingController.text,
             nearestTransitStop: _transitController.text,
             departureAt: departureAt,
@@ -260,22 +262,25 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
 
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+
+    // All participants, keyed by document ID.
     final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
+      for (final m in participants) m.id: m.participantName,
     };
-    final memberIds = participants
-        .where((m) => m.userId != null && m.userId!.trim().isNotEmpty)
-        .map((m) => m.userId!.trim())
-        .toSet()
-        .toList(growable: false);
-    final driverValue = _driverUserId?.trim();
+    final memberIds = participants.map((m) => m.id).toList(growable: false);
+
+    // Auto-select driver: prefer the current user's participant slot.
+    final driverValue = _driverParticipantId?.trim();
     if (driverValue == null || !memberIds.contains(driverValue)) {
       if (memberIds.isNotEmpty) {
-        _driverUserId = memberIds.first;
-        _selectedParticipantIds.add(_driverUserId!);
+        final myParticipantId = myUid.isNotEmpty
+            ? participants
+                .where((m) => m.userId?.trim() == myUid)
+                .map((m) => m.id)
+                .firstOrNull
+            : null;
+        _driverParticipantId = myParticipantId ?? memberIds.first;
+        _selectedParticipantIds.add(_driverParticipantId!);
       }
     }
 
@@ -369,8 +374,9 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                     const Divider(height: 32),
                     readOnlyField(
                       l10n.tripCarpoolDriverLabel,
-                      _driverUserId?.trim().isNotEmpty == true
-                          ? (memberLabels[_driverUserId!.trim()] ?? l10n.tripParticipantsTraveler)
+                      _driverParticipantId?.trim().isNotEmpty == true
+                          ? (memberLabels[_driverParticipantId!.trim()] ??
+                              l10n.tripParticipantsTraveler)
                           : '',
                     ),
                     const Divider(height: 32),
@@ -411,7 +417,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                               ListTile(
                                 dense: true,
                                 leading: Icon(
-                                  memberId == _driverUserId?.trim()
+                                  memberId == _driverParticipantId?.trim()
                                       ? Icons.drive_eta_outlined
                                       : Icons.person_outline,
                                   size: 20,
@@ -469,7 +475,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                     const SizedBox(height: 12),
                     DropdownMenu<String>(
                       width: double.infinity,
-                      initialSelection: _driverUserId,
+                      initialSelection: _driverParticipantId,
                       enableSearch: true,
                       enableFilter: true,
                       label: Text(l10n.tripCarpoolDriverLabel),
@@ -481,21 +487,21 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                             ),
                           )
                           .toList(growable: false),
-                      onSelected: canChangeDriver
-                          && canUseEditControls
+                      onSelected: canChangeDriver && canUseEditControls
                           ? (value) {
                               if (value == null || value.trim().isEmpty) return;
                               setState(() {
-                                final previousDriverId = _driverUserId?.trim() ?? '';
-                                _driverUserId = value.trim();
+                                final previousDriverId =
+                                    _driverParticipantId?.trim() ?? '';
+                                _driverParticipantId = value.trim();
                                 if (previousDriverId.isNotEmpty &&
-                                    previousDriverId != _driverUserId) {
+                                    previousDriverId != _driverParticipantId) {
                                   _selectedParticipantIds.remove(previousDriverId);
-                                  if (_defaultDriverUserId == previousDriverId) {
-                                    _defaultDriverUserId = null;
+                                  if (_defaultDriverParticipantId == previousDriverId) {
+                                    _defaultDriverParticipantId = null;
                                   }
                                 }
-                                _selectedParticipantIds.add(_driverUserId!);
+                                _selectedParticipantIds.add(_driverParticipantId!);
                               });
                             }
                           : null,
@@ -542,8 +548,10 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                                             _seatsController.text.trim(),
                                           ) ??
                                           0;
-                                      final driverUserId = _driverUserId?.trim() ?? '';
-                                      if (memberId == driverUserId && checked != true) {
+                                      final driverParticipantId =
+                                          _driverParticipantId?.trim() ?? '';
+                                      if (memberId == driverParticipantId &&
+                                          checked != true) {
                                         return;
                                       }
                                       if (checked == true &&
@@ -563,8 +571,8 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                                         } else {
                                           _selectedParticipantIds.remove(memberId);
                                         }
-                                        if (driverUserId.isNotEmpty) {
-                                          _selectedParticipantIds.add(driverUserId);
+                                        if (driverParticipantId.isNotEmpty) {
+                                          _selectedParticipantIds.add(driverParticipantId);
                                         }
                                       });
                                     }
@@ -575,8 +583,9 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                               subtitle: () {
                                 final assignment = assignmentByParticipant[memberId];
                                 if (assignment != null) {
-                                  final assignmentDriver = memberLabels[assignment.driverUserId] ??
-                                      l10n.tripParticipantsTraveler;
+                                  final assignmentDriver =
+                                      memberLabels[assignment.driverParticipantId] ??
+                                          l10n.tripParticipantsTraveler;
                                   return Text(
                                     l10n.tripCarpoolAlreadyAssignedTo(assignmentDriver),
                                   );
@@ -605,11 +614,11 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Text(l10n.commonErrorWithDetails(error.toString())),
               ),
             ),
-      ),
+          ),
     );
   }
 }

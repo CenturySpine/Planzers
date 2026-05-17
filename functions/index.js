@@ -2660,11 +2660,13 @@ function cloneFirestoreCarsArray(rawCars) {
   );
 }
 
-function uidIsDriverOfAnySerializedCar(cars, uid) {
-  return cars.some((car) => normalizeString(car.driverUserId) === uid);
+function participantIdIsDriverOfAnySerializedCar(cars, participantId) {
+  return cars.some(
+    (car) => normalizeString(car.driverParticipantId) === participantId
+  );
 }
 
-function stripUidFromEveryCarAssignments(cars, uid) {
+function stripParticipantIdFromEveryCarAssignments(cars, participantId) {
   return cars.map((car) => {
     const copy = { ...car };
     const raw = Array.isArray(car.assignedParticipantIds)
@@ -2672,13 +2674,13 @@ function stripUidFromEveryCarAssignments(cars, uid) {
       : [];
     copy.assignedParticipantIds = raw
       .map((x) => String(x).trim())
-      .filter((id) => id.length > 0 && id !== uid);
+      .filter((id) => id.length > 0 && id !== participantId);
     return copy;
   });
 }
 
 function validateSerializedTripCarOrThrow(car) {
-  const driverUserId = normalizeString(car.driverUserId);
+  const driverUserId = normalizeString(car.driverParticipantId);
   const seatsRaw = car.availableSeats;
   const seats =
     typeof seatsRaw === 'number'
@@ -2762,7 +2764,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
 
   const tripId = normalizeString(request.data?.tripId);
   const requestedCarpoolId = normalizeString(request.data?.carpoolId);
-  const driverUserId = normalizeString(request.data?.driverUserId);
+  const driverParticipantId = normalizeString(request.data?.driverParticipantId);
   const meetingPointAddress = normalizeString(request.data?.meetingPointAddress);
   const nearestTransitStop = normalizeString(request.data?.nearestTransitStop);
   const departureAt = parseCallableDateToTimestamp(
@@ -2778,7 +2780,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     : [];
   const goesShopping = request.data?.goesShopping === true;
 
-  if (!tripId || !driverUserId || !Number.isFinite(availableSeats)) {
+  if (!tripId || !driverParticipantId || !Number.isFinite(availableSeats)) {
     throw new HttpsError('invalid-argument', 'Parametres invalides');
   }
   if (!Number.isInteger(availableSeats) || availableSeats < 1) {
@@ -2790,7 +2792,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
       assignedParticipantIdsRaw
         .map((entry) => normalizeString(entry))
         .filter(Boolean)
-        .concat(driverUserId)
+        .concat(driverParticipantId)
     ),
   ];
   if (normalizedAssignedParticipantIds.length > availableSeats) {
@@ -2800,6 +2802,19 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
   const db = admin.firestore();
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  // Validate participant IDs against the participants subcollection before the
+  // transaction (Firestore transactions don't support collection queries).
+  const participantsSnap = await tripRef.collection('participants').get();
+  const validParticipantIds = new Set(participantsSnap.docs.map((d) => d.id));
+  if (!validParticipantIds.has(driverParticipantId)) {
+    throw new HttpsError('invalid-argument', 'Conducteur introuvable');
+  }
+  for (const pid of normalizedAssignedParticipantIds) {
+    if (!validParticipantIds.has(pid)) {
+      throw new HttpsError('invalid-argument', 'Participant introuvable');
+    }
+  }
 
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
@@ -2819,14 +2834,6 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
         'permission-denied',
         'Tu ne fais pas partie de ce voyage'
       );
-    }
-    if (!memberIds.includes(driverUserId)) {
-      throw new HttpsError('invalid-argument', 'Parametres invalides');
-    }
-    for (const participantId of normalizedAssignedParticipantIds) {
-      if (!memberIds.includes(participantId)) {
-        throw new HttpsError('invalid-argument', 'Parametres invalides');
-      }
     }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
@@ -2900,7 +2907,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     const updatedCar = {
       id: targetCarpoolId,
       createdByUserId,
-      driverUserId,
+      driverParticipantId,
       meetingPointAddress,
       nearestTransitStop,
       departureAt,
@@ -3022,6 +3029,17 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
 
+  // Resolve caller's participant document ID before the transaction.
+  const myParticipantSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (myParticipantSnap.empty) {
+    throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+  }
+  const myParticipantId = myParticipantSnap.docs[0].id;
+
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
       tx.get(tripRef),
@@ -3030,28 +3048,19 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
     if (!tripSnap.exists) {
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberUserIds)
-      ? tripData.memberUserIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(uid)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Tu ne fais pas partie de ce voyage'
-      );
-    }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     let cars = cloneFirestoreCarsArray(sectionData.cars);
 
-    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
+    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot join another carpool via self-assignment.'
       );
     }
 
-    cars = stripUidFromEveryCarAssignments(cars, uid);
+    cars = stripParticipantIdFromEveryCarAssignments(cars, myParticipantId);
 
     const targetIndex = cars.findIndex(
       (c) => normalizeString(c.id) === targetCarpoolId
@@ -3070,23 +3079,17 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
       ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
       : [];
     const assignedIds = [...new Set(rawAssigned)];
-    const driverUserId = normalizeString(targetCar.driverUserId);
-    if (driverUserId && !assignedIds.includes(driverUserId)) {
-      assignedIds.push(driverUserId);
+    const driverParticipantId = normalizeString(targetCar.driverParticipantId);
+    if (driverParticipantId && !assignedIds.includes(driverParticipantId)) {
+      assignedIds.push(driverParticipantId);
     }
     if (!Number.isFinite(seats) || assignedIds.length >= seats) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Carpool is full.'
-      );
+      throw new HttpsError('failed-precondition', 'Carpool is full.');
     }
-    if (assignedIds.includes(uid)) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Carpool misconfigured.'
-      );
+    if (assignedIds.includes(myParticipantId)) {
+      throw new HttpsError('failed-precondition', 'Carpool misconfigured.');
     }
-    assignedIds.push(uid);
+    assignedIds.push(myParticipantId);
     targetCar.assignedParticipantIds = assignedIds;
     targetCar.updatedAt = Timestamp.now();
     cars[targetIndex] = targetCar;
@@ -3121,6 +3124,17 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
 
+  // Resolve caller's participant document ID before the transaction.
+  const myParticipantSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (myParticipantSnap.empty) {
+    throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+  }
+  const myParticipantId = myParticipantSnap.docs[0].id;
+
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
       tx.get(tripRef),
@@ -3129,21 +3143,12 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
     if (!tripSnap.exists) {
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberUserIds)
-      ? tripData.memberUserIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(uid)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Tu ne fais pas partie de ce voyage'
-      );
-    }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     const cars = cloneFirestoreCarsArray(sectionData.cars);
 
-    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
+    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot leave their carpool via self-assignment.'
@@ -3158,8 +3163,8 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
     }
 
     const targetCar = cars[targetIndex];
-    const driverUserId = normalizeString(targetCar.driverUserId);
-    if (driverUserId === uid) {
+    const driverParticipantId = normalizeString(targetCar.driverParticipantId);
+    if (driverParticipantId === myParticipantId) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot leave their carpool via self-assignment.'
@@ -3170,7 +3175,7 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
       ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
       : [];
     const assignedIds = [...new Set(rawAssigned)];
-    if (!assignedIds.includes(uid)) {
+    if (!assignedIds.includes(myParticipantId)) {
       return;
     }
 
@@ -3179,7 +3184,7 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
         return { ...car };
       }
       const copy = { ...car };
-      copy.assignedParticipantIds = assignedIds.filter((id) => id !== uid);
+      copy.assignedParticipantIds = assignedIds.filter((id) => id !== myParticipantId);
       copy.updatedAt = Timestamp.now();
       return copy;
     });

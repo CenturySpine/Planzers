@@ -5,7 +5,7 @@ class TripCarpool {
     required this.id,
     required this.tripId,
     required this.createdByUserId,
-    required this.driverUserId,
+    required this.driverParticipantId,
     required this.meetingPointAddress,
     required this.nearestTransitStop,
     required this.departureAt,
@@ -16,7 +16,7 @@ class TripCarpool {
     required this.updatedAt,
   }) : assignedParticipantIds = _normalizeAssignedParticipants(
          assignedParticipantIds,
-         driverUserId,
+         driverParticipantId,
        ) {
     if (availableSeats < 1) {
       throw ArgumentError.value(
@@ -35,7 +35,7 @@ class TripCarpool {
   final String id;
   final String tripId;
   final String createdByUserId;
-  final String driverUserId;
+  final String driverParticipantId;
   final String meetingPointAddress;
   final String nearestTransitStop;
   final DateTime departureAt;
@@ -47,9 +47,9 @@ class TripCarpool {
 
   static List<String> _normalizeAssignedParticipants(
     List<String> rawIds,
-    String driverUserId,
+    String driverParticipantId,
   ) {
-    final driverId = driverUserId.trim();
+    final driverId = driverParticipantId.trim();
     final uniqueIds = <String>{
       ...rawIds.map((id) => id.trim()).where((id) => id.isNotEmpty),
     };
@@ -73,7 +73,8 @@ class TripCarpool {
     required Map<String, dynamic> data,
   }) {
     final now = DateTime.now();
-    final driverUserId = (data['driverUserId'] as String? ?? '').trim();
+    final driverParticipantId =
+        (data['driverParticipantId'] as String? ?? '').trim();
     final assigned = ((data['assignedParticipantIds'] as List<dynamic>?) ?? const [])
         .map((entry) => entry.toString())
         .toList(growable: false);
@@ -82,7 +83,7 @@ class TripCarpool {
       id: id,
       tripId: tripId,
       createdByUserId: (data['createdByUserId'] as String? ?? '').trim(),
-      driverUserId: driverUserId,
+      driverParticipantId: driverParticipantId,
       meetingPointAddress: (data['meetingPointAddress'] as String? ?? '').trim(),
       nearestTransitStop: (data['nearestTransitStop'] as String? ?? '').trim(),
       departureAt: _readDate(data['departureAt'], now),
@@ -97,7 +98,7 @@ class TripCarpool {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'createdByUserId': createdByUserId.trim(),
-      'driverUserId': driverUserId.trim(),
+      'driverParticipantId': driverParticipantId.trim(),
       'meetingPointAddress': meetingPointAddress.trim(),
       'nearestTransitStop': nearestTransitStop.trim(),
       'departureAt': Timestamp.fromDate(departureAt),
