@@ -76,6 +76,20 @@ class ExpensesRepository {
     return Trip.fromMap(snap.id, data);
   }
 
+  Future<String?> _resolveCurrentUserMemberId(
+    String tripId,
+    String userId,
+  ) async {
+    final snap = await firestore
+        .collection('trips')
+        .doc(tripId)
+        .collection('participants')
+        .where('userId', isEqualTo: userId)
+        .limit(1)
+        .get();
+    return snap.docs.isEmpty ? null : snap.docs.first.id;
+  }
+
   void _ensureTripMemberExpenseRole({
     required Trip trip,
     required String userId,
@@ -206,7 +220,8 @@ class ExpensesRepository {
       throw StateError('Poste introuvable');
     }
     final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
-    if (!existingGroup.isVisibleTo(user.uid)) {
+    final memberDocId = await _resolveCurrentUserMemberId(cleanTripId, user.uid);
+    if (!existingGroup.isVisibleTo(memberDocId)) {
       throw StateError('Poste introuvable ou non visible');
     }
     _ensureTripMemberExpenseRole(
@@ -244,7 +259,8 @@ class ExpensesRepository {
       throw StateError('Poste introuvable');
     }
     final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
-    if (!existingGroup.isVisibleTo(user.uid)) {
+    final memberDocId = await _resolveCurrentUserMemberId(cleanTripId, user.uid);
+    if (!existingGroup.isVisibleTo(memberDocId)) {
       throw StateError('Poste introuvable ou non visible');
     }
     _ensureTripMemberExpenseRole(
