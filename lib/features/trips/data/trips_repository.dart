@@ -216,21 +216,21 @@ class TripsRepository {
     final doc = firestore.collection('trips').doc();
     await doc.set(data);
 
-    // Firestore rules for expense groups read the parent trip document.
-    // Create the parent trip first, then create the default group.
-    final defaultGroupRef = doc.collection('expenseGroups').doc();
-    await defaultGroupRef.set({
-      'title': 'Commun',
-      'visibleToMemberIds': <String>[user.uid],
-      'isDefault': true,
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdBy': user.uid,
-    });
-
-    await doc.collection('participants').add({
+    // Create the creator's participant document first to get its stable ID.
+    // Firestore rules for expense groups read the parent trip document (already created above).
+    final participantRef = await doc.collection('participants').add({
       'participantName': creatorName.trim(),
       'userId': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    final defaultGroupRef = doc.collection('expenseGroups').doc();
+    await defaultGroupRef.set({
+      'title': 'Commun',
+      'visibleToMemberIds': <String>[participantRef.id],
+      'isDefault': true,
+      'createdAt': FieldValue.serverTimestamp(),
+      'createdBy': user.uid,
     });
   }
 
