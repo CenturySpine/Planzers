@@ -492,10 +492,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             .map((m) => m.id)
             .firstOrNull
         : null;
-    final myAssignedRoomNames = myUid == null
+    final myAssignedRoomNames = myParticipantId == null
         ? const <String>[]
         : rooms
-            .where((room) => room.assignedMemberIds.contains(myUid))
+            .where((room) => room.assignedMemberIds.contains(myParticipantId))
             .map(
               (room) => room.name.trim().isEmpty
                   ? l10n.roomsUnnamedRoom
