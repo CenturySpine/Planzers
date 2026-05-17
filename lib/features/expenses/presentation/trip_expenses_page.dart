@@ -17,9 +17,9 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// UIDs of participants who can appear as payer/participant for this expense post.
-/// [group.visibleToMemberIds] holds TripMember doc IDs; returns the UIDs of
-/// claimed participants whose doc ID is in that set.
+/// Participant doc IDs who can appear as payer/participant for this expense post.
+/// [group.visibleToMemberIds] holds TripMember doc IDs; returns the doc IDs of
+/// all participants (including unclaimed) whose doc ID is in that set.
 List<String> participantScopeMemberIdsForGroup(
   TripExpenseGroup group,
   List<TripMember> participants,
@@ -27,11 +27,8 @@ List<String> participantScopeMemberIdsForGroup(
   if (group.visibleToMemberIds.isEmpty) return [];
   final allowed = group.visibleToMemberIds.toSet();
   return participants
-      .where((m) =>
-          allowed.contains(m.id) &&
-          m.userId != null &&
-          m.userId!.trim().isNotEmpty)
-      .map((m) => m.userId!.trim())
+      .where((m) => allowed.contains(m.id))
+      .map((m) => m.id)
       .toSet()
       .toList()
     ..sort();
@@ -293,6 +290,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           participantScopeMemberIds:
               participantScopeMemberIdsForGroup(group, participants),
           memberLabels: memberLabels,
+          currentUserMemberId: currentUserMemberId,
         ),
       ),
     );
@@ -648,9 +646,10 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final viewerUserId = widget.viewerUserId?.trim();
+    final viewerMemberId = widget.currentUserMemberId?.trim();
     final settlement = computeViewerSettlement(
       widget.groupExpenses,
-      viewerUserId,
+      viewerMemberId,
       settledTransfers: widget.groupSettledTransfers
           .map((transfer) => transfer.toSuggestedTransfer()),
     );
@@ -659,7 +658,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       widget.allTripExpenses.where(
         (expense) {
           final paidBy = expense.paidBy.trim();
-          return viewerUserId != null && paidBy == viewerUserId;
+          return viewerMemberId != null && paidBy == viewerMemberId;
         },
       ),
     );
@@ -800,10 +799,10 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             pendingTransfers: settlement.suggestedTransfers,
             settledTransfers: settledTransfersVisibleToViewer(
               widget.groupSettledTransfers,
-              viewerUserId,
+              viewerMemberId,
             ),
             memberLabels: widget.memberLabels,
-            viewerUserId: viewerUserId,
+            viewerUserId: viewerMemberId,
             markingInProgress: _savingSettledTransfer,
             onMarkTransferDone: (transfer) async {
               if (_savingSettledTransfer) return;
@@ -2219,12 +2218,14 @@ class _AddExpensePage extends ConsumerStatefulWidget {
     required this.groupId,
     required this.participantScopeMemberIds,
     required this.memberLabels,
+    required this.currentUserMemberId,
   });
 
   final String tripId;
   final String groupId;
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
+  final String? currentUserMemberId;
 
   @override
   ConsumerState<_AddExpensePage> createState() => _AddExpensePageState();
@@ -2248,10 +2249,10 @@ class _AddExpensePageState extends ConsumerState<_AddExpensePage> {
   @override
   void initState() {
     super.initState();
-    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myParticipantId = widget.currentUserMemberId;
     final members = _scopeMemberIds;
-    _paidBy = (myUid != null && members.contains(myUid))
-        ? myUid
+    _paidBy = (myParticipantId != null && members.contains(myParticipantId))
+        ? myParticipantId
         : (members.isNotEmpty ? members.first : null);
     _participantIds.addAll(members);
   }
