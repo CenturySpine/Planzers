@@ -159,18 +159,10 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     return tripAsync.when(
       data: (trip) {
         if (trip == null) {
-          return Scaffold(
-            appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.tripNotFoundOrNoAccess,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.go('/trips');
+          });
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         final titleForAppBar =
