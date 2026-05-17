@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_form_page.dart';
@@ -198,6 +198,14 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
     final carpoolsAsync = ref.watch(tripCarpoolsStreamProvider(trip.id));
     final carpoolSectionAsync =
         ref.watch(tripCarpoolSectionStreamProvider(trip.id));
@@ -237,13 +245,13 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                 for (final carpool in carpools)
                   ...carpool.assignedParticipantIds,
               };
-              final unassignedMembers = trip.memberIds
+              final unassignedMembers = trip.memberUserIds
                   .where((memberId) => memberId.trim().isNotEmpty)
                   .where((memberId) => !assignedIds.contains(memberId))
                   .length;
               final myUidTrimmed = myUid?.trim() ?? '';
               final showSelfUnassignedCard = myUidTrimmed.isNotEmpty &&
-                  trip.memberIds.any((id) => id.trim() == myUidTrimmed) &&
+                  trip.memberUserIds.any((id) => id.trim() == myUidTrimmed) &&
                   !carpools.any(
                     (carpool) => carpool.assignedParticipantIds.any(
                       (id) => id.trim() == myUidTrimmed,
@@ -259,8 +267,8 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                   );
 
               final labelUserIds = <String>{
-                for (final id in trip.memberIds)
-                  if (id.trim().isNotEmpty) id.trim(),
+                for (final m in participants)
+                  if (m.userId != null && m.userId!.trim().isNotEmpty) m.userId!.trim(),
                 for (final carpool in carpools)
                   if (carpool.driverUserId.trim().isNotEmpty)
                     carpool.driverUserId.trim(),
@@ -272,20 +280,13 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
 
               return usersAsync.when(
                 data: (userDocs) {
-                  final memberLabels = tripMemberLabelsFromUserDocsById(
-                    userDocs,
-                    labelUserIds,
-                    tripMemberPublicLabels: trip.memberPublicLabels,
-                    currentUserId: myUid,
-                    emptyFallback: l10n.tripParticipantsTraveler,
-                  );
                   final viewerIsDriverOnTrip = myUidTrimmed.isNotEmpty &&
                       carpools.any(
                         (c) => c.driverUserId.trim() == myUidTrimmed,
                       );
                   final canUsePassengerSelfAssignment =
                       myUidTrimmed.isNotEmpty &&
-                          trip.memberIds.any((id) => id.trim() == myUidTrimmed);
+                          trip.memberUserIds.any((id) => id.trim() == myUidTrimmed);
                   final passengerSelfAssignmentInteractionLocked =
                       _selfAssignmentBusyCarpoolId != null;
                   return ListView(

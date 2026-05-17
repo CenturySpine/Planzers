@@ -50,7 +50,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   final TextEditingController _placeholderSearchController =
       TextEditingController();
 
-  /// 0: choose name, 1: stay + options (only when [requiresPlaceholderChoice]).
+  /// 0: choose name, 1: stay + options (only when [requiresParticipantChoice]).
   int _inviteFormStep = 0;
   bool _joinUsingCurrentProfile = false;
   TripMemberStay? _stayDraft;
@@ -72,18 +72,18 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     ];
   }
 
-  List<InviteJoinPlaceholderOption> _sortedPlaceholders(
+  List<InviteJoinParticipantOption> _sortedPlaceholders(
     InviteJoinContext ctx,
   ) {
-    final list = List<InviteJoinPlaceholderOption>.from(ctx.placeholders);
+    final list = List<InviteJoinParticipantOption>.from(ctx.participants);
     list.sort(
       (a, b) => compareDisplayNamesForSort(a.displayName, b.displayName),
     );
     return list;
   }
 
-  List<InviteJoinPlaceholderOption> _filteredPlaceholders(
-    List<InviteJoinPlaceholderOption> sorted,
+  List<InviteJoinParticipantOption> _filteredPlaceholders(
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final q = _placeholderSearchController.text;
     return sorted
@@ -92,7 +92,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   void _onPlaceholderSearchChanged(
-    List<InviteJoinPlaceholderOption> sorted,
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final filtered = _filteredPlaceholders(sorted);
     setState(() {
@@ -104,7 +104,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   Widget _placeholderChoiceTile({
-    required InviteJoinPlaceholderOption option,
+    required InviteJoinParticipantOption option,
     required int accentIndex,
     required bool isSuggested,
   }) {
@@ -213,7 +213,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   String? _findSuggestedPlaceholderId(
-    List<InviteJoinPlaceholderOption> sorted,
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final emailLocalPart = _currentUserEmailLocalPart;
     if (emailLocalPart == null || emailLocalPart.trim().isEmpty) return null;
@@ -254,7 +254,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         _joinUsingCurrentProfile = false;
         _phoneVisibilityDraft = TripMemberPhoneVisibility.nobody;
         _placeholderSearchController.clear();
-        if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
+        if (ctx.requiresParticipantChoice && ctx.participants.isNotEmpty) {
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
@@ -267,8 +267,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           _stayDraft = null;
         }
       });
-      if (!ctx.requiresPlaceholderChoice) {
-        await _join(placeholderMemberId: null);
+      if (!ctx.requiresParticipantChoice) {
+        await _join(participantId: null);
       }
     } catch (e) {
       if (!mounted) return;
@@ -283,8 +283,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   Future<void> _join({
-    String? placeholderMemberId,
-    bool bypassPlaceholderChoice = false,
+    String? participantId,
+    bool bypassParticipantChoice = false,
   }) async {
     if (_joining || _joined) return;
     setState(() {
@@ -295,8 +295,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       await ref.read(tripsRepositoryProvider).joinTripWithInvite(
             tripId: widget.tripId,
             token: widget.token,
-            placeholderMemberId: placeholderMemberId,
-            bypassPlaceholderChoice: bypassPlaceholderChoice,
+            participantId: participantId,
+            bypassParticipantChoice: bypassParticipantChoice,
           );
       if (!mounted) return;
       setState(() {
@@ -386,8 +386,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
 
     await _join(
-      placeholderMemberId: _joinUsingCurrentProfile ? null : id,
-      bypassPlaceholderChoice: _joinUsingCurrentProfile,
+      participantId: _joinUsingCurrentProfile ? null : id,
+      bypassParticipantChoice: _joinUsingCurrentProfile,
     );
     if (!_joined || !mounted) return;
 
@@ -421,7 +421,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   PreferredSizeWidget _buildAppBar() {
     final l10n = AppLocalizations.of(context)!;
     final showCancel = !_joined;
-    final placeholderPick = _context?.requiresPlaceholderChoice == true &&
+    final placeholderPick = _context?.requiresParticipantChoice == true &&
         !_loadingContext &&
         !_joining;
     return AppBar(
@@ -692,7 +692,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         : l10n.inviteJoinTripWithTitle(tripTitle);
 
     final placeholderPick = _context != null &&
-        _context!.requiresPlaceholderChoice &&
+        _context!.requiresParticipantChoice &&
         !_loadingContext &&
         !_joining &&
         !_joined;
@@ -754,7 +754,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     child: Text(l10n.inviteSeeMyTrips),
                   ),
                 ] else if (_context != null &&
-                    !_context!.requiresPlaceholderChoice &&
+                    !_context!.requiresParticipantChoice &&
                     !_joined) ...[
                   Text(
                     tripHeadline,
@@ -797,7 +797,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         child: FilledButton(
                           onPressed: _joining
                               ? null
-                              : () => _join(placeholderMemberId: null),
+                              : () => _join(participantId: null),
                           child: Text(l10n.commonRetry),
                         ),
                       ),

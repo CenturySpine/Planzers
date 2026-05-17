@@ -411,6 +411,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsDestinationLabel => 'Destination';
 
   @override
+  String get tripsCreateCreatorNameLabel => 'Your name';
+
+  @override
   String get tripsStartDateLabel => 'Start date';
 
   @override
@@ -418,7 +421,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripsCreateValidationRequired =>
-      'Title and destination are required';
+      'Title, destination and your name are required';
 
   @override
   String get tripsCreateValidationDateOrder =>
@@ -3205,6 +3208,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripsDestinationLabel => 'Destination';
 
   @override
+  String get tripsCreateCreatorNameLabel => 'Your name';
+
+  @override
   String get tripsStartDateLabel => 'Start date';
 
   @override
@@ -3212,7 +3218,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsCreateValidationRequired =>
-      'Title and destination are required';
+      'Title, destination and your name are required';
 
   @override
   String get tripsCreateValidationDateOrder =>

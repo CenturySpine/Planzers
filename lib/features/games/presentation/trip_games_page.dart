@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/games/data/trip_board_game.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -118,6 +118,15 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
     final gamesAsync = ref.watch(tripBoardGamesStreamProvider(widget.tripId));
     final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(widget.tripId)).asData?.value ??
+            [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
 
     return tripAsync.when(
       data: (trip) {
@@ -210,13 +219,8 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
                       }
 
                       final game = filteredGames[index - 2];
-                      final creatorLabel = resolveTripMemberDisplayLabel(
-                        memberId: game.createdBy,
-                        userData: usersById[game.createdBy],
-                        tripMemberPublicLabels: trip.memberPublicLabels,
-                        currentUserId: currentUserId,
-                        emptyFallback: l10n.tripParticipantsTraveler,
-                      );
+                      final creatorLabel =
+                          memberLabels[game.createdBy] ?? l10n.tripParticipantsTraveler;
                       final canDelete =
                           game.createdBy == currentUserId || canAdminEdit;
                       final canEdit = canDelete;

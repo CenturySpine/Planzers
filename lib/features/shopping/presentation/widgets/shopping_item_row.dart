@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart'
+    show avatarInitialFromDisplayLabel;
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/features/shopping/data/shopping_repository.dart';
@@ -144,13 +145,15 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
     final isClaimedByOther = claimedBy.isNotEmpty && claimedBy != currentUid;
     final canToggleChecked = isClaimedByMe;
     final claimedByUserData = claimedBy.isEmpty ? null : widget.usersDataById[claimedBy];
-    final claimedByLabel = resolveTripMemberDisplayLabel(
-      memberId: claimedBy,
-      userData: claimedByUserData,
-      tripMemberPublicLabels: const {},
-      currentUserId: currentUid,
-      emptyFallback: AppLocalizations.of(context)!.shoppingTravelerFallback,
-    );
+    final claimedByLabel = () {
+      if (claimedByUserData != null) {
+        final account =
+            (claimedByUserData['account'] as Map<String, dynamic>?) ?? const {};
+        final name = (account['name'] as String?)?.trim() ?? '';
+        if (name.isNotEmpty) return name;
+      }
+      return AppLocalizations.of(context)!.shoppingTravelerFallback;
+    }();
     final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);
     final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
           decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,

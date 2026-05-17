@@ -1,11 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
@@ -13,27 +11,30 @@ import 'package:planerz/features/expenses/data/settled_transfer.dart';
 import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_member.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Trip members who may appear as payers/participants for this expense post.
+/// UIDs of participants who can appear as payer/participant for this expense post.
+/// [group.visibleToMemberIds] holds TripMember doc IDs; returns the UIDs of
+/// claimed participants whose doc ID is in that set.
 List<String> participantScopeMemberIdsForGroup(
   TripExpenseGroup group,
-  List<String> tripMemberIds,
+  List<TripMember> participants,
 ) {
-  final clean = tripMemberIds
-      .map((id) => id.trim())
-      .where((id) => id.isNotEmpty)
-      .toList();
-  if (group.visibleToMemberIds.isEmpty) {
-    return [];
-  }
-  final allowed = group.visibleToMemberIds
-      .map((id) => id.trim())
-      .where((id) => id.isNotEmpty)
-      .toSet();
-  return clean.where((id) => allowed.contains(id)).toList()..sort();
+  if (group.visibleToMemberIds.isEmpty) return [];
+  final allowed = group.visibleToMemberIds.toSet();
+  return participants
+      .where((m) =>
+          allowed.contains(m.id) &&
+          m.userId != null &&
+          m.userId!.trim().isNotEmpty)
+      .map((m) => m.userId!.trim())
+      .toSet()
+      .toList()
+    ..sort();
 }
 
 /// Settled transfers involving [viewerUserId], or all if viewer is null/blank.
@@ -74,7 +75,20 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final settledTransfersAsync =
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
+    final memberIds = participants.map((m) => m.id).toList();
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserMemberId = participants
+        .where((m) => m.userId?.trim() == viewerId?.trim())
+        .map((m) => m.id)
+        .firstOrNull;
     final canCreateExpensePost = canCreateExpensePostForTrip(
       trip: trip,
       userId: viewerId,
@@ -82,12 +96,13 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final canCreateExpense = groupsAsync.maybeWhen(
       data: (groups) {
         final visibleGroups = groups
-            .where((group) => group.isVisibleTo(viewerId))
+            .where((group) => group.isVisibleTo(currentUserMemberId))
             .toList();
         return visibleGroups.any(
           (group) => canCreateExpenseForTrip(
             trip: trip,
             userId: viewerId,
+            currentUserMemberId: currentUserMemberId,
             expensePostVisibleToMemberIds: group.visibleToMemberIds,
           ),
         );
@@ -103,8 +118,10 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
             data: (settledTransfers) {
               return _TripExpensesBody(
                 trip: trip,
-                memberIds: trip.memberIds,
-                memberPublicLabels: trip.memberPublicLabels,
+                participants: participants,
+                memberLabels: memberLabels,
+                memberIds: memberIds,
+                currentUserMemberId: currentUserMemberId,
                 groups: groups,
                 expenses: expenses,
                 settledTransfers: settledTransfers,
@@ -165,8 +182,9 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                         _openExpenseGroupEditor(
                           context,
                           trip.id,
-                          trip.memberIds,
-                          trip.memberPublicLabels,
+                          memberIds,
+                          memberLabels,
+                          currentUserMemberId,
                           existing: null,
                         );
                       },
@@ -185,8 +203,8 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                           context,
                           ref,
                           trip.id,
-                          trip.memberIds,
-                          trip.memberPublicLabels,
+                          participants,
+                          memberLabels,
                           _activeGroupId,
                         );
                       },
@@ -212,7 +230,8 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     BuildContext context,
     String tripId,
     List<String> memberIds,
-    Map<String, String> memberPublicLabels, {
+    Map<String, String> memberLabels,
+    String? currentUserMemberId, {
     required TripExpenseGroup? existing,
   }) async {
     await Navigator.of(context).push<void>(
@@ -220,7 +239,8 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         builder: (ctx) => ExpenseGroupEditorPage(
           tripId: tripId,
           memberIds: memberIds,
-          memberPublicLabels: memberPublicLabels,
+          memberLabels: memberLabels,
+          currentUserMemberId: currentUserMemberId,
           existing: existing,
         ),
       ),
@@ -231,14 +251,18 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     BuildContext context,
     WidgetRef ref,
     String tripId,
-    List<String> memberIds,
-    Map<String, String> memberPublicLabels,
+    List<TripMember> participants,
+    Map<String, String> memberLabels,
     String? preferredGroupId,
   ) async {
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
+    final currentUserMemberId = participants
+        .where((m) => m.userId?.trim() == viewerId?.trim())
+        .map((m) => m.id)
+        .firstOrNull;
     final groups =
         await ref.read(expensesRepositoryProvider).watchTripExpenseGroups(tripId).first;
-    final visible = groups.where((g) => g.isVisibleTo(viewerId)).toList();
+    final visible = groups.where((g) => g.isVisibleTo(currentUserMemberId)).toList();
     if (!context.mounted) return;
     if (visible.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -267,8 +291,8 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
           tripId: tripId,
           groupId: group.id,
           participantScopeMemberIds:
-              participantScopeMemberIdsForGroup(group, memberIds),
-          memberPublicLabels: memberPublicLabels,
+              participantScopeMemberIdsForGroup(group, participants),
+          memberLabels: memberLabels,
         ),
       ),
     );
@@ -278,8 +302,10 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
 class _TripExpensesBody extends StatelessWidget {
   const _TripExpensesBody({
     required this.trip,
+    required this.participants,
+    required this.memberLabels,
     required this.memberIds,
-    required this.memberPublicLabels,
+    required this.currentUserMemberId,
     required this.groups,
     required this.expenses,
     required this.settledTransfers,
@@ -288,8 +314,10 @@ class _TripExpensesBody extends StatelessWidget {
   });
 
   final Trip trip;
+  final List<TripMember> participants;
+  final Map<String, String> memberLabels;
   final List<String> memberIds;
-  final Map<String, String> memberPublicLabels;
+  final String? currentUserMemberId;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final List<SettledTransfer> settledTransfers;
@@ -298,13 +326,9 @@ class _TripExpensesBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cleanMemberIds =
-        memberIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
-
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
-    final visibleGroups = groups.where((g) => g.isVisibleTo(viewerId)).toList()
+    final visibleGroups = groups.where((g) => g.isVisibleTo(currentUserMemberId)).toList()
       ..sort((a, b) {
-        // Keep the main/default post first, then place newly created posts to the right.
         if (a.isDefault != b.isDefault) {
           return a.isDefault ? -1 : 1;
         }
@@ -313,49 +337,13 @@ class _TripExpensesBody extends StatelessWidget {
         return a.title.toLowerCase().compareTo(b.title.toLowerCase());
       });
 
-    if (cleanMemberIds.isEmpty) {
-      return _buildScrollView(
-        context,
-        const {},
-        visibleGroups,
-        viewerId,
-        memberPublicLabels,
-        trip,
-      );
-    }
-
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: cleanMemberIds)
-          .snapshots(),
-      builder: (context, snapshot) {
-        final labels = tripMemberLabelsFromUserQuerySnapshot(
-          snapshot.data,
-          cleanMemberIds,
-          tripMemberPublicLabels: memberPublicLabels,
-          currentUserId: FirebaseAuth.instance.currentUser?.uid,
-          emptyFallback: AppLocalizations.of(context)!.tripParticipantsTraveler,
-        );
-
-        return _buildScrollView(
-          context,
-          labels,
-          visibleGroups,
-          viewerId,
-          memberPublicLabels,
-          trip,
-        );
-      },
-    );
+    return _buildScrollView(context, visibleGroups, viewerId, trip);
   }
 
   Widget _buildScrollView(
     BuildContext context,
-    Map<String, String> labels,
     List<TripExpenseGroup> visibleGroups,
     String? viewerId,
-    Map<String, String> memberPublicLabels,
     Trip trip,
   ) {
     final cs = Theme.of(context).colorScheme;
@@ -399,10 +387,11 @@ class _TripExpensesBody extends StatelessWidget {
                  groupSettledTransfers: settledTransfers
                      .where((t) => t.groupId == visibleGroups.single.id)
                      .toList(),
+                  participants: participants,
                   memberIds: memberIds,
-                  memberPublicLabels: memberPublicLabels,
-                 memberLabels: labels,
-                viewerUserId: viewerId,
+                  memberLabels: memberLabels,
+                  currentUserMemberId: currentUserMemberId,
+                 viewerUserId: viewerId,
               ),
             ),
           )
@@ -413,9 +402,10 @@ class _TripExpensesBody extends StatelessWidget {
               groups: visibleGroups,
                expenses: expenses,
                settledTransfers: settledTransfers,
+                participants: participants,
                 memberIds: memberIds,
-              memberPublicLabels: memberPublicLabels,
-              memberLabels: labels,
+              memberLabels: memberLabels,
+              currentUserMemberId: currentUserMemberId,
               viewerUserId: viewerId,
               initialGroupId: activeGroupId,
               onActiveGroupChanged: onActiveGroupChanged,
@@ -432,9 +422,10 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.groups,
     required this.expenses,
     required this.settledTransfers,
+    required this.participants,
     required this.memberIds,
-    required this.memberPublicLabels,
     required this.memberLabels,
+    required this.currentUserMemberId,
     required this.viewerUserId,
     required this.initialGroupId,
     required this.onActiveGroupChanged,
@@ -444,9 +435,10 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final List<SettledTransfer> settledTransfers;
+  final List<TripMember> participants;
   final List<String> memberIds;
-  final Map<String, String> memberPublicLabels;
   final Map<String, String> memberLabels;
+  final String? currentUserMemberId;
   final String? viewerUserId;
   final String? initialGroupId;
   final ValueChanged<String> onActiveGroupChanged;
@@ -552,9 +544,10 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                       groupSettledTransfers: widget.settledTransfers
                           .where((t) => t.groupId == group.id)
                           .toList(),
+                      participants: widget.participants,
                       memberIds: widget.memberIds,
-                     memberPublicLabels: widget.memberPublicLabels,
-                     memberLabels: widget.memberLabels,
+                      memberLabels: widget.memberLabels,
+                      currentUserMemberId: widget.currentUserMemberId,
                     viewerUserId: widget.viewerUserId,
                   ),
                 ),
@@ -573,9 +566,10 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.allTripExpenses,
     required this.groupExpenses,
     required this.groupSettledTransfers,
+    required this.participants,
     required this.memberIds,
-    required this.memberPublicLabels,
     required this.memberLabels,
+    required this.currentUserMemberId,
     required this.viewerUserId,
   });
 
@@ -584,9 +578,10 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
   final List<SettledTransfer> groupSettledTransfers;
+  final List<TripMember> participants;
   final List<String> memberIds;
-  final Map<String, String> memberPublicLabels;
   final Map<String, String> memberLabels;
+  final String? currentUserMemberId;
   final String? viewerUserId;
 
   @override
@@ -670,27 +665,31 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     );
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
-      widget.memberIds,
+      widget.participants,
     );
 
     final canEditPost = canEditExpensePostForTrip(
       trip: widget.trip,
       userId: viewerUserId,
+      currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
     final canDeletePost = canDeleteExpensePostForTrip(
       trip: widget.trip,
       userId: viewerUserId,
+      currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
     final canEditExpense = canEditExpenseForTrip(
       trip: widget.trip,
       userId: viewerUserId,
+      currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
     final canDeleteExpense = canDeleteExpenseForTrip(
       trip: widget.trip,
       userId: viewerUserId,
+      currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
 
@@ -740,7 +739,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                           context,
                           widget.trip.id,
                           widget.memberIds,
-                          widget.memberPublicLabels,
+                          widget.memberLabels,
+                          widget.currentUserMemberId,
                           existing: widget.group,
                         );
                         return;
@@ -2218,13 +2218,13 @@ class _AddExpensePage extends ConsumerStatefulWidget {
     required this.tripId,
     required this.groupId,
     required this.participantScopeMemberIds,
-    required this.memberPublicLabels,
+    required this.memberLabels,
   });
 
   final String tripId;
   final String groupId;
   final List<String> participantScopeMemberIds;
-  final Map<String, String> memberPublicLabels;
+  final Map<String, String> memberLabels;
 
   @override
   ConsumerState<_AddExpensePage> createState() => _AddExpensePageState();
@@ -2430,109 +2430,92 @@ class _AddExpensePageState extends ConsumerState<_AddExpensePage> {
                 ],
               ),
               const SizedBox(height: 12),
-              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .where(FieldPath.documentId, whereIn: members)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final labels = tripMemberLabelsFromUserQuerySnapshot(
-                    snapshot.data,
-                    members,
-                    tripMemberPublicLabels: widget.memberPublicLabels,
-                    currentUserId: FirebaseAuth.instance.currentUser?.uid,
-                    emptyFallback: l10n.tripParticipantsTraveler,
-                  );
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              key: ValueKey<String>(_paidBy ?? ''),
-                              initialValue:
-                                  _paidBy != null && members.contains(_paidBy)
-                                      ? _paidBy
-                                      : null,
-                              decoration: InputDecoration(
-                                labelText: l10n.expensesPaidByLabel,
-                                border: OutlineInputBorder(),
-                              ),
-                              items: [
-                                for (final id in members)
-                                  DropdownMenuItem(
-                                    value: id,
-                                    child: Text(
-                                      labels[id] ?? id,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                              ],
-                              onChanged: (v) => setState(() => _paidBy = v),
-                            ),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          key: ValueKey<String>(_paidBy ?? ''),
+                          initialValue:
+                              _paidBy != null && members.contains(_paidBy)
+                                  ? _paidBy
+                                  : null,
+                          decoration: InputDecoration(
+                            labelText: l10n.expensesPaidByLabel,
+                            border: OutlineInputBorder(),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _pickExpenseDate,
-                              borderRadius: BorderRadius.circular(12),
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  labelText: l10n.expensesDateLabel,
-                                  border: OutlineInputBorder(),
-                                  suffixIcon:
-                                      Icon(Icons.calendar_today_outlined),
-                                ),
-                                child: Text(_formatExpenseDate(_expenseDate)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.expensesAmountSplit,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: cs.outlineVariant,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
+                          items: [
                             for (final id in members)
-                              CheckboxListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                title: Text(
-                                  labels[id] ?? id,
+                              DropdownMenuItem(
+                                value: id,
+                                child: Text(
+                                  widget.memberLabels[id] ??
+                                      l10n.tripParticipantsTraveler,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                value: _participantIds.contains(id),
-                                onChanged: (checked) {
-                                  setState(() {
-                                    if (checked == true) {
-                                      _participantIds.add(id);
-                                    } else {
-                                      _participantIds.remove(id);
-                                    }
-                                  });
-                                },
                               ),
                           ],
+                          onChanged: (v) => setState(() => _paidBy = v),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _pickExpenseDate,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: l10n.expensesDateLabel,
+                              border: OutlineInputBorder(),
+                              suffixIcon: Icon(Icons.calendar_today_outlined),
+                            ),
+                            child: Text(_formatExpenseDate(_expenseDate)),
+                          ),
                         ),
                       ),
                     ],
-                  );
-                },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.expensesAmountSplit,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outlineVariant),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        for (final id in members)
+                          CheckboxListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            title: Text(
+                              widget.memberLabels[id] ??
+                                  l10n.tripParticipantsTraveler,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            value: _participantIds.contains(id),
+                            onChanged: (checked) {
+                              setState(() {
+                                if (checked == true) {
+                                  _participantIds.add(id);
+                                } else {
+                                  _participantIds.remove(id);
+                                }
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
             ],

@@ -18,6 +18,7 @@ import 'package:planerz/features/activities/presentation/trip_activity_searchabl
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -159,10 +160,14 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       trip: trip,
       userId: myUid,
     );
-    final tripMemberIds = trip.memberIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toSet();
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
@@ -251,9 +256,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             query: suggestionsQuery,
             creatorLabelFor: (activity) => creatorLabelForActivity(
               activity,
-              trip.memberPublicLabels,
-              usersDataById: creatorsDataById,
-              currentUserId: myUid,
+              memberLabels,
               unknownLabel: l10n.roleParticipant,
             ),
           );
@@ -263,9 +266,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             query: plannedQuery,
             creatorLabelForActivity: (activity) => creatorLabelForActivity(
                   activity,
-                  trip.memberPublicLabels,
-                  usersDataById: creatorsDataById,
-                  currentUserId: myUid,
+                  memberLabels,
                   unknownLabel: l10n.roleParticipant,
                 ),
             dayLabelFor: (day) => _dayLabelFor(day, l10n),
@@ -334,8 +335,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         onSearchChanged: (_) => setState(() {}),
                         entries: suggestionsEntries,
                         tripId: trip.id,
-                        tripMemberPublicLabels: trip.memberPublicLabels,
-                        tripMemberIds: tripMemberIds,
+                        tripMemberPublicLabels: memberLabels,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoSuggestion,
@@ -347,8 +347,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         onSearchChanged: (_) => setState(() {}),
                         entries: plannedEntries,
                         tripId: trip.id,
-                        tripMemberPublicLabels: trip.memberPublicLabels,
-                        tripMemberIds: tripMemberIds,
+                        tripMemberPublicLabels: memberLabels,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         emptyMessage: l10n.activitiesNoPlanned,
@@ -359,8 +358,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         plannedDays: plannedDays,
                         agendaEntries: agendaEntries,
                         tripId: trip.id,
-                        tripMemberPublicLabels: trip.memberPublicLabels,
-                        tripMemberIds: tripMemberIds,
+                        tripMemberPublicLabels: memberLabels,
                         usersDataById: creatorsDataById,
                         currentUserId: myUid,
                         onMoveBackward: () => setState(
@@ -403,7 +401,6 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.agendaEntries,
     required this.tripId,
     required this.tripMemberPublicLabels,
-    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.onMoveBackward,
@@ -417,7 +414,6 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final List<TripActivitiesListEntry> agendaEntries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
-  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final VoidCallback onMoveBackward;
@@ -477,8 +473,6 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                         tripId: tripId,
                         activity: activity,
                         tripMemberPublicLabels: tripMemberPublicLabels,
-                        usersDataById: usersDataById,
-                        currentUserId: currentUserId,
                       );
                     }
                     final meal = entry.meal;
@@ -488,8 +482,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                     return TripMealCard(
                       tripId: tripId,
                       meal: meal,
-                      memberPublicLabels: tripMemberPublicLabels,
-                      tripMemberIds: tripMemberIds,
+                      memberLabels: tripMemberPublicLabels,
                     );
                   },
                 ),

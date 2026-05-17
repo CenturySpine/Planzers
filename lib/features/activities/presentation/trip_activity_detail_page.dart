@@ -6,10 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
@@ -463,10 +463,14 @@ class _ReadBody extends ConsumerWidget {
           : false,
       orElse: () => false,
     );
-    final tripMemberPublicLabels = tripAsync.maybeWhen(
-      data: (trip) => trip?.memberPublicLabels ?? const <String, String>{},
-      orElse: () => const <String, String>{},
-    );
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
+    final tripMemberPublicLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -854,13 +858,7 @@ class _VotersSectionState extends ConsumerState<_VotersSection> {
     final usersDataById = usersDataAsync.asData?.value ?? const {};
 
     final voterNames = voterIds.map((id) {
-      return resolveTripMemberDisplayLabel(
-        memberId: id,
-        userData: usersDataById[id],
-        tripMemberPublicLabels: widget.tripMemberPublicLabels,
-        currentUserId: widget.currentUserId,
-        emptyFallback: l10n.roleParticipant,
-      );
+      return widget.tripMemberPublicLabels[id] ?? l10n.roleParticipant;
     }).toList();
 
     return Card(
@@ -961,13 +959,7 @@ class _OverlappingBadges extends StatelessWidget {
                 alignment: Alignment.center,
                 child: buildProfileBadge(
                   context: context,
-                  displayLabel: resolveTripMemberDisplayLabel(
-                    memberId: voterIds[i],
-                    userData: usersDataById[voterIds[i]],
-                    tripMemberPublicLabels: tripMemberPublicLabels,
-                    currentUserId: currentUserId,
-                    emptyFallback: fallbackLabel,
-                  ),
+                  displayLabel: tripMemberPublicLabels[voterIds[i]] ?? fallbackLabel,
                   userData: usersDataById[voterIds[i]],
                   size: _badgeSize,
                 ),

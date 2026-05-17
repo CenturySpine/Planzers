@@ -7,6 +7,7 @@ import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -23,16 +24,20 @@ class TripMealsPage extends ConsumerWidget {
       userId: currentUserId,
     );
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
 
     return mealsAsync.when(
       data: (meals) => _MealsList(
         tripId: trip.id,
         meals: meals,
-        memberPublicLabels: trip.memberPublicLabels,
-        tripMemberIds: trip.memberIds
-            .map((id) => id.trim())
-            .where((id) => id.isNotEmpty)
-            .toSet(),
+        memberLabels: memberLabels,
         canCreateMeal: canCreateMeal,
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -53,15 +58,13 @@ class _MealsList extends StatelessWidget {
   const _MealsList({
     required this.tripId,
     required this.meals,
-    required this.memberPublicLabels,
-    required this.tripMemberIds,
+    required this.memberLabels,
     required this.canCreateMeal,
   });
 
   final String tripId;
   final List<TripMeal> meals;
-  final Map<String, String> memberPublicLabels;
-  final Set<String> tripMemberIds;
+  final Map<String, String> memberLabels;
   final bool canCreateMeal;
 
   /// Group meals by date key.
@@ -135,8 +138,7 @@ class _MealsList extends StatelessWidget {
                     dateLabel: _dateKeyToLabel(context, dateKey),
                     meals: mealsForDate,
                     tripId: tripId,
-                    memberPublicLabels: memberPublicLabels,
-                    tripMemberIds: tripMemberIds,
+                    memberLabels: memberLabels,
                   );
                 },
               );
@@ -166,20 +168,17 @@ class _MealDateSection extends StatelessWidget {
     required this.dateLabel,
     required this.meals,
     required this.tripId,
-    required this.memberPublicLabels,
-    required this.tripMemberIds,
+    required this.memberLabels,
   });
 
   final String dateKey;
   final String dateLabel;
   final List<TripMeal> meals;
   final String tripId;
-  final Map<String, String> memberPublicLabels;
-  final Set<String> tripMemberIds;
+  final Map<String, String> memberLabels;
 
   @override
   Widget build(BuildContext context) {
-    // Already sorted by day part within date, thanks to repository
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Column(
@@ -195,38 +194,13 @@ class _MealDateSection extends StatelessWidget {
                   ),
             ),
           ),
-          ...meals.map((meal) => _MealCard(
+          ...meals.map((meal) => TripMealCard(
                 tripId: tripId,
                 meal: meal,
-                memberPublicLabels: memberPublicLabels,
-                tripMemberIds: tripMemberIds,
+                memberLabels: memberLabels,
               )),
         ],
       ),
-    );
-  }
-}
-
-class _MealCard extends StatelessWidget {
-  const _MealCard({
-    required this.tripId,
-    required this.meal,
-    required this.memberPublicLabels,
-    required this.tripMemberIds,
-  });
-
-  final String tripId;
-  final TripMeal meal;
-  final Map<String, String> memberPublicLabels;
-  final Set<String> tripMemberIds;
-
-  @override
-  Widget build(BuildContext context) {
-    return TripMealCard(
-      tripId: tripId,
-      meal: meal,
-      memberPublicLabels: memberPublicLabels,
-      tripMemberIds: tripMemberIds,
     );
   }
 }

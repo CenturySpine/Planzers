@@ -844,6 +844,12 @@ abstract class AppLocalizations {
   /// **'Destination'**
   String get tripsDestinationLabel;
 
+  /// No description provided for @tripsCreateCreatorNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre nom'**
+  String get tripsCreateCreatorNameLabel;
+
   /// No description provided for @tripsStartDateLabel.
   ///
   /// In fr, this message translates to:
@@ -859,7 +865,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateValidationRequired.
   ///
   /// In fr, this message translates to:
-  /// **'Titre et destination obligatoires'**
+  /// **'Titre, destination et votre nom sont obligatoires'**
   String get tripsCreateValidationRequired;
 
   /// No description provided for @tripsCreateValidationDateOrder.
