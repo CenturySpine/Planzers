@@ -188,6 +188,7 @@ class _TripMemberPreferencesPageState
         ref.watch(myTripCupidonEnabledProvider(widget.tripId));
     final myPhoneNumberAsync = ref.watch(myPhoneNumberProvider);
     final myPhoneVisibilityAsync = ref.watch(tripMemberPhoneVisibilityStreamProvider(widget.tripId));
+    ref.watch(myTripMemberStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
 
     return tripAsync.when(

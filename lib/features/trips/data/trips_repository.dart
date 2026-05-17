@@ -15,6 +15,7 @@ import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
@@ -218,9 +219,16 @@ class TripsRepository {
 
     // Create the creator's participant document first to get its stable ID.
     // Firestore rules for expense groups read the parent trip document (already created above).
+    final defaultStay = TripMemberStay.defaultForInviteContext(
+      tripStartDate: startDate,
+      tripEndDate: endDate,
+    );
     final participantRef = await doc.collection('participants').add({
       'participantName': creatorName.trim(),
       'userId': user.uid,
+      ...defaultStay.toFirestoreMap(),
+      'cupidonEnabled': false,
+      'phoneVisibility': 'nobody',
       'createdAt': FieldValue.serverTimestamp(),
     });
 
