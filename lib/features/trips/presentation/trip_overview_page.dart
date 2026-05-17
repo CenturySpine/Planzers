@@ -484,11 +484,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final participants =
         ref.watch(tripParticipantsStreamProvider(_trip.id)).asData?.value ?? [];
     final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
+      for (final m in participants) m.id: m.participantName,
     };
+    final myParticipantId = myUid != null
+        ? participants
+            .where((m) => m.userId?.trim() == myUid)
+            .map((m) => m.id)
+            .firstOrNull
+        : null;
     final myAssignedRoomNames = myUid == null
         ? const <String>[]
         : rooms
@@ -580,11 +583,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                 photoUrl: photoUrl,
               );
             }).toList();
-            final TripCarpool? myCarpool = myUid == null
+            final TripCarpool? myCarpool = myParticipantId == null
                 ? null
                 : carpools.cast<TripCarpool?>().firstWhere(
                       (entry) =>
-                          entry?.assignedParticipantIds.contains(myUid) == true,
+                          entry?.assignedParticipantIds
+                              .contains(myParticipantId) ==
+                          true,
                       orElse: () => null,
                     );
             final myCarpoolDetailLines = <String>[
@@ -597,13 +602,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   );
                   final meetingPointLabel =
                       myCarpool.meetingPointAddress.trim();
-                  final driverLabel = (memberLabels[myCarpool.driverUserId] ??
+                  final driverLabel = (memberLabels[myCarpool.driverParticipantId] ??
                           l10n.tripParticipantsTraveler)
                       .trim();
                   final passengerIds = myCarpool.assignedParticipantIds
                       .map((id) => id.trim())
                       .where((id) => id.isNotEmpty)
-                      .where((id) => id != myCarpool.driverUserId.trim())
+                      .where((id) => id != myCarpool.driverParticipantId.trim())
                       .toList(growable: false);
                   final passengerLabels = passengerIds
                       .map(
@@ -616,7 +621,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ? l10n.tripOverviewCarpoolNoPassengersPlaceholder
                       : passengerLabels.join(', ');
                   final isDriver =
-                      myUid.trim() == myCarpool.driverUserId.trim();
+                      myParticipantId != null &&
+                      myParticipantId == myCarpool.driverParticipantId.trim();
 
                   return <String>[
                     isDriver
