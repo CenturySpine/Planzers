@@ -562,7 +562,7 @@ class TripsRepository {
     _ensureTripGeneralPermissionForAction(
       trip: trip,
       userId: user.uid,
-      requiredRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
+      requiredRole: trip.participantsPermissions.manageParticipantsMinRole,
     );
 
     await firestore
@@ -901,13 +901,7 @@ class TripsRepository {
     );
 
     final fieldName = switch (action) {
-      TripParticipantsPermissionAction.createParticipant => 'createParticipant',
-      TripParticipantsPermissionAction.editPlaceholderParticipant =>
-        'editPlaceholderParticipant',
-      TripParticipantsPermissionAction.deletePlaceholderParticipant =>
-        'deletePlaceholderParticipant',
-      TripParticipantsPermissionAction.deleteRegisteredParticipant =>
-        'deleteRegisteredParticipant',
+      TripParticipantsPermissionAction.manageParticipants => 'manageParticipants',
       TripParticipantsPermissionAction.toggleAdminRole => 'toggleAdminRole',
     };
 

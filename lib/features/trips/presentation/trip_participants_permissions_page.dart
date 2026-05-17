@@ -157,66 +157,16 @@ class _TripParticipantsPermissionsPageState
                       ),
                       const SizedBox(height: 4),
                       TripPermissionItemRow(
-                        title: l10n.tripPermissionParticipantsCreate,
+                        title: l10n.tripPermissionParticipantsManage,
                         minRole:
-                            trip.participantsPermissions.createParticipantMinRole,
-                        icon: Icons.person_add_alt_outlined,
+                            trip.participantsPermissions.manageParticipantsMinRole,
+                        icon: Icons.group_outlined,
                         busy: _savingActions.contains(
-                          TripParticipantsPermissionAction.createParticipant,
+                          TripParticipantsPermissionAction.manageParticipants,
                         ),
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePermission(
-                          action: TripParticipantsPermissionAction.createParticipant,
-                          minRole: role,
-                        ),
-                      ),
-                      TripPermissionItemRow(
-                        title: l10n.tripPermissionParticipantsEditPlaceholder,
-                        minRole: trip
-                            .participantsPermissions
-                            .editPlaceholderParticipantMinRole,
-                        icon: Icons.edit_outlined,
-                        busy: _savingActions.contains(
-                          TripParticipantsPermissionAction.editPlaceholderParticipant,
-                        ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripParticipantsPermissionAction
-                              .editPlaceholderParticipant,
-                          minRole: role,
-                        ),
-                      ),
-                      TripPermissionItemRow(
-                        title: l10n.tripPermissionParticipantsDeletePlaceholder,
-                        minRole: trip
-                            .participantsPermissions
-                            .deletePlaceholderParticipantMinRole,
-                        icon: Icons.person_remove_alt_1_outlined,
-                        busy: _savingActions.contains(
-                          TripParticipantsPermissionAction
-                              .deletePlaceholderParticipant,
-                        ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripParticipantsPermissionAction
-                              .deletePlaceholderParticipant,
-                          minRole: role,
-                        ),
-                      ),
-                      TripPermissionItemRow(
-                        title: l10n.tripPermissionParticipantsDeleteRegistered,
-                        minRole: trip
-                            .participantsPermissions
-                            .deleteRegisteredParticipantMinRole,
-                        icon: Icons.person_remove_outlined,
-                        busy: _savingActions.contains(
-                          TripParticipantsPermissionAction
-                              .deleteRegisteredParticipant,
-                        ),
-                        enabled: !_isResettingDefaults,
-                        onChanged: (role) => _updatePermission(
-                          action: TripParticipantsPermissionAction
-                              .deleteRegisteredParticipant,
+                          action: TripParticipantsPermissionAction.manageParticipants,
                           minRole: role,
                         ),
                       ),

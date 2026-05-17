@@ -680,27 +680,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prepare permission management related to trip participants.';
+      'Minimum roles for managing trip participants.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Reset is ready (permissions list coming soon)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Create a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Edit a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Delete a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Delete a registered participant';
+  String get tripPermissionParticipantsManage =>
+      'Manage participants (create, edit, delete)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>
@@ -3477,27 +3461,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prepare permission management related to trip participants.';
+      'Minimum roles for managing trip participants.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Reset is ready (permissions list coming soon)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Create a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Edit a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Delete a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Delete a registered participant';
+  String get tripPermissionParticipantsManage =>
+      'Manage participants (create, edit, delete)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>

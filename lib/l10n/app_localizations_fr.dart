@@ -688,27 +688,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prépare la gestion des permissions liées aux participants du voyage.';
+      'Rôles minimaux pour la gestion des participants du voyage.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Réinitialisation prête (liste des permissions à venir)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Créer un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Modifier un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Supprimer un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Supprimer un participant inscrit';
+  String get tripPermissionParticipantsManage =>
+      'Gérer les participants (créer, modifier, supprimer)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>
@@ -3513,27 +3497,11 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prépare la gestion des permissions liées aux participants du voyage.';
+      'Rôles minimaux pour la gestion des participants du voyage.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Réinitialisation prête (liste des permissions à venir)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Créer un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Modifier un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Supprimer un participant temporaire';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Supprimer un participant inscrit';
+  String get tripPermissionParticipantsManage =>
+      'Gérer les participants (créer, modifier, supprimer)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>

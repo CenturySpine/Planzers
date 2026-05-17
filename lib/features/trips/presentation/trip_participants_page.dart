@@ -390,33 +390,14 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                   trip: trip,
                   userId: myUid,
                 );
-                final canCreateParticipant = isTripRoleAllowed(
+                final canManageParticipants = isTripRoleAllowed(
                   currentRole: currentRole,
-                  minRole: trip.participantsPermissions.createParticipantMinRole,
-                );
-                final canDeleteParticipant = isTripRoleAllowed(
-                  currentRole: currentRole,
-                  minRole:
-                      trip.participantsPermissions.deletePlaceholderParticipantMinRole,
-                );
-                final canEditParticipant = isTripRoleAllowed(
-                  currentRole: currentRole,
-                  minRole: trip.participantsPermissions.editPlaceholderParticipantMinRole,
-                );
-                final canDeleteRegisteredParticipant = isTripRoleAllowed(
-                  currentRole: currentRole,
-                  minRole:
-                      trip.participantsPermissions.deleteRegisteredParticipantMinRole,
+                  minRole: trip.participantsPermissions.manageParticipantsMinRole,
                 );
                 final canToggleAdminRole = isTripRoleAllowed(
                   currentRole: currentRole,
                   minRole: trip.participantsPermissions.toggleAdminRoleMinRole,
                 );
-                final canManageParticipants = canCreateParticipant ||
-                    canEditParticipant ||
-                    canDeleteParticipant ||
-                    canDeleteRegisteredParticipant ||
-                    canToggleAdminRole;
                 final myCupidonEnabled = enabledCupidonMemberIds
                     .contains((myUid ?? '').trim());
                 final searchQuery = _participantSearchController.text;
@@ -503,13 +484,6 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                         final isOwnerRow =
                                             row.userId?.trim() ==
                                                 trip.ownerId.trim();
-                                        final canRemoveMember =
-                                            canDeleteRegisteredParticipant &&
-                                                row.isClaimed &&
-                                                !isOwnerRow &&
-                                                row.userId?.trim() !=
-                                                    myUidTrim;
-
                                         final isRemoving =
                                             _removingMemberIds.contains(
                                                 row.participantId.trim());
@@ -520,6 +494,10 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                             Theme.of(context).colorScheme;
                                         final canCycleRole =
                                             canToggleAdminRole && !isOwnerRow && row.isClaimed;
+                                        final canDeleteThisRow =
+                                            canManageParticipants &&
+                                                !isOwnerRow &&
+                                                row.userId?.trim() != myUidTrim;
 
                                         return Card(
                                           child: ListTile(
@@ -551,148 +529,114 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                   : null,
                                             ),
                                             title: Text(row.displayLabel),
-                                            trailing: !row.isClaimed &&
-                                                    (canCreateParticipant ||
-                                                        canEditParticipant ||
-                                                        canDeleteParticipant)
-                                                ? Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      if (canEditParticipant)
-                                                        IconButton(
-                                                          tooltip:
-                                                              l10n.commonEdit,
-                                                          icon: const Icon(
-                                                              Icons
-                                                                  .edit_outlined),
-                                                          onPressed: () =>
-                                                              _openEditParticipantDialog(
-                                                            participantId:
-                                                                row.participantId,
-                                                            currentName:
-                                                                row.displayLabel,
-                                                          ),
-                                                        ),
-                                                      if (canDeleteParticipant)
-                                                        IconButton(
-                                                          tooltip: l10n
-                                                              .tripParticipantsRemoveAction,
-                                                          icon: Icon(
-                                                              Icons
-                                                                  .delete_outline,
-                                                              color: Theme.of(
-                                                                      context)
-                                                                  .colorScheme
-                                                                  .error),
-                                                          onPressed: () =>
-                                                              _confirmRemoveParticipant(
-                                                            participantId:
-                                                                row.participantId,
-                                                            label: row
-                                                                .displayLabel,
-                                                          ),
-                                                        ),
-                                                    ],
-                                                  )
-                                                : Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      if (row.phoneUri != null)
-                                                        IconButton(
-                                                          tooltip: l10n
-                                                              .tripParticipantsOpenDialer,
-                                                          icon: const Icon(
-                                                              Icons
-                                                                  .phone_outlined),
-                                                          onPressed: () =>
-                                                              launchUrl(Uri.parse(
-                                                                  row.phoneUri!)),
-                                                        ),
-                                                      if (row.isClaimed &&
-                                                          row.userId?.trim() !=
-                                                              myUidTrim &&
-                                                          myCupidonEnabled)
-                                                        IconButton(
-                                                          tooltip: row.likedByMe
-                                                              ? l10n
-                                                                  .tripParticipantsUnlike
-                                                              : l10n
-                                                                  .tripParticipantsLike,
-                                                          onPressed:
-                                                              _likingMemberIds
-                                                                      .contains(
-                                                                          row.participantId
-                                                                              .trim())
-                                                                  ? null
-                                                                  : () =>
-                                                                      _toggleCupidonLike(
-                                                                        targetMemberId:
-                                                                            row.participantId,
-                                                                        currentlyLiked:
-                                                                            row.likedByMe,
-                                                                      ),
-                                                          icon: _likingMemberIds
-                                                                  .contains(row
-                                                                      .participantId
-                                                                      .trim())
-                                                              ? const SizedBox(
-                                                                  width: 22,
-                                                                  height: 22,
-                                                                  child:
-                                                                      CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2,
-                                                                  ),
-                                                                )
-                                                              : Icon(
-                                                                  row.likedByMe
-                                                                      ? Icons
-                                                                          .favorite
-                                                                      : Icons
-                                                                          .favorite_border,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .colorScheme
-                                                                      .error,
-                                                                ),
-                                                        ),
-                                                      if (canRemoveMember)
-                                                        IconButton(
-                                                          tooltip: l10n
-                                                              .tripParticipantsRemoveAction,
-                                                          icon: isRemoving
-                                                              ? const SizedBox(
-                                                                  width: 22,
-                                                                  height: 22,
-                                                                  child:
-                                                                      CircularProgressIndicator(
-                                                                    strokeWidth:
-                                                                        2,
-                                                                  ),
-                                                                )
-                                                              : Icon(
-                                                                  Icons
-                                                                      .delete_outline,
-                                                                  color: Theme.of(
-                                                                          context)
-                                                                      .colorScheme
-                                                                      .error),
-                                                          onPressed: isRemoving ||
-                                                                  row.userId ==
-                                                                      null
-                                                              ? null
-                                                              : () =>
-                                                                  _confirmRemoveMember(
-                                                                    memberId:
-                                                                        row.userId!,
-                                                                    label: row
-                                                                        .displayLabel,
-                                                                  ),
-                                                        ),
-                                                    ],
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                if (row.phoneUri != null)
+                                                  IconButton(
+                                                    tooltip: l10n
+                                                        .tripParticipantsOpenDialer,
+                                                    icon: const Icon(
+                                                        Icons.phone_outlined),
+                                                    onPressed: () =>
+                                                        launchUrl(Uri.parse(
+                                                            row.phoneUri!)),
                                                   ),
+                                                if (row.isClaimed &&
+                                                    row.userId?.trim() !=
+                                                        myUidTrim &&
+                                                    myCupidonEnabled)
+                                                  IconButton(
+                                                    tooltip: row.likedByMe
+                                                        ? l10n
+                                                            .tripParticipantsUnlike
+                                                        : l10n
+                                                            .tripParticipantsLike,
+                                                    onPressed: _likingMemberIds
+                                                            .contains(
+                                                                row.participantId
+                                                                    .trim())
+                                                        ? null
+                                                        : () =>
+                                                            _toggleCupidonLike(
+                                                              targetMemberId:
+                                                                  row.participantId,
+                                                              currentlyLiked:
+                                                                  row.likedByMe,
+                                                            ),
+                                                    icon: _likingMemberIds
+                                                            .contains(row
+                                                                .participantId
+                                                                .trim())
+                                                        ? const SizedBox(
+                                                            width: 22,
+                                                            height: 22,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                          )
+                                                        : Icon(
+                                                            row.likedByMe
+                                                                ? Icons.favorite
+                                                                : Icons
+                                                                    .favorite_border,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .colorScheme
+                                                                .error,
+                                                          ),
+                                                  ),
+                                                if (canManageParticipants)
+                                                  IconButton(
+                                                    tooltip: l10n.commonEdit,
+                                                    icon: const Icon(
+                                                        Icons.edit_outlined),
+                                                    onPressed: () =>
+                                                        _openEditParticipantDialog(
+                                                      participantId:
+                                                          row.participantId,
+                                                      currentName:
+                                                          row.displayLabel,
+                                                    ),
+                                                  ),
+                                                if (canDeleteThisRow)
+                                                  IconButton(
+                                                    tooltip: l10n
+                                                        .tripParticipantsRemoveAction,
+                                                    icon: row.isClaimed &&
+                                                            isRemoving
+                                                        ? const SizedBox(
+                                                            width: 22,
+                                                            height: 22,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                          )
+                                                        : Icon(
+                                                            Icons.delete_outline,
+                                                            color: scheme.error,
+                                                          ),
+                                                    onPressed: row.isClaimed &&
+                                                            isRemoving
+                                                        ? null
+                                                        : () => row.isClaimed
+                                                            ? _confirmRemoveMember(
+                                                                memberId:
+                                                                    row.userId!,
+                                                                label: row
+                                                                    .displayLabel,
+                                                              )
+                                                            : _confirmRemoveParticipant(
+                                                                participantId:
+                                                                    row.participantId,
+                                                                label: row
+                                                                    .displayLabel,
+                                                              ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                         );
                                       },
@@ -700,7 +644,7 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                             ),
                           ],
                         ),
-                  floatingActionButton: canCreateParticipant
+                  floatingActionButton: canManageParticipants
                       ? FloatingActionButton(
                           onPressed: _openAddDialog,
                           tooltip:
