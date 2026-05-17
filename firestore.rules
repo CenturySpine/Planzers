@@ -517,7 +517,11 @@ service cloud.firestore {
           && (
             request.resource.data.keys().hasOnly(['participantName', 'createdAt'])
             || (
-              request.resource.data.keys().hasOnly(['participantName', 'createdAt', 'userId'])
+              request.resource.data.keys().hasOnly([
+                'participantName', 'createdAt', 'userId',
+                'stayStartDateKey', 'stayStartDayPart', 'stayEndDateKey', 'stayEndDayPart',
+                'cupidonEnabled', 'phoneVisibility'
+              ])
               && request.resource.data.userId == request.auth.uid
               && tripDoc(tripId).data.ownerId == request.auth.uid
             )
