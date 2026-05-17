@@ -1096,8 +1096,12 @@ function _startOfDay(d) {
 function defaultStayForTrip(tripData) {
   const parseDate = (raw) => {
     if (!raw) return null;
-    const d = new Date(raw);
-    return isNaN(d.getTime()) ? null : d;
+    const d = typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
+    if (isNaN(d.getTime())) return null;
+    // Trip dates are stored as midnight local time (e.g. UTC+2), which arrives
+    // as 22:00 UTC the day before on the server. Adding 12h normalises any
+    // UTC offset up to ±12h before the day is extracted.
+    return new Date(d.getTime() + 12 * 60 * 60 * 1000);
   };
   const tripStartDate = parseDate(tripData.startDate);
   const tripEndDate = parseDate(tripData.endDate);
