@@ -250,11 +250,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       if (!mounted) return;
       setState(() {
         _context = ctx;
-        _inviteFormStep = 0;
-        _joinUsingCurrentProfile = false;
         _phoneVisibilityDraft = TripMemberPhoneVisibility.nobody;
         _placeholderSearchController.clear();
         if (ctx.requiresParticipantChoice && ctx.participants.isNotEmpty) {
+          _inviteFormStep = 0;
+          _joinUsingCurrentProfile = false;
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
@@ -263,13 +263,16 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripEndDate: ctx.tripEndDate,
           );
         } else {
+          _inviteFormStep = 1;
+          _joinUsingCurrentProfile = true;
           _suggestedPlaceholderId = null;
-          _stayDraft = null;
+          _selectedPlaceholderId = null;
+          _stayDraft = TripMemberStay.defaultForInviteContext(
+            tripStartDate: ctx.tripStartDate,
+            tripEndDate: ctx.tripEndDate,
+          );
         }
       });
-      if (!ctx.requiresParticipantChoice) {
-        await _join(participantId: null);
-      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -423,7 +426,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   PreferredSizeWidget _buildAppBar() {
     final l10n = AppLocalizations.of(context)!;
     final showCancel = !_joined;
-    final placeholderPick = _context?.requiresParticipantChoice == true &&
+    final placeholderPick = _context != null &&
         !_loadingContext &&
         !_joining;
     return AppBar(
@@ -445,9 +448,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final tripCupidonModeEnabled = ctx.cupidonModeEnabled;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
-    final stepTitle = _inviteFormStep == 0
-        ? l10n.inviteJoinTripStepOne
-        : l10n.inviteJoinTripStepTwo;
+    final stepTitle = !ctx.requiresParticipantChoice
+        ? l10n.inviteJoinThisTrip
+        : (_inviteFormStep == 0
+            ? l10n.inviteJoinTripStepOne
+            : l10n.inviteJoinTripStepTwo);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -603,7 +608,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (_inviteFormStep == 1) ...[
+                      if (_inviteFormStep == 1 && ctx.requiresParticipantChoice) ...[
                         Expanded(
                           child: OutlinedButton(
                             onPressed: _joining ? null : _backToNameStep,
@@ -694,7 +699,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         : l10n.inviteJoinTripWithTitle(tripTitle);
 
     final placeholderPick = _context != null &&
-        _context!.requiresParticipantChoice &&
         !_loadingContext &&
         !_joining &&
         !_joined;
