@@ -31,6 +31,7 @@ class Trip {
     this.mealsPermissions = TripMealsPermissions.defaults,
     this.shoppingPermissions = TripShoppingPermissions.defaults,
     this.carpoolPermissions = TripCarpoolPermissions.defaults,
+    this.participantCount,
   });
 
   final String id;
@@ -45,6 +46,10 @@ class Trip {
 
   /// Firebase UIDs of all members. Managed server-side for Firestore rules.
   final List<String> memberUserIds;
+
+  /// Total number of participants (real users + placeholders).
+  /// Maintained by Firestore triggers. Null on legacy docs before migration.
+  final int? participantCount;
 
   /// Co-admins (trip creator is always admin via [ownerId]).
   final List<String> adminMemberIds;
@@ -126,6 +131,7 @@ class Trip {
       memberUserIds: ((data['memberUserIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
           .toList(),
+      participantCount: (data['participantCount'] as num?)?.toInt(),
       createdAt: createdAt,
       startDate: _parseOptionalDate(data['startDate']),
       endDate: _parseOptionalDate(data['endDate']),
