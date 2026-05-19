@@ -2,6 +2,7 @@
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const {
   onDocumentCreated,
+  onDocumentDeleted,
   onDocumentWritten,
   onDocumentUpdated,
 } = require('firebase-functions/v2/firestore');
@@ -4880,4 +4881,36 @@ exports.insertApplicationLogCallable = onCall(async (request) => {
 
   return { ok: true };
 });
+
+// ---------------------------------------------------------------------------
+// participantCount — maintained automatically via Firestore triggers.
+// Counts all participant docs (real users + placeholders) for display in the
+// trip list. No existing function needs to be updated.
+// ---------------------------------------------------------------------------
+
+exports.onTripParticipantCreated = onDocumentCreated(
+  'trips/{tripId}/participants/{participantId}',
+  async (event) => {
+    const tripId = event.params.tripId;
+    await admin.firestore().collection('trips').doc(tripId).update({
+      participantCount: FieldValue.increment(1),
+    });
+  }
+);
+
+exports.onTripParticipantDeleted = onDocumentDeleted(
+  'trips/{tripId}/participants/{participantId}',
+  async (event) => {
+    const tripId = event.params.tripId;
+    const tripRef = admin.firestore().collection('trips').doc(tripId);
+    const snap = await tripRef.get();
+    if (!snap.exists) return;
+    const current = snap.data().participantCount;
+    await tripRef.update({
+      participantCount: typeof current === 'number' && current > 1
+        ? FieldValue.increment(-1)
+        : FieldValue.delete(),
+    });
+  }
+);
 

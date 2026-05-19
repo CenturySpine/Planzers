@@ -307,7 +307,8 @@ async function migrateTripDoc(tripRef, data, opts, stats) {
   if (membersToCreate.length > 0) {
     // Garde uniquement les UIDs réels (hors ph_) dans memberIds
     const realUserIds = memberIds.filter((uid) => !uid.startsWith(PLACEHOLDER_PREFIX));
-    tripUpdate['memberIds'] = realUserIds;
+    tripUpdate['memberUserIds'] = realUserIds;
+    tripUpdate['memberIds'] = admin.firestore.FieldValue.delete();
     tripUpdate['memberPublicLabels'] = admin.firestore.FieldValue.delete();
     if (opts.verbose) {
       console.log(`  memberIds rebuilt: [${realUserIds.join(', ')}]`);
