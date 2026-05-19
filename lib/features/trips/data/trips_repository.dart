@@ -477,6 +477,7 @@ class TripsRepository {
     required String tripId,
     required String token,
     String? participantId,
+    String? participantName,
     bool bypassParticipantChoice = false,
   }) async {
     final user = auth.currentUser;
@@ -503,6 +504,10 @@ class TripsRepository {
     }
     if (bypassParticipantChoice) {
       payload['bypassParticipantChoice'] = true;
+      final name = participantName?.trim() ?? '';
+      if (name.isNotEmpty) {
+        payload['participantName'] = name;
+      }
     }
     await callable.call(payload);
   }

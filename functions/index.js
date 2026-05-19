@@ -57,6 +57,24 @@ function emailLocalPart(email) {
   return at > 0 ? e.slice(0, at).trim() : e;
 }
 
+const PARTICIPANT_NAME_MIN_LEN = 2;
+const PARTICIPANT_NAME_MAX_LEN = 50;
+
+/** Required when joining without claiming a pre-planned participant slot. */
+function assertParticipantNameForNewJoin(rawName) {
+  const name = normalizeString(rawName);
+  if (
+    name.length < PARTICIPANT_NAME_MIN_LEN ||
+    name.length > PARTICIPANT_NAME_MAX_LEN
+  ) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Indique ton prénom ou pseudo pour rejoindre ce voyage (2 à 50 caractères).'
+    );
+  }
+  return name;
+}
+
 async function fetchHtml(url) {
   const res = await fetch(url.toString(), {
     redirect: 'follow',
@@ -2249,7 +2267,8 @@ async function completeJoinTripWithInvite(
   uid,
   token,
   participantSlotId,
-  bypassParticipantChoice
+  bypassParticipantChoice,
+  newParticipantName
 ) {
   const slotArg = normalizeString(participantSlotId);
   const bypass = bypassParticipantChoice === true;
@@ -2297,25 +2316,14 @@ async function completeJoinTripWithInvite(
     claimedParticipantRef = slotDoc.ref;
   }
 
-  // Claim or create participant slot.
-  let participantName = '';
+  // Claim an existing slot or create a new participant document.
   if (claimedParticipantRef) {
-    participantName = normalizeString(
-      participantsSnap.docs.find((d) => d.ref.path === claimedParticipantRef.path)?.data().participantName
-    ) || uid;
     await claimedParticipantRef.update({ userId: uid });
   } else {
-    let fallbackName = uid;
-    try {
-      const userRecord = await admin.auth().getUser(uid);
-      fallbackName = emailLocalPart(userRecord.email || '') || uid;
-    } catch (e) {
-      console.warn('completeJoinTripWithInvite getUser', e);
-    }
-    participantName = fallbackName;
+    const participantName = assertParticipantNameForNewJoin(newParticipantName);
     const defaultStay = defaultStayForTrip(data);
     await tripRef.collection('participants').add({
-      participantName: fallbackName,
+      participantName,
       userId: uid,
       ...defaultStay,
       cupidonEnabled: false,
@@ -2591,6 +2599,7 @@ exports.joinTripWithInvite = onCall(
 
     const participantId = normalizeString(request.data?.participantId);
     const bypassParticipantChoice = request.data?.bypassParticipantChoice === true;
+    const participantName = normalizeString(request.data?.participantName);
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
     await completeJoinTripWithInvite(
@@ -2598,7 +2607,8 @@ exports.joinTripWithInvite = onCall(
       uid,
       token,
       participantId,
-      bypassParticipantChoice
+      bypassParticipantChoice,
+      participantName
     );
 
     return { ok: true };

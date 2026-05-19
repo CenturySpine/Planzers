@@ -1382,6 +1382,31 @@ class AppLocalizationsFr extends AppLocalizations {
       'Continuer avec mon profil actuel';
 
   @override
+  String get inviteBypassFirstNameTitle => 'Ton prénom ou pseudo';
+
+  @override
+  String get inviteBypassFirstNameBody =>
+      'Indique comment tu veux apparaître pour les autres participants de ce voyage.';
+
+  @override
+  String get inviteBypassFirstNameLabel => 'Prénom ou pseudo';
+
+  @override
+  String get inviteBypassFirstNameInvalid => 'Saisis entre 2 et 50 caractères.';
+
+  @override
+  String get inviteBypassFirstNameRequired =>
+      'Indique ton prénom ou pseudo pour rejoindre ce voyage.';
+
+  @override
+  String inviteBypassJoiningAs(Object name) {
+    return 'Tu rejoindras en tant que « $name »';
+  }
+
+  @override
+  String get inviteBypassChangeName => 'Modifier';
+
+  @override
   String get inviteOptionsEditableAfterJoinInfo =>
       'Tu pourras modifier toutes ces options à tout moment après avoir rejoint le voyage.';
 
@@ -4117,6 +4142,31 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
+
+  @override
+  String get inviteBypassFirstNameTitle => 'Ton prénom ou pseudo';
+
+  @override
+  String get inviteBypassFirstNameBody =>
+      'Indique comment tu veux apparaître pour les autres participants de ce voyage.';
+
+  @override
+  String get inviteBypassFirstNameLabel => 'Prénom ou pseudo';
+
+  @override
+  String get inviteBypassFirstNameInvalid => 'Saisis entre 2 et 50 caractères.';
+
+  @override
+  String get inviteBypassFirstNameRequired =>
+      'Indique ton prénom ou pseudo pour rejoindre ce voyage.';
+
+  @override
+  String inviteBypassJoiningAs(Object name) {
+    return 'Tu rejoindras en tant que « $name »';
+  }
+
+  @override
+  String get inviteBypassChangeName => 'Modifier';
 
   @override
   String get inviteOptionsEditableAfterJoinInfo =>

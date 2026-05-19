@@ -115,37 +115,6 @@ class TripMembersRepository {
     });
   }
 
-  Future<void> addParticipant({
-    required String tripId,
-    required String participantName,
-  }) async {
-    final cleanId = tripId.trim();
-    final name = participantName.trim();
-    if (cleanId.isEmpty) throw StateError('Voyage invalide');
-    if (name.isEmpty) throw StateError('Nom obligatoire');
-    await _participantsRef(cleanId).add({
-      'participantName': name,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  Future<void> updateParticipantName({
-    required String tripId,
-    required String memberId,
-    required String participantName,
-  }) async {
-    final cleanTripId = tripId.trim();
-    final cleanMemberId = memberId.trim();
-    final name = participantName.trim();
-    if (cleanTripId.isEmpty || cleanMemberId.isEmpty) {
-      throw StateError('Paramètres invalides');
-    }
-    if (name.isEmpty) throw StateError('Nom obligatoire');
-    await _participantsRef(cleanTripId).doc(cleanMemberId).update({
-      'participantName': name,
-    });
-  }
-
   Future<void> removeParticipant({
     required String tripId,
     required String memberId,
