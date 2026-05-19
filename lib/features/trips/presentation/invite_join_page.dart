@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,9 @@ class InviteJoinPage extends ConsumerStatefulWidget {
 }
 
 class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
+  static const int _kBypassParticipantNameMinLen = 2;
+  static const int _kBypassParticipantNameMaxLen = 50;
+
   static String _messageForError(BuildContext context, Object e) {
     if (e is FirebaseFunctionsException) {
       final m = e.message;
@@ -53,6 +58,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   /// 0: choose name, 1: stay + options (only when [requiresParticipantChoice]).
   int _inviteFormStep = 0;
   bool _joinUsingCurrentProfile = false;
+  String? _bypassParticipantName;
   TripMemberStay? _stayDraft;
   TripMemberPhoneVisibility _phoneVisibilityDraft =
       TripMemberPhoneVisibility.nobody;
@@ -60,6 +66,121 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   void _goToTripsList() {
     context.go('/trips');
+  }
+
+  bool _isBypassParticipantNameValid(String? name) {
+    final length = (name ?? '').trim().length;
+    return length >= _kBypassParticipantNameMinLen &&
+        length <= _kBypassParticipantNameMaxLen;
+  }
+
+  String? _validateBypassParticipantName(AppLocalizations l10n, String raw) {
+    if (!_isBypassParticipantNameValid(raw)) {
+      return l10n.inviteBypassFirstNameInvalid;
+    }
+    return null;
+  }
+
+  Future<String?> _promptBypassParticipantNameDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    String? inlineError;
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text(l10n.inviteBypassFirstNameTitle),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.inviteBypassFirstNameBody),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.inviteBypassFirstNameLabel,
+                      border: const OutlineInputBorder(),
+                      errorText: inlineError,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      final validationError = _validateBypassParticipantName(
+                        l10n,
+                        controller.text,
+                      );
+                      if (validationError != null) {
+                        setDialogState(() => inlineError = validationError);
+                        return;
+                      }
+                      Navigator.pop(dialogContext, controller.text.trim());
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.commonCancel),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final validationError = _validateBypassParticipantName(
+                      l10n,
+                      controller.text,
+                    );
+                    if (validationError != null) {
+                      setDialogState(() => inlineError = validationError);
+                      return;
+                    }
+                    Navigator.pop(dialogContext, controller.text.trim());
+                  },
+                  child: Text(l10n.commonContinue),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _ensureBypassParticipantNameOnEntry() async {
+    if (!_joinUsingCurrentProfile || !mounted) return;
+    if (_isBypassParticipantNameValid(_bypassParticipantName)) return;
+
+    final name = await _promptBypassParticipantNameDialog();
+    if (!mounted) return;
+    if (name == null) {
+      _goToTripsList();
+      return;
+    }
+    setState(() => _bypassParticipantName = name);
+  }
+
+  bool _canProceedFromCurrentStep() {
+    if (_inviteFormStep == 0) {
+      final id = _selectedPlaceholderId?.trim();
+      return id != null && id.isNotEmpty;
+    }
+    if (_joinUsingCurrentProfile) {
+      return _isBypassParticipantNameValid(_bypassParticipantName);
+    }
+    return true;
+  }
+
+  void _showJoinErrorSnackBar(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   List<Color> _joinOptionAccentColors(BuildContext context) {
@@ -265,6 +386,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         } else {
           _inviteFormStep = 1;
           _joinUsingCurrentProfile = true;
+          _bypassParticipantName = null;
           _suggestedPlaceholderId = null;
           _selectedPlaceholderId = null;
           _stayDraft = TripMemberStay.defaultForInviteContext(
@@ -273,6 +395,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           );
         }
       });
+      if (!ctx.requiresParticipantChoice) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_ensureBypassParticipantNameOnEntry());
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -287,6 +414,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   Future<void> _join({
     String? participantId,
+    String? participantName,
     bool bypassParticipantChoice = false,
   }) async {
     if (_joining || _joined) return;
@@ -299,6 +427,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripId: widget.tripId,
             token: widget.token,
             participantId: participantId,
+            participantName: participantName,
             bypassParticipantChoice: bypassParticipantChoice,
           );
       if (!mounted) return;
@@ -312,9 +441,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       );
     } catch (e) {
       if (!mounted) return;
+      final message = _messageForError(context, e);
       setState(() {
-        _error = _messageForError(context, e);
+        _error = message;
       });
+      _showJoinErrorSnackBar(message);
     } finally {
       if (mounted) {
         setState(() {
@@ -348,8 +479,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     });
   }
 
-  void _continueWithCurrentProfile() {
+  Future<void> _continueWithCurrentProfile() async {
+    final name = await _promptBypassParticipantNameDialog();
+    if (!mounted) return;
+    if (name == null) return;
+
     setState(() {
+      _bypassParticipantName = name;
       _error = null;
       _inviteFormStep = 1;
       _joinUsingCurrentProfile = true;
@@ -360,6 +496,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     setState(() {
       _inviteFormStep = 0;
       _joinUsingCurrentProfile = false;
+      _bypassParticipantName = null;
       _error = null;
     });
   }
@@ -370,6 +507,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final id = _selectedPlaceholderId?.trim();
     if (ctx == null || stay == null) return;
     if (!_joinUsingCurrentProfile && (id == null || id.isEmpty)) return;
+    if (_joinUsingCurrentProfile &&
+        !_isBypassParticipantNameValid(_bypassParticipantName)) {
+      final message = AppLocalizations.of(context)!.inviteBypassFirstNameRequired;
+      setState(() => _error = message);
+      _showJoinErrorSnackBar(message);
+      return;
+    }
 
     if (!TripMemberStay.isChronological(stay)) {
       setState(() {
@@ -390,6 +534,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     await _join(
       participantId: _joinUsingCurrentProfile ? null : id,
+      participantName:
+          _joinUsingCurrentProfile ? _bypassParticipantName!.trim() : null,
       bypassParticipantChoice: _joinUsingCurrentProfile,
     );
     if (!_joined || !mounted) return;
@@ -568,6 +714,39 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (_joinUsingCurrentProfile &&
+                                _isBypassParticipantNameValid(
+                                    _bypassParticipantName)) ...[
+                              Text(
+                                l10n.inviteBypassJoiningAs(
+                                  _bypassParticipantName!.trim(),
+                                ),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Align(
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                  onPressed: _joining
+                                      ? null
+                                      : () async {
+                                          final name =
+                                              await _promptBypassParticipantNameDialog();
+                                          if (!mounted || name == null) {
+                                            return;
+                                          }
+                                          setState(
+                                            () => _bypassParticipantName = name,
+                                          );
+                                        },
+                                  child: Text(l10n.inviteBypassChangeName),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             if (_stayDraft != null)
                               TripMemberStayOptionsEditor(
                                 mode: TripMemberStayOptionsEditorMode.draft,
@@ -626,17 +805,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton(
-                          onPressed:
-                              (_joining ||
-                                      (_inviteFormStep == 0 &&
-                                          (_selectedPlaceholderId == null ||
-                                              _selectedPlaceholderId!
-                                                  .trim()
-                                                  .isEmpty)))
-                                  ? null
-                                  : (_inviteFormStep == 0
-                                      ? _continueFromNameStep
-                                      : _completeInviteWithDetails),
+                          onPressed: (_joining || !_canProceedFromCurrentStep())
+                              ? null
+                              : (_inviteFormStep == 0
+                                  ? _continueFromNameStep
+                                  : _completeInviteWithDetails),
                           child: Text(
                             _inviteFormStep == 0
                                 ? l10n.commonContinue
