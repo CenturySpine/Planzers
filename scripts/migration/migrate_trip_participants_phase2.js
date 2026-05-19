@@ -4,7 +4,7 @@
  * Phase 2 de la migration des participants :
  *   Remplace les UIDs Firebase Auth par les participant doc IDs dans toutes
  *   les sous-collections d'un voyage :
- *     - carpools    : driverUserId (rename → driverParticipantId) + assignedParticipantIds
+ *     - sections/carpool (cars[]) : driverUserId (rename → driverParticipantId) + assignedParticipantIds
  *     - rooms       : beds[].assignedMemberIds + assignedMemberIds root (supprimé)
  *     - expenseGroups : visibleToMemberIds
  *     - expenses    : participantIds, paidBy, participantShares (clés)
@@ -286,14 +286,22 @@ async function preFlightScan(tripRef, uidMap, allDocIds) {
     for (const id of ids) check(id, collPath);
   };
 
-  // --- carpools ---
-  const carpoolsSnap = await tripRef.collection('carpools').get();
-  for (const doc of carpoolsSnap.docs) {
-    const data = doc.data();
-    const p = `carpools/${doc.id}`;
-    const driverId = data.driverUserId ?? data.driverParticipantId;
-    if (driverId) check(driverId, p);
-    checkArray(data.assignedParticipantIds, p);
+  // --- sections/carpool (cars[]) ---
+  const carpoolSectionSnap = await tripRef.collection('sections').doc('carpool').get();
+  if (carpoolSectionSnap.exists) {
+    const cars = Array.isArray(carpoolSectionSnap.data().cars)
+      ? carpoolSectionSnap.data().cars
+      : [];
+    for (let i = 0; i < cars.length; i++) {
+      const car = cars[i];
+      const carId = ((car?.id || '') + '').trim();
+      const p = carId
+        ? `sections/carpool/cars[${i}] (${carId})`
+        : `sections/carpool/cars[${i}]`;
+      const driverId = car?.driverUserId ?? car?.driverParticipantId;
+      if (driverId) check(driverId, p);
+      checkArray(car?.assignedParticipantIds, p);
+    }
   }
 
   // --- rooms ---
@@ -363,59 +371,78 @@ async function preFlightScan(tripRef, uidMap, allDocIds) {
 // Per-collection migration
 // ---------------------------------------------------------------------------
 
-async function migrateCarpools(tripRef, uidMap, opts, stats) {
-  const snap = await tripRef.collection('carpools').get();
-  if (snap.empty) return;
+const CARPOOL_SECTION_DOC_ID = 'carpool';
 
-  const db = tripRef.firestore;
-  let batch   = db.batch();
-  let opCount = 0;
+/** Remappe un objet voiture dans sections/carpool.cars[]. */
+function migrateCarpoolCar(car, uidMap, opts, carPath) {
+  if (!car || typeof car !== 'object') return { car, changed: false };
 
-  for (const doc of snap.docs) {
-    const data   = doc.data();
-    const update = {};
-    let needsUpdate = false;
+  const migrated = { ...car };
+  let changed = false;
 
-    // driverUserId (vieux nom) → driverParticipantId (nouveau nom + valeur remappée)
-    const hasOldField = data.driverUserId !== undefined;
-    const rawDriverId = hasOldField ? data.driverUserId : data.driverParticipantId;
-    if (rawDriverId) {
-      const { newId, changed } = remapOne(rawDriverId, uidMap);
-      if (changed || hasOldField) {
-        update['driverParticipantId'] = changed ? newId : rawDriverId;
-        if (hasOldField) update['driverUserId'] = admin.firestore.FieldValue.delete();
-        needsUpdate = true;
-        if (opts.verbose) {
-          const action = changed ? `${rawDriverId} → ${newId}` : `(valeur inchangée, renommage seul)`;
-          console.log(`    carpools/${doc.id}  driverParticipantId: ${action}${hasOldField ? '  [+ delete driverUserId]' : ''}`);
-        }
+  const hasOldField = migrated.driverUserId !== undefined;
+  const rawDriverId = hasOldField ? migrated.driverUserId : migrated.driverParticipantId;
+  if (rawDriverId) {
+    const { newId, changed: driverChanged } = remapOne(rawDriverId, uidMap);
+    if (driverChanged || hasOldField) {
+      migrated.driverParticipantId = driverChanged ? newId : rawDriverId;
+      delete migrated.driverUserId;
+      changed = true;
+      if (opts.verbose) {
+        const action = driverChanged ? `${rawDriverId} → ${newId}` : `(valeur inchangée, renommage seul)`;
+        console.log(`    ${carPath}  driverParticipantId: ${action}${hasOldField ? '  [+ delete driverUserId]' : ''}`);
       }
     }
-
-    if (Array.isArray(data.assignedParticipantIds)) {
-      const { newIds, changed } = remapArray(data.assignedParticipantIds, uidMap);
-      if (changed) {
-        update['assignedParticipantIds'] = newIds;
-        needsUpdate = true;
-        if (opts.verbose) {
-          console.log(`    carpools/${doc.id}  assignedParticipantIds:`);
-          data.assignedParticipantIds.forEach((id, i) => {
-            if (id !== newIds[i]) console.log(`      ${id} → ${newIds[i]}`);
-          });
-        }
-      }
-    }
-
-    if (!needsUpdate) continue;
-    stats.carpoolsUpdated++;
-    if (opts.dryRun) continue;
-
-    if (opCount >= BATCH_SIZE - 2) { await batch.commit(); batch = db.batch(); opCount = 0; }
-    batch.update(doc.ref, update);
-    opCount++;
   }
 
-  if (!opts.dryRun && opCount > 0) await batch.commit();
+  if (Array.isArray(migrated.assignedParticipantIds)) {
+    const originalIds = migrated.assignedParticipantIds;
+    const { newIds, changed: arrChanged } = remapArray(originalIds, uidMap);
+    if (arrChanged) {
+      migrated.assignedParticipantIds = newIds;
+      changed = true;
+      if (opts.verbose) {
+        console.log(`    ${carPath}  assignedParticipantIds:`);
+        originalIds.forEach((id, i) => {
+          if (id !== newIds[i]) console.log(`      ${id} → ${newIds[i]}`);
+        });
+      }
+    }
+  }
+
+  return { car: migrated, changed };
+}
+
+async function migrateCarpools(tripRef, uidMap, opts, stats) {
+  const sectionRef = tripRef.collection('sections').doc(CARPOOL_SECTION_DOC_ID);
+  const sectionSnap = await sectionRef.get();
+  if (!sectionSnap.exists) return;
+
+  const data = sectionSnap.data();
+  const cars = Array.isArray(data.cars) ? data.cars : [];
+  if (cars.length === 0) return;
+
+  const newCars = [];
+  let sectionChanged = false;
+
+  for (let i = 0; i < cars.length; i++) {
+    const car = cars[i];
+    const carId = ((car?.id || '') + '').trim();
+    const carPath = carId
+      ? `sections/carpool/cars[${i}] (${carId})`
+      : `sections/carpool/cars[${i}]`;
+    const { car: migratedCar, changed } = migrateCarpoolCar(car, uidMap, opts, carPath);
+    newCars.push(migratedCar);
+    if (changed) {
+      sectionChanged = true;
+      stats.carpoolsUpdated++;
+    }
+  }
+
+  if (!sectionChanged) return;
+  if (opts.dryRun) return;
+
+  await sectionRef.update({ cars: newCars });
 }
 
 async function migrateRooms(tripRef, uidMap, opts, stats) {
