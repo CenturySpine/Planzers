@@ -1106,5 +1106,8 @@
   "globalAnnouncementsDismissTooltip": "Masquer cette annonce",
   "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
   "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles.",
-  "publicProfileTitle": "Profil"
+  "publicProfileTitle": "Profil",
+  "profileNameDialogTitle": "Choisis ton nom de profil",
+  "profileNameDialogFieldLabel": "Nom ou pseudo",
+  "profileNameRequiredMessage": "Un nom de profil est requis pour utiliser Planerz."
 }

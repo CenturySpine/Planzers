@@ -5108,6 +5108,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Profil'**
   String get publicProfileTitle;
+
+  /// No description provided for @profileNameDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis ton nom de profil'**
+  String get profileNameDialogTitle;
+
+  /// No description provided for @profileNameDialogFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom ou pseudo'**
+  String get profileNameDialogFieldLabel;
+
+  /// No description provided for @profileNameRequiredMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un nom de profil est requis pour utiliser Planerz.'**
+  String get profileNameRequiredMessage;
 }
 
 class _AppLocalizationsDelegate

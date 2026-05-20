@@ -6,8 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/auth/display_name_setup_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class PhoneSignInPage extends ConsumerStatefulWidget {
@@ -135,6 +137,21 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
     );
   }
 
+  Future<bool> _accountNameNeedsSetup() async {
+    try {
+      final snapshot = await ref
+          .read(accountRepositoryProvider)
+          .watchMyUserDocument()
+          .first;
+      final name =
+          (snapshot.data()?['account'] as Map<String, dynamic>?)?['name']
+              as String?;
+      return accountNameNeedsSetup(name);
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _confirmCode() async {
     final l10n = AppLocalizations.of(context)!;
     final code = _codeController.text.trim();
@@ -157,6 +174,18 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
             .auth
             .signInWithCredential(credential);
         await _seedPhoneProfileAfterSignIn(result.user);
+      }
+      if (!mounted) return;
+      final needsName = await _accountNameNeedsSetup();
+      if (needsName && mounted) {
+        final saved = await showDisplayNameSetupDialog(context);
+        if (!mounted) return;
+        if (!saved) {
+          _showSnackBar(l10n.profileNameRequiredMessage);
+          await ref.read(authRepositoryProvider).auth.signOut();
+          if (mounted) _resetToPhoneStep();
+          return;
+        }
       }
       if (mounted) _navigateAfterSignIn();
     } on FirebaseAuthException catch (e) {

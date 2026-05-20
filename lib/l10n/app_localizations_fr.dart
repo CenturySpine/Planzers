@@ -2836,6 +2836,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get publicProfileTitle => 'Profil';
+
+  @override
+  String get profileNameDialogTitle => 'Choisis ton nom de profil';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Nom ou pseudo';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'Un nom de profil est requis pour utiliser Planerz.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -5598,4 +5608,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get publicProfileTitle => 'Profil';
+
+  @override
+  String get profileNameDialogTitle => 'Choisis ton nom de profil';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Nom ou pseudo';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'Un nom de profil est requis pour utiliser Planerz.';
 }

@@ -1068,5 +1068,8 @@
   "globalAnnouncementsDismissTooltip": "Hide this announcement",
   "globalAnnouncementsRestoreHiddenTooltip": "Show hidden announcements again",
   "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again.",
-  "publicProfileTitle": "Profile"
+  "publicProfileTitle": "Profile",
+  "profileNameDialogTitle": "Choose your display name",
+  "profileNameDialogFieldLabel": "Name or nickname",
+  "profileNameRequiredMessage": "A display name is required to use Planerz."
 }

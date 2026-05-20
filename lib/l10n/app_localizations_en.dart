@@ -2809,6 +2809,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get publicProfileTitle => 'Profile';
+
+  @override
+  String get profileNameDialogTitle => 'Choose your display name';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Name or nickname';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'A display name is required to use Planerz.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5545,4 +5555,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get publicProfileTitle => 'Profile';
+
+  @override
+  String get profileNameDialogTitle => 'Choose your display name';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Name or nickname';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'A display name is required to use Planerz.';
 }
