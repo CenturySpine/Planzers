@@ -178,53 +178,127 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(l10n.tripParticipantsEditNameTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: controller,
-                enabled: !dialogUseProfileName,
-                autofocus: !dialogUseProfileName,
-                decoration: InputDecoration(
-                  labelText: l10n.commonName,
-                  border: const OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.done,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final colorScheme = theme.colorScheme;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final useCustomName = !dialogUseProfileName || !isClaimed;
+            return AlertDialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+              titlePadding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+              contentPadding: const EdgeInsets.fromLTRB(28, 20, 28, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              if (isClaimed) ...[
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.tripParticipantsUseProfileName),
-                  subtitle: Text(
-                    profileName != null
-                        ? l10n.tripParticipantsProfileNameDisplay(profileName)
-                        : l10n.tripParticipantsNoProfileNameHint,
-                  ),
-                  value: dialogUseProfileName,
-                  onChanged: profileName != null
-                      ? (v) => setDialogState(() => dialogUseProfileName = v)
-                      : null,
+              title: Text(l10n.tripParticipantsEditNameTitle),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (isClaimed) ...[
+                      RadioGroup<bool>(
+                        groupValue: dialogUseProfileName,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          if (value && profileName == null) return;
+                          setDialogState(() => dialogUseProfileName = value);
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _ParticipantNameSourceOption(
+                              title: l10n.tripParticipantsEditNameModeCustom,
+                              icon: Icons.edit_outlined,
+                              value: false,
+                              selected: !dialogUseProfileName,
+                              onTap: () => setDialogState(
+                                () => dialogUseProfileName = false,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _ParticipantNameSourceOption(
+                              title: l10n.tripParticipantsEditNameModeProfile,
+                              icon: Icons.badge_outlined,
+                              value: true,
+                              selected: dialogUseProfileName,
+                              enabled: profileName != null,
+                              subtitle: profileName != null
+                                  ? l10n.tripParticipantsProfileNameDisplay(
+                                      profileName,
+                                    )
+                                  : l10n.tripParticipantsNoProfileNameHint,
+                              onTap: profileName != null
+                                  ? () => setDialogState(
+                                        () => dialogUseProfileName = true,
+                                      )
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    if (useCustomName)
+                      TextField(
+                        controller: controller,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.commonName,
+                          border: const OutlineInputBorder(),
+                        ),
+                        textInputAction: TextInputAction.done,
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.badge_outlined,
+                              size: 22,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                profileName ?? '',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(l10n.commonCancel),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(l10n.commonSave),
                 ),
               ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.commonCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.commonSave),
-            ),
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
     final name = ok == true ? controller.text.trim() : '';
     final savedUseProfileName = ok == true ? dialogUseProfileName : currentUseProfileName;
@@ -884,6 +958,100 @@ Widget _participantRoleLeading({
       ),
     ),
   );
+}
+
+class _ParticipantNameSourceOption extends StatelessWidget {
+  const _ParticipantNameSourceOption({
+    required this.title,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+    this.subtitle,
+    this.enabled = true,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool value;
+  final bool selected;
+  final VoidCallback? onTap;
+  final String? subtitle;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final effectiveOnTap = enabled ? onTap : null;
+    final borderColor = selected
+        ? colorScheme.primary
+        : colorScheme.outlineVariant;
+    final foreground = enabled
+        ? colorScheme.onSurface
+        : colorScheme.onSurface.withValues(alpha: 0.38);
+
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.35)
+          : colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: borderColor,
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: effectiveOnTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                size: 22,
+                color: enabled ? colorScheme.primary : colorScheme.outline,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: foreground,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: enabled
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Radio<bool>(
+                value: value,
+                enabled: enabled,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ParticipantRow {

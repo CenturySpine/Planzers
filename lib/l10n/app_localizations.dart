@@ -1925,6 +1925,18 @@ abstract class AppLocalizations {
   /// **'Modifier le nom'**
   String get tripParticipantsEditNameTitle;
 
+  /// No description provided for @tripParticipantsEditNameModeCustom.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom personnalisé'**
+  String get tripParticipantsEditNameModeCustom;
+
+  /// No description provided for @tripParticipantsEditNameModeProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil'**
+  String get tripParticipantsEditNameModeProfile;
+
   /// No description provided for @tripParticipantsNameUpdated.
   ///
   /// In fr, this message translates to:

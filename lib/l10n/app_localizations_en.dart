@@ -1023,6 +1023,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsEditNameTitle => 'Edit name';
 
   @override
+  String get tripParticipantsEditNameModeCustom => 'Custom name';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Profile username';
+
+  @override
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
@@ -3779,6 +3785,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsEditNameTitle => 'Edit name';
+
+  @override
+  String get tripParticipantsEditNameModeCustom => 'Custom name';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Profile username';
 
   @override
   String get tripParticipantsNameUpdated => 'Name updated';

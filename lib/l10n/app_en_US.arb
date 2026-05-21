@@ -367,6 +367,8 @@
   "tripParticipantsAddPlannedTravelerTitle": "Add planned traveler",
   "tripParticipantsPlannedTravelerAdded": "Planned traveler added",
   "tripParticipantsEditNameTitle": "Edit name",
+  "tripParticipantsEditNameModeCustom": "Custom name",
+  "tripParticipantsEditNameModeProfile": "Profile username",
   "tripParticipantsNameUpdated": "Name updated",
   "tripParticipantsUseProfileName": "Use profile username",
   "tripParticipantsProfileNameDisplay": "Profile username: {name}",

@@ -405,6 +405,8 @@
   "tripParticipantsAddPlannedTravelerTitle": "Ajouter un voyageur prévu",
   "tripParticipantsPlannedTravelerAdded": "Voyageur prévu ajouté",
   "tripParticipantsEditNameTitle": "Modifier le nom",
+  "tripParticipantsEditNameModeCustom": "Nom personnalisé",
+  "tripParticipantsEditNameModeProfile": "Pseudo du profil",
   "tripParticipantsNameUpdated": "Nom mis à jour",
   "tripParticipantsUseProfileName": "Utiliser le pseudo du profil",
   "tripParticipantsProfileNameDisplay": "Pseudo du profil : {name}",

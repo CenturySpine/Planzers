@@ -1038,6 +1038,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsEditNameTitle => 'Modifier le nom';
 
   @override
+  String get tripParticipantsEditNameModeCustom => 'Nom personnalisé';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Pseudo du profil';
+
+  @override
   String get tripParticipantsNameUpdated => 'Nom mis à jour';
 
   @override
@@ -3820,6 +3826,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsEditNameTitle => 'Modifier le nom';
+
+  @override
+  String get tripParticipantsEditNameModeCustom => 'Nom personnalisé';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Pseudo du profil';
 
   @override
   String get tripParticipantsNameUpdated => 'Nom mis à jour';
