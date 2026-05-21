@@ -1386,16 +1386,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Continue with my current profile';
 
   @override
-  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Choose how you want to appear to other participants on this trip.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'First name or nickname';
-
-  @override
   String get inviteBypassFirstNameInvalid =>
       'Enter between 2 and 50 characters.';
 
@@ -4156,16 +4146,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continue with my current profile';
-
-  @override
-  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Choose how you want to appear to other participants on this trip.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'First name or nickname';
 
   @override
   String get inviteBypassFirstNameInvalid =>

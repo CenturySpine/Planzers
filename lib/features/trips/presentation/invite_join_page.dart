@@ -13,7 +13,9 @@ import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -57,6 +59,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   int _inviteFormStep = 0;
   bool _joinUsingCurrentProfile = false;
   String? _bypassParticipantName;
+  bool _bypassUseProfileName = false;
   TripMemberStay? _stayDraft;
   TripMemberPhoneVisibility _phoneVisibilityDraft =
       TripMemberPhoneVisibility.nobody;
@@ -69,96 +72,60 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   bool _isBypassParticipantNameValid(String? name) =>
       isDisplayNameLengthValid(name ?? '');
 
-  String? _validateBypassParticipantName(AppLocalizations l10n, String raw) {
-    if (!_isBypassParticipantNameValid(raw)) {
-      return l10n.inviteBypassFirstNameInvalid;
-    }
-    return null;
+  Future<String?> _loadMyProfileName() async {
+    final snap =
+        await ref.read(accountRepositoryProvider).watchMyUserDocument().first;
+    return profileNameFromData(snap.data());
   }
 
-  Future<String?> _promptBypassParticipantNameDialog() async {
-    final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    String? inlineError;
+  void _applyBypassNameChoice(
+    TripParticipantNameDialogResult choice, {
+    required String? profileName,
+  }) {
+    final displayName = resolveTripParticipantDisplayName(
+      result: choice,
+      profileName: profileName,
+    );
+    if (displayName == null) return;
+    setState(() {
+      _bypassParticipantName = displayName;
+      _bypassUseProfileName = choice.useProfileName;
+    });
+  }
 
-    final result = await showDialog<String>(
+  /// Returns false if the user cancelled or the choice is invalid.
+  Future<bool> _pickBypassParticipantName({
+    String initialName = '',
+    bool initialUseProfileName = false,
+  }) async {
+    final profileName = await _loadMyProfileName();
+    if (!mounted) return false;
+
+    final choice = await showDialog<TripParticipantNameDialogResult>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              title: Text(l10n.inviteBypassFirstNameTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(l10n.inviteBypassFirstNameBody),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: l10n.inviteBypassFirstNameLabel,
-                      border: const OutlineInputBorder(),
-                      errorText: inlineError,
-                    ),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) {
-                      final validationError = _validateBypassParticipantName(
-                        l10n,
-                        controller.text,
-                      );
-                      if (validationError != null) {
-                        setDialogState(() => inlineError = validationError);
-                        return;
-                      }
-                      Navigator.pop(dialogContext, controller.text.trim());
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final validationError = _validateBypassParticipantName(
-                      l10n,
-                      controller.text,
-                    );
-                    if (validationError != null) {
-                      setDialogState(() => inlineError = validationError);
-                      return;
-                    }
-                    Navigator.pop(dialogContext, controller.text.trim());
-                  },
-                  child: Text(l10n.commonContinue),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogContext) => TripParticipantNameDialog(
+        initialName: initialName,
+        initialUseProfileName: initialUseProfileName,
+        isClaimed: true,
+        profileName: profileName,
+      ),
     );
+    if (!mounted || choice == null) return false;
 
-    controller.dispose();
-    return result;
+    _applyBypassNameChoice(choice, profileName: profileName);
+    return _isBypassParticipantNameValid(_bypassParticipantName);
   }
 
   Future<void> _ensureBypassParticipantNameOnEntry() async {
     if (!_joinUsingCurrentProfile || !mounted) return;
     if (_isBypassParticipantNameValid(_bypassParticipantName)) return;
 
-    final name = await _promptBypassParticipantNameDialog();
+    final picked = await _pickBypassParticipantName();
     if (!mounted) return;
-    if (name == null) {
+    if (!picked) {
       _goToTripsList();
-      return;
     }
-    setState(() => _bypassParticipantName = name);
   }
 
   bool _canProceedFromCurrentStep() {
@@ -382,6 +349,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           _inviteFormStep = 1;
           _joinUsingCurrentProfile = true;
           _bypassParticipantName = null;
+          _bypassUseProfileName = false;
           _suggestedPlaceholderId = null;
           _selectedPlaceholderId = null;
           _stayDraft = TripMemberStay.defaultForInviteContext(
@@ -411,6 +379,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     String? participantId,
     String? participantName,
     bool bypassParticipantChoice = false,
+    bool useProfileName = false,
   }) async {
     if (_joining || _joined) return;
     setState(() {
@@ -424,6 +393,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             participantId: participantId,
             participantName: participantName,
             bypassParticipantChoice: bypassParticipantChoice,
+            useProfileName: useProfileName,
           );
       if (!mounted) return;
       setState(() {
@@ -475,12 +445,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   Future<void> _continueWithCurrentProfile() async {
-    final name = await _promptBypassParticipantNameDialog();
+    final picked = await _pickBypassParticipantName();
     if (!mounted) return;
-    if (name == null) return;
+    if (!picked) return;
 
     setState(() {
-      _bypassParticipantName = name;
       _error = null;
       _inviteFormStep = 1;
       _joinUsingCurrentProfile = true;
@@ -492,6 +461,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _inviteFormStep = 0;
       _joinUsingCurrentProfile = false;
       _bypassParticipantName = null;
+      _bypassUseProfileName = false;
       _error = null;
     });
   }
@@ -532,6 +502,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       participantName:
           _joinUsingCurrentProfile ? _bypassParticipantName!.trim() : null,
       bypassParticipantChoice: _joinUsingCurrentProfile,
+      useProfileName: _joinUsingCurrentProfile && _bypassUseProfileName,
     );
     if (!_joined || !mounted) return;
 
@@ -728,13 +699,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                   onPressed: _joining
                                       ? null
                                       : () async {
-                                          final name =
-                                              await _promptBypassParticipantNameDialog();
-                                          if (!mounted || name == null) {
-                                            return;
-                                          }
-                                          setState(
-                                            () => _bypassParticipantName = name,
+                                          await _pickBypassParticipantName(
+                                            initialName:
+                                                _bypassParticipantName ?? '',
+                                            initialUseProfileName:
+                                                _bypassUseProfileName,
                                           );
                                         },
                                   child: Text(l10n.inviteBypassChangeName),

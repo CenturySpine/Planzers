@@ -2276,7 +2276,8 @@ async function completeJoinTripWithInvite(
   token,
   participantSlotId,
   bypassParticipantChoice,
-  newParticipantName
+  newParticipantName,
+  useProfileNameForJoin
 ) {
   const slotArg = normalizeString(participantSlotId);
   const bypass = bypassParticipantChoice === true;
@@ -2330,14 +2331,18 @@ async function completeJoinTripWithInvite(
   } else {
     const participantName = assertParticipantNameForNewJoin(newParticipantName);
     const defaultStay = defaultStayForTrip(data);
-    await tripRef.collection('participants').add({
+    const newParticipantDoc = {
       participantName,
       userId: uid,
       ...defaultStay,
       cupidonEnabled: false,
       phoneVisibility: 'nobody',
       createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (useProfileNameForJoin === true) {
+      newParticipantDoc.useProfileName = true;
+    }
+    await tripRef.collection('participants').add(newParticipantDoc);
   }
 
   await tripRef.update({
@@ -2608,6 +2613,7 @@ exports.joinTripWithInvite = onCall(
     const participantId = normalizeString(request.data?.participantId);
     const bypassParticipantChoice = request.data?.bypassParticipantChoice === true;
     const participantName = normalizeString(request.data?.participantName);
+    const useProfileName = request.data?.useProfileName === true;
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
     await completeJoinTripWithInvite(
@@ -2616,7 +2622,8 @@ exports.joinTripWithInvite = onCall(
       token,
       participantId,
       bypassParticipantChoice,
-      participantName
+      participantName,
+      useProfileName
     );
 
     return { ok: true };

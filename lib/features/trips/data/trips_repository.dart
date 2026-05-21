@@ -517,6 +517,7 @@ class TripsRepository {
     String? participantId,
     String? participantName,
     bool bypassParticipantChoice = false,
+    bool useProfileName = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -545,6 +546,9 @@ class TripsRepository {
       final name = participantName?.trim() ?? '';
       if (name.isNotEmpty) {
         payload['participantName'] = name;
+      }
+      if (useProfileName) {
+        payload['useProfileName'] = true;
       }
     }
     await callable.call(payload);

@@ -1401,16 +1401,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Continuer avec mon profil actuel';
 
   @override
-  String get inviteBypassFirstNameTitle => 'Ton prénom ou pseudo';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Indique comment tu veux apparaître pour les autres participants de ce voyage.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'Prénom ou pseudo';
-
-  @override
   String get inviteBypassFirstNameInvalid => 'Saisis entre 2 et 50 caractères.';
 
   @override
@@ -4197,16 +4187,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continuer avec mon profil actuel';
-
-  @override
-  String get inviteBypassFirstNameTitle => 'Ton prénom ou pseudo';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Indique comment tu veux apparaître pour les autres participants de ce voyage.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'Prénom ou pseudo';
 
   @override
   String get inviteBypassFirstNameInvalid => 'Saisis entre 2 et 50 caractères.';

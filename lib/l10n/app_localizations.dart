@@ -2556,24 +2556,6 @@ abstract class AppLocalizations {
   /// **'Continuer avec mon profil actuel'**
   String get inviteJoinWithCurrentProfileAction;
 
-  /// No description provided for @inviteBypassFirstNameTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ton prénom ou pseudo'**
-  String get inviteBypassFirstNameTitle;
-
-  /// No description provided for @inviteBypassFirstNameBody.
-  ///
-  /// In fr, this message translates to:
-  /// **'Indique comment tu veux apparaître pour les autres participants de ce voyage.'**
-  String get inviteBypassFirstNameBody;
-
-  /// No description provided for @inviteBypassFirstNameLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Prénom ou pseudo'**
-  String get inviteBypassFirstNameLabel;
-
   /// No description provided for @inviteBypassFirstNameInvalid.
   ///
   /// In fr, this message translates to:
