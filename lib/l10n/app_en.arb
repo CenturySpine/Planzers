@@ -1107,9 +1107,7 @@
   "globalAnnouncementsRestoreHiddenTooltip": "Show hidden announcements again",
   "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again.",
   "publicProfileTitle": "Profile",
-  "maintenanceTitle": "Maintenance in progress",
-  "maintenanceBody": "The app is temporarily unavailable. It will be back very soon.",
-  "profileNameDialogTitle": "Choose your display name",
+"profileNameDialogTitle": "Choose your display name",
   "profileNameDialogFieldLabel": "Name or nickname",
   "profileNameRequiredMessage": "A display name is required to use Planerz."
 }

@@ -2838,13 +2838,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get publicProfileTitle => 'Profil';
 
   @override
-  String get maintenanceTitle => 'Maintenance en cours';
-
-  @override
-  String get maintenanceBody =>
-      'L\'application est temporairement indisponible. Elle sera de retour très bientôt.';
-
-  @override
   String get profileNameDialogTitle => 'Choisis ton nom de profil';
 
   @override
@@ -5615,13 +5608,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get publicProfileTitle => 'Profil';
-
-  @override
-  String get maintenanceTitle => 'Maintenance en cours';
-
-  @override
-  String get maintenanceBody =>
-      'L\'application est temporairement indisponible. Elle sera de retour très bientôt.';
 
   @override
   String get profileNameDialogTitle => 'Choisis ton nom de profil';

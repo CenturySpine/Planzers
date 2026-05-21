@@ -198,7 +198,7 @@ L’**Emulator UI** : `http://127.0.0.1:4000/`.
 Exemple (Web) :
 
 ```powershell
-flutter run -d chrome -t lib/main_preview.dart --dart-define=USE_FIREBASE_EMULATOR=true
+flutter run -d chrome -t lib/main_preview.dart --dart-define=USE_FIREBASE_EMULATOR=true --web-port=47432
 ```
 
 - **Android emulateur** : l’app utilise automatiquement l’hote `10.0.2.2` pour joindre la machine (voir `FirebaseEmulatorWiring`).
