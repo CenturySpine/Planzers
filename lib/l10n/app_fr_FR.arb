@@ -1076,7 +1076,9 @@
   "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
   "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles.",
   "publicProfileTitle": "Profil",
-"profileNameDialogTitle": "Choisis ton nom de profil",
+  "maintenanceTitle": "Maintenance en cours",
+  "maintenanceBody": "L'application est temporairement indisponible. Elle sera de retour très bientôt.",
+  "profileNameDialogTitle": "Choisis ton nom de profil",
   "profileNameDialogFieldLabel": "Nom ou pseudo",
   "profileNameRequiredMessage": "Un nom de profil est requis pour utiliser Planerz."
 }

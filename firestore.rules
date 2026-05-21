@@ -835,8 +835,13 @@ service cloud.firestore {
     }
 
     match /system/{docId} {
-      allow read: if signedIn();
+      allow get: if docId == 'maintenance' || signedIn();
+      allow list: if signedIn();
       allow update: if docId == 'aiCircuitBreaker' && isApplicationOwner();
+      allow create, update: if docId == 'maintenance'
+        && isApplicationOwner()
+        && request.resource.data.keys().hasOnly(['isMaintenanceOngoing'])
+        && request.resource.data.isMaintenanceOngoing is bool;
       // increments and auto-trip: CF only (Admin SDK)
     }
 
