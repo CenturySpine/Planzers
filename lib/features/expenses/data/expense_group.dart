@@ -47,10 +47,11 @@ class TripExpenseGroup {
     );
   }
 
-  /// Whether this post is visible to [userId] (preview / no user → everyone).
-  bool isVisibleTo(String? userId) {
-    if (userId == null || userId.trim().isEmpty) return true;
+  /// Whether this post is visible to [memberDocId] (TripMember document ID).
+  /// Pass null or empty to default to visible (e.g. for unauthenticated preview).
+  bool isVisibleTo(String? memberDocId) {
+    if (memberDocId == null || memberDocId.trim().isEmpty) return true;
     if (visibleToMemberIds.isEmpty) return false;
-    return visibleToMemberIds.contains(userId.trim());
+    return visibleToMemberIds.contains(memberDocId.trim());
   }
 }

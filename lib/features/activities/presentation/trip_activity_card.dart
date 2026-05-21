@@ -110,8 +110,6 @@ class TripActivityCard extends StatelessWidget {
     required this.tripId,
     required this.activity,
     required this.tripMemberPublicLabels,
-    required this.usersDataById,
-    required this.currentUserId,
     this.showVoteButton = false,
     this.myUid,
   });
@@ -119,8 +117,6 @@ class TripActivityCard extends StatelessWidget {
   final String tripId;
   final TripActivity activity;
   final Map<String, String> tripMemberPublicLabels;
-  final Map<String, Map<String, dynamic>> usersDataById;
-  final String? currentUserId;
   final bool showVoteButton;
   final String? myUid;
 
@@ -215,8 +211,6 @@ class TripActivityCard extends StatelessWidget {
                                       creatorLabelForActivity(
                                         activity,
                                         tripMemberPublicLabels,
-                                        usersDataById: usersDataById,
-                                        currentUserId: currentUserId,
                                         unknownLabel: AppLocalizations.of(
                                                 context)!
                                             .roleParticipant,

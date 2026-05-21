@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
@@ -191,6 +191,15 @@ class _TripThreadMessagingPageState extends ConsumerState<TripThreadMessagingPag
         ),
       );
     }
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
+
     final chatDataAsync = ref.watch(
       tripChatDataScopedStreamProvider(
         TripMessageThreadRequest(tripId: trip.id, scope: scope),
@@ -234,8 +243,8 @@ class _TripThreadMessagingPageState extends ConsumerState<TripThreadMessagingPag
           _markMessagesAsReadIfNeeded(tripId: trip.id, messages: mergedMessages);
 
           final labelUserIds = <String>{
-            for (final id in trip.memberIds)
-              if (id.trim().isNotEmpty) id.trim(),
+            for (final m in participants)
+              if (m.userId != null && m.userId!.trim().isNotEmpty) m.userId!.trim(),
             for (final m in mergedMessages)
               if (m.authorId.trim().isNotEmpty) m.authorId.trim(),
           }.toList();
@@ -246,19 +255,12 @@ class _TripThreadMessagingPageState extends ConsumerState<TripThreadMessagingPag
           );
                 return usersAsync.when(
                   data: (userDocs) {
-                    final authorLabels = tripMemberLabelsFromUserDocsById(
-                      userDocs,
-                      labelUserIds,
-                      tripMemberPublicLabels: trip.memberPublicLabels,
-                      currentUserId: myUid,
-                      emptyFallback: 'Participant',
-                    );
                     return ChatWidget(
                       currentUserId: myUid,
                       messages: mergedMessages,
                       reactions: mergedReactions,
                       userDocs: userDocs,
-                      authorLabels: authorLabels,
+                      authorLabels: memberLabels,
                       showUserBadges: true,
                       hasMoreOlder: _hasMoreOlder,
                       loadingOlder: _loadingOlder,

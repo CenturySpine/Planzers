@@ -153,7 +153,7 @@ class TripCarpoolsRepository {
   Future<void> upsertTripCarpool({
     required String tripId,
     required String? carpoolId,
-    required String driverUserId,
+    required String driverParticipantId,
     required String meetingPointAddress,
     required String nearestTransitStop,
     required DateTime departureAt,
@@ -163,13 +163,13 @@ class TripCarpoolsRepository {
   }) async {
     final cleanTripId = tripId.trim();
     final cleanCarpoolId = carpoolId?.trim() ?? '';
-    final cleanDriverUserId = driverUserId.trim();
+    final cleanDriverParticipantId = driverParticipantId.trim();
     final normalizedAssignedIds = <String>{
       ...assignedParticipantIds.map((id) => id.trim()).where((id) => id.isNotEmpty),
-      if (cleanDriverUserId.isNotEmpty) cleanDriverUserId,
+      if (cleanDriverParticipantId.isNotEmpty) cleanDriverParticipantId,
     }.toList(growable: false);
-    if (cleanTripId.isEmpty || cleanDriverUserId.isEmpty) {
-      throw ArgumentError('tripId and driverUserId are required');
+    if (cleanTripId.isEmpty || cleanDriverParticipantId.isEmpty) {
+      throw ArgumentError('tripId and driverParticipantId are required');
     }
     if (availableSeats < 1) {
       throw ArgumentError.value(
@@ -188,7 +188,7 @@ class TripCarpoolsRepository {
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
       'carpoolId': cleanCarpoolId.isEmpty ? null : cleanCarpoolId,
-      'driverUserId': cleanDriverUserId,
+      'driverParticipantId': cleanDriverParticipantId,
       'meetingPointAddress': meetingPointAddress.trim(),
       'nearestTransitStop': nearestTransitStop.trim(),
       'departureAtMillis': departureAt.toUtc().millisecondsSinceEpoch,

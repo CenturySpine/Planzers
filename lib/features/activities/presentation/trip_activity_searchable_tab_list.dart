@@ -15,7 +15,6 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
     required this.entries,
     required this.tripId,
     required this.tripMemberPublicLabels,
-    required this.tripMemberIds,
     required this.usersDataById,
     required this.currentUserId,
     required this.emptyMessage,
@@ -30,7 +29,6 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
   final List<TripActivitiesListEntry> entries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
-  final Set<String> tripMemberIds;
   final Map<String, Map<String, dynamic>> usersDataById;
   final String? currentUserId;
   final String emptyMessage;
@@ -86,16 +84,13 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                       return TripMealCard(
                         tripId: tripId,
                         meal: meal,
-                        memberPublicLabels: tripMemberPublicLabels,
-                        tripMemberIds: tripMemberIds,
+                        memberLabels: tripMemberPublicLabels,
                       );
                     }
                     final card = TripActivityCard(
                       tripId: tripId,
                       activity: activity,
                       tripMemberPublicLabels: tripMemberPublicLabels,
-                      usersDataById: usersDataById,
-                      currentUserId: currentUserId,
                       showVoteButton: showVoteButton,
                       myUid: myUid,
                     );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +9,8 @@ import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
-import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
@@ -29,6 +31,9 @@ class InviteJoinPage extends ConsumerStatefulWidget {
 }
 
 class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
+  static const int _kBypassParticipantNameMinLen = 2;
+  static const int _kBypassParticipantNameMaxLen = 50;
+
   static String _messageForError(BuildContext context, Object e) {
     if (e is FirebaseFunctionsException) {
       final m = e.message;
@@ -50,9 +55,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   final TextEditingController _placeholderSearchController =
       TextEditingController();
 
-  /// 0: choose name, 1: stay + options (only when [requiresPlaceholderChoice]).
+  /// 0: choose name, 1: stay + options (only when [requiresParticipantChoice]).
   int _inviteFormStep = 0;
   bool _joinUsingCurrentProfile = false;
+  String? _bypassParticipantName;
   TripMemberStay? _stayDraft;
   TripMemberPhoneVisibility _phoneVisibilityDraft =
       TripMemberPhoneVisibility.nobody;
@@ -60,6 +66,121 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   void _goToTripsList() {
     context.go('/trips');
+  }
+
+  bool _isBypassParticipantNameValid(String? name) {
+    final length = (name ?? '').trim().length;
+    return length >= _kBypassParticipantNameMinLen &&
+        length <= _kBypassParticipantNameMaxLen;
+  }
+
+  String? _validateBypassParticipantName(AppLocalizations l10n, String raw) {
+    if (!_isBypassParticipantNameValid(raw)) {
+      return l10n.inviteBypassFirstNameInvalid;
+    }
+    return null;
+  }
+
+  Future<String?> _promptBypassParticipantNameDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    String? inlineError;
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text(l10n.inviteBypassFirstNameTitle),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.inviteBypassFirstNameBody),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: l10n.inviteBypassFirstNameLabel,
+                      border: const OutlineInputBorder(),
+                      errorText: inlineError,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) {
+                      final validationError = _validateBypassParticipantName(
+                        l10n,
+                        controller.text,
+                      );
+                      if (validationError != null) {
+                        setDialogState(() => inlineError = validationError);
+                        return;
+                      }
+                      Navigator.pop(dialogContext, controller.text.trim());
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(l10n.commonCancel),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final validationError = _validateBypassParticipantName(
+                      l10n,
+                      controller.text,
+                    );
+                    if (validationError != null) {
+                      setDialogState(() => inlineError = validationError);
+                      return;
+                    }
+                    Navigator.pop(dialogContext, controller.text.trim());
+                  },
+                  child: Text(l10n.commonContinue),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _ensureBypassParticipantNameOnEntry() async {
+    if (!_joinUsingCurrentProfile || !mounted) return;
+    if (_isBypassParticipantNameValid(_bypassParticipantName)) return;
+
+    final name = await _promptBypassParticipantNameDialog();
+    if (!mounted) return;
+    if (name == null) {
+      _goToTripsList();
+      return;
+    }
+    setState(() => _bypassParticipantName = name);
+  }
+
+  bool _canProceedFromCurrentStep() {
+    if (_inviteFormStep == 0) {
+      final id = _selectedPlaceholderId?.trim();
+      return id != null && id.isNotEmpty;
+    }
+    if (_joinUsingCurrentProfile) {
+      return _isBypassParticipantNameValid(_bypassParticipantName);
+    }
+    return true;
+  }
+
+  void _showJoinErrorSnackBar(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   List<Color> _joinOptionAccentColors(BuildContext context) {
@@ -72,18 +193,18 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     ];
   }
 
-  List<InviteJoinPlaceholderOption> _sortedPlaceholders(
+  List<InviteJoinParticipantOption> _sortedPlaceholders(
     InviteJoinContext ctx,
   ) {
-    final list = List<InviteJoinPlaceholderOption>.from(ctx.placeholders);
+    final list = List<InviteJoinParticipantOption>.from(ctx.participants);
     list.sort(
       (a, b) => compareDisplayNamesForSort(a.displayName, b.displayName),
     );
     return list;
   }
 
-  List<InviteJoinPlaceholderOption> _filteredPlaceholders(
-    List<InviteJoinPlaceholderOption> sorted,
+  List<InviteJoinParticipantOption> _filteredPlaceholders(
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final q = _placeholderSearchController.text;
     return sorted
@@ -92,7 +213,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   void _onPlaceholderSearchChanged(
-    List<InviteJoinPlaceholderOption> sorted,
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final filtered = _filteredPlaceholders(sorted);
     setState(() {
@@ -104,7 +225,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   Widget _placeholderChoiceTile({
-    required InviteJoinPlaceholderOption option,
+    required InviteJoinParticipantOption option,
     required int accentIndex,
     required bool isSuggested,
   }) {
@@ -213,7 +334,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   String? _findSuggestedPlaceholderId(
-    List<InviteJoinPlaceholderOption> sorted,
+    List<InviteJoinParticipantOption> sorted,
   ) {
     final emailLocalPart = _currentUserEmailLocalPart;
     if (emailLocalPart == null || emailLocalPart.trim().isEmpty) return null;
@@ -250,11 +371,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       if (!mounted) return;
       setState(() {
         _context = ctx;
-        _inviteFormStep = 0;
-        _joinUsingCurrentProfile = false;
         _phoneVisibilityDraft = TripMemberPhoneVisibility.nobody;
         _placeholderSearchController.clear();
-        if (ctx.requiresPlaceholderChoice && ctx.placeholders.isNotEmpty) {
+        if (ctx.requiresParticipantChoice && ctx.participants.isNotEmpty) {
+          _inviteFormStep = 0;
+          _joinUsingCurrentProfile = false;
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
@@ -263,12 +384,21 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             tripEndDate: ctx.tripEndDate,
           );
         } else {
+          _inviteFormStep = 1;
+          _joinUsingCurrentProfile = true;
+          _bypassParticipantName = null;
           _suggestedPlaceholderId = null;
-          _stayDraft = null;
+          _selectedPlaceholderId = null;
+          _stayDraft = TripMemberStay.defaultForInviteContext(
+            tripStartDate: ctx.tripStartDate,
+            tripEndDate: ctx.tripEndDate,
+          );
         }
       });
-      if (!ctx.requiresPlaceholderChoice) {
-        await _join(placeholderMemberId: null);
+      if (!ctx.requiresParticipantChoice) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_ensureBypassParticipantNameOnEntry());
+        });
       }
     } catch (e) {
       if (!mounted) return;
@@ -283,8 +413,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   }
 
   Future<void> _join({
-    String? placeholderMemberId,
-    bool bypassPlaceholderChoice = false,
+    String? participantId,
+    String? participantName,
+    bool bypassParticipantChoice = false,
   }) async {
     if (_joining || _joined) return;
     setState(() {
@@ -295,8 +426,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       await ref.read(tripsRepositoryProvider).joinTripWithInvite(
             tripId: widget.tripId,
             token: widget.token,
-            placeholderMemberId: placeholderMemberId,
-            bypassPlaceholderChoice: bypassPlaceholderChoice,
+            participantId: participantId,
+            participantName: participantName,
+            bypassParticipantChoice: bypassParticipantChoice,
           );
       if (!mounted) return;
       setState(() {
@@ -309,9 +441,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       );
     } catch (e) {
       if (!mounted) return;
+      final message = _messageForError(context, e);
       setState(() {
-        _error = _messageForError(context, e);
+        _error = message;
       });
+      _showJoinErrorSnackBar(message);
     } finally {
       if (mounted) {
         setState(() {
@@ -345,8 +479,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     });
   }
 
-  void _continueWithCurrentProfile() {
+  Future<void> _continueWithCurrentProfile() async {
+    final name = await _promptBypassParticipantNameDialog();
+    if (!mounted) return;
+    if (name == null) return;
+
     setState(() {
+      _bypassParticipantName = name;
       _error = null;
       _inviteFormStep = 1;
       _joinUsingCurrentProfile = true;
@@ -357,6 +496,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     setState(() {
       _inviteFormStep = 0;
       _joinUsingCurrentProfile = false;
+      _bypassParticipantName = null;
       _error = null;
     });
   }
@@ -367,6 +507,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final id = _selectedPlaceholderId?.trim();
     if (ctx == null || stay == null) return;
     if (!_joinUsingCurrentProfile && (id == null || id.isEmpty)) return;
+    if (_joinUsingCurrentProfile &&
+        !_isBypassParticipantNameValid(_bypassParticipantName)) {
+      final message = AppLocalizations.of(context)!.inviteBypassFirstNameRequired;
+      setState(() => _error = message);
+      _showJoinErrorSnackBar(message);
+      return;
+    }
 
     if (!TripMemberStay.isChronological(stay)) {
       setState(() {
@@ -386,21 +533,25 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
 
     await _join(
-      placeholderMemberId: _joinUsingCurrentProfile ? null : id,
-      bypassPlaceholderChoice: _joinUsingCurrentProfile,
+      participantId: _joinUsingCurrentProfile ? null : id,
+      participantName:
+          _joinUsingCurrentProfile ? _bypassParticipantName!.trim() : null,
+      bypassParticipantChoice: _joinUsingCurrentProfile,
     );
     if (!_joined || !mounted) return;
 
     try {
-      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
-            tripId: widget.tripId,
-            stay: stay,
-          );
-      final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
-      if (myPhoneNumber != null) {
-        await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
+      final myParticipant = await ref
+          .read(tripMembersRepositoryProvider)
+          .watchMyParticipant(widget.tripId)
+          .first;
+      if (myParticipant != null) {
+        final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+        await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
               tripId: widget.tripId,
-              visibility: _phoneVisibilityDraft,
+              participantId: myParticipant.id,
+              stay: stay,
+              phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
             );
       }
       await _persistCupidonPreferenceForTrip();
@@ -421,7 +572,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
   PreferredSizeWidget _buildAppBar() {
     final l10n = AppLocalizations.of(context)!;
     final showCancel = !_joined;
-    final placeholderPick = _context?.requiresPlaceholderChoice == true &&
+    final placeholderPick = _context != null &&
         !_loadingContext &&
         !_joining;
     return AppBar(
@@ -443,9 +594,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final tripCupidonModeEnabled = ctx.cupidonModeEnabled;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
-    final stepTitle = _inviteFormStep == 0
-        ? l10n.inviteJoinTripStepOne
-        : l10n.inviteJoinTripStepTwo;
+    final stepTitle = !ctx.requiresParticipantChoice
+        ? l10n.inviteJoinThisTrip
+        : (_inviteFormStep == 0
+            ? l10n.inviteJoinTripStepOne
+            : l10n.inviteJoinTripStepTwo);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -561,6 +714,39 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (_joinUsingCurrentProfile &&
+                                _isBypassParticipantNameValid(
+                                    _bypassParticipantName)) ...[
+                              Text(
+                                l10n.inviteBypassJoiningAs(
+                                  _bypassParticipantName!.trim(),
+                                ),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                              Align(
+                                alignment: Alignment.center,
+                                child: TextButton(
+                                  onPressed: _joining
+                                      ? null
+                                      : () async {
+                                          final name =
+                                              await _promptBypassParticipantNameDialog();
+                                          if (!mounted || name == null) {
+                                            return;
+                                          }
+                                          setState(
+                                            () => _bypassParticipantName = name,
+                                          );
+                                        },
+                                  child: Text(l10n.inviteBypassChangeName),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             if (_stayDraft != null)
                               TripMemberStayOptionsEditor(
                                 mode: TripMemberStayOptionsEditorMode.draft,
@@ -601,7 +787,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (_inviteFormStep == 1) ...[
+                      if (_inviteFormStep == 1 && ctx.requiresParticipantChoice) ...[
                         Expanded(
                           child: OutlinedButton(
                             onPressed: _joining ? null : _backToNameStep,
@@ -619,17 +805,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: FilledButton(
-                          onPressed:
-                              (_joining ||
-                                      (_inviteFormStep == 0 &&
-                                          (_selectedPlaceholderId == null ||
-                                              _selectedPlaceholderId!
-                                                  .trim()
-                                                  .isEmpty)))
-                                  ? null
-                                  : (_inviteFormStep == 0
-                                      ? _continueFromNameStep
-                                      : _completeInviteWithDetails),
+                          onPressed: (_joining || !_canProceedFromCurrentStep())
+                              ? null
+                              : (_inviteFormStep == 0
+                                  ? _continueFromNameStep
+                                  : _completeInviteWithDetails),
                           child: Text(
                             _inviteFormStep == 0
                                 ? l10n.commonContinue
@@ -692,7 +872,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         : l10n.inviteJoinTripWithTitle(tripTitle);
 
     final placeholderPick = _context != null &&
-        _context!.requiresPlaceholderChoice &&
         !_loadingContext &&
         !_joining &&
         !_joined;
@@ -754,7 +933,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     child: Text(l10n.inviteSeeMyTrips),
                   ),
                 ] else if (_context != null &&
-                    !_context!.requiresPlaceholderChoice &&
+                    !_context!.requiresParticipantChoice &&
                     !_joined) ...[
                   Text(
                     tripHeadline,
@@ -797,7 +976,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         child: FilledButton(
                           onPressed: _joining
                               ? null
-                              : () => _join(placeholderMemberId: null),
+                              : () => _join(participantId: null),
                           child: Text(l10n.commonRetry),
                         ),
                       ),

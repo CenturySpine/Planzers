@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
@@ -70,6 +70,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
 
   String get _currentUserId =>
       FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
+
+  String _nameFromUserData(Map<String, dynamic>? userData, String fallback) {
+    if (userData == null) return fallback;
+    final account = (userData['account'] as Map<String, dynamic>?) ?? const {};
+    final name = (account['name'] as String?)?.trim() ?? '';
+    return name.isNotEmpty ? name : fallback;
+  }
 
   bool _isComponentLockedByOther(MealComponent component) {
     final lockOwner = (component.lockedBy ?? '').trim();
@@ -531,10 +538,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     ),
                   ],
                   selected: {_activeMealView},
-                  onSelectionChanged: (_isSavingMealMode || !canEditMealMode)
+                  onSelectionChanged: _isSavingMealMode
                       ? null
                       : (selection) async {
-                          if (selection.isEmpty) {
+                          if (selection.isEmpty || !canEditMealMode) {
                             return;
                           }
                           if (_activeMealView == selection.first) {
@@ -682,7 +689,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required MealComponent component,
     required List<IngredientCatalogItem> catalogItems,
     required Set<String> participantAllergenIds,
-    required Map<String, String> tripMemberPublicLabels,
+    required Map<String, String> memberLabels,
     required bool canUseAi,
     required bool isApplicationOwner,
   }) async {
@@ -744,13 +751,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         }
       }
       if (!mounted) return;
-      final label = resolveTripMemberDisplayLabel(
-        memberId: lockOwnerId,
-        userData: lockOwnerData,
-        tripMemberPublicLabels: tripMemberPublicLabels,
-        currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
-      );
+      final label = memberLabels[lockOwnerId] ??
+          _nameFromUserData(
+              lockOwnerData, AppLocalizations.of(context)!.commonUnknown);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -777,13 +780,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         lockOwnerData = const <String, dynamic>{};
       }
       if (!mounted) return;
-      final label = resolveTripMemberDisplayLabel(
-        memberId: lockOwner,
-        userData: lockOwnerData,
-        tripMemberPublicLabels: tripMemberPublicLabels,
-        currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
-      );
+      final label = memberLabels[lockOwner] ??
+          _nameFromUserData(
+              lockOwnerData, AppLocalizations.of(context)!.commonUnknown);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -828,13 +827,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         }
       }
       if (!mounted) return;
-      final label = resolveTripMemberDisplayLabel(
-        memberId: lockOwnerId,
-        userData: lockOwnerData,
-        tripMemberPublicLabels: const {},
-        currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
-      );
+      final label = _nameFromUserData(
+          lockOwnerData, AppLocalizations.of(context)!.commonUnknown);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -903,13 +897,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         }
       }
       if (!mounted) return;
-      final label = resolveTripMemberDisplayLabel(
-        memberId: lockOwnerId,
-        userData: lockOwnerData,
-        tripMemberPublicLabels: const {},
-        currentUserId: _currentUserId,
-        emptyFallback: AppLocalizations.of(context)!.commonUnknown,
-      );
+      final label = _nameFromUserData(
+          lockOwnerData, AppLocalizations.of(context)!.commonUnknown);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1382,6 +1371,25 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             ),
           );
 
+    final participants = ref
+            .watch(tripParticipantsStreamProvider(widget.tripId))
+            .asData
+            ?.value ??
+        [];
+    final memberLabels = <String, String>{
+      for (final m in participants) ...<String, String>{
+        m.id: m.participantName,
+        if (m.userId != null) m.userId!: m.participantName,
+      },
+    };
+    final allParticipantUserIds = <String>[
+      for (final m in participants)
+        if (m.userId != null && m.userId!.trim().isNotEmpty) m.userId!.trim(),
+    ]..sort();
+    final allMembersAsync = ref.watch(
+        usersDataByIdsProvider(allParticipantUserIds.join('|')));
+    final allMembersData = allMembersAsync.asData?.value ?? {};
+
     return tripAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -1396,10 +1404,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             body: Center(child: Text(l10n.tripNotFound)),
           );
         }
-        final memberIds = trip.memberIds
-            .map((id) => id.trim())
-            .where((id) => id.isNotEmpty)
-            .toList();
+        final memberIds = participants.map((m) => m.id).toList();
         return mealAsync.when(
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -1426,8 +1431,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             }
             final areAllParticipantsSelected = memberIds.isNotEmpty &&
                 memberIds.every(_participantIds.contains);
-            final participantIdsForRisk = _participantIds.toList()..sort();
-            final participantIdsRiskKey = participantIdsForRisk.join('|');
+            // UIDs of selected participants for allergen risk checks
+            final selectedParticipantUserIds = <String>[
+              for (final m in participants)
+                if (_participantIds.contains(m.id) &&
+                    m.userId != null &&
+                    m.userId!.trim().isNotEmpty)
+                  m.userId!.trim(),
+            ]..sort();
+            final participantIdsRiskKey = selectedParticipantUserIds.join('|');
             final componentLockOwnerIds = _components
                 .map((component) => (component.lockedBy ?? '').trim())
                 .where((id) => id.isNotEmpty)
@@ -1442,13 +1454,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                 .toList(growable: false)
               ..sort();
             final potluckAddedByRiskKey = potluckAddedByIds.join('|');
-            final memberIdsRiskKey = memberIds.toList(growable: false)..sort();
-            final memberIdsKey = memberIdsRiskKey.join('|');
             final usersAsync = ref.watch(
               usersDataByIdsProvider(participantIdsRiskKey),
-            );
-            final membersAsync = ref.watch(
-              usersDataByIdsProvider(memberIdsKey),
             );
             final potluckUsersAsync = ref.watch(
               usersDataByIdsProvider(potluckAddedByRiskKey),
@@ -1457,19 +1464,6 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               usersDataByIdsProvider(componentLockOwnerRiskKey),
             );
             final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
-            final membersData = membersAsync.asData?.value ?? {};
-            final labels = <String, String>{
-              for (final id in memberIds)
-                id: (id == myUid)
-                    ? l10n.commonMe
-                    : resolveTripMemberDisplayLabel(
-                        memberId: id,
-                        userData: membersData[id],
-                        tripMemberPublicLabels: trip.memberPublicLabels,
-                        currentUserId: myUid,
-                        emptyFallback: l10n.roleParticipant,
-                      ),
-            };
             final colorScheme = Theme.of(context).colorScheme;
             final textTheme = Theme.of(context).textTheme;
             final canCreateMeal = canCreateMealForTrip(
@@ -1492,10 +1486,20 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               trip: trip,
               userId: myUid,
             );
-            final isMealChef = (myUid ?? '').isNotEmpty &&
+            final myTripMemberId = () {
+              final uid = (myUid ?? '').trim();
+              if (uid.isEmpty) return null;
+              for (final member in participants) {
+                if (member.userId?.trim() == uid) {
+                  return member.id;
+                }
+              }
+              return null;
+            }();
+            final isMealChef = myTripMemberId != null &&
                 _chefParticipantId != null &&
-                _chefParticipantId == myUid;
-            final canAccessTrip = trip.memberIds.contains(myUid);
+                _chefParticipantId == myTripMemberId;
+            final canAccessTrip = trip.memberUserIds.contains(myUid);
             final canAccessMealCreatePage = canAccessTrip && canCreateMeal;
             final canEditParticipants = canEditMealCore;
             final canEditRecipe = canManageRecipe || isMealChef;
@@ -1510,7 +1514,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                     ));
             final applicationOwnerScopeUid = (myUid ?? '').trim();
             final isApplicationOwner = applicationOwnerScopeUid.isNotEmpty &&
-                (membersData[applicationOwnerScopeUid]?['isApplicationOwner'] ==
+                (allMembersData[applicationOwnerScopeUid]
+                        ?['isApplicationOwner'] ==
                     true);
             if (widget.isCreate && !canAccessMealCreatePage) {
               return Scaffold(
@@ -1758,7 +1763,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 const SizedBox(width: 6),
                                               ],
                                               Text(
-                                                labels[memberId] ??
+                                                memberLabels[memberId] ??
                                                     l10n.roleParticipant,
                                               ),
                                             ],
@@ -1890,7 +1895,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         ? <String>{}
                                         : participantAllergenIdsFromUsersData(
                                             usersData,
-                                            _participantIds,
+                                            selectedParticipantUserIds,
                                           );
                                     final risk = catalogItems == null
                                         ? null
@@ -1927,8 +1932,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   catalogItems: catalogItems,
                                                   participantAllergenIds:
                                                       participantAllergenIds,
-                                                  tripMemberPublicLabels:
-                                                      trip.memberPublicLabels,
+                                                  memberLabels: memberLabels,
                                                   canUseAi: canUseRecipeAi,
                                                   isApplicationOwner:
                                                       isApplicationOwner,
@@ -1986,16 +1990,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       lockOwnersData?[
                                                           lockOwnerId];
                                                   final lockOwnerLabel =
-                                                      resolveTripMemberDisplayLabel(
-                                                    memberId: lockOwnerId,
-                                                    userData: lockOwnerData,
-                                                    tripMemberPublicLabels:
-                                                        trip.memberPublicLabels,
-                                                    currentUserId:
-                                                        _currentUserId,
-                                                    emptyFallback:
-                                                        l10n.roleParticipant,
-                                                  );
+                                                      memberLabels[
+                                                              lockOwnerId] ??
+                                                          _nameFromUserData(
+                                                              lockOwnerData,
+                                                              l10n.roleParticipant);
                                                   return Padding(
                                                     padding:
                                                         const EdgeInsets.only(
@@ -2357,19 +2356,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                                     : usersData?[
                                                                         addedBy];
                                                             final label =
-                                                                resolveTripMemberDisplayLabel(
-                                                              memberId: addedBy,
-                                                              userData:
-                                                                  userData,
-                                                              tripMemberPublicLabels:
-                                                                  trip.memberPublicLabels,
-                                                              currentUserId: FirebaseAuth
-                                                                  .instance
-                                                                  .currentUser
-                                                                  ?.uid,
-                                                              emptyFallback: l10n
-                                                                  .roleParticipant,
-                                                            );
+                                                                memberLabels[
+                                                                        addedBy] ??
+                                                                    _nameFromUserData(
+                                                                        userData,
+                                                                        l10n.roleParticipant);
                                                             return buildProfileBadge(
                                                               context: context,
                                                               displayLabel:

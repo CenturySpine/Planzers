@@ -18,6 +18,7 @@ class TripCreatePage extends ConsumerStatefulWidget {
 class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
+  late final TextEditingController _creatorNameController;
   late TripMemberStay _stay;
   String? _errorMessage;
   bool _saving = false;
@@ -27,6 +28,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     super.initState();
     _titleController = TextEditingController();
     _destinationController = TextEditingController();
+    _creatorNameController = TextEditingController();
     _stay = TripMemberStay.defaultForNewTripEditor();
   }
 
@@ -34,6 +36,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
+    _creatorNameController.dispose();
     super.dispose();
   }
 
@@ -42,8 +45,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final l10n = AppLocalizations.of(context)!;
     final title = _titleController.text.trim();
     final destination = _destinationController.text.trim();
+    final creatorName = _creatorNameController.text.trim();
 
-    if (title.isEmpty || destination.isEmpty) {
+    if (title.isEmpty || destination.isEmpty || creatorName.isEmpty) {
       setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
       return;
     }
@@ -68,6 +72,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       await ref.read(tripsRepositoryProvider).createTrip(
             title: title,
             destination: destination,
+            creatorName: creatorName,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: _stay.startDayPart,
@@ -110,6 +115,18 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
               labelText: l10n.tripsDestinationLabel,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (_) {
+              if (_errorMessage != null) setState(() => _errorMessage = null);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _creatorNameController,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: l10n.tripsCreateCreatorNameLabel,
               border: const OutlineInputBorder(),
             ),
             onChanged: (_) {

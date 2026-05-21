@@ -844,6 +844,12 @@ abstract class AppLocalizations {
   /// **'Destination'**
   String get tripsDestinationLabel;
 
+  /// No description provided for @tripsCreateCreatorNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre nom'**
+  String get tripsCreateCreatorNameLabel;
+
   /// No description provided for @tripsStartDateLabel.
   ///
   /// In fr, this message translates to:
@@ -859,7 +865,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateValidationRequired.
   ///
   /// In fr, this message translates to:
-  /// **'Titre et destination obligatoires'**
+  /// **'Titre, destination et votre nom sont obligatoires'**
   String get tripsCreateValidationRequired;
 
   /// No description provided for @tripsCreateValidationDateOrder.
@@ -1321,38 +1327,14 @@ abstract class AppLocalizations {
   /// No description provided for @tripPermissionsParticipantsDescription.
   ///
   /// In fr, this message translates to:
-  /// **'Prépare la gestion des permissions liées aux participants du voyage.'**
+  /// **'Rôles minimaux pour la gestion des participants du voyage.'**
   String get tripPermissionsParticipantsDescription;
 
-  /// No description provided for @tripPermissionsParticipantsResetPending.
+  /// No description provided for @tripPermissionParticipantsManage.
   ///
   /// In fr, this message translates to:
-  /// **'Réinitialisation prête (liste des permissions à venir)'**
-  String get tripPermissionsParticipantsResetPending;
-
-  /// No description provided for @tripPermissionParticipantsCreate.
-  ///
-  /// In fr, this message translates to:
-  /// **'Créer un participant temporaire'**
-  String get tripPermissionParticipantsCreate;
-
-  /// No description provided for @tripPermissionParticipantsEditPlaceholder.
-  ///
-  /// In fr, this message translates to:
-  /// **'Modifier un participant temporaire'**
-  String get tripPermissionParticipantsEditPlaceholder;
-
-  /// No description provided for @tripPermissionParticipantsDeletePlaceholder.
-  ///
-  /// In fr, this message translates to:
-  /// **'Supprimer un participant temporaire'**
-  String get tripPermissionParticipantsDeletePlaceholder;
-
-  /// No description provided for @tripPermissionParticipantsDeleteRegistered.
-  ///
-  /// In fr, this message translates to:
-  /// **'Supprimer un participant inscrit'**
-  String get tripPermissionParticipantsDeleteRegistered;
+  /// **'Gérer les participants (créer, modifier, supprimer)'**
+  String get tripPermissionParticipantsManage;
 
   /// No description provided for @tripPermissionParticipantsToggleAdmin.
   ///
@@ -2543,6 +2525,48 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Continuer avec mon profil actuel'**
   String get inviteJoinWithCurrentProfileAction;
+
+  /// No description provided for @inviteBypassFirstNameTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ton prénom ou pseudo'**
+  String get inviteBypassFirstNameTitle;
+
+  /// No description provided for @inviteBypassFirstNameBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indique comment tu veux apparaître pour les autres participants de ce voyage.'**
+  String get inviteBypassFirstNameBody;
+
+  /// No description provided for @inviteBypassFirstNameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prénom ou pseudo'**
+  String get inviteBypassFirstNameLabel;
+
+  /// No description provided for @inviteBypassFirstNameInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saisis entre 2 et 50 caractères.'**
+  String get inviteBypassFirstNameInvalid;
+
+  /// No description provided for @inviteBypassFirstNameRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indique ton prénom ou pseudo pour rejoindre ce voyage.'**
+  String get inviteBypassFirstNameRequired;
+
+  /// No description provided for @inviteBypassJoiningAs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu rejoindras en tant que « {name} »'**
+  String inviteBypassJoiningAs(Object name);
+
+  /// No description provided for @inviteBypassChangeName.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier'**
+  String get inviteBypassChangeName;
 
   /// No description provided for @inviteOptionsEditableAfterJoinInfo.
   ///
@@ -5096,6 +5120,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'L\'application est temporairement indisponible. Elle sera de retour très bientôt.'**
   String get maintenanceBody;
+
+  /// No description provided for @profileNameDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis ton nom de profil'**
+  String get profileNameDialogTitle;
+
+  /// No description provided for @profileNameDialogFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom ou pseudo'**
+  String get profileNameDialogFieldLabel;
+
+  /// No description provided for @profileNameRequiredMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un nom de profil est requis pour utiliser Planerz.'**
+  String get profileNameRequiredMessage;
 }
 
 class _AppLocalizationsDelegate

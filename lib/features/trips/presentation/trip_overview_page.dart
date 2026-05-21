@@ -15,7 +15,6 @@ import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
@@ -26,7 +25,7 @@ import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
-import 'package:planerz/features/trips/data/trip_placeholder_member.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
@@ -407,7 +406,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final realIds = memberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
-        .where((id) => !isTripPlaceholderMemberId(id))
         .toList();
     final sorted = [...realIds]..sort();
     final key = sorted.join('\x1e');
@@ -483,10 +481,21 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       ..shuffle();
     final roomsCount = rooms.length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
-    final myAssignedRoomNames = myUid == null
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(_trip.id)).asData?.value ?? [];
+    final memberLabels = <String, String>{
+      for (final m in participants) m.id: m.participantName,
+    };
+    final myParticipantId = myUid != null
+        ? participants
+            .where((m) => m.userId?.trim() == myUid)
+            .map((m) => m.id)
+            .firstOrNull
+        : null;
+    final myAssignedRoomNames = myParticipantId == null
         ? const <String>[]
         : rooms
-            .where((room) => room.assignedMemberIds.contains(myUid))
+            .where((room) => room.assignedMemberIds.contains(myParticipantId))
             .map(
               (room) => room.name.trim().isEmpty
                   ? l10n.roomsUnnamedRoom
@@ -535,13 +544,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         final liveLinkUrl = (liveData?['linkUrl'] as String?) ?? _trip.linkUrl;
         final livePreview =
             (liveData?['linkPreview'] as Map<String, dynamic>?) ?? const {};
-        final liveMemberIds =
-            ((liveData?['memberIds'] as List<dynamic>?) ?? _trip.memberIds)
+        final liveMemberUserIds =
+            ((liveData?['memberUserIds'] as List<dynamic>?) ?? _trip.memberUserIds)
                 .map((id) => id.toString())
                 .toList();
-        final liveMemberPublicLabels = Trip.memberPublicLabelsFromFirestore(
-          liveData?['memberPublicLabels'],
-        );
         final liveBannerImageUrl =
             (liveData?['bannerImageUrl'] as String?)?.trim() ??
                 (_trip.bannerImageUrl ?? '').trim();
@@ -552,48 +558,38 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         final tripDateLabel =
             formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
-            liveMemberIds
-                .map((id) => id.trim())
-                .where((id) => id.isNotEmpty)
-                .contains(myUid);
+            participants.any((m) => m.userId?.trim() == myUid);
         final canViewParticipants = canEdit || isTripMember;
-        final participantsCount = liveMemberIds
-            .map((id) => id.trim())
-            .where((id) => id.isNotEmpty)
-            .length;
+        final participantsCount = participants.length;
         final today = _dateOnly(DateTime.now());
-        final mergedMemberPublicLabels = {
-          ..._trip.memberPublicLabels,
-          ...liveMemberPublicLabels,
-        };
-        final usersStream = _usersDataStreamFor(liveMemberIds);
+        final participantUserIds = participants
+            .where((m) => m.userId != null && m.userId!.trim().isNotEmpty)
+            .map((m) => m.userId!.trim())
+            .toList();
+        final usersStream = _usersDataStreamFor(
+          {...participantUserIds, ...liveMemberUserIds}.toList(),
+        );
 
         return StreamBuilder<Map<String, Map<String, dynamic>>>(
           stream: usersStream,
           builder: (context, userSnap) {
             final usersDataById = userSnap.data ?? const {};
-            final memberLabels = tripMemberLabelsFromUserDocsById(
-              usersDataById,
-              liveMemberIds,
-              tripMemberPublicLabels: mergedMemberPublicLabels,
-              currentUserId: myUid,
-              emptyFallback: 'Voyageur',
-            );
-            final participantsPreview = liveMemberIds
-                .map((id) => id.trim())
-                .where((id) => id.isNotEmpty)
-                .map((id) {
-              final label = memberLabels[id]?.trim() ?? 'Voyageur';
+            final participantsPreview = participants.map((m) {
+              final photoUrl = m.userId != null
+                  ? _photoUrlFromUserData(usersDataById[m.userId!])
+                  : '';
               return _ParticipantBadgePreviewEntry(
-                initial: _initialFromLabel(label),
-                photoUrl: _photoUrlFromUserData(usersDataById[id]),
+                initial: _initialFromLabel(m.participantName),
+                photoUrl: photoUrl,
               );
             }).toList();
-            final TripCarpool? myCarpool = myUid == null
+            final TripCarpool? myCarpool = myParticipantId == null
                 ? null
                 : carpools.cast<TripCarpool?>().firstWhere(
                       (entry) =>
-                          entry?.assignedParticipantIds.contains(myUid) == true,
+                          entry?.assignedParticipantIds
+                              .contains(myParticipantId) ==
+                          true,
                       orElse: () => null,
                     );
             final myCarpoolDetailLines = <String>[
@@ -606,13 +602,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   );
                   final meetingPointLabel =
                       myCarpool.meetingPointAddress.trim();
-                  final driverLabel = (memberLabels[myCarpool.driverUserId] ??
+                  final driverLabel = (memberLabels[myCarpool.driverParticipantId] ??
                           l10n.tripParticipantsTraveler)
                       .trim();
                   final passengerIds = myCarpool.assignedParticipantIds
                       .map((id) => id.trim())
                       .where((id) => id.isNotEmpty)
-                      .where((id) => id != myCarpool.driverUserId.trim())
+                      .where((id) => id != myCarpool.driverParticipantId.trim())
                       .toList(growable: false);
                   final passengerLabels = passengerIds
                       .map(
@@ -625,7 +621,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       ? l10n.tripOverviewCarpoolNoPassengersPlaceholder
                       : passengerLabels.join(', ');
                   final isDriver =
-                      myUid.trim() == myCarpool.driverUserId.trim();
+                      myParticipantId != null &&
+                      myParticipantId == myCarpool.driverParticipantId.trim();
 
                   return <String>[
                     isDriver

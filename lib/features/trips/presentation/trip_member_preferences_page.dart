@@ -6,8 +6,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
-import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -88,8 +88,12 @@ class _TripMemberPreferencesPageState
       throw Exception('Stay validation failed: out of trip bounds');
     }
     try {
-      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
+      final myParticipant =
+          ref.read(myTripMemberStreamProvider(widget.tripId)).asData?.value;
+      if (myParticipant == null) throw StateError('Participant introuvable');
+      await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
             tripId: widget.tripId,
+            participantId: myParticipant.id,
             stay: stay,
           );
       if (!mounted) return;
@@ -110,9 +114,13 @@ class _TripMemberPreferencesPageState
   }) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      await ref.read(tripMemberProfileRepositoryProvider).setMyPhoneVisibility(
+      final myParticipant =
+          ref.read(myTripMemberStreamProvider(widget.tripId)).asData?.value;
+      if (myParticipant == null) throw StateError('Participant introuvable');
+      await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
             tripId: widget.tripId,
-            visibility: visibility,
+            participantId: myParticipant.id,
+            phoneVisibility: visibility,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -180,6 +188,7 @@ class _TripMemberPreferencesPageState
         ref.watch(myTripCupidonEnabledProvider(widget.tripId));
     final myPhoneNumberAsync = ref.watch(myPhoneNumberProvider);
     final myPhoneVisibilityAsync = ref.watch(tripMemberPhoneVisibilityStreamProvider(widget.tripId));
+    ref.watch(myTripMemberStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
 
     return tripAsync.when(
@@ -200,7 +209,7 @@ class _TripMemberPreferencesPageState
             ),
           );
         }
-        final isTripMember = myUid.isNotEmpty && trip.memberIds.contains(myUid);
+        final isTripMember = myUid.isNotEmpty && trip.memberUserIds.contains(myUid);
         final isTripOwner = myUid.isNotEmpty && trip.ownerId.trim() == myUid;
         if (!isTripMember) {
           return Scaffold(

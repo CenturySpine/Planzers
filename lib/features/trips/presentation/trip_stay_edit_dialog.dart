@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 import 'package:planerz/features/trips/data/trip.dart';
-import 'package:planerz/features/trips/data/trip_member_profile_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 
 Future<void> showTripStayEditDialog({
@@ -90,8 +90,12 @@ class _TripStayFormDialogState extends ConsumerState<_TripStayFormDialog> {
     }
     setState(() => _saving = true);
     try {
-      await ref.read(tripMemberProfileRepositoryProvider).upsertMyStay(
+      final myParticipant =
+          ref.read(myTripMemberStreamProvider(widget.trip.id)).asData?.value;
+      if (myParticipant == null) throw StateError('Participant introuvable');
+      await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
             tripId: widget.trip.id,
+            participantId: myParticipant.id,
             stay: _value,
           );
       if (!mounted) return;

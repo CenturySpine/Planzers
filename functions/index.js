@@ -2,6 +2,7 @@
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const {
   onDocumentCreated,
+  onDocumentDeleted,
   onDocumentWritten,
   onDocumentUpdated,
 } = require('firebase-functions/v2/firestore');
@@ -54,6 +55,24 @@ function emailLocalPart(email) {
   if (!e) return '';
   const at = e.indexOf('@');
   return at > 0 ? e.slice(0, at).trim() : e;
+}
+
+const PARTICIPANT_NAME_MIN_LEN = 2;
+const PARTICIPANT_NAME_MAX_LEN = 50;
+
+/** Required when joining without claiming a pre-planned participant slot. */
+function assertParticipantNameForNewJoin(rawName) {
+  const name = normalizeString(rawName);
+  if (
+    name.length < PARTICIPANT_NAME_MIN_LEN ||
+    name.length > PARTICIPANT_NAME_MAX_LEN
+  ) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Indique ton prénom ou pseudo pour rejoindre ce voyage (2 à 50 caractères).'
+    );
+  }
+  return name;
 }
 
 async function fetchHtml(url) {
@@ -281,20 +300,10 @@ async function enrichWithGooglePlaces(name, lat, lng) {
 }
 
 /** @param {FirebaseFirestore.DocumentData} data */
-function memberIdsAsSet(data) {
-  const raw = data.memberIds;
+function memberUserIdsAsSet(data) {
+  const raw = data.memberUserIds;
   if (!Array.isArray(raw)) return new Set();
   return new Set(raw.map((v) => String(v)));
-}
-
-/** Trip planner placeholders: ids in trip.memberIds until a guest claims one. */
-function isPlaceholderMemberId(id) {
-  const s = normalizeString(id);
-  return s.startsWith('ph_') && s.length > 8;
-}
-
-function newTripPlaceholderMemberId() {
-  return `ph_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
 
 /** Co-admin uids on the trip document (creator is always admin via ownerId). */
@@ -428,10 +437,10 @@ function assertTripParticipantPermission({
   fallbackRole,
   deniedMessage,
 }) {
-  const memberIds = Array.isArray(tripData.memberIds)
-    ? tripData.memberIds.map((v) => String(v))
+  const memberUserIds = Array.isArray(tripData.memberUserIds)
+    ? tripData.memberUserIds.map((v) => String(v))
     : [];
-  if (!memberIds.includes(uid)) {
+  if (!memberUserIds.includes(uid)) {
     throw new HttpsError('permission-denied', deniedMessage);
   }
   const minRole = tripParticipantPermissionMinRole(
@@ -444,37 +453,6 @@ function assertTripParticipantPermission({
   }
 }
 
-/**
- * When a placeholder row becomes a real uid in memberIds, carry co-admin from
- * ph_* to uid in adminMemberIds. Returns null if the field needs no update.
- * @param {unknown} adminIdsRaw
- * @param {string} phId
- * @param {string} uid
- * @returns {string[] | null}
- */
-function adminMemberIdsAfterPlaceholderClaim(adminIdsRaw, phId, uid) {
-  const raw = Array.isArray(adminIdsRaw)
-    ? adminIdsRaw.map((v) => String(v))
-    : [];
-  if (!raw.includes(phId)) return null;
-  return [...new Set(raw.map((id) => (id === phId ? uid : id)))];
-}
-
-/**
- * Undo {@link adminMemberIdsAfterPlaceholderClaim} when claim migration fails.
- * @param {unknown} adminIdsRaw
- * @param {string} uid
- * @param {string} phId
- * @returns {string[] | null}
- */
-function adminMemberIdsAfterRevertClaim(adminIdsRaw, uid, phId) {
-  const raw = Array.isArray(adminIdsRaw)
-    ? adminIdsRaw.map((v) => String(v))
-    : [];
-  if (!raw.includes(uid)) return null;
-  return [...new Set(raw.map((id) => (id === uid ? phId : id)))];
-}
-
 function assertTripInviteToken(data, token) {
   const expectedToken = normalizeString(data.inviteToken);
   if (!expectedToken || expectedToken !== token) {
@@ -485,279 +463,6 @@ function assertTripInviteToken(data, token) {
   }
 }
 
-/**
- * Rewires [fromId] to [toId] in expense groups, expenses, rooms, meals, and carpool cars.
- * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} fromId
- * @param {string} toId
- */
-async function migrateTripMemberIdReferences(tripRef, fromId, toId) {
-  const db = admin.firestore();
-  const carpoolDocRef = tripRef.collection('sections').doc('carpool');
-  const [groupsSnap, expensesSnap, roomsSnap, mealsSnap, carpoolDocSnap] = await Promise.all([
-    tripRef.collection('expenseGroups').get(),
-    tripRef.collection('expenses').get(),
-    tripRef.collection('rooms').get(),
-    tripRef.collection('meals').get(),
-    carpoolDocRef.get(),
-  ]);
-
-  /** @type {{ ref: FirebaseFirestore.DocumentReference, data: Record<string, unknown> }[]} */
-  const updates = [];
-
-  for (const doc of groupsSnap.docs) {
-    const vis = doc.data().visibleToMemberIds;
-    if (!Array.isArray(vis) || !vis.map(String).includes(fromId)) continue;
-    const next = [
-      ...new Set(vis.map((id) => (String(id) === fromId ? toId : String(id)))),
-    ];
-    updates.push({ ref: doc.ref, data: { visibleToMemberIds: next } });
-  }
-
-  for (const doc of expensesSnap.docs) {
-    const exp = doc.data() || {};
-    const participants = (
-      Array.isArray(exp.participantIds) ? exp.participantIds : []
-    ).map(String);
-    const paidBy = normalizeString(exp.paidBy);
-    let dirty = false;
-    let newParticipants = participants;
-    if (participants.includes(fromId)) {
-      newParticipants = [
-        ...new Set(participants.map((id) => (id === fromId ? toId : id))),
-      ];
-      dirty = true;
-    }
-    let newPaidBy = paidBy;
-    if (paidBy === fromId) {
-      newPaidBy = toId;
-      dirty = true;
-    }
-
-    /** @type {Record<string, unknown>} */
-    const expUpdate = {};
-    if (dirty) {
-      expUpdate.participantIds = newParticipants;
-      expUpdate.paidBy = newPaidBy;
-    }
-
-    const sharesRaw = exp.participantShares;
-    if (
-      sharesRaw &&
-      typeof sharesRaw === 'object' &&
-      !Array.isArray(sharesRaw) &&
-      Object.prototype.hasOwnProperty.call(sharesRaw, fromId)
-    ) {
-      const nextShares = { ...sharesRaw };
-      const v = nextShares[fromId];
-      delete nextShares[fromId];
-      nextShares[toId] = v;
-      expUpdate.participantShares = nextShares;
-      dirty = true;
-    }
-
-    if (dirty) {
-      updates.push({ ref: doc.ref, data: expUpdate });
-    }
-  }
-
-  for (const doc of roomsSnap.docs) {
-    const data = doc.data() || {};
-    const bedsRaw = Array.isArray(data.beds) ? data.beds : [];
-    let roomDirty = false;
-    const newBeds = bedsRaw.map((bed) => {
-      if (!bed || typeof bed !== 'object') return bed;
-      const ids = Array.isArray(bed.assignedMemberIds)
-        ? bed.assignedMemberIds.map(String)
-        : [];
-      if (!ids.includes(fromId)) return bed;
-      roomDirty = true;
-      const rep = [...new Set(ids.map((id) => (id === fromId ? toId : id)))];
-      return { ...bed, assignedMemberIds: rep };
-    });
-    /** @type {Record<string, unknown>} */
-    const newData = {};
-    if (roomDirty) {
-      newData.beds = newBeds;
-    }
-    const legacy = Array.isArray(data.assignedMemberIds)
-      ? data.assignedMemberIds.map(String)
-      : [];
-    if (legacy.includes(fromId)) {
-      roomDirty = true;
-      newData.assignedMemberIds = [
-        ...new Set(legacy.map((id) => (id === fromId ? toId : id))),
-      ];
-    }
-    if (roomDirty && Object.keys(newData).length > 0) {
-      updates.push({ ref: doc.ref, data: newData });
-    }
-  }
-
-  for (const doc of mealsSnap.docs) {
-    const meal = doc.data() || {};
-    const participants = (
-      Array.isArray(meal.participantIds) ? meal.participantIds : []
-    )
-      .map((v) => String(v).trim())
-      .filter((id) => id.length > 0);
-    const chefParticipantId = normalizeString(meal.chefParticipantId);
-    let dirty = false;
-
-    let newParticipants = participants;
-    if (participants.includes(fromId)) {
-      newParticipants = [
-        ...new Set(participants.map((id) => (id === fromId ? toId : id))),
-      ];
-      dirty = true;
-    } else {
-      newParticipants = [...new Set(participants)];
-    }
-
-    let newChefParticipantId = chefParticipantId;
-    if (chefParticipantId === fromId) {
-      newChefParticipantId = toId;
-      dirty = true;
-    }
-    if (
-      newChefParticipantId &&
-      !newParticipants.includes(newChefParticipantId)
-    ) {
-      newChefParticipantId = null;
-      dirty = true;
-    }
-
-    if (!dirty) continue;
-    updates.push({
-      ref: doc.ref,
-      data: {
-        participantIds: newParticipants,
-        chefParticipantId: newChefParticipantId || null,
-      },
-    });
-  }
-
-  const carpoolDocData = carpoolDocSnap.exists ? (carpoolDocSnap.data() || {}) : {};
-  const cars = Array.isArray(carpoolDocData.cars) ? carpoolDocData.cars : [];
-  const nextCars = [];
-  let carpoolCarsDirty = false;
-  for (const rawCar of cars) {
-    const carpool = rawCar && typeof rawCar === 'object' ? rawCar : {};
-    const carId = normalizeString(carpool.id);
-    const assignedParticipantIds = (
-      Array.isArray(carpool.assignedParticipantIds)
-        ? carpool.assignedParticipantIds
-        : []
-    )
-      .map((value) => String(value).trim())
-      .filter((id) => id.length > 0);
-    const driverUserId = normalizeString(carpool.driverUserId);
-    const availableSeatsRaw = Number(carpool.availableSeats);
-    const availableSeats = Number.isInteger(availableSeatsRaw)
-      ? availableSeatsRaw
-      : null;
-    let dirty = false;
-
-    let nextAssignedParticipantIds = assignedParticipantIds;
-    if (assignedParticipantIds.includes(fromId)) {
-      nextAssignedParticipantIds = [
-        ...new Set(
-          assignedParticipantIds.map((id) => (id === fromId ? toId : id))
-        ),
-      ];
-      dirty = true;
-    } else {
-      nextAssignedParticipantIds = [...new Set(assignedParticipantIds)];
-    }
-
-    let nextDriverUserId = driverUserId;
-    if (driverUserId === fromId) {
-      nextDriverUserId = toId;
-      dirty = true;
-    }
-
-    if (nextDriverUserId && !nextAssignedParticipantIds.includes(nextDriverUserId)) {
-      nextAssignedParticipantIds = [...nextAssignedParticipantIds, nextDriverUserId];
-      dirty = true;
-    }
-
-    if (
-      Number.isInteger(availableSeats) &&
-      (availableSeats < 1 || nextAssignedParticipantIds.length > availableSeats)
-    ) {
-      throw new Error(
-        `carpool participant migration exceeds seats (${tripRef.id}/${carId || 'unknown'}): ` +
-        `${nextAssignedParticipantIds.length} assigned for ${availableSeats} seats`
-      );
-    }
-
-    const updatedCar = { ...carpool };
-    if (dirty) {
-      updatedCar.assignedParticipantIds = nextAssignedParticipantIds;
-      updatedCar.driverUserId = nextDriverUserId || null;
-      updatedCar.updatedAt = Timestamp.now();
-      carpoolCarsDirty = true;
-    }
-    nextCars.push(updatedCar);
-  }
-
-  if (carpoolCarsDirty) {
-    updates.push({
-      ref: carpoolDocRef,
-      data: {
-        cars: nextCars,
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-    });
-  }
-
-  let batch = db.batch();
-  let n = 0;
-  for (const { ref, data } of updates) {
-    batch.update(ref, data);
-    n++;
-    if (n >= 450) {
-      await batch.commit();
-      batch = db.batch();
-      n = 0;
-    }
-  }
-  if (n > 0) {
-    await batch.commit();
-  }
-}
-
-/**
- * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} uid
- * @param {string} phId
- */
-async function revertTripMemberClaim(tripRef, uid, phId) {
-  await admin.firestore().runTransaction(async (tx) => {
-    const snap = await tx.get(tripRef);
-    if (!snap.exists) return;
-    const data = snap.data() || {};
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(uid)) return;
-    const newMemberIds = memberIds.map((id) => (id === uid ? phId : id));
-    /** @type {Record<string, unknown>} */
-    const upd = {
-      memberIds: newMemberIds,
-      updatedAt: FieldValue.serverTimestamp(),
-    };
-    const nextAdmins = adminMemberIdsAfterRevertClaim(
-      data.adminMemberIds,
-      uid,
-      phId
-    );
-    if (nextAdmins) {
-      upd.adminMemberIds = nextAdmins;
-    }
-    tx.update(tripRef, upd);
-  });
-}
 
 /**
  * @param {unknown} raw
@@ -856,7 +561,7 @@ function assertMemberNotCreatorOfNonDefaultExpensePost(expenseGroupDocs, memberI
     if (!isDefault && createdBy === memberId) {
       throw new HttpsError(
         'failed-precondition',
-        'Ce membre est créateur d’un poste de dépense. Transfère ou supprime ce poste avant de le supprimer.'
+        'Ce membre est créateur d\'un poste de dépense. Transfère ou supprime ce poste avant de le supprimer.'
       );
     }
   }
@@ -963,7 +668,7 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
 }
 
 /**
- * When someone is added to trip.memberIds, add them to every expense post
+ * When someone is added to trip.memberUserIds, add them to every expense post
  * (visibleToMemberIds) and every expense (participantIds). arrayUnion is
  * idempotent. Batched in chunks of 500 writes.
  * @param {FirebaseFirestore.DocumentReference} tripRef
@@ -971,6 +676,23 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
  */
 async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   const db = admin.firestore();
+
+  // Resolve the participant document ID for this UID (visibleToMemberIds stores
+  // TripMember doc IDs, not Firebase Auth UIDs).
+  const participantsSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (participantsSnap.empty) {
+    console.warn(
+      'backfillTripMemberInExpenseSubcollections: no participant found for uid',
+      uid,
+      tripRef.id,
+    );
+    return;
+  }
+  const participantId = participantsSnap.docs[0].id;
 
   const [groupsSnap, expensesSnap] = await Promise.all([
     tripRef.collection('expenseGroups').get(),
@@ -981,13 +703,13 @@ async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
   for (const doc of groupsSnap.docs) {
     updates.push({
       ref: doc.ref,
-      data: { visibleToMemberIds: FieldValue.arrayUnion(uid) },
+      data: { visibleToMemberIds: FieldValue.arrayUnion(participantId) },
     });
   }
   for (const doc of expensesSnap.docs) {
     updates.push({
       ref: doc.ref,
-      data: { participantIds: FieldValue.arrayUnion(uid) },
+      data: { participantIds: FieldValue.arrayUnion(participantId) },
     });
   }
 
@@ -1373,6 +1095,61 @@ function hasCupidonEnabled(memberData) {
   return !!(memberData && memberData.cupidonEnabled === true);
 }
 
+function _dateKey(d) {
+  const y = d.getFullYear().toString().padStart(4, '0');
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function _startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Builds the default stay fields for a new participant slot using the trip's calendar bounds.
+ * Mirrors TripMemberStay.defaultForInviteContext() from the Flutter client.
+ * @param {object} tripData - Firestore trip document data
+ * @returns {object} Firestore-ready stay fields
+ */
+function defaultStayForTrip(tripData) {
+  const parseDate = (raw) => {
+    if (!raw) return null;
+    const d = typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
+    if (isNaN(d.getTime())) return null;
+    // Trip dates are stored as midnight local time (e.g. UTC+2), which arrives
+    // as 22:00 UTC the day before on the server. Adding 12h normalises any
+    // UTC offset up to ±12h before the day is extracted.
+    return new Date(d.getTime() + 12 * 60 * 60 * 1000);
+  };
+  const tripStartDate = parseDate(tripData.startDate);
+  const tripEndDate = parseDate(tripData.endDate);
+
+  if (!tripStartDate && !tripEndDate) {
+    const now = new Date();
+    const start = _startOfDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return {
+      stayStartDateKey: _dateKey(start),
+      stayStartDayPart: 'evening',
+      stayEndDateKey: _dateKey(end),
+      stayEndDayPart: 'morning',
+    };
+  }
+
+  const start = tripStartDate ? _startOfDay(tripStartDate) : _startOfDay(new Date());
+  const end = tripEndDate ? _startOfDay(tripEndDate) : start;
+  const later = end < start ? start : end;
+  const isSingleDay = start.getTime() === later.getTime();
+  return {
+    stayStartDateKey: _dateKey(start),
+    stayStartDayPart: isSingleDay ? 'morning' : 'evening',
+    stayEndDateKey: _dateKey(later),
+    stayEndDayPart: isSingleDay ? 'evening' : 'morning',
+  };
+}
+
 /**
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} uid
@@ -1504,13 +1281,7 @@ async function removeCupidonMatchEverywhereAndCounters({
   return removed;
 }
 
-async function resolveTripMemberLabel(tripData, uid) {
-  const labels =
-    tripData.memberPublicLabels && typeof tripData.memberPublicLabels === 'object'
-      ? tripData.memberPublicLabels
-      : {};
-  const fromTrip = normalizeString(labels[uid]);
-  if (fromTrip) return fromTrip;
+async function resolveTripMemberLabel(_tripData, uid) {
   try {
     const userRecord = await admin.auth().getUser(uid);
     return emailLocalPart(userRecord.email || '') || 'Utilisateur';
@@ -1697,8 +1468,8 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     if (!tripSnap.exists) return;
 
     const trip = tripSnap.data() || {};
-    const memberIds = Array.isArray(trip.memberIds)
-      ? trip.memberIds.map((v) => String(v))
+    const memberIds = Array.isArray(trip.memberUserIds)
+      ? trip.memberUserIds.map((v) => String(v))
       : [];
     const threadType = normalizeString(msg.threadType);
     const visibilityType = normalizeString(msg.visibilityType);
@@ -1765,8 +1536,8 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     if (!tripSnap.exists) return;
 
     const trip = tripSnap.data() || {};
-    const memberIds = Array.isArray(trip.memberIds)
-      ? trip.memberIds.map((v) => String(v))
+    const memberIds = Array.isArray(trip.memberUserIds)
+      ? trip.memberUserIds.map((v) => String(v))
       : [];
     const candidateRecipients = memberIds.filter((id) => id && id !== actorId);
     if (candidateRecipients.length === 0) return;
@@ -1819,8 +1590,8 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
     if (!tripSnap.exists) return;
 
     const trip = tripSnap.data() || {};
-    const memberIds = Array.isArray(trip.memberIds)
-      ? trip.memberIds.map((v) => String(v))
+    const memberIds = Array.isArray(trip.memberUserIds)
+      ? trip.memberUserIds.map((v) => String(v))
       : [];
     const candidateRecipients = memberIds.filter((id) => id && id !== actorId);
     if (candidateRecipients.length === 0) return;
@@ -1913,7 +1684,7 @@ exports.resyncMyTripUnreadCounters = onCall(
       .get();
     const memberTripsSnap = await db
       .collection('trips')
-      .where('memberIds', 'array-contains', uid)
+      .where('memberUserIds', 'array-contains', uid)
       .get();
 
     const watchedChannels = [
@@ -2095,26 +1866,16 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     if (!afterSnap.exists) return;
 
     const beforeIds = beforeSnap.exists
-      ? memberIdsAsSet(beforeSnap.data() || {})
+      ? memberUserIdsAsSet(beforeSnap.data() || {})
       : new Set();
-    const afterIds = memberIdsAsSet(afterSnap.data() || {});
+    const afterIds = memberUserIdsAsSet(afterSnap.data() || {});
 
     const added = [...afterIds].filter((id) => !beforeIds.has(id));
     const removed = [...beforeIds].filter((id) => !afterIds.has(id));
     if (added.length === 0 && removed.length === 0) return;
-    const isPlaceholderClaimSwap =
-      added.length === 1 &&
-      removed.length === 1 &&
-      isPlaceholderMemberId(removed[0]) &&
-      !isPlaceholderMemberId(added[0]);
 
     const tripRef = afterSnap.ref;
     for (const uid of added) {
-      // Placeholder claimed by a real account: join callable migrates data;
-      // do not union the new uid into every expense like a brand-new member.
-      if (isPlaceholderClaimSwap) {
-        continue;
-      }
       try {
         await backfillTripMemberInExpenseSubcollections(tripRef, uid);
       } catch (e) {
@@ -2128,10 +1889,8 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
       }
     }
 
-    // Keep meals consistent when members are removed from trip.memberIds
-    // (manual participant removal or leave-trip flow).
-    // Skip placeholder claim swap: joinTripWithInvite migrates meal IDs itself.
-    if (isPlaceholderClaimSwap || removed.length === 0) {
+    // Keep meals consistent when members are removed from trip.memberUserIds.
+    if (removed.length === 0) {
       return;
     }
 
@@ -2202,7 +1961,7 @@ exports.disableTripCupidonForAllMembers = onDocumentUpdated(
 
     const tripRef = event.data.after.ref;
     const membersSnap = await tripRef
-      .collection('members')
+      .collection('participants')
       .where('cupidonEnabled', '==', true)
       .get();
     if (membersSnap.empty) {
@@ -2507,123 +2266,76 @@ async function completeJoinTripWithInvite(
   tripRef,
   uid,
   token,
-  placeholderMemberId,
-  bypassPlaceholderChoice
+  participantSlotId,
+  bypassParticipantChoice,
+  newParticipantName
 ) {
-  const placeholderArg = normalizeString(placeholderMemberId);
-  const bypassPlaceholder = bypassPlaceholderChoice === true;
-  let claimedPh = null;
+  const slotArg = normalizeString(participantSlotId);
+  const bypass = bypassParticipantChoice === true;
+  const db = admin.firestore();
 
-  await admin.firestore().runTransaction(async (tx) => {
-    const snap = await tx.get(tripRef);
-    if (!snap.exists) {
-      throw new HttpsError('not-found', 'Voyage introuvable');
-    }
+  // Validate token and check membership outside the transaction first.
+  const [tripSnap, participantsSnap] = await Promise.all([
+    tripRef.get(),
+    tripRef.collection('participants').get(),
+  ]);
+  if (!tripSnap.exists) {
+    throw new HttpsError('not-found', 'Voyage introuvable');
+  }
+  const data = tripSnap.data() || {};
+  assertTripInviteToken(data, token);
 
-    const data = snap.data() || {};
-    assertTripInviteToken(data, token);
-
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
-      : [];
-    if (memberIds.includes(uid)) {
-      return;
-    }
-
-    const phMembers = memberIds.filter(isPlaceholderMemberId);
-
-    if (phMembers.length > 0) {
-      if (bypassPlaceholder) {
-        memberIds.push(uid);
-        tx.update(tripRef, {
-          memberIds,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-        return;
-      }
-      if (!placeholderArg || !isPlaceholderMemberId(placeholderArg)) {
-        throw new HttpsError(
-          'invalid-argument',
-          'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
-        );
-      }
-      if (!memberIds.includes(placeholderArg)) {
-        throw new HttpsError(
-          'failed-precondition',
-          'Ce voyageur a déjà été choisi ou est introuvable.'
-        );
-      }
-      const newMemberIds = memberIds.map((id) =>
-        id === placeholderArg ? uid : id
-      );
-      claimedPh = placeholderArg;
-      /** @type {Record<string, unknown>} */
-      const tripUpdate = {
-        memberIds: newMemberIds,
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-      const nextAdmins = adminMemberIdsAfterPlaceholderClaim(
-        data.adminMemberIds,
-        placeholderArg,
-        uid
-      );
-      if (nextAdmins) {
-        tripUpdate.adminMemberIds = nextAdmins;
-      }
-      tx.update(tripRef, tripUpdate);
-    } else {
-      memberIds.push(uid);
-      tx.update(tripRef, {
-        memberIds,
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-  });
-
-  const tripSnap = await tripRef.get();
-  const tripData = tripSnap.data() || {};
-  const finalMemberIds = Array.isArray(tripData.memberIds)
-    ? tripData.memberIds.map((v) => String(v))
+  const memberUserIds = Array.isArray(data.memberUserIds)
+    ? data.memberUserIds.map((v) => String(v))
     : [];
-  if (!finalMemberIds.includes(uid)) {
+  if (memberUserIds.includes(uid)) {
     return;
   }
 
-  if (claimedPh) {
-    try {
-      await migrateTripMemberIdReferences(tripRef, claimedPh, uid);
-    } catch (e) {
-      console.error('migrateTripMemberIdReferences failed', tripRef.id, e);
-      try {
-        await revertTripMemberClaim(tripRef, uid, claimedPh);
-      } catch (revertErr) {
-        console.error('revertTripMemberClaim failed', tripRef.id, revertErr);
-      }
+  const unclaimedSlots = participantsSnap.docs.filter((d) => {
+    const userId = normalizeString(d.data().userId);
+    return !userId;
+  });
+
+  let claimedParticipantRef = null;
+
+  if (unclaimedSlots.length > 0 && !bypass) {
+    if (!slotArg) {
       throw new HttpsError(
-        'internal',
-        'Impossible de finaliser ton arrivée dans le voyage. Réessaie dans un instant.'
+        'invalid-argument',
+        'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
       );
     }
+    const slotDoc = participantsSnap.docs.find((d) => d.id === slotArg);
+    if (!slotDoc || normalizeString(slotDoc.data().userId)) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce voyageur a déjà été choisi ou est introuvable.'
+      );
+    }
+    claimedParticipantRef = slotDoc.ref;
   }
 
-  let emailLocal = '';
-  try {
-    const userRecord = await admin.auth().getUser(uid);
-    emailLocal = emailLocalPart(userRecord.email || '');
-  } catch (e) {
-    console.warn('joinTripWithInvite getUser', e);
+  // Claim an existing slot or create a new participant document.
+  if (claimedParticipantRef) {
+    await claimedParticipantRef.update({ userId: uid });
+  } else {
+    const participantName = assertParticipantNameForNewJoin(newParticipantName);
+    const defaultStay = defaultStayForTrip(data);
+    await tripRef.collection('participants').add({
+      participantName,
+      userId: uid,
+      ...defaultStay,
+      cupidonEnabled: false,
+      phoneVisibility: 'nobody',
+      createdAt: FieldValue.serverTimestamp(),
+    });
   }
 
-  const labelUpdate = {};
-  if (claimedPh) {
-    labelUpdate[`memberPublicLabels.${claimedPh}`] = FieldValue.delete();
-  }
-  if (emailLocal) {
-    labelUpdate[`memberPublicLabels.${uid}`] = emailLocal;
-  }
-  if (Object.keys(labelUpdate).length > 0) {
-    await tripRef.update(labelUpdate);
-  }
+  await tripRef.update({
+    memberUserIds: FieldValue.arrayUnion(uid),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
 }
 
 exports.getInviteJoinContext = onCall(
@@ -2670,19 +2382,22 @@ exports.getInviteJoinContext = onCall(
     const data = snap.data() || {};
     assertTripInviteToken(data, token);
 
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
       : [];
-    const labels =
-      data.memberPublicLabels && typeof data.memberPublicLabels === 'object'
-        ? data.memberPublicLabels
-        : {};
+    if (memberUserIds.includes(uid)) {
+      return { tripId: tripRef.id, alreadyMember: true };
+    }
 
-    const placeholders = memberIds
-      .filter(isPlaceholderMemberId)
-      .map((id) => ({
-        id,
-        displayName: normalizeString(labels[id]) || 'Voyageur',
+    const participantsSnap = await tripRef.collection('participants').get();
+    const unclaimedSlots = participantsSnap.docs
+      .filter((d) => {
+        const userId = normalizeString(d.data().userId);
+        return !userId;
+      })
+      .map((d) => ({
+        id: d.id,
+        displayName: normalizeString(d.data().participantName) || 'Voyageur',
       }));
 
     const startTs = data.startDate;
@@ -2699,8 +2414,8 @@ exports.getInviteJoinContext = onCall(
     return {
       tripId: tripRef.id,
       tripTitle: normalizeString(data.title) || 'Voyage',
-      placeholders,
-      requiresPlaceholderChoice: placeholders.length > 0,
+      participants: unclaimedSlots,
+      requiresParticipantChoice: unclaimedSlots.length > 0,
       cupidonModeEnabled: data.cupidonModeEnabled !== false,
       tripStartDate,
       tripEndDate,
@@ -2708,7 +2423,7 @@ exports.getInviteJoinContext = onCall(
   }
 );
 
-exports.addTripPlaceholderMember = onCall(
+exports.addTripParticipant = onCall(
   {
   },
   async (request) => {
@@ -2718,11 +2433,11 @@ exports.addTripPlaceholderMember = onCall(
     }
 
     const tripId = normalizeString(request.data?.tripId);
-    const displayName = normalizeString(request.data?.displayName);
+    const participantName = normalizeString(request.data?.participantName);
     if (!tripId) {
       throw new HttpsError('invalid-argument', 'Voyage invalide');
     }
-    if (!displayName) {
+    if (!participantName) {
       throw new HttpsError('invalid-argument', 'Nom obligatoire');
     }
 
@@ -2742,46 +2457,41 @@ exports.addTripPlaceholderMember = onCall(
       deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
     });
 
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((v) => String(v))
-      : [];
-    const memberIdSet = new Set(memberIds);
-    let placeholderId = newTripPlaceholderMemberId();
-    while (memberIdSet.has(placeholderId)) {
-      placeholderId = newTripPlaceholderMemberId();
-    }
+    const defaultStay = defaultStayForTrip(tripData);
+    const participantRef = await tripRef.collection('participants').add({
+      participantName,
+      ...defaultStay,
+      cupidonEnabled: false,
+      phoneVisibility: 'nobody',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    const participantId = participantRef.id;
 
     const groupsSnap = await tripRef.collection('expenseGroups').get();
-    let batch = db.batch();
-    let n = 0;
-
-    batch.update(tripRef, {
-      memberIds: FieldValue.arrayUnion(placeholderId),
-      [`memberPublicLabels.${placeholderId}`]: displayName,
-    });
-    n++;
-
-    for (const doc of groupsSnap.docs) {
-      batch.update(doc.ref, {
-        visibleToMemberIds: FieldValue.arrayUnion(placeholderId),
-      });
-      n++;
-      if (n >= 450) {
+    if (!groupsSnap.empty) {
+      let batch = db.batch();
+      let n = 0;
+      for (const doc of groupsSnap.docs) {
+        batch.update(doc.ref, {
+          visibleToMemberIds: FieldValue.arrayUnion(participantId),
+        });
+        n++;
+        if (n >= 450) {
+          await batch.commit();
+          batch = db.batch();
+          n = 0;
+        }
+      }
+      if (n > 0) {
         await batch.commit();
-        batch = db.batch();
-        n = 0;
       }
     }
 
-    if (n > 0) {
-      await batch.commit();
-    }
-
-    return { ok: true, placeholderId };
+    return { ok: true, participantId };
   }
 );
 
-exports.removeTripPlaceholderMember = onCall(
+exports.removeTripParticipant = onCall(
   {
   },
   async (request) => {
@@ -2791,16 +2501,22 @@ exports.removeTripPlaceholderMember = onCall(
     }
 
     const tripId = normalizeString(request.data?.tripId);
-    const placeholderId = normalizeString(request.data?.placeholderId);
-    if (!tripId || !placeholderId || !isPlaceholderMemberId(placeholderId)) {
+    const participantId = normalizeString(request.data?.participantId);
+    if (!tripId || !participantId) {
       throw new HttpsError('invalid-argument', 'Parametres invalides');
     }
 
     const db = admin.firestore();
     const tripRef = db.collection('trips').doc(tripId);
-    const tripSnap = await tripRef.get();
+    const [tripSnap, participantSnap] = await Promise.all([
+      tripRef.get(),
+      tripRef.collection('participants').doc(participantId).get(),
+    ]);
     if (!tripSnap.exists) {
       throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    if (!participantSnap.exists) {
+      throw new HttpsError('not-found', 'Participant introuvable');
     }
 
     const data = tripSnap.data() || {};
@@ -2812,19 +2528,20 @@ exports.removeTripPlaceholderMember = onCall(
       deniedMessage: 'Droits insuffisants pour retirer ce voyageur prévu.',
     });
 
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(placeholderId)) {
-      throw new HttpsError('not-found', 'Voyageur prévu introuvable');
+    const participantData = participantSnap.data() || {};
+    const claimedUserId = normalizeString(participantData.userId);
+    const ownerId = normalizeString(data.ownerId);
+
+    if (claimedUserId && claimedUserId === ownerId) {
+      throw new HttpsError('permission-denied', 'Le créateur du voyage ne peut pas être retiré.');
     }
 
     await assertMemberRemovalBlockingDependencies({
       tripRef,
-      memberId: placeholderId,
+      memberId: participantId,
       tripData: data,
     });
-    await cleanupNonBlockingMemberReferences(tripRef, placeholderId);
+    await cleanupNonBlockingMemberReferences(tripRef, participantId);
 
     const groupsSnap = await tripRef.collection('expenseGroups').get();
 
@@ -2832,11 +2549,11 @@ exports.removeTripPlaceholderMember = onCall(
     let n = 0;
     for (const doc of groupsSnap.docs) {
       const vis = doc.data().visibleToMemberIds;
-      if (!Array.isArray(vis) || !vis.map(String).includes(placeholderId)) {
+      if (!Array.isArray(vis) || !vis.map(String).includes(participantId)) {
         continue;
       }
       batch.update(doc.ref, {
-        visibleToMemberIds: FieldValue.arrayRemove(placeholderId),
+        visibleToMemberIds: FieldValue.arrayRemove(participantId),
       });
       n++;
       if (n >= 450) {
@@ -2846,12 +2563,17 @@ exports.removeTripPlaceholderMember = onCall(
       }
     }
 
-    batch.update(tripRef, {
-      memberIds: FieldValue.arrayRemove(placeholderId),
-      [`memberPublicLabels.${placeholderId}`]: FieldValue.delete(),
-      adminMemberIds: FieldValue.arrayRemove(placeholderId),
-    });
+    batch.delete(participantSnap.ref);
     n++;
+
+    if (claimedUserId) {
+      batch.update(tripRef, {
+        memberUserIds: FieldValue.arrayRemove(claimedUserId),
+        adminMemberIds: FieldValue.arrayRemove(claimedUserId),
+      });
+      n++;
+    }
+
     if (n > 0) {
       await batch.commit();
     }
@@ -2875,18 +2597,18 @@ exports.joinTripWithInvite = onCall(
       throw new HttpsError('invalid-argument', 'Lien d invitation invalide');
     }
 
-    const placeholderMemberId = normalizeString(
-      request.data?.placeholderMemberId
-    );
-    const bypassPlaceholderChoice = request.data?.bypassPlaceholderChoice === true;
+    const participantId = normalizeString(request.data?.participantId);
+    const bypassParticipantChoice = request.data?.bypassParticipantChoice === true;
+    const participantName = normalizeString(request.data?.participantName);
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
     await completeJoinTripWithInvite(
       tripRef,
       uid,
       token,
-      placeholderMemberId,
-      bypassPlaceholderChoice
+      participantId,
+      bypassParticipantChoice,
+      participantName
     );
 
     return { ok: true };
@@ -2922,28 +2644,40 @@ exports.leaveTrip = onCall(
       );
     }
 
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
       : [];
-    if (!memberIds.includes(uid)) {
+    if (!memberUserIds.includes(uid)) {
       throw new HttpsError(
         'permission-denied',
         'Tu ne fais pas partie de ce voyage'
       );
     }
 
-    await assertMemberRemovalBlockingDependencies({
-      tripRef,
-      memberId: uid,
-      tripData: data,
-    });
-    await cleanupNonBlockingMemberReferences(tripRef, uid);
+    const participantsSnap = await tripRef.collection('participants')
+      .where('userId', '==', uid)
+      .limit(1)
+      .get();
+    const participantDoc = participantsSnap.empty ? null : participantsSnap.docs[0];
 
-    await tripRef.update({
-      memberIds: FieldValue.arrayRemove(uid),
-      [`memberPublicLabels.${uid}`]: FieldValue.delete(),
+    if (participantDoc) {
+      await assertMemberRemovalBlockingDependencies({
+        tripRef,
+        memberId: participantDoc.id,
+        tripData: data,
+      });
+      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id);
+    }
+
+    const batch = db.batch();
+    batch.update(tripRef, {
+      memberUserIds: FieldValue.arrayRemove(uid),
       adminMemberIds: FieldValue.arrayRemove(uid),
     });
+    if (participantDoc) {
+      batch.delete(participantDoc.ref);
+    }
+    await batch.commit();
 
     return { ok: true };
   }
@@ -2958,11 +2692,13 @@ function cloneFirestoreCarsArray(rawCars) {
   );
 }
 
-function uidIsDriverOfAnySerializedCar(cars, uid) {
-  return cars.some((car) => normalizeString(car.driverUserId) === uid);
+function participantIdIsDriverOfAnySerializedCar(cars, participantId) {
+  return cars.some(
+    (car) => normalizeString(car.driverParticipantId) === participantId
+  );
 }
 
-function stripUidFromEveryCarAssignments(cars, uid) {
+function stripParticipantIdFromEveryCarAssignments(cars, participantId) {
   return cars.map((car) => {
     const copy = { ...car };
     const raw = Array.isArray(car.assignedParticipantIds)
@@ -2970,13 +2706,13 @@ function stripUidFromEveryCarAssignments(cars, uid) {
       : [];
     copy.assignedParticipantIds = raw
       .map((x) => String(x).trim())
-      .filter((id) => id.length > 0 && id !== uid);
+      .filter((id) => id.length > 0 && id !== participantId);
     return copy;
   });
 }
 
 function validateSerializedTripCarOrThrow(car) {
-  const driverUserId = normalizeString(car.driverUserId);
+  const driverUserId = normalizeString(car.driverParticipantId);
   const seatsRaw = car.availableSeats;
   const seats =
     typeof seatsRaw === 'number'
@@ -3060,7 +2796,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
 
   const tripId = normalizeString(request.data?.tripId);
   const requestedCarpoolId = normalizeString(request.data?.carpoolId);
-  const driverUserId = normalizeString(request.data?.driverUserId);
+  const driverParticipantId = normalizeString(request.data?.driverParticipantId);
   const meetingPointAddress = normalizeString(request.data?.meetingPointAddress);
   const nearestTransitStop = normalizeString(request.data?.nearestTransitStop);
   const departureAt = parseCallableDateToTimestamp(
@@ -3076,7 +2812,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     : [];
   const goesShopping = request.data?.goesShopping === true;
 
-  if (!tripId || !driverUserId || !Number.isFinite(availableSeats)) {
+  if (!tripId || !driverParticipantId || !Number.isFinite(availableSeats)) {
     throw new HttpsError('invalid-argument', 'Parametres invalides');
   }
   if (!Number.isInteger(availableSeats) || availableSeats < 1) {
@@ -3088,7 +2824,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
       assignedParticipantIdsRaw
         .map((entry) => normalizeString(entry))
         .filter(Boolean)
-        .concat(driverUserId)
+        .concat(driverParticipantId)
     ),
   ];
   if (normalizedAssignedParticipantIds.length > availableSeats) {
@@ -3098,6 +2834,19 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
   const db = admin.firestore();
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
+
+  // Validate participant IDs against the participants subcollection before the
+  // transaction (Firestore transactions don't support collection queries).
+  const participantsSnap = await tripRef.collection('participants').get();
+  const validParticipantIds = new Set(participantsSnap.docs.map((d) => d.id));
+  if (!validParticipantIds.has(driverParticipantId)) {
+    throw new HttpsError('invalid-argument', 'Conducteur introuvable');
+  }
+  for (const pid of normalizedAssignedParticipantIds) {
+    if (!validParticipantIds.has(pid)) {
+      throw new HttpsError('invalid-argument', 'Participant introuvable');
+    }
+  }
 
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
@@ -3109,22 +2858,14 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     }
 
     const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((value) => normalizeString(value)).filter(Boolean)
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((value) => normalizeString(value)).filter(Boolean)
       : [];
     if (!memberIds.includes(uid)) {
       throw new HttpsError(
         'permission-denied',
         'Tu ne fais pas partie de ce voyage'
       );
-    }
-    if (!memberIds.includes(driverUserId)) {
-      throw new HttpsError('invalid-argument', 'Parametres invalides');
-    }
-    for (const participantId of normalizedAssignedParticipantIds) {
-      if (!memberIds.includes(participantId)) {
-        throw new HttpsError('invalid-argument', 'Parametres invalides');
-      }
     }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
@@ -3198,7 +2939,7 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
     const updatedCar = {
       id: targetCarpoolId,
       createdByUserId,
-      driverUserId,
+      driverParticipantId,
       meetingPointAddress,
       nearestTransitStop,
       departureAt,
@@ -3252,8 +2993,8 @@ exports.deleteTripCarpool = onCall({}, async (request) => {
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
     const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((value) => normalizeString(value)).filter(Boolean)
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((value) => normalizeString(value)).filter(Boolean)
       : [];
     if (!memberIds.includes(uid)) {
       throw new HttpsError(
@@ -3320,6 +3061,17 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
 
+  // Resolve caller's participant document ID before the transaction.
+  const myParticipantSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (myParticipantSnap.empty) {
+    throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+  }
+  const myParticipantId = myParticipantSnap.docs[0].id;
+
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
       tx.get(tripRef),
@@ -3328,28 +3080,19 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
     if (!tripSnap.exists) {
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(uid)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Tu ne fais pas partie de ce voyage'
-      );
-    }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     let cars = cloneFirestoreCarsArray(sectionData.cars);
 
-    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
+    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot join another carpool via self-assignment.'
       );
     }
 
-    cars = stripUidFromEveryCarAssignments(cars, uid);
+    cars = stripParticipantIdFromEveryCarAssignments(cars, myParticipantId);
 
     const targetIndex = cars.findIndex(
       (c) => normalizeString(c.id) === targetCarpoolId
@@ -3368,23 +3111,17 @@ exports.joinTripCarpoolAsPassenger = onCall({}, async (request) => {
       ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
       : [];
     const assignedIds = [...new Set(rawAssigned)];
-    const driverUserId = normalizeString(targetCar.driverUserId);
-    if (driverUserId && !assignedIds.includes(driverUserId)) {
-      assignedIds.push(driverUserId);
+    const driverParticipantId = normalizeString(targetCar.driverParticipantId);
+    if (driverParticipantId && !assignedIds.includes(driverParticipantId)) {
+      assignedIds.push(driverParticipantId);
     }
     if (!Number.isFinite(seats) || assignedIds.length >= seats) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Carpool is full.'
-      );
+      throw new HttpsError('failed-precondition', 'Carpool is full.');
     }
-    if (assignedIds.includes(uid)) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Carpool misconfigured.'
-      );
+    if (assignedIds.includes(myParticipantId)) {
+      throw new HttpsError('failed-precondition', 'Carpool misconfigured.');
     }
-    assignedIds.push(uid);
+    assignedIds.push(myParticipantId);
     targetCar.assignedParticipantIds = assignedIds;
     targetCar.updatedAt = Timestamp.now();
     cars[targetIndex] = targetCar;
@@ -3419,6 +3156,17 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
   const tripRef = db.collection('trips').doc(tripId);
   const sectionRef = tripRef.collection('sections').doc('carpool');
 
+  // Resolve caller's participant document ID before the transaction.
+  const myParticipantSnap = await tripRef
+    .collection('participants')
+    .where('userId', '==', uid)
+    .limit(1)
+    .get();
+  if (myParticipantSnap.empty) {
+    throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+  }
+  const myParticipantId = myParticipantSnap.docs[0].id;
+
   await db.runTransaction(async (tx) => {
     const [tripSnap, sectionSnap] = await Promise.all([
       tx.get(tripRef),
@@ -3427,21 +3175,12 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
     if (!tripSnap.exists) {
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((v) => String(v))
-      : [];
-    if (!memberIds.includes(uid)) {
-      throw new HttpsError(
-        'permission-denied',
-        'Tu ne fais pas partie de ce voyage'
-      );
-    }
 
     const sectionData = sectionSnap.exists ? sectionSnap.data() || {} : {};
     const cars = cloneFirestoreCarsArray(sectionData.cars);
 
-    if (uidIsDriverOfAnySerializedCar(cars, uid)) {
+    // Block drivers (handles both new driverParticipantId and legacy driverUserId).
+    if (participantIdIsDriverOfAnySerializedCar(cars, myParticipantId)) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot leave their carpool via self-assignment.'
@@ -3456,8 +3195,8 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
     }
 
     const targetCar = cars[targetIndex];
-    const driverUserId = normalizeString(targetCar.driverUserId);
-    if (driverUserId === uid) {
+    const driverParticipantId = normalizeString(targetCar.driverParticipantId);
+    if (driverParticipantId === myParticipantId) {
       throw new HttpsError(
         'permission-denied',
         'Drivers cannot leave their carpool via self-assignment.'
@@ -3468,7 +3207,7 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
       ? targetCar.assignedParticipantIds.map((x) => String(x).trim()).filter(Boolean)
       : [];
     const assignedIds = [...new Set(rawAssigned)];
-    if (!assignedIds.includes(uid)) {
+    if (!assignedIds.includes(myParticipantId)) {
       return;
     }
 
@@ -3477,7 +3216,7 @@ exports.leaveTripCarpoolAsPassenger = onCall({}, async (request) => {
         return { ...car };
       }
       const copy = { ...car };
-      copy.assignedParticipantIds = assignedIds.filter((id) => id !== uid);
+      copy.assignedParticipantIds = assignedIds.filter((id) => id !== myParticipantId);
       copy.updatedAt = Timestamp.now();
       return copy;
     });
@@ -3508,13 +3247,13 @@ exports.removeTripRegisteredMember = onCall(
 
     const tripId = normalizeString(request.data?.tripId);
     const memberId = normalizeString(request.data?.memberId);
-    if (!tripId || !memberId || isPlaceholderMemberId(memberId)) {
+    if (!tripId || !memberId) {
       throw new HttpsError('invalid-argument', 'Parametres invalides');
     }
     if (memberId === uid) {
       throw new HttpsError(
         'invalid-argument',
-        'Utilise l’action quitter le voyage pour ton propre compte.'
+        'Utilise l\'action quitter le voyage pour ton propre compte.'
       );
     }
 
@@ -3541,25 +3280,37 @@ exports.removeTripRegisteredMember = onCall(
       );
     }
 
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
       : [];
-    if (!memberIds.includes(memberId)) {
+    if (!memberUserIds.includes(memberId)) {
       throw new HttpsError('not-found', 'Participant introuvable');
     }
 
-    await assertMemberRemovalBlockingDependencies({
-      tripRef,
-      memberId,
-      tripData: data,
-    });
-    await cleanupNonBlockingMemberReferences(tripRef, memberId);
+    const participantsSnap = await tripRef.collection('participants')
+      .where('userId', '==', memberId)
+      .limit(1)
+      .get();
+    const participantDoc = participantsSnap.empty ? null : participantsSnap.docs[0];
 
-    await tripRef.update({
-      memberIds: FieldValue.arrayRemove(memberId),
-      [`memberPublicLabels.${memberId}`]: FieldValue.delete(),
+    if (participantDoc) {
+      await assertMemberRemovalBlockingDependencies({
+        tripRef,
+        memberId: participantDoc.id,
+        tripData: data,
+      });
+      await cleanupNonBlockingMemberReferences(tripRef, participantDoc.id);
+    }
+
+    const batch = db.batch();
+    batch.update(tripRef, {
+      memberUserIds: FieldValue.arrayRemove(memberId),
       adminMemberIds: FieldValue.arrayRemove(memberId),
     });
+    if (participantDoc) {
+      batch.delete(participantDoc.ref);
+    }
+    await batch.commit();
 
     return { ok: true };
   }
@@ -3604,10 +3355,10 @@ exports.cycleTripMemberAdminRole = onCall(
       );
     }
 
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
       : [];
-    if (!memberIds.includes(memberId)) {
+    if (!memberUserIds.includes(memberId)) {
       throw new HttpsError('not-found', 'Participant introuvable');
     }
 
@@ -3647,30 +3398,17 @@ exports.registerMyTripMemberLabel = onCall(
     }
 
     const data = snap.data() || {};
-    const memberIds = Array.isArray(data.memberIds)
-      ? data.memberIds.map((v) => String(v))
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
       : [];
-    if (!memberIds.includes(uid)) {
+    if (!memberUserIds.includes(uid)) {
       throw new HttpsError(
         'permission-denied',
         'Tu ne fais pas partie de ce voyage'
       );
     }
 
-    let emailLocal = '';
-    try {
-      const userRecord = await admin.auth().getUser(uid);
-      emailLocal = emailLocalPart(userRecord.email || '');
-    } catch (e) {
-      console.warn('registerMyTripMemberLabel getUser', e);
-    }
-    if (!emailLocal) {
-      return { ok: false, reason: 'no-email' };
-    }
-
-    await tripRef.update({
-      [`memberPublicLabels.${uid}`]: emailLocal,
-    });
+    // participantName is now set from the participants sub-collection.
     return { ok: true };
   }
 );
@@ -3741,8 +3479,8 @@ exports.backfillLegacyTripPermissions = onCall(
         throw new HttpsError('not-found', 'Voyage introuvable');
       }
       const data = snap.data() || {};
-      const memberIds = Array.isArray(data.memberIds)
-        ? data.memberIds.map((v) => normalizeString(v)).filter(Boolean)
+      const memberIds = Array.isArray(data.memberUserIds)
+        ? data.memberUserIds.map((v) => normalizeString(v)).filter(Boolean)
         : [];
       if (!memberIds.includes(uid)) {
         throw new HttpsError(
@@ -3802,8 +3540,8 @@ exports.setTripCupidonEnabled = onCall(
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
     const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((v) => String(v))
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((v) => String(v))
       : [];
     if (!memberIds.includes(uid)) {
       throw new HttpsError(
@@ -3812,18 +3550,105 @@ exports.setTripCupidonEnabled = onCall(
       );
     }
 
-    await tripRef
-      .collection('members')
-      .doc(uid)
-      .set(
-        {
-          cupidonEnabled: enabled,
-          cupidonUpdatedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+    const participantSnap = await tripRef
+      .collection('participants')
+      .where('userId', '==', uid)
+      .limit(1)
+      .get();
+    if (participantSnap.empty) {
+      throw new HttpsError('not-found', 'Tu n\'es pas inscrit comme participant');
+    }
+    await participantSnap.docs[0].ref.update({
+      cupidonEnabled: enabled,
+      cupidonUpdatedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 
+    return { ok: true };
+  }
+);
+
+exports.updateParticipantProfile = onCall(
+  {},
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Utilisateur non connecte');
+    }
+
+    const tripId = normalizeString(request.data?.tripId);
+    const participantId = normalizeString(request.data?.participantId);
+    if (!tripId) {
+      throw new HttpsError('invalid-argument', 'Voyage invalide');
+    }
+
+    const stayStartDateKey = normalizeString(request.data?.stayStartDateKey);
+    const stayStartDayPart = normalizeString(request.data?.stayStartDayPart);
+    const stayEndDateKey = normalizeString(request.data?.stayEndDateKey);
+    const stayEndDayPart = normalizeString(request.data?.stayEndDayPart);
+    const phoneVisibility = normalizeString(request.data?.phoneVisibility);
+
+    const hasStay = stayStartDateKey && stayStartDayPart && stayEndDateKey && stayEndDayPart;
+    const hasPhone = !!phoneVisibility;
+    if (!hasStay && !hasPhone) {
+      throw new HttpsError('invalid-argument', 'Aucun champ à mettre à jour');
+    }
+
+    const db = admin.firestore();
+    const tripRef = db.collection('trips').doc(tripId);
+    const tripSnap = await tripRef.get();
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
+    }
+    const tripData = tripSnap.data() || {};
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((v) => String(v))
+      : [];
+    if (!memberIds.includes(uid)) {
+      throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
+    }
+
+    let participantRef;
+    if (participantId) {
+      participantRef = tripRef.collection('participants').doc(participantId);
+      const participantSnap = await participantRef.get();
+      if (!participantSnap.exists) {
+        throw new HttpsError('not-found', 'Participant introuvable');
+      }
+      const participantUserId = normalizeString(participantSnap.data()?.userId);
+      if (participantUserId !== uid) {
+        assertTripParticipantPermission({
+          tripData,
+          uid,
+          permissionKey: 'manageParticipants',
+          fallbackRole: 'owner',
+          deniedMessage: 'Droits insuffisants pour modifier ce participant.',
+        });
+      }
+    } else {
+      const snap = await tripRef
+        .collection('participants')
+        .where('userId', '==', uid)
+        .limit(1)
+        .get();
+      if (snap.empty) {
+        throw new HttpsError('not-found', 'Tu n\'es pas inscrit comme participant');
+      }
+      participantRef = snap.docs[0].ref;
+    }
+
+    const update = { updatedAt: FieldValue.serverTimestamp() };
+    if (hasStay) {
+      update.stayStartDateKey = stayStartDateKey;
+      update.stayStartDayPart = stayStartDayPart;
+      update.stayEndDateKey = stayEndDateKey;
+      update.stayEndDayPart = stayEndDayPart;
+    }
+    if (hasPhone) {
+      update.phoneVisibility = phoneVisibility;
+    }
+
+    await participantRef.update(update);
     return { ok: true };
   }
 );
@@ -3846,9 +3671,6 @@ exports.toggleTripCupidonLike = onCall(
     if (targetMemberId === uid) {
       throw new HttpsError('invalid-argument', 'Tu ne peux pas te liker');
     }
-    if (isPlaceholderMemberId(targetMemberId)) {
-      throw new HttpsError('invalid-argument', 'Participant invalide');
-    }
 
     const db = admin.firestore();
     const tripRef = db.collection('trips').doc(tripId);
@@ -3857,24 +3679,25 @@ exports.toggleTripCupidonLike = onCall(
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
     const tripData = tripSnap.data() || {};
-    const memberIds = Array.isArray(tripData.memberIds)
-      ? tripData.memberIds.map((v) => String(v))
+    const memberIds = Array.isArray(tripData.memberUserIds)
+      ? tripData.memberUserIds.map((v) => String(v))
       : [];
     if (!memberIds.includes(uid) || !memberIds.includes(targetMemberId)) {
       throw new HttpsError('permission-denied', 'Participants invalides');
     }
 
-    const [myMemberSnap, targetMemberSnap] = await Promise.all([
-      tripRef.collection('members').doc(uid).get(),
-      tripRef.collection('members').doc(targetMemberId).get(),
+    const participantsRef = tripRef.collection('participants');
+    const [myParticipantSnap, targetParticipantSnap] = await Promise.all([
+      participantsRef.where('userId', '==', uid).limit(1).get(),
+      participantsRef.where('userId', '==', targetMemberId).limit(1).get(),
     ]);
-    if (!hasCupidonEnabled(myMemberSnap.data())) {
+    if (!hasCupidonEnabled(myParticipantSnap.docs[0]?.data())) {
       throw new HttpsError(
         'failed-precondition',
         'Active le mode Cupidon pour liker des participants'
       );
     }
-    const targetCupidonEnabled = hasCupidonEnabled(targetMemberSnap.data());
+    const targetCupidonEnabled = hasCupidonEnabled(targetParticipantSnap.docs[0]?.data());
 
     const likeRef = tripRef
       .collection('cupidonLikes')
@@ -4104,7 +3927,7 @@ exports.getAppUsageStats = onCall(
         latestTripCreatedAtMs = createdAt;
       }
 
-      const memberCount = Array.isArray(trip.memberIds) ? trip.memberIds.length : 0;
+      const memberCount = Array.isArray(trip.memberUserIds) ? trip.memberUserIds.length : 0;
       if (memberCount > maxParticipants) maxParticipants = memberCount;
 
       const startDate = trip.startDate instanceof Timestamp
@@ -5068,4 +4891,36 @@ exports.insertApplicationLogCallable = onCall(async (request) => {
 
   return { ok: true };
 });
+
+// ---------------------------------------------------------------------------
+// participantCount — maintained automatically via Firestore triggers.
+// Counts all participant docs (real users + placeholders) for display in the
+// trip list. No existing function needs to be updated.
+// ---------------------------------------------------------------------------
+
+exports.onTripParticipantCreated = onDocumentCreated(
+  'trips/{tripId}/participants/{participantId}',
+  async (event) => {
+    const tripId = event.params.tripId;
+    await admin.firestore().collection('trips').doc(tripId).update({
+      participantCount: FieldValue.increment(1),
+    });
+  }
+);
+
+exports.onTripParticipantDeleted = onDocumentDeleted(
+  'trips/{tripId}/participants/{participantId}',
+  async (event) => {
+    const tripId = event.params.tripId;
+    const tripRef = admin.firestore().collection('trips').doc(tripId);
+    const snap = await tripRef.get();
+    if (!snap.exists) return;
+    const current = snap.data().participantCount;
+    await tripRef.update({
+      participantCount: typeof current === 'number' && current > 1
+        ? FieldValue.increment(-1)
+        : FieldValue.delete(),
+    });
+  }
+);
 
