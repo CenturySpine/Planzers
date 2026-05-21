@@ -5,6 +5,11 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function isApplicationOwner() {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isApplicationOwner == true;
+    }
+
     function tripDoc(tripId) {
       return firestore.get(/databases/(default)/documents/trips/$(tripId));
     }
@@ -14,10 +19,14 @@ service firebase.storage {
     }
 
     function isTripMember(tripId) {
-      return signedIn()
-        && tripExists(tripId)
-        && tripDoc(tripId).data.memberIds is list
-        && request.auth.uid in tripDoc(tripId).data.memberIds;
+      return isApplicationOwner()
+        || (
+          signedIn()
+          && tripExists(tripId)
+          && tripDoc(tripId).data.keys().hasAll(['memberUserIds'])
+          && tripDoc(tripId).data.memberUserIds is list
+          && request.auth.uid in tripDoc(tripId).data.memberUserIds
+        );
     }
 
     function isTripOwner(tripId) {

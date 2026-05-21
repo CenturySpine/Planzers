@@ -137,6 +137,7 @@
   "tripsJoinWithInviteTooltip": "Join a trip",
   "tripsNewTripTooltip": "Create a new trip",
   "tripsMyTrips": "My trips",
+  "tripsApplicationOwnerShowNonMemberTrips": "Show trips I'm not part of",
   "tripsEmptyState": "No trips yet.\nCreate your first trip.",
   "tripsTimelinePast": "Past",
   "tripsTimelineOngoing": "Ongoing",

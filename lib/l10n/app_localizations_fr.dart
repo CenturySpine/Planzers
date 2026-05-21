@@ -373,6 +373,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripsMyTrips => 'Mes voyages';
 
   @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Afficher les voyages dont je ne fais pas partie';
+
+  @override
   String get tripsEmptyState =>
       'Aucun voyage pour le moment.\nCrée ton premier voyage.';
 
@@ -3237,6 +3241,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsMyTrips => 'Mes voyages';
+
+  @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Afficher les voyages dont je ne fais pas partie';
 
   @override
   String get tripsEmptyState =>

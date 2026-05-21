@@ -137,6 +137,7 @@
   "tripsJoinWithInviteTooltip": "Rejoindre un voyage",
   "tripsNewTripTooltip": "Créer un nouveau voyage",
   "tripsMyTrips": "Mes voyages",
+  "tripsApplicationOwnerShowNonMemberTrips": "Afficher les voyages dont je ne fais pas partie",
   "tripsEmptyState": "Aucun voyage pour le moment.\nCrée ton premier voyage.",
   "tripsTimelinePast": "Passés",
   "tripsTimelineOngoing": "En cours",

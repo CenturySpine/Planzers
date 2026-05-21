@@ -374,6 +374,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsMyTrips => 'My trips';
 
   @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Show trips I\'m not part of';
+
+  @override
   String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';
 
   @override
@@ -3211,6 +3215,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsMyTrips => 'My trips';
+
+  @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Show trips I\'m not part of';
 
   @override
   String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';

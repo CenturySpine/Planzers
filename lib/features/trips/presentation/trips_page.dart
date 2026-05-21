@@ -7,6 +7,7 @@ import 'package:planerz/features/account/presentation/account_app_bar_actions.da
 import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
@@ -47,6 +48,10 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
+    final isApplicationOwner =
+        ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
+    final showNonMemberTrips =
+        ref.watch(applicationOwnerShowNonMemberTripsProvider);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -152,6 +157,39 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   ),
                 ),
               ),
+              if (isApplicationOwner)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: StaticColors.lightBackground,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: SwitchListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                      ),
+                      title: Text(
+                        l10n.tripsApplicationOwnerShowNonMemberTrips,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            ),
+                      ),
+                      value: showNonMemberTrips,
+                      onChanged: (value) {
+                        ref
+                            .read(
+                              applicationOwnerShowNonMemberTripsProvider
+                                  .notifier,
+                            )
+                            .setShowNonMemberTrips(value);
+                      },
+                    ),
+                  ),
+                ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -25,10 +25,13 @@ service cloud.firestore {
     }
 
     function isTripMember(tripId) {
-      return signedIn()
-        && tripDoc(tripId).data.keys().hasAll(['memberUserIds'])
-        && tripDoc(tripId).data.memberUserIds is list
-        && request.auth.uid in tripDoc(tripId).data.memberUserIds;
+      return isApplicationOwner()
+        || (
+          signedIn()
+          && tripDoc(tripId).data.keys().hasAll(['memberUserIds'])
+          && tripDoc(tripId).data.memberUserIds is list
+          && request.auth.uid in tripDoc(tripId).data.memberUserIds
+        );
     }
 
     function tripCallerRoleRank(tripId) {
@@ -399,7 +402,8 @@ service cloud.firestore {
     function canReadTrip(data) {
       return signedIn()
         && (
-          (data.ownerId is string && data.ownerId == request.auth.uid)
+          isApplicationOwner()
+          || (data.ownerId is string && data.ownerId == request.auth.uid)
           || (data.memberUserIds is list && request.auth.uid in data.memberUserIds)
         );
     }
@@ -474,9 +478,12 @@ service cloud.firestore {
     }
 
     match /trips/{tripId} {
-      // Query used by trips list: where('memberUserIds', arrayContains: uid).
+      // Query: member trips (arrayContains) or all trips for application owners.
       allow list: if signedIn()
-        && request.auth.uid in resource.data.memberUserIds;
+        && (
+          isApplicationOwner()
+          || request.auth.uid in resource.data.memberUserIds
+        );
       // Direct doc read (by id): creator or participant.
       allow get: if canReadTrip(resource.data);
 

@@ -15,6 +15,7 @@ import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
@@ -35,8 +36,31 @@ final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   );
 });
 
+/// In-memory only (not persisted). Application owners: include non-member trips.
+final applicationOwnerShowNonMemberTripsProvider =
+    NotifierProvider<ApplicationOwnerShowNonMemberTripsNotifier, bool>(
+  ApplicationOwnerShowNonMemberTripsNotifier.new,
+);
+
+class ApplicationOwnerShowNonMemberTripsNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setShowNonMemberTrips(bool value) {
+    state = value;
+  }
+}
+
 final tripsStreamProvider = StreamProvider<List<Trip>>((ref) {
-  return ref.watch(tripsRepositoryProvider).watchMyTrips();
+  final repo = ref.watch(tripsRepositoryProvider);
+  final isApplicationOwner =
+      ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
+  final showNonMemberTrips =
+      ref.watch(applicationOwnerShowNonMemberTripsProvider);
+  if (isApplicationOwner && showNonMemberTrips) {
+    return repo.watchAllTrips();
+  }
+  return repo.watchMyTrips();
 });
 
 /// Single trip document stream (for trip hub shell and deep links).
@@ -161,15 +185,29 @@ class TripsRepository {
         .collection('trips')
         .where('memberUserIds', arrayContains: user.uid)
         .snapshots()
-        .map((snapshot) {
-      final trips = snapshot.docs.map((doc) {
-        final data = doc.data();
-        _ensurePermissionsBlockOnFirstLoad(tripId: doc.id, data: data);
-        return Trip.fromMap(doc.id, data);
-      }).toList();
-      trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return trips;
-    });
+        .map(_tripsFromQuerySnapshot);
+  }
+
+  /// All trips (application owners only; Firestore rules enforce access).
+  Stream<List<Trip>> watchAllTrips() {
+    final user = auth.currentUser;
+    if (user == null) {
+      return Stream.value(const <Trip>[]);
+    }
+
+    return firestore.collection('trips').snapshots().map(_tripsFromQuerySnapshot);
+  }
+
+  List<Trip> _tripsFromQuerySnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final trips = snapshot.docs.map((doc) {
+      final data = doc.data();
+      _ensurePermissionsBlockOnFirstLoad(tripId: doc.id, data: data);
+      return Trip.fromMap(doc.id, data);
+    }).toList();
+    trips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return trips;
   }
 
   Future<void> createTrip({

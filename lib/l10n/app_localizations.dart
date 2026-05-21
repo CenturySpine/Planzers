@@ -772,6 +772,12 @@ abstract class AppLocalizations {
   /// **'Mes voyages'**
   String get tripsMyTrips;
 
+  /// No description provided for @tripsApplicationOwnerShowNonMemberTrips.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher les voyages dont je ne fais pas partie'**
+  String get tripsApplicationOwnerShowNonMemberTrips;
+
   /// No description provided for @tripsEmptyState.
   ///
   /// In fr, this message translates to:
