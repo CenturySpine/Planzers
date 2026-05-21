@@ -14,7 +14,10 @@ class MaintenanceGate extends ConsumerWidget {
     final maintenanceAsync = ref.watch(maintenanceOngoingProvider);
     final isOwnerAsync = ref.watch(isApplicationOwnerProvider);
 
-    final isMaintenanceOngoing = maintenanceAsync.asData?.value ?? false;
+    final isMaintenanceOngoing = switch (maintenanceAsync) {
+      AsyncData(:final value) => value,
+      _ => false,
+    };
     if (!isMaintenanceOngoing) return child;
 
     if (isOwnerAsync.isLoading &&
