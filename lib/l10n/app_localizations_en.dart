@@ -2796,6 +2796,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get publicProfileTitle => 'Profile';
+
+  @override
+  String get maintenanceTitle => 'Maintenance in progress';
+
+  @override
+  String get maintenanceBody =>
+      'The app is temporarily unavailable. It will be back very soon.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5519,4 +5526,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get publicProfileTitle => 'Profile';
+
+  @override
+  String get maintenanceTitle => 'Maintenance in progress';
+
+  @override
+  String get maintenanceBody =>
+      'The app is temporarily unavailable. It will be back very soon.';
 }

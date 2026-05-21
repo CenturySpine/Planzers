@@ -1063,5 +1063,7 @@
   "globalAnnouncementsDismissTooltip": "Masquer cette annonce",
   "globalAnnouncementsRestoreHiddenTooltip": "Réafficher les annonces masquées",
   "globalAnnouncementsRestoreHiddenSnackBar": "Les annonces masquées sont à nouveau visibles.",
-  "publicProfileTitle": "Profil"
+  "publicProfileTitle": "Profil",
+  "maintenanceTitle": "Maintenance en cours",
+  "maintenanceBody": "L'application est temporairement indisponible. Elle sera de retour très bientôt."
 }

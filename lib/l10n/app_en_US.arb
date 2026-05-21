@@ -1063,5 +1063,7 @@
   "globalAnnouncementsDismissTooltip": "Hide this announcement",
   "globalAnnouncementsRestoreHiddenTooltip": "Show hidden announcements again",
   "globalAnnouncementsRestoreHiddenSnackBar": "Hidden announcements are visible again.",
-  "publicProfileTitle": "Profile"
+  "publicProfileTitle": "Profile",
+  "maintenanceTitle": "Maintenance in progress",
+  "maintenanceBody": "The app is temporarily unavailable. It will be back very soon."
 }
