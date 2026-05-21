@@ -1937,6 +1937,12 @@ abstract class AppLocalizations {
   /// **'Pseudo du profil'**
   String get tripParticipantsEditNameModeProfile;
 
+  /// No description provided for @tripParticipantsEditNameProfileRequiresClaim.
+  ///
+  /// In fr, this message translates to:
+  /// **'Disponible une fois le voyageur inscrit au voyage.'**
+  String get tripParticipantsEditNameProfileRequiresClaim;
+
   /// No description provided for @tripParticipantsNameUpdated.
   ///
   /// In fr, this message translates to:

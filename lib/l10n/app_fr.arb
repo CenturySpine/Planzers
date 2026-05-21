@@ -407,6 +407,7 @@
   "tripParticipantsEditNameTitle": "Modifier le nom",
   "tripParticipantsEditNameModeCustom": "Nom personnalisé",
   "tripParticipantsEditNameModeProfile": "Pseudo du profil",
+  "tripParticipantsEditNameProfileRequiresClaim": "Disponible une fois le voyageur inscrit au voyage.",
   "tripParticipantsNameUpdated": "Nom mis à jour",
   "tripParticipantsUseProfileName": "Utiliser le pseudo du profil",
   "tripParticipantsProfileNameDisplay": "Pseudo du profil : {name}",

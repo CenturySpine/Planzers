@@ -1044,6 +1044,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsEditNameModeProfile => 'Pseudo du profil';
 
   @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Disponible une fois le voyageur inscrit au voyage.';
+
+  @override
   String get tripParticipantsNameUpdated => 'Nom mis à jour';
 
   @override
@@ -3832,6 +3836,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsEditNameModeProfile => 'Pseudo du profil';
+
+  @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Disponible une fois le voyageur inscrit au voyage.';
 
   @override
   String get tripParticipantsNameUpdated => 'Nom mis à jour';

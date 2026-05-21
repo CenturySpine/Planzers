@@ -407,6 +407,7 @@
   "tripParticipantsEditNameTitle": "Edit name",
   "tripParticipantsEditNameModeCustom": "Custom name",
   "tripParticipantsEditNameModeProfile": "Profile username",
+  "tripParticipantsEditNameProfileRequiresClaim": "Available once the traveler has joined the trip.",
   "tripParticipantsNameUpdated": "Name updated",
   "tripParticipantsUseProfileName": "Use profile username",
   "tripParticipantsProfileNameDisplay": "Profile username: {name}",

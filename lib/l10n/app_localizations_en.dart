@@ -1029,6 +1029,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsEditNameModeProfile => 'Profile username';
 
   @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Available once the traveler has joined the trip.';
+
+  @override
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
@@ -3791,6 +3795,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsEditNameModeProfile => 'Profile username';
+
+  @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Available once the traveler has joined the trip.';
 
   @override
   String get tripParticipantsNameUpdated => 'Name updated';

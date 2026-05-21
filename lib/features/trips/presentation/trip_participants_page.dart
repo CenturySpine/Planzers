@@ -172,141 +172,21 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
     Map<String, dynamic>? profileData,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: currentName);
     final profileName = profileNameFromData(profileData);
-    var dialogUseProfileName = currentUseProfileName && profileName != null;
 
-    final ok = await showDialog<bool>(
+    final result = await showDialog<_EditParticipantNameDialogResult>(
       context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final colorScheme = theme.colorScheme;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            final useCustomName = !dialogUseProfileName || !isClaimed;
-            return AlertDialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
-              titlePadding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
-              contentPadding: const EdgeInsets.fromLTRB(28, 20, 28, 8),
-              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Text(l10n.tripParticipantsEditNameTitle),
-              content: SizedBox(
-                width: 400,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (isClaimed) ...[
-                      RadioGroup<bool>(
-                        groupValue: dialogUseProfileName,
-                        onChanged: (value) {
-                          if (value == null) return;
-                          if (value && profileName == null) return;
-                          setDialogState(() => dialogUseProfileName = value);
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _ParticipantNameSourceOption(
-                              title: l10n.tripParticipantsEditNameModeCustom,
-                              icon: Icons.edit_outlined,
-                              value: false,
-                              selected: !dialogUseProfileName,
-                              onTap: () => setDialogState(
-                                () => dialogUseProfileName = false,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _ParticipantNameSourceOption(
-                              title: l10n.tripParticipantsEditNameModeProfile,
-                              icon: Icons.badge_outlined,
-                              value: true,
-                              selected: dialogUseProfileName,
-                              enabled: profileName != null,
-                              subtitle: profileName != null
-                                  ? l10n.tripParticipantsProfileNameDisplay(
-                                      profileName,
-                                    )
-                                  : l10n.tripParticipantsNoProfileNameHint,
-                              onTap: profileName != null
-                                  ? () => setDialogState(
-                                        () => dialogUseProfileName = true,
-                                      )
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    if (useCustomName)
-                      TextField(
-                        controller: controller,
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          labelText: l10n.commonName,
-                          border: const OutlineInputBorder(),
-                        ),
-                        textInputAction: TextInputAction.done,
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outlineVariant),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.badge_outlined,
-                              size: 22,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                profileName ?? '',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l10n.commonSave),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (ctx) => _EditParticipantNameDialog(
+        initialName: currentName,
+        initialUseProfileName: currentUseProfileName,
+        isClaimed: isClaimed,
+        profileName: profileName,
+      ),
     );
-    final name = ok == true ? controller.text.trim() : '';
-    final savedUseProfileName = ok == true ? dialogUseProfileName : currentUseProfileName;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.dispose();
-    });
 
-    if (ok != true || !mounted) return;
+    if (result == null || !mounted) return;
+    final name = result.name;
+    final savedUseProfileName = result.useProfileName;
     if (name.isEmpty && !savedUseProfileName) return;
     try {
       await ref.read(tripsRepositoryProvider).updateTripParticipantName(
@@ -958,6 +838,187 @@ Widget _participantRoleLeading({
       ),
     ),
   );
+}
+
+class _EditParticipantNameDialogResult {
+  const _EditParticipantNameDialogResult({
+    required this.name,
+    required this.useProfileName,
+  });
+
+  final String name;
+  final bool useProfileName;
+}
+
+class _EditParticipantNameDialog extends StatefulWidget {
+  const _EditParticipantNameDialog({
+    required this.initialName,
+    required this.initialUseProfileName,
+    required this.isClaimed,
+    required this.profileName,
+  });
+
+  final String initialName;
+  final bool initialUseProfileName;
+  final bool isClaimed;
+  final String? profileName;
+
+  @override
+  State<_EditParticipantNameDialog> createState() =>
+      _EditParticipantNameDialogState();
+}
+
+class _EditParticipantNameDialogState extends State<_EditParticipantNameDialog> {
+  late final TextEditingController _nameController;
+  late bool _useProfileName;
+
+  bool get _profileOptionEnabled =>
+      widget.isClaimed && widget.profileName != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _useProfileName = widget.initialUseProfileName && _profileOptionEnabled;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  String? get _profileOptionSubtitle {
+    final l10n = AppLocalizations.of(context)!;
+    if (!widget.isClaimed) {
+      return l10n.tripParticipantsEditNameProfileRequiresClaim;
+    }
+    if (widget.profileName != null) {
+      return l10n.tripParticipantsProfileNameDisplay(widget.profileName!);
+    }
+    return l10n.tripParticipantsNoProfileNameHint;
+  }
+
+  void _save() {
+    Navigator.of(context).pop(
+      _EditParticipantNameDialogResult(
+        name: _nameController.text.trim(),
+        useProfileName: _useProfileName,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final useCustomName = !_useProfileName;
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+      titlePadding: const EdgeInsets.fromLTRB(28, 28, 28, 0),
+      contentPadding: const EdgeInsets.fromLTRB(28, 20, 28, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(l10n.tripParticipantsEditNameTitle),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RadioGroup<bool>(
+              groupValue: _useProfileName,
+              onChanged: (value) {
+                if (value == null) return;
+                if (value && !_profileOptionEnabled) return;
+                setState(() => _useProfileName = value);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ParticipantNameSourceOption(
+                    title: l10n.tripParticipantsEditNameModeCustom,
+                    icon: Icons.edit_outlined,
+                    value: false,
+                    selected: !_useProfileName,
+                    onTap: () => setState(() => _useProfileName = false),
+                  ),
+                  const SizedBox(height: 12),
+                  _ParticipantNameSourceOption(
+                    title: l10n.tripParticipantsEditNameModeProfile,
+                    icon: Icons.badge_outlined,
+                    value: true,
+                    selected: _useProfileName,
+                    enabled: _profileOptionEnabled,
+                    subtitle: _profileOptionSubtitle,
+                    onTap: _profileOptionEnabled
+                        ? () => setState(() => _useProfileName = true)
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (useCustomName)
+              TextField(
+                controller: _nameController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.commonName,
+                  border: const OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save(),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 22,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.profileName ?? '',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: Text(l10n.commonSave),
+        ),
+      ],
+    );
+  }
 }
 
 class _ParticipantNameSourceOption extends StatelessWidget {
