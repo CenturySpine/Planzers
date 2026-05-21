@@ -676,17 +676,40 @@ async function cleanupNonBlockingMemberReferences(tripRef, memberId) {
 }
 
 /**
- * When someone is added to trip.memberUserIds, add them to every expense post
- * (visibleToMemberIds) and every expense (participantIds). arrayUnion is
- * idempotent. Batched in chunks of 500 writes.
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @returns {Promise<FirebaseFirestore.QueryDocumentSnapshot | null>}
+ */
+async function getDefaultExpenseGroupDoc(tripRef) {
+  const snap = await tripRef
+    .collection('expenseGroups')
+    .where('isDefault', '==', true)
+    .limit(1)
+    .get();
+  return snap.empty ? null : snap.docs[0];
+}
+
+/**
+ * @param {FirebaseFirestore.DocumentReference} tripRef
+ * @param {string} participantId TripMember doc id
+ */
+async function addParticipantIdToDefaultExpensePost(tripRef, participantId) {
+  const defaultGroupDoc = await getDefaultExpenseGroupDoc(tripRef);
+  if (!defaultGroupDoc) {
+    return;
+  }
+
+  await defaultGroupDoc.ref.update({
+    visibleToMemberIds: FieldValue.arrayUnion(participantId),
+  });
+}
+
+/**
+ * When someone joins the trip (memberUserIds), add their participant doc id to the
+ * default expense post visibility only — not other posts, not existing expenses.
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} uid
  */
-async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
-  const db = admin.firestore();
-
-  // Resolve the participant document ID for this UID (visibleToMemberIds stores
-  // TripMember doc IDs, not Firebase Auth UIDs).
+async function addTripMemberToDefaultExpensePost(tripRef, uid) {
   const participantsSnap = await tripRef
     .collection('participants')
     .where('userId', '==', uid)
@@ -694,47 +717,16 @@ async function backfillTripMemberInExpenseSubcollections(tripRef, uid) {
     .get();
   if (participantsSnap.empty) {
     console.warn(
-      'backfillTripMemberInExpenseSubcollections: no participant found for uid',
+      'addTripMemberToDefaultExpensePost: no participant found for uid',
       uid,
       tripRef.id,
     );
     return;
   }
-  const participantId = participantsSnap.docs[0].id;
-
-  const [groupsSnap, expensesSnap] = await Promise.all([
-    tripRef.collection('expenseGroups').get(),
-    tripRef.collection('expenses').get(),
-  ]);
-
-  const updates = [];
-  for (const doc of groupsSnap.docs) {
-    updates.push({
-      ref: doc.ref,
-      data: { visibleToMemberIds: FieldValue.arrayUnion(participantId) },
-    });
-  }
-  for (const doc of expensesSnap.docs) {
-    updates.push({
-      ref: doc.ref,
-      data: { participantIds: FieldValue.arrayUnion(participantId) },
-    });
-  }
-
-  let batch = db.batch();
-  let n = 0;
-  for (const { ref, data } of updates) {
-    batch.update(ref, data);
-    n++;
-    if (n >= 500) {
-      await batch.commit();
-      batch = db.batch();
-      n = 0;
-    }
-  }
-  if (n > 0) {
-    await batch.commit();
-  }
+  await addParticipantIdToDefaultExpensePost(
+    tripRef,
+    participantsSnap.docs[0].id
+  );
 }
 
 const FCM_INVALID_TOKEN_CODES = new Set([
@@ -1883,12 +1875,13 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     if (added.length === 0 && removed.length === 0) return;
 
     const tripRef = afterSnap.ref;
+
     for (const uid of added) {
       try {
-        await backfillTripMemberInExpenseSubcollections(tripRef, uid);
+        await addTripMemberToDefaultExpensePost(tripRef, uid);
       } catch (e) {
         console.error(
-          'backfillNewTripMemberInExpenses failed',
+          'backfillNewTripMemberInExpenses: default post visibility failed',
           tripRef.id,
           uid,
           e
@@ -1898,9 +1891,7 @@ exports.backfillNewTripMemberInExpenses = onDocumentUpdated(
     }
 
     // Keep meals consistent when members are removed from trip.memberUserIds.
-    if (removed.length === 0) {
-      return;
-    }
+    if (removed.length === 0) return;
 
     const db = admin.firestore();
     const mealsSnap = await tripRef.collection('meals').get();
@@ -2479,26 +2470,7 @@ exports.addTripParticipant = onCall(
       createdAt: FieldValue.serverTimestamp(),
     });
     const participantId = participantRef.id;
-
-    const groupsSnap = await tripRef.collection('expenseGroups').get();
-    if (!groupsSnap.empty) {
-      let batch = db.batch();
-      let n = 0;
-      for (const doc of groupsSnap.docs) {
-        batch.update(doc.ref, {
-          visibleToMemberIds: FieldValue.arrayUnion(participantId),
-        });
-        n++;
-        if (n >= 450) {
-          await batch.commit();
-          batch = db.batch();
-          n = 0;
-        }
-      }
-      if (n > 0) {
-        await batch.commit();
-      }
-    }
+    await addParticipantIdToDefaultExpensePost(tripRef, participantId);
 
     return { ok: true, participantId };
   }
