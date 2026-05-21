@@ -126,12 +126,6 @@ class UsersRepository {
       final authPhoneNumber = _bestAuthPhoneNumber(user);
       final splitPhone = _splitPhoneNumber(authPhoneNumber);
       final hasAuthPhone = authPhoneNumber.isNotEmpty;
-      final authDisplayName = (user.displayName ?? '').trim();
-      final initialAccountName = authDisplayName.isNotEmpty
-          ? authDisplayName
-          : authPhoneNumber.isNotEmpty
-              ? authPhoneNumber
-              : (user.email ?? '').trim();
       final baseData = <String, dynamic>{
         'uid': user.uid,
         'email': user.email,
@@ -142,10 +136,6 @@ class UsersRepository {
         },
         'lastSignInAt': now,
       };
-      if (initialAccountName.isNotEmpty) {
-        (baseData['account'] as Map<String, dynamic>)['name'] =
-            initialAccountName;
-      }
       if (googlePhotoUrl.isNotEmpty) {
         baseData['googlePhotoUrl'] = googlePhotoUrl;
         (baseData['account'] as Map<String, dynamic>)['googlePhotoUrl'] =
@@ -160,7 +150,6 @@ class UsersRepository {
             (existingAccount['photoUrl'] as String?)?.trim() ?? '';
         final existingRootPhoto =
             (existing['photoUrl'] as String?)?.trim() ?? '';
-        final existingName = (existingAccount['name'] as String?)?.trim() ?? '';
         final hasCustomPhoto =
             existingAccountPhoto.isNotEmpty || existingRootPhoto.isNotEmpty;
 
@@ -173,9 +162,6 @@ class UsersRepository {
         patchAccount.remove('email');
         patchAccount.remove('phoneNumber');
         patchAccount.remove('phoneCountryCode');
-        if (existingName.isNotEmpty) {
-          patchAccount.remove('name');
-        }
         if (!hasCustomPhoto && googlePhotoUrl.isNotEmpty) {
           patch['photoUrl'] = googlePhotoUrl;
           patchAccount['photoUrl'] = googlePhotoUrl;
