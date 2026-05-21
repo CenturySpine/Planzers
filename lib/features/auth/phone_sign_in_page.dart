@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
-import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/display_name_setup_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -162,18 +161,16 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
     setState(() => _isLoading = true);
     try {
       if (kIsWeb) {
-        final credential = await _webConfirm!(code);
-        await _seedPhoneProfileAfterSignIn(credential.user);
+        await _webConfirm!(code);
       } else {
         final credential = PhoneAuthProvider.credential(
           verificationId: _verificationId!,
           smsCode: code,
         );
-        final result = await ref
+        await ref
             .read(authRepositoryProvider)
             .auth
             .signInWithCredential(credential);
-        await _seedPhoneProfileAfterSignIn(result.user);
       }
       if (!mounted) return;
       final needsName = await _accountNameNeedsSetup();
@@ -211,17 +208,6 @@ class _PhoneSignInPageState extends ConsumerState<PhoneSignInPage> {
       context.go(redirect);
     } else {
       context.go('/trips');
-    }
-  }
-
-  Future<void> _seedPhoneProfileAfterSignIn(User? signedUser) async {
-    final user = signedUser;
-    if (user == null) return;
-
-    try {
-      await ref.read(usersRepositoryProvider).ensureUserDocument(user);
-    } catch (e) {
-      debugPrint('ensureUserDocument after phone sign-in failed: $e');
     }
   }
 

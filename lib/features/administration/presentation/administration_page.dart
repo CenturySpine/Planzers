@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/administration/data/administration_repository.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
+import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/domain/app_usage_stats.dart';
 
 final _administrationRepositoryProvider =
@@ -116,6 +117,18 @@ class _StatsBody extends StatelessWidget {
             subtitle: const Text('Créer, modifier et supprimer les annonces.'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(AdminAnnouncementsManagePage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.build_outlined),
+            title: const Text('Maintenance'),
+            subtitle: const Text(
+              'Gérer l\'état de maintenance de l\'application.',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AdminMaintenancePage.routePath),
           ),
         ),
         const SizedBox(height: 12),

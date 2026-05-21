@@ -12,6 +12,7 @@ import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
+import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -222,7 +223,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     setState(() => _isSavingName = true);
     try {
       await ref.read(accountRepositoryProvider).updateAccountName(
-            _accountNameController.text,
+            _accountNameController.text.trim(),
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -340,19 +341,23 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     );
   }
 
-  Widget _buildCompactCancelButton({
+  Widget _buildEditCancelButton({
     required bool isSaving,
     required VoidCallback onPressed,
     required String tooltip,
   }) {
-    return IconButton(
+    return IconButton.outlined(
       visualDensity: VisualDensity.compact,
-      iconSize: 18,
+      iconSize: 20,
+      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
       onPressed: isSaving ? null : onPressed,
       tooltip: tooltip,
-      icon: const Icon(Icons.undo_rounded),
+      icon: const Icon(Icons.close_rounded),
     );
   }
+
+  /// Width reserved for save + cancel buttons beside an editable field.
+  static const double _editActionsSlotWidth = 86;
 
   Widget _buildEditActions({
     required bool isSaving,
@@ -364,12 +369,13 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildCompactSaveButton(
+        _buildEditSaveButton(
           isSaving: isSaving,
           onPressed: onSave,
           tooltip: saveTooltip,
         ),
-        _buildCompactCancelButton(
+        const SizedBox(width: 6),
+        _buildEditCancelButton(
           isSaving: isSaving,
           onPressed: onCancel,
           tooltip: cancelTooltip,
@@ -378,23 +384,24 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     );
   }
 
-  Widget _buildCompactSaveButton({
+  Widget _buildEditSaveButton({
     required bool isSaving,
     required VoidCallback onPressed,
     required String tooltip,
   }) {
-    return IconButton(
+    return IconButton.filled(
       visualDensity: VisualDensity.compact,
-      iconSize: 18,
+      iconSize: 20,
+      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
       onPressed: isSaving ? null : onPressed,
       tooltip: tooltip,
       icon: isSaving
           ? const SizedBox(
-              width: 14,
-              height: 14,
+              width: 18,
+              height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.check),
+          : const Icon(Icons.check_rounded),
     );
   }
 
@@ -627,7 +634,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         _buildEditActions(
                           isSaving: _isSavingEmail,
                           onSave: _saveEmail,
@@ -656,36 +663,79 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                     ),
                   const SizedBox(height: 12),
                   if (_isEditingName)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: _accountNameFieldKey,
-                            controller: _accountNameController,
-                            decoration: InputDecoration(
-                              labelText: l10n.accountNameLabel,
-                              hintText: l10n.accountNameHint,
-                              border: const OutlineInputBorder(),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                key: _accountNameFieldKey,
+                                controller: _accountNameController,
+                                maxLength: kDisplayNameMaxLength,
+                                textCapitalization: TextCapitalization.words,
+                                onChanged: (_) => setState(() {}),
+                                buildCounter: (
+                                  context, {
+                                  required currentLength,
+                                  required isFocused,
+                                  required maxLength,
+                                }) =>
+                                    null,
+                                decoration: InputDecoration(
+                                  labelText: l10n.accountNameLabel,
+                                  hintText: l10n.accountNameHint,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (!isDisplayNameLengthValid(value ?? '')) {
+                                    return l10n.inviteBypassFirstNameInvalid;
+                                  }
+                                  return null;
+                                },
+                              ),
                             ),
-                            validator: (value) {
-                              if ((value ?? '').trim().length > 60) {
-                                return l10n.accountNameMaxLength;
-                              }
-                              return null;
-                            },
-                          ),
+                            const SizedBox(width: 8),
+                            _buildEditActions(
+                              isSaving: _isSavingName,
+                              onSave: _saveName,
+                              onCancel: () => setState(() {
+                                _accountNameController.text = accountName;
+                                _isEditingName = false;
+                              }),
+                              saveTooltip: l10n.accountSaveNameTooltip,
+                              cancelTooltip: l10n.commonCancel,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        _buildEditActions(
-                          isSaving: _isSavingName,
-                          onSave: _saveName,
-                          onCancel: () => setState(() {
-                            _accountNameController.text = accountName;
-                            _isEditingName = false;
-                          }),
-                          saveTooltip: l10n.accountSaveNameTooltip,
-                          cancelTooltip: l10n.commonCancel,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 4,
+                                  left: 16,
+                                  right: 16,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text(
+                                    '${_accountNameController.text.length}/$kDisplayNameMaxLength',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: _editActionsSlotWidth + 8),
+                          ],
                         ),
                       ],
                     )
@@ -703,11 +753,6 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         });
                       },
                     ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.accountNameFallbackHelp,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
                   const SizedBox(height: 12),
                   if (_isEditingPhone)
                     Row(
@@ -787,7 +832,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 8),
                         _buildEditActions(
                           isSaving: _isSavingPhone,
                           onSave: _savePhone,

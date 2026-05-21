@@ -116,22 +116,43 @@ class UsersRepository {
     return (countryCode: '', number: normalized);
   }
 
+  bool _signedInWithPhone(User user) {
+    return user.providerData.any((info) => info.providerId == 'phone');
+  }
+
   Future<void> ensureUserDocument(User user) async {
     final userRef = firestore.collection('users').doc(user.uid);
+    final phoneSignIn = _signedInWithPhone(user);
 
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(userRef);
       final now = FieldValue.serverTimestamp();
+
+      if (phoneSignIn) {
+        // Phone sign-in: never read or write `account` (name setup dialog only).
+        if (snapshot.exists) {
+          transaction.set(
+            userRef,
+            {
+              'uid': user.uid,
+              'lastSignInAt': now,
+            },
+            SetOptions(merge: true),
+          );
+        } else {
+          transaction.set(userRef, {
+            'uid': user.uid,
+            'createdAt': now,
+            'lastSignInAt': now,
+          });
+        }
+        return;
+      }
+
       final googlePhotoUrl = (user.photoURL ?? '').trim();
       final authPhoneNumber = _bestAuthPhoneNumber(user);
       final splitPhone = _splitPhoneNumber(authPhoneNumber);
       final hasAuthPhone = authPhoneNumber.isNotEmpty;
-      final authDisplayName = (user.displayName ?? '').trim();
-      final initialAccountName = authDisplayName.isNotEmpty
-          ? authDisplayName
-          : authPhoneNumber.isNotEmpty
-              ? authPhoneNumber
-              : (user.email ?? '').trim();
       final baseData = <String, dynamic>{
         'uid': user.uid,
         'email': user.email,
@@ -142,10 +163,6 @@ class UsersRepository {
         },
         'lastSignInAt': now,
       };
-      if (initialAccountName.isNotEmpty) {
-        (baseData['account'] as Map<String, dynamic>)['name'] =
-            initialAccountName;
-      }
       if (googlePhotoUrl.isNotEmpty) {
         baseData['googlePhotoUrl'] = googlePhotoUrl;
         (baseData['account'] as Map<String, dynamic>)['googlePhotoUrl'] =
@@ -160,7 +177,6 @@ class UsersRepository {
             (existingAccount['photoUrl'] as String?)?.trim() ?? '';
         final existingRootPhoto =
             (existing['photoUrl'] as String?)?.trim() ?? '';
-        final existingName = (existingAccount['name'] as String?)?.trim() ?? '';
         final hasCustomPhoto =
             existingAccountPhoto.isNotEmpty || existingRootPhoto.isNotEmpty;
 
@@ -173,9 +189,6 @@ class UsersRepository {
         patchAccount.remove('email');
         patchAccount.remove('phoneNumber');
         patchAccount.remove('phoneCountryCode');
-        if (existingName.isNotEmpty) {
-          patchAccount.remove('name');
-        }
         if (!hasCustomPhoto && googlePhotoUrl.isNotEmpty) {
           patch['photoUrl'] = googlePhotoUrl;
           patchAccount['photoUrl'] = googlePhotoUrl;

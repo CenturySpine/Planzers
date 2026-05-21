@@ -13,14 +13,7 @@ class TripRoomsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
-    final participants =
-        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final roomsAsync = ref.watch(tripRoomsStreamProvider(trip.id));
 
     return Scaffold(
@@ -321,12 +314,8 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
     final l10n = AppLocalizations.of(context)!;
     final participants =
         ref.watch(tripParticipantsStreamProvider(widget.tripId)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels =
+        ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
     final memberIds = participants.map((m) => m.id).toList();
     final roomsAsync = ref.watch(tripRoomsStreamProvider(widget.tripId));
 

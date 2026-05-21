@@ -74,12 +74,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         ref.watch(tripSettledTransfersStreamProvider(trip.id));
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final memberIds = participants.map((m) => m.id).toList();
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
     final currentUserMemberId = participants

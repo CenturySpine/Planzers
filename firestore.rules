@@ -25,10 +25,13 @@ service cloud.firestore {
     }
 
     function isTripMember(tripId) {
-      return signedIn()
-        && tripDoc(tripId).data.keys().hasAll(['memberUserIds'])
-        && tripDoc(tripId).data.memberUserIds is list
-        && request.auth.uid in tripDoc(tripId).data.memberUserIds;
+      return isApplicationOwner()
+        || (
+          signedIn()
+          && tripDoc(tripId).data.keys().hasAll(['memberUserIds'])
+          && tripDoc(tripId).data.memberUserIds is list
+          && request.auth.uid in tripDoc(tripId).data.memberUserIds
+        );
     }
 
     function tripCallerRoleRank(tripId) {
@@ -377,8 +380,11 @@ service cloud.firestore {
     }
 
     function canManageTripParticipants(tripId) {
-      return isTripMember(tripId)
-        && tripCallerRoleRank(tripId) >= roleRank(tripManageParticipantsMinRole(tripId));
+      return isApplicationOwner()
+        || (
+          isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= roleRank(tripManageParticipantsMinRole(tripId))
+        );
     }
 
     function tripCarpoolUpdateShoppingMeetupPointMinRole(tripId) {
@@ -399,7 +405,8 @@ service cloud.firestore {
     function canReadTrip(data) {
       return signedIn()
         && (
-          (data.ownerId is string && data.ownerId == request.auth.uid)
+          isApplicationOwner()
+          || (data.ownerId is string && data.ownerId == request.auth.uid)
           || (data.memberUserIds is list && request.auth.uid in data.memberUserIds)
         );
     }
@@ -474,9 +481,12 @@ service cloud.firestore {
     }
 
     match /trips/{tripId} {
-      // Query used by trips list: where('memberUserIds', arrayContains: uid).
+      // Query: member trips (arrayContains) or all trips for application owners.
       allow list: if signedIn()
-        && request.auth.uid in resource.data.memberUserIds;
+        && (
+          isApplicationOwner()
+          || request.auth.uid in resource.data.memberUserIds
+        );
       // Direct doc read (by id): creator or participant.
       allow get: if canReadTrip(resource.data);
 
@@ -542,8 +552,11 @@ service cloud.firestore {
               && tripDoc(tripId).data.ownerId == request.auth.uid
             )
           );
-        allow update: if canManageTripParticipants(tripId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantName'])
+        allow update: if (
+            canManageTripParticipants(tripId)
+            || (isTripMember(tripId) && resource.data.userId == request.auth.uid)
+          )
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantName', 'useProfileName'])
           && request.resource.data.participantName is string
           && request.resource.data.participantName.size() > 0;
         allow delete: if canManageTripParticipants(tripId);
@@ -832,8 +845,13 @@ service cloud.firestore {
     }
 
     match /system/{docId} {
-      allow read: if signedIn();
+      allow get: if docId == 'maintenance' || signedIn();
+      allow list: if signedIn();
       allow update: if docId == 'aiCircuitBreaker' && isApplicationOwner();
+      allow create, update: if docId == 'maintenance'
+        && isApplicationOwner()
+        && request.resource.data.keys().hasOnly(['isMaintenanceOngoing'])
+        && request.resource.data.isMaintenanceOngoing is bool;
       // increments and auto-trip: CF only (Admin SDK)
     }
 

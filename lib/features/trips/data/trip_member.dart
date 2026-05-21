@@ -34,16 +34,20 @@ class TripMember {
     this.cupidonUpdatedAt,
     this.phoneVisibility = TripMemberPhoneVisibility.nobody,
     this.updatedAt,
+    this.useProfileName = false,
   });
 
   /// Firestore document ID (auto-generated, stable across claim).
   final String id;
 
-  /// Display name set by the trip organiser. Source of truth everywhere.
+  /// Display name set by the trip organiser. Fallback when [useProfileName] is off or profile has no name.
   final String participantName;
 
   /// Firebase UID, null until the participant claims this slot.
   final String? userId;
+
+  /// When true, the resolved display name comes from the user's profile (account.name) rather than [participantName].
+  final bool useProfileName;
 
   /// Stay bounds for this participant. Written at slot creation with trip defaults.
   final TripMemberStay? stay;
@@ -77,6 +81,7 @@ class TripMember {
         Timestamp ts => ts.toDate(),
         _ => null,
       },
+      useProfileName: data['useProfileName'] == true,
     );
   }
 
@@ -87,6 +92,7 @@ class TripMember {
       if (stay != null) ...stay!.toFirestoreMap(),
       'cupidonEnabled': cupidonEnabled,
       'phoneVisibility': phoneVisibility.toFirestore(),
+      if (useProfileName) 'useProfileName': true,
     };
   }
 
@@ -98,6 +104,7 @@ class TripMember {
     Object? cupidonUpdatedAt = _sentinel,
     TripMemberPhoneVisibility? phoneVisibility,
     Object? updatedAt = _sentinel,
+    bool? useProfileName,
   }) {
     return TripMember(
       id: id,
@@ -110,6 +117,7 @@ class TripMember {
           : cupidonUpdatedAt as DateTime?,
       phoneVisibility: phoneVisibility ?? this.phoneVisibility,
       updatedAt: identical(updatedAt, _sentinel) ? this.updatedAt : updatedAt as DateTime?,
+      useProfileName: useProfileName ?? this.useProfileName,
     );
   }
 }

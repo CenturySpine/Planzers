@@ -6,6 +6,7 @@ import 'package:planerz/features/auth/email_link_sign_in_page.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/auth/sign_in_page.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
+import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
@@ -140,6 +141,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminAnnouncementsManagePage.routePath,
       builder: (context, state) => const AdminAnnouncementsManagePage(),
+    ),
+    GoRoute(
+      path: AdminMaintenancePage.routePath,
+      builder: (context, state) => const AdminMaintenancePage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,

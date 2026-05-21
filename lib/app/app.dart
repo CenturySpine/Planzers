@@ -7,7 +7,6 @@ import 'package:planerz/app/theme/app_palette_provider.dart';
 import 'package:planerz/app/theme/app_theme.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/app/theme/static_colors.dart';
-import 'package:planerz/app/maintenance/maintenance_gate.dart';
 import 'package:planerz/app/update/update_gate.dart';
 import 'package:planerz/core/firebase/bootstrap.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
@@ -64,11 +63,9 @@ class _PlanerzThemedApp extends ConsumerWidget {
             // the two queues never interfere.
             child: ScaffoldMessenger(
               child: UpdateGate(
-                child: MaintenanceGate(
-                  child: ColoredBox(
-                    color: StaticColors.background,
-                    child: child ?? const SizedBox.shrink(),
-                  ),
+                child: ColoredBox(
+                  color: StaticColors.background,
+                  child: child ?? const SizedBox.shrink(),
                 ),
               ),
             ),

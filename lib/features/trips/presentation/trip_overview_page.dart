@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -483,9 +484,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final participants =
         ref.watch(tripParticipantsStreamProvider(_trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) m.id: m.participantName,
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(_trip.id));
     final myParticipantId = myUid != null
         ? participants
             .where((m) => m.userId?.trim() == myUid)
@@ -579,7 +578,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   ? _photoUrlFromUserData(usersDataById[m.userId!])
                   : '';
               return _ParticipantBadgePreviewEntry(
-                initial: _initialFromLabel(m.participantName),
+                initial: _initialFromLabel(resolveTripMemberDisplayLabel(m, profileData: usersDataById[m.userId])),
                 photoUrl: photoUrl,
               );
             }).toList();

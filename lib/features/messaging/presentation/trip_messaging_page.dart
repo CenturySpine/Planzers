@@ -193,12 +193,7 @@ class _TripThreadMessagingPageState extends ConsumerState<TripThreadMessagingPag
     }
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
 
     final chatDataAsync = ref.watch(
       tripChatDataScopedStreamProvider(

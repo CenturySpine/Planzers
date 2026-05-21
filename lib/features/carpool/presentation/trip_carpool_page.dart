@@ -201,9 +201,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
     // Participant document ID → display name.
-    final memberLabels = <String, String>{
-      for (final m in participants) m.id: m.participantName,
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     // Participant document ID → Firebase UID (for profile photo lookup).
     final participantIdToUserId = <String, String>{
       for (final m in participants)

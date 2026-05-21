@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 // Matches phone numbers: starts with '+' or digit, followed by 5+ digit/space/punctuation chars.
@@ -40,10 +41,7 @@ class _DisplayNameSetupDialogState
     super.dispose();
   }
 
-  bool get _isValid {
-    final len = _controller.text.trim().length;
-    return len >= 2 && len <= 50;
-  }
+  bool get _isValid => isDisplayNameLengthValid(_controller.text);
 
   Future<void> _save() async {
     final name = _controller.text.trim();
@@ -65,7 +63,7 @@ class _DisplayNameSetupDialogState
       content: TextField(
         controller: _controller,
         autofocus: true,
-        maxLength: 50,
+        maxLength: kDisplayNameMaxLength,
         textCapitalization: TextCapitalization.words,
         textInputAction: TextInputAction.done,
         onSubmitted: (_) {

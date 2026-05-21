@@ -604,12 +604,6 @@ abstract class AppLocalizations {
   /// **'Ex : Alex'**
   String get accountNameHint;
 
-  /// No description provided for @accountNameMaxLength.
-  ///
-  /// In fr, this message translates to:
-  /// **'Maximum 60 caractères'**
-  String get accountNameMaxLength;
-
   /// No description provided for @accountPhoneCountryCodeLabel.
   ///
   /// In fr, this message translates to:
@@ -675,12 +669,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Enregistrer le nom'**
   String get accountSaveNameTooltip;
-
-  /// No description provided for @accountNameFallbackHelp.
-  ///
-  /// In fr, this message translates to:
-  /// **'Si vide, le nom affiché sera votre e-mail.'**
-  String get accountNameFallbackHelp;
 
   /// No description provided for @accountFoodAllergens.
   ///
@@ -783,6 +771,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Mes voyages'**
   String get tripsMyTrips;
+
+  /// No description provided for @tripsApplicationOwnerShowNonMemberTrips.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher les voyages dont je ne fais pas partie'**
+  String get tripsApplicationOwnerShowNonMemberTrips;
 
   /// No description provided for @tripsEmptyState.
   ///
@@ -1925,11 +1919,47 @@ abstract class AppLocalizations {
   /// **'Modifier le nom'**
   String get tripParticipantsEditNameTitle;
 
+  /// No description provided for @tripParticipantsEditNameModeCustom.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom personnalisé'**
+  String get tripParticipantsEditNameModeCustom;
+
+  /// No description provided for @tripParticipantsEditNameModeProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil'**
+  String get tripParticipantsEditNameModeProfile;
+
+  /// No description provided for @tripParticipantsEditNameProfileRequiresClaim.
+  ///
+  /// In fr, this message translates to:
+  /// **'Disponible une fois le voyageur inscrit au voyage.'**
+  String get tripParticipantsEditNameProfileRequiresClaim;
+
   /// No description provided for @tripParticipantsNameUpdated.
   ///
   /// In fr, this message translates to:
   /// **'Nom mis à jour'**
   String get tripParticipantsNameUpdated;
+
+  /// No description provided for @tripParticipantsUseProfileName.
+  ///
+  /// In fr, this message translates to:
+  /// **'Utiliser le pseudo du profil'**
+  String get tripParticipantsUseProfileName;
+
+  /// No description provided for @tripParticipantsProfileNameDisplay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil : {name}'**
+  String tripParticipantsProfileNameDisplay(Object name);
+
+  /// No description provided for @tripParticipantsNoProfileNameHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun pseudo de profil disponible pour cette option.'**
+  String get tripParticipantsNoProfileNameHint;
 
   /// No description provided for @tripParticipantsRemovePlannedTravelerTitle.
   ///
@@ -2525,24 +2555,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Continuer avec mon profil actuel'**
   String get inviteJoinWithCurrentProfileAction;
-
-  /// No description provided for @inviteBypassFirstNameTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ton prénom ou pseudo'**
-  String get inviteBypassFirstNameTitle;
-
-  /// No description provided for @inviteBypassFirstNameBody.
-  ///
-  /// In fr, this message translates to:
-  /// **'Indique comment tu veux apparaître pour les autres participants de ce voyage.'**
-  String get inviteBypassFirstNameBody;
-
-  /// No description provided for @inviteBypassFirstNameLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Prénom ou pseudo'**
-  String get inviteBypassFirstNameLabel;
 
   /// No description provided for @inviteBypassFirstNameInvalid.
   ///
@@ -5108,18 +5120,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Profil'**
   String get publicProfileTitle;
-
-  /// No description provided for @maintenanceTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Maintenance en cours'**
-  String get maintenanceTitle;
-
-  /// No description provided for @maintenanceBody.
-  ///
-  /// In fr, this message translates to:
-  /// **'L\'application est temporairement indisponible. Elle sera de retour très bientôt.'**
-  String get maintenanceBody;
 
   /// No description provided for @profileNameDialogTitle.
   ///

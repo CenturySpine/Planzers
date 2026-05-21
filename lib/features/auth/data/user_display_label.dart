@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 
 /// Local part of [email] for compact labels (text before '@').
@@ -62,73 +61,37 @@ String tripMemberStoredProfileBadgeUrl(Map<String, dynamic>? data) {
   return '';
 }
 
-/// Display name for a [TripMember]: always [TripMember.participantName].
-String resolveTripMemberDisplayLabel(TripMember member) {
+/// Resolved display name for a [TripMember].
+///
+/// When [member.useProfileName] is true and [profileData] contains a non-empty
+/// account.name, that value is returned. Otherwise falls back to [member.participantName].
+String resolveTripMemberDisplayLabel(
+  TripMember member, {
+  Map<String, dynamic>? profileData,
+}) {
+  if (member.useProfileName && profileData != null) {
+    final name = ((profileData['account'] as Map<String, dynamic>?) ?? const {})['name'] as String?;
+    if (name != null && name.trim().isNotEmpty) return name.trim();
+  }
   return member.participantName;
 }
 
-/// Profile badge URL for a [TripMember].
-///
-/// Returns '' for unclaimed members (no [TripMember.userId]).
-/// For claimed members, looks up [userDocsById] by UID.
-String resolveTripMemberBadgeUrl(
-  TripMember member,
-  Map<String, Map<String, dynamic>> userDocsById,
-) {
-  final uid = member.userId;
-  if (uid == null || uid.trim().isEmpty) return '';
-  return tripMemberStoredProfileBadgeUrl(userDocsById[uid]);
-}
-
 /// Display labels for all [members], keyed by TripMember document ID.
-Map<String, String> tripMemberLabelsFromMembers(List<TripMember> members) {
-  return {for (final m in members) m.id: m.participantName};
-}
-
-/// Badge URLs for all [members], keyed by TripMember document ID.
-/// Only claimed members (userId != null) may have a photo.
-Map<String, String> tripMemberBadgeUrlsFromMembers(
-  List<TripMember> members,
-  Map<String, Map<String, dynamic>> userDocsById,
-) {
+///
+/// Pass [userDocsById] to enable profile-name resolution for members with [TripMember.useProfileName].
+Map<String, String> tripMemberLabelsFromMembers(
+  List<TripMember> members, {
+  Map<String, Map<String, dynamic>> userDocsById = const {},
+}) {
   return {
     for (final m in members)
-      m.id: resolveTripMemberBadgeUrl(m, userDocsById),
+      m.id: resolveTripMemberDisplayLabel(m, profileData: userDocsById[m.userId]),
   };
 }
 
-/// When the current user's participant doc is not yet loaded, use Auth
-/// info to build a provisional display name for their own badge.
-///
-/// Returns null if no usable identity is available.
-Map<String, dynamic>? tripMemberUserDataWithAuthFallback(
-  String? userId,
-  Map<String, Map<String, dynamic>> userDocsById,
-) {
-  final uid = userId?.trim() ?? '';
-  if (uid.isEmpty) return null;
-  final existing = userDocsById[uid];
-  if (existing != null) return existing;
-
-  final currentUser = FirebaseAuth.instance.currentUser;
-  if (currentUser?.uid != uid) return null;
-
-  final email = currentUser?.email?.trim() ?? '';
-  final phoneNumber = currentUser?.phoneNumber?.trim() ?? '';
-  var fallbackName = '';
-  if (email.isNotEmpty) {
-    fallbackName = displayLabelFromEmail(email);
-  } else if (phoneNumber.isNotEmpty) {
-    fallbackName = displayLabelFromPhoneNumber(phoneNumber);
-  }
-  if (fallbackName.isEmpty) return null;
-  return {
-    'email': email,
-    'phoneNumber': phoneNumber,
-    'account': <String, dynamic>{
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'name': fallbackName,
-    },
-  };
+/// Extracts the account.name from a user profile document, or null if absent/empty.
+String? profileNameFromData(Map<String, dynamic>? profileData) {
+  if (profileData == null) return null;
+  final name = ((profileData['account'] as Map<String, dynamic>?) ?? const {})['name'] as String?;
+  return (name != null && name.trim().isNotEmpty) ? name.trim() : null;
 }

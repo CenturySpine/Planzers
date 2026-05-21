@@ -264,9 +264,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
 
     // All participants, keyed by document ID.
-    final memberLabels = <String, String>{
-      for (final m in participants) m.id: m.participantName,
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final memberIds = participants.map((m) => m.id).toList(growable: false);
 
     // Auto-select driver: prefer the current user's participant slot.

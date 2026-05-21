@@ -277,9 +277,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountNameHint => 'Example: Alex';
 
   @override
-  String get accountNameMaxLength => 'Maximum 60 characters';
-
-  @override
   String get accountPhoneCountryCodeLabel => 'Country code';
 
   @override
@@ -313,10 +310,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSaveNameTooltip => 'Save name';
-
-  @override
-  String get accountNameFallbackHelp =>
-      'If empty, your email is used as your display name.';
 
   @override
   String get accountFoodAllergens => 'Food allergens';
@@ -379,6 +372,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripsMyTrips => 'My trips';
+
+  @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Show trips I\'m not part of';
 
   @override
   String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';
@@ -1023,7 +1020,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsEditNameTitle => 'Edit name';
 
   @override
+  String get tripParticipantsEditNameModeCustom => 'Custom name';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Profile username';
+
+  @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Available once the traveler has joined the trip.';
+
+  @override
   String get tripParticipantsNameUpdated => 'Name updated';
+
+  @override
+  String get tripParticipantsUseProfileName => 'Use profile username';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Profile username: $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'No profile username available for this option.';
 
   @override
   String get tripParticipantsRemovePlannedTravelerTitle =>
@@ -1365,16 +1384,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continue with my current profile';
-
-  @override
-  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Choose how you want to appear to other participants on this trip.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'First name or nickname';
 
   @override
   String get inviteBypassFirstNameInvalid =>
@@ -2811,13 +2820,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get publicProfileTitle => 'Profile';
 
   @override
-  String get maintenanceTitle => 'Maintenance in progress';
-
-  @override
-  String get maintenanceBody =>
-      'The app is temporarily unavailable. It will be back very soon.';
-
-  @override
   String get profileNameDialogTitle => 'Choose your display name';
 
   @override
@@ -3101,9 +3103,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountNameHint => 'Example: Alex';
 
   @override
-  String get accountNameMaxLength => 'Maximum 60 characters';
-
-  @override
   String get accountPhoneCountryCodeLabel => 'Country code';
 
   @override
@@ -3137,10 +3136,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountSaveNameTooltip => 'Save name';
-
-  @override
-  String get accountNameFallbackHelp =>
-      'If empty, your email is used as your display name.';
 
   @override
   String get accountFoodAllergens => 'Food allergens';
@@ -3203,6 +3198,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsMyTrips => 'My trips';
+
+  @override
+  String get tripsApplicationOwnerShowNonMemberTrips =>
+      'Show trips I\'m not part of';
 
   @override
   String get tripsEmptyState => 'No trips yet.\nCreate your first trip.';
@@ -3776,7 +3775,29 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripParticipantsEditNameTitle => 'Edit name';
 
   @override
+  String get tripParticipantsEditNameModeCustom => 'Custom name';
+
+  @override
+  String get tripParticipantsEditNameModeProfile => 'Profile username';
+
+  @override
+  String get tripParticipantsEditNameProfileRequiresClaim =>
+      'Available once the traveler has joined the trip.';
+
+  @override
   String get tripParticipantsNameUpdated => 'Name updated';
+
+  @override
+  String get tripParticipantsUseProfileName => 'Use profile username';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Profile username: $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'No profile username available for this option.';
 
   @override
   String get tripParticipantsRemovePlannedTravelerTitle =>
@@ -4118,16 +4139,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get inviteJoinWithCurrentProfileAction =>
       'Continue with my current profile';
-
-  @override
-  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
-
-  @override
-  String get inviteBypassFirstNameBody =>
-      'Choose how you want to appear to other participants on this trip.';
-
-  @override
-  String get inviteBypassFirstNameLabel => 'First name or nickname';
 
   @override
   String get inviteBypassFirstNameInvalid =>
@@ -5562,13 +5573,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get publicProfileTitle => 'Profile';
-
-  @override
-  String get maintenanceTitle => 'Maintenance in progress';
-
-  @override
-  String get maintenanceBody =>
-      'The app is temporarily unavailable. It will be back very soon.';
 
   @override
   String get profileNameDialogTitle => 'Choose your display name';
