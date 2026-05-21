@@ -164,6 +164,46 @@ function buildDefaultStayFields(tripData) {
 }
 
 // ---------------------------------------------------------------------------
+// Pre-flight validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Vérifie la cohérence du document voyage avant toute écriture.
+ * Retourne un tableau de chaînes décrivant les erreurs bloquantes (vide = OK).
+ *
+ * Incohérences détectées :
+ *   1. Doc members/{uid} présent mais uid absent de memberIds
+ *      → les données de ce membre seraient perdues lors de l'étape 3.
+ *   2. memberIds et memberUserIds coexistent dans le document voyage
+ *      → indicateur d'une migration précédente incomplète.
+ */
+function preFlightValidation(data, membersSubSnap) {
+  const issues = [];
+
+  const memberIds = Array.isArray(data.memberIds) ? data.memberIds : [];
+  const memberIdsSet = new Set(memberIds);
+
+  for (const mDoc of membersSubSnap.docs) {
+    const uid = mDoc.id;
+    if (!memberIdsSet.has(uid)) {
+      issues.push(
+        `members/${uid} est présent dans la sous-collection mais absent de memberIds` +
+        ` — ses données seraient perdues lors de la migration`,
+      );
+    }
+  }
+
+  if (data.memberIds != null && data.memberUserIds != null) {
+    issues.push(
+      `Le document contient à la fois "memberIds" et "memberUserIds"` +
+      ` — état de migration partielle détecté, vérification manuelle requise`,
+    );
+  }
+
+  return issues;
+}
+
+// ---------------------------------------------------------------------------
 // Core migration — single trip
 // ---------------------------------------------------------------------------
 
@@ -212,6 +252,18 @@ async function migrateTripDoc(tripRef, data, opts, stats) {
         console.log(`    members/${mDoc.id} -> [${fields}]`);
       }
     }
+  }
+
+  // --- Pre-flight validation ---
+  const preFlightIssues = preFlightValidation(data, membersSubSnap);
+  if (preFlightIssues.length > 0) {
+    console.error(`\nERREUR — Incohérences détectées sur trips/${tripId}. Migration annulée.`);
+    console.error('Corrigez ces entrées manuellement avant de relancer :\n');
+    for (const issue of preFlightIssues) {
+      console.error(`  → ${issue}`);
+    }
+    stats.errors++;
+    return;
   }
 
   if (opts.dryRun) {
