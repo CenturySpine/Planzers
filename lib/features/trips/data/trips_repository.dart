@@ -547,6 +547,7 @@ class TripsRepository {
     required String tripId,
     required String participantId,
     required String participantName,
+    required bool useProfileName,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -592,7 +593,10 @@ class TripsRepository {
       );
     }
 
-    await participantRef.update(<String, dynamic>{'participantName': name});
+    await participantRef.update(<String, dynamic>{
+      'participantName': name,
+      'useProfileName': useProfileName,
+    });
   }
 
   Future<void> removeTripParticipant({

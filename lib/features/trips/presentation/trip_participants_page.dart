@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -166,46 +167,79 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
   Future<void> _openEditParticipantDialog({
     required String participantId,
     required String currentName,
+    required bool currentUseProfileName,
+    required bool isClaimed,
+    Map<String, dynamic>? profileData,
   }) async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: currentName);
+    final profileName = profileNameFromData(profileData);
+    var dialogUseProfileName = currentUseProfileName && profileName != null;
+
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.tripParticipantsEditNameTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: l10n.commonName,
-            border: const OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(l10n.tripParticipantsEditNameTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: controller,
+                enabled: !dialogUseProfileName,
+                autofocus: !dialogUseProfileName,
+                decoration: InputDecoration(
+                  labelText: l10n.commonName,
+                  border: const OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+              ),
+              if (isClaimed) ...[
+                const SizedBox(height: 12),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.tripParticipantsUseProfileName),
+                  subtitle: Text(
+                    profileName != null
+                        ? l10n.tripParticipantsProfileNameDisplay(profileName)
+                        : l10n.tripParticipantsNoProfileNameHint,
+                  ),
+                  value: dialogUseProfileName,
+                  onChanged: profileName != null
+                      ? (v) => setDialogState(() => dialogUseProfileName = v)
+                      : null,
+                ),
+              ],
+            ],
           ),
-          textInputAction: TextInputAction.done,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.commonSave),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.commonSave),
-          ),
-        ],
       ),
     );
     final name = ok == true ? controller.text.trim() : '';
+    final savedUseProfileName = ok == true ? dialogUseProfileName : currentUseProfileName;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.dispose();
     });
 
     if (ok != true || !mounted) return;
-    if (name.isEmpty) return;
+    if (name.isEmpty && !savedUseProfileName) return;
     try {
       await ref.read(tripsRepositoryProvider).updateTripParticipantName(
             tripId: widget.tripId,
             participantId: participantId,
             participantName: name,
+            useProfileName: savedUseProfileName,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -597,7 +631,12 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                       participantId:
                                                           row.participantId,
                                                       currentName:
-                                                          row.displayLabel,
+                                                          row.rawParticipantName,
+                                                      currentUseProfileName:
+                                                          row.useProfileName,
+                                                      isClaimed: row.isClaimed,
+                                                      profileData:
+                                                          row.profileData,
                                                     ),
                                                   ),
                                                 if (canDeleteThisRow)
@@ -734,7 +773,9 @@ List<_ParticipantRow> _participantRowsForTrip(
       participantId: member.id,
       userId: member.userId,
       isClaimed: member.isClaimed,
-      displayLabel: member.participantName,
+      rawParticipantName: member.participantName,
+      useProfileName: member.useProfileName,
+      displayLabel: resolveTripMemberDisplayLabel(member, profileData: profileData),
       isAdmin: member.userId != null
           ? trip.memberHasAdminRole(member.userId!)
           : false,
@@ -850,6 +891,8 @@ class _ParticipantRow {
     required this.participantId,
     required this.userId,
     required this.isClaimed,
+    required this.rawParticipantName,
+    required this.useProfileName,
     required this.displayLabel,
     required this.isAdmin,
     required this.likedByMe,
@@ -860,6 +903,8 @@ class _ParticipantRow {
   final String participantId;
   final String? userId;
   final bool isClaimed;
+  final String rawParticipantName;
+  final bool useProfileName;
   final String displayLabel;
   final bool isAdmin;
   final bool likedByMe;

@@ -1931,6 +1931,24 @@ abstract class AppLocalizations {
   /// **'Nom mis à jour'**
   String get tripParticipantsNameUpdated;
 
+  /// No description provided for @tripParticipantsUseProfileName.
+  ///
+  /// In fr, this message translates to:
+  /// **'Utiliser le pseudo du profil'**
+  String get tripParticipantsUseProfileName;
+
+  /// No description provided for @tripParticipantsProfileNameDisplay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil : {name}'**
+  String tripParticipantsProfileNameDisplay(Object name);
+
+  /// No description provided for @tripParticipantsNoProfileNameHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun pseudo de profil disponible pour cette option.'**
+  String get tripParticipantsNoProfileNameHint;
+
   /// No description provided for @tripParticipantsRemovePlannedTravelerTitle.
   ///
   /// In fr, this message translates to:

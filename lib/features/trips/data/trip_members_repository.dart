@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 
 final tripMembersRepositoryProvider = Provider<TripMembersRepository>((ref) {
@@ -49,6 +51,38 @@ final tripMembersPhoneVisibilityStreamProvider =
   return ref
       .watch(tripMembersRepositoryProvider)
       .watchAllMembersPhoneVisibility(tripId);
+});
+
+/// Resolved display labels for all trip participants, keyed by member ID and user ID.
+///
+/// Fetches profile docs internally — only for participants with [TripMember.useProfileName].
+/// Pages just watch this provider; no need to pass profileData anywhere.
+final tripMemberResolvedLabelsProvider =
+    Provider.autoDispose.family<Map<String, String>, String>((ref, tripId) {
+  final participants =
+      ref.watch(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
+  final relevantUids = participants
+      .where((m) =>
+          m.useProfileName && m.userId != null && m.userId!.trim().isNotEmpty)
+      .map((m) => m.userId!.trim())
+      .toSet()
+      .toList();
+  final userDocsById = relevantUids.isEmpty
+      ? const <String, Map<String, dynamic>>{}
+      : ref
+              .watch(usersDataByIdsKeyStreamProvider(
+                  stableUsersIdsKey(relevantUids)))
+              .asData
+              ?.value ??
+          const <String, Map<String, dynamic>>{};
+  return {
+    for (final m in participants) ...<String, String>{
+      m.id: resolveTripMemberDisplayLabel(m, profileData: userDocsById[m.userId]),
+      if (m.userId != null)
+        m.userId!:
+            resolveTripMemberDisplayLabel(m, profileData: userDocsById[m.userId]),
+    },
+  };
 });
 
 class TripMembersRepository {

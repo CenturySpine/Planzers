@@ -406,6 +406,12 @@
   "tripParticipantsPlannedTravelerAdded": "Planned traveler added",
   "tripParticipantsEditNameTitle": "Edit name",
   "tripParticipantsNameUpdated": "Name updated",
+  "tripParticipantsUseProfileName": "Use profile username",
+  "tripParticipantsProfileNameDisplay": "Profile username: {name}",
+  "@tripParticipantsProfileNameDisplay": {
+    "placeholders": {"name": {}}
+  },
+  "tripParticipantsNoProfileNameHint": "No profile username available for this option.",
   "tripParticipantsRemovePlannedTravelerTitle": "Remove this planned traveler?",
   "tripParticipantsRemovePlannedTravelerBody": "\"{label}\" will be removed from participants.",
   "@tripParticipantsRemovePlannedTravelerBody": {

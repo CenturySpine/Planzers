@@ -463,14 +463,8 @@ class _ReadBody extends ConsumerWidget {
           : false,
       orElse: () => false,
     );
-    final participants =
-        ref.watch(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
-    final tripMemberPublicLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final tripMemberPublicLabels =
+        ref.watch(tripMemberResolvedLabelsProvider(tripId));
 
     return ListView(
       padding: const EdgeInsets.all(16),

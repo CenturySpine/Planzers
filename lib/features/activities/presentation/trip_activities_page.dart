@@ -160,14 +160,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       trip: trip,
       userId: myUid,
     );
-    final participants =
-        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));

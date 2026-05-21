@@ -1026,6 +1026,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
+  String get tripParticipantsUseProfileName => 'Use profile username';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Profile username: $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'No profile username available for this option.';
+
+  @override
   String get tripParticipantsRemovePlannedTravelerTitle =>
       'Remove this planned traveler?';
 
@@ -3770,6 +3782,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsNameUpdated => 'Name updated';
+
+  @override
+  String get tripParticipantsUseProfileName => 'Use profile username';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Profile username: $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'No profile username available for this option.';
 
   @override
   String get tripParticipantsRemovePlannedTravelerTitle =>

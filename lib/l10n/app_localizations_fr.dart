@@ -1041,6 +1041,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsNameUpdated => 'Nom mis à jour';
 
   @override
+  String get tripParticipantsUseProfileName => 'Utiliser le pseudo du profil';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Pseudo du profil : $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'Aucun pseudo de profil disponible pour cette option.';
+
+  @override
   String get tripParticipantsRemovePlannedTravelerTitle =>
       'Retirer ce voyageur prévu ?';
 
@@ -3811,6 +3823,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsNameUpdated => 'Nom mis à jour';
+
+  @override
+  String get tripParticipantsUseProfileName => 'Utiliser le pseudo du profil';
+
+  @override
+  String tripParticipantsProfileNameDisplay(Object name) {
+    return 'Pseudo du profil : $name';
+  }
+
+  @override
+  String get tripParticipantsNoProfileNameHint =>
+      'Aucun pseudo de profil disponible pour cette option.';
 
   @override
   String get tripParticipantsRemovePlannedTravelerTitle =>

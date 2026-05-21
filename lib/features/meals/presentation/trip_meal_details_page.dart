@@ -1376,12 +1376,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             .asData
             ?.value ??
         [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels =
+        ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
     final allParticipantUserIds = <String>[
       for (final m in participants)
         if (m.userId != null && m.userId!.trim().isNotEmpty) m.userId!.trim(),

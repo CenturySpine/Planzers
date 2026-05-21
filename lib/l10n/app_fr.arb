@@ -406,6 +406,12 @@
   "tripParticipantsPlannedTravelerAdded": "Voyageur prévu ajouté",
   "tripParticipantsEditNameTitle": "Modifier le nom",
   "tripParticipantsNameUpdated": "Nom mis à jour",
+  "tripParticipantsUseProfileName": "Utiliser le pseudo du profil",
+  "tripParticipantsProfileNameDisplay": "Pseudo du profil : {name}",
+  "@tripParticipantsProfileNameDisplay": {
+    "placeholders": {"name": {}}
+  },
+  "tripParticipantsNoProfileNameHint": "Aucun pseudo de profil disponible pour cette option.",
   "tripParticipantsRemovePlannedTravelerTitle": "Retirer ce voyageur prévu ?",
   "tripParticipantsRemovePlannedTravelerBody": "« {label} » sera retiré des participants.",
   "@tripParticipantsRemovePlannedTravelerBody": {

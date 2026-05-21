@@ -24,14 +24,7 @@ class TripMealsPage extends ConsumerWidget {
       userId: currentUserId,
     );
     final mealsAsync = ref.watch(tripMealsStreamProvider(trip.id));
-    final participants =
-        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
 
     return mealsAsync.when(
       data: (meals) => _MealsList(

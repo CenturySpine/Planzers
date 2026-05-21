@@ -118,15 +118,8 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage>
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
     final gamesAsync = ref.watch(tripBoardGamesStreamProvider(widget.tripId));
     final currentUserId = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
-    final participants =
-        ref.watch(tripParticipantsStreamProvider(widget.tripId)).asData?.value ??
-            [];
-    final memberLabels = <String, String>{
-      for (final m in participants) ...<String, String>{
-        m.id: m.participantName,
-        if (m.userId != null) m.userId!: m.participantName,
-      },
-    };
+    final memberLabels =
+        ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
 
     return tripAsync.when(
       data: (trip) {
