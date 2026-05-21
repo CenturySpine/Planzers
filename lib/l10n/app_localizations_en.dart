@@ -411,6 +411,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsDestinationLabel => 'Destination';
 
   @override
+  String get tripsCreateCreatorNameLabel => 'Your name';
+
+  @override
   String get tripsStartDateLabel => 'Start date';
 
   @override
@@ -418,7 +421,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripsCreateValidationRequired =>
-      'Title and destination are required';
+      'Title, destination and your name are required';
 
   @override
   String get tripsCreateValidationDateOrder =>
@@ -677,27 +680,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prepare permission management related to trip participants.';
+      'Minimum roles for managing trip participants.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Reset is ready (permissions list coming soon)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Create a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Edit a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Delete a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Delete a registered participant';
+  String get tripPermissionParticipantsManage =>
+      'Manage participants (create, edit, delete)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>
@@ -1380,6 +1367,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Continue with my current profile';
 
   @override
+  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
+
+  @override
+  String get inviteBypassFirstNameBody =>
+      'Choose how you want to appear to other participants on this trip.';
+
+  @override
+  String get inviteBypassFirstNameLabel => 'First name or nickname';
+
+  @override
+  String get inviteBypassFirstNameInvalid =>
+      'Enter between 2 and 50 characters.';
+
+  @override
+  String get inviteBypassFirstNameRequired =>
+      'Enter your first name or nickname to join this trip.';
+
+  @override
+  String inviteBypassJoiningAs(Object name) {
+    return 'You will join as \"$name\"';
+  }
+
+  @override
+  String get inviteBypassChangeName => 'Change';
+
+  @override
   String get inviteOptionsEditableAfterJoinInfo =>
       'You can change all these options at any time after joining the trip.';
 
@@ -1580,7 +1593,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filter shows only items matching the selected state.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
@@ -2803,6 +2816,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get maintenanceBody =>
       'The app is temporarily unavailable. It will be back very soon.';
+
+  @override
+  String get profileNameDialogTitle => 'Choose your display name';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Name or nickname';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'A display name is required to use Planerz.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -3212,6 +3235,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripsDestinationLabel => 'Destination';
 
   @override
+  String get tripsCreateCreatorNameLabel => 'Your name';
+
+  @override
   String get tripsStartDateLabel => 'Start date';
 
   @override
@@ -3219,7 +3245,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsCreateValidationRequired =>
-      'Title and destination are required';
+      'Title, destination and your name are required';
 
   @override
   String get tripsCreateValidationDateOrder =>
@@ -3478,27 +3504,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPermissionsParticipantsDescription =>
-      'Prepare permission management related to trip participants.';
+      'Minimum roles for managing trip participants.';
 
   @override
-  String get tripPermissionsParticipantsResetPending =>
-      'Reset is ready (permissions list coming soon)';
-
-  @override
-  String get tripPermissionParticipantsCreate =>
-      'Create a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsEditPlaceholder =>
-      'Edit a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeletePlaceholder =>
-      'Delete a temporary participant';
-
-  @override
-  String get tripPermissionParticipantsDeleteRegistered =>
-      'Delete a registered participant';
+  String get tripPermissionParticipantsManage =>
+      'Manage participants (create, edit, delete)';
 
   @override
   String get tripPermissionParticipantsToggleAdmin =>
@@ -4110,6 +4120,32 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Continue with my current profile';
 
   @override
+  String get inviteBypassFirstNameTitle => 'Your first name or nickname';
+
+  @override
+  String get inviteBypassFirstNameBody =>
+      'Choose how you want to appear to other participants on this trip.';
+
+  @override
+  String get inviteBypassFirstNameLabel => 'First name or nickname';
+
+  @override
+  String get inviteBypassFirstNameInvalid =>
+      'Enter between 2 and 50 characters.';
+
+  @override
+  String get inviteBypassFirstNameRequired =>
+      'Enter your first name or nickname to join this trip.';
+
+  @override
+  String inviteBypassJoiningAs(Object name) {
+    return 'You will join as \"$name\"';
+  }
+
+  @override
+  String get inviteBypassChangeName => 'Change';
+
+  @override
   String get inviteOptionsEditableAfterJoinInfo =>
       'You can change all these options at any time after joining the trip.';
 
@@ -4310,7 +4346,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get shoppingFiltersHelpBody =>
-      'The filter shows only items matching the selected state.';
+      'The filters for all items, to buy, and already checked are mutually exclusive. The « claimed by me » filter adds on top and only keeps your claimed lines among what those filters already show.';
 
   @override
   String get shoppingFilterAll => 'All items';
@@ -5533,4 +5569,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get maintenanceBody =>
       'The app is temporarily unavailable. It will be back very soon.';
+
+  @override
+  String get profileNameDialogTitle => 'Choose your display name';
+
+  @override
+  String get profileNameDialogFieldLabel => 'Name or nickname';
+
+  @override
+  String get profileNameRequiredMessage =>
+      'A display name is required to use Planerz.';
 }

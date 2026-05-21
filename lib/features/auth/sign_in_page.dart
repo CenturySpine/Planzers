@@ -12,7 +12,10 @@ import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
+import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/auth/display_name_setup_dialog.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/app/app_version_provider.dart';
@@ -123,21 +126,57 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     return maxWidth;
   }
 
+  void _navigateAfterSignIn() {
+    final redirect = widget.redirectAfterSignIn;
+    if (redirect != null && redirect.trim().isNotEmpty) {
+      context.go(redirect);
+    } else {
+      context.go('/trips');
+    }
+  }
+
+  Future<bool> _accountNameNeedsSetup() async {
+    try {
+      final snapshot = await ref
+          .read(accountRepositoryProvider)
+          .watchMyUserDocument()
+          .first;
+      final name =
+          (snapshot.data()?['account'] as Map<String, dynamic>?)?['name']
+              as String?;
+      return accountNameNeedsSetup(name);
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _signInWithGoogle() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await ref.read(authRepositoryProvider).signInWithGoogle();
-      if (mounted) {
-        final redirect = widget.redirectAfterSignIn;
-        if (redirect != null && redirect.trim().isNotEmpty) {
-          context.go(redirect);
-        } else {
-          context.go('/trips');
+      final credential =
+          await ref.read(authRepositoryProvider).signInWithGoogle();
+      if (credential.user != null) {
+        await ref
+            .read(usersRepositoryProvider)
+            .ensureUserDocument(credential.user!);
+      }
+      if (!mounted) return;
+      final needsName = await _accountNameNeedsSetup();
+      if (needsName && mounted) {
+        final saved = await showDisplayNameSetupDialog(context);
+        if (!mounted) return;
+        if (!saved) {
+          _showInfoSnackBar(
+            AppLocalizations.of(context)!.profileNameRequiredMessage,
+          );
+          await ref.read(authRepositoryProvider).auth.signOut();
+          return;
         }
       }
+      if (mounted) _navigateAfterSignIn();
     } on FirebaseAuthException catch (e) {
       debugPrint('Google sign-in error: ${e.message ?? e.code}');
     } catch (e) {

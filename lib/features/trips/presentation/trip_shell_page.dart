@@ -7,33 +7,9 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
-import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
-
-/// Backfill [Trip.memberPublicLabels] for the current user (e.g. voyages créés
-/// avant le déploiement des fonctions). Au plus un appel par voyage et par
-/// lancement d'app, et seulement si l'entrée est encore absente.
-final _tripMemberPublicLabelHealScheduled = <String>{};
-
-void _scheduleTripMemberPublicLabelHealIfNeeded(WidgetRef ref, Trip trip) {
-  final uid = FirebaseAuth.instance.currentUser?.uid.trim();
-  if (uid == null || uid.isEmpty) return;
-
-  final existing = trip.memberPublicLabels[uid]?.trim() ?? '';
-  if (existing.isNotEmpty) return;
-
-  final id = trip.id.trim();
-  if (id.isEmpty) return;
-  if (!_tripMemberPublicLabelHealScheduled.add(id)) return;
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    ref
-        .read(tripsRepositoryProvider)
-        .registerMyTripMemberLabel(tripId: id)
-        .catchError((Object _) {});
-  });
-}
 
 /// Width at which we show a [NavigationRail] instead of a bottom nav bar.
 const double _kTripShellWideBreakpoint = 720;
@@ -183,25 +159,15 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     return tripAsync.when(
       data: (trip) {
         if (trip == null) {
-          return Scaffold(
-            appBar: AppBar(title: Text(l10n.tripLabelGeneric)),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.tripNotFoundOrNoAccess,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.go('/trips');
+          });
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         final titleForAppBar =
             trip.title.isEmpty ? l10n.tripLabelGeneric : trip.title;
         _precacheTripBannerIfNeeded(trip.bannerImageUrl);
-
-        _scheduleTripMemberPublicLabelHealIfNeeded(ref, trip);
 
         return TripScope(
           trip: trip,

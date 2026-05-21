@@ -50,7 +50,7 @@ class MealsRepository {
     return firestore
         .collection('trips')
         .doc(tripId.trim())
-        .collection('members')
+        .collection('participants')
         .doc(memberId.trim());
   }
 

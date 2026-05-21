@@ -51,7 +51,7 @@ class TripAnnouncementsRepository {
     final tripData = tripSnap.data() ?? const <String, dynamic>{};
     final trip = Trip.fromMap(tripSnap.id, tripData);
     final uid = user.uid.trim();
-    if (!trip.memberIds.contains(uid)) {
+    if (!trip.memberUserIds.contains(uid)) {
       throw StateError('Acces refuse');
     }
     final currentRole = resolveTripPermissionRole(trip: trip, userId: uid);

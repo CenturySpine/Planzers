@@ -96,15 +96,17 @@ class CupidonRepository {
     return firestore
         .collection('trips')
         .doc(cleanTripId)
-        .collection('members')
+        .collection('participants')
         .where('cupidonEnabled', isEqualTo: true)
         .snapshots()
-        .map(
-          (snap) => snap.docs
-              .map((doc) => doc.id.trim())
-              .where((id) => id.isNotEmpty)
-              .toSet(),
-        );
+        .map((snap) {
+      final ids = <String>{};
+      for (final doc in snap.docs) {
+        final uid = (doc.data()['userId'] as String?)?.trim() ?? '';
+        if (uid.isNotEmpty) ids.add(uid);
+      }
+      return ids;
+    });
   }
 
   Stream<bool> watchMyTripCupidonEnabled(String tripId) {
@@ -116,10 +118,12 @@ class CupidonRepository {
     return firestore
         .collection('trips')
         .doc(cleanTripId)
-        .collection('members')
-        .doc(uid)
+        .collection('participants')
+        .where('userId', isEqualTo: uid)
+        .limit(1)
         .snapshots()
-        .map((doc) => doc.data()?['cupidonEnabled'] == true);
+        .map((snap) =>
+            snap.docs.isNotEmpty && snap.docs.first.data()['cupidonEnabled'] == true);
   }
 
   Stream<Set<String>> watchMyLikedTargetIds(String tripId) {

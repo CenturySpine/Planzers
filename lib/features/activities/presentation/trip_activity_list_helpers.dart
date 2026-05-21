@@ -2,7 +2,6 @@ import 'dart:ui' show Locale;
 
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -34,20 +33,12 @@ enum TripActivitiesAdapterCategory { repas }
 
 String creatorLabelForActivity(
   TripActivity activity,
-  Map<String, String> tripMemberPublicLabels, {
-  required Map<String, Map<String, dynamic>> usersDataById,
-  String? currentUserId,
+  Map<String, String> memberLabels, {
   required String unknownLabel,
 }) {
   final id = activity.createdBy.trim();
   if (id.isEmpty) return unknownLabel;
-  return resolveTripMemberDisplayLabel(
-    memberId: id,
-    userData: usersDataById[id],
-    tripMemberPublicLabels: tripMemberPublicLabels,
-    currentUserId: currentUserId,
-    emptyFallback: unknownLabel,
-  );
+  return memberLabels[id] ?? unknownLabel;
 }
 
 DateTime tripActivityDateOnly(DateTime value) {

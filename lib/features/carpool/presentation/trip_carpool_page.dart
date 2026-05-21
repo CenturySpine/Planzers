@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_form_page.dart';
@@ -198,10 +198,23 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final trip = TripScope.of(context);
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
+    // Participant document ID → display name.
+    final memberLabels = <String, String>{
+      for (final m in participants) m.id: m.participantName,
+    };
+    // Participant document ID → Firebase UID (for profile photo lookup).
+    final participantIdToUserId = <String, String>{
+      for (final m in participants)
+        if (m.userId != null && m.userId!.trim().isNotEmpty)
+          m.id: m.userId!.trim(),
+    };
     final carpoolsAsync = ref.watch(tripCarpoolsStreamProvider(trip.id));
     final carpoolSectionAsync =
         ref.watch(tripCarpoolSectionStreamProvider(trip.id));
     final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final myUidTrimmed = myUid?.trim() ?? '';
     final canPropose = canProposeCarpoolForTrip(trip: trip, userId: myUid);
     final canEditGlobalMeetup = canUpdateCarpoolShoppingMeetupPointForTrip(
       trip: trip,
@@ -213,6 +226,13 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
       currentRole: currentTripRole,
       minRole: TripPermissionRole.admin,
     );
+    // Current user's participant document ID (null if not a participant).
+    final myParticipantId = myUidTrimmed.isNotEmpty
+        ? participants
+            .where((m) => m.userId?.trim() == myUidTrimmed)
+            .map((m) => m.id)
+            .firstOrNull
+        : null;
     return Scaffold(
       body: carpoolSectionAsync.when(
         data: (carpoolSection) {
@@ -225,46 +245,38 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
           return carpoolsAsync.when(
             data: (carpools) {
               final carpoolsForList = [...carpools];
-              if (myUid != null && carpoolsForList.length > 1) {
+              if (myParticipantId != null && carpoolsForList.length > 1) {
                 carpoolsForList.sort((a, b) {
-                  final aMine = a.assignedParticipantIds.contains(myUid);
-                  final bMine = b.assignedParticipantIds.contains(myUid);
+                  final aMine = a.assignedParticipantIds.contains(myParticipantId);
+                  final bMine = b.assignedParticipantIds.contains(myParticipantId);
                   if (aMine == bMine) return 0;
                   return aMine ? -1 : 1;
                 });
               }
-              final assignedIds = <String>{
+              final assignedParticipantIdSet = <String>{
                 for (final carpool in carpools)
                   ...carpool.assignedParticipantIds,
               };
-              final unassignedMembers = trip.memberIds
-                  .where((memberId) => memberId.trim().isNotEmpty)
-                  .where((memberId) => !assignedIds.contains(memberId))
+              final unassignedMembers = participants
+                  .where((m) => !assignedParticipantIdSet.contains(m.id))
                   .length;
-              final myUidTrimmed = myUid?.trim() ?? '';
-              final showSelfUnassignedCard = myUidTrimmed.isNotEmpty &&
-                  trip.memberIds.any((id) => id.trim() == myUidTrimmed) &&
+              final showSelfUnassignedCard = myParticipantId != null &&
                   !carpools.any(
                     (carpool) => carpool.assignedParticipantIds.any(
-                      (id) => id.trim() == myUidTrimmed,
+                      (id) => id.trim() == myParticipantId,
                     ),
                   );
-              final showGlobalShoppingMeetupSection = myUidTrimmed.isNotEmpty &&
+              final showGlobalShoppingMeetupSection = myParticipantId != null &&
                   carpools.any(
                     (carpool) =>
                         carpool.goesShopping &&
                         carpool.assignedParticipantIds.any(
-                          (id) => id.trim() == myUidTrimmed,
+                          (id) => id.trim() == myParticipantId,
                         ),
                   );
 
-              final labelUserIds = <String>{
-                for (final id in trip.memberIds)
-                  if (id.trim().isNotEmpty) id.trim(),
-                for (final carpool in carpools)
-                  if (carpool.driverUserId.trim().isNotEmpty)
-                    carpool.driverUserId.trim(),
-              }.toList(growable: false);
+              // Collect all participant userIds to fetch profile photos.
+              final labelUserIds = participantIdToUserId.values.toList(growable: false);
               final usersIdsKey = stableUsersIdsKey(labelUserIds);
               final usersAsync = ref.watch(
                 usersDataByIdsKeyStreamProvider(usersIdsKey),
@@ -272,20 +284,11 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
 
               return usersAsync.when(
                 data: (userDocs) {
-                  final memberLabels = tripMemberLabelsFromUserDocsById(
-                    userDocs,
-                    labelUserIds,
-                    tripMemberPublicLabels: trip.memberPublicLabels,
-                    currentUserId: myUid,
-                    emptyFallback: l10n.tripParticipantsTraveler,
-                  );
-                  final viewerIsDriverOnTrip = myUidTrimmed.isNotEmpty &&
+                  final viewerIsDriverOnTrip = myParticipantId != null &&
                       carpools.any(
-                        (c) => c.driverUserId.trim() == myUidTrimmed,
+                        (c) => c.driverParticipantId.trim() == myParticipantId,
                       );
-                  final canUsePassengerSelfAssignment =
-                      myUidTrimmed.isNotEmpty &&
-                          trip.memberIds.any((id) => id.trim() == myUidTrimmed);
+                  final canUsePassengerSelfAssignment = myParticipantId != null;
                   final passengerSelfAssignmentInteractionLocked =
                       _selfAssignmentBusyCarpoolId != null;
                   return ListView(
@@ -438,9 +441,9 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                       for (final carpool in carpoolsForList)
                         Builder(
                           builder: (context) {
-                            final isUidInThisCarpool =
+                            final isUidInThisCarpool = myParticipantId != null &&
                                 carpool.assignedParticipantIds.any(
-                              (id) => id.trim() == myUidTrimmed,
+                              (id) => id.trim() == myParticipantId,
                             );
                             final remainingPassengerSeats =
                                 carpool.availableSeats -
@@ -454,7 +457,8 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                 canUsePassengerSelfAssignment &&
                                     !viewerIsDriverOnTrip &&
                                     isUidInThisCarpool &&
-                                    carpool.driverUserId.trim() != myUidTrimmed;
+                                    carpool.driverParticipantId.trim() !=
+                                        myParticipantId;
                             final joinPassengerSpinner =
                                 _selfAssignmentBusyKind ==
                                         _TripCarpoolSelfAssignmentBusyKind
@@ -471,17 +475,17 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                               children: [
                                 _TripCarpoolCard(
                                   carpool: carpool,
-                                  isCurrentUserInCarpool:
-                                      myUidTrimmed.isNotEmpty &&
-                                          isUidInThisCarpool,
+                                  isCurrentUserInCarpool: isUidInThisCarpool,
                                   driverLabel:
-                                      memberLabels[carpool.driverUserId] ??
+                                      memberLabels[carpool.driverParticipantId] ??
                                           l10n.tripParticipantsTraveler,
-                                  driverUserData:
-                                      userDocs[carpool.driverUserId],
+                                  driverUserData: userDocs[participantIdToUserId[
+                                      carpool.driverParticipantId]],
                                   passengerLabels: carpool
                                       .assignedParticipantIds
-                                      .where((id) => id != carpool.driverUserId)
+                                      .where(
+                                        (id) => id != carpool.driverParticipantId,
+                                      )
                                       .map(
                                         (id) =>
                                             memberLabels[id] ??
