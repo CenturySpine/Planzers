@@ -160,9 +160,9 @@ class _TripsPageState extends ConsumerState<TripsPage>
               if (isApplicationOwner)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: StaticColors.lightBackground,
+                  child: Material(
+                    color: StaticColors.lightBackground,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: SwitchListTile(
