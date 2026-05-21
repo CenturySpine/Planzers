@@ -380,8 +380,11 @@ service cloud.firestore {
     }
 
     function canManageTripParticipants(tripId) {
-      return isTripMember(tripId)
-        && tripCallerRoleRank(tripId) >= roleRank(tripManageParticipantsMinRole(tripId));
+      return isApplicationOwner()
+        || (
+          isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= roleRank(tripManageParticipantsMinRole(tripId))
+        );
     }
 
     function tripCarpoolUpdateShoppingMeetupPointMinRole(tripId) {

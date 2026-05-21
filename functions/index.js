@@ -1,4 +1,4 @@
-﻿const admin = require('firebase-admin');
+const admin = require('firebase-admin');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const {
   onDocumentCreated,
@@ -430,13 +430,21 @@ function tripPermissionsEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function assertTripParticipantPermission({
+async function userIsApplicationOwner(uid) {
+  const snap = await admin.firestore().collection('users').doc(uid).get();
+  return snap.exists && snap.data()?.isApplicationOwner === true;
+}
+
+async function assertTripParticipantPermission({
   tripData,
   uid,
   permissionKey,
   fallbackRole,
   deniedMessage,
 }) {
+  if (await userIsApplicationOwner(uid)) {
+    return;
+  }
   const memberUserIds = Array.isArray(tripData.memberUserIds)
     ? tripData.memberUserIds.map((v) => String(v))
     : [];
@@ -2449,7 +2457,7 @@ exports.addTripParticipant = onCall(
     }
 
     const tripData = tripSnap.data() || {};
-    assertTripParticipantPermission({
+    await assertTripParticipantPermission({
       tripData,
       uid,
       permissionKey: 'createParticipant',
@@ -2520,7 +2528,7 @@ exports.removeTripParticipant = onCall(
     }
 
     const data = tripSnap.data() || {};
-    assertTripParticipantPermission({
+    await assertTripParticipantPermission({
       tripData: data,
       uid,
       permissionKey: 'deletePlaceholderParticipant',
@@ -3264,7 +3272,7 @@ exports.removeTripRegisteredMember = onCall(
       throw new HttpsError('not-found', 'Voyage introuvable');
     }
     const data = tripSnap.data() || {};
-    assertTripParticipantPermission({
+    await assertTripParticipantPermission({
       tripData: data,
       uid,
       permissionKey: 'deleteRegisteredParticipant',
@@ -3339,7 +3347,7 @@ exports.cycleTripMemberAdminRole = onCall(
     }
 
     const data = tripSnap.data() || {};
-    assertTripParticipantPermission({
+    await assertTripParticipantPermission({
       tripData: data,
       uid,
       permissionKey: 'toggleAdminRole',
@@ -3604,7 +3612,7 @@ exports.updateParticipantProfile = onCall(
     const memberIds = Array.isArray(tripData.memberUserIds)
       ? tripData.memberUserIds.map((v) => String(v))
       : [];
-    if (!memberIds.includes(uid)) {
+    if (!memberIds.includes(uid) && !(await userIsApplicationOwner(uid))) {
       throw new HttpsError('permission-denied', 'Tu ne fais pas partie de ce voyage');
     }
 
@@ -3617,7 +3625,7 @@ exports.updateParticipantProfile = onCall(
       }
       const participantUserId = normalizeString(participantSnap.data()?.userId);
       if (participantUserId !== uid) {
-        assertTripParticipantPermission({
+        await assertTripParticipantPermission({
           tripData,
           uid,
           permissionKey: 'manageParticipants',

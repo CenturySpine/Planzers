@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -624,11 +624,17 @@ class TripsRepository {
     final isOwnParticipant = participantUserId?.trim() == user.uid;
 
     if (!isOwnParticipant) {
-      _ensureTripGeneralPermissionForAction(
-        trip: trip,
-        userId: user.uid,
-        requiredRole: trip.participantsPermissions.manageParticipantsMinRole,
-      );
+      final ownerSnap =
+          await firestore.collection('users').doc(user.uid).get();
+      final isApplicationOwner =
+          ownerSnap.data()?['isApplicationOwner'] == true;
+      if (!isApplicationOwner) {
+        _ensureTripGeneralPermissionForAction(
+          trip: trip,
+          userId: user.uid,
+          requiredRole: trip.participantsPermissions.manageParticipantsMinRole,
+        );
+      }
     }
 
     await participantRef.update(<String, dynamic>{

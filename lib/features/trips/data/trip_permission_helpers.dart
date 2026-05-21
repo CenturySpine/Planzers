@@ -394,3 +394,31 @@ bool canUpdateCarpoolShoppingMeetupPointForTrip({
     minRole: trip.carpoolPermissions.updateShoppingMeetupPointMinRole,
   );
 }
+
+bool canManageTripParticipantsForUser({
+  required Trip trip,
+  required String? userId,
+  required bool isApplicationOwner,
+}) {
+  if (isApplicationOwner) return true;
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty || !trip.memberUserIds.contains(uid)) return false;
+  return isTripRoleAllowed(
+    currentRole: resolveTripPermissionRole(trip: trip, userId: uid),
+    minRole: trip.participantsPermissions.manageParticipantsMinRole,
+  );
+}
+
+bool canToggleTripParticipantAdminRoleForUser({
+  required Trip trip,
+  required String? userId,
+  required bool isApplicationOwner,
+}) {
+  if (isApplicationOwner) return true;
+  final uid = userId?.trim() ?? '';
+  if (uid.isEmpty || !trip.memberUserIds.contains(uid)) return false;
+  return isTripRoleAllowed(
+    currentRole: resolveTripPermissionRole(trip: trip, userId: uid),
+    minRole: trip.participantsPermissions.toggleAdminRoleMinRole,
+  );
+}

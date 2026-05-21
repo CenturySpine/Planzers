@@ -7,6 +7,7 @@ import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
@@ -332,6 +333,8 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
         ref.watch(tripCupidonEnabledMemberIdsProvider(widget.tripId));
     final myLikesAsync =
         ref.watch(myCupidonLikedTargetIdsProvider(widget.tripId));
+    final isApplicationOwner =
+        ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
 
     return asyncTrip.when(
       data: (trip) {
@@ -372,17 +375,16 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                   currentUserRole: currentUserRole,
                 );
                 final myUidTrim = (myUid ?? '').trim();
-                final currentRole = resolveTripPermissionRole(
+                final canManageParticipants = canManageTripParticipantsForUser(
                   trip: trip,
                   userId: myUid,
+                  isApplicationOwner: isApplicationOwner,
                 );
-                final canManageParticipants = isTripRoleAllowed(
-                  currentRole: currentRole,
-                  minRole: trip.participantsPermissions.manageParticipantsMinRole,
-                );
-                final canToggleAdminRole = isTripRoleAllowed(
-                  currentRole: currentRole,
-                  minRole: trip.participantsPermissions.toggleAdminRoleMinRole,
+                final canToggleAdminRole =
+                    canToggleTripParticipantAdminRoleForUser(
+                  trip: trip,
+                  userId: myUid,
+                  isApplicationOwner: isApplicationOwner,
                 );
                 final myCupidonEnabled = enabledCupidonMemberIds
                     .contains((myUid ?? '').trim());
