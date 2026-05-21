@@ -2824,6 +2824,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get publicProfileTitle => 'Profil';
+
+  @override
+  String get maintenanceTitle => 'Maintenance en cours';
+
+  @override
+  String get maintenanceBody =>
+      'L\'application est temporairement indisponible. Elle sera de retour très bientôt.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -5574,4 +5581,11 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get publicProfileTitle => 'Profil';
+
+  @override
+  String get maintenanceTitle => 'Maintenance en cours';
+
+  @override
+  String get maintenanceBody =>
+      'L\'application est temporairement indisponible. Elle sera de retour très bientôt.';
 }

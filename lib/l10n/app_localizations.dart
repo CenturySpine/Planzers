@@ -5084,6 +5084,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Profil'**
   String get publicProfileTitle;
+
+  /// No description provided for @maintenanceTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maintenance en cours'**
+  String get maintenanceTitle;
+
+  /// No description provided for @maintenanceBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'application est temporairement indisponible. Elle sera de retour très bientôt.'**
+  String get maintenanceBody;
 }
 
 class _AppLocalizationsDelegate
