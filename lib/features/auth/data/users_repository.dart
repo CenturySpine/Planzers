@@ -116,12 +116,39 @@ class UsersRepository {
     return (countryCode: '', number: normalized);
   }
 
+  bool _signedInWithPhone(User user) {
+    return user.providerData.any((info) => info.providerId == 'phone');
+  }
+
   Future<void> ensureUserDocument(User user) async {
     final userRef = firestore.collection('users').doc(user.uid);
+    final phoneSignIn = _signedInWithPhone(user);
 
     await firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(userRef);
       final now = FieldValue.serverTimestamp();
+
+      if (phoneSignIn) {
+        // Phone sign-in: never read or write `account` (name setup dialog only).
+        if (snapshot.exists) {
+          transaction.set(
+            userRef,
+            {
+              'uid': user.uid,
+              'lastSignInAt': now,
+            },
+            SetOptions(merge: true),
+          );
+        } else {
+          transaction.set(userRef, {
+            'uid': user.uid,
+            'createdAt': now,
+            'lastSignInAt': now,
+          });
+        }
+        return;
+      }
+
       final googlePhotoUrl = (user.photoURL ?? '').trim();
       final authPhoneNumber = _bestAuthPhoneNumber(user);
       final splitPhone = _splitPhoneNumber(authPhoneNumber);

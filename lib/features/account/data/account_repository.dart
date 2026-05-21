@@ -216,14 +216,16 @@ class AccountRepository {
 
     final userRef = firestore.collection('users').doc(uid);
     final trimmedName = accountName.trim();
-    await userRef.set({
-      'account': {
-        'name': trimmedName,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
+    try {
+      await userRef.update({
+        'account.name': trimmedName,
+      });
+    } on FirebaseException catch (e) {
+      if (e.code != 'not-found') rethrow;
+      await userRef.set({
+        'account': {'name': trimmedName},
+      });
+    }
   }
 
   Future<void> updateAccountEmail(String email) async {
