@@ -542,7 +542,10 @@ service cloud.firestore {
               && tripDoc(tripId).data.ownerId == request.auth.uid
             )
           );
-        allow update: if canManageTripParticipants(tripId)
+        allow update: if (
+            canManageTripParticipants(tripId)
+            || (isTripMember(tripId) && resource.data.userId == request.auth.uid)
+          )
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantName'])
           && request.resource.data.participantName is string
           && request.resource.data.participantName.size() > 0;

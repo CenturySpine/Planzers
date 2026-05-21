@@ -585,7 +585,9 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage> {
                                                                 .error,
                                                           ),
                                                   ),
-                                                if (canManageParticipants)
+                                                if (canManageParticipants ||
+                                                    row.userId?.trim() ==
+                                                        myUidTrim)
                                                   IconButton(
                                                     tooltip: l10n.commonEdit,
                                                     icon: const Icon(

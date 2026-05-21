@@ -572,18 +572,27 @@ class TripsRepository {
 
     final data = snapshot.data() ?? const <String, dynamic>{};
     final trip = Trip.fromMap(snapshot.id, data);
-    _ensureTripGeneralPermissionForAction(
-      trip: trip,
-      userId: user.uid,
-      requiredRole: trip.participantsPermissions.manageParticipantsMinRole,
-    );
 
-    await firestore
+    final participantRef = firestore
         .collection('trips')
         .doc(cleanTripId)
         .collection('participants')
-        .doc(cleanPid)
-        .update(<String, dynamic>{'participantName': name});
+        .doc(cleanPid);
+    final participantSnap = await participantRef.get();
+    final participantUserId =
+        (participantSnap.data() ?? const <String, dynamic>{})['userId']
+            as String?;
+    final isOwnParticipant = participantUserId?.trim() == user.uid;
+
+    if (!isOwnParticipant) {
+      _ensureTripGeneralPermissionForAction(
+        trip: trip,
+        userId: user.uid,
+        requiredRole: trip.participantsPermissions.manageParticipantsMinRole,
+      );
+    }
+
+    await participantRef.update(<String, dynamic>{'participantName': name});
   }
 
   Future<void> removeTripParticipant({
