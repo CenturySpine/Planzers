@@ -12,6 +12,7 @@ import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -31,9 +32,6 @@ class InviteJoinPage extends ConsumerStatefulWidget {
 }
 
 class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
-  static const int _kBypassParticipantNameMinLen = 2;
-  static const int _kBypassParticipantNameMaxLen = 50;
-
   static String _messageForError(BuildContext context, Object e) {
     if (e is FirebaseFunctionsException) {
       final m = e.message;
@@ -68,11 +66,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     context.go('/trips');
   }
 
-  bool _isBypassParticipantNameValid(String? name) {
-    final length = (name ?? '').trim().length;
-    return length >= _kBypassParticipantNameMinLen &&
-        length <= _kBypassParticipantNameMaxLen;
-  }
+  bool _isBypassParticipantNameValid(String? name) =>
+      isDisplayNameLengthValid(name ?? '');
 
   String? _validateBypassParticipantName(AppLocalizations l10n, String raw) {
     if (!_isBypassParticipantNameValid(raw)) {

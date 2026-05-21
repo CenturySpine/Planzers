@@ -604,12 +604,6 @@ abstract class AppLocalizations {
   /// **'Ex : Alex'**
   String get accountNameHint;
 
-  /// No description provided for @accountNameMaxLength.
-  ///
-  /// In fr, this message translates to:
-  /// **'Maximum 60 caractères'**
-  String get accountNameMaxLength;
-
   /// No description provided for @accountPhoneCountryCodeLabel.
   ///
   /// In fr, this message translates to:
@@ -675,12 +669,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Enregistrer le nom'**
   String get accountSaveNameTooltip;
-
-  /// No description provided for @accountNameFallbackHelp.
-  ///
-  /// In fr, this message translates to:
-  /// **'Si vide, le nom affiché sera votre e-mail.'**
-  String get accountNameFallbackHelp;
 
   /// No description provided for @accountFoodAllergens.
   ///

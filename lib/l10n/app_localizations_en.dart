@@ -277,9 +277,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountNameHint => 'Example: Alex';
 
   @override
-  String get accountNameMaxLength => 'Maximum 60 characters';
-
-  @override
   String get accountPhoneCountryCodeLabel => 'Country code';
 
   @override
@@ -313,10 +310,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountSaveNameTooltip => 'Save name';
-
-  @override
-  String get accountNameFallbackHelp =>
-      'If empty, your email is used as your display name.';
 
   @override
   String get accountFoodAllergens => 'Food allergens';
@@ -3116,9 +3109,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountNameHint => 'Example: Alex';
 
   @override
-  String get accountNameMaxLength => 'Maximum 60 characters';
-
-  @override
   String get accountPhoneCountryCodeLabel => 'Country code';
 
   @override
@@ -3152,10 +3142,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get accountSaveNameTooltip => 'Save name';
-
-  @override
-  String get accountNameFallbackHelp =>
-      'If empty, your email is used as your display name.';
 
   @override
   String get accountFoodAllergens => 'Food allergens';
