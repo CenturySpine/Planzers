@@ -2198,6 +2198,21 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajoute des dépenses pour voir la répartition.';
 
   @override
+  String get expensesToReceive => 'À recevoir';
+
+  @override
+  String get expensesToPay => 'À payer';
+
+  @override
+  String get expensesBalanced => 'Équilibré';
+
+  @override
+  String get expensesRefreshBalances => 'Recalculer les soldes';
+
+  @override
+  String get expensesBalancesRefreshed => 'Soldes recalculés';
+
+  @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
 
   @override
@@ -4983,6 +4998,21 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get expensesAddToSeeBreakdown =>
       'Ajoute des dépenses pour voir la répartition.';
+
+  @override
+  String get expensesToReceive => 'À recevoir';
+
+  @override
+  String get expensesToPay => 'À payer';
+
+  @override
+  String get expensesBalanced => 'Équilibré';
+
+  @override
+  String get expensesRefreshBalances => 'Recalculer les soldes';
+
+  @override
+  String get expensesBalancesRefreshed => 'Soldes recalculés';
 
   @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';

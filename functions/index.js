@@ -4916,10 +4916,12 @@ const {
   markExpenseReimbursementPaid,
   unmarkExpenseReimbursementPaid,
   deleteExpenseGroup,
+  refreshExpenseGroupSettlement,
 } = require('./expense_settlement_recalc');
 
 exports.recomputeExpenseGroupSettlement = recomputeExpenseGroupSettlement;
 exports.markExpenseReimbursementPaid = markExpenseReimbursementPaid;
 exports.unmarkExpenseReimbursementPaid = unmarkExpenseReimbursementPaid;
 exports.deleteExpenseGroup = deleteExpenseGroup;
+exports.refreshExpenseGroupSettlement = refreshExpenseGroupSettlement;
 

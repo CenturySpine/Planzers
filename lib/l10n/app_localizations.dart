@@ -3990,6 +3990,36 @@ abstract class AppLocalizations {
   /// **'Ajoute des dépenses pour voir la répartition.'**
   String get expensesAddToSeeBreakdown;
 
+  /// No description provided for @expensesToReceive.
+  ///
+  /// In fr, this message translates to:
+  /// **'À recevoir'**
+  String get expensesToReceive;
+
+  /// No description provided for @expensesToPay.
+  ///
+  /// In fr, this message translates to:
+  /// **'À payer'**
+  String get expensesToPay;
+
+  /// No description provided for @expensesBalanced.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équilibré'**
+  String get expensesBalanced;
+
+  /// No description provided for @expensesRefreshBalances.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recalculer les soldes'**
+  String get expensesRefreshBalances;
+
+  /// No description provided for @expensesBalancesRefreshed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soldes recalculés'**
+  String get expensesBalancesRefreshed;
+
   /// No description provided for @expensesSuggestedReimbursements.
   ///
   /// In fr, this message translates to:

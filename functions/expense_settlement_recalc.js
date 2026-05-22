@@ -6,6 +6,7 @@ const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const {
   BALANCE_EPSILON,
+  BALANCE_SETTLEMENT_THRESHOLD,
   tripExpenseFromDoc,
   computeBalances,
   suggestTransfers,
@@ -134,7 +135,22 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
 
   const expenses = await loadGroupExpenses(db, tripId, cleanGroupId);
   const balancesByCurrency = computeBalances(expenses);
-  const suggested = suggestTransfers(balancesByCurrency);
+
+  // Zero out members whose net balance is below the settlement threshold before
+  // computing suggestions and writing to Firestore, so the client receives no
+  // intelligence about what amount counts as "at equilibrium".
+  const thresholdedByCurrency = {};
+  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    const thresholdedNets = {};
+    for (const [participantId, value] of Object.entries(nets)) {
+      if (Math.abs(value) >= BALANCE_SETTLEMENT_THRESHOLD) {
+        thresholdedNets[participantId] = value;
+      }
+    }
+    thresholdedByCurrency[currency] = thresholdedNets;
+  }
+
+  const suggested = suggestTransfers(thresholdedByCurrency);
   const summary = computeGroupSummary(expenses);
 
   const balancesCol = gRef.collection('balances');
@@ -146,7 +162,7 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
     balancesCol.get(),
   ]);
 
-  const currencyKeys = new Set(Object.keys(balancesByCurrency));
+  const currencyKeys = new Set(Object.keys(thresholdedByCurrency));
 
   await db.runTransaction(async (tx) => {
     const freshGroup = await tx.get(gRef);
@@ -163,7 +179,7 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
       }
     }
 
-    for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    for (const [currency, nets] of Object.entries(thresholdedByCurrency)) {
       const cleanedNets = {};
       for (const [participantId, value] of Object.entries(nets)) {
         if (Math.abs(value) > BALANCE_EPSILON) {
@@ -432,10 +448,36 @@ const deleteExpenseGroup = onCall({}, async (request) => {
   return { ok: true };
 });
 
+const refreshExpenseGroupSettlement = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const tripId = normalizeString(request.data?.tripId);
+  const groupId = normalizeString(request.data?.groupId);
+  if (!tripId || !groupId) {
+    throw new HttpsError('invalid-argument', 'Paramètres invalides');
+  }
+
+  const db = admin.firestore();
+  const tripSnap = await db.collection('trips').doc(tripId).get();
+  if (!tripSnap.exists) {
+    throw new HttpsError('not-found', 'Voyage introuvable');
+  }
+  if (tripCallerRoleRank(tripSnap.data() || {}, uid) < roleRank('admin')) {
+    throw new HttpsError('permission-denied', 'Droits insuffisants');
+  }
+
+  await recomputeExpenseGroupSettlementForGroup(db, tripId, groupId);
+  return { ok: true };
+});
+
 module.exports = {
   recomputeExpenseGroupSettlement,
   markExpenseReimbursementPaid,
   unmarkExpenseReimbursementPaid,
   deleteExpenseGroup,
   recomputeExpenseGroupSettlementForGroup,
+  refreshExpenseGroupSettlement,
 };

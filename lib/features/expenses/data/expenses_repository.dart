@@ -364,6 +364,18 @@ class ExpensesRepository {
     });
   }
 
+  Future<void> refreshExpenseGroupSettlement({
+    required String tripId,
+    required String groupId,
+  }) async {
+    final callable =
+        _functions.httpsCallable('refreshExpenseGroupSettlement');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+    });
+  }
+
   Future<void> addExpense({
     required String tripId,
     required String groupId,

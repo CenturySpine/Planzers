@@ -2179,6 +2179,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesAddToSeeBreakdown => 'Add expenses to see the breakdown.';
 
   @override
+  String get expensesToReceive => 'To receive';
+
+  @override
+  String get expensesToPay => 'To pay';
+
+  @override
+  String get expensesBalanced => 'Balanced';
+
+  @override
+  String get expensesRefreshBalances => 'Refresh balances';
+
+  @override
+  String get expensesBalancesRefreshed => 'Balances refreshed';
+
+  @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';
 
   @override
@@ -4938,6 +4953,21 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesAddToSeeBreakdown => 'Add expenses to see the breakdown.';
+
+  @override
+  String get expensesToReceive => 'To receive';
+
+  @override
+  String get expensesToPay => 'To pay';
+
+  @override
+  String get expensesBalanced => 'Balanced';
+
+  @override
+  String get expensesRefreshBalances => 'Refresh balances';
+
+  @override
+  String get expensesBalancesRefreshed => 'Balances refreshed';
 
   @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';

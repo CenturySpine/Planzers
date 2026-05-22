@@ -8,6 +8,9 @@
 
 const BALANCE_EPSILON = 0.009;
 
+// Balances below this threshold are considered at equilibrium and sent as zero to the client.
+const BALANCE_SETTLEMENT_THRESHOLD = 0.50;
+
 function roundMoney(value) {
   return Math.round(value * 100) / 100;
 }
@@ -270,6 +273,7 @@ function amountsMatch(a, b) {
 
 module.exports = {
   BALANCE_EPSILON,
+  BALANCE_SETTLEMENT_THRESHOLD,
   roundMoney,
   tripExpenseFromDoc,
   computeBalances,

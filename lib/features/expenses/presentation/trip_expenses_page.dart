@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
@@ -12,6 +13,7 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -740,6 +742,13 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             memberLabels: widget.memberLabels,
             currentUserMemberId: widget.currentUserMemberId,
             canMarkReimbursement: canMarkReimbursement,
+            isAdmin: isTripRoleAllowed(
+              currentRole: resolveTripPermissionRole(
+                trip: widget.trip,
+                userId: viewerUserId,
+              ),
+              minRole: TripPermissionRole.admin,
+            ),
           )
         else
           Column(
@@ -903,6 +912,7 @@ class _SettlementSection extends ConsumerStatefulWidget {
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.canMarkReimbursement,
+    required this.isAdmin,
   });
 
   final String tripId;
@@ -911,6 +921,7 @@ class _SettlementSection extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final bool canMarkReimbursement;
+  final bool isAdmin;
 
   @override
   ConsumerState<_SettlementSection> createState() => _SettlementSectionState();
@@ -919,6 +930,7 @@ class _SettlementSection extends ConsumerStatefulWidget {
 class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   bool _showAllPost = false;
   String? _busySuggestionKey;
+  bool _refreshing = false;
 
   ExpenseGroupScope get _scope => (
         tripId: widget.tripId,
@@ -994,6 +1006,34 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     }
   }
 
+  Future<void> _refreshSettlement() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await ref.read(expensesRepositoryProvider).refreshExpenseGroupSettlement(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.expensesBalancesRefreshed),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
   String _participantLabel(String participantId) {
     return widget.memberLabels[participantId] ??
         AppLocalizations.of(context)!.tripParticipantsTraveler;
@@ -1040,10 +1080,28 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
           ),
         ),
         const SizedBox(height: 8),
-        _SectionHeader(
-          icon: Icons.balance_outlined,
-          label: l10n.expensesBalancesByCurrency,
-          iconColor: cs.secondary,
+        Row(
+          children: [
+            Expanded(
+              child: _SectionHeader(
+                icon: Icons.balance_outlined,
+                label: l10n.expensesBalancesByCurrency,
+                iconColor: cs.secondary,
+              ),
+            ),
+            if (widget.isAdmin)
+              IconButton(
+                tooltip: l10n.expensesRefreshBalances,
+                onPressed: _refreshing ? null : _refreshSettlement,
+                icon: _refreshing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         if (waitingForData && !hasBalances)
@@ -1068,28 +1126,49 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
           )
         else
           for (final balance in balances)
-            if (balance.nets.isNotEmpty) ...[
+            if (balance.nets.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  balance.currency,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        balance.currency,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              letterSpacing: 1.1,
+                            ),
                       ),
-                ),
-              ),
-              for (final entry in balance.nets.entries)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    l10n.expensesBalanceNetLine(
-                      _participantLabel(entry.key),
-                      _formatMoney(balance.currency, entry.value),
-                    ),
+                      const SizedBox(height: 6),
+                      for (final entry in (balance.nets.entries.toList()
+                        ..sort((a, b) => a.key.compareTo(b.key))))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _participantLabel(entry.key),
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ),
+                              _BalanceChip(
+                                amount: entry.value,
+                                currency: balance.currency,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 8),
-            ],
+              ),
         const SizedBox(height: 4),
         _SectionHeader(
           icon: Icons.sync_alt,
@@ -1158,6 +1237,54 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               onAction: () => _unmarkPaid(settlement),
             ),
       ],
+    );
+  }
+}
+
+class _BalanceChip extends StatelessWidget {
+  const _BalanceChip({required this.amount, required this.currency});
+
+  final double amount;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final pz = context.planerzColors;
+
+    final isCreditor = amount > 0;
+    final isDebtor = amount < 0;
+
+    final bg = isCreditor
+        ? pz.successContainer
+        : isDebtor
+            ? cs.errorContainer
+            : cs.surfaceContainerHighest;
+    final fg = isCreditor
+        ? pz.success
+        : isDebtor
+            ? cs.error
+            : cs.onSurfaceVariant;
+    final prefix = isCreditor
+        ? l10n.expensesToReceive
+        : isDebtor
+            ? l10n.expensesToPay
+            : l10n.expensesBalanced;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$prefix · ${_formatMoney(currency, amount.abs())}',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
     );
   }
 }
