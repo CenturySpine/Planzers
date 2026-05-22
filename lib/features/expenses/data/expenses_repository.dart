@@ -1,8 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expense_group_summary.dart';
+import 'package:planerz/features/expenses/data/group_balance.dart';
+import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -27,14 +32,42 @@ final tripExpensesStreamProvider =
   return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
 });
 
+typedef ExpenseGroupScope = ({String tripId, String groupId});
+
+final expenseGroupBalancesStreamProvider = StreamProvider.autoDispose
+    .family<List<GroupBalance>, ExpenseGroupScope>((ref, scope) {
+  return ref
+      .watch(expensesRepositoryProvider)
+      .watchGroupBalances(scope.tripId, scope.groupId);
+});
+
+final expenseGroupSuggestedReimbursementsStreamProvider =
+    StreamProvider.autoDispose
+        .family<List<SuggestedReimbursement>, ExpenseGroupScope>((ref, scope) {
+  return ref.watch(expensesRepositoryProvider).watchGroupSuggestedReimbursements(
+        scope.tripId,
+        scope.groupId,
+      );
+});
+
+final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
+    .family<ExpenseGroupSummary?, ExpenseGroupScope>((ref, scope) {
+  return ref
+      .watch(expensesRepositoryProvider)
+      .watchGroupExpenseSummary(scope.tripId, scope.groupId);
+});
+
 class ExpensesRepository {
   ExpensesRepository({
     required this.firestore,
     required this.auth,
-  });
+    FirebaseFunctions? functions,
+  }) : _functions = functions ??
+            FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion);
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final FirebaseFunctions _functions;
 
   CollectionReference<Map<String, dynamic>> _expenseGroupsCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('expenseGroups');
@@ -96,6 +129,55 @@ class ExpensesRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(TripExpenseGroup.fromDoc).toList());
+  }
+
+  Stream<List<GroupBalance>> watchGroupBalances(String tripId, String groupId) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(const <GroupBalance>[]);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('balances')
+        .snapshots()
+        .map((snap) => snap.docs.map(GroupBalance.fromDoc).toList());
+  }
+
+  Stream<List<SuggestedReimbursement>> watchGroupSuggestedReimbursements(
+    String tripId,
+    String groupId,
+  ) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(const <SuggestedReimbursement>[]);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('suggestedReimbursements')
+        .snapshots()
+        .map((snap) => snap.docs.map(SuggestedReimbursement.fromDoc).toList());
+  }
+
+  Stream<ExpenseGroupSummary?> watchGroupExpenseSummary(
+    String tripId,
+    String groupId,
+  ) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(null);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('summary')
+        .doc('current')
+        .snapshots()
+        .map((snap) {
+      if (!snap.exists) return null;
+      return ExpenseGroupSummary.fromDoc(snap);
+    });
   }
 
   Stream<List<TripExpense>> watchTripExpenses(String tripId) {
@@ -238,17 +320,48 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.deleteExpensePostMinRole,
     );
 
-    final groupRef = _expenseGroupsCol(cleanTripId).doc(cleanGroupId);
-    final expensesSnap = await _expensesCol(cleanTripId)
-        .where('groupId', isEqualTo: cleanGroupId)
-        .get();
+    final callable = _functions.httpsCallable('deleteExpenseGroup');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': cleanTripId,
+      'groupId': cleanGroupId,
+    });
+  }
 
-    final batch = firestore.batch();
-    for (final doc in expensesSnap.docs) {
-      batch.delete(doc.reference);
+  Future<String> markExpenseReimbursementPaid({
+    required String tripId,
+    required String groupId,
+    required String fromParticipantId,
+    required String toParticipantId,
+    required double amount,
+    required String currency,
+  }) async {
+    final callable = _functions.httpsCallable('markExpenseReimbursementPaid');
+    final result = await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+      'fromParticipantId': fromParticipantId.trim(),
+      'toParticipantId': toParticipantId.trim(),
+      'amount': amount,
+      'currency': currency.trim().toUpperCase(),
+    });
+    final expenseId = result.data['expenseId']?.toString().trim() ?? '';
+    if (expenseId.isEmpty) {
+      throw StateError('Réponse serveur invalide');
     }
-    batch.delete(groupRef);
-    await batch.commit();
+    return expenseId;
+  }
+
+  Future<void> unmarkExpenseReimbursementPaid({
+    required String tripId,
+    required String groupId,
+    required String expenseId,
+  }) async {
+    final callable = _functions.httpsCallable('unmarkExpenseReimbursementPaid');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+      'expenseId': expenseId.trim(),
+    });
   }
 
   Future<void> addExpense({

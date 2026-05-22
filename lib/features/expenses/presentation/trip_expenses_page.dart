@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
@@ -335,7 +336,6 @@ class _TripExpensesBody extends StatelessWidget {
                child: _ExpensePostPanel(
                  trip: trip,
                  group: visibleGroups.single,
-                 allTripExpenses: expenses,
                  groupExpenses: expenses
                       .where((e) => e.groupId == visibleGroups.single.id)
                       .toList(),
@@ -487,7 +487,6 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                    child: _ExpensePostPanel(
                      trip: widget.trip,
                      group: group,
-                      allTripExpenses: widget.expenses,
                       groupExpenses:
                           widget.expenses.where((e) => e.groupId == group.id).toList(),
                       participants: widget.participants,
@@ -509,7 +508,6 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   const _ExpensePostPanel({
     required this.trip,
     required this.group,
-    required this.allTripExpenses,
     required this.groupExpenses,
     required this.participants,
     required this.memberIds,
@@ -520,7 +518,6 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
   final Trip trip;
   final TripExpenseGroup group;
-  final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
   final List<TripMember> participants;
   final List<String> memberIds;
@@ -592,15 +589,18 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final l10n = AppLocalizations.of(context)!;
     final viewerUserId = widget.viewerUserId?.trim();
     final viewerMemberId = widget.currentUserMemberId?.trim();
-    final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
-    final myTotalsByCurrency = _sumByCurrency(
-      widget.allTripExpenses.where(
-        (expense) {
-          final paidBy = expense.paidBy.trim();
-          return viewerMemberId != null && paidBy == viewerMemberId;
-        },
-      ),
+    final groupScope = (
+      tripId: widget.trip.id,
+      groupId: widget.group.id,
     );
+    final summary =
+        ref.watch(expenseGroupSummaryStreamProvider(groupScope)).asData?.value;
+    final postTotalsByCurrency = summary?.postTotalsByCurrency ?? const {};
+    final myTotalsByCurrency = viewerMemberId != null
+        ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
+        : const <String, double>{};
+    final canMarkReimbursement =
+        widget.group.isVisibleTo(widget.currentUserMemberId);
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
       widget.participants,
@@ -733,14 +733,21 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         ),
         const SizedBox(height: 12),
         if (_activeView == _ExpensePostView.settlement)
-          const _SettlementSection()
+          _SettlementSection(
+            tripId: widget.trip.id,
+            group: widget.group,
+            groupExpenses: widget.groupExpenses,
+            memberLabels: widget.memberLabels,
+            currentUserMemberId: widget.currentUserMemberId,
+            canMarkReimbursement: canMarkReimbursement,
+          )
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _ExpenseTotalsHeader(
                 myTotalsByCurrency: myTotalsByCurrency,
-                tripTotalsByCurrency: tripTotalsByCurrency,
+                postTotalsByCurrency: postTotalsByCurrency,
               ),
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
@@ -791,20 +798,6 @@ enum _ExpensePostView { operations, settlement }
 
 const _kDefaultExpenseCurrency = 'EUR';
 
-Map<String, double> _sumByCurrency(Iterable<TripExpense> expenses) {
-  final totals = <String, double>{};
-  for (final expense in expenses) {
-    final currency = expense.currency.trim().toUpperCase();
-    if (currency.isEmpty) continue;
-    totals.update(
-      currency,
-      (value) => value + expense.amount,
-      ifAbsent: () => expense.amount,
-    );
-  }
-  return totals;
-}
-
 String _formatTotalsByCurrency(Map<String, double> totalsByCurrency) {
   if (totalsByCurrency.isEmpty) {
     return _formatMoney(_kDefaultExpenseCurrency, 0);
@@ -838,11 +831,11 @@ enum _ExpensePostMenuAction { edit, delete }
 class _ExpenseTotalsHeader extends StatelessWidget {
   const _ExpenseTotalsHeader({
     required this.myTotalsByCurrency,
-    required this.tripTotalsByCurrency,
+    required this.postTotalsByCurrency,
   });
 
   final Map<String, double> myTotalsByCurrency;
-  final Map<String, double> tripTotalsByCurrency;
+  final Map<String, double> postTotalsByCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -886,10 +879,10 @@ class _ExpenseTotalsHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(l10n.expensesTripTotalCost, style: labelStyle),
+                Text(l10n.expensesPostTotal, style: labelStyle),
                 const SizedBox(height: 3),
                 Text(
-                  _formatTotalsByCurrency(tripTotalsByCurrency),
+                  _formatTotalsByCurrency(postTotalsByCurrency),
                   textAlign: TextAlign.right,
                   style: valueStyle?.copyWith(color: cs.inverseSurface),
                 ),
@@ -902,32 +895,201 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   }
 }
 
-class _SettlementSection extends StatelessWidget {
-  const _SettlementSection();
+class _SettlementSection extends ConsumerStatefulWidget {
+  const _SettlementSection({
+    required this.tripId,
+    required this.group,
+    required this.groupExpenses,
+    required this.memberLabels,
+    required this.currentUserMemberId,
+    required this.canMarkReimbursement,
+  });
+
+  final String tripId;
+  final TripExpenseGroup group;
+  final List<TripExpense> groupExpenses;
+  final Map<String, String> memberLabels;
+  final String? currentUserMemberId;
+  final bool canMarkReimbursement;
+
+  @override
+  ConsumerState<_SettlementSection> createState() => _SettlementSectionState();
+}
+
+class _SettlementSectionState extends ConsumerState<_SettlementSection> {
+  bool _showAllPost = false;
+  String? _busySuggestionKey;
+
+  ExpenseGroupScope get _scope => (
+        tripId: widget.tripId,
+        groupId: widget.group.id,
+      );
+
+  bool _involvesCurrentUser(SuggestedReimbursement suggestion) {
+    final memberId = widget.currentUserMemberId?.trim();
+    if (memberId == null || memberId.isEmpty) return false;
+    return suggestion.fromParticipantId == memberId ||
+        suggestion.toParticipantId == memberId;
+  }
+
+  bool _involvesCurrentUserSettlement(TripExpense expense) {
+    final memberId = widget.currentUserMemberId?.trim();
+    if (memberId == null || memberId.isEmpty) return false;
+    final beneficiary = expense.participantIds.isNotEmpty
+        ? expense.participantIds.first
+        : '';
+    return expense.paidBy == memberId || beneficiary == memberId;
+  }
+
+  Future<void> _markPaid(SuggestedReimbursement suggestion) async {
+    if (!widget.canMarkReimbursement || _busySuggestionKey != null) return;
+    final key =
+        '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}';
+    setState(() => _busySuggestionKey = key);
+    try {
+      await ref.read(expensesRepositoryProvider).markExpenseReimbursementPaid(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+            fromParticipantId: suggestion.fromParticipantId,
+            toParticipantId: suggestion.toParticipantId,
+            amount: suggestion.amount,
+            currency: suggestion.currency,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!
+                .expensesMarkReimbursementFailed(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busySuggestionKey = null);
+    }
+  }
+
+  Future<void> _unmarkPaid(TripExpense settlement) async {
+    if (!widget.canMarkReimbursement || _busySuggestionKey != null) return;
+    setState(() => _busySuggestionKey = settlement.id);
+    try {
+      await ref.read(expensesRepositoryProvider).unmarkExpenseReimbursementPaid(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+            expenseId: settlement.id,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!
+                .expensesUnmarkReimbursementFailed(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busySuggestionKey = null);
+    }
+  }
+
+  String _participantLabel(String participantId) {
+    return widget.memberLabels[participantId] ??
+        AppLocalizations.of(context)!.tripParticipantsTraveler;
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final balancesAsync =
+        ref.watch(expenseGroupBalancesStreamProvider(_scope));
+    final suggestionsAsync =
+        ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
+
+    final balances = balancesAsync.asData?.value ?? const [];
+    final allSuggestions = suggestionsAsync.asData?.value ?? const [];
+    final visibleSuggestions = _showAllPost
+        ? allSuggestions
+        : allSuggestions.where(_involvesCurrentUser).toList();
+
+    final allSettlements = widget.groupExpenses
+        .where((e) => e.operationType == ExpenseOperationType.settlement)
+        .toList();
+    final visibleSettlements = _showAllPost
+        ? allSettlements
+        : allSettlements.where(_involvesCurrentUserSettlement).toList();
+
+    final hasBalances = balances.any((b) => b.nets.isNotEmpty);
+    final waitingForData = balancesAsync.isLoading || suggestionsAsync.isLoading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilterChip(
+            label: Text(
+              _showAllPost
+                  ? l10n.expensesShowAllPostReimbursements
+                  : l10n.expensesShowMyReimbursementsOnly,
+            ),
+            selected: _showAllPost,
+            onSelected: (selected) => setState(() => _showAllPost = selected),
+          ),
+        ),
+        const SizedBox(height: 8),
         _SectionHeader(
           icon: Icons.balance_outlined,
           label: l10n.expensesBalancesByCurrency,
           iconColor: cs.secondary,
         ),
         const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            l10n.expensesAddToSeeBreakdown,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
+        if (waitingForData && !hasBalances)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              l10n.expensesNoCalculationYet,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
+          )
+        else if (!hasBalances)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              l10n.expensesAddToSeeBreakdown,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
+          )
+        else
+          for (final balance in balances)
+            if (balance.nets.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  balance.currency,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
-          ),
-        ),
+              ),
+              for (final entry in balance.nets.entries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    l10n.expensesBalanceNetLine(
+                      _participantLabel(entry.key),
+                      _formatMoney(balance.currency, entry.value),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+            ],
         const SizedBox(height: 4),
         _SectionHeader(
           icon: Icons.sync_alt,
@@ -941,14 +1103,131 @@ class _SettlementSection extends StatelessWidget {
                 color: cs.onSurfaceVariant,
               ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          l10n.expensesNoCalculationYet,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
+        const SizedBox(height: 8),
+        if (visibleSuggestions.isEmpty)
+          Text(
+            waitingForData
+                ? l10n.expensesNoCalculationYet
+                : l10n.expensesAddToSeeBreakdown,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+          )
+        else
+          for (final suggestion in visibleSuggestions)
+            _ReimbursementRow(
+              title: l10n.expensesReimbursementFromTo(
+                _participantLabel(suggestion.fromParticipantId),
+                _participantLabel(suggestion.toParticipantId),
               ),
+              amountLabel:
+                  _formatMoney(suggestion.currency, suggestion.amount),
+              actionLabel: l10n.expensesMarkReimbursementPaid,
+              showAction: widget.canMarkReimbursement,
+              busy: _busySuggestionKey ==
+                  '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}',
+              onAction: () => _markPaid(suggestion),
+            ),
+        const SizedBox(height: 12),
+        _SectionHeader(
+          icon: Icons.check_circle_outline,
+          label: l10n.expensesSettledReimbursements,
+          iconColor: cs.tertiary,
         ),
+        const SizedBox(height: 8),
+        if (visibleSettlements.isEmpty)
+          Text(
+            l10n.expensesAddToSeeBreakdown,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+          )
+        else
+          for (final settlement in visibleSettlements)
+            _ReimbursementRow(
+              title: l10n.expensesReimbursementFromTo(
+                _participantLabel(settlement.paidBy),
+                settlement.participantIds.isNotEmpty
+                    ? _participantLabel(settlement.participantIds.first)
+                    : l10n.tripParticipantsTraveler,
+              ),
+              amountLabel: _formatMoney(settlement.currency, settlement.amount),
+              actionLabel: l10n.expensesUnmarkReimbursementPaid,
+              showAction: widget.canMarkReimbursement,
+              busy: _busySuggestionKey == settlement.id,
+              onAction: () => _unmarkPaid(settlement),
+            ),
       ],
+    );
+  }
+}
+
+class _ReimbursementRow extends StatelessWidget {
+  const _ReimbursementRow({
+    required this.title,
+    required this.amountLabel,
+    required this.actionLabel,
+    required this.showAction,
+    required this.busy,
+    required this.onAction,
+  });
+
+  final String title;
+  final String amountLabel;
+  final String actionLabel;
+  final bool showAction;
+  final bool busy;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: cs.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+                Text(
+                  amountLabel,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+            if (showAction) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: busy ? null : onAction,
+                  child: busy
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: cs.primary,
+                          ),
+                        )
+                      : Text(actionLabel),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1079,6 +1358,7 @@ class _ExpenseCard extends StatelessWidget {
   final bool canDeleteExpense;
 
   Future<void> _openDetails(BuildContext context) async {
+    if (expense.operationType == ExpenseOperationType.settlement) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => _ExpenseDetailsPage(
@@ -1096,16 +1376,33 @@ class _ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = expense;
+    final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final isSettlement = e.operationType == ExpenseOperationType.settlement;
+    final accentColor = isSettlement ? cs.tertiary : cs.primary;
     final paidByLabel =
-        memberLabels[e.paidBy] ?? AppLocalizations.of(context)!.tripParticipantsTraveler;
+        memberLabels[e.paidBy] ?? l10n.tripParticipantsTraveler;
+    final subtitle = isSettlement
+        ? (e.participantIds.isNotEmpty
+            ? l10n.expensesReimbursementFromTo(
+                paidByLabel,
+                memberLabels[e.participantIds.first] ??
+                    l10n.tripParticipantsTraveler,
+              )
+            : l10n.expensesSettlementType)
+        : l10n.expensesPaidByWithLabel(paidByLabel);
+    final title = isSettlement
+        ? l10n.expensesSettlementType
+        : (e.title.isEmpty ? l10n.activitiesUntitled : e.title);
 
     return Card(
       margin: EdgeInsets.zero,
-      color: cs.surfaceContainerHighest,
+      color: isSettlement
+          ? cs.tertiaryContainer.withValues(alpha: 0.35)
+          : cs.surfaceContainerHighest,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDetails(context),
+        onTap: isSettlement ? null : () => _openDetails(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
           child: Row(
@@ -1115,12 +1412,16 @@ class _ExpenseCard extends StatelessWidget {
                 width: 4,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: cs.primary,
+                  color: accentColor,
                   borderRadius: const BorderRadius.horizontal(
                     left: Radius.circular(12),
                   ),
                 ),
               ),
+              if (isSettlement) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.swap_horiz, color: accentColor, size: 22),
+              ],
               const SizedBox(width: 10),
               Expanded(
                 child: Padding(
@@ -1130,18 +1431,14 @@ class _ExpenseCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        e.title.isEmpty
-                            ? AppLocalizations.of(context)!.activitiesUntitled
-                            : e.title,
+                        title,
                         style: Theme.of(context).textTheme.bodyLarge,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        AppLocalizations.of(context)!.expensesPaidByWithLabel(
-                          paidByLabel,
-                        ),
+                        subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -1157,13 +1454,17 @@ class _ExpenseCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: cs.primaryContainer,
+                    color: isSettlement
+                        ? cs.tertiaryContainer
+                        : cs.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _formatMoney(e.currency, e.amount),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: cs.onPrimaryContainer,
+                          color: isSettlement
+                              ? cs.onTertiaryContainer
+                              : cs.onPrimaryContainer,
                           fontWeight: FontWeight.w700,
                         ),
                   ),

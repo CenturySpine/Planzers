@@ -3,6 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Expense currencies supported by the app (display + separate balance buckets).
 const Set<String> kSupportedExpenseCurrencies = {'EUR', 'USD'};
 
+/// Kind of row in `trips/{tripId}/expenses` (expense vs server-recorded settlement).
+enum ExpenseOperationType {
+  expense,
+  settlement,
+}
+
 /// How the expense total is allocated across [participantIds].
 enum ExpenseSplitMode {
   /// Same amount for each participant (`total / count`).
@@ -26,6 +32,7 @@ class TripExpense {
     required this.createdAt,
     required this.expenseDate,
     this.createdBy,
+    this.operationType = ExpenseOperationType.expense,
     this.splitMode = ExpenseSplitMode.equal,
     Map<String, double>? participantShares,
   }) : participantShares = participantShares ?? const {};
@@ -43,6 +50,7 @@ class TripExpense {
   final DateTime createdAt;
   final DateTime expenseDate;
   final String? createdBy;
+  final ExpenseOperationType operationType;
 
   /// When [splitMode] is [ExpenseSplitMode.customAmounts], share per participant
   /// (same keys as [participantIds]); ignored for equal split.
@@ -89,6 +97,7 @@ class TripExpense {
         expenseDate.day,
       ),
       createdBy: (data['createdBy'] as String?)?.trim(),
+      operationType: _operationTypeFromFirestore(data['operationType']),
       splitMode: _splitModeFromFirestore(data['splitMode']),
       participantShares: _participantSharesFromFirestore(data['participantShares']),
     );
@@ -101,12 +110,12 @@ class TripExpense {
   }) {
     final map = <String, dynamic>{
       'groupId': groupId.trim(),
+      'operationType': 'expense',
       'title': title.trim(),
       'amount': amount,
       'currency': currency.trim().toUpperCase(),
       'paidBy': paidBy.trim(),
       'participantIds': participantIds,
-      'category': category.trim().isEmpty ? 'other' : category.trim(),
       'expenseDate': Timestamp.fromDate(
         DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
       ),
@@ -124,6 +133,12 @@ class TripExpense {
     }
     return map;
   }
+}
+
+ExpenseOperationType _operationTypeFromFirestore(Object? raw) {
+  final s = raw?.toString().trim().toLowerCase() ?? '';
+  if (s == 'settlement') return ExpenseOperationType.settlement;
+  return ExpenseOperationType.expense;
 }
 
 ExpenseSplitMode _splitModeFromFirestore(Object? raw) {

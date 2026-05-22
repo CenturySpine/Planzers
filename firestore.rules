@@ -571,14 +571,32 @@ service cloud.firestore {
           && request.resource.data.visibleToMemberIds is list;
         allow delete: if canDeleteExpensePost(tripId)
           && resource.data.visibleToMemberIds is list;
+
+        match /balances/{balanceId} {
+          allow read: if isTripMember(tripId);
+          allow write: if false;
+        }
+
+        match /suggestedReimbursements/{suggestionId} {
+          allow read: if isTripMember(tripId);
+          allow write: if false;
+        }
+
+        match /summary/{summaryId} {
+          allow read: if isTripMember(tripId);
+          allow write: if false;
+        }
       }
 
       match /expenses/{expenseId} {
-        allow read, write: if isTripMember(tripId);
-      }
-
-      match /expenseSettledTransfers/{transferId} {
-        allow read, write: if isTripMember(tripId);
+        allow read: if isTripMember(tripId);
+        allow create: if isTripMember(tripId)
+          && request.resource.data.get('operationType', 'expense') != 'settlement';
+        allow update: if isTripMember(tripId)
+          && resource.data.get('operationType', 'expense') != 'settlement'
+          && request.resource.data.get('operationType', 'expense') != 'settlement';
+        allow delete: if isTripMember(tripId)
+          && resource.data.get('operationType', 'expense') != 'settlement';
       }
 
       match /rooms/{roomId} {

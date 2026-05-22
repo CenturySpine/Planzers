@@ -2208,6 +2208,47 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesNoCalculationYet => 'Pas encore de calcul.';
 
   @override
+  String get expensesPostTotal => 'Total du poste';
+
+  @override
+  String get expensesSettlementType => 'Remboursement';
+
+  @override
+  String get expensesMarkReimbursementPaid => 'Marquer comme payé';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Annuler le paiement';
+
+  @override
+  String get expensesShowAllPostReimbursements => 'Tout le poste';
+
+  @override
+  String get expensesShowMyReimbursementsOnly => 'Moi uniquement';
+
+  @override
+  String get expensesSettledReimbursements => 'Remboursements effectués';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from rembourse $to';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label : $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Impossible d\'enregistrer le remboursement : $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Impossible d\'annuler le remboursement : $error';
+  }
+
+  @override
   String get expensesDeleteExpenseTitle => 'Supprimer cette dépense ?';
 
   @override
@@ -4952,6 +4993,47 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesNoCalculationYet => 'Pas encore de calcul.';
+
+  @override
+  String get expensesPostTotal => 'Total du poste';
+
+  @override
+  String get expensesSettlementType => 'Remboursement';
+
+  @override
+  String get expensesMarkReimbursementPaid => 'Marquer comme payé';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Annuler le paiement';
+
+  @override
+  String get expensesShowAllPostReimbursements => 'Tout le poste';
+
+  @override
+  String get expensesShowMyReimbursementsOnly => 'Moi uniquement';
+
+  @override
+  String get expensesSettledReimbursements => 'Remboursements effectués';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from rembourse $to';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label : $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Impossible d\'enregistrer le remboursement : $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Impossible d\'annuler le remboursement : $error';
+  }
 
   @override
   String get expensesDeleteExpenseTitle => 'Supprimer cette dépense ?';

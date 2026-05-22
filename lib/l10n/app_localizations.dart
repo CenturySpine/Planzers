@@ -4008,6 +4008,72 @@ abstract class AppLocalizations {
   /// **'Pas encore de calcul.'**
   String get expensesNoCalculationYet;
 
+  /// No description provided for @expensesPostTotal.
+  ///
+  /// In fr, this message translates to:
+  /// **'Total du poste'**
+  String get expensesPostTotal;
+
+  /// No description provided for @expensesSettlementType.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remboursement'**
+  String get expensesSettlementType;
+
+  /// No description provided for @expensesMarkReimbursementPaid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Marquer comme payé'**
+  String get expensesMarkReimbursementPaid;
+
+  /// No description provided for @expensesUnmarkReimbursementPaid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler le paiement'**
+  String get expensesUnmarkReimbursementPaid;
+
+  /// No description provided for @expensesShowAllPostReimbursements.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout le poste'**
+  String get expensesShowAllPostReimbursements;
+
+  /// No description provided for @expensesShowMyReimbursementsOnly.
+  ///
+  /// In fr, this message translates to:
+  /// **'Moi uniquement'**
+  String get expensesShowMyReimbursementsOnly;
+
+  /// No description provided for @expensesSettledReimbursements.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remboursements effectués'**
+  String get expensesSettledReimbursements;
+
+  /// No description provided for @expensesReimbursementFromTo.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} rembourse {to}'**
+  String expensesReimbursementFromTo(Object from, Object to);
+
+  /// No description provided for @expensesBalanceNetLine.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} : {amount}'**
+  String expensesBalanceNetLine(Object label, Object amount);
+
+  /// No description provided for @expensesMarkReimbursementFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'enregistrer le remboursement : {error}'**
+  String expensesMarkReimbursementFailed(Object error);
+
+  /// No description provided for @expensesUnmarkReimbursementFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'annuler le remboursement : {error}'**
+  String expensesUnmarkReimbursementFailed(Object error);
+
   /// No description provided for @expensesDeleteExpenseTitle.
   ///
   /// In fr, this message translates to:

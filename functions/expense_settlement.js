@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Utility scripts only (trip_expense_settlements.js, migrations, etc.).
- * Authoritative Cloud Functions copy: functions/expense_settlement.js (participantId naming).
- * When changing settlement algorithms, update both files.
+ * Authoritative settlement math for Cloud Functions (participantId field names).
+ * Keep logic in sync with scripts/expense_settlement.js (utility scripts; fromUserId naming).
+ * When changing algorithms, update both files.
  */
 
 const BALANCE_EPSILON = 0.009;
@@ -34,7 +34,12 @@ function participantSharesFromFirestore(raw) {
   return out;
 }
 
-/** @typedef {{ id: string, groupId: string, amount: number, currency: string, paidBy: string, participantIds: string[], splitMode: string, participantShares: Record<string, number> }} TripExpense */
+function operationTypeFromFirestore(raw) {
+  const s = (raw == null ? '' : String(raw)).trim().toLowerCase();
+  return s === 'settlement' ? 'settlement' : 'expense';
+}
+
+/** @typedef {{ id: string, groupId: string, operationType: string, amount: number, currency: string, paidBy: string, participantIds: string[], splitMode: string, participantShares: Record<string, number> }} TripExpense */
 
 /**
  * @param {import('firebase-admin').firestore.DocumentSnapshot} doc
@@ -51,6 +56,7 @@ function tripExpenseFromDoc(doc) {
   return {
     id: doc.id,
     groupId: String(data.groupId || '').trim(),
+    operationType: operationTypeFromFirestore(data.operationType),
     amount,
     currency: String(data.currency || 'EUR')
       .trim()
@@ -84,7 +90,7 @@ function participantSharesForExpense(expense, participants) {
     if (v == null || v < 0) {
       const per =
         participants.length > 0 ? expense.amount / participants.length : 0;
-      return Object.fromEntries(participants.map((uid) => [uid, per]));
+      return Object.fromEntries(participants.map((pid) => [pid, per]));
     }
     out[id] = v;
     sum += v;
@@ -124,50 +130,28 @@ function computeBalances(expenses) {
     const bucket = result[currency];
 
     const shares = participantSharesForExpense(expense, participants);
-    for (const uid of participants) {
-      const share = shares[uid] ?? 0;
-      bucket[uid] = (bucket[uid] ?? 0) - share;
+    for (const participantId of participants) {
+      const share = shares[participantId] ?? 0;
+      bucket[participantId] = (bucket[participantId] ?? 0) - share;
     }
     bucket[paidBy] = (bucket[paidBy] ?? 0) + amount;
+  }
+
+  for (const currency of Object.keys(result)) {
+    const bucket = result[currency];
+    for (const [participantId, value] of Object.entries(bucket)) {
+      const rounded = roundMoney(value);
+      bucket[participantId] =
+        Math.abs(rounded) <= BALANCE_EPSILON ? 0 : rounded;
+    }
   }
 
   return result;
 }
 
 /**
- * @typedef {{ fromUserId: string, toUserId: string, amount: number, currency: string }} SuggestedTransfer
+ * @typedef {{ fromParticipantId: string, toParticipantId: string, amount: number, currency: string }} SuggestedTransfer
  */
-
-/**
- * @param {Record<string, Record<string, number>>} balances
- * @param {Iterable<SuggestedTransfer>} settledTransfers
- */
-function applySettledTransfersToBalances(balances, settledTransfers) {
-  for (const transfer of settledTransfers) {
-    const fromUserId = String(transfer.fromUserId || '').trim();
-    const toUserId = String(transfer.toUserId || '').trim();
-    const currency = String(transfer.currency || '')
-      .trim()
-      .toUpperCase();
-    const amount = roundMoney(transfer.amount);
-    if (!fromUserId || !toUserId || !currency) continue;
-    if (amount <= BALANCE_EPSILON) continue;
-
-    if (!balances[currency]) balances[currency] = {};
-    const bucket = balances[currency];
-    const fromBalance = (bucket[fromUserId] ?? 0) + amount;
-    const toBalance = (bucket[toUserId] ?? 0) - amount;
-    bucket[fromUserId] = roundMoney(fromBalance);
-    bucket[toUserId] = roundMoney(toBalance);
-
-    if (Math.abs(bucket[fromUserId]) <= BALANCE_EPSILON) {
-      bucket[fromUserId] = 0;
-    }
-    if (Math.abs(bucket[toUserId]) <= BALANCE_EPSILON) {
-      bucket[toUserId] = 0;
-    }
-  }
-}
 
 /**
  * @param {Record<string, number>} balances
@@ -205,8 +189,8 @@ function simplifyCurrency(balances, currency, out) {
     if (pay <= BALANCE_EPSILON) break;
 
     out.push({
-      fromUserId: maxDebtor,
-      toUserId: maxCreditor,
+      fromParticipantId: maxDebtor,
+      toParticipantId: maxCreditor,
       amount: pay,
       currency,
     });
@@ -249,14 +233,39 @@ function suggestTransfers(balancesByCurrency) {
 
 /**
  * @param {Iterable<TripExpense>} expenses
- * @param {Iterable<SuggestedTransfer>} [settledTransfers]
- * @returns {{ balancesByCurrency: Record<string, Record<string, number>>, suggestedTransfers: SuggestedTransfer[] }}
+ * @returns {{ postTotalsByCurrency: Record<string, number>, paidByTotalsByCurrency: Record<string, Record<string, number>> }}
  */
-function computeSettlement(expenses, settledTransfers = []) {
-  const balances = computeBalances(expenses);
-  applySettledTransfersToBalances(balances, settledTransfers);
-  const suggestedTransfers = suggestTransfers(balances);
-  return { balancesByCurrency: balances, suggestedTransfers };
+function computeGroupSummary(expenses) {
+  /** @type {Record<string, number>} */
+  const postTotalsByCurrency = {};
+  /** @type {Record<string, Record<string, number>>} */
+  const paidByTotalsByCurrency = {};
+
+  for (const expense of expenses) {
+    if (expense.operationType !== 'expense') continue;
+    const currency = expense.currency.trim().toUpperCase();
+    if (!currency) continue;
+    const amount = expense.amount;
+    if (amount <= 0) continue;
+
+    postTotalsByCurrency[currency] = roundMoney(
+      (postTotalsByCurrency[currency] ?? 0) + amount
+    );
+
+    const paidBy = expense.paidBy.trim();
+    if (!paidBy) continue;
+    if (!paidByTotalsByCurrency[paidBy]) {
+      paidByTotalsByCurrency[paidBy] = {};
+    }
+    const bucket = paidByTotalsByCurrency[paidBy];
+    bucket[currency] = roundMoney((bucket[currency] ?? 0) + amount);
+  }
+
+  return { postTotalsByCurrency, paidByTotalsByCurrency };
+}
+
+function amountsMatch(a, b) {
+  return Math.abs(roundMoney(a) - roundMoney(b)) <= BALANCE_EPSILON;
 }
 
 module.exports = {
@@ -264,7 +273,7 @@ module.exports = {
   roundMoney,
   tripExpenseFromDoc,
   computeBalances,
-  applySettledTransfersToBalances,
   suggestTransfers,
-  computeSettlement,
+  computeGroupSummary,
+  amountsMatch,
 };

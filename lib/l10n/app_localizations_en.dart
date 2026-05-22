@@ -2189,6 +2189,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesNoCalculationYet => 'No calculation yet.';
 
   @override
+  String get expensesPostTotal => 'Post total';
+
+  @override
+  String get expensesSettlementType => 'Reimbursement';
+
+  @override
+  String get expensesMarkReimbursementPaid => 'Mark as paid';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Undo payment';
+
+  @override
+  String get expensesShowAllPostReimbursements => 'Entire post';
+
+  @override
+  String get expensesShowMyReimbursementsOnly => 'Only me';
+
+  @override
+  String get expensesSettledReimbursements => 'Recorded reimbursements';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from reimburses $to';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label: $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Could not record reimbursement: $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Could not undo reimbursement: $error';
+  }
+
+  @override
   String get expensesDeleteExpenseTitle => 'Delete this expense?';
 
   @override
@@ -4907,6 +4948,47 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesNoCalculationYet => 'No calculation yet.';
+
+  @override
+  String get expensesPostTotal => 'Post total';
+
+  @override
+  String get expensesSettlementType => 'Reimbursement';
+
+  @override
+  String get expensesMarkReimbursementPaid => 'Mark as paid';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Undo payment';
+
+  @override
+  String get expensesShowAllPostReimbursements => 'Entire post';
+
+  @override
+  String get expensesShowMyReimbursementsOnly => 'Only me';
+
+  @override
+  String get expensesSettledReimbursements => 'Recorded reimbursements';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from reimburses $to';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label: $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Could not record reimbursement: $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Could not undo reimbursement: $error';
+  }
 
   @override
   String get expensesDeleteExpenseTitle => 'Delete this expense?';

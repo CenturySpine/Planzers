@@ -4911,3 +4911,15 @@ exports.onTripParticipantDeleted = onDocumentDeleted(
   }
 );
 
+const {
+  recomputeExpenseGroupSettlement,
+  markExpenseReimbursementPaid,
+  unmarkExpenseReimbursementPaid,
+  deleteExpenseGroup,
+} = require('./expense_settlement_recalc');
+
+exports.recomputeExpenseGroupSettlement = recomputeExpenseGroupSettlement;
+exports.markExpenseReimbursementPaid = markExpenseReimbursementPaid;
+exports.unmarkExpenseReimbursementPaid = unmarkExpenseReimbursementPaid;
+exports.deleteExpenseGroup = deleteExpenseGroup;
+
