@@ -1,19 +1,25 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
-import 'package:planerz/features/expenses/data/settled_transfer.dart';
-import 'package:planerz/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/data/expenses_states.dart';
+import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -34,24 +40,6 @@ List<String> participantScopeMemberIdsForGroup(
     ..sort();
 }
 
-/// Settled transfers involving [viewerUserId], or all if viewer is null/blank.
-List<SettledTransfer> settledTransfersVisibleToViewer(
-  List<SettledTransfer> groupSettled,
-  String? viewerUserId,
-) {
-  final v = viewerUserId?.trim();
-  final filtered = v == null || v.isEmpty
-      ? groupSettled.toList()
-      : groupSettled
-          .where((t) {
-            final from = t.fromUserId.trim();
-            final to = t.toUserId.trim();
-            return from == v || to == v;
-          })
-          .toList();
-  filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return filtered;
-}
 
 class TripExpensesPage extends ConsumerStatefulWidget {
   const TripExpensesPage({super.key});
@@ -70,8 +58,6 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
-    final settledTransfersAsync =
-        ref.watch(tripSettledTransfersStreamProvider(trip.id));
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
@@ -101,40 +87,39 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
-    final showExpensesFab = canCreateExpense || canCreateExpensePost;
+    final states = ref.watch(tripExpensesStatesStreamProvider(trip.id)).asData?.value ??
+        TripExpensesStates.defaults;
+    final isAdminOrAbove = isTripRoleAllowed(
+      currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
+      minRole: TripPermissionRole.admin,
+    );
+    final lockRestrictsEditing = states.expensesLocked && !isAdminOrAbove;
+    final showExpensesFab =
+        (canCreateExpense || canCreateExpensePost) &&
+        (isAdminOrAbove || !states.expensesLocked);
 
     return Scaffold(
       body: groupsAsync.when(
         data: (groups) => expensesAsync.when(
-          data: (expenses) => settledTransfersAsync.when(
-            data: (settledTransfers) {
-              return _TripExpensesBody(
-                trip: trip,
-                participants: participants,
-                memberLabels: memberLabels,
-                memberIds: memberIds,
-                currentUserMemberId: currentUserMemberId,
-                groups: groups,
-                expenses: expenses,
-                settledTransfers: settledTransfers,
-                activeGroupId: _activeGroupId,
-                onActiveGroupChanged: (groupId) {
-                  if (_activeGroupId == groupId) return;
-                  setState(() => _activeGroupId = groupId);
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
+          data: (expenses) {
+            return _TripExpensesBody(
+              trip: trip,
+              participants: participants,
+              memberLabels: memberLabels,
+              memberIds: memberIds,
+              currentUserMemberId: currentUserMemberId,
+              groups: groups,
+              expenses: expenses,
+              activeGroupId: _activeGroupId,
+              lockRestrictsEditing: lockRestrictsEditing,
+              isAdminOrAbove: isAdminOrAbove,
+              expensesLocked: states.expensesLocked,
+              onActiveGroupChanged: (groupId) {
+                if (_activeGroupId == groupId) return;
+                setState(() => _activeGroupId = groupId);
+              },
+            );
+          },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Padding(
@@ -301,8 +286,10 @@ class _TripExpensesBody extends StatelessWidget {
     required this.currentUserMemberId,
     required this.groups,
     required this.expenses,
-    required this.settledTransfers,
     required this.activeGroupId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -313,8 +300,10 @@ class _TripExpensesBody extends StatelessWidget {
   final String? currentUserMemberId;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
-  final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -373,18 +362,17 @@ class _TripExpensesBody extends StatelessWidget {
                child: _ExpensePostPanel(
                  trip: trip,
                  group: visibleGroups.single,
-                 allTripExpenses: expenses,
                  groupExpenses: expenses
                       .where((e) => e.groupId == visibleGroups.single.id)
                       .toList(),
-                 groupSettledTransfers: settledTransfers
-                     .where((t) => t.groupId == visibleGroups.single.id)
-                     .toList(),
                   participants: participants,
                   memberIds: memberIds,
                   memberLabels: memberLabels,
                   currentUserMemberId: currentUserMemberId,
                  viewerUserId: viewerId,
+                 lockRestrictsEditing: lockRestrictsEditing,
+                 isAdminOrAbove: isAdminOrAbove,
+                 expensesLocked: expensesLocked,
               ),
             ),
           )
@@ -394,13 +382,15 @@ class _TripExpensesBody extends StatelessWidget {
               trip: trip,
               groups: visibleGroups,
                expenses: expenses,
-               settledTransfers: settledTransfers,
                 participants: participants,
                 memberIds: memberIds,
               memberLabels: memberLabels,
               currentUserMemberId: currentUserMemberId,
               viewerUserId: viewerId,
               initialGroupId: activeGroupId,
+              lockRestrictsEditing: lockRestrictsEditing,
+              isAdminOrAbove: isAdminOrAbove,
+              expensesLocked: expensesLocked,
               onActiveGroupChanged: onActiveGroupChanged,
             ),
           ),
@@ -414,26 +404,30 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.trip,
     required this.groups,
     required this.expenses,
-    required this.settledTransfers,
     required this.participants,
     required this.memberIds,
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.viewerUserId,
     required this.initialGroupId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
   final Trip trip;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
-  final List<SettledTransfer> settledTransfers;
   final List<TripMember> participants;
   final List<String> memberIds;
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final String? viewerUserId;
   final String? initialGroupId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -531,17 +525,16 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                    child: _ExpensePostPanel(
                      trip: widget.trip,
                      group: group,
-                      allTripExpenses: widget.expenses,
                       groupExpenses:
                           widget.expenses.where((e) => e.groupId == group.id).toList(),
-                      groupSettledTransfers: widget.settledTransfers
-                          .where((t) => t.groupId == group.id)
-                          .toList(),
                       participants: widget.participants,
                       memberIds: widget.memberIds,
                       memberLabels: widget.memberLabels,
                       currentUserMemberId: widget.currentUserMemberId,
                     viewerUserId: widget.viewerUserId,
+                    lockRestrictsEditing: widget.lockRestrictsEditing,
+                    isAdminOrAbove: widget.isAdminOrAbove,
+                    expensesLocked: widget.expensesLocked,
                   ),
                 ),
             ],
@@ -556,26 +549,28 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   const _ExpensePostPanel({
     required this.trip,
     required this.group,
-    required this.allTripExpenses,
     required this.groupExpenses,
-    required this.groupSettledTransfers,
     required this.participants,
     required this.memberIds,
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.viewerUserId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
   });
 
   final Trip trip;
   final TripExpenseGroup group;
-  final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
-  final List<SettledTransfer> groupSettledTransfers;
   final List<TripMember> participants;
   final List<String> memberIds;
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final String? viewerUserId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
 
   @override
   ConsumerState<_ExpensePostPanel> createState() => _ExpensePostPanelState();
@@ -583,8 +578,81 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
-  bool _savingSettledTransfer = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
+  late final NotificationCenterRepository _notificationCenter;
+  DateTime? _lastReadMarkedAt;
+  DateTime? _lastPresencePingAt;
+  String? _presenceTripId;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationCenter = ref.read(notificationCenterRepositoryProvider);
+  }
+
+  @override
+  void dispose() {
+    final tripId = _presenceTripId;
+    if (tripId != null && tripId.isNotEmpty) {
+      unawaited(_notificationCenter.clearOpenChannel(tripId: tripId));
+    }
+    super.dispose();
+  }
+
+  bool _isExpensesBalancesVisible() {
+    try {
+      final path = GoRouterState.of(context).uri.path;
+      if (!path.endsWith('/expenses') || path.contains('/settings/')) {
+        return false;
+      }
+      return _activeView == _ExpensePostView.settlement;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _markExpensesNotificationsReadIfNeeded(String tripId) {
+    if (!_isExpensesBalancesVisible()) return;
+    final now = DateTime.now().toUtc();
+    final lastMarked = _lastReadMarkedAt;
+    if (lastMarked != null &&
+        now.difference(lastMarked) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastReadMarkedAt = now;
+    unawaited(
+      _notificationCenter.markReadUpTo(
+        tripId: tripId,
+        channel: TripNotificationChannel.expenses,
+        timestamp: now,
+      ),
+    );
+  }
+
+  void _syncExpensesPresenceIfNeeded(String tripId) {
+    if (!_isExpensesBalancesVisible()) return;
+    final now = DateTime.now().toUtc();
+    final sameTrip = _presenceTripId == tripId;
+    final shouldPing = !sameTrip ||
+        _lastPresencePingAt == null ||
+        now.difference(_lastPresencePingAt!) > const Duration(seconds: 25);
+    if (!shouldPing) return;
+    _presenceTripId = tripId;
+    _lastPresencePingAt = now;
+    unawaited(
+      _notificationCenter.setOpenChannel(
+        tripId: tripId,
+        channel: TripNotificationChannel.expenses,
+      ),
+    );
+  }
+
+  void _clearExpensesPresenceIfNeeded(String tripId) {
+    if (_presenceTripId != tripId) return;
+    _presenceTripId = null;
+    _lastPresencePingAt = null;
+    unawaited(_notificationCenter.clearOpenChannel(tripId: tripId));
+  }
 
   Future<void> _confirmDeletePost() async {
     if (_deletingPost) return;
@@ -640,23 +708,22 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _markExpensesNotificationsReadIfNeeded(widget.trip.id);
+    _syncExpensesPresenceIfNeeded(widget.trip.id);
     final viewerUserId = widget.viewerUserId?.trim();
     final viewerMemberId = widget.currentUserMemberId?.trim();
-    final settlement = computeViewerSettlement(
-      widget.groupExpenses,
-      viewerMemberId,
-      settledTransfers: widget.groupSettledTransfers
-          .map((transfer) => transfer.toSuggestedTransfer()),
+    final groupScope = (
+      tripId: widget.trip.id,
+      groupId: widget.group.id,
     );
-    final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
-    final myTotalsByCurrency = _sumByCurrency(
-      widget.allTripExpenses.where(
-        (expense) {
-          final paidBy = expense.paidBy.trim();
-          return viewerMemberId != null && paidBy == viewerMemberId;
-        },
-      ),
-    );
+    final summary =
+        ref.watch(expenseGroupSummaryStreamProvider(groupScope)).asData?.value;
+    final postTotalsByCurrency = summary?.postTotalsByCurrency ?? const {};
+    final myTotalsByCurrency = viewerMemberId != null
+        ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
+        : const <String, double>{};
+    final canMarkReimbursement =
+        widget.group.isVisibleTo(widget.currentUserMemberId);
     final scope = participantScopeMemberIdsForGroup(
       widget.group,
       widget.participants,
@@ -686,18 +753,23 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
+    final effectiveCanEditPost = canEditPost && !widget.lockRestrictsEditing;
+    final effectiveCanDeletePost = canDeletePost && !widget.lockRestrictsEditing;
+    final effectiveCanEditExpense = canEditExpense && !widget.lockRestrictsEditing;
+    final effectiveCanDeleteExpense =
+        canDeleteExpense && !widget.lockRestrictsEditing;
+    final showPostMenu = !widget.group.isDefault &&
+        (effectiveCanEditPost || effectiveCanDeletePost);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              SegmentedButton<_ExpensePostView>(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SegmentedButton<_ExpensePostView>(
                 segments: [
                   ButtonSegment<_ExpensePostView>(
                     value: _ExpensePostView.operations,
@@ -713,13 +785,19 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                 selected: {_activeView},
                 onSelectionChanged: (selection) {
                   if (selection.isEmpty) return;
-                  setState(() => _activeView = selection.first);
+                  final next = selection.first;
+                  setState(() => _activeView = next);
+                  if (next == _ExpensePostView.settlement) {
+                    _markExpensesNotificationsReadIfNeeded(widget.trip.id);
+                    _syncExpensesPresenceIfNeeded(widget.trip.id);
+                  } else {
+                    _clearExpensesPresenceIfNeeded(widget.trip.id);
+                  }
                 },
               ),
-              if (!widget.group.isDefault && (canEditPost || canDeletePost))
-                Positioned(
-                  right: -6,
-                  child: PopupMenuButton<_ExpensePostMenuAction>(
+            ),
+            if (showPostMenu)
+              PopupMenuButton<_ExpensePostMenuAction>(
                     tooltip: l10n.tripOverviewActions,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -743,7 +821,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     },
                     itemBuilder: (context) {
                       final items = <PopupMenuEntry<_ExpensePostMenuAction>>[];
-                      if (canEditPost) {
+                      if (effectiveCanEditPost) {
                         items.add(
                           PopupMenuItem<_ExpensePostMenuAction>(
                             value: _ExpensePostMenuAction.edit,
@@ -757,7 +835,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                           ),
                         );
                       }
-                      if (canDeletePost) {
+                      if (effectiveCanDeletePost) {
                         items.add(
                           PopupMenuItem<_ExpensePostMenuAction>(
                             value: _ExpensePostMenuAction.delete,
@@ -783,81 +861,38 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       return items;
                     },
                   ),
-                ),
-            ],
-          ),
+          ],
         ),
         const SizedBox(height: 12),
         if (_activeView == _ExpensePostView.settlement)
           _SettlementSection(
-            balancesByCurrency: settlement.balancesByCurrency,
-            pendingTransfers: settlement.suggestedTransfers,
-            settledTransfers: settledTransfersVisibleToViewer(
-              widget.groupSettledTransfers,
-              viewerMemberId,
-            ),
+            tripId: widget.trip.id,
+            group: widget.group,
+            groupExpenses: widget.groupExpenses,
             memberLabels: widget.memberLabels,
-            viewerUserId: viewerMemberId,
-            markingInProgress: _savingSettledTransfer,
-            onMarkTransferDone: (transfer) async {
-              if (_savingSettledTransfer) return;
-              setState(() => _savingSettledTransfer = true);
-              try {
-                await ref.read(expensesRepositoryProvider).markTransferAsSettled(
-                      tripId: widget.trip.id,
-                      groupId: widget.group.id,
-                      transfer: transfer,
-                    );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context)!.commonErrorWithDetails(
-                        e.toString(),
-                      ),
-                    ),
-                  ),
-                );
-              } finally {
-                if (mounted) {
-                  setState(() => _savingSettledTransfer = false);
-                }
-              }
-            },
-            onUnmarkSettled: (settled) async {
-              if (_savingSettledTransfer) return;
-              setState(() => _savingSettledTransfer = true);
-              try {
-                await ref.read(expensesRepositoryProvider).deleteSettledTransfer(
-                      tripId: widget.trip.id,
-                      settledTransferId: settled.id,
-                    );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context)!.commonErrorWithDetails(
-                        e.toString(),
-                      ),
-                    ),
-                  ),
-                );
-              } finally {
-                if (mounted) {
-                  setState(() => _savingSettledTransfer = false);
-                }
-              }
-            },
+            currentUserMemberId: widget.currentUserMemberId,
+            canMarkReimbursement: canMarkReimbursement,
+            expensesLocked: widget.expensesLocked,
+            isAdmin: widget.isAdminOrAbove,
           )
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ExpenseTotalsHeader(
-                myTotalsByCurrency: myTotalsByCurrency,
-                tripTotalsByCurrency: tripTotalsByCurrency,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _ExpenseTotalsHeader(
+                      myTotalsByCurrency: myTotalsByCurrency,
+                      postTotalsByCurrency: postTotalsByCurrency,
+                    ),
+                  ),
+                  if (widget.expensesLocked) ...[
+                    const SizedBox(width: 8),
+                    const _ExpensesLockedIndicator(),
+                  ],
+                ],
               ),
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
@@ -893,8 +928,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   widget.trip.id,
                   scope,
                   widget.memberLabels,
-                  canEditExpense: canEditExpense,
-                  canDeleteExpense: canDeleteExpense,
+                  canEditExpense: effectiveCanEditExpense,
+                  canDeleteExpense: effectiveCanDeleteExpense,
                 ),
             ],
           ),
@@ -907,20 +942,6 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 enum _ExpensePostView { operations, settlement }
 
 const _kDefaultExpenseCurrency = 'EUR';
-
-Map<String, double> _sumByCurrency(Iterable<TripExpense> expenses) {
-  final totals = <String, double>{};
-  for (final expense in expenses) {
-    final currency = expense.currency.trim().toUpperCase();
-    if (currency.isEmpty) continue;
-    totals.update(
-      currency,
-      (value) => value + expense.amount,
-      ifAbsent: () => expense.amount,
-    );
-  }
-  return totals;
-}
 
 String _formatTotalsByCurrency(Map<String, double> totalsByCurrency) {
   if (totalsByCurrency.isEmpty) {
@@ -948,30 +969,6 @@ String _formatExpenseDate(DateTime date) {
   return DateFormat('dd/MM/yyyy').format(date);
 }
 
-/// Remboursement suggéré : formulation à la 1ʳᵉ personne si [viewerUserId] est concerné.
-String _formatSuggestedTransferLine({
-  required SuggestedTransfer transfer,
-  required Map<String, String> memberLabels,
-  required String? viewerUserId,
-  required AppLocalizations l10n,
-}) {
-  final v = viewerUserId?.trim();
-  final fromId = transfer.fromUserId.trim();
-  final toId = transfer.toUserId.trim();
-  final fromL = memberLabels[fromId] ?? l10n.tripParticipantsTraveler;
-  final toL = memberLabels[toId] ?? l10n.tripParticipantsTraveler;
-  final amt = _formatMoney(transfer.currency, transfer.amount);
-
-  if (v != null && v.isNotEmpty) {
-    if (fromId == v) {
-      return l10n.expensesYouOwe(amt, toL);
-    }
-    if (toId == v) {
-      return l10n.expensesOwesYou(fromL, amt);
-    }
-  }
-  return l10n.expensesGivesTo(fromL, amt, toL);
-}
 
 enum _ExpenseDetailsMenuAction { edit, delete }
 enum _ExpensePostMenuAction { edit, delete }
@@ -979,11 +976,11 @@ enum _ExpensePostMenuAction { edit, delete }
 class _ExpenseTotalsHeader extends StatelessWidget {
   const _ExpenseTotalsHeader({
     required this.myTotalsByCurrency,
-    required this.tripTotalsByCurrency,
+    required this.postTotalsByCurrency,
   });
 
   final Map<String, double> myTotalsByCurrency;
-  final Map<String, double> tripTotalsByCurrency;
+  final Map<String, double> postTotalsByCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -1027,10 +1024,10 @@ class _ExpenseTotalsHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(l10n.expensesTripTotalCost, style: labelStyle),
+                Text(l10n.expensesPostTotal, style: labelStyle),
                 const SizedBox(height: 3),
                 Text(
-                  _formatTotalsByCurrency(tripTotalsByCurrency),
+                  _formatTotalsByCurrency(postTotalsByCurrency),
                   textAlign: TextAlign.right,
                   style: valueStyle?.copyWith(color: cs.inverseSurface),
                 ),
@@ -1043,43 +1040,430 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   }
 }
 
-class _SettlementSection extends StatelessWidget {
-  const _SettlementSection({
-    required this.balancesByCurrency,
-    required this.pendingTransfers,
-    required this.settledTransfers,
-    required this.memberLabels,
-    required this.viewerUserId,
-    required this.markingInProgress,
-    required this.onMarkTransferDone,
-    required this.onUnmarkSettled,
+/// Read-only indicator shown to all members when expenses are UI-locked.
+class _ExpensesLockedIndicator extends StatelessWidget {
+  const _ExpensesLockedIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.lock_outline,
+      size: 18,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+  }
+}
+
+/// Admin-only pill toggle (same style as suggested-reimbursement filters).
+class _ExpensesStatePillToggle extends StatelessWidget {
+  const _ExpensesStatePillToggle({
+    required this.offIcon,
+    required this.onIcon,
+    required this.on,
+    required this.onChanged,
   });
 
-  final BalancesByCurrency balancesByCurrency;
-  final List<SuggestedTransfer> pendingTransfers;
-  final List<SettledTransfer> settledTransfers;
+  final IconData offIcon;
+  final IconData onIcon;
+  final bool on;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      height: 30,
+      margin: const EdgeInsets.only(right: 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ExpensesStatePillSegment(
+            icon: offIcon,
+            selected: !on,
+            onTap: () => onChanged(false),
+          ),
+          _ExpensesStatePillSegment(
+            icon: onIcon,
+            selected: on,
+            onTap: () => onChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpensesStatePillSegment extends StatelessWidget {
+  const _ExpensesStatePillSegment({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? cs.secondaryContainer : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettlementSection extends ConsumerStatefulWidget {
+  const _SettlementSection({
+    required this.tripId,
+    required this.group,
+    required this.groupExpenses,
+    required this.memberLabels,
+    required this.currentUserMemberId,
+    required this.canMarkReimbursement,
+    required this.expensesLocked,
+    required this.isAdmin,
+  });
+
+  final String tripId;
+  final TripExpenseGroup group;
+  final List<TripExpense> groupExpenses;
   final Map<String, String> memberLabels;
-  final String? viewerUserId;
-  final bool markingInProgress;
-  final Future<void> Function(SuggestedTransfer transfer) onMarkTransferDone;
-  final Future<void> Function(SettledTransfer settled) onUnmarkSettled;
+  final String? currentUserMemberId;
+  final bool canMarkReimbursement;
+  final bool expensesLocked;
+  final bool isAdmin;
+
+  @override
+  ConsumerState<_SettlementSection> createState() => _SettlementSectionState();
+}
+
+class _SettlementSectionState extends ConsumerState<_SettlementSection> {
+  bool _showAllPost = false;
+  String? _busySuggestionKey;
+  bool _refreshing = false;
+
+  ExpenseGroupScope get _scope => (
+        tripId: widget.tripId,
+        groupId: widget.group.id,
+      );
+
+  bool _involvesCurrentUser(SuggestedReimbursement suggestion) {
+    final memberId = widget.currentUserMemberId?.trim();
+    if (memberId == null || memberId.isEmpty) return false;
+    return suggestion.fromParticipantId == memberId ||
+        suggestion.toParticipantId == memberId;
+  }
+
+  bool _involvesCurrentUserSettlement(TripExpense expense) {
+    final memberId = widget.currentUserMemberId?.trim();
+    if (memberId == null || memberId.isEmpty) return false;
+    final beneficiary = expense.participantIds.isNotEmpty
+        ? expense.participantIds.first
+        : '';
+    return expense.paidBy == memberId || beneficiary == memberId;
+  }
+
+  Future<void> _markPaid(SuggestedReimbursement suggestion) async {
+    if (!widget.canMarkReimbursement ||
+        !widget.expensesLocked ||
+        _busySuggestionKey != null) {
+      return;
+    }
+    final key =
+        '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}';
+    setState(() => _busySuggestionKey = key);
+    try {
+      await ref.read(expensesRepositoryProvider).markExpenseReimbursementPaid(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+            fromParticipantId: suggestion.fromParticipantId,
+            toParticipantId: suggestion.toParticipantId,
+            amount: suggestion.amount,
+            currency: suggestion.currency,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!
+                .expensesMarkReimbursementFailed(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busySuggestionKey = null);
+    }
+  }
+
+  Future<void> _unmarkPaid(TripExpense settlement) async {
+    if (!widget.canMarkReimbursement ||
+        !widget.expensesLocked ||
+        _busySuggestionKey != null) {
+      return;
+    }
+    setState(() => _busySuggestionKey = settlement.id);
+    try {
+      await ref.read(expensesRepositoryProvider).unmarkExpenseReimbursementPaid(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+            expenseId: settlement.id,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!
+                .expensesUnmarkReimbursementFailed(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busySuggestionKey = null);
+    }
+  }
+
+  Future<void> _setExpensesUiLocked(bool locked) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ref.read(expensesRepositoryProvider).setExpensesUiLocked(
+            tripId: widget.tripId,
+            locked: locked,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            locked ? l10n.expensesLockedSnackBar : l10n.expensesUnlockedSnackBar,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(e.toString())),
+        ),
+      );
+    }
+  }
+
+  Future<void> _setExpensesNotificationsEnabled(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ref.read(expensesRepositoryProvider).setExpensesNotificationsEnabled(
+            tripId: widget.tripId,
+            enabled: enabled,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled
+                ? l10n.expensesNotificationsEnabledSnackBar
+                : l10n.expensesNotificationsDisabledSnackBar,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(e.toString())),
+        ),
+      );
+    }
+  }
+
+  Future<void> _refreshSettlement() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await ref.read(expensesRepositoryProvider).refreshExpenseGroupSettlement(
+            tripId: widget.tripId,
+            groupId: widget.group.id,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.expensesBalancesRefreshed),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  String _participantLabel(String participantId) {
+    return widget.memberLabels[participantId] ??
+        AppLocalizations.of(context)!.tripParticipantsTraveler;
+  }
+
+  ({String title, bool bold}) _reimbursementLabel(String fromId, String toId) {
+    final l10n = AppLocalizations.of(context)!;
+    final me = widget.currentUserMemberId?.trim();
+    if (me != null && me.isNotEmpty) {
+      if (fromId == me) {
+        return (title: l10n.expensesReimbursementYouOweTo(_participantLabel(toId)), bold: true);
+      }
+      if (toId == me) {
+        return (title: l10n.expensesReimbursementOwesYou(_participantLabel(fromId)), bold: true);
+      }
+    }
+    return (
+      title: l10n.expensesReimbursementFromTo(_participantLabel(fromId), _participantLabel(toId)),
+      bold: false,
+    );
+  }
+
+  Widget _buildFilterSegment(
+    BuildContext context,
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? cs.secondaryContainer : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
     final pz = context.planerzColors;
+    final balancesAsync =
+        ref.watch(expenseGroupBalancesStreamProvider(_scope));
+    final suggestionsAsync =
+        ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
+    final states =
+        ref.watch(tripExpensesStatesStreamProvider(widget.tripId)).asData?.value ??
+            TripExpensesStates.defaults;
+
+    final balances = balancesAsync.asData?.value ?? const [];
+    final allSuggestions = suggestionsAsync.asData?.value ?? const [];
+    final visibleSuggestions = _showAllPost
+        ? allSuggestions
+        : allSuggestions.where(_involvesCurrentUser).toList();
+
+    final allSettlements = widget.groupExpenses
+        .where((e) => e.operationType == ExpenseOperationType.settlement)
+        .toList();
+    final visibleSettlements = _showAllPost
+        ? allSettlements
+        : allSettlements.where(_involvesCurrentUserSettlement).toList();
+
+    final hasBalances = balances.any((b) => b.nets.isNotEmpty);
+    final waitingForData = balancesAsync.isLoading || suggestionsAsync.isLoading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SectionHeader(
-          icon: Icons.balance_outlined,
-          label: l10n.expensesBalancesByCurrency,
-          iconColor: cs.secondary,
+        Row(
+          children: [
+            Expanded(
+              child: _SectionHeader(
+                icon: Icons.balance_outlined,
+                label: l10n.expensesBalancesByCurrency,
+                iconColor: cs.secondary,
+              ),
+            ),
+            if (widget.isAdmin) ...[
+              Tooltip(
+                message: states.expensesLocked
+                    ? l10n.expensesTooltipUnlockExpenses
+                    : l10n.expensesTooltipLockExpenses,
+                child: _ExpensesStatePillToggle(
+                  offIcon: Icons.lock_open_outlined,
+                  onIcon: Icons.lock_outline,
+                  on: states.expensesLocked,
+                  onChanged: _setExpensesUiLocked,
+                ),
+              ),
+              Tooltip(
+                message: states.expensesNotificationsEnabled
+                    ? l10n.expensesTooltipDisableExpenseNotifications
+                    : l10n.expensesTooltipEnableExpenseNotifications,
+                child: _ExpensesStatePillToggle(
+                  offIcon: Icons.notifications_off_outlined,
+                  onIcon: Icons.notifications_active_outlined,
+                  on: states.expensesNotificationsEnabled,
+                  onChanged: _setExpensesNotificationsEnabled,
+                ),
+              ),
+              IconButton(
+                tooltip: l10n.expensesRefreshBalances,
+                onPressed: _refreshing ? null : _refreshSettlement,
+                icon: _refreshing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
-        if (balancesByCurrency.isEmpty)
+        if (waitingForData && !hasBalances)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              l10n.expensesNoCalculationYet,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
+          )
+        else if (!hasBalances)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
@@ -1090,99 +1474,77 @@ class _SettlementSection extends StatelessWidget {
             ),
           )
         else
-          ...balancesByCurrency.entries.map((currencyEntry) {
-            final currency = currencyEntry.key;
-            final perUser = currencyEntry.value;
-            if (perUser.isEmpty) {
-              return const SizedBox.shrink();
-            }
-            final sortedIds = perUser.keys.toList()..sort();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currency,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            letterSpacing: 1.1,
+          for (final balance in balances)
+            if (balance.nets.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        balance.currency,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              letterSpacing: 1.1,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      for (final entry in (balance.nets.entries.toList()
+                        ..sort((a, b) => a.key.compareTo(b.key))))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _participantLabel(entry.key),
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ),
+                              _BalanceChip(
+                                amount: entry.value,
+                                currency: balance.currency,
+                              ),
+                            ],
                           ),
-                    ),
-                    const SizedBox(height: 6),
-                    ...sortedIds.map((uid) {
-                      final bal = perUser[uid] ?? 0;
-                      final label =
-                          memberLabels[uid] ?? l10n.tripParticipantsTraveler;
-                      final isCreditor = bal > 0.009;
-                      final isDebtor = bal < -0.009;
-
-                      final chipBg = isCreditor
-                          ? pz.successContainer
-                          : isDebtor
-                              ? cs.errorContainer
-                              : cs.surfaceContainerHighest;
-                      final chipFg = isCreditor
-                          ? pz.success
-                          : isDebtor
-                              ? cs.error
-                              : cs.onSurfaceVariant;
-                      final prefix = isCreditor
-                          ? l10n.expensesToReceive
-                          : isDebtor
-                              ? l10n.expensesToPay
-                              : l10n.expensesBalanced;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: chipBg,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '$prefix · ${_formatMoney(currency, bal.abs())}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: chipFg,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                          ],
                         ),
-                      );
-                    }),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            );
-          }),
         const SizedBox(height: 4),
-        _SectionHeader(
-          icon: Icons.sync_alt,
-          label: l10n.expensesSuggestedReimbursements,
-          iconColor: cs.primary,
+        Row(
+          children: [
+            Expanded(
+              child: _SectionHeader(
+                icon: Icons.sync_alt,
+                label: l10n.expensesSuggestedReimbursements,
+                iconColor: cs.primary,
+              ),
+            ),
+            Container(
+              height: 30,
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterSegment(context, l10n.commonAll, _showAllPost,
+                      () => setState(() => _showAllPost = true)),
+                  _buildFilterSegment(context, l10n.commonMe, !_showAllPost,
+                      () => setState(() => _showAllPost = false)),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
@@ -1191,82 +1553,197 @@ class _SettlementSection extends StatelessWidget {
                 color: cs.onSurfaceVariant,
               ),
         ),
-        const SizedBox(height: 12),
-        if (pendingTransfers.isEmpty && settledTransfers.isEmpty)
+        const SizedBox(height: 8),
+        if (visibleSuggestions.isEmpty)
           Text(
-            balancesByCurrency.isEmpty
+            waitingForData
                 ? l10n.expensesNoCalculationYet
-                : l10n.expensesYouOweNothing,
+                : l10n.expensesAddToSeeBreakdown,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
           )
-        else ...[
-          ...pendingTransfers.map((t) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Semantics(
-                label: l10n.expensesMarkReimbursementDoneSemantics,
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: false,
-                  onChanged: markingInProgress
-                      ? null
-                      : (value) async {
-                          if (value != true) return;
-                          await onMarkTransferDone(t);
-                        },
-                  title: Text(
-                    _formatSuggestedTransferLine(
-                      transfer: t,
-                      memberLabels: memberLabels,
-                      viewerUserId: viewerUserId,
-                      l10n: l10n,
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
+        else
+          ...visibleSuggestions.map((suggestion) {
+            final lbl = _reimbursementLabel(
+              suggestion.fromParticipantId,
+              suggestion.toParticipantId,
+            );
+            return _ReimbursementRow(
+              title: lbl.title,
+              bold: lbl.bold,
+              amountLabel: _formatMoney(suggestion.currency, suggestion.amount),
+              actionIcon: Icons.check_circle_outline,
+              actionTooltip: l10n.expensesMarkReimbursementPaid,
+              actionColor: pz.success,
+              showAction:
+                  widget.canMarkReimbursement && widget.expensesLocked,
+              busy: _busySuggestionKey ==
+                  '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}',
+              onAction: () => _markPaid(suggestion),
             );
           }),
-          ...settledTransfers.map((s) {
-            final t = s.toSuggestedTransfer();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Semantics(
-                label: l10n.expensesUnmarkReimbursementSemantics,
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: true,
-                  onChanged: markingInProgress
-                      ? null
-                      : (value) async {
-                          if (value != false) return;
-                          await onUnmarkSettled(s);
-                        },
-                  title: Text(
-                    _formatSuggestedTransferLine(
-                      transfer: t,
-                      memberLabels: memberLabels,
-                      viewerUserId: viewerUserId,
-                      l10n: l10n,
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
+        const SizedBox(height: 12),
+        _SectionHeader(
+          icon: Icons.check_circle_outline,
+          label: l10n.expensesSettledReimbursements,
+          iconColor: cs.tertiary,
+        ),
+        const SizedBox(height: 8),
+        if (visibleSettlements.isEmpty)
+          Text(
+            l10n.expensesAddToSeeBreakdown,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
                 ),
-              ),
+          )
+        else
+          ...visibleSettlements.map((settlement) {
+            final toId = settlement.participantIds.isNotEmpty
+                ? settlement.participantIds.first
+                : '';
+            final lbl = _reimbursementLabel(settlement.paidBy, toId);
+            return _ReimbursementRow(
+              title: lbl.title,
+              bold: lbl.bold,
+              amountLabel: _formatMoney(settlement.currency, settlement.amount),
+              actionIcon: Icons.cancel_outlined,
+              actionTooltip: l10n.expensesUnmarkReimbursementPaid,
+              actionColor: cs.error,
+              showAction:
+                  widget.canMarkReimbursement && widget.expensesLocked,
+              busy: _busySuggestionKey == settlement.id,
+              onAction: () => _unmarkPaid(settlement),
             );
           }),
-        ],
       ],
+    );
+  }
+}
+
+class _BalanceChip extends StatelessWidget {
+  const _BalanceChip({required this.amount, required this.currency});
+
+  final double amount;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final pz = context.planerzColors;
+
+    final isCreditor = amount > 0;
+    final isDebtor = amount < 0;
+
+    final bg = isCreditor
+        ? pz.successContainer
+        : isDebtor
+            ? cs.errorContainer
+            : cs.surfaceContainerHighest;
+    final fg = isCreditor
+        ? pz.success
+        : isDebtor
+            ? cs.error
+            : cs.onSurfaceVariant;
+    final prefix = isCreditor
+        ? l10n.expensesToReceive
+        : isDebtor
+            ? l10n.expensesToPay
+            : l10n.expensesBalanced;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$prefix · ${_formatMoney(currency, amount.abs())}',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _ReimbursementRow extends StatelessWidget {
+  const _ReimbursementRow({
+    required this.title,
+    required this.amountLabel,
+    required this.actionIcon,
+    required this.actionTooltip,
+    required this.showAction,
+    required this.busy,
+    required this.onAction,
+    this.actionColor,
+    this.bold = false,
+  });
+
+  final String title;
+  final String amountLabel;
+  final IconData actionIcon;
+  final String actionTooltip;
+  final bool showAction;
+  final bool busy;
+  final VoidCallback onAction;
+  final Color? actionColor;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: cs.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: bold ? FontWeight.w700 : null,
+                    ),
+              ),
+            ),
+            Text(
+              amountLabel,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            if (showAction) ...[
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: busy
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: actionColor ?? cs.primary,
+                        ),
+                      )
+                    : IconButton(
+                        tooltip: actionTooltip,
+                        onPressed: onAction,
+                        icon: Icon(actionIcon, size: 20, color: actionColor),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                      ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1397,6 +1874,7 @@ class _ExpenseCard extends StatelessWidget {
   final bool canDeleteExpense;
 
   Future<void> _openDetails(BuildContext context) async {
+    if (expense.operationType == ExpenseOperationType.settlement) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => _ExpenseDetailsPage(
@@ -1414,16 +1892,33 @@ class _ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = expense;
+    final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final isSettlement = e.operationType == ExpenseOperationType.settlement;
+    final accentColor = isSettlement ? cs.tertiary : cs.primary;
     final paidByLabel =
-        memberLabels[e.paidBy] ?? AppLocalizations.of(context)!.tripParticipantsTraveler;
+        memberLabels[e.paidBy] ?? l10n.tripParticipantsTraveler;
+    final subtitle = isSettlement
+        ? (e.participantIds.isNotEmpty
+            ? l10n.expensesReimbursementFromTo(
+                paidByLabel,
+                memberLabels[e.participantIds.first] ??
+                    l10n.tripParticipantsTraveler,
+              )
+            : l10n.expensesSettlementType)
+        : l10n.expensesPaidByWithLabel(paidByLabel);
+    final title = isSettlement
+        ? l10n.expensesSettlementType
+        : (e.title.isEmpty ? l10n.activitiesUntitled : e.title);
 
     return Card(
       margin: EdgeInsets.zero,
-      color: cs.surfaceContainerHighest,
+      color: isSettlement
+          ? cs.tertiaryContainer.withValues(alpha: 0.35)
+          : cs.surfaceContainerHighest,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _openDetails(context),
+        onTap: isSettlement ? null : () => _openDetails(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
           child: Row(
@@ -1433,12 +1928,16 @@ class _ExpenseCard extends StatelessWidget {
                 width: 4,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: cs.primary,
+                  color: accentColor,
                   borderRadius: const BorderRadius.horizontal(
                     left: Radius.circular(12),
                   ),
                 ),
               ),
+              if (isSettlement) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.swap_horiz, color: accentColor, size: 22),
+              ],
               const SizedBox(width: 10),
               Expanded(
                 child: Padding(
@@ -1448,18 +1947,14 @@ class _ExpenseCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        e.title.isEmpty
-                            ? AppLocalizations.of(context)!.activitiesUntitled
-                            : e.title,
+                        title,
                         style: Theme.of(context).textTheme.bodyLarge,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        AppLocalizations.of(context)!.expensesPaidByWithLabel(
-                          paidByLabel,
-                        ),
+                        subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -1475,13 +1970,17 @@ class _ExpenseCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: cs.primaryContainer,
+                    color: isSettlement
+                        ? cs.tertiaryContainer
+                        : cs.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _formatMoney(e.currency, e.amount),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: cs.onPrimaryContainer,
+                          color: isSettlement
+                              ? cs.onTertiaryContainer
+                              : cs.onPrimaryContainer,
                           fontWeight: FontWeight.w700,
                         ),
                   ),

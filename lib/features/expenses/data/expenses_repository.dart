@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
-import 'package:planerz/features/expenses/data/settled_transfer.dart';
-import 'package:planerz/features/expenses/domain/expense_settlement.dart';
+import 'package:planerz/features/expenses/data/expense_group_summary.dart';
+import 'package:planerz/features/expenses/data/expenses_states.dart';
+import 'package:planerz/features/expenses/data/group_balance.dart';
+import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -29,25 +33,48 @@ final tripExpensesStreamProvider =
   return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
 });
 
-/// Live list of settled transfers for a trip (oldest first).
-final tripSettledTransfersStreamProvider =
-    StreamProvider.autoDispose.family<List<SettledTransfer>, String>((
-      ref,
-      tripId,
-    ) {
-      return ref
-          .watch(expensesRepositoryProvider)
-          .watchTripSettledTransfers(tripId);
-    });
+typedef ExpenseGroupScope = ({String tripId, String groupId});
+
+final expenseGroupBalancesStreamProvider = StreamProvider.autoDispose
+    .family<List<GroupBalance>, ExpenseGroupScope>((ref, scope) {
+  return ref
+      .watch(expensesRepositoryProvider)
+      .watchGroupBalances(scope.tripId, scope.groupId);
+});
+
+final expenseGroupSuggestedReimbursementsStreamProvider =
+    StreamProvider.autoDispose
+        .family<List<SuggestedReimbursement>, ExpenseGroupScope>((ref, scope) {
+  return ref.watch(expensesRepositoryProvider).watchGroupSuggestedReimbursements(
+        scope.tripId,
+        scope.groupId,
+      );
+});
+
+final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
+    .family<ExpenseGroupSummary?, ExpenseGroupScope>((ref, scope) {
+  return ref
+      .watch(expensesRepositoryProvider)
+      .watchGroupExpenseSummary(scope.tripId, scope.groupId);
+});
+
+/// Live expense section state (lock + notifications) for a trip.
+final tripExpensesStatesStreamProvider =
+    StreamProvider.autoDispose.family<TripExpensesStates, String>((ref, tripId) {
+  return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
+});
 
 class ExpensesRepository {
   ExpensesRepository({
     required this.firestore,
     required this.auth,
-  });
+    FirebaseFunctions? functions,
+  }) : _functions = functions ??
+            FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion);
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final FirebaseFunctions _functions;
 
   CollectionReference<Map<String, dynamic>> _expenseGroupsCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('expenseGroups');
@@ -57,11 +84,63 @@ class ExpensesRepository {
     return firestore.collection('trips').doc(tripId).collection('expenses');
   }
 
-  CollectionReference<Map<String, dynamic>> _settledTransfersCol(String tripId) {
+  DocumentReference<Map<String, dynamic>> _expensesStatesDoc(String tripId) {
     return firestore
         .collection('trips')
-        .doc(tripId)
-        .collection('expenseSettledTransfers');
+        .doc(tripId.trim())
+        .collection('expenses_states')
+        .doc(kTripExpensesStatesDocId);
+  }
+
+  Stream<TripExpensesStates> watchExpensesStates(String tripId) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(TripExpensesStates.defaults);
+    }
+    return _expensesStatesDoc(cleanId).snapshots().map((snap) {
+      if (!snap.exists) return TripExpensesStates.defaults;
+      return TripExpensesStates.fromMap(snap.data() ?? const {});
+    });
+  }
+
+  Future<void> setExpensesUiLocked({
+    required String tripId,
+    required bool locked,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    await _expensesStatesDoc(cleanTripId).set(
+      <String, dynamic>{
+        'expensesLocked': locked,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> setExpensesNotificationsEnabled({
+    required String tripId,
+    required bool enabled,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    await _expensesStatesDoc(cleanTripId).set(
+      <String, dynamic>{
+        'expensesNotificationsEnabled': enabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+      SetOptions(merge: true),
+    );
   }
 
   Future<Trip> _requireTrip(String tripId) async {
@@ -118,6 +197,55 @@ class ExpensesRepository {
         .map((snap) => snap.docs.map(TripExpenseGroup.fromDoc).toList());
   }
 
+  Stream<List<GroupBalance>> watchGroupBalances(String tripId, String groupId) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(const <GroupBalance>[]);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('balances')
+        .snapshots()
+        .map((snap) => snap.docs.map(GroupBalance.fromDoc).toList());
+  }
+
+  Stream<List<SuggestedReimbursement>> watchGroupSuggestedReimbursements(
+    String tripId,
+    String groupId,
+  ) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(const <SuggestedReimbursement>[]);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('suggestedReimbursements')
+        .snapshots()
+        .map((snap) => snap.docs.map(SuggestedReimbursement.fromDoc).toList());
+  }
+
+  Stream<ExpenseGroupSummary?> watchGroupExpenseSummary(
+    String tripId,
+    String groupId,
+  ) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(null);
+    }
+    return _expenseGroupsCol(cleanTripId)
+        .doc(cleanGroupId)
+        .collection('summary')
+        .doc('current')
+        .snapshots()
+        .map((snap) {
+      if (!snap.exists) return null;
+      return ExpenseGroupSummary.fromDoc(snap);
+    });
+  }
+
   Stream<List<TripExpense>> watchTripExpenses(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -128,17 +256,6 @@ class ExpensesRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(TripExpense.fromDoc).toList());
-  }
-
-  Stream<List<SettledTransfer>> watchTripSettledTransfers(String tripId) {
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return Stream.value(const <SettledTransfer>[]);
-    }
-    return _settledTransfersCol(cleanId)
-        .orderBy('createdAt')
-        .snapshots()
-        .map((snap) => snap.docs.map(SettledTransfer.fromDoc).toList());
   }
 
   Future<void> addExpenseGroup({
@@ -269,17 +386,60 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.deleteExpensePostMinRole,
     );
 
-    final groupRef = _expenseGroupsCol(cleanTripId).doc(cleanGroupId);
-    final expensesSnap = await _expensesCol(cleanTripId)
-        .where('groupId', isEqualTo: cleanGroupId)
-        .get();
+    final callable = _functions.httpsCallable('deleteExpenseGroup');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': cleanTripId,
+      'groupId': cleanGroupId,
+    });
+  }
 
-    final batch = firestore.batch();
-    for (final doc in expensesSnap.docs) {
-      batch.delete(doc.reference);
+  Future<String> markExpenseReimbursementPaid({
+    required String tripId,
+    required String groupId,
+    required String fromParticipantId,
+    required String toParticipantId,
+    required double amount,
+    required String currency,
+  }) async {
+    final callable = _functions.httpsCallable('markExpenseReimbursementPaid');
+    final result = await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+      'fromParticipantId': fromParticipantId.trim(),
+      'toParticipantId': toParticipantId.trim(),
+      'amount': amount,
+      'currency': currency.trim().toUpperCase(),
+    });
+    final expenseId = result.data['expenseId']?.toString().trim() ?? '';
+    if (expenseId.isEmpty) {
+      throw StateError('Réponse serveur invalide');
     }
-    batch.delete(groupRef);
-    await batch.commit();
+    return expenseId;
+  }
+
+  Future<void> unmarkExpenseReimbursementPaid({
+    required String tripId,
+    required String groupId,
+    required String expenseId,
+  }) async {
+    final callable = _functions.httpsCallable('unmarkExpenseReimbursementPaid');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+      'expenseId': expenseId.trim(),
+    });
+  }
+
+  Future<void> refreshExpenseGroupSettlement({
+    required String tripId,
+    required String groupId,
+  }) async {
+    final callable =
+        _functions.httpsCallable('refreshExpenseGroupSettlement');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': tripId.trim(),
+      'groupId': groupId.trim(),
+    });
   }
 
   Future<void> addExpense({
@@ -459,62 +619,4 @@ class ExpensesRepository {
     await _expensesCol(cleanTripId).doc(cleanExpenseId).delete();
   }
 
-  Future<void> markTransferAsSettled({
-    required String tripId,
-    required String groupId,
-    required SuggestedTransfer transfer,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanGroupId = groupId.trim();
-    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
-    final fromUserId = transfer.fromUserId.trim();
-    final toUserId = transfer.toUserId.trim();
-    final currency = transfer.currency.trim().toUpperCase();
-    if (fromUserId.isEmpty || toUserId.isEmpty || currency.isEmpty) {
-      throw StateError('Remboursement invalide');
-    }
-    final cents = (transfer.amount * 100).round();
-    if (cents <= 0) {
-      throw StateError('Montant invalide');
-    }
-
-    final amount = cents / 100.0;
-    final docId =
-        '${cleanGroupId}__${currency}__${fromUserId}__${toUserId}__$cents';
-    await _settledTransfersCol(cleanTripId).doc(docId).set({
-      'groupId': cleanGroupId,
-      'fromUserId': fromUserId,
-      'toUserId': toUserId,
-      'amount': amount,
-      'currency': currency,
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdBy': user.uid,
-    });
-  }
-
-  /// Removes a previously recorded settlement so balances and suggestions revert.
-  Future<void> deleteSettledTransfer({
-    required String tripId,
-    required String settledTransferId,
-  }) async {
-    if (auth.currentUser == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanDocId = settledTransferId.trim();
-    if (cleanTripId.isEmpty || cleanDocId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
-    await _settledTransfersCol(cleanTripId).doc(cleanDocId).delete();
-  }
 }

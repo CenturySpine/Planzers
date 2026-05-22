@@ -68,12 +68,13 @@ class TripNotificationCounters {
 
   int unreadFor(TripNotificationChannel channel) => channels[channel] ?? 0;
 
-  /// Unread shown on trip list and trip shell (messages + activities only).
+  /// Unread shown on trip list and trip shell (messages + activities + announcements + expenses).
   /// Cupidon is profile-only; [total] may still include legacy cupidon values.
   int get tripShellUnreadTotal =>
       unreadFor(TripNotificationChannel.messages) +
       unreadFor(TripNotificationChannel.activities) +
-      unreadFor(TripNotificationChannel.announcements);
+      unreadFor(TripNotificationChannel.announcements) +
+      unreadFor(TripNotificationChannel.expenses);
 
   bool hasChannel(TripNotificationChannel channel) => channels.containsKey(channel);
 
@@ -357,15 +358,17 @@ class NotificationCenterRepository {
       TripNotificationChannel.messages => 'messages',
       TripNotificationChannel.activities => 'activities',
       TripNotificationChannel.announcements => 'announcements',
+      TripNotificationChannel.expenses ||
       TripNotificationChannel.cupidon =>
-        throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
+        throw UnsupportedError('computeUnreadCount not applicable to $channel'),
     };
     final actorField = switch (channel) {
       TripNotificationChannel.messages => 'authorId',
       TripNotificationChannel.activities => 'createdBy',
       TripNotificationChannel.announcements => 'authorId',
+      TripNotificationChannel.expenses ||
       TripNotificationChannel.cupidon =>
-        throw UnsupportedError('computeUnreadCount not applicable to cupidon'),
+        throw UnsupportedError('computeUnreadCount not applicable to $channel'),
     };
 
     final baseQuery = firestore

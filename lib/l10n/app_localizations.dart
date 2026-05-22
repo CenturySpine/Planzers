@@ -3966,24 +3966,6 @@ abstract class AppLocalizations {
   /// **'Aucune opération dans ce poste.'**
   String get expensesNoOperationInPost;
 
-  /// No description provided for @expensesYouOwe.
-  ///
-  /// In fr, this message translates to:
-  /// **'Tu dois {amount} à {label}'**
-  String expensesYouOwe(Object amount, Object label);
-
-  /// No description provided for @expensesOwesYou.
-  ///
-  /// In fr, this message translates to:
-  /// **'{label} te doit {amount}'**
-  String expensesOwesYou(Object label, Object amount);
-
-  /// No description provided for @expensesGivesTo.
-  ///
-  /// In fr, this message translates to:
-  /// **'{from} donne {amount} à {to}'**
-  String expensesGivesTo(Object from, Object amount, Object to);
-
   /// No description provided for @expensesMyTotalSpend.
   ///
   /// In fr, this message translates to:
@@ -4026,6 +4008,66 @@ abstract class AppLocalizations {
   /// **'Équilibré'**
   String get expensesBalanced;
 
+  /// No description provided for @expensesRefreshBalances.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recalculer les soldes'**
+  String get expensesRefreshBalances;
+
+  /// No description provided for @expensesTooltipLockExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller les dépenses'**
+  String get expensesTooltipLockExpenses;
+
+  /// No description provided for @expensesTooltipUnlockExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller les dépenses'**
+  String get expensesTooltipUnlockExpenses;
+
+  /// No description provided for @expensesTooltipEnableExpenseNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer les notifications de dépenses'**
+  String get expensesTooltipEnableExpenseNotifications;
+
+  /// No description provided for @expensesTooltipDisableExpenseNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désactiver les notifications de dépenses'**
+  String get expensesTooltipDisableExpenseNotifications;
+
+  /// No description provided for @expensesLockedSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépenses verrouillées'**
+  String get expensesLockedSnackBar;
+
+  /// No description provided for @expensesUnlockedSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépenses déverrouillées'**
+  String get expensesUnlockedSnackBar;
+
+  /// No description provided for @expensesNotificationsEnabledSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notifications de dépenses activées'**
+  String get expensesNotificationsEnabledSnackBar;
+
+  /// No description provided for @expensesNotificationsDisabledSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notifications de dépenses désactivées'**
+  String get expensesNotificationsDisabledSnackBar;
+
+  /// No description provided for @expensesBalancesRefreshed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soldes recalculés'**
+  String get expensesBalancesRefreshed;
+
   /// No description provided for @expensesSuggestedReimbursements.
   ///
   /// In fr, this message translates to:
@@ -4044,23 +4086,71 @@ abstract class AppLocalizations {
   /// **'Pas encore de calcul.'**
   String get expensesNoCalculationYet;
 
-  /// No description provided for @expensesYouOweNothing.
+  /// No description provided for @expensesPostTotal.
   ///
   /// In fr, this message translates to:
-  /// **'Tu ne dois rien à personne 😎'**
-  String get expensesYouOweNothing;
+  /// **'Total du poste'**
+  String get expensesPostTotal;
 
-  /// No description provided for @expensesMarkReimbursementDoneSemantics.
+  /// No description provided for @expensesSettlementType.
   ///
   /// In fr, this message translates to:
-  /// **'Marquer ce remboursement comme effectué'**
-  String get expensesMarkReimbursementDoneSemantics;
+  /// **'Remboursement'**
+  String get expensesSettlementType;
 
-  /// No description provided for @expensesUnmarkReimbursementSemantics.
+  /// No description provided for @expensesMarkReimbursementPaid.
   ///
   /// In fr, this message translates to:
-  /// **'Annuler le marquage de ce remboursement'**
-  String get expensesUnmarkReimbursementSemantics;
+  /// **'Marquer comme payé'**
+  String get expensesMarkReimbursementPaid;
+
+  /// No description provided for @expensesUnmarkReimbursementPaid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler le paiement'**
+  String get expensesUnmarkReimbursementPaid;
+
+  /// No description provided for @expensesSettledReimbursements.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remboursements effectués'**
+  String get expensesSettledReimbursements;
+
+  /// No description provided for @expensesReimbursementFromTo.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} rembourse {to}'**
+  String expensesReimbursementFromTo(Object from, Object to);
+
+  /// No description provided for @expensesReimbursementYouOweTo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu dois à {name}'**
+  String expensesReimbursementYouOweTo(Object name);
+
+  /// No description provided for @expensesReimbursementOwesYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} te doit'**
+  String expensesReimbursementOwesYou(Object name);
+
+  /// No description provided for @expensesBalanceNetLine.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} : {amount}'**
+  String expensesBalanceNetLine(Object label, Object amount);
+
+  /// No description provided for @expensesMarkReimbursementFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'enregistrer le remboursement : {error}'**
+  String expensesMarkReimbursementFailed(Object error);
+
+  /// No description provided for @expensesUnmarkReimbursementFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'annuler le remboursement : {error}'**
+  String expensesUnmarkReimbursementFailed(Object error);
 
   /// No description provided for @expensesDeleteExpenseTitle.
   ///

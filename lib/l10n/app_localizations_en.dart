@@ -2167,21 +2167,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesNoOperationInPost => 'No operation in this section.';
 
   @override
-  String expensesYouOwe(Object amount, Object label) {
-    return 'You owe $amount to $label';
-  }
-
-  @override
-  String expensesOwesYou(Object label, Object amount) {
-    return '$label owes you $amount';
-  }
-
-  @override
-  String expensesGivesTo(Object from, Object amount, Object to) {
-    return '$from gives $amount to $to';
-  }
-
-  @override
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
@@ -2203,6 +2188,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesBalanced => 'Balanced';
 
   @override
+  String get expensesRefreshBalances => 'Refresh balances';
+
+  @override
+  String get expensesTooltipLockExpenses => 'Lock expenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Unlock expenses';
+
+  @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Enable expense notifications';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Disable expense notifications';
+
+  @override
+  String get expensesLockedSnackBar => 'Expenses locked';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Expenses unlocked';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Expense notifications enabled';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Expense notifications disabled';
+
+  @override
+  String get expensesBalancesRefreshed => 'Balances refreshed';
+
+  @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';
 
   @override
@@ -2213,15 +2232,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesNoCalculationYet => 'No calculation yet.';
 
   @override
-  String get expensesYouOweNothing => 'You owe nothing to anyone 😎';
+  String get expensesPostTotal => 'Post total';
 
   @override
-  String get expensesMarkReimbursementDoneSemantics =>
-      'Mark this reimbursement as done';
+  String get expensesSettlementType => 'Reimbursement';
 
   @override
-  String get expensesUnmarkReimbursementSemantics =>
-      'Unmark this reimbursement';
+  String get expensesMarkReimbursementPaid => 'Mark as paid';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Undo payment';
+
+  @override
+  String get expensesSettledReimbursements => 'Recorded reimbursements';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from reimburses $to';
+  }
+
+  @override
+  String expensesReimbursementYouOweTo(Object name) {
+    return 'You owe $name';
+  }
+
+  @override
+  String expensesReimbursementOwesYou(Object name) {
+    return '$name owes you';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label: $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Could not record reimbursement: $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Could not undo reimbursement: $error';
+  }
 
   @override
   String get expensesDeleteExpenseTitle => 'Delete this expense?';
@@ -4922,21 +4975,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesNoOperationInPost => 'No operation in this section.';
 
   @override
-  String expensesYouOwe(Object amount, Object label) {
-    return 'You owe $amount to $label';
-  }
-
-  @override
-  String expensesOwesYou(Object label, Object amount) {
-    return '$label owes you $amount';
-  }
-
-  @override
-  String expensesGivesTo(Object from, Object amount, Object to) {
-    return '$from gives $amount to $to';
-  }
-
-  @override
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
@@ -4958,6 +4996,40 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesBalanced => 'Balanced';
 
   @override
+  String get expensesRefreshBalances => 'Refresh balances';
+
+  @override
+  String get expensesTooltipLockExpenses => 'Lock expenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Unlock expenses';
+
+  @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Enable expense notifications';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Disable expense notifications';
+
+  @override
+  String get expensesLockedSnackBar => 'Expenses locked';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Expenses unlocked';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Expense notifications enabled';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Expense notifications disabled';
+
+  @override
+  String get expensesBalancesRefreshed => 'Balances refreshed';
+
+  @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';
 
   @override
@@ -4968,15 +5040,49 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesNoCalculationYet => 'No calculation yet.';
 
   @override
-  String get expensesYouOweNothing => 'You owe nothing to anyone 😎';
+  String get expensesPostTotal => 'Post total';
 
   @override
-  String get expensesMarkReimbursementDoneSemantics =>
-      'Mark this reimbursement as done';
+  String get expensesSettlementType => 'Reimbursement';
 
   @override
-  String get expensesUnmarkReimbursementSemantics =>
-      'Unmark this reimbursement';
+  String get expensesMarkReimbursementPaid => 'Mark as paid';
+
+  @override
+  String get expensesUnmarkReimbursementPaid => 'Undo payment';
+
+  @override
+  String get expensesSettledReimbursements => 'Recorded reimbursements';
+
+  @override
+  String expensesReimbursementFromTo(Object from, Object to) {
+    return '$from reimburses $to';
+  }
+
+  @override
+  String expensesReimbursementYouOweTo(Object name) {
+    return 'You owe $name';
+  }
+
+  @override
+  String expensesReimbursementOwesYou(Object name) {
+    return '$name owes you';
+  }
+
+  @override
+  String expensesBalanceNetLine(Object label, Object amount) {
+    return '$label: $amount';
+  }
+
+  @override
+  String expensesMarkReimbursementFailed(Object error) {
+    return 'Could not record reimbursement: $error';
+  }
+
+  @override
+  String expensesUnmarkReimbursementFailed(Object error) {
+    return 'Could not undo reimbursement: $error';
+  }
 
   @override
   String get expensesDeleteExpenseTitle => 'Delete this expense?';
