@@ -32,6 +32,31 @@ function expensesCol(db, tripId) {
   return db.collection('trips').doc(tripId).collection('expenses');
 }
 
+function expensesStatesRef(db, tripId) {
+  return db
+    .collection('trips')
+    .doc(tripId)
+    .collection('expenses_states')
+    .doc('default');
+}
+
+function parseBoolFlag(raw, defaultValue) {
+  if (raw === true) return true;
+  if (raw === false) return false;
+  if (typeof raw === 'string') {
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return defaultValue;
+}
+
+async function areExpenseNotificationsEnabled(db, tripId) {
+  const snap = await expensesStatesRef(db, tripId).get();
+  if (!snap.exists) return true;
+  return parseBoolFlag(snap.data()?.expensesNotificationsEnabled, true);
+}
+
 async function resolveCallerParticipantId(db, tripId, uid) {
   const snap = await db
     .collection('trips')
@@ -341,30 +366,32 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
   });
 
   try {
-    const [toData, fromData, tripSnap] = await Promise.all([
-      resolveParticipantData(db, tripId, toParticipantId),
-      resolveParticipantData(db, tripId, fromParticipantId),
-      db.collection('trips').doc(tripId).get(),
-    ]);
-    const toUserId = toData?.userId;
-    if (toUserId && toUserId !== uid) {
-      const fromName = fromData?.displayName || "Quelqu'un";
-      const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
-      const amountLabel = formatReimbursementAmount(amount);
-      await db.collection('notificationQueue').add({
-        channel: 'expenses',
-        type: 'expense_reimbursement_paid',
-        tripId,
-        actorId: uid,
-        targetPath: `/trips/${tripId}/expenses`,
-        title: `Dépenses · ${tripTitle}`,
-        body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
-        candidateRecipients: [toUserId],
-        skipPresenceCheck: false,
-        androidChannelId: 'planerz_expenses',
-        payload: {},
-        createdAt: FieldValue.serverTimestamp(),
-      });
+    if (await areExpenseNotificationsEnabled(db, tripId)) {
+      const [toData, fromData, tripSnap] = await Promise.all([
+        resolveParticipantData(db, tripId, toParticipantId),
+        resolveParticipantData(db, tripId, fromParticipantId),
+        db.collection('trips').doc(tripId).get(),
+      ]);
+      const toUserId = toData?.userId;
+      if (toUserId && toUserId !== uid) {
+        const fromName = fromData?.displayName || "Quelqu'un";
+        const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+        const amountLabel = formatReimbursementAmount(amount);
+        await db.collection('notificationQueue').add({
+          channel: 'expenses',
+          type: 'expense_reimbursement_paid',
+          tripId,
+          actorId: uid,
+          targetPath: `/trips/${tripId}/expenses`,
+          title: `Dépenses · ${tripTitle}`,
+          body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
+          candidateRecipients: [toUserId],
+          skipPresenceCheck: false,
+          androidChannelId: 'planerz_expenses',
+          payload: {},
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
     }
   } catch (e) {
     console.warn('markExpenseReimbursementPaid: notification failed', e);
@@ -407,33 +434,35 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
   await expenseRef.delete();
 
   try {
-    const fromParticipantId = normalizeString(expense.paidBy);
-    const toParticipantId = normalizeString(expense.participantIds?.[0]);
-    if (fromParticipantId && toParticipantId) {
-      const [toData, fromData, tripSnap] = await Promise.all([
-        resolveParticipantData(db, tripId, toParticipantId),
-        resolveParticipantData(db, tripId, fromParticipantId),
-        db.collection('trips').doc(tripId).get(),
-      ]);
-      const toUserId = toData?.userId;
-      if (toUserId && toUserId !== uid) {
-        const fromName = fromData?.displayName || "Quelqu'un";
-        const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
-        const amountLabel = formatReimbursementAmount(expense.amount);
-        await db.collection('notificationQueue').add({
-          channel: 'expenses',
-          type: 'expense_reimbursement_unpaid',
-          tripId,
-          actorId: uid,
-          targetPath: `/trips/${tripId}/expenses`,
-          title: `Dépenses · ${tripTitle}`,
-          body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
-          candidateRecipients: [toUserId],
-          skipPresenceCheck: false,
-          androidChannelId: 'planerz_expenses',
-          payload: {},
-          createdAt: FieldValue.serverTimestamp(),
-        });
+    if (await areExpenseNotificationsEnabled(db, tripId)) {
+      const fromParticipantId = normalizeString(expense.paidBy);
+      const toParticipantId = normalizeString(expense.participantIds?.[0]);
+      if (fromParticipantId && toParticipantId) {
+        const [toData, fromData, tripSnap] = await Promise.all([
+          resolveParticipantData(db, tripId, toParticipantId),
+          resolveParticipantData(db, tripId, fromParticipantId),
+          db.collection('trips').doc(tripId).get(),
+        ]);
+        const toUserId = toData?.userId;
+        if (toUserId && toUserId !== uid) {
+          const fromName = fromData?.displayName || "Quelqu'un";
+          const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+          const amountLabel = formatReimbursementAmount(expense.amount);
+          await db.collection('notificationQueue').add({
+            channel: 'expenses',
+            type: 'expense_reimbursement_unpaid',
+            tripId,
+            actorId: uid,
+            targetPath: `/trips/${tripId}/expenses`,
+            title: `Dépenses · ${tripTitle}`,
+            body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
+            candidateRecipients: [toUserId],
+            skipPresenceCheck: false,
+            androidChannelId: 'planerz_expenses',
+            payload: {},
+            createdAt: FieldValue.serverTimestamp(),
+          });
+        }
       }
     }
   } catch (e) {

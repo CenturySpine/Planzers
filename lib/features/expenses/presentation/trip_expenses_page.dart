@@ -12,7 +12,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
-import 'package:planerz/features/expenses/data/expenses_ui_lock.dart';
+import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -87,16 +87,16 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
-    final locks = ref.watch(tripExpensesUiLockStreamProvider(trip.id)).asData?.value ??
-        TripExpensesUiLock.defaults;
+    final states = ref.watch(tripExpensesStatesStreamProvider(trip.id)).asData?.value ??
+        TripExpensesStates.defaults;
     final isAdminOrAbove = isTripRoleAllowed(
       currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
       minRole: TripPermissionRole.admin,
     );
-    final lockRestrictsEditing = locks.expensesLocked && !isAdminOrAbove;
+    final lockRestrictsEditing = states.expensesLocked && !isAdminOrAbove;
     final showExpensesFab =
         (canCreateExpense || canCreateExpensePost) &&
-        (isAdminOrAbove || !locks.expensesLocked);
+        (isAdminOrAbove || !states.expensesLocked);
 
     return Scaffold(
       body: groupsAsync.when(
@@ -113,7 +113,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
               activeGroupId: _activeGroupId,
               lockRestrictsEditing: lockRestrictsEditing,
               isAdminOrAbove: isAdminOrAbove,
-              expensesLocked: locks.expensesLocked,
+              expensesLocked: states.expensesLocked,
               onActiveGroupChanged: (groupId) {
                 if (_activeGroupId == groupId) return;
                 setState(() => _activeGroupId = groupId);
@@ -1053,15 +1053,19 @@ class _ExpensesLockedIndicator extends StatelessWidget {
   }
 }
 
-/// Admin-only lock toggle (same pill style as suggested-reimbursement filters).
-class _ExpensesUiLockToggle extends StatelessWidget {
-  const _ExpensesUiLockToggle({
-    required this.locked,
-    required this.onLockedChanged,
+/// Admin-only pill toggle (same style as suggested-reimbursement filters).
+class _ExpensesStatePillToggle extends StatelessWidget {
+  const _ExpensesStatePillToggle({
+    required this.offIcon,
+    required this.onIcon,
+    required this.on,
+    required this.onChanged,
   });
 
-  final bool locked;
-  final ValueChanged<bool> onLockedChanged;
+  final IconData offIcon;
+  final IconData onIcon;
+  final bool on;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1076,15 +1080,15 @@ class _ExpensesUiLockToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _ExpensesUiLockSegment(
-            icon: Icons.lock_open_outlined,
-            selected: !locked,
-            onTap: () => onLockedChanged(false),
+          _ExpensesStatePillSegment(
+            icon: offIcon,
+            selected: !on,
+            onTap: () => onChanged(false),
           ),
-          _ExpensesUiLockSegment(
-            icon: Icons.lock_outline,
-            selected: locked,
-            onTap: () => onLockedChanged(true),
+          _ExpensesStatePillSegment(
+            icon: onIcon,
+            selected: on,
+            onTap: () => onChanged(true),
           ),
         ],
       ),
@@ -1092,8 +1096,8 @@ class _ExpensesUiLockToggle extends StatelessWidget {
   }
 }
 
-class _ExpensesUiLockSegment extends StatelessWidget {
-  const _ExpensesUiLockSegment({
+class _ExpensesStatePillSegment extends StatelessWidget {
+  const _ExpensesStatePillSegment({
     required this.icon,
     required this.selected,
     required this.onTap,
@@ -1229,18 +1233,52 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   }
 
   Future<void> _setExpensesUiLocked(bool locked) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await ref.read(expensesRepositoryProvider).setExpensesUiLocked(
             tripId: widget.tripId,
             locked: locked,
           );
-    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            locked ? l10n.expensesLockedSnackBar : l10n.expensesUnlockedSnackBar,
           ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(e.toString())),
+        ),
+      );
+    }
+  }
+
+  Future<void> _setExpensesNotificationsEnabled(bool enabled) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ref.read(expensesRepositoryProvider).setExpensesNotificationsEnabled(
+            tripId: widget.tripId,
+            enabled: enabled,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled
+                ? l10n.expensesNotificationsEnabledSnackBar
+                : l10n.expensesNotificationsDisabledSnackBar,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.commonErrorWithDetails(e.toString())),
         ),
       );
     }
@@ -1334,9 +1372,9 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         ref.watch(expenseGroupBalancesStreamProvider(_scope));
     final suggestionsAsync =
         ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
-    final locks =
-        ref.watch(tripExpensesUiLockStreamProvider(widget.tripId)).asData?.value ??
-            TripExpensesUiLock.defaults;
+    final states =
+        ref.watch(tripExpensesStatesStreamProvider(widget.tripId)).asData?.value ??
+            TripExpensesStates.defaults;
 
     final balances = balancesAsync.asData?.value ?? const [];
     final allSuggestions = suggestionsAsync.asData?.value ?? const [];
@@ -1368,12 +1406,25 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             ),
             if (widget.isAdmin) ...[
               Tooltip(
-                message: locks.expensesLocked
+                message: states.expensesLocked
                     ? l10n.expensesTooltipUnlockExpenses
                     : l10n.expensesTooltipLockExpenses,
-                child: _ExpensesUiLockToggle(
-                  locked: locks.expensesLocked,
-                  onLockedChanged: _setExpensesUiLocked,
+                child: _ExpensesStatePillToggle(
+                  offIcon: Icons.lock_open_outlined,
+                  onIcon: Icons.lock_outline,
+                  on: states.expensesLocked,
+                  onChanged: _setExpensesUiLocked,
+                ),
+              ),
+              Tooltip(
+                message: states.expensesNotificationsEnabled
+                    ? l10n.expensesTooltipDisableExpenseNotifications
+                    : l10n.expensesTooltipEnableExpenseNotifications,
+                child: _ExpensesStatePillToggle(
+                  offIcon: Icons.notifications_off_outlined,
+                  onIcon: Icons.notifications_active_outlined,
+                  on: states.expensesNotificationsEnabled,
+                  onChanged: _setExpensesNotificationsEnabled,
                 ),
               ),
               IconButton(

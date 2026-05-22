@@ -4026,6 +4026,42 @@ abstract class AppLocalizations {
   /// **'Déverrouiller les dépenses'**
   String get expensesTooltipUnlockExpenses;
 
+  /// No description provided for @expensesTooltipEnableExpenseNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer les notifications de dépenses'**
+  String get expensesTooltipEnableExpenseNotifications;
+
+  /// No description provided for @expensesTooltipDisableExpenseNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désactiver les notifications de dépenses'**
+  String get expensesTooltipDisableExpenseNotifications;
+
+  /// No description provided for @expensesLockedSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépenses verrouillées'**
+  String get expensesLockedSnackBar;
+
+  /// No description provided for @expensesUnlockedSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépenses déverrouillées'**
+  String get expensesUnlockedSnackBar;
+
+  /// No description provided for @expensesNotificationsEnabledSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notifications de dépenses activées'**
+  String get expensesNotificationsEnabledSnackBar;
+
+  /// No description provided for @expensesNotificationsDisabledSnackBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Notifications de dépenses désactivées'**
+  String get expensesNotificationsDisabledSnackBar;
+
   /// No description provided for @expensesBalancesRefreshed.
   ///
   /// In fr, this message translates to:

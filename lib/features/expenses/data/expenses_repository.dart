@@ -6,7 +6,7 @@ import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expense_group_summary.dart';
-import 'package:planerz/features/expenses/data/expenses_ui_lock.dart';
+import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/group_balance.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -58,10 +58,10 @@ final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
       .watchGroupExpenseSummary(scope.tripId, scope.groupId);
 });
 
-/// Live UI lock flag for trip expense editing controls.
-final tripExpensesUiLockStreamProvider =
-    StreamProvider.autoDispose.family<TripExpensesUiLock, String>((ref, tripId) {
-  return ref.watch(expensesRepositoryProvider).watchExpensesUiLock(tripId);
+/// Live expense section state (lock + notifications) for a trip.
+final tripExpensesStatesStreamProvider =
+    StreamProvider.autoDispose.family<TripExpensesStates, String>((ref, tripId) {
+  return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
 });
 
 class ExpensesRepository {
@@ -84,22 +84,22 @@ class ExpensesRepository {
     return firestore.collection('trips').doc(tripId).collection('expenses');
   }
 
-  DocumentReference<Map<String, dynamic>> _expensesUiLockDoc(String tripId) {
+  DocumentReference<Map<String, dynamic>> _expensesStatesDoc(String tripId) {
     return firestore
         .collection('trips')
         .doc(tripId.trim())
-        .collection('expenses_ui_locks')
-        .doc(kTripExpensesUiLockDocId);
+        .collection('expenses_states')
+        .doc(kTripExpensesStatesDocId);
   }
 
-  Stream<TripExpensesUiLock> watchExpensesUiLock(String tripId) {
+  Stream<TripExpensesStates> watchExpensesStates(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
-      return Stream.value(TripExpensesUiLock.defaults);
+      return Stream.value(TripExpensesStates.defaults);
     }
-    return _expensesUiLockDoc(cleanId).snapshots().map((snap) {
-      if (!snap.exists) return TripExpensesUiLock.defaults;
-      return TripExpensesUiLock.fromMap(snap.data() ?? const {});
+    return _expensesStatesDoc(cleanId).snapshots().map((snap) {
+      if (!snap.exists) return TripExpensesStates.defaults;
+      return TripExpensesStates.fromMap(snap.data() ?? const {});
     });
   }
 
@@ -113,9 +113,29 @@ class ExpensesRepository {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
 
-    await _expensesUiLockDoc(cleanTripId).set(
+    await _expensesStatesDoc(cleanTripId).set(
       <String, dynamic>{
         'expensesLocked': locked,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> setExpensesNotificationsEnabled({
+    required String tripId,
+    required bool enabled,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    await _expensesStatesDoc(cleanTripId).set(
+      <String, dynamic>{
+        'expensesNotificationsEnabled': enabled,
         'updatedAt': FieldValue.serverTimestamp(),
         'updatedBy': user.uid,
       },

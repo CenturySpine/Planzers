@@ -2197,6 +2197,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesTooltipUnlockExpenses => 'Unlock expenses';
 
   @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Enable expense notifications';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Disable expense notifications';
+
+  @override
+  String get expensesLockedSnackBar => 'Expenses locked';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Expenses unlocked';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Expense notifications enabled';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Expense notifications disabled';
+
+  @override
   String get expensesBalancesRefreshed => 'Balances refreshed';
 
   @override
@@ -4981,6 +5003,28 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesTooltipUnlockExpenses => 'Unlock expenses';
+
+  @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Enable expense notifications';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Disable expense notifications';
+
+  @override
+  String get expensesLockedSnackBar => 'Expenses locked';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Expenses unlocked';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Expense notifications enabled';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Expense notifications disabled';
 
   @override
   String get expensesBalancesRefreshed => 'Balances refreshed';

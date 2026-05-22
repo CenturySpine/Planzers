@@ -2216,6 +2216,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesTooltipUnlockExpenses => 'Déverrouiller les dépenses';
 
   @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Activer les notifications de dépenses';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Désactiver les notifications de dépenses';
+
+  @override
+  String get expensesLockedSnackBar => 'Dépenses verrouillées';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Dépenses déverrouillées';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Notifications de dépenses activées';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Notifications de dépenses désactivées';
+
+  @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
 
   @override
@@ -5026,6 +5048,28 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesTooltipUnlockExpenses => 'Déverrouiller les dépenses';
+
+  @override
+  String get expensesTooltipEnableExpenseNotifications =>
+      'Activer les notifications de dépenses';
+
+  @override
+  String get expensesTooltipDisableExpenseNotifications =>
+      'Désactiver les notifications de dépenses';
+
+  @override
+  String get expensesLockedSnackBar => 'Dépenses verrouillées';
+
+  @override
+  String get expensesUnlockedSnackBar => 'Dépenses déverrouillées';
+
+  @override
+  String get expensesNotificationsEnabledSnackBar =>
+      'Notifications de dépenses activées';
+
+  @override
+  String get expensesNotificationsDisabledSnackBar =>
+      'Notifications de dépenses désactivées';
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';

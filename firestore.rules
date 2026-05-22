@@ -658,8 +658,8 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Expense section UI lock (hides edit FAB/actions; does not change permissions).
-      match /expenses_ui_locks/{lockDocId} {
+      // Expense section state (UI lock + notification channel toggle).
+      match /expenses_states/{stateDocId} {
         allow read: if isTripMember(tripId);
         allow create, update: if isTripMember(tripId)
           && tripCallerRoleRank(tripId) >= 2;
