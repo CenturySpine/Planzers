@@ -872,6 +872,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             memberLabels: widget.memberLabels,
             currentUserMemberId: widget.currentUserMemberId,
             canMarkReimbursement: canMarkReimbursement,
+            expensesLocked: widget.expensesLocked,
             isAdmin: widget.isAdminOrAbove,
           )
         else
@@ -1138,6 +1139,7 @@ class _SettlementSection extends ConsumerStatefulWidget {
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.canMarkReimbursement,
+    required this.expensesLocked,
     required this.isAdmin,
   });
 
@@ -1147,6 +1149,7 @@ class _SettlementSection extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final bool canMarkReimbursement;
+  final bool expensesLocked;
   final bool isAdmin;
 
   @override
@@ -1180,7 +1183,11 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   }
 
   Future<void> _markPaid(SuggestedReimbursement suggestion) async {
-    if (!widget.canMarkReimbursement || _busySuggestionKey != null) return;
+    if (!widget.canMarkReimbursement ||
+        !widget.expensesLocked ||
+        _busySuggestionKey != null) {
+      return;
+    }
     final key =
         '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}';
     setState(() => _busySuggestionKey = key);
@@ -1209,7 +1216,11 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   }
 
   Future<void> _unmarkPaid(TripExpense settlement) async {
-    if (!widget.canMarkReimbursement || _busySuggestionKey != null) return;
+    if (!widget.canMarkReimbursement ||
+        !widget.expensesLocked ||
+        _busySuggestionKey != null) {
+      return;
+    }
     setState(() => _busySuggestionKey = settlement.id);
     try {
       await ref.read(expensesRepositoryProvider).unmarkExpenseReimbursementPaid(
@@ -1565,7 +1576,8 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               actionIcon: Icons.check_circle_outline,
               actionTooltip: l10n.expensesMarkReimbursementPaid,
               actionColor: pz.success,
-              showAction: widget.canMarkReimbursement,
+              showAction:
+                  widget.canMarkReimbursement && widget.expensesLocked,
               busy: _busySuggestionKey ==
                   '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}',
               onAction: () => _markPaid(suggestion),
@@ -1598,7 +1610,8 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               actionIcon: Icons.cancel_outlined,
               actionTooltip: l10n.expensesUnmarkReimbursementPaid,
               actionColor: cs.error,
-              showAction: widget.canMarkReimbursement,
+              showAction:
+                  widget.canMarkReimbursement && widget.expensesLocked,
               busy: _busySuggestionKey == settlement.id,
               onAction: () => _unmarkPaid(settlement),
             );
