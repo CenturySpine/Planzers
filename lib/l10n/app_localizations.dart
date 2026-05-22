@@ -3966,24 +3966,6 @@ abstract class AppLocalizations {
   /// **'Aucune opération dans ce poste.'**
   String get expensesNoOperationInPost;
 
-  /// No description provided for @expensesYouOwe.
-  ///
-  /// In fr, this message translates to:
-  /// **'Tu dois {amount} à {label}'**
-  String expensesYouOwe(Object amount, Object label);
-
-  /// No description provided for @expensesOwesYou.
-  ///
-  /// In fr, this message translates to:
-  /// **'{label} te doit {amount}'**
-  String expensesOwesYou(Object label, Object amount);
-
-  /// No description provided for @expensesGivesTo.
-  ///
-  /// In fr, this message translates to:
-  /// **'{from} donne {amount} à {to}'**
-  String expensesGivesTo(Object from, Object amount, Object to);
-
   /// No description provided for @expensesMyTotalSpend.
   ///
   /// In fr, this message translates to:
@@ -4008,24 +3990,6 @@ abstract class AppLocalizations {
   /// **'Ajoute des dépenses pour voir la répartition.'**
   String get expensesAddToSeeBreakdown;
 
-  /// No description provided for @expensesToReceive.
-  ///
-  /// In fr, this message translates to:
-  /// **'À recevoir'**
-  String get expensesToReceive;
-
-  /// No description provided for @expensesToPay.
-  ///
-  /// In fr, this message translates to:
-  /// **'À payer'**
-  String get expensesToPay;
-
-  /// No description provided for @expensesBalanced.
-  ///
-  /// In fr, this message translates to:
-  /// **'Équilibré'**
-  String get expensesBalanced;
-
   /// No description provided for @expensesSuggestedReimbursements.
   ///
   /// In fr, this message translates to:
@@ -4043,24 +4007,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Pas encore de calcul.'**
   String get expensesNoCalculationYet;
-
-  /// No description provided for @expensesYouOweNothing.
-  ///
-  /// In fr, this message translates to:
-  /// **'Tu ne dois rien à personne 😎'**
-  String get expensesYouOweNothing;
-
-  /// No description provided for @expensesMarkReimbursementDoneSemantics.
-  ///
-  /// In fr, this message translates to:
-  /// **'Marquer ce remboursement comme effectué'**
-  String get expensesMarkReimbursementDoneSemantics;
-
-  /// No description provided for @expensesUnmarkReimbursementSemantics.
-  ///
-  /// In fr, this message translates to:
-  /// **'Annuler le marquage de ce remboursement'**
-  String get expensesUnmarkReimbursementSemantics;
 
   /// No description provided for @expensesDeleteExpenseTitle.
   ///

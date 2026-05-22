@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
-import 'package:planerz/features/expenses/data/settled_transfer.dart';
-import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
@@ -34,24 +31,6 @@ List<String> participantScopeMemberIdsForGroup(
     ..sort();
 }
 
-/// Settled transfers involving [viewerUserId], or all if viewer is null/blank.
-List<SettledTransfer> settledTransfersVisibleToViewer(
-  List<SettledTransfer> groupSettled,
-  String? viewerUserId,
-) {
-  final v = viewerUserId?.trim();
-  final filtered = v == null || v.isEmpty
-      ? groupSettled.toList()
-      : groupSettled
-          .where((t) {
-            final from = t.fromUserId.trim();
-            final to = t.toUserId.trim();
-            return from == v || to == v;
-          })
-          .toList();
-  filtered.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-  return filtered;
-}
 
 class TripExpensesPage extends ConsumerStatefulWidget {
   const TripExpensesPage({super.key});
@@ -70,8 +49,6 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final trip = TripScope.of(context);
     final groupsAsync = ref.watch(tripExpenseGroupsStreamProvider(trip.id));
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
-    final settledTransfersAsync =
-        ref.watch(tripSettledTransfersStreamProvider(trip.id));
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
@@ -106,35 +83,22 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     return Scaffold(
       body: groupsAsync.when(
         data: (groups) => expensesAsync.when(
-          data: (expenses) => settledTransfersAsync.when(
-            data: (settledTransfers) {
-              return _TripExpensesBody(
-                trip: trip,
-                participants: participants,
-                memberLabels: memberLabels,
-                memberIds: memberIds,
-                currentUserMemberId: currentUserMemberId,
-                groups: groups,
-                expenses: expenses,
-                settledTransfers: settledTransfers,
-                activeGroupId: _activeGroupId,
-                onActiveGroupChanged: (groupId) {
-                  if (_activeGroupId == groupId) return;
-                  setState(() => _activeGroupId = groupId);
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
+          data: (expenses) {
+            return _TripExpensesBody(
+              trip: trip,
+              participants: participants,
+              memberLabels: memberLabels,
+              memberIds: memberIds,
+              currentUserMemberId: currentUserMemberId,
+              groups: groups,
+              expenses: expenses,
+              activeGroupId: _activeGroupId,
+              onActiveGroupChanged: (groupId) {
+                if (_activeGroupId == groupId) return;
+                setState(() => _activeGroupId = groupId);
+              },
+            );
+          },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(
             child: Padding(
@@ -301,7 +265,6 @@ class _TripExpensesBody extends StatelessWidget {
     required this.currentUserMemberId,
     required this.groups,
     required this.expenses,
-    required this.settledTransfers,
     required this.activeGroupId,
     required this.onActiveGroupChanged,
   });
@@ -313,7 +276,6 @@ class _TripExpensesBody extends StatelessWidget {
   final String? currentUserMemberId;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
-  final List<SettledTransfer> settledTransfers;
   final String? activeGroupId;
   final ValueChanged<String> onActiveGroupChanged;
 
@@ -377,9 +339,6 @@ class _TripExpensesBody extends StatelessWidget {
                  groupExpenses: expenses
                       .where((e) => e.groupId == visibleGroups.single.id)
                       .toList(),
-                 groupSettledTransfers: settledTransfers
-                     .where((t) => t.groupId == visibleGroups.single.id)
-                     .toList(),
                   participants: participants,
                   memberIds: memberIds,
                   memberLabels: memberLabels,
@@ -394,7 +353,6 @@ class _TripExpensesBody extends StatelessWidget {
               trip: trip,
               groups: visibleGroups,
                expenses: expenses,
-               settledTransfers: settledTransfers,
                 participants: participants,
                 memberIds: memberIds,
               memberLabels: memberLabels,
@@ -414,7 +372,6 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.trip,
     required this.groups,
     required this.expenses,
-    required this.settledTransfers,
     required this.participants,
     required this.memberIds,
     required this.memberLabels,
@@ -427,7 +384,6 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final Trip trip;
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
-  final List<SettledTransfer> settledTransfers;
   final List<TripMember> participants;
   final List<String> memberIds;
   final Map<String, String> memberLabels;
@@ -534,9 +490,6 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                       allTripExpenses: widget.expenses,
                       groupExpenses:
                           widget.expenses.where((e) => e.groupId == group.id).toList(),
-                      groupSettledTransfers: widget.settledTransfers
-                          .where((t) => t.groupId == group.id)
-                          .toList(),
                       participants: widget.participants,
                       memberIds: widget.memberIds,
                       memberLabels: widget.memberLabels,
@@ -558,7 +511,6 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.group,
     required this.allTripExpenses,
     required this.groupExpenses,
-    required this.groupSettledTransfers,
     required this.participants,
     required this.memberIds,
     required this.memberLabels,
@@ -570,7 +522,6 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final TripExpenseGroup group;
   final List<TripExpense> allTripExpenses;
   final List<TripExpense> groupExpenses;
-  final List<SettledTransfer> groupSettledTransfers;
   final List<TripMember> participants;
   final List<String> memberIds;
   final Map<String, String> memberLabels;
@@ -583,7 +534,6 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
-  bool _savingSettledTransfer = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
 
   Future<void> _confirmDeletePost() async {
@@ -642,12 +592,6 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final l10n = AppLocalizations.of(context)!;
     final viewerUserId = widget.viewerUserId?.trim();
     final viewerMemberId = widget.currentUserMemberId?.trim();
-    final settlement = computeViewerSettlement(
-      widget.groupExpenses,
-      viewerMemberId,
-      settledTransfers: widget.groupSettledTransfers
-          .map((transfer) => transfer.toSuggestedTransfer()),
-    );
     final tripTotalsByCurrency = _sumByCurrency(widget.allTripExpenses);
     final myTotalsByCurrency = _sumByCurrency(
       widget.allTripExpenses.where(
@@ -789,68 +733,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         ),
         const SizedBox(height: 12),
         if (_activeView == _ExpensePostView.settlement)
-          _SettlementSection(
-            balancesByCurrency: settlement.balancesByCurrency,
-            pendingTransfers: settlement.suggestedTransfers,
-            settledTransfers: settledTransfersVisibleToViewer(
-              widget.groupSettledTransfers,
-              viewerMemberId,
-            ),
-            memberLabels: widget.memberLabels,
-            viewerUserId: viewerMemberId,
-            markingInProgress: _savingSettledTransfer,
-            onMarkTransferDone: (transfer) async {
-              if (_savingSettledTransfer) return;
-              setState(() => _savingSettledTransfer = true);
-              try {
-                await ref.read(expensesRepositoryProvider).markTransferAsSettled(
-                      tripId: widget.trip.id,
-                      groupId: widget.group.id,
-                      transfer: transfer,
-                    );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context)!.commonErrorWithDetails(
-                        e.toString(),
-                      ),
-                    ),
-                  ),
-                );
-              } finally {
-                if (mounted) {
-                  setState(() => _savingSettledTransfer = false);
-                }
-              }
-            },
-            onUnmarkSettled: (settled) async {
-              if (_savingSettledTransfer) return;
-              setState(() => _savingSettledTransfer = true);
-              try {
-                await ref.read(expensesRepositoryProvider).deleteSettledTransfer(
-                      tripId: widget.trip.id,
-                      settledTransferId: settled.id,
-                    );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context)!.commonErrorWithDetails(
-                        e.toString(),
-                      ),
-                    ),
-                  ),
-                );
-              } finally {
-                if (mounted) {
-                  setState(() => _savingSettledTransfer = false);
-                }
-              }
-            },
-          )
+          const _SettlementSection()
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -948,30 +831,6 @@ String _formatExpenseDate(DateTime date) {
   return DateFormat('dd/MM/yyyy').format(date);
 }
 
-/// Remboursement suggéré : formulation à la 1ʳᵉ personne si [viewerUserId] est concerné.
-String _formatSuggestedTransferLine({
-  required SuggestedTransfer transfer,
-  required Map<String, String> memberLabels,
-  required String? viewerUserId,
-  required AppLocalizations l10n,
-}) {
-  final v = viewerUserId?.trim();
-  final fromId = transfer.fromUserId.trim();
-  final toId = transfer.toUserId.trim();
-  final fromL = memberLabels[fromId] ?? l10n.tripParticipantsTraveler;
-  final toL = memberLabels[toId] ?? l10n.tripParticipantsTraveler;
-  final amt = _formatMoney(transfer.currency, transfer.amount);
-
-  if (v != null && v.isNotEmpty) {
-    if (fromId == v) {
-      return l10n.expensesYouOwe(amt, toL);
-    }
-    if (toId == v) {
-      return l10n.expensesOwesYou(fromL, amt);
-    }
-  }
-  return l10n.expensesGivesTo(fromL, amt, toL);
-}
 
 enum _ExpenseDetailsMenuAction { edit, delete }
 enum _ExpensePostMenuAction { edit, delete }
@@ -1044,31 +903,12 @@ class _ExpenseTotalsHeader extends StatelessWidget {
 }
 
 class _SettlementSection extends StatelessWidget {
-  const _SettlementSection({
-    required this.balancesByCurrency,
-    required this.pendingTransfers,
-    required this.settledTransfers,
-    required this.memberLabels,
-    required this.viewerUserId,
-    required this.markingInProgress,
-    required this.onMarkTransferDone,
-    required this.onUnmarkSettled,
-  });
-
-  final BalancesByCurrency balancesByCurrency;
-  final List<SuggestedTransfer> pendingTransfers;
-  final List<SettledTransfer> settledTransfers;
-  final Map<String, String> memberLabels;
-  final String? viewerUserId;
-  final bool markingInProgress;
-  final Future<void> Function(SuggestedTransfer transfer) onMarkTransferDone;
-  final Future<void> Function(SettledTransfer settled) onUnmarkSettled;
+  const _SettlementSection();
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
-    final pz = context.planerzColors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1079,105 +919,15 @@ class _SettlementSection extends StatelessWidget {
           iconColor: cs.secondary,
         ),
         const SizedBox(height: 8),
-        if (balancesByCurrency.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              l10n.expensesAddToSeeBreakdown,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-            ),
-          )
-        else
-          ...balancesByCurrency.entries.map((currencyEntry) {
-            final currency = currencyEntry.key;
-            final perUser = currencyEntry.value;
-            if (perUser.isEmpty) {
-              return const SizedBox.shrink();
-            }
-            final sortedIds = perUser.keys.toList()..sort();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            l10n.expensesAddToSeeBreakdown,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
                 ),
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      currency,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            letterSpacing: 1.1,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    ...sortedIds.map((uid) {
-                      final bal = perUser[uid] ?? 0;
-                      final label =
-                          memberLabels[uid] ?? l10n.tripParticipantsTraveler;
-                      final isCreditor = bal > 0.009;
-                      final isDebtor = bal < -0.009;
-
-                      final chipBg = isCreditor
-                          ? pz.successContainer
-                          : isDebtor
-                              ? cs.errorContainer
-                              : cs.surfaceContainerHighest;
-                      final chipFg = isCreditor
-                          ? pz.success
-                          : isDebtor
-                              ? cs.error
-                              : cs.onSurfaceVariant;
-                      final prefix = isCreditor
-                          ? l10n.expensesToReceive
-                          : isDebtor
-                              ? l10n.expensesToPay
-                              : l10n.expensesBalanced;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                label,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: chipBg,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '$prefix · ${_formatMoney(currency, bal.abs())}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: chipFg,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            );
-          }),
+          ),
+        ),
         const SizedBox(height: 4),
         _SectionHeader(
           icon: Icons.sync_alt,
@@ -1192,80 +942,12 @@ class _SettlementSection extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 12),
-        if (pendingTransfers.isEmpty && settledTransfers.isEmpty)
-          Text(
-            balancesByCurrency.isEmpty
-                ? l10n.expensesNoCalculationYet
-                : l10n.expensesYouOweNothing,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-          )
-        else ...[
-          ...pendingTransfers.map((t) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Semantics(
-                label: l10n.expensesMarkReimbursementDoneSemantics,
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: false,
-                  onChanged: markingInProgress
-                      ? null
-                      : (value) async {
-                          if (value != true) return;
-                          await onMarkTransferDone(t);
-                        },
-                  title: Text(
-                    _formatSuggestedTransferLine(
-                      transfer: t,
-                      memberLabels: memberLabels,
-                      viewerUserId: viewerUserId,
-                      l10n: l10n,
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
+        Text(
+          l10n.expensesNoCalculationYet,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
               ),
-            );
-          }),
-          ...settledTransfers.map((s) {
-            final t = s.toSuggestedTransfer();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Semantics(
-                label: l10n.expensesUnmarkReimbursementSemantics,
-                child: CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: true,
-                  onChanged: markingInProgress
-                      ? null
-                      : (value) async {
-                          if (value != false) return;
-                          await onUnmarkSettled(s);
-                        },
-                  title: Text(
-                    _formatSuggestedTransferLine(
-                      transfer: t,
-                      memberLabels: memberLabels,
-                      viewerUserId: viewerUserId,
-                      l10n: l10n,
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
+        ),
       ],
     );
   }

@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Expense currencies supported by the app (display + separate balance buckets).
+const Set<String> kSupportedExpenseCurrencies = {'EUR', 'USD'};
+
 /// How the expense total is allocated across [participantIds].
 enum ExpenseSplitMode {
   /// Same amount for each participant (`total / count`).

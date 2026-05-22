@@ -3,8 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
-import 'package:planerz/features/expenses/data/settled_transfer.dart';
-import 'package:planerz/features/expenses/domain/expense_settlement.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -29,17 +27,6 @@ final tripExpensesStreamProvider =
   return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
 });
 
-/// Live list of settled transfers for a trip (oldest first).
-final tripSettledTransfersStreamProvider =
-    StreamProvider.autoDispose.family<List<SettledTransfer>, String>((
-      ref,
-      tripId,
-    ) {
-      return ref
-          .watch(expensesRepositoryProvider)
-          .watchTripSettledTransfers(tripId);
-    });
-
 class ExpensesRepository {
   ExpensesRepository({
     required this.firestore,
@@ -55,13 +42,6 @@ class ExpensesRepository {
 
   CollectionReference<Map<String, dynamic>> _expensesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('expenses');
-  }
-
-  CollectionReference<Map<String, dynamic>> _settledTransfersCol(String tripId) {
-    return firestore
-        .collection('trips')
-        .doc(tripId)
-        .collection('expenseSettledTransfers');
   }
 
   Future<Trip> _requireTrip(String tripId) async {
@@ -128,17 +108,6 @@ class ExpensesRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs.map(TripExpense.fromDoc).toList());
-  }
-
-  Stream<List<SettledTransfer>> watchTripSettledTransfers(String tripId) {
-    final cleanId = tripId.trim();
-    if (cleanId.isEmpty) {
-      return Stream.value(const <SettledTransfer>[]);
-    }
-    return _settledTransfersCol(cleanId)
-        .orderBy('createdAt')
-        .snapshots()
-        .map((snap) => snap.docs.map(SettledTransfer.fromDoc).toList());
   }
 
   Future<void> addExpenseGroup({
@@ -459,62 +428,4 @@ class ExpensesRepository {
     await _expensesCol(cleanTripId).doc(cleanExpenseId).delete();
   }
 
-  Future<void> markTransferAsSettled({
-    required String tripId,
-    required String groupId,
-    required SuggestedTransfer transfer,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanGroupId = groupId.trim();
-    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
-    final fromUserId = transfer.fromUserId.trim();
-    final toUserId = transfer.toUserId.trim();
-    final currency = transfer.currency.trim().toUpperCase();
-    if (fromUserId.isEmpty || toUserId.isEmpty || currency.isEmpty) {
-      throw StateError('Remboursement invalide');
-    }
-    final cents = (transfer.amount * 100).round();
-    if (cents <= 0) {
-      throw StateError('Montant invalide');
-    }
-
-    final amount = cents / 100.0;
-    final docId =
-        '${cleanGroupId}__${currency}__${fromUserId}__${toUserId}__$cents';
-    await _settledTransfersCol(cleanTripId).doc(docId).set({
-      'groupId': cleanGroupId,
-      'fromUserId': fromUserId,
-      'toUserId': toUserId,
-      'amount': amount,
-      'currency': currency,
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdBy': user.uid,
-    });
-  }
-
-  /// Removes a previously recorded settlement so balances and suggestions revert.
-  Future<void> deleteSettledTransfer({
-    required String tripId,
-    required String settledTransferId,
-  }) async {
-    if (auth.currentUser == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    final cleanDocId = settledTransferId.trim();
-    if (cleanTripId.isEmpty || cleanDocId.isEmpty) {
-      throw StateError('Parametres invalides');
-    }
-
-    await _settledTransfersCol(cleanTripId).doc(cleanDocId).delete();
-  }
 }

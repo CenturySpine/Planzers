@@ -2185,21 +2185,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesNoOperationInPost => 'Aucune opération dans ce poste.';
 
   @override
-  String expensesYouOwe(Object amount, Object label) {
-    return 'Tu dois $amount à $label';
-  }
-
-  @override
-  String expensesOwesYou(Object label, Object amount) {
-    return '$label te doit $amount';
-  }
-
-  @override
-  String expensesGivesTo(Object from, Object amount, Object to) {
-    return '$from donne $amount à $to';
-  }
-
-  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
 
   @override
@@ -2213,15 +2198,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajoute des dépenses pour voir la répartition.';
 
   @override
-  String get expensesToReceive => 'À recevoir';
-
-  @override
-  String get expensesToPay => 'À payer';
-
-  @override
-  String get expensesBalanced => 'Équilibré';
-
-  @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
 
   @override
@@ -2230,17 +2206,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get expensesNoCalculationYet => 'Pas encore de calcul.';
-
-  @override
-  String get expensesYouOweNothing => 'Tu ne dois rien à personne 😎';
-
-  @override
-  String get expensesMarkReimbursementDoneSemantics =>
-      'Marquer ce remboursement comme effectué';
-
-  @override
-  String get expensesUnmarkReimbursementSemantics =>
-      'Annuler le marquage de ce remboursement';
 
   @override
   String get expensesDeleteExpenseTitle => 'Supprimer cette dépense ?';
@@ -4966,21 +4931,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get expensesNoOperationInPost => 'Aucune opération dans ce poste.';
 
   @override
-  String expensesYouOwe(Object amount, Object label) {
-    return 'Tu dois $amount à $label';
-  }
-
-  @override
-  String expensesOwesYou(Object label, Object amount) {
-    return '$label te doit $amount';
-  }
-
-  @override
-  String expensesGivesTo(Object from, Object amount, Object to) {
-    return '$from donne $amount à $to';
-  }
-
-  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
 
   @override
@@ -4994,15 +4944,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Ajoute des dépenses pour voir la répartition.';
 
   @override
-  String get expensesToReceive => 'À recevoir';
-
-  @override
-  String get expensesToPay => 'À payer';
-
-  @override
-  String get expensesBalanced => 'Équilibré';
-
-  @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
 
   @override
@@ -5011,17 +4952,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesNoCalculationYet => 'Pas encore de calcul.';
-
-  @override
-  String get expensesYouOweNothing => 'Tu ne dois rien à personne 😎';
-
-  @override
-  String get expensesMarkReimbursementDoneSemantics =>
-      'Marquer ce remboursement comme effectué';
-
-  @override
-  String get expensesUnmarkReimbursementSemantics =>
-      'Annuler le marquage de ce remboursement';
 
   @override
   String get expensesDeleteExpenseTitle => 'Supprimer cette dépense ?';
