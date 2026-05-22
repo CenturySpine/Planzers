@@ -7,7 +7,9 @@
  * d'un voyage (isDefault, ex. « Commun »), même logique que l'onglet « Équilibres ».
  * Libellés : memberPublicLabels du voyage, puis users/{uid} si absent (prod legacy).
  *
- * Algorithme : scripts/expense_settlement.js (miroir de expense_settlement.dart).
+ * Algorithme : scripts/expense_settlement.js (script utilitaire).
+ * En production, les remboursements payés sont des expenses operationType settlement ;
+ * expenseSettledTransfers est legacy (ignoré par l'app).
  *
  * Usage :
  *   node trip_expense_settlements.js --key <service-account.json> --trip <tripId>
