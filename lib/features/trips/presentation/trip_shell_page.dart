@@ -113,6 +113,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
 
     var unreadMessages = 0;
     var unreadActivities = 0;
+    var unreadExpenses = 0;
     final messages = messagesAsync.asData?.value;
     final activities = activitiesAsync.asData?.value;
     final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
@@ -139,10 +140,15 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
         return activity.createdAt.toUtc().isAfter(activitiesLastReadAt);
       }).length;
     }
+    if (counters != null &&
+        counters.hasChannel(TripNotificationChannel.expenses)) {
+      unreadExpenses = counters.unreadFor(TripNotificationChannel.expenses);
+    }
 
     int unreadForLabel(String label) => switch (label) {
           'Messagerie' => unreadMessages,
           'Planning' => unreadActivities,
+          'Dépenses' => unreadExpenses,
           _ => 0,
         };
 
@@ -228,13 +234,15 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                                 icon: d.icon,
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Planning',
+                                    d.label == 'Planning' ||
+                                    d.label == 'Dépenses',
                               ),
                               selectedIcon: _buildNavIcon(
                                 icon: d.selectedIcon,
                                 unreadCount: unreadForLabel(d.label),
                                 showBadge: d.label == 'Messagerie' ||
-                                    d.label == 'Planning',
+                                    d.label == 'Planning' ||
+                                    d.label == 'Dépenses',
                               ),
                               label: Text(localizedNavLabel(d.label)),
                             ),
@@ -256,6 +264,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                         unreadByTabLabel: {
                           'Messagerie': unreadMessages,
                           'Planning': unreadActivities,
+                          'Dépenses': unreadExpenses,
                         },
                       ),
               );
@@ -427,7 +436,8 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
                                                               d.label] ??
                                                           0,
                                                   showBadge:
-                                                      d.label == 'Messagerie',
+                                                      d.label == 'Messagerie' ||
+                                                      d.label == 'Dépenses',
                                                   color: selected
                                                       ? colorScheme.primary
                                                       : colorScheme

@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/core/notifications/notification_center_repository.dart';
+import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
@@ -534,6 +539,80 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
+  late final NotificationCenterRepository _notificationCenter;
+  DateTime? _lastReadMarkedAt;
+  DateTime? _lastPresencePingAt;
+  String? _presenceTripId;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationCenter = ref.read(notificationCenterRepositoryProvider);
+  }
+
+  @override
+  void dispose() {
+    final tripId = _presenceTripId;
+    if (tripId != null && tripId.isNotEmpty) {
+      unawaited(_notificationCenter.clearOpenChannel(tripId: tripId));
+    }
+    super.dispose();
+  }
+
+  bool _isExpensesBalancesVisible() {
+    try {
+      final path = GoRouterState.of(context).uri.path;
+      if (!path.endsWith('/expenses') || path.contains('/settings/')) {
+        return false;
+      }
+      return _activeView == _ExpensePostView.settlement;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _markExpensesNotificationsReadIfNeeded(String tripId) {
+    if (!_isExpensesBalancesVisible()) return;
+    final now = DateTime.now().toUtc();
+    final lastMarked = _lastReadMarkedAt;
+    if (lastMarked != null &&
+        now.difference(lastMarked) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastReadMarkedAt = now;
+    unawaited(
+      _notificationCenter.markReadUpTo(
+        tripId: tripId,
+        channel: TripNotificationChannel.expenses,
+        timestamp: now,
+      ),
+    );
+  }
+
+  void _syncExpensesPresenceIfNeeded(String tripId) {
+    if (!_isExpensesBalancesVisible()) return;
+    final now = DateTime.now().toUtc();
+    final sameTrip = _presenceTripId == tripId;
+    final shouldPing = !sameTrip ||
+        _lastPresencePingAt == null ||
+        now.difference(_lastPresencePingAt!) > const Duration(seconds: 25);
+    if (!shouldPing) return;
+    _presenceTripId = tripId;
+    _lastPresencePingAt = now;
+    unawaited(
+      _notificationCenter.setOpenChannel(
+        tripId: tripId,
+        channel: TripNotificationChannel.expenses,
+      ),
+    );
+  }
+
+  void _clearExpensesPresenceIfNeeded(String tripId) {
+    if (_presenceTripId != tripId) return;
+    _presenceTripId = null;
+    _lastPresencePingAt = null;
+    unawaited(_notificationCenter.clearOpenChannel(tripId: tripId));
+  }
 
   Future<void> _confirmDeletePost() async {
     if (_deletingPost) return;
@@ -589,6 +668,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _markExpensesNotificationsReadIfNeeded(widget.trip.id);
+    _syncExpensesPresenceIfNeeded(widget.trip.id);
     final viewerUserId = widget.viewerUserId?.trim();
     final viewerMemberId = widget.currentUserMemberId?.trim();
     final groupScope = (
@@ -659,7 +740,14 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                 selected: {_activeView},
                 onSelectionChanged: (selection) {
                   if (selection.isEmpty) return;
-                  setState(() => _activeView = selection.first);
+                  final next = selection.first;
+                  setState(() => _activeView = next);
+                  if (next == _ExpensePostView.settlement) {
+                    _markExpensesNotificationsReadIfNeeded(widget.trip.id);
+                    _syncExpensesPresenceIfNeeded(widget.trip.id);
+                  } else {
+                    _clearExpensesPresenceIfNeeded(widget.trip.id);
+                  }
                 },
               ),
               if (!widget.group.isDefault && (canEditPost || canDeletePost))

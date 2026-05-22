@@ -1641,6 +1641,7 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
       TRIP_NOTIFICATION_CHANNELS.MESSAGES,
       TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
       TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
+      TRIP_NOTIFICATION_CHANNELS.EXPENSES,
     ];
     for (const channel of watchedChannels) {
       const beforeTs = beforeSnap.exists
@@ -1650,6 +1651,15 @@ exports.syncTripUnreadCountersFromReadState = onDocumentWritten(
       const beforeMillis = beforeTs ? beforeTs.toMillis() : 0;
       const afterMillis = afterTs ? afterTs.toMillis() : 0;
       if (beforeMillis === afterMillis) {
+        continue;
+      }
+      if (channel === TRIP_NOTIFICATION_CHANNELS.EXPENSES) {
+        await setTripChannelCounter({
+          tripId,
+          uid: userId,
+          channel,
+          value: 0,
+        });
         continue;
       }
       const readAfter =
