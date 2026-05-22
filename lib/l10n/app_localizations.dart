@@ -4062,18 +4062,6 @@ abstract class AppLocalizations {
   /// **'Annuler le paiement'**
   String get expensesUnmarkReimbursementPaid;
 
-  /// No description provided for @expensesShowAllPostReimbursements.
-  ///
-  /// In fr, this message translates to:
-  /// **'Tout le poste'**
-  String get expensesShowAllPostReimbursements;
-
-  /// No description provided for @expensesShowMyReimbursementsOnly.
-  ///
-  /// In fr, this message translates to:
-  /// **'Moi uniquement'**
-  String get expensesShowMyReimbursementsOnly;
-
   /// No description provided for @expensesSettledReimbursements.
   ///
   /// In fr, this message translates to:

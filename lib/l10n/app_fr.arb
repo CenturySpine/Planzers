@@ -872,8 +872,6 @@
   "expensesSettlementType": "Remboursement",
   "expensesMarkReimbursementPaid": "Marquer comme payé",
   "expensesUnmarkReimbursementPaid": "Annuler le paiement",
-  "expensesShowAllPostReimbursements": "Tout le poste",
-  "expensesShowMyReimbursementsOnly": "Moi uniquement",
   "expensesSettledReimbursements": "Remboursements effectués",
   "expensesReimbursementFromTo": "{from} rembourse {to}",
   "@expensesReimbursementFromTo": {"placeholders": {"from": {}, "to": {}}},

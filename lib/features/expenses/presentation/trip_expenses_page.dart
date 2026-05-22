@@ -1039,6 +1039,35 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         AppLocalizations.of(context)!.tripParticipantsTraveler;
   }
 
+  Widget _buildFilterSegment(
+    BuildContext context,
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? cs.secondaryContainer : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1067,19 +1096,6 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilterChip(
-            label: Text(
-              _showAllPost
-                  ? l10n.expensesShowAllPostReimbursements
-                  : l10n.expensesShowMyReimbursementsOnly,
-            ),
-            selected: _showAllPost,
-            onSelected: (selected) => setState(() => _showAllPost = selected),
-          ),
-        ),
-        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -1170,10 +1186,32 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 ),
               ),
         const SizedBox(height: 4),
-        _SectionHeader(
-          icon: Icons.sync_alt,
-          label: l10n.expensesSuggestedReimbursements,
-          iconColor: cs.primary,
+        Row(
+          children: [
+            Expanded(
+              child: _SectionHeader(
+                icon: Icons.sync_alt,
+                label: l10n.expensesSuggestedReimbursements,
+                iconColor: cs.primary,
+              ),
+            ),
+            Container(
+              height: 30,
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterSegment(context, l10n.commonAll, _showAllPost,
+                      () => setState(() => _showAllPost = true)),
+                  _buildFilterSegment(context, l10n.commonMe, !_showAllPost,
+                      () => setState(() => _showAllPost = false)),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(

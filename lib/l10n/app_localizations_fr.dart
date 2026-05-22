@@ -2235,12 +2235,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesUnmarkReimbursementPaid => 'Annuler le paiement';
 
   @override
-  String get expensesShowAllPostReimbursements => 'Tout le poste';
-
-  @override
-  String get expensesShowMyReimbursementsOnly => 'Moi uniquement';
-
-  @override
   String get expensesSettledReimbursements => 'Remboursements effectués';
 
   @override
@@ -5035,12 +5029,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesUnmarkReimbursementPaid => 'Annuler le paiement';
-
-  @override
-  String get expensesShowAllPostReimbursements => 'Tout le poste';
-
-  @override
-  String get expensesShowMyReimbursementsOnly => 'Moi uniquement';
 
   @override
   String get expensesSettledReimbursements => 'Remboursements effectués';

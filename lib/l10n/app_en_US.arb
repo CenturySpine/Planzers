@@ -834,8 +834,6 @@
   "expensesSettlementType": "Reimbursement",
   "expensesMarkReimbursementPaid": "Mark as paid",
   "expensesUnmarkReimbursementPaid": "Undo payment",
-  "expensesShowAllPostReimbursements": "Entire post",
-  "expensesShowMyReimbursementsOnly": "Only me",
   "expensesSettledReimbursements": "Recorded reimbursements",
   "expensesReimbursementFromTo": "{from} reimburses {to}",
   "@expensesReimbursementFromTo": {"placeholders": {"from": {}, "to": {}}},
