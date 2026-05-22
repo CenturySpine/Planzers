@@ -738,6 +738,7 @@ const TRIP_NOTIFICATION_CHANNELS = Object.freeze({
   MESSAGES: 'messages',
   ACTIVITIES: 'activities',
   ANNOUNCEMENTS: 'announcements',
+  EXPENSES: 'expenses',
   CUPIDON: 'cupidon',
 });
 
@@ -745,6 +746,7 @@ const ANDROID_CHANNEL_IDS = Object.freeze({
   messages: 'planerz_messages',
   activities: 'planerz_activities',
   announcements: 'planerz_announcements',
+  expenses: 'planerz_expenses',
   cupidon: 'planerz_cupidon',
 });
 
@@ -956,7 +958,7 @@ function channelsMap(data) {
 }
 
 /**
- * Trip list / shell badge total: messages + activities only (Cupidon is profile-only).
+ * Trip list / shell badge total: messages + activities + announcements + expenses (Cupidon is profile-only).
  * @param {Record<string, unknown>} channels
  * @returns {number}
  */
@@ -967,6 +969,7 @@ function tripNotificationShellTotalFromChannels(channels) {
   const msgsRaw = channels[TRIP_NOTIFICATION_CHANNELS.MESSAGES];
   const actsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ACTIVITIES];
   const announcementsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS];
+  const expensesRaw = channels[TRIP_NOTIFICATION_CHANNELS.EXPENSES];
   const msgs =
     typeof msgsRaw === 'number' ? msgsRaw : Number(msgsRaw) || 0;
   const acts =
@@ -975,7 +978,9 @@ function tripNotificationShellTotalFromChannels(channels) {
     typeof announcementsRaw === 'number'
       ? announcementsRaw
       : Number(announcementsRaw) || 0;
-  return msgs + acts + announcements;
+  const expenses =
+    typeof expensesRaw === 'number' ? expensesRaw : Number(expensesRaw) || 0;
+  return msgs + acts + announcements + expenses;
 }
 
 function channelReadTimestamp(data, channel) {
@@ -1805,16 +1810,9 @@ exports.reconcileMyCupidonNotificationCounters = onCall(
       const prev =
         typeof prevRaw === 'number' ? prevRaw : Number(prevRaw) || 0;
 
-      const msgsRaw = channels[TRIP_NOTIFICATION_CHANNELS.MESSAGES];
-      const actsRaw = channels[TRIP_NOTIFICATION_CHANNELS.ACTIVITIES];
-      const msgs =
-        typeof msgsRaw === 'number' ? msgsRaw : Number(msgsRaw) || 0;
-      const acts =
-        typeof actsRaw === 'number' ? actsRaw : Number(actsRaw) || 0;
-
       const totalRaw = data.total;
       const total = typeof totalRaw === 'number' ? totalRaw : Number(totalRaw) || 0;
-      const nextTotal = msgs + acts;
+      const nextTotal = tripNotificationShellTotalFromChannels(channels);
 
       if (prev === actual && total === nextTotal) {
         continue;

@@ -43,6 +43,25 @@ async function resolveCallerParticipantId(db, tripId, uid) {
   return snap.empty ? null : snap.docs[0].id;
 }
 
+async function resolveParticipantData(db, tripId, participantId) {
+  const snap = await db
+    .collection('trips')
+    .doc(tripId)
+    .collection('participants')
+    .doc(participantId)
+    .get();
+  if (!snap.exists) return null;
+  const data = snap.data() || {};
+  const userId = normalizeString(data.userId);
+  const displayName = normalizeString(data.participantName) || 'Utilisateur';
+  return { userId: userId || null, displayName };
+}
+
+function formatReimbursementAmount(amount) {
+  const fixed = parseFloat(amount.toFixed(2));
+  return fixed % 1 === 0 ? fixed.toFixed(0) : fixed.toFixed(2);
+}
+
 async function assertExpenseGroupVisibleToCaller({
   db,
   tripId,
@@ -321,6 +340,36 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
     });
   });
 
+  try {
+    const [toData, fromData, tripSnap] = await Promise.all([
+      resolveParticipantData(db, tripId, toParticipantId),
+      resolveParticipantData(db, tripId, fromParticipantId),
+      db.collection('trips').doc(tripId).get(),
+    ]);
+    const toUserId = toData?.userId;
+    if (toUserId && toUserId !== uid) {
+      const fromName = fromData?.displayName || "Quelqu'un";
+      const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+      const amountLabel = formatReimbursementAmount(amount);
+      await db.collection('notificationQueue').add({
+        channel: 'expenses',
+        type: 'expense_reimbursement_paid',
+        tripId,
+        actorId: uid,
+        targetPath: `/trips/${tripId}/expenses`,
+        title: `Dépenses · ${tripTitle}`,
+        body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
+        candidateRecipients: [toUserId],
+        skipPresenceCheck: false,
+        androidChannelId: 'planerz_expenses',
+        payload: {},
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+  } catch (e) {
+    console.warn('markExpenseReimbursementPaid: notification failed', e);
+  }
+
   return { expenseId: createdExpenseId };
 });
 
@@ -356,6 +405,41 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
   }
 
   await expenseRef.delete();
+
+  try {
+    const fromParticipantId = normalizeString(expense.paidBy);
+    const toParticipantId = normalizeString(expense.participantIds?.[0]);
+    if (fromParticipantId && toParticipantId) {
+      const [toData, fromData, tripSnap] = await Promise.all([
+        resolveParticipantData(db, tripId, toParticipantId),
+        resolveParticipantData(db, tripId, fromParticipantId),
+        db.collection('trips').doc(tripId).get(),
+      ]);
+      const toUserId = toData?.userId;
+      if (toUserId && toUserId !== uid) {
+        const fromName = fromData?.displayName || "Quelqu'un";
+        const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+        const amountLabel = formatReimbursementAmount(expense.amount);
+        await db.collection('notificationQueue').add({
+          channel: 'expenses',
+          type: 'expense_reimbursement_unpaid',
+          tripId,
+          actorId: uid,
+          targetPath: `/trips/${tripId}/expenses`,
+          title: `Dépenses · ${tripTitle}`,
+          body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
+          candidateRecipients: [toUserId],
+          skipPresenceCheck: false,
+          androidChannelId: 'planerz_expenses',
+          payload: {},
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('unmarkExpenseReimbursementPaid: notification failed', e);
+  }
+
   return { ok: true };
 });
 

@@ -2,12 +2,14 @@ enum TripNotificationChannel {
   messages,
   activities,
   announcements,
+  expenses,
   cupidon;
 
   String get firestoreKey => switch (this) {
         messages => 'messages',
         activities => 'activities',
         announcements => 'announcements',
+        expenses => 'expenses',
         cupidon => 'cupidon',
       };
 
@@ -15,6 +17,7 @@ enum TripNotificationChannel {
         messages => 'planerz_messages',
         activities => 'planerz_activities',
         announcements => 'planerz_announcements',
+        expenses => 'planerz_expenses',
         cupidon => 'planerz_cupidon',
       };
 
@@ -22,6 +25,7 @@ enum TripNotificationChannel {
         messages => 'Messages de voyage',
         activities => 'Activités de voyage',
         announcements => 'Annonces organisateurs',
+        expenses => 'Dépenses de voyage',
         cupidon => 'Mode Cupidon',
       };
 
@@ -29,6 +33,7 @@ enum TripNotificationChannel {
         messages => 'messages',
         activities => 'activities',
         announcements => 'announcements',
+        expenses => 'expenses',
         cupidon => 'cupidon',
       };
 
