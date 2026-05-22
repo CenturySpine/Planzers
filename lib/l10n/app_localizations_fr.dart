@@ -2243,6 +2243,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String expensesReimbursementYouOweTo(Object name) {
+    return 'Tu dois à $name';
+  }
+
+  @override
+  String expensesReimbursementOwesYou(Object name) {
+    return '$name te doit';
+  }
+
+  @override
   String expensesBalanceNetLine(Object label, Object amount) {
     return '$label : $amount';
   }
@@ -5036,6 +5046,16 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String expensesReimbursementFromTo(Object from, Object to) {
     return '$from rembourse $to';
+  }
+
+  @override
+  String expensesReimbursementYouOweTo(Object name) {
+    return 'Tu dois à $name';
+  }
+
+  @override
+  String expensesReimbursementOwesYou(Object name) {
+    return '$name te doit';
   }
 
   @override

@@ -1039,6 +1039,23 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         AppLocalizations.of(context)!.tripParticipantsTraveler;
   }
 
+  ({String title, bool bold}) _reimbursementLabel(String fromId, String toId) {
+    final l10n = AppLocalizations.of(context)!;
+    final me = widget.currentUserMemberId?.trim();
+    if (me != null && me.isNotEmpty) {
+      if (fromId == me) {
+        return (title: l10n.expensesReimbursementYouOweTo(_participantLabel(toId)), bold: true);
+      }
+      if (toId == me) {
+        return (title: l10n.expensesReimbursementOwesYou(_participantLabel(fromId)), bold: true);
+      }
+    }
+    return (
+      title: l10n.expensesReimbursementFromTo(_participantLabel(fromId), _participantLabel(toId)),
+      bold: false,
+    );
+  }
+
   Widget _buildFilterSegment(
     BuildContext context,
     String label,
@@ -1232,14 +1249,15 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 ),
           )
         else
-          for (final suggestion in visibleSuggestions)
-            _ReimbursementRow(
-              title: l10n.expensesReimbursementFromTo(
-                _participantLabel(suggestion.fromParticipantId),
-                _participantLabel(suggestion.toParticipantId),
-              ),
-              amountLabel:
-                  _formatMoney(suggestion.currency, suggestion.amount),
+          ...visibleSuggestions.map((suggestion) {
+            final lbl = _reimbursementLabel(
+              suggestion.fromParticipantId,
+              suggestion.toParticipantId,
+            );
+            return _ReimbursementRow(
+              title: lbl.title,
+              bold: lbl.bold,
+              amountLabel: _formatMoney(suggestion.currency, suggestion.amount),
               actionIcon: Icons.check_circle_outline,
               actionTooltip: l10n.expensesMarkReimbursementPaid,
               actionColor: pz.success,
@@ -1247,7 +1265,8 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               busy: _busySuggestionKey ==
                   '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}',
               onAction: () => _markPaid(suggestion),
-            ),
+            );
+          }),
         const SizedBox(height: 12),
         _SectionHeader(
           icon: Icons.check_circle_outline,
@@ -1263,14 +1282,14 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 ),
           )
         else
-          for (final settlement in visibleSettlements)
-            _ReimbursementRow(
-              title: l10n.expensesReimbursementFromTo(
-                _participantLabel(settlement.paidBy),
-                settlement.participantIds.isNotEmpty
-                    ? _participantLabel(settlement.participantIds.first)
-                    : l10n.tripParticipantsTraveler,
-              ),
+          ...visibleSettlements.map((settlement) {
+            final toId = settlement.participantIds.isNotEmpty
+                ? settlement.participantIds.first
+                : '';
+            final lbl = _reimbursementLabel(settlement.paidBy, toId);
+            return _ReimbursementRow(
+              title: lbl.title,
+              bold: lbl.bold,
               amountLabel: _formatMoney(settlement.currency, settlement.amount),
               actionIcon: Icons.cancel_outlined,
               actionTooltip: l10n.expensesUnmarkReimbursementPaid,
@@ -1278,7 +1297,8 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               showAction: widget.canMarkReimbursement,
               busy: _busySuggestionKey == settlement.id,
               onAction: () => _unmarkPaid(settlement),
-            ),
+            );
+          }),
       ],
     );
   }
@@ -1342,6 +1362,7 @@ class _ReimbursementRow extends StatelessWidget {
     required this.busy,
     required this.onAction,
     this.actionColor,
+    this.bold = false,
   });
 
   final String title;
@@ -1352,6 +1373,7 @@ class _ReimbursementRow extends StatelessWidget {
   final bool busy;
   final VoidCallback onAction;
   final Color? actionColor;
+  final bool bold;
 
   @override
   Widget build(BuildContext context) {
@@ -1366,7 +1388,9 @@ class _ReimbursementRow extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: bold ? FontWeight.w700 : null,
+                    ),
               ),
             ),
             Text(

@@ -4074,6 +4074,18 @@ abstract class AppLocalizations {
   /// **'{from} rembourse {to}'**
   String expensesReimbursementFromTo(Object from, Object to);
 
+  /// No description provided for @expensesReimbursementYouOweTo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu dois à {name}'**
+  String expensesReimbursementYouOweTo(Object name);
+
+  /// No description provided for @expensesReimbursementOwesYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} te doit'**
+  String expensesReimbursementOwesYou(Object name);
+
   /// No description provided for @expensesBalanceNetLine.
   ///
   /// In fr, this message translates to:
