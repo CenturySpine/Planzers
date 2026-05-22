@@ -1072,6 +1072,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final pz = context.planerzColors;
     final balancesAsync =
         ref.watch(expenseGroupBalancesStreamProvider(_scope));
     final suggestionsAsync =
@@ -1239,7 +1240,9 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               ),
               amountLabel:
                   _formatMoney(suggestion.currency, suggestion.amount),
-              actionLabel: l10n.expensesMarkReimbursementPaid,
+              actionIcon: Icons.check_circle_outline,
+              actionTooltip: l10n.expensesMarkReimbursementPaid,
+              actionColor: pz.success,
               showAction: widget.canMarkReimbursement,
               busy: _busySuggestionKey ==
                   '${suggestion.fromParticipantId}|${suggestion.toParticipantId}|${suggestion.currency}|${suggestion.amount}',
@@ -1269,7 +1272,9 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                     : l10n.tripParticipantsTraveler,
               ),
               amountLabel: _formatMoney(settlement.currency, settlement.amount),
-              actionLabel: l10n.expensesUnmarkReimbursementPaid,
+              actionIcon: Icons.cancel_outlined,
+              actionTooltip: l10n.expensesUnmarkReimbursementPaid,
+              actionColor: cs.error,
               showAction: widget.canMarkReimbursement,
               busy: _busySuggestionKey == settlement.id,
               onAction: () => _unmarkPaid(settlement),
@@ -1331,18 +1336,22 @@ class _ReimbursementRow extends StatelessWidget {
   const _ReimbursementRow({
     required this.title,
     required this.amountLabel,
-    required this.actionLabel,
+    required this.actionIcon,
+    required this.actionTooltip,
     required this.showAction,
     required this.busy,
     required this.onAction,
+    this.actionColor,
   });
 
   final String title;
   final String amountLabel;
-  final String actionLabel;
+  final IconData actionIcon;
+  final String actionTooltip;
   final bool showAction;
   final bool busy;
   final VoidCallback onAction;
+  final Color? actionColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1351,43 +1360,44 @@ class _ReimbursementRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       color: cs.surfaceContainerHighest,
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge,
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+            Text(
+              amountLabel,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                ),
-                Text(
-                  amountLabel,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
             ),
             if (showAction) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: busy ? null : onAction,
-                  child: busy
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: cs.primary,
-                          ),
-                        )
-                      : Text(actionLabel),
-                ),
+              const SizedBox(width: 4),
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: busy
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: actionColor ?? cs.primary,
+                        ),
+                      )
+                    : IconButton(
+                        tooltip: actionTooltip,
+                        onPressed: onAction,
+                        icon: Icon(actionIcon, size: 20, color: actionColor),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
+                      ),
               ),
             ],
           ],
