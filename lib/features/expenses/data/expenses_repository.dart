@@ -6,6 +6,7 @@ import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expense_group_summary.dart';
+import 'package:planerz/features/expenses/data/expenses_ui_lock.dart';
 import 'package:planerz/features/expenses/data/group_balance.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -57,6 +58,12 @@ final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
       .watchGroupExpenseSummary(scope.tripId, scope.groupId);
 });
 
+/// Live UI lock flag for trip expense editing controls.
+final tripExpensesUiLockStreamProvider =
+    StreamProvider.autoDispose.family<TripExpensesUiLock, String>((ref, tripId) {
+  return ref.watch(expensesRepositoryProvider).watchExpensesUiLock(tripId);
+});
+
 class ExpensesRepository {
   ExpensesRepository({
     required this.firestore,
@@ -75,6 +82,45 @@ class ExpensesRepository {
 
   CollectionReference<Map<String, dynamic>> _expensesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('expenses');
+  }
+
+  DocumentReference<Map<String, dynamic>> _expensesUiLockDoc(String tripId) {
+    return firestore
+        .collection('trips')
+        .doc(tripId.trim())
+        .collection('expenses_ui_locks')
+        .doc(kTripExpensesUiLockDocId);
+  }
+
+  Stream<TripExpensesUiLock> watchExpensesUiLock(String tripId) {
+    final cleanId = tripId.trim();
+    if (cleanId.isEmpty) {
+      return Stream.value(TripExpensesUiLock.defaults);
+    }
+    return _expensesUiLockDoc(cleanId).snapshots().map((snap) {
+      if (!snap.exists) return TripExpensesUiLock.defaults;
+      return TripExpensesUiLock.fromMap(snap.data() ?? const {});
+    });
+  }
+
+  Future<void> setExpensesUiLocked({
+    required String tripId,
+    required bool locked,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) throw StateError('Utilisateur non connecte');
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+
+    await _expensesUiLockDoc(cleanTripId).set(
+      <String, dynamic>{
+        'expensesLocked': locked,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': user.uid,
+      },
+      SetOptions(merge: true),
+    );
   }
 
   Future<Trip> _requireTrip(String tripId) async {

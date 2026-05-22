@@ -658,6 +658,14 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Expense section UI lock (hides edit FAB/actions; does not change permissions).
+      match /expenses_ui_locks/{lockDocId} {
+        allow read: if isTripMember(tripId);
+        allow create, update: if isTripMember(tripId)
+          && tripCallerRoleRank(tripId) >= 2;
+        allow delete: if false;
+      }
+
       // Persisted consolidated shopping list (`meta` + row docs). Reads must work even when empty.
       match /consolidatedShoppingItems/{docId} {
         allow read: if isTripMember(tripId);

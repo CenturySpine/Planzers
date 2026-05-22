@@ -826,6 +826,8 @@
   "expensesToPay": "To pay",
   "expensesBalanced": "Balanced",
   "expensesRefreshBalances": "Refresh balances",
+  "expensesTooltipLockExpenses": "Lock expenses",
+  "expensesTooltipUnlockExpenses": "Unlock expenses",
   "expensesBalancesRefreshed": "Balances refreshed",
   "expensesSuggestedReimbursements": "Suggested reimbursements",
   "expensesSuggestedReimbursementsHint": "Minimum number of transfers to balance accounts (per currency).",

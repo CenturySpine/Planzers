@@ -2210,6 +2210,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesRefreshBalances => 'Recalculer les soldes';
 
   @override
+  String get expensesTooltipLockExpenses => 'Verrouiller les dépenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Déverrouiller les dépenses';
+
+  @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
 
   @override
@@ -5014,6 +5020,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesRefreshBalances => 'Recalculer les soldes';
+
+  @override
+  String get expensesTooltipLockExpenses => 'Verrouiller les dépenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Déverrouiller les dépenses';
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';

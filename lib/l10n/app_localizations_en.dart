@@ -2191,6 +2191,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesRefreshBalances => 'Refresh balances';
 
   @override
+  String get expensesTooltipLockExpenses => 'Lock expenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Unlock expenses';
+
+  @override
   String get expensesBalancesRefreshed => 'Balances refreshed';
 
   @override
@@ -4969,6 +4975,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesRefreshBalances => 'Refresh balances';
+
+  @override
+  String get expensesTooltipLockExpenses => 'Lock expenses';
+
+  @override
+  String get expensesTooltipUnlockExpenses => 'Unlock expenses';
 
   @override
   String get expensesBalancesRefreshed => 'Balances refreshed';

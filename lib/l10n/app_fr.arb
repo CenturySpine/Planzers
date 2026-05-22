@@ -864,6 +864,8 @@
   "expensesToPay": "À payer",
   "expensesBalanced": "Équilibré",
   "expensesRefreshBalances": "Recalculer les soldes",
+  "expensesTooltipLockExpenses": "Verrouiller les dépenses",
+  "expensesTooltipUnlockExpenses": "Déverrouiller les dépenses",
   "expensesBalancesRefreshed": "Soldes recalculés",
   "expensesSuggestedReimbursements": "Remboursements suggérés",
   "expensesSuggestedReimbursementsHint": "Nombre minimal de virements pour équilibrer les comptes (par devise).",

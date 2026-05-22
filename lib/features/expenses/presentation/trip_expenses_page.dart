@@ -12,6 +12,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/expenses_ui_lock.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -86,7 +87,16 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
-    final showExpensesFab = canCreateExpense || canCreateExpensePost;
+    final locks = ref.watch(tripExpensesUiLockStreamProvider(trip.id)).asData?.value ??
+        TripExpensesUiLock.defaults;
+    final isAdminOrAbove = isTripRoleAllowed(
+      currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
+      minRole: TripPermissionRole.admin,
+    );
+    final lockRestrictsEditing = locks.expensesLocked && !isAdminOrAbove;
+    final showExpensesFab =
+        (canCreateExpense || canCreateExpensePost) &&
+        (isAdminOrAbove || !locks.expensesLocked);
 
     return Scaffold(
       body: groupsAsync.when(
@@ -101,6 +111,9 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
               groups: groups,
               expenses: expenses,
               activeGroupId: _activeGroupId,
+              lockRestrictsEditing: lockRestrictsEditing,
+              isAdminOrAbove: isAdminOrAbove,
+              expensesLocked: locks.expensesLocked,
               onActiveGroupChanged: (groupId) {
                 if (_activeGroupId == groupId) return;
                 setState(() => _activeGroupId = groupId);
@@ -274,6 +287,9 @@ class _TripExpensesBody extends StatelessWidget {
     required this.groups,
     required this.expenses,
     required this.activeGroupId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -285,6 +301,9 @@ class _TripExpensesBody extends StatelessWidget {
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final String? activeGroupId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -351,6 +370,9 @@ class _TripExpensesBody extends StatelessWidget {
                   memberLabels: memberLabels,
                   currentUserMemberId: currentUserMemberId,
                  viewerUserId: viewerId,
+                 lockRestrictsEditing: lockRestrictsEditing,
+                 isAdminOrAbove: isAdminOrAbove,
+                 expensesLocked: expensesLocked,
               ),
             ),
           )
@@ -366,6 +388,9 @@ class _TripExpensesBody extends StatelessWidget {
               currentUserMemberId: currentUserMemberId,
               viewerUserId: viewerId,
               initialGroupId: activeGroupId,
+              lockRestrictsEditing: lockRestrictsEditing,
+              isAdminOrAbove: isAdminOrAbove,
+              expensesLocked: expensesLocked,
               onActiveGroupChanged: onActiveGroupChanged,
             ),
           ),
@@ -385,6 +410,9 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.currentUserMemberId,
     required this.viewerUserId,
     required this.initialGroupId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -397,6 +425,9 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final String? currentUserMemberId;
   final String? viewerUserId;
   final String? initialGroupId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -501,6 +532,9 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                       memberLabels: widget.memberLabels,
                       currentUserMemberId: widget.currentUserMemberId,
                     viewerUserId: widget.viewerUserId,
+                    lockRestrictsEditing: widget.lockRestrictsEditing,
+                    isAdminOrAbove: widget.isAdminOrAbove,
+                    expensesLocked: widget.expensesLocked,
                   ),
                 ),
             ],
@@ -521,6 +555,9 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.viewerUserId,
+    required this.lockRestrictsEditing,
+    required this.isAdminOrAbove,
+    required this.expensesLocked,
   });
 
   final Trip trip;
@@ -531,6 +568,9 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final String? viewerUserId;
+  final bool lockRestrictsEditing;
+  final bool isAdminOrAbove;
+  final bool expensesLocked;
 
   @override
   ConsumerState<_ExpensePostPanel> createState() => _ExpensePostPanelState();
@@ -713,18 +753,23 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
+    final effectiveCanEditPost = canEditPost && !widget.lockRestrictsEditing;
+    final effectiveCanDeletePost = canDeletePost && !widget.lockRestrictsEditing;
+    final effectiveCanEditExpense = canEditExpense && !widget.lockRestrictsEditing;
+    final effectiveCanDeleteExpense =
+        canDeleteExpense && !widget.lockRestrictsEditing;
+    final showPostMenu = !widget.group.isDefault &&
+        (effectiveCanEditPost || effectiveCanDeletePost);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              SegmentedButton<_ExpensePostView>(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: SegmentedButton<_ExpensePostView>(
                 segments: [
                   ButtonSegment<_ExpensePostView>(
                     value: _ExpensePostView.operations,
@@ -750,10 +795,9 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   }
                 },
               ),
-              if (!widget.group.isDefault && (canEditPost || canDeletePost))
-                Positioned(
-                  right: -6,
-                  child: PopupMenuButton<_ExpensePostMenuAction>(
+            ),
+            if (showPostMenu)
+              PopupMenuButton<_ExpensePostMenuAction>(
                     tooltip: l10n.tripOverviewActions,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
@@ -777,7 +821,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     },
                     itemBuilder: (context) {
                       final items = <PopupMenuEntry<_ExpensePostMenuAction>>[];
-                      if (canEditPost) {
+                      if (effectiveCanEditPost) {
                         items.add(
                           PopupMenuItem<_ExpensePostMenuAction>(
                             value: _ExpensePostMenuAction.edit,
@@ -791,7 +835,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                           ),
                         );
                       }
-                      if (canDeletePost) {
+                      if (effectiveCanDeletePost) {
                         items.add(
                           PopupMenuItem<_ExpensePostMenuAction>(
                             value: _ExpensePostMenuAction.delete,
@@ -817,9 +861,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       return items;
                     },
                   ),
-                ),
-            ],
-          ),
+          ],
         ),
         const SizedBox(height: 12),
         if (_activeView == _ExpensePostView.settlement)
@@ -830,21 +872,26 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             memberLabels: widget.memberLabels,
             currentUserMemberId: widget.currentUserMemberId,
             canMarkReimbursement: canMarkReimbursement,
-            isAdmin: isTripRoleAllowed(
-              currentRole: resolveTripPermissionRole(
-                trip: widget.trip,
-                userId: viewerUserId,
-              ),
-              minRole: TripPermissionRole.admin,
-            ),
+            isAdmin: widget.isAdminOrAbove,
           )
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _ExpenseTotalsHeader(
-                myTotalsByCurrency: myTotalsByCurrency,
-                postTotalsByCurrency: postTotalsByCurrency,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _ExpenseTotalsHeader(
+                      myTotalsByCurrency: myTotalsByCurrency,
+                      postTotalsByCurrency: postTotalsByCurrency,
+                    ),
+                  ),
+                  if (widget.expensesLocked) ...[
+                    const SizedBox(width: 8),
+                    const _ExpensesLockedIndicator(),
+                  ],
+                ],
               ),
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
@@ -880,8 +927,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   widget.trip.id,
                   scope,
                   widget.memberLabels,
-                  canEditExpense: canEditExpense,
-                  canDeleteExpense: canDeleteExpense,
+                  canEditExpense: effectiveCanEditExpense,
+                  canDeleteExpense: effectiveCanDeleteExpense,
                 ),
             ],
           ),
@@ -992,6 +1039,93 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   }
 }
 
+/// Read-only indicator shown to all members when expenses are UI-locked.
+class _ExpensesLockedIndicator extends StatelessWidget {
+  const _ExpensesLockedIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.lock_outline,
+      size: 18,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+  }
+}
+
+/// Admin-only lock toggle (same pill style as suggested-reimbursement filters).
+class _ExpensesUiLockToggle extends StatelessWidget {
+  const _ExpensesUiLockToggle({
+    required this.locked,
+    required this.onLockedChanged,
+  });
+
+  final bool locked;
+  final ValueChanged<bool> onLockedChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      height: 30,
+      margin: const EdgeInsets.only(right: 4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ExpensesUiLockSegment(
+            icon: Icons.lock_open_outlined,
+            selected: !locked,
+            onTap: () => onLockedChanged(false),
+          ),
+          _ExpensesUiLockSegment(
+            icon: Icons.lock_outline,
+            selected: locked,
+            onTap: () => onLockedChanged(true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpensesUiLockSegment extends StatelessWidget {
+  const _ExpensesUiLockSegment({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? cs.secondaryContainer : null,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
 class _SettlementSection extends ConsumerStatefulWidget {
   const _SettlementSection({
     required this.tripId,
@@ -1094,6 +1228,24 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     }
   }
 
+  Future<void> _setExpensesUiLocked(bool locked) async {
+    try {
+      await ref.read(expensesRepositoryProvider).setExpensesUiLocked(
+            tripId: widget.tripId,
+            locked: locked,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _refreshSettlement() async {
     if (_refreshing) return;
     setState(() => _refreshing = true);
@@ -1182,6 +1334,9 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         ref.watch(expenseGroupBalancesStreamProvider(_scope));
     final suggestionsAsync =
         ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
+    final locks =
+        ref.watch(tripExpensesUiLockStreamProvider(widget.tripId)).asData?.value ??
+            TripExpensesUiLock.defaults;
 
     final balances = balancesAsync.asData?.value ?? const [];
     final allSuggestions = suggestionsAsync.asData?.value ?? const [];
@@ -1211,7 +1366,16 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 iconColor: cs.secondary,
               ),
             ),
-            if (widget.isAdmin)
+            if (widget.isAdmin) ...[
+              Tooltip(
+                message: locks.expensesLocked
+                    ? l10n.expensesTooltipUnlockExpenses
+                    : l10n.expensesTooltipLockExpenses,
+                child: _ExpensesUiLockToggle(
+                  locked: locks.expensesLocked,
+                  onLockedChanged: _setExpensesUiLocked,
+                ),
+              ),
               IconButton(
                 tooltip: l10n.expensesRefreshBalances,
                 onPressed: _refreshing ? null : _refreshSettlement,
@@ -1223,6 +1387,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                       )
                     : const Icon(Icons.refresh),
               ),
+            ],
           ],
         ),
         const SizedBox(height: 8),

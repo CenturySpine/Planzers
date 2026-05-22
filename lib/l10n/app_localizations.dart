@@ -4014,6 +4014,18 @@ abstract class AppLocalizations {
   /// **'Recalculer les soldes'**
   String get expensesRefreshBalances;
 
+  /// No description provided for @expensesTooltipLockExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller les dépenses'**
+  String get expensesTooltipLockExpenses;
+
+  /// No description provided for @expensesTooltipUnlockExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller les dépenses'**
+  String get expensesTooltipUnlockExpenses;
+
   /// No description provided for @expensesBalancesRefreshed.
   ///
   /// In fr, this message translates to:
