@@ -124,20 +124,22 @@ function roleRank(role) {
   const r = normalizeString(role).toLowerCase();
   if (r === 'owner') return 3;
   if (r === 'admin') return 2;
-  if (r === 'participant') return 1;
+  if (r === 'chef') return 1;
   return 0;
 }
 
+/** Co-admin uids on the trip document (creator is always admin via ownerId). */
+function tripAdminMemberIdSet(tripData) {
+  const raw = tripData?.adminMemberIds;
+  if (!Array.isArray(raw)) return new Set();
+  return new Set(raw.map((v) => String(v)));
+}
+
 function tripCallerRoleRank(tripData, uid) {
-  const ownerId = normalizeString(tripData?.ownerId);
-  if (ownerId && ownerId === uid) return roleRank('owner');
-  const admins = tripData?.adminUserIds;
-  if (Array.isArray(admins) && admins.includes(uid)) return roleRank('admin');
-  const members = tripData?.memberUserIds;
-  if (Array.isArray(members) && members.includes(uid)) {
-    return roleRank('participant');
-  }
-  return 0;
+  const cleanUid = normalizeString(uid);
+  if (!cleanUid) return -1;
+  if (normalizeString(tripData?.ownerId) === cleanUid) return roleRank('owner');
+  return tripAdminMemberIdSet(tripData).has(cleanUid) ? roleRank('admin') : 0;
 }
 
 function deleteExpensePostMinRole(tripData) {
@@ -593,4 +595,6 @@ module.exports = {
   deleteExpenseGroup,
   recomputeExpenseGroupSettlementForGroup,
   refreshExpenseGroupSettlement,
+  tripCallerRoleRank,
+  roleRank,
 };
