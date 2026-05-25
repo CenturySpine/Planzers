@@ -17,6 +17,7 @@ import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
+import 'package:planerz/core/presentation/state_pill_toggle.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
@@ -1054,45 +1055,6 @@ class _ExpensesLockedIndicator extends StatelessWidget {
   }
 }
 
-/// Admin-only pill toggle — shows the current-state icon only; tap to switch.
-class _ExpensesStatePillToggle extends StatelessWidget {
-  const _ExpensesStatePillToggle({
-    required this.offIcon,
-    required this.onIcon,
-    required this.on,
-    required this.onChanged,
-  });
-
-  final IconData offIcon;
-  final IconData onIcon;
-  final bool on;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: () => onChanged(!on),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 30,
-        margin: const EdgeInsets.only(right: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: on ? cs.secondaryContainer : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          on ? onIcon : offIcon,
-          size: 18,
-          color: on ? cs.onSecondaryContainer : cs.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
 class _SettlementSection extends ConsumerStatefulWidget {
   const _SettlementSection({
     required this.tripId,
@@ -1382,7 +1344,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 message: states.expensesLocked
                     ? l10n.expensesTooltipUnlockExpenses
                     : l10n.expensesTooltipLockExpenses,
-                child: _ExpensesStatePillToggle(
+                child: StatePillToggle(
                   offIcon: Icons.lock_open_outlined,
                   onIcon: Icons.lock_outline,
                   on: states.expensesLocked,
@@ -1393,7 +1355,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 message: states.expensesNotificationsEnabled
                     ? l10n.expensesTooltipDisableExpenseNotifications
                     : l10n.expensesTooltipEnableExpenseNotifications,
-                child: _ExpensesStatePillToggle(
+                child: StatePillToggle(
                   offIcon: Icons.notifications_off_outlined,
                   onIcon: Icons.notifications_active_outlined,
                   on: states.expensesNotificationsEnabled,
