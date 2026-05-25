@@ -1054,7 +1054,7 @@ class _ExpensesLockedIndicator extends StatelessWidget {
   }
 }
 
-/// Admin-only pill toggle (same style as suggested-reimbursement filters).
+/// Admin-only pill toggle — shows the current-state icon only; tap to switch.
 class _ExpensesStatePillToggle extends StatelessWidget {
   const _ExpensesStatePillToggle({
     required this.offIcon,
@@ -1071,60 +1071,22 @@ class _ExpensesStatePillToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 30,
-      margin: const EdgeInsets.only(right: 4),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ExpensesStatePillSegment(
-            icon: offIcon,
-            selected: !on,
-            onTap: () => onChanged(false),
-          ),
-          _ExpensesStatePillSegment(
-            icon: onIcon,
-            selected: on,
-            onTap: () => onChanged(true),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExpensesStatePillSegment extends StatelessWidget {
-  const _ExpensesStatePillSegment({
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return InkWell(
-      onTap: onTap,
+      onTap: () => onChanged(!on),
       borderRadius: BorderRadius.circular(8),
       child: Container(
+        height: 30,
+        margin: const EdgeInsets.only(right: 4),
         padding: const EdgeInsets.symmetric(horizontal: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? cs.secondaryContainer : null,
+          color: on ? cs.secondaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
-          icon,
+          on ? onIcon : offIcon,
           size: 18,
-          color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+          color: on ? cs.onSecondaryContainer : cs.onSurfaceVariant,
         ),
       ),
     );
