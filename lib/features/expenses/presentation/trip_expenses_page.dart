@@ -1539,7 +1539,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               title: lbl.title,
               bold: lbl.bold,
               amountLabel: _formatMoney(suggestion.currency, suggestion.amount),
-              actionIcon: Icons.check_circle_outline,
+              actionIcon: Icons.check,
               actionTooltip: l10n.expensesMarkReimbursementPaid,
               actionColor: pz.success,
               showAction:
@@ -1573,7 +1573,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               title: lbl.title,
               bold: lbl.bold,
               amountLabel: _formatMoney(settlement.currency, settlement.amount),
-              actionIcon: Icons.cancel_outlined,
+              actionIcon: Icons.close,
               actionTooltip: l10n.expensesUnmarkReimbursementPaid,
               actionColor: cs.error,
               showAction:
@@ -1683,29 +1683,51 @@ class _ReimbursementRow extends StatelessWidget {
                   ),
             ),
             if (showAction) ...[
-              const SizedBox(width: 4),
-              SizedBox(
-                width: 36,
-                height: 36,
-                child: busy
-                    ? Padding(
-                        padding: const EdgeInsets.all(8),
+              const SizedBox(width: 8),
+              busy
+                  ? SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Padding(
+                        padding: const EdgeInsets.all(7),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: actionColor ?? cs.primary,
                         ),
-                      )
-                    : IconButton(
-                        tooltip: actionTooltip,
-                        onPressed: onAction,
-                        icon: Icon(actionIcon, size: 20, color: actionColor),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
+                      ),
+                    )
+                  : Tooltip(
+                      message: actionTooltip,
+                      child: InkWell(
+                        onTap: onAction,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: (actionColor ?? cs.primary)
+                                  .withValues(alpha: 0.45),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26000000),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                              BoxShadow(
+                                color: Color(0x14000000),
+                                blurRadius: 2,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Icon(actionIcon, size: 12, color: actionColor),
                         ),
                       ),
-              ),
+                    ),
             ],
           ],
         ),
