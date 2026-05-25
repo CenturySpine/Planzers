@@ -12,6 +12,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/group_balance.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
@@ -723,6 +724,25 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final myTotalsByCurrency = viewerMemberId != null
         ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
         : const <String, double>{};
+    final groupBalances =
+        ref.watch(expenseGroupBalancesStreamProvider(groupScope)).asData?.value ?? const <GroupBalance>[];
+    final Map<String, double>? myCostByCurrency = viewerMemberId != null
+        ? () {
+            final netsByCurrency = <String, Map<String, double>>{
+              for (final b in groupBalances) b.currency: b.nets,
+            };
+            final currencies = <String>{
+              ...myTotalsByCurrency.keys,
+              for (final b in groupBalances)
+                if (b.nets.containsKey(viewerMemberId)) b.currency,
+            };
+            return <String, double>{
+              for (final c in currencies)
+                c: (myTotalsByCurrency[c] ?? 0.0) -
+                    (netsByCurrency[c]?[viewerMemberId] ?? 0.0),
+            };
+          }()
+        : null;
     final canMarkReimbursement =
         widget.group.isVisibleTo(widget.currentUserMemberId);
     final scope = participantScopeMemberIdsForGroup(
@@ -887,6 +907,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     child: _ExpenseTotalsHeader(
                       myTotalsByCurrency: myTotalsByCurrency,
                       postTotalsByCurrency: postTotalsByCurrency,
+                      myCostByCurrency: myCostByCurrency,
                     ),
                   ),
                   if (widget.expensesLocked) ...[
@@ -978,10 +999,12 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   const _ExpenseTotalsHeader({
     required this.myTotalsByCurrency,
     required this.postTotalsByCurrency,
+    this.myCostByCurrency,
   });
 
   final Map<String, double> myTotalsByCurrency;
   final Map<String, double> postTotalsByCurrency;
+  final Map<String, double>? myCostByCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -992,6 +1015,13 @@ class _ExpenseTotalsHeader extends StatelessWidget {
         );
     final valueStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w700,
+        );
+
+    Widget divider() => Container(
+          width: 1,
+          height: 36,
+          color: cs.outlineVariant,
+          margin: const EdgeInsets.symmetric(horizontal: 12),
         );
 
     return Container(
@@ -1015,12 +1045,24 @@ class _ExpenseTotalsHeader extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 1,
-            height: 36,
-            color: cs.outlineVariant,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-          ),
+          if (myCostByCurrency != null) ...[
+            divider(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(l10n.expensesMyCost, style: labelStyle),
+                  const SizedBox(height: 3),
+                  Text(
+                    _formatTotalsByCurrency(myCostByCurrency!),
+                    textAlign: TextAlign.center,
+                    style: valueStyle?.copyWith(color: cs.onSurface),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          divider(),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,

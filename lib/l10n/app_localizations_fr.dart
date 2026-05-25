@@ -2188,6 +2188,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesMyTotalSpend => 'Mes dépenses totales';
 
   @override
+  String get expensesMyCost => 'Mon coût total';
+
+  @override
   String get expensesTripTotalCost => 'Coût total du séjour';
 
   @override
@@ -5020,6 +5023,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
+
+  @override
+  String get expensesMyCost => 'Mon coût total';
 
   @override
   String get expensesTripTotalCost => 'Coût total du séjour';

@@ -3972,6 +3972,12 @@ abstract class AppLocalizations {
   /// **'Mes dépenses totales'**
   String get expensesMyTotalSpend;
 
+  /// No description provided for @expensesMyCost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon coût total'**
+  String get expensesMyCost;
+
   /// No description provided for @expensesTripTotalCost.
   ///
   /// In fr, this message translates to:

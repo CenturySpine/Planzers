@@ -857,6 +857,7 @@
   "expensesPostDeleted": "Section deleted",
   "expensesNoOperationInPost": "No operation in this section.",
   "expensesMyTotalSpend": "My total expenses",
+  "expensesMyCost": "My share",
   "expensesTripTotalCost": "Total trip cost",
   "expensesBalancesByCurrency": "Balances (by currency)",
   "expensesAddToSeeBreakdown": "Add expenses to see the breakdown.",

@@ -2170,6 +2170,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
+  String get expensesMyCost => 'My share';
+
+  @override
   String get expensesTripTotalCost => 'Total trip cost';
 
   @override
@@ -4976,6 +4979,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesMyTotalSpend => 'My total expenses';
+
+  @override
+  String get expensesMyCost => 'My share';
 
   @override
   String get expensesTripTotalCost => 'Total trip cost';
