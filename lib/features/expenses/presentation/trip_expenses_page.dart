@@ -12,7 +12,6 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
-import 'package:planerz/features/expenses/data/group_balance.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
@@ -724,23 +723,24 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final myTotalsByCurrency = viewerMemberId != null
         ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
         : const <String, double>{};
-    final groupBalances =
-        ref.watch(expenseGroupBalancesStreamProvider(groupScope)).asData?.value ?? const <GroupBalance>[];
     final Map<String, double>? myCostByCurrency = viewerMemberId != null
         ? () {
-            final netsByCurrency = <String, Map<String, double>>{
-              for (final b in groupBalances) b.currency: b.nets,
-            };
-            final currencies = <String>{
-              ...myTotalsByCurrency.keys,
-              for (final b in groupBalances)
-                if (b.nets.containsKey(viewerMemberId)) b.currency,
-            };
-            return <String, double>{
-              for (final c in currencies)
-                c: (myTotalsByCurrency[c] ?? 0.0) -
-                    (netsByCurrency[c]?[viewerMemberId] ?? 0.0),
-            };
+            final result = <String, double>{};
+            for (final expense in widget.groupExpenses) {
+              if (expense.operationType == ExpenseOperationType.settlement) {
+                continue;
+              }
+              if (!expense.participantIds.contains(viewerMemberId)) continue;
+              final share =
+                  expense.splitMode == ExpenseSplitMode.customAmounts
+                      ? (expense.participantShares[viewerMemberId] ?? 0.0)
+                      : (expense.participantIds.isEmpty
+                          ? 0.0
+                          : expense.amount / expense.participantIds.length);
+              result[expense.currency] =
+                  (result[expense.currency] ?? 0.0) + share;
+            }
+            return result;
           }()
         : null;
     final canMarkReimbursement =
