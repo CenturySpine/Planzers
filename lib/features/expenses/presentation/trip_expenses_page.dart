@@ -1461,20 +1461,21 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                             ),
                       ),
                       const SizedBox(height: 6),
-                      for (final entry in (balance.nets.entries.toList()
-                        ..sort((a, b) => a.key.compareTo(b.key))))
+                      for (final memberId in (widget.group.visibleToMemberIds.isNotEmpty
+                          ? (widget.group.visibleToMemberIds.toList()..sort())
+                          : (balance.nets.keys.toList()..sort())))
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 3),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  _participantLabel(entry.key),
+                                  _participantLabel(memberId),
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               ),
                               _BalanceChip(
-                                amount: entry.value,
+                                amount: balance.nets[memberId] ?? 0.0,
                                 currency: balance.currency,
                               ),
                             ],
@@ -1599,8 +1600,10 @@ class _BalanceChip extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final pz = context.planerzColors;
 
-    final isCreditor = amount > 0;
-    final isDebtor = amount < 0;
+    const threshold = 0.5;
+    final effectiveAmount = amount.abs() < threshold ? 0.0 : amount;
+    final isCreditor = effectiveAmount > 0;
+    final isDebtor = effectiveAmount < 0;
 
     final bg = isCreditor
         ? pz.successContainer
@@ -1625,7 +1628,7 @@ class _BalanceChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        '$prefix · ${_formatMoney(currency, amount.abs())}',
+        '$prefix · ${_formatMoney(currency, effectiveAmount.abs())}',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: fg,
               fontWeight: FontWeight.w600,
