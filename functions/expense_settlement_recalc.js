@@ -7,6 +7,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const {
   BALANCE_EPSILON,
   BALANCE_SETTLEMENT_THRESHOLD,
+  roundMoney,
   tripExpenseFromDoc,
   computeBalances,
   suggestTransfers,
@@ -261,10 +262,24 @@ const recomputeExpenseGroupSettlement = onDocumentWritten(
   async (event) => {
     const tripId = event.params.tripId;
     const db = admin.firestore();
-    const groupIds = new Set();
 
     const before = event.data.before?.data();
     const after = event.data.after?.data();
+
+    const afterOpType = after != null ? normalizeString(after.operationType) : null;
+    const beforeOpType = before != null ? normalizeString(before.operationType) : null;
+
+    // Skip recalc for any settlement write (creation or deletion).
+    // markExpenseReimbursementPaid and unmarkExpenseReimbursementPaid handle
+    // suggestion and balance updates directly in their own transactions.
+    const opType = afterOpType ?? beforeOpType;
+    if (opType === 'settlement') return;
+
+    // Regular expense written while locked → skip (lock freezes the suggested transfers).
+    const statesSnap = await expensesStatesRef(db, tripId).get();
+    if (parseBoolFlag(statesSnap.data()?.expensesLocked, false)) return;
+
+    const groupIds = new Set();
     const beforeGroup = normalizeString(before?.groupId);
     const afterGroup = normalizeString(after?.groupId);
     if (beforeGroup) groupIds.add(beforeGroup);
@@ -313,8 +328,15 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
   let createdExpenseId = null;
 
   await db.runTransaction(async (tx) => {
-    const suggestionsSnap = await tx.get(gRef.collection('suggestedReimbursements'));
-    const hasSuggestion = suggestionsSnap.docs.some((doc) => {
+    // All reads must come before any writes in a Firestore transaction.
+    const balanceDocRef = gRef.collection('balances').doc(currency);
+    const [suggestionsSnap, settlementsSnap, balanceSnap] = await Promise.all([
+      tx.get(gRef.collection('suggestedReimbursements')),
+      tx.get(expensesCollection.where('groupId', '==', groupId)),
+      tx.get(balanceDocRef),
+    ]);
+
+    const matchedSuggestion = suggestionsSnap.docs.find((doc) => {
       const d = doc.data() || {};
       return (
         normalizeString(d.fromParticipantId) === fromParticipantId &&
@@ -323,16 +345,13 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
         amountsMatch(d.amount, amount)
       );
     });
-    if (!hasSuggestion) {
+    if (!matchedSuggestion) {
       throw new HttpsError(
         'failed-precondition',
         'Ce remboursement ne correspond pas à une suggestion actuelle'
       );
     }
 
-    const settlementsSnap = await tx.get(
-      expensesCollection.where('groupId', '==', groupId)
-    );
     for (const doc of settlementsSnap.docs) {
       const expense = tripExpenseFromDoc(doc);
       if (expense.operationType !== 'settlement') continue;
@@ -350,6 +369,7 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
       }
     }
 
+    // Writes — all reads above are complete.
     const newRef = expensesCollection.doc();
     createdExpenseId = newRef.id;
     tx.set(newRef, {
@@ -365,6 +385,20 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
       createdAt: FieldValue.serverTimestamp(),
       createdBy: uid,
     });
+
+    // Delete the matched suggestion directly — the trigger skips recalc on settlement writes,
+    // so we must keep Firestore consistent here in the same transaction.
+    tx.delete(matchedSuggestion.ref);
+
+    // Update net balances for this currency to mirror what computeBalances would produce
+    // for this settlement: debtor (fromParticipantId) balance goes up, creditor goes down.
+    const nets = Object.assign({}, balanceSnap.data()?.nets || {});
+    nets[fromParticipantId] = roundMoney((nets[fromParticipantId] ?? 0) + amount);
+    nets[toParticipantId] = roundMoney((nets[toParticipantId] ?? 0) - amount);
+    for (const [pid, val] of Object.entries(nets)) {
+      if (Math.abs(val) <= BALANCE_EPSILON) delete nets[pid];
+    }
+    tx.set(balanceDocRef, { currency, nets });
   });
 
   try {
@@ -433,12 +467,49 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
     throw new HttpsError('failed-precondition', 'Opération invalide');
   }
 
-  await expenseRef.delete();
+  const fromParticipantId = normalizeString(expense.paidBy);
+  const toParticipantId = normalizeString(expense.participantIds?.[0]);
+  const settlementCurrency = expense.currency;
+  const settlementAmount = expense.amount;
+
+  const gRef = groupRef(db, tripId, groupId);
+
+  await db.runTransaction(async (tx) => {
+    // All reads first.
+    const balanceDocRef = gRef.collection('balances').doc(settlementCurrency);
+    const [freshExpense, balanceSnap] = await Promise.all([
+      tx.get(expenseRef),
+      tx.get(balanceDocRef),
+    ]);
+    if (!freshExpense.exists) {
+      throw new HttpsError('not-found', 'Opération introuvable');
+    }
+
+    // Writes.
+    tx.delete(expenseRef);
+
+    // Restore the suggestion that was removed when the settlement was created.
+    if (fromParticipantId && toParticipantId) {
+      tx.set(gRef.collection('suggestedReimbursements').doc(), {
+        fromParticipantId,
+        toParticipantId,
+        amount: settlementAmount,
+        currency: settlementCurrency,
+      });
+
+      // Reverse the balance delta applied during mark-as-paid.
+      const nets = Object.assign({}, balanceSnap.data()?.nets || {});
+      nets[fromParticipantId] = roundMoney((nets[fromParticipantId] ?? 0) - settlementAmount);
+      nets[toParticipantId] = roundMoney((nets[toParticipantId] ?? 0) + settlementAmount);
+      for (const [pid, val] of Object.entries(nets)) {
+        if (Math.abs(val) <= BALANCE_EPSILON) delete nets[pid];
+      }
+      tx.set(balanceDocRef, { currency: settlementCurrency, nets });
+    }
+  });
 
   try {
     if (await areExpenseNotificationsEnabled(db, tripId)) {
-      const fromParticipantId = normalizeString(expense.paidBy);
-      const toParticipantId = normalizeString(expense.participantIds?.[0]);
       if (fromParticipantId && toParticipantId) {
         const [toData, fromData, tripSnap] = await Promise.all([
           resolveParticipantData(db, tripId, toParticipantId),
