@@ -1,6 +1,18 @@
 # Plan — Groupes de participants (parts) pour les dépenses
 
-> **Statut :** plan (non implémenté). Décisions validées en session de conception.
+> **Statut :** plan (non implémenté). Décisions validées en session de conception + revue critique code (2026-05).
+
+## Décisions complémentaires (revue critique)
+
+| Sujet | Décision |
+|--------|----------|
+| Lignes de solde (onglet équilibres) | Itérer les **clés de `balance.nets`** (pas seulement `visibleToMemberIds`) ; même mise en page |
+| Quitter le voyage / retirer un participant | **Bloquer** tant qu’il appartient à **un groupe** (le retirer du groupe d’abord) |
+| Modifier un groupe référencé dans une opération | **Interdit** (comme la suppression) |
+| Résolution d’un id (parts, libellé) | Lookup **`participants/{id}` d’abord**, puis `participantGroups/{id}` |
+| CRUD groupes | **Firestore direct** depuis l’app + règles (`canManageTripParticipants` en écriture) |
+| Libellés « Tu dois… » / « … te doit » | Comparer avec **`billingUnitId`**, pas seulement `memberId` |
+| Notifications remboursement (id groupe) | **Notifier tous les membres** du groupe qui ont un `userId` |
 
 ## Objectif
 
@@ -49,12 +61,14 @@ flowchart LR
 | `parts` | number | > 0, ex. `2`, `2.5` |
 | `createdAt` / `updatedAt` | timestamp | |
 
+**Persistance groupes** : écriture **Firestore directe** (repository Dart) ; règles `match /participantGroups/{groupId}` — lecture `isTripMember`, écriture `canManageTripParticipants` (aligné sur [`participants`](../../firestore.rules)).
+
 **Contraintes produit (CF + client)** :
 
 - Un `TripMember` dans **au plus un** groupe.
 - Membre d’un groupe **jamais** stocké seul dans `paidBy` / `participantIds` d’une dépense (seul l’id du groupe).
-- **Suppression groupe** : **interdite** si son id apparaît dans une opération — `paidBy`, `participantIds`, clé de `participantShares`, ou settlement équivalent. Pas de dissolution ni recalcul historique.
-- **Suppression participant** : bloquer si membre d’un groupe **ou** référencé dans une dépense ; étendre [`assertMemberNotUsedInExpenses`](../../functions/index.js) + contrôle d’usage des groupes.
+- **Modification ou suppression groupe** : **interdites** si son id apparaît dans une opération (`paidBy`, `participantIds`, `participantShares`, settlement). Pas de dissolution ni recalcul historique.
+- **Suppression / départ participant** : bloquer s’il appartient encore à **un groupe** (quel qu’il soit) ; bloquer aussi s’il est référencé directement dans une dépense. Étendre [`assertMemberRemovalBlockingDependencies`](../../functions/index.js) / [`leaveTrip`](../../functions/index.js) + [`assertMemberNotUsedInExpenses`](../../functions/index.js).
 
 ---
 
@@ -73,10 +87,12 @@ Aucun changement de **forme** des modèles / documents Firestore dépenses :
 
 ```
 resolveUnit(id, groupsMap, membersMap) → parts
-  id ∈ participants  → 1
-  id ∈ participantGroups → group.parts
+  id ∈ participants (priorité)  → 1
+  sinon id ∈ participantGroups → group.parts
   inconnu → fallback 1 ou erreur validation à l’écriture
 ```
+
+Même ordre pour les **libellés** (`tripExpenseUnitLabelsProvider`).
 
 **Répartition** (`splitMode: equal`, pondéré par parts) sur `participantIds` :
 
@@ -93,6 +109,7 @@ pour chaque id dans participantIds : nets[id] -= share(id)
 
 - `customAmounts` : clés inchangées ; somme ±0,02 €.
 - **Suggestions** : [`suggestTransfers`](../../functions/expense_settlement.js) inchangé (greedy, minimise le nombre de virements) ; entrée/sortie = mêmes champs, ids pouvant être des groupes.
+- **Remboursement enregistré** ([`markExpenseReimbursementPaid`](../../functions/expense_settlement_recalc.js)) : si `toParticipantId` ou `fromParticipantId` est un **groupe**, notifier **chaque membre** du groupe ayant un `userId` (étendre `resolveParticipantData` / file notification).
 - **Vue utilisateur connecté** : `billingUnitId(memberId)` → `groupId` si membre groupé, sinon `memberId` (voir filtres ci‑dessous).
 - Voyages sans groupes → comportement strictement identique à aujourd’hui.
 
@@ -129,7 +146,7 @@ Fichiers à aligner (même algo) :
   - **Label** (obligatoire, ex. « A&B », « Famille Martin »).
   - **Membres** : sélection multi parmi les `TripMember` **non déjà dans un autre groupe** ; minimum **2**.
   - **Parts** : par défaut = **nombre de membres du groupe** ; champ **éditable à la main** (nombre > 0, décimales autorisées — ex. 2,5).
-- **Supprimer** un groupe : autorisé **uniquement** s’il n’apparaît dans aucune opération ; sinon action désactivée + message l10n (CF `failed-precondition` en secours).
+- **Modifier / supprimer** un groupe : autorisé **uniquement** s’il n’apparaît dans aucune opération ; sinon actions désactivées + message l10n.
 - l10n : libellés onglet, actions, validations (min 2 membres, parts invalides, membre déjà groupé, groupe utilisé dans des dépenses).
 
 ### Dépenses (v1)
@@ -142,15 +159,20 @@ Fichiers à aligner (même algo) :
 
 Règle produit : un groupe **paie** ou **est concerné** en bloc ; l’app ne modélise pas qui paie quoi **à l’intérieur** du groupe (compte commun / arrangement hors app).
 
-Sélection payeur / concernés : liste = membres non groupés + groupes (ids stockés dans les champs existants).
+Sélection payeur / concernés : liste = membres non groupés + groupes (ids stockés dans les champs existants). Étendre le périmètre poste au-delà de [`participantScopeMemberIdsForGroup`](../../lib/features/expenses/presentation/trip_expenses_page.dart) : unités dont tous les `memberIds` ⊆ `visibleToMemberIds` (ou membre seul visible).
+
+Côté client : **validation** à l’ajout/édition (pas de membre groupé en solo ; ids résolvables) — les règles Firestore `expenses` restent permissives.
 
 ### Soldes & remboursements (UI existante — ne pas refactoriser)
 
 Écrans / widgets actuels (liste des `nets`, suggestions, settlements faits) : **mise en page et structure inchangées**.
 
-Seul changement : résolution du **nom affiché** pour une clé/id (participant ou groupe).
+Changements ciblés :
 
-Pas de nouvelle ligne UI, pas de regroupement visuel supplémentaire : une clé = une ligne, comme aujourd’hui.
+- **Nom affiché** : résolution via `tripExpenseUnitLabelsProvider` (participant ou groupe).
+- **Liste des soldes par devise** : itérer les **clés de `balance.nets`** (tri stable), et non plus principalement `visibleToMemberIds` — sinon les groupes n’apparaissent pas.
+
+Pas de regroupement visuel supplémentaire : une clé de `nets` = une ligne.
 
 ### Filtres « Tous / Moi » (comportement existant, élargi aux groupes)
 
@@ -171,6 +193,8 @@ Helper partagé (ex. `expenseInvolvesBillingUnit(expense, unitId)`) — pas de d
 
 « Tous » : inchangé (toutes les opérations / tous les remboursements visibles).
 
+**Libellés personnalisés remboursements** ([`_reimbursementLabel`](../../lib/features/expenses/presentation/trip_expenses_page.dart)) : comparer `from` / `to` avec **`viewerBillingUnitId`**, pas `currentUserMemberId` seul.
+
 ### Résolution des libellés (factorisée, réutilisable)
 
 Sur le modèle existant participants ([`tripMemberLabelsFromMembers`](../../lib/features/auth/data/user_display_label.dart), [`tripMemberResolvedLabelsProvider`](../../lib/features/trips/data/trip_members_repository.dart)) :
@@ -179,7 +203,7 @@ Sur le modèle existant participants ([`tripMemberLabelsFromMembers`](../../lib/
 |--------|----------------------|---------------------|
 | Fonction pure | `resolveTripMemberDisplayLabel` / `tripMemberLabelsFromMembers` | `resolveParticipantGroupDisplayLabel` / `participantGroupLabelsFromGroups` → `group.label` |
 | Provider Riverpod | `tripMemberResolvedLabelsProvider(tripId)` | `tripParticipantGroupLabelsProvider(tripId)` → `Map<groupId, String>` |
-| Résolution d’un id dépense | — | `tripExpenseUnitLabelsProvider(tripId)` : lookup membre puis groupe ; **une seule API** pour dépenses / soldes / suggestions |
+| Résolution d’un id dépense | — | `tripExpenseUnitLabelsProvider(tripId)` : lookup **participant d’abord**, puis groupe ; **une seule API** pour dépenses / soldes / suggestions |
 
 Règles :
 
@@ -201,7 +225,7 @@ Réutiliser `permissions.participants.manageParticipants` (ou équivalent exista
 - Pas d’usage des groupes hors **dépenses + dérivés** (ne pas toucher aux collections / écrans repas, chambres, activités, …).
 - Pas de fusion groupes / [`expenseGroups`](../../lib/features/expenses/data/expense_group.dart) (postes de dépense ≠ groupes de voyageurs).
 - Pas de modification du schéma `TripMember` ni des **champs** des modèles dépense / balance / suggestion / settlement.
-- Pas de refonte UI des écrans soldes & remboursements (libellés uniquement).
+- Pas de refonte UI des écrans soldes & remboursements (libellés + itération `nets` uniquement).
 - **Pas de ventilation des montants vers les `memberIds`** (ni pour soldes, ni pour suggestions) — c’est le cœur métier du regroupement.
 - Pas de stockage de parts par membre sur chaque dépense (résolution via le groupe).
 - Pas de suppression de groupe « en cascade » sur les dépenses existantes.
@@ -231,9 +255,11 @@ Suggestion : **Pierre → Sabine, 50 €** (pas 25+25). Décomposition bilatéra
 
 ## Tâches d’implémentation
 
-- [ ] Collection `participantGroups` + modèle Dart + repository + règles Firestore
-- [ ] Schéma dépense inchangé ; `resolveUnit` au calcul (CF + script + tests)
+- [ ] Collection `participantGroups` + modèle Dart + repository + règles Firestore (écriture directe)
+- [ ] `resolveUnit` + parts dans `participantSharesForExpense` (CF + script + tests, dont scénario Pierre/Sabine/A&B)
 - [ ] `computeBalances` / suggestions / settlements sur ids unitaires
+- [ ] Notifications remboursement : membres du groupe si id groupe
 - [ ] Onglet Groupes dans `TripParticipantsPage`
-- [ ] Sélection unités dépenses + filtres Tous/Moi via `billingUnitId` + libellés factorisés
-- [ ] Blocage suppression groupe/participant si référencé dans une opération
+- [ ] Sélection unités dépenses + validation client + périmètre poste étendu
+- [ ] Soldes : itération `balance.nets` + libellés ; filtres Tous/Moi + `_reimbursementLabel` via `billingUnitId`
+- [ ] Blocage édition/suppression groupe si référencé ; blocage départ participant si encore dans un groupe
