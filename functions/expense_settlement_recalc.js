@@ -83,6 +83,63 @@ async function resolveParticipantData(db, tripId, participantId) {
   return { userId: userId || null, displayName };
 }
 
+/**
+ * Resolves notification recipients for a billing unit id.
+ * If the id belongs to a ParticipantGroup, returns data for all group members that have a userId.
+ * Otherwise behaves like resolveParticipantData.
+ *
+ * @returns {Promise<Array<{ userId: string|null, displayName: string }>>}
+ */
+async function resolveUnitRecipients(db, tripId, unitId) {
+  // Try participant first (priority per plan)
+  const participantSnap = await db
+    .collection('trips')
+    .doc(tripId)
+    .collection('participants')
+    .doc(unitId)
+    .get();
+  if (participantSnap.exists) {
+    const data = participantSnap.data() || {};
+    const userId = normalizeString(data.userId);
+    const displayName = normalizeString(data.participantName) || 'Utilisateur';
+    return [{ userId: userId || null, displayName }];
+  }
+
+  // Try participantGroup
+  const groupSnap = await db
+    .collection('trips')
+    .doc(tripId)
+    .collection('participantGroups')
+    .doc(unitId)
+    .get();
+  if (!groupSnap.exists) return [];
+  const groupData = groupSnap.data() || {};
+  const memberIds = Array.isArray(groupData.memberIds) ? groupData.memberIds : [];
+
+  const memberSnaps = await Promise.all(
+    memberIds
+      .map((mid) => normalizeString(mid))
+      .filter((mid) => mid.length > 0)
+      .map((mid) =>
+        db
+          .collection('trips')
+          .doc(tripId)
+          .collection('participants')
+          .doc(mid)
+          .get()
+      )
+  );
+
+  return memberSnaps
+    .filter((snap) => snap.exists)
+    .map((snap) => {
+      const d = snap.data() || {};
+      const userId = normalizeString(d.userId);
+      const displayName = normalizeString(d.participantName) || 'Utilisateur';
+      return { userId: userId || null, displayName };
+    });
+}
+
 function formatReimbursementAmount(amount) {
   const fixed = parseFloat(amount.toFixed(2));
   return fixed % 1 === 0 ? fixed.toFixed(0) : fixed.toFixed(2);
@@ -180,8 +237,17 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
   const myGeneration = afterIncSnap.data()?.recalcGeneration;
   if (typeof myGeneration !== 'number') return;
 
-  const expenses = await loadGroupExpenses(db, tripId, cleanGroupId);
-  const balancesByCurrency = computeBalances(expenses);
+  const [expenses, participantGroupsSnap] = await Promise.all([
+    loadGroupExpenses(db, tripId, cleanGroupId),
+    db.collection('trips').doc(tripId).collection('participantGroups').get(),
+  ]);
+  const groupsMap = {};
+  for (const doc of participantGroupsSnap.docs) {
+    const d = doc.data() || {};
+    const parts = typeof d.parts === 'number' && d.parts > 0 ? d.parts : 1;
+    groupsMap[doc.id] = { parts };
+  }
+  const balancesByCurrency = computeBalances(expenses, groupsMap);
 
   // Zero out members whose net balance is below the settlement threshold before
   // computing suggestions and writing to Firestore, so the client receives no
@@ -403,16 +469,18 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
 
   try {
     if (await areExpenseNotificationsEnabled(db, tripId)) {
-      const [toData, fromData, tripSnap] = await Promise.all([
-        resolveParticipantData(db, tripId, toParticipantId),
-        resolveParticipantData(db, tripId, fromParticipantId),
+      const [toRecipients, fromRecipients, tripSnap] = await Promise.all([
+        resolveUnitRecipients(db, tripId, toParticipantId),
+        resolveUnitRecipients(db, tripId, fromParticipantId),
         db.collection('trips').doc(tripId).get(),
       ]);
-      const toUserId = toData?.userId;
-      if (toUserId && toUserId !== uid) {
-        const fromName = fromData?.displayName || "Quelqu'un";
-        const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
-        const amountLabel = formatReimbursementAmount(amount);
+      const fromName = (fromRecipients[0]?.displayName) || "Quelqu'un";
+      const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+      const amountLabel = formatReimbursementAmount(amount);
+      const candidateRecipients = toRecipients
+        .map((r) => r.userId)
+        .filter((userId) => userId && userId !== uid);
+      if (candidateRecipients.length > 0) {
         await db.collection('notificationQueue').add({
           channel: 'expenses',
           type: 'expense_reimbursement_paid',
@@ -421,7 +489,7 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
           targetPath: `/trips/${tripId}/expenses`,
           title: `Dépenses · ${tripTitle}`,
           body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
-          candidateRecipients: [toUserId],
+          candidateRecipients,
           skipPresenceCheck: false,
           androidChannelId: 'planerz_expenses',
           payload: {},
@@ -511,16 +579,18 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
   try {
     if (await areExpenseNotificationsEnabled(db, tripId)) {
       if (fromParticipantId && toParticipantId) {
-        const [toData, fromData, tripSnap] = await Promise.all([
-          resolveParticipantData(db, tripId, toParticipantId),
-          resolveParticipantData(db, tripId, fromParticipantId),
+        const [toRecipients, fromRecipients, tripSnap] = await Promise.all([
+          resolveUnitRecipients(db, tripId, toParticipantId),
+          resolveUnitRecipients(db, tripId, fromParticipantId),
           db.collection('trips').doc(tripId).get(),
         ]);
-        const toUserId = toData?.userId;
-        if (toUserId && toUserId !== uid) {
-          const fromName = fromData?.displayName || "Quelqu'un";
-          const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
-          const amountLabel = formatReimbursementAmount(expense.amount);
+        const fromName = (fromRecipients[0]?.displayName) || "Quelqu'un";
+        const tripTitle = normalizeString(tripSnap.data()?.title) || 'Voyage';
+        const amountLabel = formatReimbursementAmount(expense.amount);
+        const candidateRecipients = toRecipients
+          .map((r) => r.userId)
+          .filter((userId) => userId && userId !== uid);
+        if (candidateRecipients.length > 0) {
           await db.collection('notificationQueue').add({
             channel: 'expenses',
             type: 'expense_reimbursement_unpaid',
@@ -529,7 +599,7 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
             targetPath: `/trips/${tripId}/expenses`,
             title: `Dépenses · ${tripTitle}`,
             body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
-            candidateRecipients: [toUserId],
+            candidateRecipients,
             skipPresenceCheck: false,
             androidChannelId: 'planerz_expenses',
             payload: {},

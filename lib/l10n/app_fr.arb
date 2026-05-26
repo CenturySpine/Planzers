@@ -1134,5 +1134,40 @@
   "publicProfileTitle": "Profil",
   "profileNameDialogTitle": "Choisis ton nom de profil",
   "profileNameDialogFieldLabel": "Nom ou pseudo",
-  "profileNameRequiredMessage": "Un nom de profil est requis pour utiliser Planerz."
+  "profileNameRequiredMessage": "Un nom de profil est requis pour utiliser Planerz.",
+
+  "participantGroupsTabLabel": "Groupes",
+  "participantGroupsEmpty": "Aucun groupe de facturation.",
+  "participantGroupsAddTitle": "Créer un groupe",
+  "participantGroupsEditTitle": "Modifier le groupe",
+  "participantGroupsLabelField": "Libellé (ex. A&B, Famille Martin)",
+  "participantGroupsLabelRequired": "Le libellé est obligatoire.",
+  "participantGroupsMembersField": "Membres du groupe",
+  "participantGroupsMembersMinTwo": "Au moins 2 membres sont requis.",
+  "participantGroupsPartsField": "Parts",
+  "participantGroupsPartsInvalid": "La valeur doit être un nombre supérieur à 0.",
+  "participantGroupsAlreadyInGroup": "{label} appartient déjà au groupe « {groupLabel} ».",
+  "@participantGroupsAlreadyInGroup": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "groupLabel": { "type": "String" }
+    }
+  },
+  "participantGroupsUsedInExpenses": "Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.",
+  "participantGroupsSaved": "Groupe enregistré.",
+  "participantGroupsDeleted": "Groupe supprimé.",
+  "participantGroupsDeleteTitle": "Supprimer ce groupe ?",
+  "participantGroupsDeleteBody": "Le groupe « {label} » sera supprimé. Les dépenses existantes ne sont pas modifiées.",
+  "@participantGroupsDeleteBody": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "participantGroupsMemberCount": "{count} membres · {parts} parts",
+  "@participantGroupsMemberCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "parts": { "type": "String" }
+    }
+  }
 }

@@ -5240,6 +5240,108 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Un nom de profil est requis pour utiliser Planerz.'**
   String get profileNameRequiredMessage;
+
+  /// No description provided for @participantGroupsTabLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupes'**
+  String get participantGroupsTabLabel;
+
+  /// No description provided for @participantGroupsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun groupe de facturation.'**
+  String get participantGroupsEmpty;
+
+  /// No description provided for @participantGroupsAddTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un groupe'**
+  String get participantGroupsAddTitle;
+
+  /// No description provided for @participantGroupsEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le groupe'**
+  String get participantGroupsEditTitle;
+
+  /// No description provided for @participantGroupsLabelField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Libellé (ex. A&B, Famille Martin)'**
+  String get participantGroupsLabelField;
+
+  /// No description provided for @participantGroupsLabelRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le libellé est obligatoire.'**
+  String get participantGroupsLabelRequired;
+
+  /// No description provided for @participantGroupsMembersField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Membres du groupe'**
+  String get participantGroupsMembersField;
+
+  /// No description provided for @participantGroupsMembersMinTwo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Au moins 2 membres sont requis.'**
+  String get participantGroupsMembersMinTwo;
+
+  /// No description provided for @participantGroupsPartsField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parts'**
+  String get participantGroupsPartsField;
+
+  /// No description provided for @participantGroupsPartsInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'La valeur doit être un nombre supérieur à 0.'**
+  String get participantGroupsPartsInvalid;
+
+  /// No description provided for @participantGroupsAlreadyInGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} appartient déjà au groupe « {groupLabel} ».'**
+  String participantGroupsAlreadyInGroup(String label, String groupLabel);
+
+  /// No description provided for @participantGroupsUsedInExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.'**
+  String get participantGroupsUsedInExpenses;
+
+  /// No description provided for @participantGroupsSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe enregistré.'**
+  String get participantGroupsSaved;
+
+  /// No description provided for @participantGroupsDeleted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe supprimé.'**
+  String get participantGroupsDeleted;
+
+  /// No description provided for @participantGroupsDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce groupe ?'**
+  String get participantGroupsDeleteTitle;
+
+  /// No description provided for @participantGroupsDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le groupe « {label} » sera supprimé. Les dépenses existantes ne sont pas modifiées.'**
+  String participantGroupsDeleteBody(String label);
+
+  /// No description provided for @participantGroupsMemberCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} membres · {parts} parts'**
+  String participantGroupsMemberCount(int count, String parts);
 }
 
 class _AppLocalizationsDelegate

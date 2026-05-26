@@ -2888,6 +2888,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileNameRequiredMessage =>
       'A display name is required to use Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groups';
+
+  @override
+  String get participantGroupsEmpty => 'No billing groups.';
+
+  @override
+  String get participantGroupsAddTitle => 'Create group';
+
+  @override
+  String get participantGroupsEditTitle => 'Edit group';
+
+  @override
+  String get participantGroupsLabelField => 'Label (e.g. A&B, Martin Family)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Label is required.';
+
+  @override
+  String get participantGroupsMembersField => 'Group members';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'At least 2 members are required.';
+
+  @override
+  String get participantGroupsPartsField => 'Shares';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'Must be a number greater than 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label already belongs to group \"$groupLabel\".';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'This group is used in expenses and cannot be edited or deleted.';
+
+  @override
+  String get participantGroupsSaved => 'Group saved.';
+
+  @override
+  String get participantGroupsDeleted => 'Group deleted.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Delete this group?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Group \"$label\" will be deleted. Existing expenses are not affected.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count members · $parts shares';
+  }
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5703,4 +5763,64 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get profileNameRequiredMessage =>
       'A display name is required to use Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groups';
+
+  @override
+  String get participantGroupsEmpty => 'No billing groups.';
+
+  @override
+  String get participantGroupsAddTitle => 'Create group';
+
+  @override
+  String get participantGroupsEditTitle => 'Edit group';
+
+  @override
+  String get participantGroupsLabelField => 'Label (e.g. A&B, Martin Family)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Label is required.';
+
+  @override
+  String get participantGroupsMembersField => 'Group members';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'At least 2 members are required.';
+
+  @override
+  String get participantGroupsPartsField => 'Shares';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'Must be a number greater than 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label already belongs to group \"$groupLabel\".';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'This group is used in expenses and cannot be edited or deleted.';
+
+  @override
+  String get participantGroupsSaved => 'Group saved.';
+
+  @override
+  String get participantGroupsDeleted => 'Group deleted.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Delete this group?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Group \"$label\" will be deleted. Existing expenses are not affected.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count members · $parts shares';
+  }
 }

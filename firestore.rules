@@ -562,6 +562,25 @@ service cloud.firestore {
         allow delete: if canManageTripParticipants(tripId);
       }
 
+      match /participantGroups/{groupId} {
+        allow read: if isTripMember(tripId);
+        allow create: if canManageTripParticipants(tripId)
+          && request.resource.data.label is string
+          && request.resource.data.label.size() > 0
+          && request.resource.data.memberIds is list
+          && request.resource.data.memberIds.size() >= 2
+          && request.resource.data.parts is number
+          && request.resource.data.parts > 0;
+        allow update: if canManageTripParticipants(tripId)
+          && request.resource.data.label is string
+          && request.resource.data.label.size() > 0
+          && request.resource.data.memberIds is list
+          && request.resource.data.memberIds.size() >= 2
+          && request.resource.data.parts is number
+          && request.resource.data.parts > 0;
+        allow delete: if canManageTripParticipants(tripId);
+      }
+
       match /expenseGroups/{groupId} {
         allow read: if isTripMember(tripId);
         allow create: if canCreateExpensePost(tripId)

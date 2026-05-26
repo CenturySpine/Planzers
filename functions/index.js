@@ -589,6 +589,24 @@ function assertMemberIsNotTripAdmin(tripData, memberId) {
 }
 
 /**
+ * @param {FirebaseFirestore.QueryDocumentSnapshot[]} participantGroupDocs
+ * @param {string} memberId
+ */
+function assertMemberNotInParticipantGroup(participantGroupDocs, memberId) {
+  for (const doc of participantGroupDocs) {
+    const data = doc.data() || {};
+    const memberIds = normalizedIdList(data.memberIds);
+    if (memberIds.includes(memberId)) {
+      const label = normalizeString(data.label) || 'un groupe';
+      throw new HttpsError(
+        'failed-precondition',
+        `Ce membre appartient au groupe "${label}". Retire-le du groupe avant de le supprimer du voyage.`
+      );
+    }
+  }
+}
+
+/**
  * @param {FirebaseFirestore.DocumentReference} tripRef
  * @param {string} memberId
  * @param {FirebaseFirestore.DocumentData} tripData
@@ -598,12 +616,14 @@ async function assertMemberRemovalBlockingDependencies({
   memberId,
   tripData,
 }) {
-  const [expensesSnap, roomsSnap, mealsSnap, groupsSnap] = await Promise.all([
+  const [expensesSnap, roomsSnap, mealsSnap, groupsSnap, participantGroupsSnap] = await Promise.all([
     tripRef.collection('expenses').get(),
     tripRef.collection('rooms').get(),
     tripRef.collection('meals').get(),
     tripRef.collection('expenseGroups').get(),
+    tripRef.collection('participantGroups').get(),
   ]);
+  assertMemberNotInParticipantGroup(participantGroupsSnap.docs, memberId);
   assertMemberNotUsedInExpenses(expensesSnap.docs, memberId);
   assertMemberNotAssignedInRooms(roomsSnap.docs, memberId);
   assertMemberNotUsedInMeals(mealsSnap.docs, memberId);

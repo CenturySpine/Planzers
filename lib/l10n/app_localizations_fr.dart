@@ -2915,6 +2915,66 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get profileNameRequiredMessage =>
       'Un nom de profil est requis pour utiliser Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groupes';
+
+  @override
+  String get participantGroupsEmpty => 'Aucun groupe de facturation.';
+
+  @override
+  String get participantGroupsAddTitle => 'Créer un groupe';
+
+  @override
+  String get participantGroupsEditTitle => 'Modifier le groupe';
+
+  @override
+  String get participantGroupsLabelField => 'Libellé (ex. A&B, Famille Martin)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Le libellé est obligatoire.';
+
+  @override
+  String get participantGroupsMembersField => 'Membres du groupe';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'Au moins 2 membres sont requis.';
+
+  @override
+  String get participantGroupsPartsField => 'Parts';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'La valeur doit être un nombre supérieur à 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label appartient déjà au groupe « $groupLabel ».';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.';
+
+  @override
+  String get participantGroupsSaved => 'Groupe enregistré.';
+
+  @override
+  String get participantGroupsDeleted => 'Groupe supprimé.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Supprimer ce groupe ?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Le groupe « $label » sera supprimé. Les dépenses existantes ne sont pas modifiées.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count membres · $parts parts';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -5756,4 +5816,64 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get profileNameRequiredMessage =>
       'Un nom de profil est requis pour utiliser Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groupes';
+
+  @override
+  String get participantGroupsEmpty => 'Aucun groupe de facturation.';
+
+  @override
+  String get participantGroupsAddTitle => 'Créer un groupe';
+
+  @override
+  String get participantGroupsEditTitle => 'Modifier le groupe';
+
+  @override
+  String get participantGroupsLabelField => 'Libellé (ex. A&B, Famille Martin)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Le libellé est obligatoire.';
+
+  @override
+  String get participantGroupsMembersField => 'Membres du groupe';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'Au moins 2 membres sont requis.';
+
+  @override
+  String get participantGroupsPartsField => 'Parts';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'La valeur doit être un nombre supérieur à 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label appartient déjà au groupe « $groupLabel ».';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.';
+
+  @override
+  String get participantGroupsSaved => 'Groupe enregistré.';
+
+  @override
+  String get participantGroupsDeleted => 'Groupe supprimé.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Supprimer ce groupe ?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Le groupe « $label » sera supprimé. Les dépenses existantes ne sont pas modifiées.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count membres · $parts parts';
+  }
 }

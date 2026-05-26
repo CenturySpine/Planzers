@@ -1134,5 +1134,40 @@
   "publicProfileTitle": "Profile",
   "profileNameDialogTitle": "Choose your display name",
   "profileNameDialogFieldLabel": "Name or nickname",
-  "profileNameRequiredMessage": "A display name is required to use Planerz."
+  "profileNameRequiredMessage": "A display name is required to use Planerz.",
+
+  "participantGroupsTabLabel": "Groups",
+  "participantGroupsEmpty": "No billing groups.",
+  "participantGroupsAddTitle": "Create group",
+  "participantGroupsEditTitle": "Edit group",
+  "participantGroupsLabelField": "Label (e.g. A&B, Martin Family)",
+  "participantGroupsLabelRequired": "Label is required.",
+  "participantGroupsMembersField": "Group members",
+  "participantGroupsMembersMinTwo": "At least 2 members are required.",
+  "participantGroupsPartsField": "Shares",
+  "participantGroupsPartsInvalid": "Must be a number greater than 0.",
+  "participantGroupsAlreadyInGroup": "{label} already belongs to group \"{groupLabel}\".",
+  "@participantGroupsAlreadyInGroup": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "groupLabel": { "type": "String" }
+    }
+  },
+  "participantGroupsUsedInExpenses": "This group is used in expenses and cannot be edited or deleted.",
+  "participantGroupsSaved": "Group saved.",
+  "participantGroupsDeleted": "Group deleted.",
+  "participantGroupsDeleteTitle": "Delete this group?",
+  "participantGroupsDeleteBody": "Group \"{label}\" will be deleted. Existing expenses are not affected.",
+  "@participantGroupsDeleteBody": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "participantGroupsMemberCount": "{count} members · {parts} shares",
+  "@participantGroupsMemberCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "parts": { "type": "String" }
+    }
+  }
 }

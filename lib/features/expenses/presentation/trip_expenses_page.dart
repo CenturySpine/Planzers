@@ -15,6 +15,8 @@ import 'package:planerz/features/expenses/data/expenses_repository.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
+import 'package:planerz/features/trips/data/participant_group.dart';
+import 'package:planerz/features/trips/data/participant_groups_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/core/presentation/state_pill_toggle.dart';
@@ -24,21 +26,27 @@ import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Participant doc IDs who can appear as payer/participant for this expense post.
-/// [group.visibleToMemberIds] holds TripMember doc IDs; returns the doc IDs of
-/// all participants (including unclaimed) whose doc ID is in that set.
-List<String> participantScopeMemberIdsForGroup(
+/// Billing unit IDs (ungrouped member IDs + applicable group IDs) for an expense post.
+///
+/// Ungrouped members: allowed by [group.visibleToMemberIds] and not in any group.
+/// Groups: those whose every member is within the allowed set.
+List<String> participantScopeUnitIdsForGroup(
   TripExpenseGroup group,
   List<TripMember> participants,
+  List<ParticipantGroup> participantGroups,
 ) {
   if (group.visibleToMemberIds.isEmpty) return [];
   final allowed = group.visibleToMemberIds.toSet();
-  return participants
-      .where((m) => allowed.contains(m.id))
+  final groupedMemberIds = participantGroups.expand((g) => g.memberIds).toSet();
+  final ungrouped = participants
+      .where((m) => allowed.contains(m.id) && !groupedMemberIds.contains(m.id))
       .map((m) => m.id)
-      .toSet()
-      .toList()
-    ..sort();
+      .toList();
+  final scopeGroups = participantGroups
+      .where((g) => g.memberIds.isNotEmpty && g.memberIds.every(allowed.contains))
+      .map((g) => g.id)
+      .toList();
+  return [...ungrouped, ...scopeGroups]..sort();
 }
 
 
@@ -61,7 +69,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
+    final unitLabels = ref.watch(tripExpenseUnitLabelsProvider(trip.id));
     final memberIds = participants.map((m) => m.id).toList();
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
     final currentUserMemberId = participants
@@ -106,7 +114,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
             return _TripExpensesBody(
               trip: trip,
               participants: participants,
-              memberLabels: memberLabels,
+              memberLabels: unitLabels,
               memberIds: memberIds,
               currentUserMemberId: currentUserMemberId,
               groups: groups,
@@ -161,7 +169,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                           context,
                           trip.id,
                           memberIds,
-                          memberLabels,
+                          unitLabels,
                           currentUserMemberId,
                           existing: null,
                         );
@@ -182,7 +190,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                           ref,
                           trip.id,
                           participants,
-                          memberLabels,
+                          unitLabels,
                           _activeGroupId,
                         );
                       },
@@ -263,13 +271,15 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     }
     final group = chosenGroup ?? visible.first;
     if (!context.mounted) return;
+    final participantGroupsList =
+        ref.read(tripParticipantGroupsStreamProvider(tripId)).asData?.value ?? [];
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => _AddExpensePage(
           tripId: tripId,
           groupId: group.id,
           participantScopeMemberIds:
-              participantScopeMemberIdsForGroup(group, participants),
+              participantScopeUnitIdsForGroup(group, participants, participantGroupsList),
           memberLabels: memberLabels,
           currentUserMemberId: currentUserMemberId,
         ),
@@ -713,7 +723,10 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     _markExpensesNotificationsReadIfNeeded(widget.trip.id);
     _syncExpensesPresenceIfNeeded(widget.trip.id);
     final viewerUserId = widget.viewerUserId?.trim();
-    final viewerMemberId = widget.currentUserMemberId?.trim();
+    final viewerBillingUnitId =
+        ref.watch(viewerBillingUnitIdProvider(widget.trip.id))?.trim();
+    final participantGroups =
+        ref.watch(tripParticipantGroupsStreamProvider(widget.trip.id)).asData?.value ?? [];
     final groupScope = (
       tripId: widget.trip.id,
       groupId: widget.group.id,
@@ -721,23 +734,29 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     final summary =
         ref.watch(expenseGroupSummaryStreamProvider(groupScope)).asData?.value;
     final postTotalsByCurrency = summary?.postTotalsByCurrency ?? const {};
-    final myTotalsByCurrency = viewerMemberId != null
-        ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
+    final myTotalsByCurrency = viewerBillingUnitId != null
+        ? summary?.paidByTotalsByCurrency[viewerBillingUnitId] ?? const {}
         : const <String, double>{};
-    final Map<String, double>? myCostByCurrency = viewerMemberId != null
+    final Map<String, double>? myCostByCurrency = viewerBillingUnitId != null
         ? () {
+            final groupParts = {for (final g in participantGroups) g.id: g.parts};
             final result = <String, double>{};
             for (final expense in widget.groupExpenses) {
               if (expense.operationType == ExpenseOperationType.settlement) {
                 continue;
               }
-              if (!expense.participantIds.contains(viewerMemberId)) continue;
-              final share =
-                  expense.splitMode == ExpenseSplitMode.customAmounts
-                      ? (expense.participantShares[viewerMemberId] ?? 0.0)
-                      : (expense.participantIds.isEmpty
-                          ? 0.0
-                          : expense.amount / expense.participantIds.length);
+              if (!expense.participantIds.contains(viewerBillingUnitId)) continue;
+              final double share;
+              if (expense.splitMode == ExpenseSplitMode.customAmounts) {
+                share = expense.participantShares[viewerBillingUnitId] ?? 0.0;
+              } else {
+                final totalParts = expense.participantIds
+                    .fold<double>(0, (s, id) => s + (groupParts[id] ?? 1.0));
+                final myParts = groupParts[viewerBillingUnitId] ?? 1.0;
+                share = totalParts > 0
+                    ? expense.amount * myParts / totalParts
+                    : 0.0;
+              }
               result[expense.currency] =
                   (result[expense.currency] ?? 0.0) + share;
             }
@@ -746,9 +765,10 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         : null;
     final canMarkReimbursement =
         widget.group.isVisibleTo(widget.currentUserMemberId);
-    final scope = participantScopeMemberIdsForGroup(
+    final scope = participantScopeUnitIdsForGroup(
       widget.group,
       widget.participants,
+      participantGroups,
     );
 
     final canEditPost = canEditExpensePostForTrip(
@@ -787,8 +807,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         : widget.groupExpenses
             .where(
               (expense) =>
-                  viewerMemberId != null &&
-                  expense.involvesMember(viewerMemberId),
+                  viewerBillingUnitId != null &&
+                  expense.involvesMember(viewerBillingUnitId),
             )
             .toList();
 
@@ -1242,18 +1262,6 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         groupId: widget.group.id,
       );
 
-  bool _involvesCurrentUser(SuggestedReimbursement suggestion) {
-    final memberId = widget.currentUserMemberId?.trim();
-    if (memberId == null || memberId.isEmpty) return false;
-    return suggestion.fromParticipantId == memberId ||
-        suggestion.toParticipantId == memberId;
-  }
-
-  bool _involvesCurrentUserSettlement(TripExpense expense) {
-    final memberId = widget.currentUserMemberId?.trim();
-    if (memberId == null || memberId.isEmpty) return false;
-    return expense.involvesMember(memberId);
-  }
 
   Future<void> _markPaid(SuggestedReimbursement suggestion) async {
     if (!widget.canMarkReimbursement ||
@@ -1401,9 +1409,13 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         AppLocalizations.of(context)!.tripParticipantsTraveler;
   }
 
-  ({String title, bool bold}) _reimbursementLabel(String fromId, String toId) {
+  ({String title, bool bold}) _reimbursementLabel(
+    String fromId,
+    String toId,
+    String? billingUnitId,
+  ) {
     final l10n = AppLocalizations.of(context)!;
-    final me = widget.currentUserMemberId?.trim();
+    final me = billingUnitId?.trim();
     if (me != null && me.isNotEmpty) {
       if (fromId == me) {
         return (title: l10n.expensesReimbursementYouOweTo(_participantLabel(toId)), bold: true);
@@ -1431,20 +1443,36 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         ref.watch(tripExpensesStatesStreamProvider(widget.tripId)).asData?.value ??
             TripExpensesStates.defaults;
 
+    final viewerBillingUnitId =
+        ref.watch(viewerBillingUnitIdProvider(widget.tripId))?.trim();
+
     final balances = balancesAsync.asData?.value ?? const [];
     final allSuggestions = suggestionsAsync.asData?.value ?? const [];
     final visibleSuggestions = _showAllPost
         ? allSuggestions
-        : allSuggestions.where(_involvesCurrentUser).toList();
+        : allSuggestions.where((s) {
+            if (viewerBillingUnitId == null || viewerBillingUnitId.isEmpty) {
+              return false;
+            }
+            return s.fromParticipantId == viewerBillingUnitId ||
+                s.toParticipantId == viewerBillingUnitId;
+          }).toList();
 
     final allSettlements = widget.groupExpenses
         .where((e) => e.operationType == ExpenseOperationType.settlement)
         .toList();
     final visibleSettlements = _showAllPost
         ? allSettlements
-        : allSettlements.where(_involvesCurrentUserSettlement).toList();
+        : allSettlements.where((e) {
+            if (viewerBillingUnitId == null || viewerBillingUnitId.isEmpty) {
+              return false;
+            }
+            return e.involvesMember(viewerBillingUnitId);
+          }).toList();
 
-    final hasBalances = balances.any((b) => b.nets.isNotEmpty);
+    final hasNonSettlementExpenses = widget.groupExpenses
+        .any((e) => e.operationType != ExpenseOperationType.settlement);
+    final hasBalances = hasNonSettlementExpenses || balances.any((b) => b.nets.isNotEmpty);
     final waitingForData = balancesAsync.isLoading || suggestionsAsync.isLoading;
 
     return Column(
@@ -1519,50 +1547,49 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
           )
         else
           for (final balance in balances)
-            if (balance.nets.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        balance.currency,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              letterSpacing: 1.1,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      for (final memberId in (widget.group.visibleToMemberIds.isNotEmpty
-                          ? (widget.group.visibleToMemberIds.toList()..sort())
-                          : (balance.nets.keys.toList()..sort())))
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _participantLabel(memberId),
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ),
-                              _BalanceChip(
-                                amount: balance.nets[memberId] ?? 0.0,
-                                currency: balance.currency,
-                              ),
-                            ],
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      balance.currency,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            letterSpacing: 1.1,
                           ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final memberId in (balance.nets.isNotEmpty
+                        ? (balance.nets.keys.toList()..sort())
+                        : (widget.memberLabels.keys.toList()..sort())))
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _participantLabel(memberId),
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            _BalanceChip(
+                              amount: balance.nets[memberId] ?? 0.0,
+                              currency: balance.currency,
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
+            ),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -1604,6 +1631,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             final lbl = _reimbursementLabel(
               suggestion.fromParticipantId,
               suggestion.toParticipantId,
+              viewerBillingUnitId,
             );
             return _ReimbursementRow(
               title: lbl.title,
@@ -1638,7 +1666,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             final toId = settlement.participantIds.isNotEmpty
                 ? settlement.participantIds.first
                 : '';
-            final lbl = _reimbursementLabel(settlement.paidBy, toId);
+            final lbl = _reimbursementLabel(settlement.paidBy, toId, viewerBillingUnitId);
             return _ReimbursementRow(
               title: lbl.title,
               bold: lbl.bold,
@@ -2207,7 +2235,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
     return out;
   }
 
-  Widget? _shareAmountTrailing(String memberId) {
+  Widget? _shareAmountTrailing(String memberId, Map<String, double> groupParts) {
     if (!_participantIds.contains(memberId)) {
       return Text(
         AppLocalizations.of(context)!.commonDash,
@@ -2217,8 +2245,10 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       );
     }
     if (_splitMode == ExpenseSplitMode.equal) {
-      final n = _participantIds.length;
-      final per = n > 0 ? _parsedTotalAmount() / n : 0.0;
+      final totalParts = _participantIds.fold<double>(
+          0, (s, id) => s + (groupParts[id] ?? 1.0));
+      final myParts = groupParts[memberId] ?? 1.0;
+      final per = totalParts > 0 ? _parsedTotalAmount() * myParts / totalParts : 0.0;
       return Text(
         _formatShareMoney(per),
         style: Theme.of(context).textTheme.bodyMedium,
@@ -2433,6 +2463,9 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
         .where((id) => id.isNotEmpty)
         .toList();
     final cs = Theme.of(context).colorScheme;
+    final participantGroups =
+        ref.watch(tripParticipantGroupsStreamProvider(widget.tripId)).asData?.value ?? [];
+    final groupParts = {for (final g in participantGroups) g.id: g.parts};
 
     return Scaffold(
       appBar: AppBar(
@@ -2711,7 +2744,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                           widget.memberLabels[id] ?? id,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        secondary: _shareAmountTrailing(id),
+                        secondary: _shareAmountTrailing(id, groupParts),
                         value: _participantIds.contains(id),
                         onChanged: !_editing
                             ? null
