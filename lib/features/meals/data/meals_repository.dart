@@ -54,6 +54,21 @@ class MealsRepository {
         .doc(memberId.trim());
   }
 
+  Future<void> _assertParticipantCanBeMealChef({
+    required String tripId,
+    required String participantId,
+  }) async {
+    final cleanParticipantId = participantId.trim();
+    if (cleanParticipantId.isEmpty) return;
+    final snap = await _memberRef(
+      tripId: tripId,
+      memberId: cleanParticipantId,
+    ).get();
+    if (snap.data()?['isChild'] == true) {
+      throw StateError('Un enfant ne peut pas etre chef de repas');
+    }
+  }
+
   /// Calculate automatic participants for a meal at given date + day part,
   /// based on all trip members' presence (TripMemberStay).
   /// Ignores members whose stay data is missing or invalid.
@@ -149,6 +164,14 @@ class MealsRepository {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) {
       throw StateError('Voyage invalide');
+    }
+
+    final normalizedChef = chefParticipantId?.trim();
+    if (normalizedChef != null && normalizedChef.isNotEmpty) {
+      await _assertParticipantCanBeMealChef(
+        tripId: cleanTripId,
+        participantId: normalizedChef,
+      );
     }
 
     final docRef = await _mealsCol(cleanTripId).add({
@@ -286,6 +309,14 @@ class MealsRepository {
       ..sort();
 
     final normalizedChef = (chefParticipantId ?? '').trim();
+
+    if (normalizedChef.isNotEmpty &&
+        normalizedParticipantIds.contains(normalizedChef)) {
+      await _assertParticipantCanBeMealChef(
+        tripId: cleanTripId,
+        participantId: normalizedChef,
+      );
+    }
 
     try {
       await docRef.update({

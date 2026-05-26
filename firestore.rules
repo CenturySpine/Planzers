@@ -556,9 +556,19 @@ service cloud.firestore {
             canManageTripParticipants(tripId)
             || (isTripMember(tripId) && resource.data.userId == request.auth.uid)
           )
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantName', 'useProfileName'])
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['participantName', 'useProfileName', 'isChild'])
           && request.resource.data.participantName is string
-          && request.resource.data.participantName.size() > 0;
+          && request.resource.data.participantName.size() > 0
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isChild'])
+            || (
+              canManageTripParticipants(tripId)
+              && !(resource.data.keys().hasAny(['userId'])
+                && resource.data.userId is string
+                && resource.data.userId.size() > 0)
+            )
+          );
         allow delete: if canManageTripParticipants(tripId);
       }
 

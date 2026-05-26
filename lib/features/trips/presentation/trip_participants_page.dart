@@ -228,32 +228,53 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
   Future<void> _openAddDialog() async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
+    var isChild = false;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.tripParticipantsAddPlannedTravelerTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: l10n.commonName,
-            border: const OutlineInputBorder(),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(l10n.tripParticipantsAddPlannedTravelerTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.commonName,
+                  border: const OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: Text(
+                  tripMemberChildLabelEmoji,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                title: Text(l10n.tripParticipantsIsChildLabel),
+                subtitle: Text(l10n.tripParticipantsIsChildSubtitle),
+                value: isChild,
+                onChanged: (value) => setDialogState(() => isChild = value),
+              ),
+            ],
           ),
-          textInputAction: TextInputAction.done,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.commonAdd),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.commonAdd),
-          ),
-        ],
       ),
     );
     final name = ok == true ? controller.text.trim() : '';
+    final savedIsChild = ok == true && isChild;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.dispose();
     });
@@ -264,6 +285,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
       await ref.read(tripsRepositoryProvider).addTripParticipant(
             tripId: widget.tripId,
             participantName: name,
+            isChild: savedIsChild,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -281,6 +303,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     required String participantId,
     required String currentName,
     required bool currentUseProfileName,
+    required bool currentIsChild,
     required bool isClaimed,
     Map<String, dynamic>? profileData,
   }) async {
@@ -292,6 +315,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
       builder: (ctx) => TripParticipantNameDialog(
         initialName: currentName,
         initialUseProfileName: currentUseProfileName,
+        initialIsChild: currentIsChild,
         isClaimed: isClaimed,
         profileName: profileName,
       ),
@@ -300,6 +324,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     if (result == null || !mounted) return;
     final name = result.name;
     final savedUseProfileName = result.useProfileName;
+    final savedIsChild = result.isChild;
     if (name.isEmpty && !savedUseProfileName) return;
     try {
       await ref.read(tripsRepositoryProvider).updateTripParticipantName(
@@ -307,6 +332,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
             participantId: participantId,
             participantName: name,
             useProfileName: savedUseProfileName,
+            isChild: savedIsChild,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -686,6 +712,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                                 row.rawParticipantName,
                                             currentUseProfileName:
                                                 row.useProfileName,
+                                            currentIsChild: row.isChild,
                                             isClaimed: row.isClaimed,
                                             profileData:
                                                 row.profileData,
@@ -1078,17 +1105,30 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
   late final TextEditingController _partsController;
   late final Set<String> _selectedMemberIds;
 
+  Map<String, TripMember> get _membersById =>
+      {for (final m in widget.participants) m.id: m};
+
+  String _formatParts(double value) =>
+      value == value.truncateToDouble()
+          ? value.toInt().toString()
+          : value.toStringAsFixed(1);
+
+  bool _partsEqual(double a, double b) => (a - b).abs() < 0.001;
+
+  double _suggestedPartsFor(Set<String> memberIds) =>
+      suggestedParticipantGroupParts(memberIds, _membersById);
+
   @override
   void initState() {
     super.initState();
     _labelController =
         TextEditingController(text: widget.existing?.label ?? '');
     final defaultParts = widget.existing?.parts ??
-        (widget.existing?.memberIds.length.toDouble() ?? 2.0);
+        (widget.existing != null
+            ? _suggestedPartsFor(widget.existing!.memberIds.toSet())
+            : 2.0);
     _partsController = TextEditingController(
-      text: defaultParts == defaultParts.truncateToDouble()
-          ? defaultParts.toInt().toString()
-          : defaultParts.toStringAsFixed(1),
+      text: _formatParts(defaultParts),
     );
     _selectedMemberIds = {...(widget.existing?.memberIds ?? [])};
   }
@@ -1110,20 +1150,19 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
 
   void _onMemberToggled(String memberId, bool selected) {
     setState(() {
+      final previousIds = Set<String>.from(_selectedMemberIds);
       if (selected) {
         _selectedMemberIds.add(memberId);
       } else {
         _selectedMemberIds.remove(memberId);
       }
-      final count = _selectedMemberIds.length;
-      if (count > 0) {
+      if (_selectedMemberIds.isNotEmpty) {
         final currentParts =
             double.tryParse(_partsController.text.replaceAll(',', '.'));
-        // Only auto-update parts if they currently equal a whole number
-        // matching the old count (user hasn't customised them).
-        final oldCount = selected ? count - 1 : count + 1;
-        if (currentParts == oldCount.toDouble()) {
-          _partsController.text = count.toString();
+        final oldSuggested = _suggestedPartsFor(previousIds);
+        if (currentParts != null && _partsEqual(currentParts, oldSuggested)) {
+          _partsController.text =
+              _formatParts(_suggestedPartsFor(_selectedMemberIds));
         }
       }
     });
@@ -1314,6 +1353,7 @@ List<_ParticipantRow> _participantRowsForTrip(
       isClaimed: member.isClaimed,
       rawParticipantName: member.participantName,
       useProfileName: member.useProfileName,
+      isChild: member.isChild,
       displayLabel: resolveTripMemberDisplayLabel(member, profileData: profileData),
       isAdmin: member.userId != null
           ? trip.memberHasAdminRole(member.userId!)
@@ -1374,6 +1414,7 @@ Widget _participantRoleLeading({
     displayLabel: row.displayLabel,
     userData: row.profileData,
     size: 28,
+    isChild: row.isChild,
   );
 
   final icon = showAdminIcon
@@ -1432,6 +1473,7 @@ class _ParticipantRow {
     required this.isClaimed,
     required this.rawParticipantName,
     required this.useProfileName,
+    required this.isChild,
     required this.displayLabel,
     required this.isAdmin,
     required this.likedByMe,
@@ -1444,6 +1486,7 @@ class _ParticipantRow {
   final bool isClaimed;
   final String rawParticipantName;
   final bool useProfileName;
+  final bool isChild;
   final String displayLabel;
   final bool isAdmin;
   final bool likedByMe;

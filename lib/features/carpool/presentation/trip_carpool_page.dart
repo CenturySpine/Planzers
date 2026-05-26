@@ -479,6 +479,15 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                           l10n.tripParticipantsTraveler,
                                   driverUserData: userDocs[participantIdToUserId[
                                       carpool.driverParticipantId]],
+                                  driverIsChild: participants
+                                      .where(
+                                        (m) =>
+                                            m.id ==
+                                            carpool.driverParticipantId.trim(),
+                                      )
+                                      .map((m) => m.isChild)
+                                      .firstOrNull ??
+                                      false,
                                   passengerLabels: carpool
                                       .assignedParticipantIds
                                       .where(
@@ -573,6 +582,7 @@ class _TripCarpoolCard extends StatelessWidget {
     required this.isCurrentUserInCarpool,
     required this.driverLabel,
     required this.driverUserData,
+    required this.driverIsChild,
     required this.passengerLabels,
     required this.showJoinPassengerAction,
     required this.showLeavePassengerAction,
@@ -587,6 +597,7 @@ class _TripCarpoolCard extends StatelessWidget {
   final bool isCurrentUserInCarpool;
   final String driverLabel;
   final Map<String, dynamic>? driverUserData;
+  final bool driverIsChild;
   final List<String> passengerLabels;
   final bool showJoinPassengerAction;
   final bool showLeavePassengerAction;
@@ -651,6 +662,7 @@ class _TripCarpoolCard extends StatelessWidget {
                     displayLabel: driverLabel,
                     userData: driverUserData,
                     size: 28,
+                    isChild: driverIsChild,
                   ),
                   const SizedBox(width: 10),
                   Expanded(

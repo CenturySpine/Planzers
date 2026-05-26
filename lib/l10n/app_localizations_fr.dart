@@ -1032,6 +1032,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsPlannedTravelerAdded => 'Voyageur prévu ajouté';
 
   @override
+  String get tripParticipantsIsChildLabel => 'Enfant';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'Sans compte utilisateur ; facturation via un groupe uniquement.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'Un enfant ne peut pas être chef de repas.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'Un enfant ne peut pas être conducteur.';
+
+  @override
   String get tripParticipantsEditNameTitle => 'Modifier le nom';
 
   @override
@@ -3931,6 +3946,21 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsPlannedTravelerAdded => 'Voyageur prévu ajouté';
+
+  @override
+  String get tripParticipantsIsChildLabel => 'Enfant';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'Sans compte utilisateur ; facturation via un groupe uniquement.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'Un enfant ne peut pas être chef de repas.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'Un enfant ne peut pas être conducteur.';
 
   @override
   String get tripParticipantsEditNameTitle => 'Modifier le nom';

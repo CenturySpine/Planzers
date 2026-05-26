@@ -395,12 +395,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  String _initialFromLabel(String label) {
-    final clean = label.trim();
-    if (clean.isEmpty) return '?';
-    return clean.substring(0, 1).toUpperCase();
-  }
-
   Stream<Map<String, Map<String, dynamic>>> _usersDataStreamFor(
     List<String> memberIds,
   ) {
@@ -574,11 +568,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           builder: (context, userSnap) {
             final usersDataById = userSnap.data ?? const {};
             final participantsPreview = participants.map((m) {
-              final photoUrl = m.userId != null
-                  ? _photoUrlFromUserData(usersDataById[m.userId!])
-                  : '';
+              final displayLabel = resolveTripMemberDisplayLabel(
+                m,
+                profileData: usersDataById[m.userId],
+              );
+              final photoUrl = m.isChild
+                  ? ''
+                  : (m.userId != null
+                      ? _photoUrlFromUserData(usersDataById[m.userId!])
+                      : '');
               return _ParticipantBadgePreviewEntry(
-                initial: _initialFromLabel(resolveTripMemberDisplayLabel(m, profileData: usersDataById[m.userId])),
+                initial: avatarInitialFromDisplayLabel(displayLabel),
                 photoUrl: photoUrl,
               );
             }).toList();

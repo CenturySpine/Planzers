@@ -1913,6 +1913,30 @@ abstract class AppLocalizations {
   /// **'Voyageur prévu ajouté'**
   String get tripParticipantsPlannedTravelerAdded;
 
+  /// No description provided for @tripParticipantsIsChildLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enfant'**
+  String get tripParticipantsIsChildLabel;
+
+  /// No description provided for @tripParticipantsIsChildSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans compte utilisateur ; facturation via un groupe uniquement.'**
+  String get tripParticipantsIsChildSubtitle;
+
+  /// No description provided for @tripParticipantsChildCannotBeChef.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un enfant ne peut pas être chef de repas.'**
+  String get tripParticipantsChildCannotBeChef;
+
+  /// No description provided for @tripParticipantsChildCannotBeDriver.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un enfant ne peut pas être conducteur.'**
+  String get tripParticipantsChildCannotBeDriver;
+
   /// No description provided for @tripParticipantsEditNameTitle.
   ///
   /// In fr, this message translates to:

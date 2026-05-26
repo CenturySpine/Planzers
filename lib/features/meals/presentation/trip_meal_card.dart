@@ -6,6 +6,7 @@ import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMealCard extends ConsumerWidget {
@@ -29,6 +30,10 @@ class TripMealCard extends ConsumerWidget {
     final hasChef =
         meal.mealMode == MealMode.cooked && chefId != null && chefId.isNotEmpty;
     final chefLabel = hasChef ? (memberLabels[chefId] ?? l10n.commonUnknown) : '';
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
+    final chefIsChild = hasChef &&
+        participants.any((m) => m.id == chefId && m.isChild);
     final participantCount = meal.participantIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
@@ -120,6 +125,7 @@ class TripMealCard extends ConsumerWidget {
                                 displayLabel: chefLabel,
                                 userData: null,
                                 size: 24,
+                                isChild: chefIsChild,
                               ),
                               Positioned(
                                 top: -3,

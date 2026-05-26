@@ -1017,6 +1017,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsPlannedTravelerAdded => 'Planned traveler added';
 
   @override
+  String get tripParticipantsIsChildLabel => 'Child';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'No user account; billing only through a group.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'A child cannot be the meal chef.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'A child cannot be the driver.';
+
+  @override
   String get tripParticipantsEditNameTitle => 'Edit name';
 
   @override
@@ -3890,6 +3905,21 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsPlannedTravelerAdded => 'Planned traveler added';
+
+  @override
+  String get tripParticipantsIsChildLabel => 'Child';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'No user account; billing only through a group.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'A child cannot be the meal chef.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'A child cannot be the driver.';
 
   @override
   String get tripParticipantsEditNameTitle => 'Edit name';

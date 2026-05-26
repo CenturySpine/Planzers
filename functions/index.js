@@ -2322,7 +2322,8 @@ async function completeJoinTripWithInvite(
 
   const unclaimedSlots = participantsSnap.docs.filter((d) => {
     const userId = normalizeString(d.data().userId);
-    return !userId;
+    const isChild = d.data().isChild === true;
+    return !userId && !isChild;
   });
 
   let claimedParticipantRef = null;
@@ -2339,6 +2340,12 @@ async function completeJoinTripWithInvite(
       throw new HttpsError(
         'failed-precondition',
         'Ce voyageur a déjà été choisi ou est introuvable.'
+      );
+    }
+    if (slotDoc.data().isChild === true) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
       );
     }
     claimedParticipantRef = slotDoc.ref;
@@ -2425,7 +2432,8 @@ exports.getInviteJoinContext = onCall(
     const unclaimedSlots = participantsSnap.docs
       .filter((d) => {
         const userId = normalizeString(d.data().userId);
-        return !userId;
+        const isChild = d.data().isChild === true;
+        return !userId && !isChild;
       })
       .map((d) => ({
         id: d.id,
@@ -2466,6 +2474,7 @@ exports.addTripParticipant = onCall(
 
     const tripId = normalizeString(request.data?.tripId);
     const participantName = normalizeString(request.data?.participantName);
+    const isChild = request.data?.isChild === true;
     if (!tripId) {
       throw new HttpsError('invalid-argument', 'Voyage invalide');
     }
@@ -2490,15 +2499,21 @@ exports.addTripParticipant = onCall(
     });
 
     const defaultStay = defaultStayForTrip(tripData);
-    const participantRef = await tripRef.collection('participants').add({
+    const participantDoc = {
       participantName,
       ...defaultStay,
       cupidonEnabled: false,
       phoneVisibility: 'nobody',
       createdAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (isChild) {
+      participantDoc.isChild = true;
+    }
+    const participantRef = await tripRef.collection('participants').add(participantDoc);
     const participantId = participantRef.id;
-    await addParticipantIdToDefaultExpensePost(tripRef, participantId);
+    if (!isChild) {
+      await addParticipantIdToDefaultExpensePost(tripRef, participantId);
+    }
 
     return { ok: true, participantId };
   }
@@ -2856,6 +2871,15 @@ exports.upsertTripCarpool = onCall({}, async (request) => {
   const validParticipantIds = new Set(participantsSnap.docs.map((d) => d.id));
   if (!validParticipantIds.has(driverParticipantId)) {
     throw new HttpsError('invalid-argument', 'Conducteur introuvable');
+  }
+  const driverParticipantDoc = participantsSnap.docs.find(
+    (doc) => doc.id === driverParticipantId
+  );
+  if (driverParticipantDoc?.data()?.isChild === true) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Un enfant ne peut pas etre conducteur.'
+    );
   }
   for (const pid of normalizedAssignedParticipantIds) {
     if (!validParticipantIds.has(pid)) {

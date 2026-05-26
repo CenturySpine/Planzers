@@ -39,7 +39,10 @@ List<String> participantScopeUnitIdsForGroup(
   final allowed = group.visibleToMemberIds.toSet();
   final groupedMemberIds = participantGroups.expand((g) => g.memberIds).toSet();
   final ungrouped = participants
-      .where((m) => allowed.contains(m.id) && !groupedMemberIds.contains(m.id))
+      .where((m) =>
+          !m.isChild &&
+          allowed.contains(m.id) &&
+          !groupedMemberIds.contains(m.id))
       .map((m) => m.id)
       .toList();
   final scopeGroups = participantGroups

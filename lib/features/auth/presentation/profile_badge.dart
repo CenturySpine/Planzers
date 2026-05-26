@@ -5,13 +5,18 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 ///
 /// Uses the canonical stored profile photo when available, otherwise falls back
 /// to a uniform circular badge with the first uppercase letter of the label.
+///
+/// When [isChild] is true, never uses a profile photo (initial-only fallback).
 Widget buildProfileBadge({
   required BuildContext context,
   required String displayLabel,
   Map<String, dynamic>? userData,
   double size = 28,
+  bool isChild = false,
 }) {
   final scheme = Theme.of(context).colorScheme;
+  final initial = avatarInitialFromDisplayLabel(displayLabel);
+
   final fallback = Container(
     width: size,
     height: size,
@@ -21,7 +26,7 @@ Widget buildProfileBadge({
       shape: BoxShape.circle,
     ),
     child: Text(
-      avatarInitialFromDisplayLabel(displayLabel),
+      initial,
       textAlign: TextAlign.center,
       style: TextStyle(
         color: scheme.onSurfaceVariant,
@@ -31,6 +36,10 @@ Widget buildProfileBadge({
       ),
     ),
   );
+
+  if (isChild) {
+    return fallback;
+  }
 
   final photoUrl = tripMemberStoredProfileBadgeUrl(userData);
   if (photoUrl.isEmpty) {

@@ -107,6 +107,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       builder: (dialogContext) => TripParticipantNameDialog(
         initialName: initialName,
         initialUseProfileName: initialUseProfileName,
+        initialIsChild: false,
         isClaimed: true,
         profileName: profileName,
       ),

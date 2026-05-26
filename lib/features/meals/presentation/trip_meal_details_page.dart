@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
+import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
@@ -573,7 +574,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     );
   }
 
-  void _hydrateFromMeal(TripMeal meal) {
+  void _hydrateFromMeal(TripMeal meal, List<TripMember> participants) {
     if (widget.isCreate && _isHydrated) return;
     // Keep optimistic local edits while a save is in-flight.
     if (_isSavingParticipants ||
@@ -589,9 +590,11 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     _mealDayPart = meal.mealDayPart;
     _mealTime = _parseHHMMToTimeOfDay(meal.mealTimeHHMM);
     _participantIds = meal.participantIds.toSet();
-    _chefParticipantId = meal.chefParticipantId != null &&
-            _participantIds.contains(meal.chefParticipantId)
-        ? meal.chefParticipantId
+    final rawChefId = meal.chefParticipantId;
+    _chefParticipantId = rawChefId != null &&
+            _participantIds.contains(rawChefId) &&
+            _participantCanBeMealChef(rawChefId, participants)
+        ? rawChefId
         : null;
     _components = meal.components.toList(growable: true)
       ..sort((a, b) => a.order.compareTo(b.order));
@@ -961,7 +964,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  Future<void> _autoRecalculateParticipants(List<String> memberIds) async {
+  Future<void> _autoRecalculateParticipants(
+    List<String> memberIds,
+    List<TripMember> participants,
+  ) async {
     if (_isSavingParticipants) return;
     final previousParticipantIds = _participantIds.toSet();
     final previousChefParticipantId = _chefParticipantId;
@@ -977,13 +983,15 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       setState(() {
         _participantIds = ids.toSet();
         if (_chefParticipantId != null &&
-            !_participantIds.contains(_chefParticipantId)) {
+            (!_participantIds.contains(_chefParticipantId) ||
+                !_participantCanBeMealChef(_chefParticipantId!, participants))) {
           _chefParticipantId = null;
         }
       });
       await _saveMealParticipants(
         previousParticipantIds: previousParticipantIds,
         previousChefParticipantId: previousChefParticipantId,
+        participants: participants,
       );
     } catch (e) {
       if (!mounted) return;
@@ -999,7 +1007,10 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  Future<void> _toggleAllParticipants(List<String> memberIds) async {
+  Future<void> _toggleAllParticipants(
+    List<String> memberIds,
+    List<TripMember> participants,
+  ) async {
     if (_isSavingParticipants) return;
     final previousParticipantIds = _participantIds.toSet();
     final previousChefParticipantId = _chefParticipantId;
@@ -1008,28 +1019,36 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     setState(() {
       _participantIds = allSelected ? <String>{} : memberIds.toSet();
       if (_chefParticipantId != null &&
-          !_participantIds.contains(_chefParticipantId)) {
+          (!_participantIds.contains(_chefParticipantId) ||
+              !_participantCanBeMealChef(_chefParticipantId!, participants))) {
         _chefParticipantId = null;
       }
     });
     await _saveMealParticipants(
       previousParticipantIds: previousParticipantIds,
       previousChefParticipantId: previousChefParticipantId,
+      participants: participants,
     );
   }
 
   Future<void> _saveMealParticipants({
     required Set<String> previousParticipantIds,
     required String? previousChefParticipantId,
+    required List<TripMember> participants,
   }) async {
     if (widget.isCreate || _isSavingParticipants || _isSaving) return;
+    final sanitizedChef =
+        _sanitizedChefParticipantId(_chefParticipantId, participants);
+    if (sanitizedChef != _chefParticipantId) {
+      setState(() => _chefParticipantId = sanitizedChef);
+    }
     setState(() => _isSavingParticipants = true);
     try {
       await ref.read(mealsRepositoryProvider).updateMealParticipants(
             tripId: widget.tripId,
             mealId: widget.mealId!,
             participantIds: _participantIds.toList(growable: false),
-            chefParticipantId: _chefParticipantId,
+            chefParticipantId: sanitizedChef,
           );
     } catch (e) {
       if (!mounted) return;
@@ -1053,10 +1072,24 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  Future<void> _toggleChefParticipant(String participantId) async {
+  Future<void> _toggleChefParticipant(
+    String participantId,
+    List<TripMember> participants,
+  ) async {
     if (_isSavingParticipants) return;
     if (_activeMealView != _MealDetailsView.cooked) return;
     if (!_participantIds.contains(participantId)) return;
+    if (!_participantCanBeMealChef(participantId, participants)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.tripParticipantsChildCannotBeChef,
+          ),
+        ),
+      );
+      return;
+    }
     final previousParticipantIds = _participantIds.toSet();
     final previousChefParticipantId = _chefParticipantId;
     setState(() {
@@ -1069,7 +1102,29 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     await _saveMealParticipants(
       previousParticipantIds: previousParticipantIds,
       previousChefParticipantId: previousChefParticipantId,
+      participants: participants,
     );
+  }
+
+  bool _participantCanBeMealChef(
+    String participantId,
+    List<TripMember> participants,
+  ) {
+    for (final member in participants) {
+      if (member.id == participantId) {
+        return member.canBeMealChefOrCarpoolDriver;
+      }
+    }
+    return false;
+  }
+
+  String? _sanitizedChefParticipantId(
+    String? chefParticipantId,
+    List<TripMember> participants,
+  ) {
+    final chefId = chefParticipantId?.trim();
+    if (chefId == null || chefId.isEmpty) return null;
+    return _participantCanBeMealChef(chefId, participants) ? chefId : null;
   }
 
   Future<void> _pickDate() async {
@@ -1272,19 +1327,24 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     setState(() => _isSaving = true);
     try {
       final repo = ref.read(mealsRepositoryProvider);
+      final participants =
+          ref.read(tripParticipantsStreamProvider(widget.tripId)).asData?.value ??
+              [];
       final mealDayPart = tripDayPartToFirestore(_mealDayPart);
       final participantIds = _participantIds.toList()..sort();
       final mealMode = _dataModeFromMealView(_activeMealView);
       final potluckItems = mealMode == MealMode.potluck
           ? _potluckItems
           : const <MealPotluckItem>[];
+      final chefParticipantId =
+          _sanitizedChefParticipantId(_chefParticipantId, participants);
       await repo.addMeal(
         tripId: widget.tripId,
         mealDateKey: _mealDateKey,
         mealDayPart: mealDayPart,
         mealTimeHHMM: _timeToHHMM(_mealTime),
         participantIds: participantIds,
-        chefParticipantId: _chefParticipantId,
+        chefParticipantId: chefParticipantId,
         components: _components,
         mealMode: mealMode,
         potluckItems: potluckItems,
@@ -1417,7 +1477,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
               );
             }
             if (meal != null) {
-              _hydrateFromMeal(meal);
+              _hydrateFromMeal(meal, participants);
             } else if (!_isHydrated) {
               _isHydrated = true;
               final tripStart = trip.startDate;
@@ -1696,7 +1756,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     onPressed: _isSavingParticipants
                                         ? null
                                         : () => _autoRecalculateParticipants(
-                                            memberIds),
+                                            memberIds, participants),
                                     icon: const Icon(
                                         Icons.auto_fix_high_outlined),
                                     label: Text(l10n.commonAuto),
@@ -1705,7 +1765,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     onPressed: _isSavingParticipants
                                         ? null
                                         : () =>
-                                            _toggleAllParticipants(memberIds),
+                                            _toggleAllParticipants(
+                                                memberIds, participants),
                                     icon: const Icon(Icons.done_all_outlined),
                                     label: Text(
                                       areAllParticipantsSelected
@@ -1735,8 +1796,13 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                   GestureDetector(
                                     onLongPress: _activeMealView ==
                                                 _MealDetailsView.cooked &&
-                                            canEditParticipants
-                                        ? () => _toggleChefParticipant(memberId)
+                                            canEditParticipants &&
+                                            _participantCanBeMealChef(
+                                                memberId, participants)
+                                        ? () => _toggleChefParticipant(
+                                              memberId,
+                                              participants,
+                                            )
                                         : null,
                                     child: Builder(
                                       builder: (context) {
@@ -1804,6 +1870,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   previousParticipantIds,
                                               previousChefParticipantId:
                                                   previousChefParticipantId,
+                                              participants: participants,
                                             );
                                           },
                                         );
