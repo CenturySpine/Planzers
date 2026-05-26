@@ -3966,6 +3966,12 @@ abstract class AppLocalizations {
   /// **'Aucune opération dans ce poste.'**
   String get expensesNoOperationInPost;
 
+  /// No description provided for @expensesNoMyOperationInPost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune opération vous concernant dans ce poste.'**
+  String get expensesNoMyOperationInPost;
+
   /// No description provided for @expensesMyTotalSpend.
   ///
   /// In fr, this message translates to:

@@ -818,6 +818,7 @@
   "@expensesDeletePostBody": {"placeholders": {"title": {}}},
   "expensesPostDeleted": "Section deleted",
   "expensesNoOperationInPost": "No operation in this section.",
+  "expensesNoMyOperationInPost": "No operation involving you in this section.",
   "expensesMyTotalSpend": "My total expenses",
   "expensesMyCost": "My share",
   "expensesTripTotalCost": "Total trip cost",

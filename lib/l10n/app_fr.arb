@@ -856,6 +856,7 @@
   "@expensesDeletePostBody": {"placeholders": {"title": {}}},
   "expensesPostDeleted": "Poste supprimé",
   "expensesNoOperationInPost": "Aucune opération dans ce poste.",
+  "expensesNoMyOperationInPost": "Aucune opération vous concernant dans ce poste.",
   "expensesMyTotalSpend": "Mes dépenses totales",
   "expensesMyCost": "Mon coût total",
   "expensesTripTotalCost": "Coût total du séjour",

@@ -2167,6 +2167,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesNoOperationInPost => 'No operation in this section.';
 
   @override
+  String get expensesNoMyOperationInPost =>
+      'No operation involving you in this section.';
+
+  @override
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
@@ -4976,6 +4980,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesNoOperationInPost => 'No operation in this section.';
+
+  @override
+  String get expensesNoMyOperationInPost =>
+      'No operation involving you in this section.';
 
   @override
   String get expensesMyTotalSpend => 'My total expenses';

@@ -580,6 +580,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
+  bool _showAllOperations = true;
   late final NotificationCenterRepository _notificationCenter;
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
@@ -781,6 +782,15 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
         canDeleteExpense && !widget.lockRestrictsEditing;
     final showPostMenu = !widget.group.isDefault &&
         (effectiveCanEditPost || effectiveCanDeletePost);
+    final visibleOperations = _showAllOperations
+        ? widget.groupExpenses
+        : widget.groupExpenses
+            .where(
+              (expense) =>
+                  viewerMemberId != null &&
+                  expense.involvesMember(viewerMemberId),
+            )
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -916,6 +926,19 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   ],
                 ],
               ),
+              if (widget.groupExpenses.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildTousMoiSegmentedFilter(
+                    context,
+                    showAll: _showAllOperations,
+                    onShowAllChanged: (showAll) {
+                      setState(() => _showAllOperations = showAll);
+                    },
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
                 Padding(
@@ -943,10 +966,36 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     ],
                   ),
                 )
+              else if (visibleOperations.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 40,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.expensesNoMyOperationInPost,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                )
               else
                 ..._buildExpensesGroupedByDate(
                   context,
-                  widget.groupExpenses,
+                  visibleOperations,
                   widget.trip.id,
                   scope,
                   widget.memberLabels,
@@ -962,6 +1011,67 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 }
 
 enum _ExpensePostView { operations, settlement }
+
+Widget _buildTousMoiFilterSegment(
+  BuildContext context,
+  String label,
+  bool selected,
+  VoidCallback onTap,
+) {
+  final cs = Theme.of(context).colorScheme;
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: selected ? cs.secondaryContainer : null,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+      ),
+    ),
+  );
+}
+
+Widget _buildTousMoiSegmentedFilter(
+  BuildContext context, {
+  required bool showAll,
+  required ValueChanged<bool> onShowAllChanged,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final cs = Theme.of(context).colorScheme;
+  return Container(
+    height: 30,
+    decoration: BoxDecoration(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildTousMoiFilterSegment(
+          context,
+          l10n.commonAll,
+          showAll,
+          () => onShowAllChanged(true),
+        ),
+        _buildTousMoiFilterSegment(
+          context,
+          l10n.commonMe,
+          !showAll,
+          () => onShowAllChanged(false),
+        ),
+      ],
+    ),
+  );
+}
 
 const _kDefaultExpenseCurrency = 'EUR';
 
@@ -1142,10 +1252,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
   bool _involvesCurrentUserSettlement(TripExpense expense) {
     final memberId = widget.currentUserMemberId?.trim();
     if (memberId == null || memberId.isEmpty) return false;
-    final beneficiary = expense.participantIds.isNotEmpty
-        ? expense.participantIds.first
-        : '';
-    return expense.paidBy == memberId || beneficiary == memberId;
+    return expense.involvesMember(memberId);
   }
 
   Future<void> _markPaid(SuggestedReimbursement suggestion) async {
@@ -1311,35 +1418,6 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     );
   }
 
-  Widget _buildFilterSegment(
-    BuildContext context,
-    String label,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? cs.secondaryContainer : null,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1495,21 +1573,12 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 iconColor: cs.primary,
               ),
             ),
-            Container(
-              height: 30,
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildFilterSegment(context, l10n.commonAll, _showAllPost,
-                      () => setState(() => _showAllPost = true)),
-                  _buildFilterSegment(context, l10n.commonMe, !_showAllPost,
-                      () => setState(() => _showAllPost = false)),
-                ],
-              ),
+            _buildTousMoiSegmentedFilter(
+              context,
+              showAll: _showAllPost,
+              onShowAllChanged: (showAll) {
+                setState(() => _showAllPost = showAll);
+              },
             ),
           ],
         ),

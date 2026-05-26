@@ -57,6 +57,13 @@ class TripExpense {
   final ExpenseSplitMode splitMode;
   final Map<String, double> participantShares;
 
+  /// Whether [memberId] is the payer or among participants (debtors).
+  bool involvesMember(String memberId) {
+    final id = memberId.trim();
+    if (id.isEmpty) return false;
+    return paidBy == id || participantIds.contains(id);
+  }
+
   factory TripExpense.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const <String, dynamic>{};
     final createdAtRaw = data['createdAt'];
