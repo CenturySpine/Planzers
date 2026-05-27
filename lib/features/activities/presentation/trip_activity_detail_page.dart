@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -349,7 +350,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   }
 }
 
-class _ReadBody extends ConsumerWidget {
+class _ReadBody extends ConsumerStatefulWidget {
   const _ReadBody({
     required this.tripId,
     required this.activity,
@@ -360,15 +361,21 @@ class _ReadBody extends ConsumerWidget {
   final TripActivity activity;
   final bool canEditActivity;
 
+  @override
+  ConsumerState<_ReadBody> createState() => _ReadBodyState();
+}
+
+class _ReadBodyState extends ConsumerState<_ReadBody> {
+  bool _refreshingRoute = false;
+
   Future<void> _toggleDone(
-    WidgetRef ref,
     BuildContext context,
     bool value,
   ) async {
     try {
       await ref.read(activitiesRepositoryProvider).setActivityDone(
-            tripId: tripId,
-            activityId: activity.id,
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
             done: value,
           );
     } catch (e) {
@@ -384,12 +391,35 @@ class _ReadBody extends ConsumerWidget {
     }
   }
 
+  Future<void> _refreshRoute(BuildContext context) async {
+    if (_refreshingRoute) return;
+    setState(() => _refreshingRoute = true);
+    try {
+      await ref.read(activitiesRepositoryProvider).refreshActivityDrivingRoute(
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshingRoute = false);
+    }
+  }
+
   Future<DateTime?> _pickPlannedDateTime(
     BuildContext context, {
     DateTime? tripStartDate,
   }) async {
     final now = DateTime.now();
-    final localPlannedAt = activity.plannedAt?.toLocal();
+    final localPlannedAt = widget.activity.plannedAt?.toLocal();
     final localTripStartDate = tripStartDate?.toLocal();
     final initialDate = DateUtils.dateOnly(
       localPlannedAt ?? localTripStartDate ?? now,
@@ -427,14 +457,13 @@ class _ReadBody extends ConsumerWidget {
   }
 
   Future<void> _setPlannedDate(
-    WidgetRef ref,
     BuildContext context,
     DateTime? plannedAt,
   ) async {
     try {
       await ref.read(activitiesRepositoryProvider).setActivityPlannedAt(
-            tripId: tripId,
-            activityId: activity.id,
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
             plannedAt: plannedAt,
           );
     } catch (e) {
@@ -451,8 +480,8 @@ class _ReadBody extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tripAsync = ref.watch(tripStreamProvider(tripId));
+  Widget build(BuildContext context) {
+    final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
     final canPlanActivity = tripAsync.maybeWhen(
       data: (trip) => trip != null
@@ -464,19 +493,19 @@ class _ReadBody extends ConsumerWidget {
       orElse: () => false,
     );
     final tripMemberPublicLabels =
-        ref.watch(tripMemberResolvedLabelsProvider(tripId));
+        ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (activity.linkUrl.trim().isNotEmpty) ...[
+        if (widget.activity.linkUrl.trim().isNotEmpty) ...[
           LinkPreviewCompact(
-            url: activity.linkUrl.trim(),
-            preview: activity.linkPreview,
+            url: widget.activity.linkUrl.trim(),
+            preview: widget.activity.linkPreview,
           ),
           const SizedBox(height: 16),
         ],
-        if (activity.address.trim().isNotEmpty) ...[
+        if (widget.activity.address.trim().isNotEmpty) ...[
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -493,7 +522,7 @@ class _ReadBody extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          activity.address.trim(),
+                          widget.activity.address.trim(),
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
@@ -501,7 +530,7 @@ class _ReadBody extends ConsumerWidget {
                         tooltip: AppLocalizations.of(context)!.tripOverviewOpenLocation,
                         onPressed: () => openAddressInGoogleMaps(
                               context,
-                              activity.address,
+                              widget.activity.address,
                             ),
                         icon: const Icon(Icons.location_on_outlined),
                         padding: EdgeInsets.zero,
@@ -528,17 +557,58 @@ class _ReadBody extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              AppLocalizations.of(context)!.activitiesFromLodgingByCar,
-                              style: Theme.of(context).textTheme.labelLarge,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    AppLocalizations.of(context)!.activitiesFromLodgingByCar,
+                                    style: Theme.of(context).textTheme.labelLarge,
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: AppLocalizations.of(context)!.commonRetry,
+                                  onPressed: _refreshingRoute
+                                      ? null
+                                      : () => _refreshRoute(context),
+                                  icon: _refreshingRoute
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.refresh_outlined),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  splashRadius: 18,
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              _activityDrivingRouteBodyText(
-                                activity,
-                                AppLocalizations.of(context)!,
-                              ),
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_shouldShowDrivingRouteSpinner(widget.activity.tripDrivingRoute)) ...[
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    _activityDrivingRouteBodyText(
+                                      widget.activity,
+                                      AppLocalizations.of(context)!,
+                                    ),
+                                    style: Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -563,9 +633,9 @@ class _ReadBody extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  activity.freeComments.trim().isEmpty
+                  widget.activity.freeComments.trim().isEmpty
                       ? AppLocalizations.of(context)!.commonDash
-                      : activity.freeComments.trim(),
+                      : widget.activity.freeComments.trim(),
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ],
@@ -580,16 +650,16 @@ class _ReadBody extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CheckboxListTile(
-                  value: activity.done,
-                  onChanged: canEditActivity ? (v) async {
+                  value: widget.activity.done,
+                  onChanged: widget.canEditActivity ? (v) async {
                     if (v == null) return;
-                    await _toggleDone(ref, context, v);
+                    await _toggleDone(context, v);
                   } : null,
                   title: Text(AppLocalizations.of(context)!.activitiesDone),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                 ),
-                if (activity.category != TripActivityCategory.restaurant) ...[
+                if (widget.activity.category != TripActivityCategory.restaurant) ...[
                   const SizedBox(height: 4),
                   TextButton.icon(
                     onPressed: canPlanActivity
@@ -603,28 +673,24 @@ class _ReadBody extends ConsumerWidget {
                             );
                             if (pickedDateTime == null) return;
                             if (!context.mounted) return;
-                            await _setPlannedDate(
-                              ref,
-                              context,
-                              pickedDateTime,
-                            );
+                            await _setPlannedDate(context, pickedDateTime);
                           }
                         : null,
                     icon: const Icon(Icons.calendar_month_outlined),
                     label: Text(
-                      activity.plannedAt == null
+                      widget.activity.plannedAt == null
                           ? AppLocalizations.of(context)!.activitiesPlannedUnset
                           : AppLocalizations.of(context)!.activitiesPlannedOn(
                               DateFormat.yMMMMd(
                                 Localizations.localeOf(context).toString(),
-                              ).add_Hm().format(activity.plannedAt!.toLocal()),
+                              ).add_Hm().format(widget.activity.plannedAt!.toLocal()),
                             ),
                     ),
                   ),
-                  if (activity.plannedAt != null)
+                  if (widget.activity.plannedAt != null)
                     TextButton(
                       onPressed: canPlanActivity
-                          ? () => _setPlannedDate(ref, context, null)
+                          ? () => _setPlannedDate(context, null)
                           : null,
                       child: Text(
                         AppLocalizations.of(context)!.activitiesRemovePlannedDate,
@@ -637,9 +703,9 @@ class _ReadBody extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         _VotersSection(
-          tripId: tripId,
-          activityId: activity.id,
-          votes: activity.votes,
+          tripId: widget.tripId,
+          activityId: widget.activity.id,
+          votes: widget.activity.votes,
           myUid: myUid ?? '',
           currentUserId: myUid,
           tripMemberPublicLabels: tripMemberPublicLabels,
@@ -1001,4 +1067,9 @@ String _activityDrivingRouteBodyText(
     default:
       return l10n.activitiesRouteStatus(route.status);
   }
+}
+
+bool _shouldShowDrivingRouteSpinner(ActivityTripDrivingRoute? route) {
+  if (route == null) return true;
+  return route.status == 'calculating';
 }

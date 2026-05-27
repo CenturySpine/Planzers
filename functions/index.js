@@ -4977,3 +4977,14 @@ exports.unmarkExpenseReimbursementPaid = unmarkExpenseReimbursementPaid;
 exports.deleteExpenseGroup = deleteExpenseGroup;
 exports.refreshExpenseGroupSettlement = refreshExpenseGroupSettlement;
 
+const {
+  computeActivityDrivingRouteFromTrip,
+  recomputeActivityDrivingRoutesOnTripAddressChange,
+  refreshActivityDrivingRoute,
+} = require('./activity_driving_route');
+
+exports.computeActivityDrivingRouteFromTrip = computeActivityDrivingRouteFromTrip;
+exports.recomputeActivityDrivingRoutesOnTripAddressChange =
+  recomputeActivityDrivingRoutesOnTripAddressChange;
+exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
+
