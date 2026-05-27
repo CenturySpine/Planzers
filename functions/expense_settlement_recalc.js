@@ -6,13 +6,15 @@ const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const {
   BALANCE_EPSILON,
-  BALANCE_SETTLEMENT_THRESHOLD,
   roundMoney,
   tripExpenseFromDoc,
   computeBalances,
   suggestTransfers,
   computeGroupSummary,
   amountsMatch,
+  normalizeNetsMapForFirestore,
+  balancesForClientFirestore,
+  balancesForSuggestions,
 } = require('./expense_settlement');
 
 const BATCH_OP_LIMIT = 499;
@@ -258,22 +260,10 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
     groupsMap[doc.id] = { parts };
   }
   const balancesByCurrency = computeBalances(expenses, groupsMap);
-
-  // Zero out members whose net balance is below the settlement threshold before
-  // computing suggestions and writing to Firestore, so the client receives no
-  // intelligence about what amount counts as "at equilibrium".
-  const thresholdedByCurrency = {};
-  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
-    const thresholdedNets = {};
-    for (const [participantId, value] of Object.entries(nets)) {
-      if (Math.abs(value) >= BALANCE_SETTLEMENT_THRESHOLD) {
-        thresholdedNets[participantId] = value;
-      }
-    }
-    thresholdedByCurrency[currency] = thresholdedNets;
-  }
-
-  const suggested = suggestTransfers(thresholdedByCurrency);
+  const clientNetsByCurrency = balancesForClientFirestore(balancesByCurrency);
+  const suggested = suggestTransfers(
+    balancesForSuggestions(balancesByCurrency)
+  );
   const summary = computeGroupSummary(expenses);
 
   const balancesCol = gRef.collection('balances');
@@ -285,7 +275,7 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
     balancesCol.get(),
   ]);
 
-  const currencyKeys = new Set(Object.keys(thresholdedByCurrency));
+  const currencyKeys = new Set(Object.keys(balancesByCurrency));
 
   await db.runTransaction(async (tx) => {
     const freshGroup = await tx.get(gRef);
@@ -302,16 +292,10 @@ async function recomputeExpenseGroupSettlementForGroup(db, tripId, groupId) {
       }
     }
 
-    for (const [currency, nets] of Object.entries(thresholdedByCurrency)) {
-      const cleanedNets = {};
-      for (const [participantId, value] of Object.entries(nets)) {
-        if (Math.abs(value) > BALANCE_EPSILON) {
-          cleanedNets[participantId] = value;
-        }
-      }
+    for (const [currency, nets] of Object.entries(clientNetsByCurrency)) {
       tx.set(balancesCol.doc(currency), {
         currency,
-        nets: cleanedNets,
+        nets,
       });
     }
 
@@ -469,10 +453,10 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
     const nets = Object.assign({}, balanceSnap.data()?.nets || {});
     nets[fromParticipantId] = roundMoney((nets[fromParticipantId] ?? 0) + amount);
     nets[toParticipantId] = roundMoney((nets[toParticipantId] ?? 0) - amount);
-    for (const [pid, val] of Object.entries(nets)) {
-      if (Math.abs(val) <= BALANCE_EPSILON) delete nets[pid];
-    }
-    tx.set(balanceDocRef, { currency, nets });
+    tx.set(balanceDocRef, {
+      currency,
+      nets: normalizeNetsMapForFirestore(nets),
+    });
   });
 
   try {
@@ -577,10 +561,10 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
       const nets = Object.assign({}, balanceSnap.data()?.nets || {});
       nets[fromParticipantId] = roundMoney((nets[fromParticipantId] ?? 0) - settlementAmount);
       nets[toParticipantId] = roundMoney((nets[toParticipantId] ?? 0) + settlementAmount);
-      for (const [pid, val] of Object.entries(nets)) {
-        if (Math.abs(val) <= BALANCE_EPSILON) delete nets[pid];
-      }
-      tx.set(balanceDocRef, { currency: settlementCurrency, nets });
+      tx.set(balanceDocRef, {
+        currency: settlementCurrency,
+        nets: normalizeNetsMapForFirestore(nets),
+      });
     }
   });
 

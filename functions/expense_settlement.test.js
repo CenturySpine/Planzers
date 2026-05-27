@@ -7,6 +7,10 @@ const {
   computeGroupSummary,
   amountsMatch,
   resolveUnit,
+  normalizeNetForFirestore,
+  normalizeNetsMapForFirestore,
+  balancesForClientFirestore,
+  balancesForSuggestions,
 } = require('./expense_settlement');
 
 function fakeDoc(id, data) {
@@ -158,4 +162,39 @@ test('computeGroupSummary ignores settlements', () => {
   assert.ok(amountsMatch(summary.postTotalsByCurrency.EUR, 30));
   assert.ok(amountsMatch(summary.paidByTotalsByCurrency.alice.EUR, 30));
   assert.equal(summary.paidByTotalsByCurrency.bob, undefined);
+});
+
+test('normalizeNetForFirestore keeps equilibrium as explicit zero', () => {
+  assert.equal(normalizeNetForFirestore(0), 0);
+  assert.equal(normalizeNetForFirestore(0.008), 0);
+  assert.equal(normalizeNetForFirestore(-0.49), 0);
+  assert.equal(normalizeNetForFirestore(0.49), 0);
+  assert.equal(normalizeNetForFirestore(0.5), 0.5);
+  assert.equal(normalizeNetForFirestore(-0.5), -0.5);
+});
+
+test('normalizeNetsMapForFirestore keeps all participant keys', () => {
+  const out = normalizeNetsMapForFirestore({
+    alice: 12.34,
+    bob: -0.02,
+    carol: 0,
+  });
+  assert.deepEqual(out, {
+    alice: 12.34,
+    bob: 0,
+    carol: 0,
+  });
+});
+
+test('balancesForClientFirestore and balancesForSuggestions diverge below threshold', () => {
+  const balances = {
+    EUR: { alice: 20, bob: -0.3, carol: 0 },
+  };
+  assert.deepEqual(balancesForClientFirestore(balances), {
+    EUR: { alice: 20, bob: 0, carol: 0 },
+  });
+  assert.deepEqual(balancesForSuggestions(balances), {
+    EUR: { alice: 20 },
+  });
+  assert.equal(suggestTransfers(balancesForSuggestions(balances)).length, 0);
 });

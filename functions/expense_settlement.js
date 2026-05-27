@@ -319,6 +319,70 @@ function amountsMatch(a, b) {
   return Math.abs(roundMoney(a) - roundMoney(b)) <= BALANCE_EPSILON;
 }
 
+/**
+ * Normalizes a single net balance for Firestore client display.
+ * Values below the settlement threshold (including rounding dust) are sent as 0.
+ *
+ * @param {number} value
+ * @returns {number}
+ */
+function normalizeNetForFirestore(value) {
+  const rounded = roundMoney(value);
+  if (Math.abs(rounded) < BALANCE_SETTLEMENT_THRESHOLD) {
+    return 0;
+  }
+  return rounded;
+}
+
+/**
+ * Keeps every participant entry; equilibrium balances are written as 0.
+ *
+ * @param {Record<string, number>} nets
+ * @returns {Record<string, number>}
+ */
+function normalizeNetsMapForFirestore(nets) {
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const [participantId, value] of Object.entries(nets)) {
+    out[participantId] = normalizeNetForFirestore(value);
+  }
+  return out;
+}
+
+/**
+ * @param {Record<string, Record<string, number>>} balancesByCurrency
+ * @returns {Record<string, Record<string, number>>}
+ */
+function balancesForClientFirestore(balancesByCurrency) {
+  /** @type {Record<string, Record<string, number>>} */
+  const result = {};
+  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    result[currency] = normalizeNetsMapForFirestore(nets);
+  }
+  return result;
+}
+
+/**
+ * Input for suggestTransfers: only balances above the settlement threshold.
+ *
+ * @param {Record<string, Record<string, number>>} balancesByCurrency
+ * @returns {Record<string, Record<string, number>>}
+ */
+function balancesForSuggestions(balancesByCurrency) {
+  /** @type {Record<string, Record<string, number>>} */
+  const result = {};
+  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    const filtered = {};
+    for (const [participantId, value] of Object.entries(nets)) {
+      if (Math.abs(value) >= BALANCE_SETTLEMENT_THRESHOLD) {
+        filtered[participantId] = value;
+      }
+    }
+    result[currency] = filtered;
+  }
+  return result;
+}
+
 module.exports = {
   BALANCE_EPSILON,
   BALANCE_SETTLEMENT_THRESHOLD,
@@ -329,4 +393,8 @@ module.exports = {
   suggestTransfers,
   computeGroupSummary,
   amountsMatch,
+  normalizeNetForFirestore,
+  normalizeNetsMapForFirestore,
+  balancesForClientFirestore,
+  balancesForSuggestions,
 };
