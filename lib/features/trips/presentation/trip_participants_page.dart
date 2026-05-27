@@ -18,6 +18,7 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/core/presentation/planerz_info_callout.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -527,16 +528,8 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 if (widget.canManageParticipants)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Text(
-                      l10n.tripParticipantsAdminHint,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                    child: PlanerzInfoCallout(
+                      message: l10n.tripParticipantsAdminHint,
                     ),
                   ),
                 Padding(
@@ -950,22 +943,35 @@ class _GroupsTabState extends ConsumerState<_GroupsTab> {
       data: (groups) {
         return Stack(
           children: [
-            groups.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        l10n.participantGroupsEmpty,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: cs.onSurfaceVariant,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: PlanerzInfoCallout(
+                    message: l10n.participantGroupsTabHint,
+                  ),
+                ),
+                Expanded(
+                  child: groups.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              l10n.participantGroupsEmpty,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
                             ),
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                    itemCount: groups.length,
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                          itemCount: groups.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final group = groups[index];
@@ -1043,7 +1049,10 @@ class _GroupsTabState extends ConsumerState<_GroupsTab> {
                         ),
                       );
                     },
-                  ),
+                        ),
+                ),
+              ],
+            ),
             if (widget.canManageParticipants)
               Positioned(
                 right: 16,

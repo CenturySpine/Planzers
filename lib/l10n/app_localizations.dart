@@ -5271,6 +5271,12 @@ abstract class AppLocalizations {
   /// **'Groupes'**
   String get participantGroupsTabLabel;
 
+  /// No description provided for @participantGroupsTabHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.'**
+  String get participantGroupsTabHint;
+
   /// No description provided for @participantGroupsEmpty.
   ///
   /// In fr, this message translates to:

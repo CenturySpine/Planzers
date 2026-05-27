@@ -1141,6 +1141,7 @@
   "profileNameRequiredMessage": "A display name is required to use Planerz.",
 
   "participantGroupsTabLabel": "Groups",
+  "participantGroupsTabHint": "A group combines several travelers into one billing unit for expenses. Shares are the group's weight in the split: by default, 1 share per adult and 0.5 per child, but an administrator can freely change this total.",
   "participantGroupsEmpty": "No billing groups.",
   "participantGroupsAddTitle": "Create group",
   "participantGroupsEditTitle": "Edit group",

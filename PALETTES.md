@@ -14,6 +14,8 @@ Définies dans `lib/app/theme/brand_palette.dart` · mappées dans `lib/app/them
 | `accent` | `colorScheme.tertiary` | <span style="display:inline-block;width:16px;height:16px;background:#CF30B8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CF30B8` | <span style="display:inline-block;width:16px;height:16px;background:#D44D00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#D44D00` |
 | `secondary` | `colorScheme.secondary` | <span style="display:inline-block;width:16px;height:16px;background:#7ECFDD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#7ECFDD` | <span style="display:inline-block;width:16px;height:16px;background:#70CDC5;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#70CDC5` |
 | `secondaryContainer` | `colorScheme.secondaryContainer` | <span style="display:inline-block;width:16px;height:16px;background:#CFEFF4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFEFF4` | <span style="display:inline-block;width:16px;height:16px;background:#CFF5F0;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFF5F0` |
+| `info` | `context.planerzColors.info` | <span style="display:inline-block;width:16px;height:16px;background:#2D7A94;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2D7A94` | <span style="display:inline-block;width:16px;height:16px;background:#3F46F7;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#3F46F7` |
+| `infoContainer` | `context.planerzColors.infoContainer` | <span style="display:inline-block;width:16px;height:16px;background:#CFEFF4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFEFF4` | <span style="display:inline-block;width:16px;height:16px;background:#E5F2FD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E5F2FD` |
 | `success` | `context.planerzColors.success` | <span style="display:inline-block;width:16px;height:16px;background:#4DC75E;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#4DC75E` | <span style="display:inline-block;width:16px;height:16px;background:#2EB37F;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2EB37F` |
 | `successContainer` | `context.planerzColors.successContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E8F8EA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E8F8EA` | <span style="display:inline-block;width:16px;height:16px;background:#CCF5E4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CCF5E4` |
 | `warning` | `context.planerzColors.warning` | <span style="display:inline-block;width:16px;height:16px;background:#AE8F56;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#AE8F56` | <span style="display:inline-block;width:16px;height:16px;background:#C49A00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#C49A00` |
@@ -44,6 +46,8 @@ cs.surfaceContainerHighest
 
 // Extension PlanerzColors (lib/app/theme/planerz_colors.dart)
 final pz = context.planerzColors;
+pz.info
+pz.infoContainer
 pz.success
 pz.successContainer
 pz.warning

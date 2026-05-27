@@ -68,6 +68,8 @@ class AppTheme {
       ),
       extensions: <ThemeExtension<dynamic>>[
         PlanerzColors(
+          info: p.info,
+          infoContainer: p.infoContainer,
           success: p.success,
           successContainer: p.successContainer,
           warning: p.warning,

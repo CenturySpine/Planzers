@@ -2935,6 +2935,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get participantGroupsTabLabel => 'Groupes';
 
   @override
+  String get participantGroupsTabHint =>
+      'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.';
+
+  @override
   String get participantGroupsEmpty => 'Aucun groupe de facturation.';
 
   @override
@@ -5849,6 +5853,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get participantGroupsTabLabel => 'Groupes';
+
+  @override
+  String get participantGroupsTabHint =>
+      'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.';
 
   @override
   String get participantGroupsEmpty => 'Aucun groupe de facturation.';

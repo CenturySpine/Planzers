@@ -4,18 +4,24 @@ import 'package:flutter/material.dart';
 @immutable
 class PlanerzColors extends ThemeExtension<PlanerzColors> {
   const PlanerzColors({
+    required this.info,
+    required this.infoContainer,
     required this.success,
     required this.successContainer,
     required this.warning,
     required this.warningContainer,
   });
 
+  final Color info;
+  final Color infoContainer;
   final Color success;
   final Color successContainer;
   final Color warning;
   final Color warningContainer;
 
   static const PlanerzColors fallback = PlanerzColors(
+    info: Color(0xFF2D7A94),
+    infoContainer: Color(0xFFCFEFF4),
     success: Color(0xFF4DC75E),
     successContainer: Color(0xFFE8F8EA),
     warning: Color(0xFFAE8F56),
@@ -24,12 +30,16 @@ class PlanerzColors extends ThemeExtension<PlanerzColors> {
 
   @override
   PlanerzColors copyWith({
+    Color? info,
+    Color? infoContainer,
     Color? success,
     Color? successContainer,
     Color? warning,
     Color? warningContainer,
   }) {
     return PlanerzColors(
+      info: info ?? this.info,
+      infoContainer: infoContainer ?? this.infoContainer,
       success: success ?? this.success,
       successContainer: successContainer ?? this.successContainer,
       warning: warning ?? this.warning,
@@ -41,6 +51,8 @@ class PlanerzColors extends ThemeExtension<PlanerzColors> {
   PlanerzColors lerp(ThemeExtension<PlanerzColors>? other, double t) {
     if (other is! PlanerzColors) return this;
     return PlanerzColors(
+      info: Color.lerp(info, other.info, t)!,
+      infoContainer: Color.lerp(infoContainer, other.infoContainer, t)!,
       success: Color.lerp(success, other.success, t)!,
       successContainer:
           Color.lerp(successContainer, other.successContainer, t)!,

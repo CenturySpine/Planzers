@@ -2908,6 +2908,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get participantGroupsTabLabel => 'Groups';
 
   @override
+  String get participantGroupsTabHint =>
+      'A group combines several travelers into one billing unit for expenses. Shares are the group\'s weight in the split: by default, 1 share per adult and 0.5 per child, but an administrator can freely change this total.';
+
+  @override
   String get participantGroupsEmpty => 'No billing groups.';
 
   @override
@@ -5796,6 +5800,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get participantGroupsTabLabel => 'Groups';
+
+  @override
+  String get participantGroupsTabHint =>
+      'A group combines several travelers into one billing unit for expenses. Shares are the group\'s weight in the split: by default, 1 share per adult and 0.5 per child, but an administrator can freely change this total.';
 
   @override
   String get participantGroupsEmpty => 'No billing groups.';

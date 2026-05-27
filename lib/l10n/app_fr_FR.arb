@@ -1103,6 +1103,7 @@
   "profileNameRequiredMessage": "Un nom de profil est requis pour utiliser Planerz.",
 
   "participantGroupsTabLabel": "Groupes",
+  "participantGroupsTabHint": "Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.",
   "participantGroupsEmpty": "Aucun groupe de facturation.",
   "participantGroupsAddTitle": "Créer un groupe",
   "participantGroupsEditTitle": "Modifier le groupe",

@@ -26,6 +26,8 @@ class BrandPaletteData {
     required this.accent,
     required this.secondary,
     required this.secondaryContainer,
+    required this.info,
+    required this.infoContainer,
     required this.success,
     required this.successContainer,
     required this.warning,
@@ -48,6 +50,8 @@ class BrandPaletteData {
   final Color accent;
   final Color secondary;
   final Color secondaryContainer;
+  final Color info;
+  final Color infoContainer;
   final Color success;
   final Color successContainer;
   final Color warning;
@@ -70,6 +74,8 @@ class BrandPaletteData {
     accent: Color(0xFFCF30B8),
     secondary: Color(0xFF7ECFDD),
     secondaryContainer: Color(0xFFCFEFF4),
+    info: Color(0xFF2D7A94),
+    infoContainer: Color(0xFFCFEFF4),
     success: Color(0xFF4DC75E),
     successContainer: Color(0xFFE8F8EA),
     warning: Color(0xFFAE8F56),
@@ -94,6 +100,8 @@ class BrandPaletteData {
     accent: Color(0xFFD44D00),
     secondary: Color(0xFF70CDC5),
     secondaryContainer: Color(0xFFCFF5F0),
+    info: Color(0xFF3F46F7),
+    infoContainer: Color(0xFFE5F2FD),
     success: Color(0xFF2EB37F),
     successContainer: Color(0xFFCCF5E4),
     warning: Color(0xFFC49A00),
