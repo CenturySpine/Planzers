@@ -3996,6 +3996,12 @@ abstract class AppLocalizations {
   /// **'Aucune opération vous concernant dans ce poste.'**
   String get expensesNoMyOperationInPost;
 
+  /// No description provided for @expensesOperationsFilterHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.'**
+  String get expensesOperationsFilterHint;
+
   /// No description provided for @expensesMyTotalSpend.
   ///
   /// In fr, this message translates to:
@@ -4103,6 +4109,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Soldes recalculés'**
   String get expensesBalancesRefreshed;
+
+  /// No description provided for @expensesBalancesAdminHintLock.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.'**
+  String get expensesBalancesAdminHintLock;
+
+  /// No description provided for @expensesBalancesAdminHintNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Active ou désactive les notifications lors des changements sur les remboursements.'**
+  String get expensesBalancesAdminHintNotifications;
+
+  /// No description provided for @expensesBalancesAdminHintRefresh.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recalcule les soldes et les remboursements suggérés de ce poste.'**
+  String get expensesBalancesAdminHintRefresh;
 
   /// No description provided for @expensesSuggestedReimbursements.
   ///

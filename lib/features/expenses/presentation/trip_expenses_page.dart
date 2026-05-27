@@ -19,6 +19,7 @@ import 'package:planerz/features/trips/data/participant_group.dart';
 import 'package:planerz/features/trips/data/participant_groups_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
+import 'package:planerz/core/presentation/planerz_info_callout.dart';
 import 'package:planerz/core/presentation/state_pill_toggle.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -951,15 +952,23 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
               ),
               if (widget.groupExpenses.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _buildTousMoiSegmentedFilter(
-                    context,
-                    showAll: _showAllOperations,
-                    onShowAllChanged: (showAll) {
-                      setState(() => _showAllOperations = showAll);
-                    },
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: PlanerzInfoCallout(
+                        message: l10n.expensesOperationsFilterHint,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTousMoiSegmentedFilter(
+                      context,
+                      showAll: _showAllOperations,
+                      onShowAllChanged: (showAll) {
+                        setState(() => _showAllOperations = showAll);
+                      },
+                    ),
+                  ],
                 ),
               ],
               const SizedBox(height: 12),
@@ -1212,6 +1221,119 @@ class _ExpenseTotalsHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Admin hint for balances tab controls (lock, notifications, refresh).
+class _ExpensesBalancesAdminInfoCallout extends StatelessWidget {
+  const _ExpensesBalancesAdminInfoCallout();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final planerzColors = context.planerzColors;
+    final cs = theme.colorScheme;
+    final hintStyle = theme.textTheme.bodySmall?.copyWith(
+      color: planerzColors.info,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: planerzColors.infoContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: planerzColors.info,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.lock_outline,
+                  message: l10n.expensesBalancesAdminHintLock,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+                const SizedBox(height: 6),
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.notifications_active_outlined,
+                  message: l10n.expensesBalancesAdminHintNotifications,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+                const SizedBox(height: 6),
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.refresh,
+                  message: l10n.expensesBalancesAdminHintRefresh,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpensesBalancesAdminHintRow extends StatelessWidget {
+  const _ExpensesBalancesAdminHintRow({
+    required this.icon,
+    required this.message,
+    required this.hintStyle,
+    required this.chipColor,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String message;
+  final TextStyle? hintStyle;
+  final Color chipColor;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 30,
+          width: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: chipColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: iconColor),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            style: hintStyle,
+            strutStyle: StrutStyle(
+              fontSize: hintStyle?.fontSize,
+              height: 1.25,
+              forceStrutHeight: true,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1481,6 +1603,10 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.isAdmin) ...[
+          const _ExpensesBalancesAdminInfoCallout(),
+          const SizedBox(height: 8),
+        ],
         Row(
           children: [
             Expanded(

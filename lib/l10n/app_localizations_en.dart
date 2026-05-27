@@ -2186,6 +2186,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No operation involving you in this section.';
 
   @override
+  String get expensesOperationsFilterHint =>
+      'Shows all operations in the section, or only those involving you.';
+
+  @override
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
@@ -2242,6 +2246,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expensesBalancesRefreshed => 'Balances refreshed';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Locks trip expenses to freeze edits and allow marking reimbursements as paid.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Turns notifications on or off when reimbursements change.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalculates balances and suggested reimbursements for this section.';
 
   @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';
@@ -5080,6 +5096,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'No operation involving you in this section.';
 
   @override
+  String get expensesOperationsFilterHint =>
+      'Shows all operations in the section, or only those involving you.';
+
+  @override
   String get expensesMyTotalSpend => 'My total expenses';
 
   @override
@@ -5136,6 +5156,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesBalancesRefreshed => 'Balances refreshed';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Locks trip expenses to freeze edits and allow marking reimbursements as paid.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Turns notifications on or off when reimbursements change.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalculates balances and suggested reimbursements for this section.';
 
   @override
   String get expensesSuggestedReimbursements => 'Suggested reimbursements';

@@ -2204,6 +2204,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucune opération vous concernant dans ce poste.';
 
   @override
+  String get expensesOperationsFilterHint =>
+      'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.';
+
+  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
 
   @override
@@ -2261,6 +2265,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Active ou désactive les notifications lors des changements sur les remboursements.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalcule les soldes et les remboursements suggérés de ce poste.';
 
   @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
@@ -5124,6 +5140,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Aucune opération vous concernant dans ce poste.';
 
   @override
+  String get expensesOperationsFilterHint =>
+      'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.';
+
+  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
 
   @override
@@ -5181,6 +5201,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Active ou désactive les notifications lors des changements sur les remboursements.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalcule les soldes et les remboursements suggérés de ce poste.';
 
   @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
