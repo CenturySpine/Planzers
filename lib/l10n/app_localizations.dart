@@ -3354,6 +3354,12 @@ abstract class AppLocalizations {
   /// **'Depuis le logement (voiture)'**
   String get activitiesFromLodgingByCar;
 
+  /// No description provided for @activitiesFromCurrentLocationByCar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Depuis l\'emplacement actuel (voiture)'**
+  String get activitiesFromCurrentLocationByCar;
+
   /// No description provided for @commonDash.
   ///
   /// In fr, this message translates to:
@@ -3395,6 +3401,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Calcul en cours depuis l\'adresse du voyage.'**
   String get activitiesRouteCalculating;
+
+  /// No description provided for @activitiesRouteNotCalculatedYet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore calculé.'**
+  String get activitiesRouteNotCalculatedYet;
 
   /// No description provided for @activitiesRouteDistance.
   ///

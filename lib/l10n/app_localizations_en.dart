@@ -1825,6 +1825,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'From current location (car)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -1848,6 +1852,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get activitiesRouteCalculating =>
       'Calculating route from trip address.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
 
   @override
   String activitiesRouteDistance(Object distance) {
@@ -4735,6 +4742,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get activitiesFromLodgingByCar => 'From lodging (car)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'From current location (car)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -4758,6 +4769,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get activitiesRouteCalculating =>
       'Calculating route from trip address.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Not calculated yet.';
 
   @override
   String activitiesRouteDistance(Object distance) {

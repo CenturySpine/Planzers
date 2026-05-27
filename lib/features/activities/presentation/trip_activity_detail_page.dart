@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
@@ -367,6 +369,8 @@ class _ReadBody extends ConsumerStatefulWidget {
 
 class _ReadBodyState extends ConsumerState<_ReadBody> {
   bool _refreshingRoute = false;
+  bool _refreshingCurrentLocationRoute = false;
+  ActivityTripDrivingRoute? _currentLocationRoute;
 
   Future<void> _toggleDone(
     BuildContext context,
@@ -411,6 +415,54 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
       }
     } finally {
       if (mounted) setState(() => _refreshingRoute = false);
+    }
+  }
+
+  Future<void> _refreshCurrentLocationRoute(BuildContext context) async {
+    if (_refreshingCurrentLocationRoute) return;
+    setState(() => _refreshingCurrentLocationRoute = true);
+    try {
+      if (!kIsWeb) {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          throw StateError('La géolocalisation est désactivée sur cet appareil.');
+        }
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw StateError('Permission de géolocalisation refusée.');
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final route = await ref
+          .read(activitiesRepositoryProvider)
+          .refreshActivityDrivingRouteFromCurrentLocation(
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+      if (!mounted) return;
+      setState(() => _currentLocationRoute = route);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshingCurrentLocationRoute = false);
     }
   }
 
@@ -610,6 +662,87 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                                 ),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.my_location_outlined,
+                        size: 22,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    AppLocalizations.of(context)!
+                                        .activitiesFromCurrentLocationByCar,
+                                    style: Theme.of(context).textTheme.labelLarge,
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: AppLocalizations.of(context)!.commonRetry,
+                                  onPressed: _refreshingCurrentLocationRoute
+                                      ? null
+                                      : () => _refreshCurrentLocationRoute(context),
+                                  icon: _refreshingCurrentLocationRoute
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.refresh_outlined),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 32,
+                                    minHeight: 32,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  splashRadius: 18,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            if (_refreshingCurrentLocationRoute &&
+                                _currentLocationRoute == null)
+                              Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      AppLocalizations.of(context)!
+                                          .activitiesRouteCalculating,
+                                      style: Theme.of(context).textTheme.bodyMedium,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Text(
+                                _currentLocationRoute == null
+                                    ? AppLocalizations.of(context)!
+                                        .activitiesRouteNotCalculatedYet
+                                    : _drivingRouteBodyText(
+                                        _currentLocationRoute!,
+                                        AppLocalizations.of(context)!,
+                                      ),
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
                           ],
                         ),
                       ),
@@ -1031,15 +1164,10 @@ class _OverlappingBadges extends StatelessWidget {
   }
 }
 
-String _activityDrivingRouteBodyText(
-  TripActivity activity,
+String _drivingRouteBodyText(
+  ActivityTripDrivingRoute route,
   AppLocalizations l10n,
 ) {
-  final route = activity.tripDrivingRoute;
-
-  if (route == null) {
-    return l10n.activitiesRouteCalculating;
-  }
   switch (route.status) {
     case 'ok':
       final dist = route.distanceText?.trim();
@@ -1064,9 +1192,20 @@ String _activityDrivingRouteBodyText(
       final msg = route.errorMessage?.trim() ?? '';
       if (msg.isEmpty) return l10n.activitiesRouteError;
       return l10n.activitiesRouteErrorWithMessage(msg);
+    case 'missing_activity_address':
+      return l10n.activitiesAddressHint;
     default:
       return l10n.activitiesRouteStatus(route.status);
   }
+}
+
+String _activityDrivingRouteBodyText(
+  TripActivity activity,
+  AppLocalizations l10n,
+) {
+  final route = activity.tripDrivingRoute;
+  if (route == null) return l10n.activitiesRouteCalculating;
+  return _drivingRouteBodyText(route, l10n);
 }
 
 bool _shouldShowDrivingRouteSpinner(ActivityTripDrivingRoute? route) {

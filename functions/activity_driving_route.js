@@ -9,6 +9,11 @@ function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
 }
 
+function asFiniteNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 /**
  * @param {unknown} data
  * @returns {Promise<{ distanceMeters: number, durationSeconds: number, distanceText: string, durationText: string } | { elementStatus: string }>}
@@ -34,11 +39,31 @@ function parseRoutesApiResponse(data) {
 }
 
 /**
- * @param {string} originAddress
- * @param {string} destAddress
+ * @param {{ address?: string, latitude?: number, longitude?: number }} origin
+ * @param {string} destinationAddress
  * @param {string} apiKey
  */
-async function fetchDrivingMatrix(originAddress, destAddress, apiKey) {
+async function fetchDrivingMatrix(origin, destinationAddress, apiKey) {
+  const originAddress = normalizeString(origin?.address);
+  const originLatitude = asFiniteNumber(origin?.latitude);
+  const originLongitude = asFiniteNumber(origin?.longitude);
+  const hasOriginAddress = originAddress.length > 0;
+  const hasOriginLatLng = originLatitude != null && originLongitude != null;
+  if (!hasOriginAddress && !hasOriginLatLng) {
+    throw new Error('Origin is missing');
+  }
+
+  const originPayload = hasOriginAddress
+    ? { address: originAddress }
+    : {
+        location: {
+          latLng: {
+            latitude: originLatitude,
+            longitude: originLongitude,
+          },
+        },
+      };
+
   const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
     headers: {
@@ -47,8 +72,8 @@ async function fetchDrivingMatrix(originAddress, destAddress, apiKey) {
       'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration',
     },
     body: JSON.stringify({
-      origin: { address: originAddress },
-      destination: { address: destAddress },
+      origin: originPayload,
+      destination: { address: destinationAddress },
       travelMode: 'DRIVE',
       routingPreference: 'TRAFFIC_UNAWARE',
       units: 'METRIC',
@@ -110,7 +135,11 @@ async function writeTripDrivingRouteForActivity(
   }
 
   try {
-    const result = await fetchDrivingMatrix(tripAddress, activityAddress, apiKey);
+    const result = await fetchDrivingMatrix(
+      { address: tripAddress },
+      activityAddress,
+      apiKey
+    );
     if (result.elementStatus) {
       await docRef.set(
         {
@@ -251,6 +280,11 @@ const refreshActivityDrivingRoute = onCall(
       throw new HttpsError('failed-precondition', 'Clé API Google indisponible');
     }
 
+    const originType = normalizeString(request.data?.originType) || 'trip_address';
+    if (originType !== 'trip_address' && originType !== 'current_location') {
+      throw new HttpsError('invalid-argument', 'Type d’origine invalide');
+    }
+
     const db = admin.firestore();
     const tripRef = db.collection('trips').doc(tripId);
     const tripSnap = await tripRef.get();
@@ -275,23 +309,75 @@ const refreshActivityDrivingRoute = onCall(
     const activityAddress = normalizeString(activityData.address);
     const tripAddress = normalizeString(tripData.address);
 
-    await activityRef.set(
-      {
-        tripDrivingRoute: {
-          status: 'calculating',
-          calculatedAt: FieldValue.serverTimestamp(),
+    if (originType === 'trip_address') {
+      await activityRef.set(
+        {
+          tripDrivingRoute: {
+            status: 'calculating',
+            calculatedAt: FieldValue.serverTimestamp(),
+          },
         },
-      },
-      { merge: true }
-    );
+        { merge: true }
+      );
 
-    await writeTripDrivingRouteForActivity(
-      activityRef,
-      tripAddress,
-      activityAddress,
-      apiKey
-    );
-    return { ok: true };
+      await writeTripDrivingRouteForActivity(
+        activityRef,
+        tripAddress,
+        activityAddress,
+        apiKey
+      );
+      return { ok: true };
+    }
+
+    const latitude = asFiniteNumber(request.data?.latitude);
+    const longitude = asFiniteNumber(request.data?.longitude);
+    if (latitude == null || longitude == null) {
+      throw new HttpsError('invalid-argument', 'Coordonnées invalides');
+    }
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      throw new HttpsError('invalid-argument', 'Coordonnées hors limites');
+    }
+    if (!activityAddress) {
+      return {
+        ok: true,
+        route: { status: 'missing_activity_address' },
+      };
+    }
+
+    try {
+      const result = await fetchDrivingMatrix(
+        { latitude, longitude },
+        activityAddress,
+        apiKey
+      );
+      if (result.elementStatus) {
+        return {
+          ok: true,
+          route: {
+            status: 'no_result',
+            detail: result.elementStatus,
+          },
+        };
+      }
+      return {
+        ok: true,
+        route: {
+          status: 'ok',
+          distanceMeters: result.distanceMeters,
+          durationSeconds: result.durationSeconds,
+          distanceText: result.distanceText,
+          durationText: result.durationText,
+        },
+      };
+    } catch (e) {
+      return {
+        ok: true,
+        route: {
+          status: 'error',
+          errorMessage: String(e),
+        },
+      };
+    }
   }
 );
 

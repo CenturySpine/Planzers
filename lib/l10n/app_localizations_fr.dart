@@ -1843,6 +1843,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'Depuis l\'emplacement actuel (voiture)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -1866,6 +1870,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get activitiesRouteCalculating =>
       'Calcul en cours depuis l\'adresse du voyage.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
 
   @override
   String activitiesRouteDistance(Object distance) {
@@ -4779,6 +4786,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'Depuis l\'emplacement actuel (voiture)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -4802,6 +4813,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get activitiesRouteCalculating =>
       'Calcul en cours depuis l\'adresse du voyage.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
 
   @override
   String activitiesRouteDistance(Object distance) {
