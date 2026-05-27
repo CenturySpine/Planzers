@@ -47,3 +47,7 @@ Write every release note in two parts, in this strict order.
 - If the “Détails complémentaires (technique et exploitation)” section contains no additional shipped delta beyond what is already listed in section 1, omit it.
 - As a .md file, added to the repo root
 - Use french language all the way.
+
+## 2) Release note file naming
+- The file must be named "RELEASE_NOTE_vx.y.z-suffix" where x, y & z are version numbers and "suffix" is the vesion suffix (-alpha1, -beta4, -rc2, etc.).
+- If there is a doubt about file naming, ask the user.
