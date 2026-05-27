@@ -106,10 +106,8 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
       minRole: TripPermissionRole.admin,
     );
-    final lockRestrictsEditing = states.expensesLocked && !isAdminOrAbove;
-    final showExpensesFab =
-        (canCreateExpense || canCreateExpensePost) &&
-        (isAdminOrAbove || !states.expensesLocked);
+    final lockRestrictsEditing = states.expensesLocked;
+    final showExpensesFab = canCreateExpensePost || (canCreateExpense && !states.expensesLocked);
 
     return Scaffold(
       body: groupsAsync.when(
@@ -181,7 +179,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (canCreateExpense) ...[
+                  if (canCreateExpense && !states.expensesLocked) ...[
                     FloatingActionButton.extended(
                       heroTag: 'trip_expenses_add_expense',
                       tooltip: l10n.expensesAddExpenseTooltip,
@@ -799,8 +797,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
-    final effectiveCanEditPost = canEditPost && !widget.lockRestrictsEditing;
-    final effectiveCanDeletePost = canDeletePost && !widget.lockRestrictsEditing;
+    final effectiveCanEditPost = canEditPost;
+    final effectiveCanDeletePost = canDeletePost;
     final effectiveCanEditExpense = canEditExpense && !widget.lockRestrictsEditing;
     final effectiveCanDeleteExpense =
         canDeleteExpense && !widget.lockRestrictsEditing;

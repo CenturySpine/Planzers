@@ -6,7 +6,7 @@
 
 | Sujet | Décision |
 |--------|----------|
-| Lignes de solde (onglet équilibres) | Itérer les **clés de `balance.nets`** (pas seulement `visibleToMemberIds`) ; même mise en page |
+| Lignes de solde (onglet équilibres) | Afficher **toutes les unités de facturation du poste** (membres non groupés + groupes applicables) ; les soldes à l’équilibre (0) **restent affichés** |
 | Quitter le voyage / retirer un participant | **Bloquer** tant qu’il appartient à **un groupe** (le retirer du groupe d’abord) |
 | Modifier un groupe référencé dans une opération | **Interdit** (comme la suppression) |
 | Résolution d’un id (parts, libellé) | Lookup **`participants/{id}` d’abord**, puis `participantGroups/{id}` |
@@ -170,7 +170,9 @@ Côté client : **validation** à l’ajout/édition (pas de membre groupé en s
 Changements ciblés :
 
 - **Nom affiché** : résolution via `tripExpenseUnitLabelsProvider` (participant ou groupe).
-- **Liste des soldes par devise** : itérer les **clés de `balance.nets`** (tri stable), et non plus principalement `visibleToMemberIds` — sinon les groupes n’apparaissent pas.
+- **Liste des soldes par devise** : afficher toutes les **unités de facturation** du poste (scope = membres non groupés + groupes dont tous les `memberIds` ⊆ `visibleToMemberIds`).
+- **Équilibre** : tout solde dont \(|net| < 0,5\) est **considéré comme 0** (équilibré) mais la ligne reste affichée.
+- **Groupes** : les `TripMember` appartenant à un groupe ne doivent **jamais** apparaître en tant qu’unités de facturation (ni dans les listes, ni dans `paidBy`/`participantIds`, ni dans les soldes/suggestions/settlements).
 
 Pas de regroupement visuel supplémentaire : une clé de `nets` = une ligne.
 
