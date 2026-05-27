@@ -2268,7 +2268,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get expensesBalancesAdminHintLock =>
-      'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.';
+      'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.';
 
   @override
   String get expensesBalancesAdminHintNotifications =>
@@ -5204,7 +5204,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesBalancesAdminHintLock =>
-      'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.';
+      'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.';
 
   @override
   String get expensesBalancesAdminHintNotifications =>

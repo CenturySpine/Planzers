@@ -842,7 +842,7 @@
   "expensesNotificationsEnabledSnackBar": "Notifications de dépenses activées",
   "expensesNotificationsDisabledSnackBar": "Notifications de dépenses désactivées",
   "expensesBalancesRefreshed": "Soldes recalculés",
-  "expensesBalancesAdminHintLock": "Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.",
+  "expensesBalancesAdminHintLock": "Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.",
   "expensesBalancesAdminHintNotifications": "Active ou désactive les notifications lors des changements sur les remboursements.",
   "expensesBalancesAdminHintRefresh": "Recalcule les soldes et les remboursements suggérés de ce poste.",
   "expensesSuggestedReimbursements": "Remboursements suggérés",

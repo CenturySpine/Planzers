@@ -615,6 +615,14 @@ service cloud.firestore {
           allow read: if isTripMember(tripId);
           allow write: if false;
         }
+
+        // Per-post UI lock (expenses frozen for this post only).
+        match /state/{stateDocId} {
+          allow read: if isTripMember(tripId);
+          allow create, update: if isTripMember(tripId)
+            && tripCallerRoleRank(tripId) >= 2;
+          allow delete: if false;
+        }
       }
 
       match /expenses/{expenseId} {
@@ -687,7 +695,7 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Expense section state (UI lock + notification channel toggle).
+      // Trip-wide expense settings (notification channel toggle).
       match /expenses_states/{stateDocId} {
         allow read: if isTripMember(tripId);
         allow create, update: if isTripMember(tripId)

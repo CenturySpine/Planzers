@@ -4113,7 +4113,7 @@ abstract class AppLocalizations {
   /// No description provided for @expensesBalancesAdminHintLock.
   ///
   /// In fr, this message translates to:
-  /// **'Verrouille les dépenses du voyage pour figer les saisies et permettre de marquer les remboursements payés.'**
+  /// **'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.'**
   String get expensesBalancesAdminHintLock;
 
   /// No description provided for @expensesBalancesAdminHintNotifications.

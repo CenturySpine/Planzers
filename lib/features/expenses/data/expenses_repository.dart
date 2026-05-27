@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expense_group_state.dart';
 import 'package:planerz/features/expenses/data/expense_group_summary.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/group_balance.dart';
@@ -58,10 +59,19 @@ final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
       .watchGroupExpenseSummary(scope.tripId, scope.groupId);
 });
 
-/// Live expense section state (lock + notifications) for a trip.
+/// Live trip-wide expense settings (notifications) for a trip.
 final tripExpensesStatesStreamProvider =
     StreamProvider.autoDispose.family<TripExpensesStates, String>((ref, tripId) {
   return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
+});
+
+/// Live lock state for a single expense post.
+final expenseGroupStateStreamProvider = StreamProvider.autoDispose
+    .family<TripExpenseGroupState, ExpenseGroupScope>((ref, scope) {
+  return ref.watch(expensesRepositoryProvider).watchExpenseGroupState(
+        scope.tripId,
+        scope.groupId,
+      );
 });
 
 class ExpensesRepository {
@@ -92,6 +102,16 @@ class ExpensesRepository {
         .doc(kTripExpensesStatesDocId);
   }
 
+  DocumentReference<Map<String, dynamic>> _expenseGroupStateDoc(
+    String tripId,
+    String groupId,
+  ) {
+    return _expenseGroupsCol(tripId)
+        .doc(groupId.trim())
+        .collection('state')
+        .doc(kExpenseGroupStateDocId);
+  }
+
   Stream<TripExpensesStates> watchExpensesStates(String tripId) {
     final cleanId = tripId.trim();
     if (cleanId.isEmpty) {
@@ -103,17 +123,35 @@ class ExpensesRepository {
     });
   }
 
+  Stream<TripExpenseGroupState> watchExpenseGroupState(
+    String tripId,
+    String groupId,
+  ) {
+    final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
+    if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
+      return Stream.value(TripExpenseGroupState.defaults);
+    }
+    return _expenseGroupStateDoc(cleanTripId, cleanGroupId).snapshots().map((snap) {
+      if (!snap.exists) return TripExpenseGroupState.defaults;
+      return TripExpenseGroupState.fromMap(snap.data() ?? const {});
+    });
+  }
+
   Future<void> setExpensesUiLocked({
     required String tripId,
+    required String groupId,
     required bool locked,
   }) async {
     final user = auth.currentUser;
     if (user == null) throw StateError('Utilisateur non connecte');
 
     final cleanTripId = tripId.trim();
+    final cleanGroupId = groupId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
+    if (cleanGroupId.isEmpty) throw StateError('Poste invalide');
 
-    await _expensesStatesDoc(cleanTripId).set(
+    await _expenseGroupStateDoc(cleanTripId, cleanGroupId).set(
       <String, dynamic>{
         'expensesLocked': locked,
         'updatedAt': FieldValue.serverTimestamp(),

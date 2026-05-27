@@ -12,6 +12,7 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/expense_group_state.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
@@ -100,14 +101,37 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
-    final states = ref.watch(tripExpensesStatesStreamProvider(trip.id)).asData?.value ??
-        TripExpensesStates.defaults;
     final isAdminOrAbove = isTripRoleAllowed(
       currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
       minRole: TripPermissionRole.admin,
     );
-    final lockRestrictsEditing = states.expensesLocked;
-    final showExpensesFab = canCreateExpensePost || (canCreateExpense && !states.expensesLocked);
+    final groupsForFab = groupsAsync.asData?.value;
+    final visibleGroupsForFab = groupsForFab == null
+        ? const <TripExpenseGroup>[]
+        : groupsForFab
+            .where((group) => group.isVisibleTo(currentUserMemberId))
+            .toList();
+    final resolvedActiveGroupId = () {
+      final preferred = _activeGroupId?.trim();
+      if (preferred != null && preferred.isNotEmpty) return preferred;
+      if (visibleGroupsForFab.length == 1) return visibleGroupsForFab.single.id;
+      return null;
+    }();
+    final activeGroupLocked = resolvedActiveGroupId != null
+        ? (ref
+                    .watch(
+                      expenseGroupStateStreamProvider((
+                        tripId: trip.id,
+                        groupId: resolvedActiveGroupId,
+                      )),
+                    )
+                    .asData
+                    ?.value ??
+                TripExpenseGroupState.defaults)
+            .expensesLocked
+        : false;
+    final showExpensesFab =
+        canCreateExpensePost || (canCreateExpense && !activeGroupLocked);
 
     return Scaffold(
       body: groupsAsync.when(
@@ -122,9 +146,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
               groups: groups,
               expenses: expenses,
               activeGroupId: _activeGroupId,
-              lockRestrictsEditing: lockRestrictsEditing,
               isAdminOrAbove: isAdminOrAbove,
-              expensesLocked: states.expensesLocked,
               onActiveGroupChanged: (groupId) {
                 if (_activeGroupId == groupId) return;
                 setState(() => _activeGroupId = groupId);
@@ -179,7 +201,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (canCreateExpense && !states.expensesLocked) ...[
+                  if (canCreateExpense && !activeGroupLocked) ...[
                     FloatingActionButton.extended(
                       heroTag: 'trip_expenses_add_expense',
                       tooltip: l10n.expensesAddExpenseTooltip,
@@ -300,9 +322,7 @@ class _TripExpensesBody extends StatelessWidget {
     required this.groups,
     required this.expenses,
     required this.activeGroupId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -314,9 +334,7 @@ class _TripExpensesBody extends StatelessWidget {
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final String? activeGroupId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -383,9 +401,7 @@ class _TripExpensesBody extends StatelessWidget {
                   memberLabels: memberLabels,
                   currentUserMemberId: currentUserMemberId,
                  viewerUserId: viewerId,
-                 lockRestrictsEditing: lockRestrictsEditing,
                  isAdminOrAbove: isAdminOrAbove,
-                 expensesLocked: expensesLocked,
               ),
             ),
           )
@@ -401,9 +417,7 @@ class _TripExpensesBody extends StatelessWidget {
               currentUserMemberId: currentUserMemberId,
               viewerUserId: viewerId,
               initialGroupId: activeGroupId,
-              lockRestrictsEditing: lockRestrictsEditing,
               isAdminOrAbove: isAdminOrAbove,
-              expensesLocked: expensesLocked,
               onActiveGroupChanged: onActiveGroupChanged,
             ),
           ),
@@ -423,9 +437,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.currentUserMemberId,
     required this.viewerUserId,
     required this.initialGroupId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -438,9 +450,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final String? currentUserMemberId;
   final String? viewerUserId;
   final String? initialGroupId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -545,9 +555,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                       memberLabels: widget.memberLabels,
                       currentUserMemberId: widget.currentUserMemberId,
                     viewerUserId: widget.viewerUserId,
-                    lockRestrictsEditing: widget.lockRestrictsEditing,
                     isAdminOrAbove: widget.isAdminOrAbove,
-                    expensesLocked: widget.expensesLocked,
                   ),
                 ),
             ],
@@ -568,9 +576,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.viewerUserId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
   });
 
   final Trip trip;
@@ -581,9 +587,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final String? viewerUserId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
 
   @override
   ConsumerState<_ExpensePostPanel> createState() => _ExpensePostPanelState();
@@ -733,6 +737,10 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       tripId: widget.trip.id,
       groupId: widget.group.id,
     );
+    final groupState = ref.watch(expenseGroupStateStreamProvider(groupScope)).asData?.value ??
+        TripExpenseGroupState.defaults;
+    final lockRestrictsEditing = groupState.expensesLocked;
+    final expensesLocked = groupState.expensesLocked;
     final summary =
         ref.watch(expenseGroupSummaryStreamProvider(groupScope)).asData?.value;
     final postTotalsByCurrency = summary?.postTotalsByCurrency ?? const {};
@@ -799,9 +807,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     );
     final effectiveCanEditPost = canEditPost;
     final effectiveCanDeletePost = canDeletePost;
-    final effectiveCanEditExpense = canEditExpense && !widget.lockRestrictsEditing;
-    final effectiveCanDeleteExpense =
-        canDeleteExpense && !widget.lockRestrictsEditing;
+    final effectiveCanEditExpense = canEditExpense && !lockRestrictsEditing;
+    final effectiveCanDeleteExpense = canDeleteExpense && !lockRestrictsEditing;
     final showPostMenu = !widget.group.isDefault &&
         (effectiveCanEditPost || effectiveCanDeletePost);
     final visibleOperations = _showAllOperations
@@ -925,7 +932,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             memberLabels: widget.memberLabels,
             currentUserMemberId: widget.currentUserMemberId,
             canMarkReimbursement: canMarkReimbursement,
-            expensesLocked: widget.expensesLocked,
+            expensesLocked: expensesLocked,
             isAdmin: widget.isAdminOrAbove,
           )
         else
@@ -942,7 +949,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       myCostByCurrency: myCostByCurrency,
                     ),
                   ),
-                  if (widget.expensesLocked) ...[
+                  if (expensesLocked) ...[
                     const SizedBox(width: 8),
                     const _ExpensesLockedIndicator(),
                   ],
@@ -1452,6 +1459,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     try {
       await ref.read(expensesRepositoryProvider).setExpensesUiLocked(
             tripId: widget.tripId,
+            groupId: widget.group.id,
             locked: locked,
           );
       if (!mounted) return;
@@ -1562,7 +1570,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         ref.watch(expenseGroupBalancesStreamProvider(_scope));
     final suggestionsAsync =
         ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
-    final states =
+    final tripStates =
         ref.watch(tripExpensesStatesStreamProvider(widget.tripId)).asData?.value ??
             TripExpensesStates.defaults;
 
@@ -1616,24 +1624,24 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             ),
             if (widget.isAdmin) ...[
               Tooltip(
-                message: states.expensesLocked
+                message: widget.expensesLocked
                     ? l10n.expensesTooltipUnlockExpenses
                     : l10n.expensesTooltipLockExpenses,
                 child: StatePillToggle(
                   offIcon: Icons.lock_open_outlined,
                   onIcon: Icons.lock_outline,
-                  on: states.expensesLocked,
+                  on: widget.expensesLocked,
                   onChanged: _setExpensesUiLocked,
                 ),
               ),
               Tooltip(
-                message: states.expensesNotificationsEnabled
+                message: tripStates.expensesNotificationsEnabled
                     ? l10n.expensesTooltipDisableExpenseNotifications
                     : l10n.expensesTooltipEnableExpenseNotifications,
                 child: StatePillToggle(
                   offIcon: Icons.notifications_off_outlined,
                   onIcon: Icons.notifications_active_outlined,
-                  on: states.expensesNotificationsEnabled,
+                  on: tripStates.expensesNotificationsEnabled,
                   onChanged: _setExpensesNotificationsEnabled,
                 ),
               ),

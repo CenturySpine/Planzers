@@ -41,6 +41,16 @@ function expensesStatesRef(db, tripId) {
     .doc('default');
 }
 
+function expenseGroupStateRef(db, tripId, groupId) {
+  return groupRef(db, tripId, groupId).collection('state').doc('current');
+}
+
+async function isExpenseGroupLocked(db, tripId, groupId) {
+  const snap = await expenseGroupStateRef(db, tripId, groupId).get();
+  if (!snap.exists) return false;
+  return parseBoolFlag(snap.data()?.expensesLocked, false);
+}
+
 function parseBoolFlag(raw, defaultValue) {
   if (raw === true) return true;
   if (raw === false) return false;
@@ -341,10 +351,6 @@ const recomputeExpenseGroupSettlement = onDocumentWritten(
     const opType = afterOpType ?? beforeOpType;
     if (opType === 'settlement') return;
 
-    // Regular expense written while locked → skip (lock freezes the suggested transfers).
-    const statesSnap = await expensesStatesRef(db, tripId).get();
-    if (parseBoolFlag(statesSnap.data()?.expensesLocked, false)) return;
-
     const groupIds = new Set();
     const beforeGroup = normalizeString(before?.groupId);
     const afterGroup = normalizeString(after?.groupId);
@@ -352,6 +358,8 @@ const recomputeExpenseGroupSettlement = onDocumentWritten(
     if (afterGroup) groupIds.add(afterGroup);
 
     for (const groupId of groupIds) {
+      // Regular expense written while this post is locked → skip recalc for that post only.
+      if (await isExpenseGroupLocked(db, tripId, groupId)) continue;
       await recomputeExpenseGroupSettlementForGroup(db, tripId, groupId);
     }
   }
