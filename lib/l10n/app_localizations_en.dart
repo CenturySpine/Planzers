@@ -1341,6 +1341,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewOpenLocation => 'Open location';
 
   @override
+  String get openRouteGoogleMaps => 'Google Maps';
+
+  @override
+  String get openRouteWaze => 'Waze';
+
+  @override
   String get tripOverviewUntitled => 'Untitled';
 
   @override
@@ -4256,6 +4262,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewOpenLocation => 'Open location';
+
+  @override
+  String get openRouteGoogleMaps => 'Google Maps';
+
+  @override
+  String get openRouteWaze => 'Waze';
 
   @override
   String get tripOverviewUntitled => 'Untitled';

@@ -2472,6 +2472,18 @@ abstract class AppLocalizations {
   /// **'Ouvrir la localisation'**
   String get tripOverviewOpenLocation;
 
+  /// No description provided for @openRouteGoogleMaps.
+  ///
+  /// In fr, this message translates to:
+  /// **'Google Maps'**
+  String get openRouteGoogleMaps;
+
+  /// No description provided for @openRouteWaze.
+  ///
+  /// In fr, this message translates to:
+  /// **'Waze'**
+  String get openRouteWaze;
+
   /// No description provided for @tripOverviewUntitled.
   ///
   /// In fr, this message translates to:

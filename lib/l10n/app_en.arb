@@ -566,6 +566,8 @@
   "tripOverviewLinkInvalid": "Invalid link (e.g. https://...)",
   "tripOverviewLinkMustStartWithHttp": "Link must start with http(s)://",
   "tripOverviewOpenLocation": "Open location",
+  "openRouteGoogleMaps": "Google Maps",
+  "openRouteWaze": "Waze",
   "tripOverviewUntitled": "Untitled",
   "tripOverviewUnknownDestination": "Unknown destination",
   "tripOverviewLeaveTripTitle": "Leave this trip?",
