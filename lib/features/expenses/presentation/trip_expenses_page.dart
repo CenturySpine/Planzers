@@ -12,32 +12,46 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/data/expense_group_state.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
 import 'package:planerz/features/expenses/data/suggested_reimbursement.dart';
 import 'package:planerz/features/expenses/presentation/expense_group_editor_page.dart';
+import 'package:planerz/features/trips/data/participant_group.dart';
+import 'package:planerz/features/trips/data/participant_groups_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member.dart';
+import 'package:planerz/core/presentation/planerz_info_callout.dart';
+import 'package:planerz/core/presentation/state_pill_toggle.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Participant doc IDs who can appear as payer/participant for this expense post.
-/// [group.visibleToMemberIds] holds TripMember doc IDs; returns the doc IDs of
-/// all participants (including unclaimed) whose doc ID is in that set.
-List<String> participantScopeMemberIdsForGroup(
+/// Billing unit IDs (ungrouped member IDs + applicable group IDs) for an expense post.
+///
+/// Ungrouped members: allowed by [group.visibleToMemberIds] and not in any group.
+/// Groups: those whose every member is within the allowed set.
+List<String> participantScopeUnitIdsForGroup(
   TripExpenseGroup group,
   List<TripMember> participants,
+  List<ParticipantGroup> participantGroups,
 ) {
   if (group.visibleToMemberIds.isEmpty) return [];
   final allowed = group.visibleToMemberIds.toSet();
-  return participants
-      .where((m) => allowed.contains(m.id))
+  final groupedMemberIds = participantGroups.expand((g) => g.memberIds).toSet();
+  final ungrouped = participants
+      .where((m) =>
+          !m.isChild &&
+          allowed.contains(m.id) &&
+          !groupedMemberIds.contains(m.id))
       .map((m) => m.id)
-      .toSet()
-      .toList()
-    ..sort();
+      .toList();
+  final scopeGroups = participantGroups
+      .where((g) => g.memberIds.isNotEmpty && g.memberIds.every(allowed.contains))
+      .map((g) => g.id)
+      .toList();
+  return [...ungrouped, ...scopeGroups]..sort();
 }
 
 
@@ -60,7 +74,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     final expensesAsync = ref.watch(tripExpensesStreamProvider(trip.id));
     final participants =
         ref.watch(tripParticipantsStreamProvider(trip.id)).asData?.value ?? [];
-    final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
+    final unitLabels = ref.watch(tripExpenseUnitLabelsProvider(trip.id));
     final memberIds = participants.map((m) => m.id).toList();
     final viewerId = FirebaseAuth.instance.currentUser?.uid;
     final currentUserMemberId = participants
@@ -87,16 +101,37 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       },
       orElse: () => false,
     );
-    final states = ref.watch(tripExpensesStatesStreamProvider(trip.id)).asData?.value ??
-        TripExpensesStates.defaults;
     final isAdminOrAbove = isTripRoleAllowed(
       currentRole: resolveTripPermissionRole(trip: trip, userId: viewerId),
       minRole: TripPermissionRole.admin,
     );
-    final lockRestrictsEditing = states.expensesLocked && !isAdminOrAbove;
+    final groupsForFab = groupsAsync.asData?.value;
+    final visibleGroupsForFab = groupsForFab == null
+        ? const <TripExpenseGroup>[]
+        : groupsForFab
+            .where((group) => group.isVisibleTo(currentUserMemberId))
+            .toList();
+    final resolvedActiveGroupId = () {
+      final preferred = _activeGroupId?.trim();
+      if (preferred != null && preferred.isNotEmpty) return preferred;
+      if (visibleGroupsForFab.length == 1) return visibleGroupsForFab.single.id;
+      return null;
+    }();
+    final activeGroupLocked = resolvedActiveGroupId != null
+        ? (ref
+                    .watch(
+                      expenseGroupStateStreamProvider((
+                        tripId: trip.id,
+                        groupId: resolvedActiveGroupId,
+                      )),
+                    )
+                    .asData
+                    ?.value ??
+                TripExpenseGroupState.defaults)
+            .expensesLocked
+        : false;
     final showExpensesFab =
-        (canCreateExpense || canCreateExpensePost) &&
-        (isAdminOrAbove || !states.expensesLocked);
+        canCreateExpensePost || (canCreateExpense && !activeGroupLocked);
 
     return Scaffold(
       body: groupsAsync.when(
@@ -105,15 +140,13 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
             return _TripExpensesBody(
               trip: trip,
               participants: participants,
-              memberLabels: memberLabels,
+              memberLabels: unitLabels,
               memberIds: memberIds,
               currentUserMemberId: currentUserMemberId,
               groups: groups,
               expenses: expenses,
               activeGroupId: _activeGroupId,
-              lockRestrictsEditing: lockRestrictsEditing,
               isAdminOrAbove: isAdminOrAbove,
-              expensesLocked: states.expensesLocked,
               onActiveGroupChanged: (groupId) {
                 if (_activeGroupId == groupId) return;
                 setState(() => _activeGroupId = groupId);
@@ -160,7 +193,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                           context,
                           trip.id,
                           memberIds,
-                          memberLabels,
+                          unitLabels,
                           currentUserMemberId,
                           existing: null,
                         );
@@ -168,7 +201,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (canCreateExpense) ...[
+                  if (canCreateExpense && !activeGroupLocked) ...[
                     FloatingActionButton.extended(
                       heroTag: 'trip_expenses_add_expense',
                       tooltip: l10n.expensesAddExpenseTooltip,
@@ -181,7 +214,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                           ref,
                           trip.id,
                           participants,
-                          memberLabels,
+                          unitLabels,
                           _activeGroupId,
                         );
                       },
@@ -262,13 +295,15 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     }
     final group = chosenGroup ?? visible.first;
     if (!context.mounted) return;
+    final participantGroupsList =
+        ref.read(tripParticipantGroupsStreamProvider(tripId)).asData?.value ?? [];
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => _AddExpensePage(
           tripId: tripId,
           groupId: group.id,
           participantScopeMemberIds:
-              participantScopeMemberIdsForGroup(group, participants),
+              participantScopeUnitIdsForGroup(group, participants, participantGroupsList),
           memberLabels: memberLabels,
           currentUserMemberId: currentUserMemberId,
         ),
@@ -287,9 +322,7 @@ class _TripExpensesBody extends StatelessWidget {
     required this.groups,
     required this.expenses,
     required this.activeGroupId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -301,9 +334,7 @@ class _TripExpensesBody extends StatelessWidget {
   final List<TripExpenseGroup> groups;
   final List<TripExpense> expenses;
   final String? activeGroupId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -370,9 +401,7 @@ class _TripExpensesBody extends StatelessWidget {
                   memberLabels: memberLabels,
                   currentUserMemberId: currentUserMemberId,
                  viewerUserId: viewerId,
-                 lockRestrictsEditing: lockRestrictsEditing,
                  isAdminOrAbove: isAdminOrAbove,
-                 expensesLocked: expensesLocked,
               ),
             ),
           )
@@ -388,9 +417,7 @@ class _TripExpensesBody extends StatelessWidget {
               currentUserMemberId: currentUserMemberId,
               viewerUserId: viewerId,
               initialGroupId: activeGroupId,
-              lockRestrictsEditing: lockRestrictsEditing,
               isAdminOrAbove: isAdminOrAbove,
-              expensesLocked: expensesLocked,
               onActiveGroupChanged: onActiveGroupChanged,
             ),
           ),
@@ -410,9 +437,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
     required this.currentUserMemberId,
     required this.viewerUserId,
     required this.initialGroupId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
     required this.onActiveGroupChanged,
   });
 
@@ -425,9 +450,7 @@ class _ExpensePostsTabbedView extends StatefulWidget {
   final String? currentUserMemberId;
   final String? viewerUserId;
   final String? initialGroupId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
   final ValueChanged<String> onActiveGroupChanged;
 
   @override
@@ -532,9 +555,7 @@ class _ExpensePostsTabbedViewState extends State<_ExpensePostsTabbedView>
                       memberLabels: widget.memberLabels,
                       currentUserMemberId: widget.currentUserMemberId,
                     viewerUserId: widget.viewerUserId,
-                    lockRestrictsEditing: widget.lockRestrictsEditing,
                     isAdminOrAbove: widget.isAdminOrAbove,
-                    expensesLocked: widget.expensesLocked,
                   ),
                 ),
             ],
@@ -555,9 +576,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
     required this.memberLabels,
     required this.currentUserMemberId,
     required this.viewerUserId,
-    required this.lockRestrictsEditing,
     required this.isAdminOrAbove,
-    required this.expensesLocked,
   });
 
   final Trip trip;
@@ -568,9 +587,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
   final String? viewerUserId;
-  final bool lockRestrictsEditing;
   final bool isAdminOrAbove;
-  final bool expensesLocked;
 
   @override
   ConsumerState<_ExpensePostPanel> createState() => _ExpensePostPanelState();
@@ -579,6 +596,7 @@ class _ExpensePostPanel extends ConsumerStatefulWidget {
 class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
   bool _deletingPost = false;
   _ExpensePostView _activeView = _ExpensePostView.operations;
+  bool _showAllOperations = true;
   late final NotificationCenterRepository _notificationCenter;
   DateTime? _lastReadMarkedAt;
   DateTime? _lastPresencePingAt;
@@ -711,22 +729,56 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
     _markExpensesNotificationsReadIfNeeded(widget.trip.id);
     _syncExpensesPresenceIfNeeded(widget.trip.id);
     final viewerUserId = widget.viewerUserId?.trim();
-    final viewerMemberId = widget.currentUserMemberId?.trim();
+    final viewerBillingUnitId =
+        ref.watch(viewerBillingUnitIdProvider(widget.trip.id))?.trim();
+    final participantGroups =
+        ref.watch(tripParticipantGroupsStreamProvider(widget.trip.id)).asData?.value ?? [];
     final groupScope = (
       tripId: widget.trip.id,
       groupId: widget.group.id,
     );
+    final groupState = ref.watch(expenseGroupStateStreamProvider(groupScope)).asData?.value ??
+        TripExpenseGroupState.defaults;
+    final lockRestrictsEditing = groupState.expensesLocked;
+    final expensesLocked = groupState.expensesLocked;
     final summary =
         ref.watch(expenseGroupSummaryStreamProvider(groupScope)).asData?.value;
     final postTotalsByCurrency = summary?.postTotalsByCurrency ?? const {};
-    final myTotalsByCurrency = viewerMemberId != null
-        ? summary?.paidByTotalsByCurrency[viewerMemberId] ?? const {}
+    final myTotalsByCurrency = viewerBillingUnitId != null
+        ? summary?.paidByTotalsByCurrency[viewerBillingUnitId] ?? const {}
         : const <String, double>{};
+    final Map<String, double>? myCostByCurrency = viewerBillingUnitId != null
+        ? () {
+            final groupParts = {for (final g in participantGroups) g.id: g.parts};
+            final result = <String, double>{};
+            for (final expense in widget.groupExpenses) {
+              if (expense.operationType == ExpenseOperationType.settlement) {
+                continue;
+              }
+              if (!expense.participantIds.contains(viewerBillingUnitId)) continue;
+              final double share;
+              if (expense.splitMode == ExpenseSplitMode.customAmounts) {
+                share = expense.participantShares[viewerBillingUnitId] ?? 0.0;
+              } else {
+                final totalParts = expense.participantIds
+                    .fold<double>(0, (s, id) => s + (groupParts[id] ?? 1.0));
+                final myParts = groupParts[viewerBillingUnitId] ?? 1.0;
+                share = totalParts > 0
+                    ? expense.amount * myParts / totalParts
+                    : 0.0;
+              }
+              result[expense.currency] =
+                  (result[expense.currency] ?? 0.0) + share;
+            }
+            return result;
+          }()
+        : null;
     final canMarkReimbursement =
         widget.group.isVisibleTo(widget.currentUserMemberId);
-    final scope = participantScopeMemberIdsForGroup(
+    final scope = participantScopeUnitIdsForGroup(
       widget.group,
       widget.participants,
+      participantGroups,
     );
 
     final canEditPost = canEditExpensePostForTrip(
@@ -753,13 +805,21 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
-    final effectiveCanEditPost = canEditPost && !widget.lockRestrictsEditing;
-    final effectiveCanDeletePost = canDeletePost && !widget.lockRestrictsEditing;
-    final effectiveCanEditExpense = canEditExpense && !widget.lockRestrictsEditing;
-    final effectiveCanDeleteExpense =
-        canDeleteExpense && !widget.lockRestrictsEditing;
+    final effectiveCanEditPost = canEditPost;
+    final effectiveCanDeletePost = canDeletePost;
+    final effectiveCanEditExpense = canEditExpense && !lockRestrictsEditing;
+    final effectiveCanDeleteExpense = canDeleteExpense && !lockRestrictsEditing;
     final showPostMenu = !widget.group.isDefault &&
         (effectiveCanEditPost || effectiveCanDeletePost);
+    final visibleOperations = _showAllOperations
+        ? widget.groupExpenses
+        : widget.groupExpenses
+            .where(
+              (expense) =>
+                  viewerBillingUnitId != null &&
+                  expense.involvesMember(viewerBillingUnitId),
+            )
+            .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -872,7 +932,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             memberLabels: widget.memberLabels,
             currentUserMemberId: widget.currentUserMemberId,
             canMarkReimbursement: canMarkReimbursement,
-            expensesLocked: widget.expensesLocked,
+            expensesLocked: expensesLocked,
             isAdmin: widget.isAdminOrAbove,
           )
         else
@@ -886,14 +946,36 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     child: _ExpenseTotalsHeader(
                       myTotalsByCurrency: myTotalsByCurrency,
                       postTotalsByCurrency: postTotalsByCurrency,
+                      myCostByCurrency: myCostByCurrency,
                     ),
                   ),
-                  if (widget.expensesLocked) ...[
+                  if (expensesLocked) ...[
                     const SizedBox(width: 8),
                     const _ExpensesLockedIndicator(),
                   ],
                 ],
               ),
+              if (widget.groupExpenses.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: PlanerzInfoCallout(
+                        message: l10n.expensesOperationsFilterHint,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTousMoiSegmentedFilter(
+                      context,
+                      showAll: _showAllOperations,
+                      onShowAllChanged: (showAll) {
+                        setState(() => _showAllOperations = showAll);
+                      },
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
               if (widget.groupExpenses.isEmpty)
                 Padding(
@@ -921,10 +1003,36 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                     ],
                   ),
                 )
+              else if (visibleOperations.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 40,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.35),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.expensesNoMyOperationInPost,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                )
               else
                 ..._buildExpensesGroupedByDate(
                   context,
-                  widget.groupExpenses,
+                  visibleOperations,
                   widget.trip.id,
                   scope,
                   widget.memberLabels,
@@ -940,6 +1048,67 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
 }
 
 enum _ExpensePostView { operations, settlement }
+
+Widget _buildTousMoiFilterSegment(
+  BuildContext context,
+  String label,
+  bool selected,
+  VoidCallback onTap,
+) {
+  final cs = Theme.of(context).colorScheme;
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: selected ? cs.secondaryContainer : null,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+      ),
+    ),
+  );
+}
+
+Widget _buildTousMoiSegmentedFilter(
+  BuildContext context, {
+  required bool showAll,
+  required ValueChanged<bool> onShowAllChanged,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  final cs = Theme.of(context).colorScheme;
+  return Container(
+    height: 30,
+    decoration: BoxDecoration(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildTousMoiFilterSegment(
+          context,
+          l10n.commonAll,
+          showAll,
+          () => onShowAllChanged(true),
+        ),
+        _buildTousMoiFilterSegment(
+          context,
+          l10n.commonMe,
+          !showAll,
+          () => onShowAllChanged(false),
+        ),
+      ],
+    ),
+  );
+}
 
 const _kDefaultExpenseCurrency = 'EUR';
 
@@ -977,10 +1146,12 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   const _ExpenseTotalsHeader({
     required this.myTotalsByCurrency,
     required this.postTotalsByCurrency,
+    this.myCostByCurrency,
   });
 
   final Map<String, double> myTotalsByCurrency;
   final Map<String, double> postTotalsByCurrency;
+  final Map<String, double>? myCostByCurrency;
 
   @override
   Widget build(BuildContext context) {
@@ -991,6 +1162,13 @@ class _ExpenseTotalsHeader extends StatelessWidget {
         );
     final valueStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w700,
+        );
+
+    Widget divider() => Container(
+          width: 1,
+          height: 36,
+          color: cs.outlineVariant,
+          margin: const EdgeInsets.symmetric(horizontal: 12),
         );
 
     return Container(
@@ -1014,12 +1192,24 @@ class _ExpenseTotalsHeader extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 1,
-            height: 36,
-            color: cs.outlineVariant,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-          ),
+          if (myCostByCurrency != null) ...[
+            divider(),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(l10n.expensesMyCost, style: labelStyle),
+                  const SizedBox(height: 3),
+                  Text(
+                    _formatTotalsByCurrency(myCostByCurrency!),
+                    textAlign: TextAlign.center,
+                    style: valueStyle?.copyWith(color: cs.onSurface),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          divider(),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -1040,6 +1230,119 @@ class _ExpenseTotalsHeader extends StatelessWidget {
   }
 }
 
+/// Admin hint for balances tab controls (lock, notifications, refresh).
+class _ExpensesBalancesAdminInfoCallout extends StatelessWidget {
+  const _ExpensesBalancesAdminInfoCallout();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final planerzColors = context.planerzColors;
+    final cs = theme.colorScheme;
+    final hintStyle = theme.textTheme.bodySmall?.copyWith(
+      color: planerzColors.info,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: planerzColors.infoContainer,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: planerzColors.info,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.lock_outline,
+                  message: l10n.expensesBalancesAdminHintLock,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+                const SizedBox(height: 6),
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.notifications_active_outlined,
+                  message: l10n.expensesBalancesAdminHintNotifications,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+                const SizedBox(height: 6),
+                _ExpensesBalancesAdminHintRow(
+                  icon: Icons.refresh,
+                  message: l10n.expensesBalancesAdminHintRefresh,
+                  hintStyle: hintStyle,
+                  chipColor: cs.surfaceContainerHighest,
+                  iconColor: planerzColors.info,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpensesBalancesAdminHintRow extends StatelessWidget {
+  const _ExpensesBalancesAdminHintRow({
+    required this.icon,
+    required this.message,
+    required this.hintStyle,
+    required this.chipColor,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String message;
+  final TextStyle? hintStyle;
+  final Color chipColor;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 30,
+          width: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: chipColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: iconColor),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            message,
+            style: hintStyle,
+            strutStyle: StrutStyle(
+              fontSize: hintStyle?.fontSize,
+              height: 1.25,
+              forceStrutHeight: true,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Read-only indicator shown to all members when expenses are UI-locked.
 class _ExpensesLockedIndicator extends StatelessWidget {
   const _ExpensesLockedIndicator();
@@ -1050,83 +1353,6 @@ class _ExpensesLockedIndicator extends StatelessWidget {
       Icons.lock_outline,
       size: 18,
       color: Theme.of(context).colorScheme.onSurfaceVariant,
-    );
-  }
-}
-
-/// Admin-only pill toggle (same style as suggested-reimbursement filters).
-class _ExpensesStatePillToggle extends StatelessWidget {
-  const _ExpensesStatePillToggle({
-    required this.offIcon,
-    required this.onIcon,
-    required this.on,
-    required this.onChanged,
-  });
-
-  final IconData offIcon;
-  final IconData onIcon;
-  final bool on;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      height: 30,
-      margin: const EdgeInsets.only(right: 4),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ExpensesStatePillSegment(
-            icon: offIcon,
-            selected: !on,
-            onTap: () => onChanged(false),
-          ),
-          _ExpensesStatePillSegment(
-            icon: onIcon,
-            selected: on,
-            onTap: () => onChanged(true),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExpensesStatePillSegment extends StatelessWidget {
-  const _ExpensesStatePillSegment({
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? cs.secondaryContainer : null,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
-        ),
-      ),
     );
   }
 }
@@ -1166,21 +1392,6 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         groupId: widget.group.id,
       );
 
-  bool _involvesCurrentUser(SuggestedReimbursement suggestion) {
-    final memberId = widget.currentUserMemberId?.trim();
-    if (memberId == null || memberId.isEmpty) return false;
-    return suggestion.fromParticipantId == memberId ||
-        suggestion.toParticipantId == memberId;
-  }
-
-  bool _involvesCurrentUserSettlement(TripExpense expense) {
-    final memberId = widget.currentUserMemberId?.trim();
-    if (memberId == null || memberId.isEmpty) return false;
-    final beneficiary = expense.participantIds.isNotEmpty
-        ? expense.participantIds.first
-        : '';
-    return expense.paidBy == memberId || beneficiary == memberId;
-  }
 
   Future<void> _markPaid(SuggestedReimbursement suggestion) async {
     if (!widget.canMarkReimbursement ||
@@ -1248,6 +1459,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     try {
       await ref.read(expensesRepositoryProvider).setExpensesUiLocked(
             tripId: widget.tripId,
+            groupId: widget.group.id,
             locked: locked,
           );
       if (!mounted) return;
@@ -1328,9 +1540,13 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         AppLocalizations.of(context)!.tripParticipantsTraveler;
   }
 
-  ({String title, bool bold}) _reimbursementLabel(String fromId, String toId) {
+  ({String title, bool bold}) _reimbursementLabel(
+    String fromId,
+    String toId,
+    String? billingUnitId,
+  ) {
     final l10n = AppLocalizations.of(context)!;
-    final me = widget.currentUserMemberId?.trim();
+    final me = billingUnitId?.trim();
     if (me != null && me.isNotEmpty) {
       if (fromId == me) {
         return (title: l10n.expensesReimbursementYouOweTo(_participantLabel(toId)), bold: true);
@@ -1345,35 +1561,6 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     );
   }
 
-  Widget _buildFilterSegment(
-    BuildContext context,
-    String label,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? cs.secondaryContainer : null,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: selected ? cs.onSecondaryContainer : cs.onSurfaceVariant,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1383,29 +1570,49 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
         ref.watch(expenseGroupBalancesStreamProvider(_scope));
     final suggestionsAsync =
         ref.watch(expenseGroupSuggestedReimbursementsStreamProvider(_scope));
-    final states =
+    final tripStates =
         ref.watch(tripExpensesStatesStreamProvider(widget.tripId)).asData?.value ??
             TripExpensesStates.defaults;
+
+    final viewerBillingUnitId =
+        ref.watch(viewerBillingUnitIdProvider(widget.tripId))?.trim();
 
     final balances = balancesAsync.asData?.value ?? const [];
     final allSuggestions = suggestionsAsync.asData?.value ?? const [];
     final visibleSuggestions = _showAllPost
         ? allSuggestions
-        : allSuggestions.where(_involvesCurrentUser).toList();
+        : allSuggestions.where((s) {
+            if (viewerBillingUnitId == null || viewerBillingUnitId.isEmpty) {
+              return false;
+            }
+            return s.fromParticipantId == viewerBillingUnitId ||
+                s.toParticipantId == viewerBillingUnitId;
+          }).toList();
 
     final allSettlements = widget.groupExpenses
         .where((e) => e.operationType == ExpenseOperationType.settlement)
         .toList();
     final visibleSettlements = _showAllPost
         ? allSettlements
-        : allSettlements.where(_involvesCurrentUserSettlement).toList();
+        : allSettlements.where((e) {
+            if (viewerBillingUnitId == null || viewerBillingUnitId.isEmpty) {
+              return false;
+            }
+            return e.involvesMember(viewerBillingUnitId);
+          }).toList();
 
-    final hasBalances = balances.any((b) => b.nets.isNotEmpty);
+    final hasNonSettlementExpenses = widget.groupExpenses
+        .any((e) => e.operationType != ExpenseOperationType.settlement);
+    final hasBalances = hasNonSettlementExpenses || balances.any((b) => b.nets.isNotEmpty);
     final waitingForData = balancesAsync.isLoading || suggestionsAsync.isLoading;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.isAdmin) ...[
+          const _ExpensesBalancesAdminInfoCallout(),
+          const SizedBox(height: 8),
+        ],
         Row(
           children: [
             Expanded(
@@ -1417,24 +1624,24 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             ),
             if (widget.isAdmin) ...[
               Tooltip(
-                message: states.expensesLocked
+                message: widget.expensesLocked
                     ? l10n.expensesTooltipUnlockExpenses
                     : l10n.expensesTooltipLockExpenses,
-                child: _ExpensesStatePillToggle(
+                child: StatePillToggle(
                   offIcon: Icons.lock_open_outlined,
                   onIcon: Icons.lock_outline,
-                  on: states.expensesLocked,
+                  on: widget.expensesLocked,
                   onChanged: _setExpensesUiLocked,
                 ),
               ),
               Tooltip(
-                message: states.expensesNotificationsEnabled
+                message: tripStates.expensesNotificationsEnabled
                     ? l10n.expensesTooltipDisableExpenseNotifications
                     : l10n.expensesTooltipEnableExpenseNotifications,
-                child: _ExpensesStatePillToggle(
+                child: StatePillToggle(
                   offIcon: Icons.notifications_off_outlined,
                   onIcon: Icons.notifications_active_outlined,
-                  on: states.expensesNotificationsEnabled,
+                  on: tripStates.expensesNotificationsEnabled,
                   onChanged: _setExpensesNotificationsEnabled,
                 ),
               ),
@@ -1475,49 +1682,49 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
           )
         else
           for (final balance in balances)
-            if (balance.nets.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        balance.currency,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              letterSpacing: 1.1,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      for (final entry in (balance.nets.entries.toList()
-                        ..sort((a, b) => a.key.compareTo(b.key))))
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _participantLabel(entry.key),
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ),
-                              _BalanceChip(
-                                amount: entry.value,
-                                currency: balance.currency,
-                              ),
-                            ],
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      balance.currency,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            letterSpacing: 1.1,
                           ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final memberId in (balance.nets.isNotEmpty
+                        ? (balance.nets.keys.toList()..sort())
+                        : (widget.memberLabels.keys.toList()..sort())))
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _participantLabel(memberId),
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                            _BalanceChip(
+                              amount: balance.nets[memberId] ?? 0.0,
+                              currency: balance.currency,
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
+            ),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -1528,21 +1735,12 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                 iconColor: cs.primary,
               ),
             ),
-            Container(
-              height: 30,
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildFilterSegment(context, l10n.commonAll, _showAllPost,
-                      () => setState(() => _showAllPost = true)),
-                  _buildFilterSegment(context, l10n.commonMe, !_showAllPost,
-                      () => setState(() => _showAllPost = false)),
-                ],
-              ),
+            _buildTousMoiSegmentedFilter(
+              context,
+              showAll: _showAllPost,
+              onShowAllChanged: (showAll) {
+                setState(() => _showAllPost = showAll);
+              },
             ),
           ],
         ),
@@ -1568,12 +1766,13 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             final lbl = _reimbursementLabel(
               suggestion.fromParticipantId,
               suggestion.toParticipantId,
+              viewerBillingUnitId,
             );
             return _ReimbursementRow(
               title: lbl.title,
               bold: lbl.bold,
               amountLabel: _formatMoney(suggestion.currency, suggestion.amount),
-              actionIcon: Icons.check_circle_outline,
+              actionIcon: Icons.check,
               actionTooltip: l10n.expensesMarkReimbursementPaid,
               actionColor: pz.success,
               showAction:
@@ -1602,12 +1801,12 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             final toId = settlement.participantIds.isNotEmpty
                 ? settlement.participantIds.first
                 : '';
-            final lbl = _reimbursementLabel(settlement.paidBy, toId);
+            final lbl = _reimbursementLabel(settlement.paidBy, toId, viewerBillingUnitId);
             return _ReimbursementRow(
               title: lbl.title,
               bold: lbl.bold,
               amountLabel: _formatMoney(settlement.currency, settlement.amount),
-              actionIcon: Icons.cancel_outlined,
+              actionIcon: Icons.close,
               actionTooltip: l10n.expensesUnmarkReimbursementPaid,
               actionColor: cs.error,
               showAction:
@@ -1633,8 +1832,10 @@ class _BalanceChip extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final pz = context.planerzColors;
 
-    final isCreditor = amount > 0;
-    final isDebtor = amount < 0;
+    const threshold = 0.5;
+    final effectiveAmount = amount.abs() < threshold ? 0.0 : amount;
+    final isCreditor = effectiveAmount > 0;
+    final isDebtor = effectiveAmount < 0;
 
     final bg = isCreditor
         ? pz.successContainer
@@ -1659,7 +1860,7 @@ class _BalanceChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        '$prefix · ${_formatMoney(currency, amount.abs())}',
+        '$prefix · ${_formatMoney(currency, effectiveAmount.abs())}',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: fg,
               fontWeight: FontWeight.w600,
@@ -1717,29 +1918,51 @@ class _ReimbursementRow extends StatelessWidget {
                   ),
             ),
             if (showAction) ...[
-              const SizedBox(width: 4),
-              SizedBox(
-                width: 36,
-                height: 36,
-                child: busy
-                    ? Padding(
-                        padding: const EdgeInsets.all(8),
+              const SizedBox(width: 8),
+              busy
+                  ? SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: Padding(
+                        padding: const EdgeInsets.all(7),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: actionColor ?? cs.primary,
                         ),
-                      )
-                    : IconButton(
-                        tooltip: actionTooltip,
-                        onPressed: onAction,
-                        icon: Icon(actionIcon, size: 20, color: actionColor),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
+                      ),
+                    )
+                  : Tooltip(
+                      message: actionTooltip,
+                      child: InkWell(
+                        onTap: onAction,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: (actionColor ?? cs.primary)
+                                  .withValues(alpha: 0.45),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x26000000),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                              BoxShadow(
+                                color: Color(0x14000000),
+                                blurRadius: 2,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Icon(actionIcon, size: 12, color: actionColor),
                         ),
                       ),
-              ),
+                    ),
             ],
           ],
         ),
@@ -2147,7 +2370,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
     return out;
   }
 
-  Widget? _shareAmountTrailing(String memberId) {
+  Widget? _shareAmountTrailing(String memberId, Map<String, double> groupParts) {
     if (!_participantIds.contains(memberId)) {
       return Text(
         AppLocalizations.of(context)!.commonDash,
@@ -2157,8 +2380,10 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
       );
     }
     if (_splitMode == ExpenseSplitMode.equal) {
-      final n = _participantIds.length;
-      final per = n > 0 ? _parsedTotalAmount() / n : 0.0;
+      final totalParts = _participantIds.fold<double>(
+          0, (s, id) => s + (groupParts[id] ?? 1.0));
+      final myParts = groupParts[memberId] ?? 1.0;
+      final per = totalParts > 0 ? _parsedTotalAmount() * myParts / totalParts : 0.0;
       return Text(
         _formatShareMoney(per),
         style: Theme.of(context).textTheme.bodyMedium,
@@ -2373,6 +2598,9 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
         .where((id) => id.isNotEmpty)
         .toList();
     final cs = Theme.of(context).colorScheme;
+    final participantGroups =
+        ref.watch(tripParticipantGroupsStreamProvider(widget.tripId)).asData?.value ?? [];
+    final groupParts = {for (final g in participantGroups) g.id: g.parts};
 
     return Scaffold(
       appBar: AppBar(
@@ -2651,7 +2879,7 @@ class _ExpenseDetailsPageState extends ConsumerState<_ExpenseDetailsPage> {
                           widget.memberLabels[id] ?? id,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        secondary: _shareAmountTrailing(id),
+                        secondary: _shareAmountTrailing(id, groupParts),
                         value: _participantIds.contains(id),
                         onChanged: !_editing
                             ? null

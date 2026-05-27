@@ -1032,6 +1032,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripParticipantsPlannedTravelerAdded => 'Voyageur prévu ajouté';
 
   @override
+  String get tripParticipantsIsChildLabel => 'Enfant';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'Sans compte utilisateur ; facturation via un groupe uniquement.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'Un enfant ne peut pas être chef de repas.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'Un enfant ne peut pas être conducteur.';
+
+  @override
   String get tripParticipantsEditNameTitle => 'Modifier le nom';
 
   @override
@@ -1339,6 +1354,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewOpenLocation => 'Ouvrir la localisation';
+
+  @override
+  String get openRouteGoogleMaps => 'Google Maps';
+
+  @override
+  String get openRouteWaze => 'Waze';
 
   @override
   String get tripOverviewUntitled => 'Sans titre';
@@ -1828,6 +1849,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'Depuis l\'emplacement actuel (voiture)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -1851,6 +1876,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get activitiesRouteCalculating =>
       'Calcul en cours depuis l\'adresse du voyage.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
 
   @override
   String activitiesRouteDistance(Object distance) {
@@ -2185,7 +2213,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesNoOperationInPost => 'Aucune opération dans ce poste.';
 
   @override
+  String get expensesNoMyOperationInPost =>
+      'Aucune opération vous concernant dans ce poste.';
+
+  @override
+  String get expensesOperationsFilterHint =>
+      'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.';
+
+  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
+
+  @override
+  String get expensesMyCost => 'Mon coût total';
 
   @override
   String get expensesTripTotalCost => 'Coût total du séjour';
@@ -2239,6 +2278,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Active ou désactive les notifications lors des changements sur les remboursements.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalcule les soldes et les remboursements suggérés de ce poste.';
 
   @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
@@ -2908,6 +2959,70 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get profileNameRequiredMessage =>
       'Un nom de profil est requis pour utiliser Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groupes';
+
+  @override
+  String get participantGroupsTabHint =>
+      'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.';
+
+  @override
+  String get participantGroupsEmpty => 'Aucun groupe de facturation.';
+
+  @override
+  String get participantGroupsAddTitle => 'Créer un groupe';
+
+  @override
+  String get participantGroupsEditTitle => 'Modifier le groupe';
+
+  @override
+  String get participantGroupsLabelField => 'Libellé (ex. A&B, Famille Martin)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Le libellé est obligatoire.';
+
+  @override
+  String get participantGroupsMembersField => 'Membres du groupe';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'Au moins 2 membres sont requis.';
+
+  @override
+  String get participantGroupsPartsField => 'Parts';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'La valeur doit être un nombre supérieur à 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label appartient déjà au groupe « $groupLabel ».';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.';
+
+  @override
+  String get participantGroupsSaved => 'Groupe enregistré.';
+
+  @override
+  String get participantGroupsDeleted => 'Groupe supprimé.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Supprimer ce groupe ?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Le groupe « $label » sera supprimé. Les dépenses existantes ne sont pas modifiées.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count membres · $parts parts';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -3866,6 +3981,21 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripParticipantsPlannedTravelerAdded => 'Voyageur prévu ajouté';
 
   @override
+  String get tripParticipantsIsChildLabel => 'Enfant';
+
+  @override
+  String get tripParticipantsIsChildSubtitle =>
+      'Sans compte utilisateur ; facturation via un groupe uniquement.';
+
+  @override
+  String get tripParticipantsChildCannotBeChef =>
+      'Un enfant ne peut pas être chef de repas.';
+
+  @override
+  String get tripParticipantsChildCannotBeDriver =>
+      'Un enfant ne peut pas être conducteur.';
+
+  @override
   String get tripParticipantsEditNameTitle => 'Modifier le nom';
 
   @override
@@ -4173,6 +4303,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewOpenLocation => 'Ouvrir la localisation';
+
+  @override
+  String get openRouteGoogleMaps => 'Google Maps';
+
+  @override
+  String get openRouteWaze => 'Waze';
 
   @override
   String get tripOverviewUntitled => 'Sans titre';
@@ -4662,6 +4798,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get activitiesFromLodgingByCar => 'Depuis le logement (voiture)';
 
   @override
+  String get activitiesFromCurrentLocationByCar =>
+      'Depuis l\'emplacement actuel (voiture)';
+
+  @override
   String get commonDash => '—';
 
   @override
@@ -4685,6 +4825,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get activitiesRouteCalculating =>
       'Calcul en cours depuis l\'adresse du voyage.';
+
+  @override
+  String get activitiesRouteNotCalculatedYet => 'Pas encore calculé.';
 
   @override
   String activitiesRouteDistance(Object distance) {
@@ -5019,7 +5162,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get expensesNoOperationInPost => 'Aucune opération dans ce poste.';
 
   @override
+  String get expensesNoMyOperationInPost =>
+      'Aucune opération vous concernant dans ce poste.';
+
+  @override
+  String get expensesOperationsFilterHint =>
+      'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.';
+
+  @override
   String get expensesMyTotalSpend => 'Mes dépenses totales';
+
+  @override
+  String get expensesMyCost => 'Mon coût total';
 
   @override
   String get expensesTripTotalCost => 'Coût total du séjour';
@@ -5073,6 +5227,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesBalancesRefreshed => 'Soldes recalculés';
+
+  @override
+  String get expensesBalancesAdminHintLock =>
+      'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.';
+
+  @override
+  String get expensesBalancesAdminHintNotifications =>
+      'Active ou désactive les notifications lors des changements sur les remboursements.';
+
+  @override
+  String get expensesBalancesAdminHintRefresh =>
+      'Recalcule les soldes et les remboursements suggérés de ce poste.';
 
   @override
   String get expensesSuggestedReimbursements => 'Remboursements suggérés';
@@ -5742,4 +5908,68 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get profileNameRequiredMessage =>
       'Un nom de profil est requis pour utiliser Planerz.';
+
+  @override
+  String get participantGroupsTabLabel => 'Groupes';
+
+  @override
+  String get participantGroupsTabHint =>
+      'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.';
+
+  @override
+  String get participantGroupsEmpty => 'Aucun groupe de facturation.';
+
+  @override
+  String get participantGroupsAddTitle => 'Créer un groupe';
+
+  @override
+  String get participantGroupsEditTitle => 'Modifier le groupe';
+
+  @override
+  String get participantGroupsLabelField => 'Libellé (ex. A&B, Famille Martin)';
+
+  @override
+  String get participantGroupsLabelRequired => 'Le libellé est obligatoire.';
+
+  @override
+  String get participantGroupsMembersField => 'Membres du groupe';
+
+  @override
+  String get participantGroupsMembersMinTwo =>
+      'Au moins 2 membres sont requis.';
+
+  @override
+  String get participantGroupsPartsField => 'Parts';
+
+  @override
+  String get participantGroupsPartsInvalid =>
+      'La valeur doit être un nombre supérieur à 0.';
+
+  @override
+  String participantGroupsAlreadyInGroup(String label, String groupLabel) {
+    return '$label appartient déjà au groupe « $groupLabel ».';
+  }
+
+  @override
+  String get participantGroupsUsedInExpenses =>
+      'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.';
+
+  @override
+  String get participantGroupsSaved => 'Groupe enregistré.';
+
+  @override
+  String get participantGroupsDeleted => 'Groupe supprimé.';
+
+  @override
+  String get participantGroupsDeleteTitle => 'Supprimer ce groupe ?';
+
+  @override
+  String participantGroupsDeleteBody(String label) {
+    return 'Le groupe « $label » sera supprimé. Les dépenses existantes ne sont pas modifiées.';
+  }
+
+  @override
+  String participantGroupsMemberCount(int count, String parts) {
+    return '$count membres · $parts parts';
+  }
 }

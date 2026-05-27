@@ -35,6 +35,7 @@ class TripMember {
     this.phoneVisibility = TripMemberPhoneVisibility.nobody,
     this.updatedAt,
     this.useProfileName = false,
+    this.isChild = false,
   });
 
   /// Firestore document ID (auto-generated, stable across claim).
@@ -57,7 +58,13 @@ class TripMember {
   final TripMemberPhoneVisibility phoneVisibility;
   final DateTime? updatedAt;
 
+  /// Planned traveler without a linked user account (never claimable via invite).
+  final bool isChild;
+
   bool get isClaimed => userId != null && userId!.trim().isNotEmpty;
+
+  /// Meal chef and carpool driver roles are reserved for non-child participants.
+  bool get canBeMealChefOrCarpoolDriver => !isChild;
 
   factory TripMember.fromMap(String id, Map<String, dynamic> data) {
     final rawCupidonUpdatedAt = data['cupidonUpdatedAt'];
@@ -82,6 +89,7 @@ class TripMember {
         _ => null,
       },
       useProfileName: data['useProfileName'] == true,
+      isChild: data['isChild'] == true,
     );
   }
 
@@ -93,6 +101,7 @@ class TripMember {
       'cupidonEnabled': cupidonEnabled,
       'phoneVisibility': phoneVisibility.toFirestore(),
       if (useProfileName) 'useProfileName': true,
+      if (isChild) 'isChild': true,
     };
   }
 
@@ -105,6 +114,7 @@ class TripMember {
     TripMemberPhoneVisibility? phoneVisibility,
     Object? updatedAt = _sentinel,
     bool? useProfileName,
+    bool? isChild,
   }) {
     return TripMember(
       id: id,
@@ -118,8 +128,20 @@ class TripMember {
       phoneVisibility: phoneVisibility ?? this.phoneVisibility,
       updatedAt: identical(updatedAt, _sentinel) ? this.updatedAt : updatedAt as DateTime?,
       useProfileName: useProfileName ?? this.useProfileName,
+      isChild: isChild ?? this.isChild,
     );
   }
 }
+
+/// Suggested [ParticipantGroup.parts] when selecting members in the group editor.
+double suggestedParticipantGroupParts(
+  Iterable<String> memberIds,
+  Map<String, TripMember> membersById,
+) =>
+    memberIds.fold<double>(0, (total, id) {
+      final member = membersById[id];
+      if (member == null) return total + 1.0;
+      return total + (member.isChild ? 0.5 : 1.0);
+    });
 
 const Object _sentinel = Object();

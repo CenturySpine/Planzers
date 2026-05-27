@@ -29,7 +29,7 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
-import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
@@ -395,12 +395,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
-  String _initialFromLabel(String label) {
-    final clean = label.trim();
-    if (clean.isEmpty) return '?';
-    return clean.substring(0, 1).toUpperCase();
-  }
-
   Stream<Map<String, Map<String, dynamic>>> _usersDataStreamFor(
     List<String> memberIds,
   ) {
@@ -574,11 +568,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           builder: (context, userSnap) {
             final usersDataById = userSnap.data ?? const {};
             final participantsPreview = participants.map((m) {
-              final photoUrl = m.userId != null
-                  ? _photoUrlFromUserData(usersDataById[m.userId!])
-                  : '';
+              final displayLabel = resolveTripMemberDisplayLabel(
+                m,
+                profileData: usersDataById[m.userId],
+              );
+              final photoUrl = m.isChild
+                  ? ''
+                  : (m.userId != null
+                      ? _photoUrlFromUserData(usersDataById[m.userId!])
+                      : '');
               return _ParticipantBadgePreviewEntry(
-                initial: _initialFromLabel(resolveTripMemberDisplayLabel(m, profileData: usersDataById[m.userId])),
+                initial: avatarInitialFromDisplayLabel(displayLabel),
                 photoUrl: photoUrl,
               );
             }).toList();
@@ -1249,13 +1249,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                     ),
                                     color: cs.tertiary,
                                     onPressed: () {
-                                      if (isMapsLink) {
-                                        _openLinkUrl(linkUrlForUi);
-                                      } else {
-                                        openAddressInGoogleMaps(
+                                      final destination = _trip.address.trim().isNotEmpty
+                                          ? _trip.address.trim()
+                                          : (livePreview['description'] as String? ?? '')
+                                              .trim();
+                                      if (destination.isNotEmpty) {
+                                        openRouteInMapAppsSelector(
                                           context,
-                                          _trip.address,
+                                          destinationAddress: destination,
                                         );
+                                      } else if (isMapsLink) {
+                                        _openLinkUrl(linkUrlForUi);
                                       }
                                     },
                                   )

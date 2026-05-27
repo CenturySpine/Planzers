@@ -132,6 +132,18 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
       );
       return;
     }
+    final participants =
+        ref.read(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
+    final selectedDriver = participants
+        .where((member) => member.id == driverParticipantId)
+        .firstOrNull;
+    if (selectedDriver == null ||
+        !selectedDriver.canBeMealChefOrCarpoolDriver) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripParticipantsChildCannotBeDriver)),
+      );
+      return;
+    }
     final seats = int.tryParse(_seatsController.text.trim()) ?? 0;
     if (seats < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -266,19 +278,28 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
     // All participants, keyed by document ID.
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     final memberIds = participants.map((m) => m.id).toList(growable: false);
+    final driverEligibleParticipants = participants
+        .where((member) => member.canBeMealChefOrCarpoolDriver)
+        .toList(growable: false);
+    final driverEligibleIds =
+        driverEligibleParticipants.map((member) => member.id).toList(
+              growable: false,
+            );
 
     // Auto-select driver: prefer the current user's participant slot.
     final driverValue = _driverParticipantId?.trim();
-    if (driverValue == null || !memberIds.contains(driverValue)) {
-      if (memberIds.isNotEmpty) {
+    if (driverValue == null || !driverEligibleIds.contains(driverValue)) {
+      if (driverEligibleIds.isNotEmpty) {
         final myParticipantId = myUid.isNotEmpty
-            ? participants
-                .where((m) => m.userId?.trim() == myUid)
-                .map((m) => m.id)
+            ? driverEligibleParticipants
+                .where((member) => member.userId?.trim() == myUid)
+                .map((member) => member.id)
                 .firstOrNull
             : null;
-        _driverParticipantId = myParticipantId ?? memberIds.first;
+        _driverParticipantId = myParticipantId ?? driverEligibleIds.first;
         _selectedParticipantIds.add(_driverParticipantId!);
+      } else {
+        _driverParticipantId = null;
       }
     }
 
@@ -477,7 +498,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                       enableSearch: true,
                       enableFilter: true,
                       label: Text(l10n.tripCarpoolDriverLabel),
-                      dropdownMenuEntries: memberIds
+                      dropdownMenuEntries: driverEligibleIds
                           .map(
                             (id) => DropdownMenuEntry<String>(
                               value: id,

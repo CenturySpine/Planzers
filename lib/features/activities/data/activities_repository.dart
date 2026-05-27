@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 
@@ -232,15 +235,24 @@ class ActivitiesRepository {
       throw StateError('Droits insuffisants pour modifier une activite');
     }
 
-    await docRef.update({
+    final previousAddress =
+        (snap.data()?['address'] as String?)?.trim() ?? '';
+    final newAddress = address.trim();
+
+    final update = <String, dynamic>{
       'label': cleanLabel,
       'category': category.firestoreValue,
       'linkUrl': linkUrl.trim(),
-      'address': address.trim(),
+      'address': newAddress,
       'freeComments': freeComments.trim(),
       'itinerary': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (previousAddress != newAddress) {
+      update['tripDrivingRoute'] = FieldValue.delete();
+    }
+
+    await docRef.update(update);
   }
 
   Future<void> voteForActivity({
@@ -329,5 +341,67 @@ class ActivitiesRepository {
     }
 
     await docRef.delete();
+  }
+
+  Future<void> refreshActivityDrivingRoute({
+    required String tripId,
+    required String activityId,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    ).httpsCallable('refreshActivityDrivingRoute');
+    await callable.call({
+      'tripId': cleanTripId,
+      'activityId': cleanActivityId,
+      'originType': 'trip_address',
+    });
+  }
+
+  Future<ActivityTripDrivingRoute> refreshActivityDrivingRouteFromCurrentLocation({
+    required String tripId,
+    required String activityId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final callable = FirebaseFunctions.instanceFor(
+      region: kFirebaseFunctionsRegion,
+    ).httpsCallable('refreshActivityDrivingRoute');
+    final response = await callable.call({
+      'tripId': cleanTripId,
+      'activityId': cleanActivityId,
+      'originType': 'current_location',
+      'latitude': latitude,
+      'longitude': longitude,
+    });
+    final data = response.data;
+    if (data is! Map) {
+      throw StateError('Réponse route invalide');
+    }
+    final routeRaw = data['route'];
+    final route = ActivityTripDrivingRoute.fromFirestore(routeRaw);
+    if (route == null) {
+      throw StateError('Réponse route vide');
+    }
+    return route;
   }
 }

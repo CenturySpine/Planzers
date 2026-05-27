@@ -38,6 +38,11 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>waze</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Permet de choisir une photo pour la bannière du voyage.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

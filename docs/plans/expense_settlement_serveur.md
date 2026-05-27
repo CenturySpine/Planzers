@@ -81,7 +81,7 @@ sequenceDiagram
 
 | Chemin | Contenu | Écriture |
 |--------|---------|----------|
-| `balances/{currency}` | `{ currency, nets: { [participantId]: number } }` — soldes **après** toutes les ops (expense + settlement), arrondis `roundMoney` | CF seule |
+| `balances/{currency}` | `{ currency, nets: { [participantId]: number } }` — soldes **après** toutes les ops (expense + settlement), arrondis `roundMoney`. Tout solde dont \(|net| < 0,5\) est **considéré comme 0** (équilibré) **et reste remonté** dans `nets` | CF seule |
 | `suggestedReimbursements/{autoId}` | `{ fromParticipantId, toParticipantId, amount, currency }` | CF seule ; **delete collection** puis recréation à chaque recalc |
 | `summary/current` | voir schéma ci-dessous | CF seule |
 
@@ -108,6 +108,11 @@ sequenceDiagram
 
 Algorithme : `functions/expense_settlement.js` (copie de `scripts/expense_settlement.js`, champs renommés en `participantId`) — **`computeBalances` + `suggestTransfers` uniquement** (plus de `applySettledTransfers` dans le pipeline CF : les settlements sont déjà dans `expenses`).
 
+Règles produit (groupes de participants) :
+
+- Les ids manipulés dans les dépenses/soldes/suggestions/settlements sont des **unités de facturation** : `TripMember` non groupé **ou** `ParticipantGroup`.
+- Un `TripMember` appartenant à un `ParticipantGroup` ne doit **jamais** apparaître individuellement dans les écritures dérivées (balances/suggestions) : seul l’id du groupe est pris en compte.
+
 ---
 
 ## 2. Cloud Functions (`functions/index.js`)
@@ -130,7 +135,7 @@ Module dédié : `functions/expense_settlement_recalc.js`, qui `require('./expen
 
 Contenu de l'écriture dans la transaction finale :
 1. Supprimer tous les docs `suggestedReimbursements/*` du groupe.
-2. Écrire `balances/{currency}` (une par devise).
+2. Écrire `balances/{currency}` (une par devise), en conservant les lignes à l’équilibre (0).
 3. Créer les `suggestedReimbursements/*`.
 4. Mettre à jour `summary/current`.
 

@@ -42,6 +42,22 @@ function operationTypeFromFirestore(raw) {
   return s === 'settlement' ? 'settlement' : 'expense';
 }
 
+/**
+ * Resolves how many billing parts an id represents.
+ *
+ * Priority: participant (TripMember) ids return 1; group ids return group.parts.
+ * Since participantGroups are the only special case and we don't have a membersMap
+ * at this layer, the rule simplifies to: if id is in groupsMap return group.parts, else 1.
+ *
+ * @param {string} id
+ * @param {Record<string, { parts: number }>} groupsMap  keyed by groupId
+ * @returns {number}
+ */
+function resolveUnit(id, groupsMap) {
+  const g = groupsMap[id];
+  return g != null && g.parts > 0 ? g.parts : 1;
+}
+
 /** @typedef {{ id: string, groupId: string, operationType: string, amount: number, currency: string, paidBy: string, participantIds: string[], splitMode: string, participantShares: Record<string, number> }} TripExpense */
 
 /**
@@ -76,13 +92,24 @@ function tripExpenseFromDoc(doc) {
 /**
  * @param {TripExpense} expense
  * @param {string[]} participants
+ * @param {Record<string, { parts: number }>} [groupsMap]
  * @returns {Record<string, number>}
  */
-function participantSharesForExpense(expense, participants) {
+function participantSharesForExpense(expense, participants, groupsMap = {}) {
   if (expense.splitMode !== 'customAmounts') {
-    const n = participants.length;
-    const per = n > 0 ? expense.amount / n : 0;
-    return Object.fromEntries(participants.map((id) => [id, per]));
+    const totalParts = participants.reduce(
+      (sum, id) => sum + resolveUnit(id, groupsMap),
+      0
+    );
+    if (totalParts <= 0) {
+      return Object.fromEntries(participants.map((id) => [id, 0]));
+    }
+    return Object.fromEntries(
+      participants.map((id) => [
+        id,
+        expense.amount * resolveUnit(id, groupsMap) / totalParts,
+      ])
+    );
   }
 
   const raw = expense.participantShares;
@@ -91,26 +118,47 @@ function participantSharesForExpense(expense, participants) {
   for (const id of participants) {
     const v = raw[id];
     if (v == null || v < 0) {
-      const per =
-        participants.length > 0 ? expense.amount / participants.length : 0;
-      return Object.fromEntries(participants.map((pid) => [pid, per]));
+      const totalParts = participants.reduce(
+        (s, i) => s + resolveUnit(i, groupsMap),
+        0
+      );
+      if (totalParts <= 0) {
+        return Object.fromEntries(participants.map((pid) => [pid, 0]));
+      }
+      return Object.fromEntries(
+        participants.map((pid) => [
+          pid,
+          expense.amount * resolveUnit(pid, groupsMap) / totalParts,
+        ])
+      );
     }
     out[id] = v;
     sum += v;
   }
   if (Math.abs(sum - expense.amount) > 0.02) {
-    const n = participants.length;
-    const per = n > 0 ? expense.amount / n : 0;
-    return Object.fromEntries(participants.map((id) => [id, per]));
+    const totalParts = participants.reduce(
+      (s, i) => s + resolveUnit(i, groupsMap),
+      0
+    );
+    if (totalParts <= 0) {
+      return Object.fromEntries(participants.map((id) => [id, 0]));
+    }
+    return Object.fromEntries(
+      participants.map((id) => [
+        id,
+        expense.amount * resolveUnit(id, groupsMap) / totalParts,
+      ])
+    );
   }
   return out;
 }
 
 /**
  * @param {Iterable<TripExpense>} expenses
+ * @param {Record<string, { parts: number }>} [groupsMap]  keyed by groupId
  * @returns {Record<string, Record<string, number>>}
  */
-function computeBalances(expenses) {
+function computeBalances(expenses, groupsMap = {}) {
   /** @type {Record<string, Record<string, number>>} */
   const result = {};
 
@@ -132,7 +180,7 @@ function computeBalances(expenses) {
     if (!result[currency]) result[currency] = {};
     const bucket = result[currency];
 
-    const shares = participantSharesForExpense(expense, participants);
+    const shares = participantSharesForExpense(expense, participants, groupsMap);
     for (const participantId of participants) {
       const share = shares[participantId] ?? 0;
       bucket[participantId] = (bucket[participantId] ?? 0) - share;
@@ -271,13 +319,82 @@ function amountsMatch(a, b) {
   return Math.abs(roundMoney(a) - roundMoney(b)) <= BALANCE_EPSILON;
 }
 
+/**
+ * Normalizes a single net balance for Firestore client display.
+ * Values below the settlement threshold (including rounding dust) are sent as 0.
+ *
+ * @param {number} value
+ * @returns {number}
+ */
+function normalizeNetForFirestore(value) {
+  const rounded = roundMoney(value);
+  if (Math.abs(rounded) < BALANCE_SETTLEMENT_THRESHOLD) {
+    return 0;
+  }
+  return rounded;
+}
+
+/**
+ * Keeps every participant entry; equilibrium balances are written as 0.
+ *
+ * @param {Record<string, number>} nets
+ * @returns {Record<string, number>}
+ */
+function normalizeNetsMapForFirestore(nets) {
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const [participantId, value] of Object.entries(nets)) {
+    out[participantId] = normalizeNetForFirestore(value);
+  }
+  return out;
+}
+
+/**
+ * @param {Record<string, Record<string, number>>} balancesByCurrency
+ * @returns {Record<string, Record<string, number>>}
+ */
+function balancesForClientFirestore(balancesByCurrency) {
+  /** @type {Record<string, Record<string, number>>} */
+  const result = {};
+  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    result[currency] = normalizeNetsMapForFirestore(nets);
+  }
+  return result;
+}
+
+/**
+ * Input for suggestTransfers: only balances above the settlement threshold.
+ *
+ * @param {Record<string, Record<string, number>>} balancesByCurrency
+ * @returns {Record<string, Record<string, number>>}
+ */
+function balancesForSuggestions(balancesByCurrency) {
+  /** @type {Record<string, Record<string, number>>} */
+  const result = {};
+  for (const [currency, nets] of Object.entries(balancesByCurrency)) {
+    const filtered = {};
+    for (const [participantId, value] of Object.entries(nets)) {
+      if (Math.abs(value) >= BALANCE_SETTLEMENT_THRESHOLD) {
+        filtered[participantId] = value;
+      }
+    }
+    result[currency] = filtered;
+  }
+  return result;
+}
+
 module.exports = {
   BALANCE_EPSILON,
   BALANCE_SETTLEMENT_THRESHOLD,
   roundMoney,
+  resolveUnit,
   tripExpenseFromDoc,
   computeBalances,
   suggestTransfers,
   computeGroupSummary,
   amountsMatch,
+  normalizeNetForFirestore,
+  normalizeNetsMapForFirestore,
+  balancesForClientFirestore,
+  balancesForSuggestions,
 };

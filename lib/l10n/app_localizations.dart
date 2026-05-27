@@ -1913,6 +1913,30 @@ abstract class AppLocalizations {
   /// **'Voyageur prévu ajouté'**
   String get tripParticipantsPlannedTravelerAdded;
 
+  /// No description provided for @tripParticipantsIsChildLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enfant'**
+  String get tripParticipantsIsChildLabel;
+
+  /// No description provided for @tripParticipantsIsChildSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans compte utilisateur ; facturation via un groupe uniquement.'**
+  String get tripParticipantsIsChildSubtitle;
+
+  /// No description provided for @tripParticipantsChildCannotBeChef.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un enfant ne peut pas être chef de repas.'**
+  String get tripParticipantsChildCannotBeChef;
+
+  /// No description provided for @tripParticipantsChildCannotBeDriver.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un enfant ne peut pas être conducteur.'**
+  String get tripParticipantsChildCannotBeDriver;
+
   /// No description provided for @tripParticipantsEditNameTitle.
   ///
   /// In fr, this message translates to:
@@ -2447,6 +2471,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ouvrir la localisation'**
   String get tripOverviewOpenLocation;
+
+  /// No description provided for @openRouteGoogleMaps.
+  ///
+  /// In fr, this message translates to:
+  /// **'Google Maps'**
+  String get openRouteGoogleMaps;
+
+  /// No description provided for @openRouteWaze.
+  ///
+  /// In fr, this message translates to:
+  /// **'Waze'**
+  String get openRouteWaze;
 
   /// No description provided for @tripOverviewUntitled.
   ///
@@ -3330,6 +3366,12 @@ abstract class AppLocalizations {
   /// **'Depuis le logement (voiture)'**
   String get activitiesFromLodgingByCar;
 
+  /// No description provided for @activitiesFromCurrentLocationByCar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Depuis l\'emplacement actuel (voiture)'**
+  String get activitiesFromCurrentLocationByCar;
+
   /// No description provided for @commonDash.
   ///
   /// In fr, this message translates to:
@@ -3371,6 +3413,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Calcul en cours depuis l\'adresse du voyage.'**
   String get activitiesRouteCalculating;
+
+  /// No description provided for @activitiesRouteNotCalculatedYet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore calculé.'**
+  String get activitiesRouteNotCalculatedYet;
 
   /// No description provided for @activitiesRouteDistance.
   ///
@@ -3966,11 +4014,29 @@ abstract class AppLocalizations {
   /// **'Aucune opération dans ce poste.'**
   String get expensesNoOperationInPost;
 
+  /// No description provided for @expensesNoMyOperationInPost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune opération vous concernant dans ce poste.'**
+  String get expensesNoMyOperationInPost;
+
+  /// No description provided for @expensesOperationsFilterHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Affiche toutes les opérations du poste, ou seulement celles où tu es impliqué.'**
+  String get expensesOperationsFilterHint;
+
   /// No description provided for @expensesMyTotalSpend.
   ///
   /// In fr, this message translates to:
   /// **'Mes dépenses totales'**
   String get expensesMyTotalSpend;
+
+  /// No description provided for @expensesMyCost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon coût total'**
+  String get expensesMyCost;
 
   /// No description provided for @expensesTripTotalCost.
   ///
@@ -4067,6 +4133,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Soldes recalculés'**
   String get expensesBalancesRefreshed;
+
+  /// No description provided for @expensesBalancesAdminHintLock.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouille les dépenses du poste pour figer les saisies et permettre de marquer les remboursements payés.'**
+  String get expensesBalancesAdminHintLock;
+
+  /// No description provided for @expensesBalancesAdminHintNotifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Active ou désactive les notifications lors des changements sur les remboursements.'**
+  String get expensesBalancesAdminHintNotifications;
+
+  /// No description provided for @expensesBalancesAdminHintRefresh.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recalcule les soldes et les remboursements suggérés de ce poste.'**
+  String get expensesBalancesAdminHintRefresh;
 
   /// No description provided for @expensesSuggestedReimbursements.
   ///
@@ -5228,6 +5312,114 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Un nom de profil est requis pour utiliser Planerz.'**
   String get profileNameRequiredMessage;
+
+  /// No description provided for @participantGroupsTabLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupes'**
+  String get participantGroupsTabLabel;
+
+  /// No description provided for @participantGroupsTabHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un groupe regroupe plusieurs voyageurs en une seule unité de facturation pour les dépenses. Les parts représentent le poids du groupe dans la répartition : par défaut, 1 part par adulte et 0,5 part par enfant, mais un administrateur peut modifier librement ce total.'**
+  String get participantGroupsTabHint;
+
+  /// No description provided for @participantGroupsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun groupe de facturation.'**
+  String get participantGroupsEmpty;
+
+  /// No description provided for @participantGroupsAddTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un groupe'**
+  String get participantGroupsAddTitle;
+
+  /// No description provided for @participantGroupsEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le groupe'**
+  String get participantGroupsEditTitle;
+
+  /// No description provided for @participantGroupsLabelField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Libellé (ex. A&B, Famille Martin)'**
+  String get participantGroupsLabelField;
+
+  /// No description provided for @participantGroupsLabelRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le libellé est obligatoire.'**
+  String get participantGroupsLabelRequired;
+
+  /// No description provided for @participantGroupsMembersField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Membres du groupe'**
+  String get participantGroupsMembersField;
+
+  /// No description provided for @participantGroupsMembersMinTwo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Au moins 2 membres sont requis.'**
+  String get participantGroupsMembersMinTwo;
+
+  /// No description provided for @participantGroupsPartsField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parts'**
+  String get participantGroupsPartsField;
+
+  /// No description provided for @participantGroupsPartsInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'La valeur doit être un nombre supérieur à 0.'**
+  String get participantGroupsPartsInvalid;
+
+  /// No description provided for @participantGroupsAlreadyInGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} appartient déjà au groupe « {groupLabel} ».'**
+  String participantGroupsAlreadyInGroup(String label, String groupLabel);
+
+  /// No description provided for @participantGroupsUsedInExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce groupe est utilisé dans des dépenses et ne peut pas être modifié ni supprimé.'**
+  String get participantGroupsUsedInExpenses;
+
+  /// No description provided for @participantGroupsSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe enregistré.'**
+  String get participantGroupsSaved;
+
+  /// No description provided for @participantGroupsDeleted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe supprimé.'**
+  String get participantGroupsDeleted;
+
+  /// No description provided for @participantGroupsDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce groupe ?'**
+  String get participantGroupsDeleteTitle;
+
+  /// No description provided for @participantGroupsDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le groupe « {label} » sera supprimé. Les dépenses existantes ne sont pas modifiées.'**
+  String participantGroupsDeleteBody(String label);
+
+  /// No description provided for @participantGroupsMemberCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} membres · {parts} parts'**
+  String participantGroupsMemberCount(int count, String parts);
 }
 
 class _AppLocalizationsDelegate

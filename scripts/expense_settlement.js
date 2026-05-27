@@ -34,6 +34,18 @@ function participantSharesFromFirestore(raw) {
   return out;
 }
 
+/**
+ * Resolves how many billing parts an id represents.
+ *
+ * @param {string} id
+ * @param {Record<string, { parts: number }>} groupsMap  keyed by groupId
+ * @returns {number}
+ */
+function resolveUnit(id, groupsMap) {
+  const g = groupsMap[id];
+  return g != null && g.parts > 0 ? g.parts : 1;
+}
+
 /** @typedef {{ id: string, groupId: string, amount: number, currency: string, paidBy: string, participantIds: string[], splitMode: string, participantShares: Record<string, number> }} TripExpense */
 
 /**
@@ -67,13 +79,24 @@ function tripExpenseFromDoc(doc) {
 /**
  * @param {TripExpense} expense
  * @param {string[]} participants
+ * @param {Record<string, { parts: number }>} [groupsMap]
  * @returns {Record<string, number>}
  */
-function participantSharesForExpense(expense, participants) {
+function participantSharesForExpense(expense, participants, groupsMap = {}) {
   if (expense.splitMode !== 'customAmounts') {
-    const n = participants.length;
-    const per = n > 0 ? expense.amount / n : 0;
-    return Object.fromEntries(participants.map((id) => [id, per]));
+    const totalParts = participants.reduce(
+      (sum, id) => sum + resolveUnit(id, groupsMap),
+      0
+    );
+    if (totalParts <= 0) {
+      return Object.fromEntries(participants.map((id) => [id, 0]));
+    }
+    return Object.fromEntries(
+      participants.map((id) => [
+        id,
+        expense.amount * resolveUnit(id, groupsMap) / totalParts,
+      ])
+    );
   }
 
   const raw = expense.participantShares;
@@ -82,26 +105,47 @@ function participantSharesForExpense(expense, participants) {
   for (const id of participants) {
     const v = raw[id];
     if (v == null || v < 0) {
-      const per =
-        participants.length > 0 ? expense.amount / participants.length : 0;
-      return Object.fromEntries(participants.map((uid) => [uid, per]));
+      const totalParts = participants.reduce(
+        (s, i) => s + resolveUnit(i, groupsMap),
+        0
+      );
+      if (totalParts <= 0) {
+        return Object.fromEntries(participants.map((uid) => [uid, 0]));
+      }
+      return Object.fromEntries(
+        participants.map((uid) => [
+          uid,
+          expense.amount * resolveUnit(uid, groupsMap) / totalParts,
+        ])
+      );
     }
     out[id] = v;
     sum += v;
   }
   if (Math.abs(sum - expense.amount) > 0.02) {
-    const n = participants.length;
-    const per = n > 0 ? expense.amount / n : 0;
-    return Object.fromEntries(participants.map((id) => [id, per]));
+    const totalParts = participants.reduce(
+      (s, i) => s + resolveUnit(i, groupsMap),
+      0
+    );
+    if (totalParts <= 0) {
+      return Object.fromEntries(participants.map((id) => [id, 0]));
+    }
+    return Object.fromEntries(
+      participants.map((id) => [
+        id,
+        expense.amount * resolveUnit(id, groupsMap) / totalParts,
+      ])
+    );
   }
   return out;
 }
 
 /**
  * @param {Iterable<TripExpense>} expenses
+ * @param {Record<string, { parts: number }>} [groupsMap]  keyed by groupId
  * @returns {Record<string, Record<string, number>>}
  */
-function computeBalances(expenses) {
+function computeBalances(expenses, groupsMap = {}) {
   /** @type {Record<string, Record<string, number>>} */
   const result = {};
 
@@ -123,7 +167,7 @@ function computeBalances(expenses) {
     if (!result[currency]) result[currency] = {};
     const bucket = result[currency];
 
-    const shares = participantSharesForExpense(expense, participants);
+    const shares = participantSharesForExpense(expense, participants, groupsMap);
     for (const uid of participants) {
       const share = shares[uid] ?? 0;
       bucket[uid] = (bucket[uid] ?? 0) - share;
@@ -250,10 +294,11 @@ function suggestTransfers(balancesByCurrency) {
 /**
  * @param {Iterable<TripExpense>} expenses
  * @param {Iterable<SuggestedTransfer>} [settledTransfers]
+ * @param {Record<string, { parts: number }>} [groupsMap]  keyed by groupId
  * @returns {{ balancesByCurrency: Record<string, Record<string, number>>, suggestedTransfers: SuggestedTransfer[] }}
  */
-function computeSettlement(expenses, settledTransfers = []) {
-  const balances = computeBalances(expenses);
+function computeSettlement(expenses, settledTransfers = [], groupsMap = {}) {
+  const balances = computeBalances(expenses, groupsMap);
   applySettledTransfersToBalances(balances, settledTransfers);
   const suggestedTransfers = suggestTransfers(balances);
   return { balancesByCurrency: balances, suggestedTransfers };
@@ -262,6 +307,7 @@ function computeSettlement(expenses, settledTransfers = []) {
 module.exports = {
   BALANCE_EPSILON,
   roundMoney,
+  resolveUnit,
   tripExpenseFromDoc,
   computeBalances,
   applySettledTransfersToBalances,

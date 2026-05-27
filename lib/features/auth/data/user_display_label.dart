@@ -1,5 +1,29 @@
 import 'package:planerz/features/trips/data/trip_member.dart';
 
+/// Canonical child marker prepended to resolved participant display labels.
+const String tripMemberChildLabelEmoji = '👶';
+
+String _withChildLabelPrefix(String label, {required bool isChild}) {
+  final trimmedLabel = label.trim();
+  if (!isChild || trimmedLabel.isEmpty) {
+    return trimmedLabel;
+  }
+  final canonicalPrefix = '$tripMemberChildLabelEmoji ';
+  if (trimmedLabel.startsWith(canonicalPrefix)) {
+    return trimmedLabel;
+  }
+  return '$canonicalPrefix$trimmedLabel';
+}
+
+String _stripChildLabelPrefix(String label) {
+  final trimmedLabel = label.trim();
+  final canonicalPrefix = '$tripMemberChildLabelEmoji ';
+  if (trimmedLabel.startsWith(canonicalPrefix)) {
+    return trimmedLabel.substring(canonicalPrefix.length).trimLeft();
+  }
+  return trimmedLabel;
+}
+
 /// Local part of [email] for compact labels (text before '@').
 ///
 /// If [email] has no '@', returns the trimmed string as-is.
@@ -32,7 +56,7 @@ String displayLabelFromPhoneNumber(String phoneNumber) {
 
 /// First uppercase character used for avatar fallback.
 String avatarInitialFromDisplayLabel(String label) {
-  final trimmed = label.trim();
+  final trimmed = _stripChildLabelPrefix(label);
   if (trimmed.isEmpty) return '?';
   return trimmed[0].toUpperCase();
 }
@@ -69,11 +93,16 @@ String resolveTripMemberDisplayLabel(
   TripMember member, {
   Map<String, dynamic>? profileData,
 }) {
+  String resolvedLabel;
   if (member.useProfileName && profileData != null) {
     final name = ((profileData['account'] as Map<String, dynamic>?) ?? const {})['name'] as String?;
-    if (name != null && name.trim().isNotEmpty) return name.trim();
+    if (name != null && name.trim().isNotEmpty) {
+      resolvedLabel = name.trim();
+      return _withChildLabelPrefix(resolvedLabel, isChild: member.isChild);
+    }
   }
-  return member.participantName;
+  resolvedLabel = member.participantName;
+  return _withChildLabelPrefix(resolvedLabel, isChild: member.isChild);
 }
 
 /// Display labels for all [members], keyed by TripMember document ID.

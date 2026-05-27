@@ -559,6 +559,7 @@ class TripsRepository {
   Future<void> addTripParticipant({
     required String tripId,
     required String participantName,
+    bool isChild = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -582,6 +583,7 @@ class TripsRepository {
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
       'participantName': name,
+      if (isChild) 'isChild': true,
     });
   }
 
@@ -590,6 +592,7 @@ class TripsRepository {
     required String participantId,
     required String participantName,
     required bool useProfileName,
+    bool isChild = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -644,6 +647,7 @@ class TripsRepository {
     await participantRef.update(<String, dynamic>{
       'participantName': name,
       'useProfileName': useProfileName,
+      'isChild': isChild,
     });
   }
 

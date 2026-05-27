@@ -556,9 +556,38 @@ service cloud.firestore {
             canManageTripParticipants(tripId)
             || (isTripMember(tripId) && resource.data.userId == request.auth.uid)
           )
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participantName', 'useProfileName'])
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['participantName', 'useProfileName', 'isChild'])
           && request.resource.data.participantName is string
-          && request.resource.data.participantName.size() > 0;
+          && request.resource.data.participantName.size() > 0
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isChild'])
+            || (
+              canManageTripParticipants(tripId)
+              && !(resource.data.keys().hasAny(['userId'])
+                && resource.data.userId is string
+                && resource.data.userId.size() > 0)
+            )
+          );
+        allow delete: if canManageTripParticipants(tripId);
+      }
+
+      match /participantGroups/{groupId} {
+        allow read: if isTripMember(tripId);
+        allow create: if canManageTripParticipants(tripId)
+          && request.resource.data.label is string
+          && request.resource.data.label.size() > 0
+          && request.resource.data.memberIds is list
+          && request.resource.data.memberIds.size() >= 2
+          && request.resource.data.parts is number
+          && request.resource.data.parts > 0;
+        allow update: if canManageTripParticipants(tripId)
+          && request.resource.data.label is string
+          && request.resource.data.label.size() > 0
+          && request.resource.data.memberIds is list
+          && request.resource.data.memberIds.size() >= 2
+          && request.resource.data.parts is number
+          && request.resource.data.parts > 0;
         allow delete: if canManageTripParticipants(tripId);
       }
 
@@ -585,6 +614,14 @@ service cloud.firestore {
         match /summary/{summaryId} {
           allow read: if isTripMember(tripId);
           allow write: if false;
+        }
+
+        // Per-post UI lock (expenses frozen for this post only).
+        match /state/{stateDocId} {
+          allow read: if isTripMember(tripId);
+          allow create, update: if isTripMember(tripId)
+            && tripCallerRoleRank(tripId) >= 2;
+          allow delete: if false;
         }
       }
 
@@ -658,7 +695,7 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Expense section state (UI lock + notification channel toggle).
+      // Trip-wide expense settings (notification channel toggle).
       match /expenses_states/{stateDocId} {
         allow read: if isTripMember(tripId);
         allow create, update: if isTripMember(tripId)

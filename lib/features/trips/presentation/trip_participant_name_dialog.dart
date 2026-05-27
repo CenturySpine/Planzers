@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripParticipantNameDialogResult {
   const TripParticipantNameDialogResult({
     required this.name,
     required this.useProfileName,
+    required this.isChild,
   });
 
   final String name;
   final bool useProfileName;
+  final bool isChild;
 }
 
 /// Resolves the display name chosen in [TripParticipantNameDialog].
@@ -32,12 +35,14 @@ class TripParticipantNameDialog extends StatefulWidget {
     super.key,
     required this.initialName,
     required this.initialUseProfileName,
+    required this.initialIsChild,
     required this.isClaimed,
     required this.profileName,
   });
 
   final String initialName;
   final bool initialUseProfileName;
+  final bool initialIsChild;
   final bool isClaimed;
   final String? profileName;
 
@@ -49,6 +54,7 @@ class TripParticipantNameDialog extends StatefulWidget {
 class _TripParticipantNameDialogState extends State<TripParticipantNameDialog> {
   late final TextEditingController _nameController;
   late bool _useProfileName;
+  late bool _isChild;
 
   bool get _profileOptionEnabled =>
       widget.isClaimed && widget.profileName != null;
@@ -65,6 +71,7 @@ class _TripParticipantNameDialogState extends State<TripParticipantNameDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _useProfileName = widget.initialUseProfileName && _profileOptionEnabled;
+    _isChild = widget.initialIsChild && !widget.isClaimed;
     _nameController.addListener(_onNameChanged);
   }
 
@@ -102,6 +109,7 @@ class _TripParticipantNameDialogState extends State<TripParticipantNameDialog> {
       TripParticipantNameDialogResult(
         name: _nameController.text.trim(),
         useProfileName: _useProfileName,
+        isChild: _isChild,
       ),
     );
   }
@@ -205,6 +213,20 @@ class _TripParticipantNameDialogState extends State<TripParticipantNameDialog> {
                   ],
                 ),
               ),
+            if (!widget.isClaimed) ...[
+              const SizedBox(height: 16),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: Text(
+                  tripMemberChildLabelEmoji,
+                  style: theme.textTheme.headlineSmall,
+                ),
+                title: Text(l10n.tripParticipantsIsChildLabel),
+                subtitle: Text(l10n.tripParticipantsIsChildSubtitle),
+                value: _isChild,
+                onChanged: (value) => setState(() => _isChild = value),
+              ),
+            ],
           ],
         ),
       ),

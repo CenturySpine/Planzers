@@ -403,6 +403,10 @@
   "tripParticipantsLikeSaveError": "Unable to save this like right now.",
   "tripParticipantsAddPlannedTravelerTitle": "Add planned traveler",
   "tripParticipantsPlannedTravelerAdded": "Planned traveler added",
+  "tripParticipantsIsChildLabel": "Child",
+  "tripParticipantsIsChildSubtitle": "No user account; billing only through a group.",
+  "tripParticipantsChildCannotBeChef": "A child cannot be the meal chef.",
+  "tripParticipantsChildCannotBeDriver": "A child cannot be the driver.",
   "tripParticipantsEditNameTitle": "Edit name",
   "tripParticipantsEditNameModeCustom": "Custom name",
   "tripParticipantsEditNameModeProfile": "Profile username",
@@ -562,6 +566,8 @@
   "tripOverviewLinkInvalid": "Invalid link (e.g. https://...)",
   "tripOverviewLinkMustStartWithHttp": "Link must start with http(s)://",
   "tripOverviewOpenLocation": "Open location",
+  "openRouteGoogleMaps": "Google Maps",
+  "openRouteWaze": "Waze",
   "tripOverviewUntitled": "Untitled",
   "tripOverviewUnknownDestination": "Unknown destination",
   "tripOverviewLeaveTripTitle": "Leave this trip?",
@@ -719,6 +725,7 @@
   "activitiesPlannedDateHelp": "Planned date",
   "activitiesAddressCardTitle": "Location address",
   "activitiesFromLodgingByCar": "From lodging (car)",
+  "activitiesFromCurrentLocationByCar": "From current location (car)",
   "commonDash": "—",
   "activitiesDone": "Activity done",
   "activitiesPlannedUnset": "Planned on: not set",
@@ -727,6 +734,7 @@
   "activitiesRemovePlannedDate": "Remove planned date",
   "activitiesLinkPreviewAfterSave": "Link preview will be updated after saving.",
   "activitiesRouteCalculating": "Calculating route from trip address.",
+  "activitiesRouteNotCalculatedYet": "Not calculated yet.",
   "activitiesRouteDistance": "Distance: {distance}",
   "@activitiesRouteDistance": {"placeholders": {"distance": {}}},
   "activitiesRouteDuration": "Duration: {duration}",
@@ -856,7 +864,10 @@
   "@expensesDeletePostBody": {"placeholders": {"title": {}}},
   "expensesPostDeleted": "Section deleted",
   "expensesNoOperationInPost": "No operation in this section.",
+  "expensesNoMyOperationInPost": "No operation involving you in this section.",
+  "expensesOperationsFilterHint": "Shows all operations in the section, or only those involving you.",
   "expensesMyTotalSpend": "My total expenses",
+  "expensesMyCost": "My share",
   "expensesTripTotalCost": "Total trip cost",
   "expensesBalancesByCurrency": "Balances (by currency)",
   "expensesAddToSeeBreakdown": "Add expenses to see the breakdown.",
@@ -873,6 +884,9 @@
   "expensesNotificationsEnabledSnackBar": "Expense notifications enabled",
   "expensesNotificationsDisabledSnackBar": "Expense notifications disabled",
   "expensesBalancesRefreshed": "Balances refreshed",
+  "expensesBalancesAdminHintLock": "Locks trip expenses to freeze edits and allow marking reimbursements as paid.",
+  "expensesBalancesAdminHintNotifications": "Turns notifications on or off when reimbursements change.",
+  "expensesBalancesAdminHintRefresh": "Recalculates balances and suggested reimbursements for this section.",
   "expensesSuggestedReimbursements": "Suggested reimbursements",
   "expensesSuggestedReimbursementsHint": "Minimum number of transfers to balance accounts (per currency).",
   "expensesNoCalculationYet": "No calculation yet.",
@@ -1132,5 +1146,41 @@
   "publicProfileTitle": "Profile",
   "profileNameDialogTitle": "Choose your display name",
   "profileNameDialogFieldLabel": "Name or nickname",
-  "profileNameRequiredMessage": "A display name is required to use Planerz."
+  "profileNameRequiredMessage": "A display name is required to use Planerz.",
+
+  "participantGroupsTabLabel": "Groups",
+  "participantGroupsTabHint": "A group combines several travelers into one billing unit for expenses. Shares are the group's weight in the split: by default, 1 share per adult and 0.5 per child, but an administrator can freely change this total.",
+  "participantGroupsEmpty": "No billing groups.",
+  "participantGroupsAddTitle": "Create group",
+  "participantGroupsEditTitle": "Edit group",
+  "participantGroupsLabelField": "Label (e.g. A&B, Martin Family)",
+  "participantGroupsLabelRequired": "Label is required.",
+  "participantGroupsMembersField": "Group members",
+  "participantGroupsMembersMinTwo": "At least 2 members are required.",
+  "participantGroupsPartsField": "Shares",
+  "participantGroupsPartsInvalid": "Must be a number greater than 0.",
+  "participantGroupsAlreadyInGroup": "{label} already belongs to group \"{groupLabel}\".",
+  "@participantGroupsAlreadyInGroup": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "groupLabel": { "type": "String" }
+    }
+  },
+  "participantGroupsUsedInExpenses": "This group is used in expenses and cannot be edited or deleted.",
+  "participantGroupsSaved": "Group saved.",
+  "participantGroupsDeleted": "Group deleted.",
+  "participantGroupsDeleteTitle": "Delete this group?",
+  "participantGroupsDeleteBody": "Group \"{label}\" will be deleted. Existing expenses are not affected.",
+  "@participantGroupsDeleteBody": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "participantGroupsMemberCount": "{count} members · {parts} shares",
+  "@participantGroupsMemberCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "parts": { "type": "String" }
+    }
+  }
 }
