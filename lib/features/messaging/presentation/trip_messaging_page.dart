@@ -589,8 +589,8 @@ class _TripThreadMessagingPageState
               ),
               Positioned(
                 bottom: 0,
-                left: isSentByMe ? null : 0,
-                right: isSentByMe ? 0 : null,
+                left: isSentByMe ? null : 8,
+                right: isSentByMe ? 8 : null,
                 child: MessageReactionsBadge(reactions: reactions),
               ),
             ],
