@@ -249,104 +249,56 @@ class _MessageOptionsSheet extends StatelessWidget {
   }
 }
 
-/// Emoji reaction pills overlaid on a chat bubble via a [Stack].
-///
-/// Must be placed inside a [Stack] with [Clip.none]; positioning is the
-/// caller's responsibility.
-class ReactionsRow extends StatelessWidget {
-  final Message message;
-  final String? myUid;
-  final Future<void> Function(String messageId, String emoji) onSetReaction;
-  final Future<void> Function(String messageId) onRemoveReaction;
-
-  const ReactionsRow({
+/// Single combined reaction badge shown below a message bubble (pre-migration style).
+class MessageReactionsBadge extends StatelessWidget {
+  const MessageReactionsBadge({
     super.key,
-    required this.message,
-    required this.myUid,
-    required this.onSetReaction,
-    required this.onRemoveReaction,
+    required this.reactions,
   });
+
+  final Map<String, List<String>> reactions;
 
   @override
   Widget build(BuildContext context) {
-    final reactions = message.reactions;
-    if (reactions == null || reactions.isEmpty) return const SizedBox.shrink();
+    if (reactions.isEmpty) return const SizedBox.shrink();
 
+    final emojis = _sortedReactionEmojis(reactions);
+    final totalCount = reactions.values.fold<int>(0, (sum, uids) => sum + uids.length);
     final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final emojisLabel = emojis.join(' ');
+    final countLabel = totalCount > 1 ? ' $totalCount' : '';
 
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        for (final entry in reactions.entries)
-          _ReactionPill(
-            emoji: entry.key,
-            count: entry.value.length,
-            isMine: myUid != null && entry.value.contains(myUid),
-            scheme: scheme,
-            textTheme: textTheme,
-            onTap: () {
-              if (myUid != null && entry.value.contains(myUid)) {
-                unawaited(onRemoveReaction(message.id));
-              } else {
-                unawaited(onSetReaction(message.id, entry.key));
-              }
-            },
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
-      ],
-    );
-  }
-}
-
-class _ReactionPill extends StatelessWidget {
-  final String emoji;
-  final int count;
-  final bool isMine;
-  final ColorScheme scheme;
-  final TextTheme textTheme;
-  final VoidCallback onTap;
-
-  const _ReactionPill({
-    required this.emoji,
-    required this.count,
-    required this.isMine,
-    required this.scheme,
-    required this.textTheme,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isMine ? scheme.primaryContainer : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isMine ? scheme.primary : scheme.outlineVariant,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            if (count > 1) ...[
-              const SizedBox(width: 4),
-              Text(
-                '$count',
-                style: textTheme.labelSmall?.copyWith(
-                  color: isMine ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
-                ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(
+          '$emojisLabel$countLabel',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ],
         ),
       ),
     );
   }
+}
+
+/// Emojis sorted by popularity (same order as pre-migration chat).
+List<String> _sortedReactionEmojis(Map<String, List<String>> reactions) {
+  final entries = reactions.entries.toList()
+    ..sort((a, b) => b.value.length.compareTo(a.value.length));
+  return entries.map((e) => e.key).toList();
 }
 
 /// Avatar widget for the chat list.

@@ -302,7 +302,40 @@ class _TripThreadMessagingPageState
         final isLast = groupStatus?.isLast ?? true;
         final showAvatar = !isSentByMe && isLast && isRemoved != true;
         final showUsername = !isSentByMe && isFirst && isRemoved != true;
-        return ChatMessage(
+        final reactions = message.reactions;
+        final showReactions = isRemoved != true &&
+            reactions != null &&
+            reactions.isNotEmpty;
+
+        final messages = chatController.messages;
+        final previousHasReactions = index > 0 &&
+            _messageHasReactions(messages[index - 1]);
+
+        // Pill sits in the bubble's bottom padding (overlap without layout overflow).
+        // Negative [Positioned.bottom] draws outside the Stack and gets clipped by
+        // the next list item — same fix as pre-migration extraTopCardMargin.
+        final Widget bubbleChild;
+        if (showReactions) {
+          bubbleChild = Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: child,
+              ),
+              Positioned(
+                bottom: 0,
+                left: isSentByMe ? null : 0,
+                right: isSentByMe ? 0 : null,
+                child: MessageReactionsBadge(reactions: reactions),
+              ),
+            ],
+          );
+        } else {
+          bubbleChild = child;
+        }
+
+        final chatMessage = ChatMessage(
           message: message,
           index: index,
           animation: animation,
@@ -328,7 +361,13 @@ class _TripThreadMessagingPageState
                   ),
                 )
               : null,
-          child: child,
+          child: bubbleChild,
+        );
+
+        if (!previousHasReactions) return chatMessage;
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: chatMessage,
         );
       },
       chatAnimatedListBuilder: (ctx, itemBuilder) {
@@ -409,6 +448,11 @@ class _TripThreadMessagingPageState
       ),
     );
   }
+}
+
+bool _messageHasReactions(Message message) {
+  final reactions = message.reactions;
+  return reactions != null && reactions.isNotEmpty;
 }
 
 // ── Bubble corner radius ──────────────────────────────────────────────────────
