@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
@@ -19,6 +20,7 @@ import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/features/messaging/presentation/chat_builders.dart';
+import 'package:planerz/features/messaging/presentation/chat_image_viewer.dart';
 import 'package:planerz/features/messaging/presentation/chat_message_text.dart';
 import 'package:planerz/features/messaging/presentation/reply_widgets.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
@@ -401,8 +403,16 @@ class _TripThreadMessagingPageState
         const avatarSlot = 40.0;
         const sideMargin = 48.0;
         final w = MediaQuery.sizeOf(ctx).width;
-        final maxWidth =
+        final bubbleMaxWidth =
             isSentByMe ? w - sideMargin : w - avatarSlot - sideMargin;
+        final imageMaxWidth = math.min(
+          bubbleMaxWidth,
+          chatImageBubbleMaxExtent,
+        );
+        final imageConstraints = BoxConstraints(
+          maxWidth: imageMaxWidth,
+          maxHeight: chatImageBubbleMaxExtent,
+        );
 
         Widget? replyTopWidget;
         final replyId = message.replyToMessageId;
@@ -445,7 +455,7 @@ class _TripThreadMessagingPageState
             return FlyerChatImageMessage(
               message: message,
               index: index,
-              constraints: BoxConstraints(maxWidth: maxWidth),
+              constraints: imageConstraints,
               borderRadius: radius,
               topWidget: replyTopWidget,
               placeholderColor: highlightedId == message.id
@@ -587,6 +597,17 @@ class _TripThreadMessagingPageState
               resolveUser: resolveUser,
               builders: _builders!,
               onAttachmentTap: _isSendingImage ? null : handleAttachmentTap,
+              onMessageTap: (ctx, message, {required index, required details}) {
+                if (message is! ImageMessage) return;
+                unawaited(
+                  showChatImageViewer(
+                    context: ctx,
+                    imageUrl: message.source,
+                    crossCache: _crossCache,
+                    caption: message.text,
+                  ),
+                );
+              },
               onMessageSend: (text) {
                 final messenger = ScaffoldMessenger.maybeOf(context);
                 final replyId = _replyingTo?.id;
