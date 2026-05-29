@@ -274,13 +274,22 @@ class TripMessagesRepository {
     await _messagesCol(cleanTripId).add(payload);
   }
 
+  /// Pre-allocates a Firestore message document id for optimistic UI.
+  String newImageMessageId(String tripId) =>
+      _messagesCol(tripId.trim()).doc().id;
+
+  Future<(double, double)?> decodeImageDimensions(Uint8List bytes) =>
+      _decodeImageDimensions(bytes);
+
   Future<void> sendImageMessage({
     required String tripId,
+    required String messageId,
     required Uint8List bytes,
     required String fileExt,
     TripMessageThreadScope scope = const TripMessageThreadScope.main(),
     String? replyToMessageId,
     String? caption,
+    void Function(double progress)? onUploadProgress,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -307,11 +316,16 @@ class TripMessagesRepository {
       await _assertIsTripAdmin(cleanTripId, user.uid);
     }
 
+    final cleanMessageId = messageId.trim();
+    if (cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
     final dimensions = await _decodeImageDimensions(bytes);
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
-    final messageRef = _messagesCol(cleanTripId).doc();
-    final objectPath = 'trips/$cleanTripId/messages/${messageRef.id}.$ext';
+    final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
+    final objectPath = 'trips/$cleanTripId/messages/$cleanMessageId.$ext';
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',
@@ -321,10 +335,19 @@ class TripMessagesRepository {
     };
 
     final objectRef = storage.ref(objectPath);
-    await objectRef.putData(
+    final uploadTask = objectRef.putData(
       bytes,
       SettableMetadata(contentType: contentType),
     );
+    if (onUploadProgress != null) {
+      uploadTask.snapshotEvents.listen((event) {
+        final total = event.totalBytes;
+        if (total > 0) {
+          onUploadProgress(event.bytesTransferred / total);
+        }
+      });
+    }
+    await uploadTask;
     final downloadUrl = await objectRef.getDownloadURL();
 
     final payload = <String, dynamic>{

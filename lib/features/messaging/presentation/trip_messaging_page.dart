@@ -77,7 +77,6 @@ class _TripThreadMessagingPageState
   String? _selectedMessageId;
   final _highlightedMessageId = ValueNotifier<String?>(null);
   final _crossCache = CrossCache();
-  bool _isSendingImage = false;
 
   @override
   void initState() {
@@ -346,7 +345,9 @@ class _TripThreadMessagingPageState
     }
 
     Future<void> handleAttachmentTap() async {
-      if (_isSendingImage) return;
+      final uid = myUid;
+      if (uid == null) return;
+
       final picker = ImagePicker();
       final picked = await picker.pickImage(
         source: ImageSource.gallery,
@@ -354,12 +355,13 @@ class _TripThreadMessagingPageState
         maxHeight: 4096,
         imageQuality: 92,
       );
-      if (picked == null || !mounted) return;
+      if (picked == null || !context.mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
 
       final bytes = await picked.readAsBytes();
-      if (!mounted) return;
+      if (!context.mounted) return;
       if (bytes.length > TripMessagesRepository.maxImageBytes) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        messenger?.showSnackBar(
           SnackBar(content: Text(l10n.chatImageTooLarge)),
         );
         return;
@@ -370,30 +372,43 @@ class _TripThreadMessagingPageState
       final replyId = _replyingTo?.id;
       _cancelReply();
 
-      setState(() {
-        _isSendingImage = true;
-        _builders = null;
-      });
-      final messenger = ScaffoldMessenger.maybeOf(context);
+      final messageId = repo.newImageMessageId(trip.id);
+      final dimensions = await repo.decodeImageDimensions(bytes);
+      if (!context.mounted) return;
+
+      final optimisticMessage = ImageMessage(
+        id: messageId,
+        authorId: uid,
+        createdAt: DateTime.now().toUtc(),
+        source: messageId,
+        status: MessageStatus.sending,
+        width: dimensions?.$1,
+        height: dimensions?.$2,
+        replyToMessageId: replyId,
+      );
+      await chatController.insertOptimisticImage(
+        message: optimisticMessage,
+        previewBytes: bytes,
+      );
+      if (!context.mounted) return;
+
       try {
         await repo.sendImageMessage(
           tripId: trip.id,
+          messageId: messageId,
           bytes: bytes,
           fileExt: ext,
           scope: scope,
           replyToMessageId: replyId,
+          onUploadProgress: (progress) {
+            chatController.updateUploadProgress(messageId, progress);
+          },
         );
       } catch (e) {
+        await chatController.markOptimisticImageFailed(messageId);
         messenger?.showSnackBar(
           SnackBar(content: Text(l10n.chatSendImpossible(e.toString()))),
         );
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isSendingImage = false;
-            _builders = null;
-          });
-        }
       }
     }
 
@@ -544,12 +559,18 @@ class _TripThreadMessagingPageState
           hasTopWidget: replyTopWidget != null,
         );
 
+        final previewBytes = chatController.optimisticPreviewBytes(message.id);
+        final localPreview = previewBytes != null
+            ? MemoryImage(previewBytes)
+            : null;
+
         return ValueListenableBuilder<String?>(
           valueListenable: _highlightedMessageId,
           builder: (ctx2, highlightedId, _) {
             return FlyerChatImageMessage(
               message: message,
               index: index,
+              customImageProvider: localPreview,
               constraints: imageConstraints,
               borderRadius: radius,
               topWidget: replyTopWidget,
@@ -697,17 +718,8 @@ class _TripThreadMessagingPageState
           maxLines: 5,
           minLines: 1,
           textCapitalization: TextCapitalization.sentences,
-          attachmentEnabled: !_isSendingImage,
-          attachmentIcon: _isSendingImage
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Padding(
-                    padding: EdgeInsets.all(2),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : const Icon(Icons.image_outlined),
+          attachmentEnabled: true,
+          attachmentIcon: const Icon(Icons.image_outlined),
           topWidget: replyTarget != null
               ? ReplyComposerBanner(
                   authorId: replyTarget.authorId,
@@ -760,7 +772,7 @@ class _TripThreadMessagingPageState
               crossCache: _crossCache,
               resolveUser: resolveUser,
               builders: _builders!,
-              onAttachmentTap: _isSendingImage ? null : handleAttachmentTap,
+              onAttachmentTap: handleAttachmentTap,
               onMessageTap: (ctx, message, {required index, required details}) {
                 if (_selectedMessageId != null) {
                   setState(() {
@@ -771,10 +783,15 @@ class _TripThreadMessagingPageState
                   return;
                 }
                 if (message is! ImageMessage) return;
+                final previewBytes =
+                    chatController.optimisticPreviewBytes(message.id);
                 unawaited(
                   showChatImageViewer(
                     context: ctx,
-                    imageUrl: message.source,
+                    imageUrl: previewBytes == null ? message.source : null,
+                    imageProvider: previewBytes != null
+                        ? MemoryImage(previewBytes)
+                        : null,
                     crossCache: _crossCache,
                     caption: message.text,
                   ),

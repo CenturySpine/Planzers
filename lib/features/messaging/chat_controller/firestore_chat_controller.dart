@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,9 @@ final firestoreChatControllerProvider = Provider.autoDispose
 ///   (older paginated + recent) and calls [setMessages], which lets the
 ///   [ChatAnimatedList] run a diff and animate only what changed.
 /// - [loadOlderPage] fetches older messages and prepends them to the list.
-class FirestoreChatController with ScrollToMessageMixin implements ChatController {
+class FirestoreChatController
+    with ScrollToMessageMixin, UploadProgressMixin
+    implements ChatController {
   final InMemoryChatController _inner;
   StreamSubscription<TripChatData>? _sub;
   bool _initialized = false;
@@ -47,6 +50,10 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
 
   // Older messages fetched via pagination (messageId → (message, reactions))
   final _olderById = <String, (TripMessage, List<TripMessageReaction>)>{};
+
+  /// Outgoing image messages shown before Firestore confirms them.
+  final _optimisticById = <String, ImageMessage>{};
+  final _optimisticPreviewBytes = <String, Uint8List>{};
 
   FirestoreChatController({required Stream<TripChatData> stream})
       : _inner = InMemoryChatController() {
@@ -85,6 +92,41 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
     disposeScrollMethods();
     _sub?.cancel();
     _inner.dispose();
+  }
+
+  @override
+  Stream<double> getUploadProgress(String id) =>
+      _inner.getUploadProgress(id);
+
+  @override
+  void updateUploadProgress(String id, double progress) =>
+      _inner.updateUploadProgress(id, progress);
+
+  @override
+  void clearUploadProgress(String id) => _inner.clearUploadProgress(id);
+
+  Uint8List? optimisticPreviewBytes(String messageId) =>
+      _optimisticPreviewBytes[messageId];
+
+  /// Inserts a local image bubble while upload and Firestore write run.
+  Future<void> insertOptimisticImage({
+    required ImageMessage message,
+    required Uint8List previewBytes,
+  }) async {
+    _optimisticById[message.id] = message;
+    _optimisticPreviewBytes[message.id] = previewBytes;
+    _rebuildMessages();
+  }
+
+  Future<void> markOptimisticImageFailed(String messageId) async {
+    final current = _optimisticById[messageId];
+    if (current == null) return;
+    _optimisticById[messageId] = current.copyWith(
+      status: MessageStatus.error,
+      failedAt: DateTime.now().toUtc(),
+    );
+    clearUploadProgress(messageId);
+    _rebuildMessages();
   }
 
   // ── Public pagination state ────────────────────────────────────────────
@@ -148,8 +190,22 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
       _olderById.remove(m.id);
     }
 
+    _dropConfirmedOptimisticMessages();
     _rebuildMessages();
     _initialized = true;
+  }
+
+  void _dropConfirmedOptimisticMessages() {
+    final confirmedIds = <String>{
+      for (final m in _recentMessages) m.id,
+      ..._olderById.keys,
+    };
+    for (final id in confirmedIds) {
+      if (_optimisticById.remove(id) != null) {
+        _optimisticPreviewBytes.remove(id);
+        clearUploadProgress(id);
+      }
+    }
   }
 
   /// Updates reactions in the in-memory list immediately (before Firestore echoes).
@@ -173,17 +229,33 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
     await _inner.updateMessage(old, updated);
   }
 
-  void _rebuildMessages() {
-    // Merge: older (sorted by createdAt) + recent (sorted by createdAt)
-    // Recent messages appear after all older ones. IDs are unique.
+  List<Message> _buildMappedMessages() {
     final olderSorted = _olderById.values.toList()
       ..sort((a, b) => a.$1.createdAt.compareTo(b.$1.createdAt));
 
-    final allMapped = <Message>[
+    final firestoreMessages = <Message>[
       for (final entry in olderSorted) mapTripMessage(entry.$1, entry.$2),
       for (final m in _recentMessages)
         mapTripMessage(m, _recentReactions[m.id] ?? []),
     ];
+
+    final firestoreIds = firestoreMessages.map((m) => m.id).toSet();
+    final merged = List<Message>.from(firestoreMessages);
+    for (final optimistic in _optimisticById.values) {
+      if (!firestoreIds.contains(optimistic.id)) {
+        merged.add(optimistic);
+      }
+    }
+    merged.sort((a, b) {
+      final aTime = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return aTime.compareTo(bTime);
+    });
+    return merged;
+  }
+
+  void _rebuildMessages() {
+    final allMapped = _buildMappedMessages();
 
     final previous = _inner.messages;
     if (previous.length == allMapped.length &&

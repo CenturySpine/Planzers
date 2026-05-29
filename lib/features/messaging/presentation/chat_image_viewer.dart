@@ -4,21 +4,23 @@ import 'package:flutter/material.dart';
 /// Maximum width/height for image thumbnails in the trip chat list.
 const double chatImageBubbleMaxExtent = 280;
 
-/// Opens a full-screen viewer with pinch-to-zoom for a chat image URL.
+/// Opens a full-screen viewer with pinch-to-zoom for a chat image.
 Future<void> showChatImageViewer({
   required BuildContext context,
-  required String imageUrl,
   required CrossCache crossCache,
+  String? imageUrl,
+  ImageProvider? imageProvider,
   String? caption,
 }) {
-  final cleanUrl = imageUrl.trim();
-  if (cleanUrl.isEmpty) return Future.value();
+  final cleanUrl = imageUrl?.trim() ?? '';
+  if (cleanUrl.isEmpty && imageProvider == null) return Future.value();
 
   return Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       fullscreenDialog: true,
       builder: (ctx) => _ChatImageViewerPage(
-        imageUrl: cleanUrl,
+        imageUrl: cleanUrl.isEmpty ? null : cleanUrl,
+        imageProvider: imageProvider,
         crossCache: crossCache,
         caption: caption?.trim(),
       ),
@@ -28,12 +30,14 @@ Future<void> showChatImageViewer({
 
 class _ChatImageViewerPage extends StatelessWidget {
   const _ChatImageViewerPage({
-    required this.imageUrl,
     required this.crossCache,
+    this.imageUrl,
+    this.imageProvider,
     this.caption,
   });
 
-  final String imageUrl;
+  final String? imageUrl;
+  final ImageProvider? imageProvider;
   final CrossCache crossCache;
   final String? caption;
 
@@ -57,7 +61,8 @@ class _ChatImageViewerPage extends StatelessWidget {
                 maxScale: 4,
                 child: Center(
                   child: Image(
-                    image: CachedNetworkImage(imageUrl, crossCache),
+                    image: imageProvider ??
+                        CachedNetworkImage(imageUrl!, crossCache),
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, progress) {
                       if (progress == null) return child;
