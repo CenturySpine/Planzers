@@ -432,6 +432,57 @@ service cloud.firestore {
         );
     }
 
+    function tripMessageThreadFieldsUnchanged() {
+      return request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && messageThreadType(request.resource.data) == messageThreadType(resource.data)
+        && messageVisibilityType(request.resource.data) == messageVisibilityType(resource.data)
+        && (
+          (!resource.data.keys().hasAny(['threadObjectType']) && !request.resource.data.keys().hasAny(['threadObjectType']))
+          || request.resource.data.threadObjectType == resource.data.threadObjectType
+        )
+        && (
+          (!resource.data.keys().hasAny(['threadObjectId']) && !request.resource.data.keys().hasAny(['threadObjectId']))
+          || request.resource.data.threadObjectId == resource.data.threadObjectId
+        );
+    }
+
+    function tripMessageOptionalTextUnchanged() {
+      return (!resource.data.keys().hasAny(['text']) && !request.resource.data.keys().hasAny(['text']))
+        || request.resource.data.text == resource.data.text;
+    }
+
+    function tripMessageImageFieldsUnchanged() {
+      return !resource.data.keys().hasAny(['type'])
+        || resource.data.type != 'image'
+        || (
+          request.resource.data.type == resource.data.type
+          && request.resource.data.imageUrl == resource.data.imageUrl
+          && request.resource.data.imageStoragePath == resource.data.imageStoragePath
+          && (
+            (!resource.data.keys().hasAny(['imageWidth']) && !request.resource.data.keys().hasAny(['imageWidth']))
+            || request.resource.data.imageWidth == resource.data.imageWidth
+          )
+          && (
+            (!resource.data.keys().hasAny(['imageHeight']) && !request.resource.data.keys().hasAny(['imageHeight']))
+            || request.resource.data.imageHeight == resource.data.imageHeight
+          )
+        );
+    }
+
+    function tripMessageReactionUpdateOnly() {
+      return tripMessageThreadFieldsUnchanged()
+        && tripMessageOptionalTextUnchanged()
+        && tripMessageImageFieldsUnchanged()
+        && request.resource.data.reactionsByUser is map
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'reactionsByUser',
+            'reactionsByUser.' + request.auth.uid,
+            'updatedAt',
+          ]);
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == userId;
@@ -871,28 +922,7 @@ service cloud.firestore {
                   'updatedAt',
                 ])
             )
-            || (
-              request.resource.data.authorId == resource.data.authorId
-              && request.resource.data.createdAt == resource.data.createdAt
-              && messageThreadType(request.resource.data) == messageThreadType(resource.data)
-              && messageVisibilityType(request.resource.data) == messageVisibilityType(resource.data)
-              && (
-                (!resource.data.keys().hasAny(['threadObjectType']) && !request.resource.data.keys().hasAny(['threadObjectType']))
-                || request.resource.data.threadObjectType == resource.data.threadObjectType
-              )
-              && (
-                (!resource.data.keys().hasAny(['threadObjectId']) && !request.resource.data.keys().hasAny(['threadObjectId']))
-                || request.resource.data.threadObjectId == resource.data.threadObjectId
-              )
-              && request.resource.data.text == resource.data.text
-              && request.resource.data.reactionsByUser is map
-              && request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly([
-                  'reactionsByUser',
-                  'reactionsByUser.' + request.auth.uid,
-                  'updatedAt',
-                ])
-            )
+            || tripMessageReactionUpdateOnly()
           );
         allow delete: if canReadTripMessage(tripId, resource.data)
           && resource.data.authorId == request.auth.uid;
