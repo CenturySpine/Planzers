@@ -4500,6 +4500,18 @@ abstract class AppLocalizations {
   /// **'Répondre'**
   String get chatReply;
 
+  /// No description provided for @chatQuotedImage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo'**
+  String get chatQuotedImage;
+
+  /// No description provided for @chatImageTooLarge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Image trop volumineuse (10 Mo max.)'**
+  String get chatImageTooLarge;
+
   /// No description provided for @appCopyright.
   ///
   /// In fr, this message translates to:

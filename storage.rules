@@ -35,6 +35,15 @@ service firebase.storage {
         && tripDoc(tripId).data.ownerId == request.auth.uid;
     }
 
+    // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
+    match /trips/{tripId}/messages/{fileName} {
+      allow read: if isTripMember(tripId);
+      allow write: if isTripMember(tripId)
+        && request.resource != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
     match /trips/{tripId}/{allPaths=**} {

@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
+  blurhash_dart:
+    dependency: transitive
+    description:
+      name: blurhash_dart
+      sha256: "43955b6c2e30a7d440028d1af0fa185852f3534b795cc6eb81fbf397b464409f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -186,7 +194,7 @@ packages:
     source: hosted
     version: "1.15.0"
   cross_cache:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: cross_cache
       sha256: "4983a16603cc99b0a14de6a772fa8ee4533411f46f3c423f1386fea7566049c5"
@@ -557,6 +565,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flyer_chat_image_message:
+    dependency: "direct main"
+    description:
+      name: flyer_chat_image_message
+      sha256: "04730c9373c9c7315ba0e1a360c67ac5f6c7ec8a700ffe2d2dc00e29b7f8ff90"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
   flyer_chat_text_message:
     dependency: "direct main"
     description:
@@ -1362,6 +1378,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.17"
+  thumbhash:
+    dependency: transitive
+    description:
+      name: thumbhash
+      sha256: "5f6d31c5279ca0b5caa81ec10aae8dcaab098d82cb699ea66ada4ed09c794a37"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0+1"
   timezone:
     dependency: transitive
     description:

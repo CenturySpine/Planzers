@@ -958,6 +958,8 @@
   "chatGoBottom": "Aller en bas",
   "chatEditMessageTitle": "Modifier le message",
   "chatReply": "Répondre",
+  "chatQuotedImage": "Photo",
+  "chatImageTooLarge": "Image trop volumineuse (10 Mo max.)",
   "appCopyright": "© 2026 Bruno Chappe",
   "tripsMemberCount": "{count} membre(s)",
   "@tripsMemberCount": {"placeholders": {"count": {}}},

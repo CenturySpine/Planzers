@@ -1,12 +1,15 @@
 import 'dart:async';
 
+import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:flyer_chat_image_message/flyer_chat_image_message.dart';
 import 'package:flyer_chat_text_message/flyer_chat_text_message.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
@@ -65,6 +68,8 @@ class _TripThreadMessagingPageState
   // Reply state — nulled out whenever _replyingTo changes to force a Builders rebuild.
   Message? _replyingTo;
   final _highlightedMessageId = ValueNotifier<String?>(null);
+  final _crossCache = CrossCache();
+  bool _isSendingImage = false;
 
   @override
   void initState() {
@@ -74,6 +79,7 @@ class _TripThreadMessagingPageState
 
   @override
   void dispose() {
+    _crossCache.dispose();
     _highlightedMessageId.dispose();
     final tripId = _presenceTripId;
     if (tripId != null && tripId.isNotEmpty) {
@@ -219,6 +225,68 @@ class _TripThreadMessagingPageState
       );
     }
 
+    String replyPreviewText(Message message) {
+      return switch (message) {
+        TextMessage(:final text) => text,
+        ImageMessage(:final text) when text != null && text.trim().isNotEmpty =>
+          text.trim(),
+        ImageMessage() => l10n.chatQuotedImage,
+        _ => '',
+      };
+    }
+
+    Future<void> handleAttachmentTap() async {
+      if (_isSendingImage) return;
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 92,
+      );
+      if (picked == null || !mounted) return;
+
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      if (bytes.length > TripMessagesRepository.maxImageBytes) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(l10n.chatImageTooLarge)),
+        );
+        return;
+      }
+
+      final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(picked.path);
+      final ext = extMatch?.group(1)?.toLowerCase() ?? 'jpg';
+      final replyId = _replyingTo?.id;
+      _cancelReply();
+
+      setState(() {
+        _isSendingImage = true;
+        _builders = null;
+      });
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      try {
+        await repo.sendImageMessage(
+          tripId: trip.id,
+          bytes: bytes,
+          fileExt: ext,
+          scope: scope,
+          replyToMessageId: replyId,
+        );
+      } catch (e) {
+        messenger?.showSnackBar(
+          SnackBar(content: Text(l10n.chatSendImpossible(e.toString()))),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSendingImage = false;
+            _builders = null;
+          });
+        }
+      }
+    }
+
     void handleMessageOptions(BuildContext ctx, Message message) {
       unawaited(
         showMessageOptions(
@@ -266,11 +334,10 @@ class _TripThreadMessagingPageState
               break;
             }
           }
-          if (original is TextMessage) {
-            final orig = original;
+          if (original != null) {
             replyTopWidget = QuotedMessageSnippet(
-              authorId: orig.authorId,
-              text: orig.text,
+              authorId: original.authorId,
+              text: replyPreviewText(original),
               tripId: trip.id,
               onTap: () {
                 _highlightedMessageId.value = replyId;
@@ -324,6 +391,65 @@ class _TripThreadMessagingPageState
                   ? textTheme.labelSmall?.copyWith(
                       color: scheme.onPrimaryContainer.withValues(alpha: 0.6),
                     )
+                  : null,
+            );
+          },
+        );
+      },
+      imageMessageBuilder: (ctx, message, index,
+          {required isSentByMe, groupStatus}) {
+        const avatarSlot = 40.0;
+        const sideMargin = 48.0;
+        final w = MediaQuery.sizeOf(ctx).width;
+        final maxWidth =
+            isSentByMe ? w - sideMargin : w - avatarSlot - sideMargin;
+
+        Widget? replyTopWidget;
+        final replyId = message.replyToMessageId;
+        if (replyId != null) {
+          Message? original;
+          for (final m in chatController.messages) {
+            if (m.id == replyId) {
+              original = m;
+              break;
+            }
+          }
+          if (original != null) {
+            replyTopWidget = QuotedMessageSnippet(
+              authorId: original.authorId,
+              text: replyPreviewText(original),
+              tripId: trip.id,
+              onTap: () {
+                _highlightedMessageId.value = replyId;
+                unawaited(
+                  chatController.scrollToMessage(replyId, alignment: 0.3),
+                );
+                Future.delayed(const Duration(milliseconds: 1200), () {
+                  _highlightedMessageId.value = null;
+                });
+              },
+            );
+          }
+        }
+
+        final radius = _groupedBubbleRadius(
+          isSentByMe: isSentByMe,
+          isFirst: groupStatus?.isFirst ?? true,
+          isLast: groupStatus?.isLast ?? true,
+          hasTopWidget: replyTopWidget != null,
+        );
+
+        return ValueListenableBuilder<String?>(
+          valueListenable: _highlightedMessageId,
+          builder: (ctx2, highlightedId, _) {
+            return FlyerChatImageMessage(
+              message: message,
+              index: index,
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              borderRadius: radius,
+              topWidget: replyTopWidget,
+              placeholderColor: highlightedId == message.id
+                  ? Theme.of(ctx2).colorScheme.tertiaryContainer
                   : null,
             );
           },
@@ -420,10 +546,20 @@ class _TripThreadMessagingPageState
           maxLines: 5,
           minLines: 1,
           textCapitalization: TextCapitalization.sentences,
-          topWidget: replyTarget is TextMessage
+          attachmentIcon: _isSendingImage
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Padding(
+                    padding: EdgeInsets.all(2),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : const Icon(Icons.image_outlined),
+          topWidget: replyTarget != null
               ? ReplyComposerBanner(
                   authorId: replyTarget.authorId,
-                  text: replyTarget.text,
+                  text: replyPreviewText(replyTarget),
                   tripId: trip.id,
                   onCancel: _cancelReply,
                 )
@@ -447,8 +583,10 @@ class _TripThreadMessagingPageState
             child: Chat(
               currentUserId: myUid ?? '',
               chatController: chatController,
+              crossCache: _crossCache,
               resolveUser: resolveUser,
               builders: _builders!,
+              onAttachmentTap: _isSendingImage ? null : handleAttachmentTap,
               onMessageSend: (text) {
                 final messenger = ScaffoldMessenger.maybeOf(context);
                 final replyId = _replyingTo?.id;

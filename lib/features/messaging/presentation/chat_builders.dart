@@ -24,7 +24,7 @@ Future<void> showMessageOptions(
   required Future<void> Function(String messageId) onDelete,
   required void Function(Message message) onReply,
 }) async {
-  if (message is! TextMessage) return;
+  if (message is! TextMessage && message is! ImageMessage) return;
   final l10n = AppLocalizations.of(context)!;
   await showModalBottomSheet<void>(
     context: context,
@@ -62,7 +62,7 @@ class _MessageOptionsSheet extends StatelessWidget {
   });
 
   final BuildContext outerContext;
-  final TextMessage message;
+  final Message message;
   final bool isMine;
   final String? myUid;
   final AppLocalizations l10n;
@@ -164,29 +164,32 @@ class _MessageOptionsSheet extends StatelessWidget {
                 onReply(message);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.copy_outlined),
-              title: Text(l10n.chatCopy),
-              onTap: () {
-                Navigator.pop(sheetCtx);
-                Clipboard.setData(ClipboardData(text: message.text));
-                if (outerContext.mounted) {
-                  ScaffoldMessenger.of(outerContext).showSnackBar(
-                    SnackBar(content: Text(l10n.chatCopied)),
-                  );
-                }
-              },
-            ),
-            if (isMine)
+            if (message is TextMessage)
+              ListTile(
+                leading: const Icon(Icons.copy_outlined),
+                title: Text(l10n.chatCopy),
+                onTap: () {
+                  final textMessage = message as TextMessage;
+                  Navigator.pop(sheetCtx);
+                  Clipboard.setData(ClipboardData(text: textMessage.text));
+                  if (outerContext.mounted) {
+                    ScaffoldMessenger.of(outerContext).showSnackBar(
+                      SnackBar(content: Text(l10n.chatCopied)),
+                    );
+                  }
+                },
+              ),
+            if (isMine && message is TextMessage)
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
                 title: Text(l10n.chatEditMessageTitle),
                 onTap: () async {
                   Navigator.pop(sheetCtx);
+                  final textMessage = message as TextMessage;
                   final newText = await showDialog<String>(
                     context: outerContext,
                     builder: (ctx) => EditTextDialog(
-                      initialText: message.text,
+                      initialText: textMessage.text,
                       title: l10n.chatEditMessageTitle,
                       maxLength: TripMessagesRepository.maxTextLength,
                     ),
