@@ -134,18 +134,37 @@ function tripDisplayTitle(data) {
   return String(data?.title ?? '').trim() || '(sans titre)';
 }
 
-async function countDefaultGroupsForTrip(tripRef) {
-  const snap = await tripRef.collection('expenseGroups').get();
-  let count = 0;
-  for (const doc of snap.docs) {
-    if (doc.data()?.isDefault === true) count++;
-  }
-  return count;
-}
-
 async function loadParticipantDocIds(tripRef) {
   const snap = await tripRef.collection('participants').get();
   return snap.docs.map((d) => d.id);
+}
+
+async function inspectDefaultGroupsForTrip(tripRef, participantIds) {
+  const snap = await tripRef.collection('expenseGroups').get();
+  const defaultDocs = snap.docs.filter((doc) => doc.data()?.isDefault === true);
+  if (defaultDocs.length !== 1) {
+    return {
+      defaultCount: defaultDocs.length,
+      defaultGroupId: '',
+      missingParticipantIds: [],
+    };
+  }
+
+  const defaultDoc = defaultDocs[0];
+  const visibleToMemberIdsRaw = defaultDoc.data()?.visibleToMemberIds;
+  const visibleToMemberIds = Array.isArray(visibleToMemberIdsRaw)
+    ? visibleToMemberIdsRaw.map((value) => String(value).trim()).filter(Boolean)
+    : [];
+  const visibleSet = new Set(visibleToMemberIds);
+  const missingParticipantIds = participantIds.filter(
+    (participantId) => !visibleSet.has(participantId),
+  );
+
+  return {
+    defaultCount: 1,
+    defaultGroupId: defaultDoc.id,
+    missingParticipantIds,
+  };
 }
 
 async function discoverTripsMissingDefault(db, opts) {
@@ -163,17 +182,34 @@ async function discoverTripsMissingDefault(db, opts) {
 
   const missing = [];
   const ambiguous = [];
+  const inconsistent = [];
 
   for (const tripDoc of tripDocs) {
     const tripId = tripDoc.id;
     const data = tripDoc.data() || {};
-    const defaultCount = await countDefaultGroupsForTrip(tripDoc.ref);
+    const ownerId = String(data.ownerId ?? '').trim();
+    const participantIds = await loadParticipantDocIds(tripDoc.ref);
+    const defaultInfo = await inspectDefaultGroupsForTrip(
+      tripDoc.ref,
+      participantIds,
+    );
+    const defaultCount = defaultInfo.defaultCount;
 
     if (defaultCount > 1) {
       ambiguous.push({ tripId, data, defaultCount });
       continue;
     }
     if (defaultCount === 1) {
+      if (defaultInfo.missingParticipantIds.length > 0) {
+        inconsistent.push({
+          tripId,
+          data,
+          defaultGroupId: defaultInfo.defaultGroupId,
+          missingParticipantIds: defaultInfo.missingParticipantIds,
+          participantIds,
+        });
+        continue;
+      }
       if (opts.verbose) {
         console.log(
           `  OK  "${tripDisplayTitle(data)}" (${tripId}) — poste par défaut présent`,
@@ -181,9 +217,6 @@ async function discoverTripsMissingDefault(db, opts) {
       }
       continue;
     }
-
-    const ownerId = String(data.ownerId ?? '').trim();
-    const participantIds = await loadParticipantDocIds(tripDoc.ref);
 
     missing.push({
       tripId,
@@ -193,7 +226,7 @@ async function discoverTripsMissingDefault(db, opts) {
     });
   }
 
-  return { missing, ambiguous };
+  return { missing, ambiguous, inconsistent };
 }
 
 function buildDefaultGroupPayload(ownerId, participantIds) {
@@ -240,6 +273,40 @@ async function createDefaultGroupForTrip(db, entry, opts) {
   return { tripId, groupId: groupRef.id, dryRun: false };
 }
 
+async function fixDefaultGroupVisibilityForTrip(db, entry, opts) {
+  const { tripId, defaultGroupId, participantIds, missingParticipantIds } = entry;
+  const title = tripDisplayTitle(entry.data);
+  const tripRef = db.collection('trips').doc(tripId);
+  const groupRef = tripRef.collection('expenseGroups').doc(defaultGroupId);
+
+  if (defaultGroupId === '') {
+    throw new Error(`defaultGroupId manquant sur trips/${tripId}`);
+  }
+  if (participantIds.length === 0) {
+    throw new Error(
+      `aucun participant sur trips/${tripId} — visibleToMemberIds serait vide`,
+    );
+  }
+
+  if (opts.dryRun) {
+    console.log(
+      `  [dry-run] trips/${tripId}/expenseGroups/${defaultGroupId}  ajoutParticipants=${missingParticipantIds.length}  totalParticipants=${participantIds.length}`,
+    );
+    if (opts.verbose) {
+      console.log(
+        `            participants manquants: ${missingParticipantIds.join(', ')}`,
+      );
+    }
+    return { tripId, groupId: defaultGroupId, dryRun: true };
+  }
+
+  await groupRef.update({ visibleToMemberIds: participantIds });
+  console.log(
+    `  [apply]   "${title}" (${tripId}) → expenseGroups/${defaultGroupId} (visibleToMemberIds mis à jour)`,
+  );
+  return { tripId, groupId: defaultGroupId, dryRun: false };
+}
+
 function printMissingList(missing) {
   console.log(`\n${missing.length} voyage(s) sans poste par défaut :\n`);
   missing.forEach((entry, idx) => {
@@ -247,6 +314,23 @@ function printMissingList(missing) {
     const n = entry.participantIds.length;
     console.log(
       `  [${idx + 1}] ${title}  (${entry.tripId})  owner=${entry.ownerId || '?'}  participants=${n}`,
+    );
+  });
+}
+
+function printActionsList(actions) {
+  console.log(`\n${actions.length} action(s) à corriger :\n`);
+  actions.forEach((action, idx) => {
+    const entry = action.entry;
+    const title = tripDisplayTitle(entry.data);
+    if (action.kind === 'create') {
+      console.log(
+        `  [${idx + 1}] [CREATE] ${title}  (${entry.tripId})  owner=${entry.ownerId || '?'}  participants=${entry.participantIds.length}`,
+      );
+      return;
+    }
+    console.log(
+      `  [${idx + 1}] [PATCH ] ${title}  (${entry.tripId})  group=${entry.defaultGroupId}  missing=${entry.missingParticipantIds.length}`,
     );
   });
 }
@@ -259,6 +343,18 @@ function printAmbiguousList(ambiguous) {
   ambiguous.forEach((entry) => {
     console.log(
       `  • ${tripDisplayTitle(entry.data)}  (${entry.tripId})  count=${entry.defaultCount}`,
+    );
+  });
+}
+
+function printInconsistentList(inconsistent) {
+  if (inconsistent.length === 0) return;
+  console.log(
+    `\nATTENTION — ${inconsistent.length} voyage(s) avec poste isDefault incomplet (participants manquants dans visibleToMemberIds) :\n`,
+  );
+  inconsistent.forEach((entry) => {
+    console.log(
+      `  • ${tripDisplayTitle(entry.data)}  (${entry.tripId})  group=${entry.defaultGroupId}  missing=${entry.missingParticipantIds.length}`,
     );
   });
 }
@@ -287,33 +383,43 @@ async function run() {
   console.log('');
   console.log('Scan des voyages...');
 
-  const { missing, ambiguous } = await discoverTripsMissingDefault(db, opts);
+  const { missing, ambiguous, inconsistent } = await discoverTripsMissingDefault(
+    db,
+    opts,
+  );
   printAmbiguousList(ambiguous);
+  printInconsistentList(inconsistent);
 
-  if (missing.length === 0) {
-    console.log('\nAucun voyage sans poste de dépense par défaut.');
+  const actions = [
+    ...missing.map((entry) => ({ kind: 'create', entry })),
+    ...inconsistent.map((entry) => ({ kind: 'patch', entry })),
+  ];
+
+  if (actions.length === 0) {
+    console.log('\nAucune correction à appliquer.');
     await app.delete();
     return;
   }
 
   printMissingList(missing);
+  printActionsList(actions);
 
   let toProcess = [];
 
   if (opts.all) {
     const confirmAll = await prompt(
-      `\nCréer le poste « ${DEFAULT_TITLE} » pour les ${missing.length} voyage(s) ci-dessus ? (oui/non) : `,
+      `\nAppliquer les ${actions.length} correction(s) ci-dessus ? (oui/non) : `,
     );
     if (confirmAll.toLowerCase() !== 'oui' && confirmAll.toLowerCase() !== 'o') {
       console.log('Annulé.');
       await app.delete();
       return;
     }
-    toProcess = missing;
+    toProcess = actions;
   } else {
     console.log('');
     const answer = await prompt(
-      'Numéro du voyage à corriger, "tous" pour la liste entière, ou "q" pour quitter : ',
+      'Numéro de l’action à corriger, "tous" pour la liste entière, ou "q" pour quitter : ',
     );
 
     if (answer.toLowerCase() === 'q' || answer === '') {
@@ -324,7 +430,7 @@ async function run() {
 
     if (answer.toLowerCase() === 'tous' || answer.toLowerCase() === 'all') {
       const confirmAll = await prompt(
-        `Confirmer la création pour ${missing.length} voyage(s) ? (oui/non) : `,
+        `Confirmer les ${actions.length} correction(s) ? (oui/non) : `,
       );
       if (
         confirmAll.toLowerCase() !== 'oui' &&
@@ -334,15 +440,15 @@ async function run() {
         await app.delete();
         return;
       }
-      toProcess = missing;
+      toProcess = actions;
     } else {
       const choice = parseInt(answer, 10);
-      if (!Number.isFinite(choice) || choice < 1 || choice > missing.length) {
+      if (!Number.isFinite(choice) || choice < 1 || choice > actions.length) {
         console.error(`Choix invalide : "${answer}"`);
         await app.delete();
         process.exit(1);
       }
-      toProcess = [missing[choice - 1]];
+      toProcess = [actions[choice - 1]];
     }
   }
 
@@ -352,22 +458,28 @@ async function run() {
 
   if (!opts.apply) {
     console.log(
-      '\nMode dry-run : aucune écriture. Relancer avec --apply pour créer les postes.',
+      '\nMode dry-run : aucune écriture. Relancer avec --apply pour appliquer les corrections.',
     );
   }
 
   console.log('');
   let created = 0;
+  let fixed = 0;
   let errors = 0;
 
-  for (const entry of toProcess) {
+  for (const action of toProcess) {
     try {
-      await createDefaultGroupForTrip(db, entry, opts);
-      created++;
+      if (action.kind === 'create') {
+        await createDefaultGroupForTrip(db, action.entry, opts);
+        created++;
+      } else {
+        await fixDefaultGroupVisibilityForTrip(db, action.entry, opts);
+        fixed++;
+      }
     } catch (err) {
       errors++;
       console.error(
-        `  ERR  trips/${entry.tripId} → ${err.message}`,
+        `  ERR  trips/${action.entry.tripId} → ${err.message}`,
       );
     }
   }
@@ -376,8 +488,10 @@ async function run() {
   console.log('--- Résultat ---');
   if (opts.dryRun) {
     console.log(`Postes à créer (simulation) : ${created}`);
+    console.log(`Postes à corriger (simu)    : ${fixed}`);
   } else {
     console.log(`Postes créés                : ${created}`);
+    console.log(`Postes corrigés             : ${fixed}`);
   }
   console.log(`Erreurs                     : ${errors}`);
 

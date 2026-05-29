@@ -2472,10 +2472,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatMoreEmojis => 'More emojis';
 
   @override
+  String get chatInsertEmoji => 'Emojis';
+
+  @override
   String get chatGoBottom => 'Go to bottom';
 
   @override
   String get chatEditMessageTitle => 'Edit message';
+
+  @override
+  String get chatReply => 'Reply';
+
+  @override
+  String get chatQuotedImage => 'Photo';
+
+  @override
+  String get chatImageTooLarge => 'Image too large (10 MB max.)';
+
+  @override
+  String get chatCropImageTitle => 'Crop photo';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';
@@ -5395,10 +5410,25 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get chatMoreEmojis => 'More emojis';
 
   @override
+  String get chatInsertEmoji => 'Emojis';
+
+  @override
   String get chatGoBottom => 'Go to bottom';
 
   @override
   String get chatEditMessageTitle => 'Edit message';
+
+  @override
+  String get chatReply => 'Reply';
+
+  @override
+  String get chatQuotedImage => 'Photo';
+
+  @override
+  String get chatImageTooLarge => 'Image too large (10 MB max.)';
+
+  @override
+  String get chatCropImageTitle => 'Crop photo';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';

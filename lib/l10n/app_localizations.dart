@@ -4482,6 +4482,12 @@ abstract class AppLocalizations {
   /// **'Plus d\'émojis'**
   String get chatMoreEmojis;
 
+  /// No description provided for @chatInsertEmoji.
+  ///
+  /// In fr, this message translates to:
+  /// **'Émojis'**
+  String get chatInsertEmoji;
+
   /// No description provided for @chatGoBottom.
   ///
   /// In fr, this message translates to:
@@ -4493,6 +4499,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Modifier le message'**
   String get chatEditMessageTitle;
+
+  /// No description provided for @chatReply.
+  ///
+  /// In fr, this message translates to:
+  /// **'Répondre'**
+  String get chatReply;
+
+  /// No description provided for @chatQuotedImage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo'**
+  String get chatQuotedImage;
+
+  /// No description provided for @chatImageTooLarge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Image trop volumineuse (10 Mo max.)'**
+  String get chatImageTooLarge;
+
+  /// No description provided for @chatCropImageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recadrer la photo'**
+  String get chatCropImageTitle;
 
   /// No description provided for @appCopyright.
   ///

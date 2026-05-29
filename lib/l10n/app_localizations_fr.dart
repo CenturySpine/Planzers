@@ -2491,10 +2491,25 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatMoreEmojis => 'Plus d\'émojis';
 
   @override
+  String get chatInsertEmoji => 'Émojis';
+
+  @override
   String get chatGoBottom => 'Aller en bas';
 
   @override
   String get chatEditMessageTitle => 'Modifier le message';
+
+  @override
+  String get chatReply => 'Répondre';
+
+  @override
+  String get chatQuotedImage => 'Photo';
+
+  @override
+  String get chatImageTooLarge => 'Image trop volumineuse (10 Mo max.)';
+
+  @override
+  String get chatCropImageTitle => 'Recadrer la photo';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';
@@ -5440,10 +5455,25 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get chatMoreEmojis => 'Plus d\'émojis';
 
   @override
+  String get chatInsertEmoji => 'Émojis';
+
+  @override
   String get chatGoBottom => 'Aller en bas';
 
   @override
   String get chatEditMessageTitle => 'Modifier le message';
+
+  @override
+  String get chatReply => 'Répondre';
+
+  @override
+  String get chatQuotedImage => 'Photo';
+
+  @override
+  String get chatImageTooLarge => 'Image trop volumineuse (10 Mo max.)';
+
+  @override
+  String get chatCropImageTitle => 'Recadrer la photo';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';

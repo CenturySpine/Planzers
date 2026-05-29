@@ -53,6 +53,32 @@ final tripMembersPhoneVisibilityStreamProvider =
       .watchAllMembersPhoneVisibility(tripId);
 });
 
+/// Stored profile photo URLs for all claimed trip participants, keyed by user ID.
+///
+/// Returns empty string for members without a valid non-Google-hosted photo.
+final tripMemberPhotoUrlsProvider =
+    Provider.autoDispose.family<Map<String, String>, String>((ref, tripId) {
+  final participants =
+      ref.watch(tripParticipantsStreamProvider(tripId)).asData?.value ?? [];
+  final claimedUids = participants
+      .where((m) => m.userId != null && m.userId!.trim().isNotEmpty)
+      .map((m) => m.userId!.trim())
+      .toSet()
+      .toList();
+  final userDocsById = claimedUids.isEmpty
+      ? const <String, Map<String, dynamic>>{}
+      : ref
+              .watch(usersDataByIdsKeyStreamProvider(
+                  stableUsersIdsKey(claimedUids)))
+              .asData
+              ?.value ??
+          const <String, Map<String, dynamic>>{};
+  return {
+    for (final uid in claimedUids)
+      uid: tripMemberStoredProfileBadgeUrl(userDocsById[uid]),
+  };
+});
+
 /// Resolved display labels for all trip participants, keyed by member ID and user ID.
 ///
 /// Fetches profile docs internally — only for participants with [TripMember.useProfileName].

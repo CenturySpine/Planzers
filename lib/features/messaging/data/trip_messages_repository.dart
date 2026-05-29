@@ -1,15 +1,33 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/messaging/data/trip_message.dart';
+import 'package:planerz/features/messaging/data/trip_message_kind.dart';
 import 'package:planerz/features/messaging/data/trip_message_reaction.dart';
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 
 final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
+  final target = ref.watch(firebaseTargetProvider);
+  final configuredBucket = switch (target) {
+    FirebaseTarget.preview => 'planerz-preview.firebasestorage.app',
+    FirebaseTarget.prod => 'planerz.firebasestorage.app',
+  };
+  final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
+  final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
+  final bucketUri =
+      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
   return TripMessagesRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
+    storage: FirebaseStorage.instanceFor(bucket: bucketUri),
   );
 });
 
@@ -115,12 +133,15 @@ class TripMessagesRepository {
   TripMessagesRepository({
     required this.firestore,
     required this.auth,
+    required this.storage,
   });
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
+  final FirebaseStorage storage;
 
   static const int maxTextLength = 4000;
+  static const int maxImageBytes = 10 * 1024 * 1024;
   static const String _messagesChannelKey = 'messages';
 
   CollectionReference<Map<String, dynamic>> _messagesCol(String tripId) {
@@ -209,6 +230,7 @@ class TripMessagesRepository {
     required String tripId,
     required String text,
     TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    String? replyToMessageId,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -245,7 +267,124 @@ class TripMessagesRepository {
         payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
       }
     }
+    final cleanReplyId = replyToMessageId?.trim();
+    if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
+      payload['replyToMessageId'] = cleanReplyId;
+    }
     await _messagesCol(cleanTripId).add(payload);
+  }
+
+  /// Pre-allocates a Firestore message document id for optimistic UI.
+  String newImageMessageId(String tripId) =>
+      _messagesCol(tripId.trim()).doc().id;
+
+  Future<(double, double)?> decodeImageDimensions(Uint8List bytes) =>
+      _decodeImageDimensions(bytes);
+
+  Future<void> sendImageMessage({
+    required String tripId,
+    required String messageId,
+    required Uint8List bytes,
+    required String fileExt,
+    TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    String? replyToMessageId,
+    String? caption,
+    void Function(double progress)? onUploadProgress,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+    if (bytes.isEmpty) {
+      throw StateError('Image invalide');
+    }
+    if (bytes.length > maxImageBytes) {
+      throw StateError('Image trop volumineuse');
+    }
+
+    final trimmedCaption = (caption ?? '').trim();
+    if (trimmedCaption.length > maxTextLength) {
+      throw StateError('Message trop long');
+    }
+
+    if (scope.isAdmin) {
+      await _assertIsTripAdmin(cleanTripId, user.uid);
+    }
+
+    final cleanMessageId = messageId.trim();
+    if (cleanMessageId.isEmpty) {
+      throw StateError('Parametres invalides');
+    }
+
+    final dimensions = await _decodeImageDimensions(bytes);
+    final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
+    final ext = safeExt.isEmpty ? 'jpg' : safeExt;
+    final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
+    final objectPath = 'trips/$cleanTripId/messages/$cleanMessageId.$ext';
+    final contentType = switch (ext) {
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'heic' => 'image/heic',
+      'gif' => 'image/gif',
+      _ => 'image/jpeg',
+    };
+
+    final objectRef = storage.ref(objectPath);
+    final uploadTask = objectRef.putData(
+      bytes,
+      SettableMetadata(contentType: contentType),
+    );
+    if (onUploadProgress != null) {
+      uploadTask.snapshotEvents.listen((event) {
+        final total = event.totalBytes;
+        if (total > 0) {
+          onUploadProgress(event.bytesTransferred / total);
+        }
+      });
+    }
+    await uploadTask;
+    final downloadUrl = await objectRef.getDownloadURL();
+
+    final payload = <String, dynamic>{
+      'type': TripMessageKind.image.firestoreValue,
+      'imageUrl': downloadUrl,
+      'imageStoragePath': objectPath,
+      'authorId': user.uid,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    if (dimensions != null) {
+      payload['imageWidth'] = dimensions.$1;
+      payload['imageHeight'] = dimensions.$2;
+    }
+    if (trimmedCaption.isNotEmpty) {
+      payload['text'] = trimmedCaption;
+    }
+    if (!scope.isMain) {
+      payload['threadType'] = scope.threadType.firestoreValue;
+      payload['visibilityType'] = scope.visibilityType.firestoreValue;
+      if (scope.isObject) {
+        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
+      }
+    }
+    final cleanReplyId = replyToMessageId?.trim();
+    if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
+      payload['replyToMessageId'] = cleanReplyId;
+    }
+
+    try {
+      await messageRef.set(payload);
+    } catch (e) {
+      try {
+        await objectRef.delete();
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   Future<void> updateMessage({
@@ -282,6 +421,9 @@ class TripMessagesRepository {
       messageId: cleanMessageId,
       scope: scope,
     );
+    if (message.isImage) {
+      throw StateError('Message non modifiable');
+    }
     await _messagesCol(cleanTripId).doc(message.id).update({
       'text': trimmed,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -311,6 +453,12 @@ class TripMessagesRepository {
       scope: scope,
     );
     await _messagesCol(cleanTripId).doc(message.id).delete();
+    final storagePath = message.imageStoragePath?.trim() ?? '';
+    if (storagePath.isNotEmpty) {
+      try {
+        await storage.ref(storagePath).delete();
+      } catch (_) {}
+    }
   }
 
   Stream<Map<String, List<TripMessageReaction>>> watchReactionsByMessage(
@@ -588,5 +736,20 @@ class TripMessagesRepository {
       return _messagesChannelKey;
     }
     return scope.channelKey;
+  }
+
+  Future<(double, double)?> _decodeImageDimensions(Uint8List bytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final width = image.width.toDouble();
+      final height = image.height.toDouble();
+      image.dispose();
+      if (width <= 0 || height <= 0) return null;
+      return (width, height);
+    } catch (_) {
+      return null;
+    }
   }
 }

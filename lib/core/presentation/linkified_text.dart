@@ -86,12 +86,12 @@ class _LinkifiedTextState extends State<LinkifiedText> {
       }
 
       final rawUrl = match.group(0)!;
-      final trimmedUrl = _trimUrlWrappingPunctuation(rawUrl);
+      final trimmedUrl = trimUrlWrappingPunctuation(rawUrl);
       final href = trimmedUrl.toLowerCase().startsWith('www.')
           ? 'https://$trimmedUrl'
           : trimmedUrl;
       final recognizer = TapGestureRecognizer()
-        ..onTap = () => unawaited(_openUrl(context, href));
+        ..onTap = () => unawaited(openExternalUrl(context, href));
       _recognizers.add(recognizer);
       children.add(
         TextSpan(text: rawUrl, style: linkStyle, recognizer: recognizer),
@@ -115,7 +115,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
   }
 }
 
-String _trimUrlWrappingPunctuation(String rawUrl) {
+String trimUrlWrappingPunctuation(String rawUrl) {
   var sanitizedUrl = rawUrl;
   while (sanitizedUrl.isNotEmpty) {
     final lastCharacter = sanitizedUrl[sanitizedUrl.length - 1];
@@ -128,7 +128,7 @@ String _trimUrlWrappingPunctuation(String rawUrl) {
   return sanitizedUrl;
 }
 
-Future<void> _openUrl(BuildContext context, String url) async {
+Future<void> openExternalUrl(BuildContext context, String url) async {
   final parsedUrl = Uri.tryParse(url.trim());
   if (parsedUrl == null || !parsedUrl.hasScheme || parsedUrl.host.isEmpty) {
     if (context.mounted) {

@@ -1484,9 +1484,13 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     const tripId = event.params.tripId;
     const msg = snap.data() || {};
     const authorId = normalizeString(msg.authorId);
-    const text = normalizeString(msg.text).slice(0, 180);
+    const isImageMessage = normalizeString(msg.type) === 'image';
+    const text = isImageMessage
+      ? normalizeString(msg.text).slice(0, 180)
+      : normalizeString(msg.text).slice(0, 180);
 
-    if (!authorId || !text) return;
+    if (!authorId) return;
+    if (!text && !isImageMessage) return;
 
     const db = admin.firestore();
     const tripSnap = await db.collection('trips').doc(tripId).get();
@@ -1524,7 +1528,9 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
       title: isAdminsOnlyMessage
         ? `Messagerie admin · ${tripTitle}`
         : `Messagerie · ${tripTitle}`,
-      body: `${authorLabel} : ${text}`,
+      body: isImageMessage
+        ? (text ? `${authorLabel} : ${text}` : `${authorLabel} a envoyé une photo`)
+        : `${authorLabel} : ${text}`,
       candidateRecipients,
       skipPresenceCheck: false,
       androidChannelId: ANDROID_CHANNEL_IDS.messages,

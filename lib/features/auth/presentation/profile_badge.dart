@@ -11,6 +11,7 @@ Widget buildProfileBadge({
   required BuildContext context,
   required String displayLabel,
   Map<String, dynamic>? userData,
+  String? photoUrl,
   double size = 28,
   bool isChild = false,
 }) {
@@ -41,8 +42,9 @@ Widget buildProfileBadge({
     return fallback;
   }
 
-  final photoUrl = tripMemberStoredProfileBadgeUrl(userData);
-  if (photoUrl.isEmpty) {
+  final resolvedUrl =
+      photoUrl ?? tripMemberStoredProfileBadgeUrl(userData);
+  if (resolvedUrl.isEmpty) {
     return fallback;
   }
 
@@ -51,7 +53,7 @@ Widget buildProfileBadge({
     height: size,
     child: ClipOval(
       child: Image.network(
-        photoUrl,
+        resolvedUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => fallback,
       ),
