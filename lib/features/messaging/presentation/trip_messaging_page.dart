@@ -185,6 +185,38 @@ class _TripThreadMessagingPageState
       );
     }
 
+    Future<void> setReaction(String messageId, String emoji) async {
+      final uid = myUid;
+      if (uid != null) {
+        await chatController.applyLocalReaction(
+          messageId: messageId,
+          userId: uid,
+          emoji: emoji,
+        );
+      }
+      await repo.setMyReaction(
+        tripId: trip.id,
+        messageId: messageId,
+        emoji: emoji,
+        scope: scope,
+      );
+    }
+
+    Future<void> removeReaction(String messageId) async {
+      final uid = myUid;
+      if (uid != null) {
+        await chatController.applyLocalReaction(
+          messageId: messageId,
+          userId: uid,
+        );
+      }
+      await repo.removeMyReaction(
+        tripId: trip.id,
+        messageId: messageId,
+        scope: scope,
+      );
+    }
+
     void handleMessageOptions(BuildContext ctx, Message message) {
       unawaited(
         showMessageOptions(
@@ -192,17 +224,8 @@ class _TripThreadMessagingPageState
           message,
           isMine: myUid != null && message.authorId == myUid,
           myUid: myUid,
-          onSetReaction: (msgId, emoji) => repo.setMyReaction(
-            tripId: trip.id,
-            messageId: msgId,
-            emoji: emoji,
-            scope: scope,
-          ),
-          onRemoveReaction: (msgId) => repo.removeMyReaction(
-            tripId: trip.id,
-            messageId: msgId,
-            scope: scope,
-          ),
+          onSetReaction: setReaction,
+          onRemoveReaction: removeReaction,
           onEdit: (msgId, text) => repo.updateMessage(
             tripId: trip.id,
             messageId: msgId,

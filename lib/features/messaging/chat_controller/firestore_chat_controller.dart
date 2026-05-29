@@ -152,6 +152,27 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
     _initialized = true;
   }
 
+  /// Updates reactions in the in-memory list immediately (before Firestore echoes).
+  Future<void> applyLocalReaction({
+    required String messageId,
+    required String userId,
+    String? emoji,
+  }) async {
+    final index = _inner.messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+    final old = _inner.messages[index];
+    final updated = _messageWithReactions(
+      old,
+      reactions: _reactionsAfterUserChange(
+        old.reactions,
+        userId: userId,
+        emoji: emoji,
+      ),
+    );
+    if (updated == old) return;
+    await _inner.updateMessage(old, updated);
+  }
+
   void _rebuildMessages() {
     // Merge: older (sorted by createdAt) + recent (sorted by createdAt)
     // Recent messages appear after all older ones. IDs are unique.
@@ -164,6 +185,18 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
         mapTripMessage(m, _recentReactions[m.id] ?? []),
     ];
 
+    final previous = _inner.messages;
+    if (previous.length == allMapped.length &&
+        _sameMessageIdsInOrder(previous, allMapped)) {
+      // ChatMessageInternal only listens to ChatOperationType.update — not set.
+      for (var i = 0; i < previous.length; i++) {
+        if (previous[i] != allMapped[i]) {
+          unawaited(_inner.updateMessage(previous[i], allMapped[i]));
+        }
+      }
+      return;
+    }
+
     // Always non-animated: using animated:true on a setMessages diff causes
     // a key collision when _onChanged removes then re-inserts the same message
     // ID — both 250ms animations coexist during any concurrent layout rebuild
@@ -172,4 +205,47 @@ class FirestoreChatController with ScrollToMessageMixin implements ChatControlle
     // the insert, so the two children never overlap.
     unawaited(_inner.setMessages(allMapped, animated: false));
   }
+}
+
+bool _sameMessageIdsInOrder(List<Message> previous, List<Message> next) {
+  for (var i = 0; i < previous.length; i++) {
+    if (previous[i].id != next[i].id) return false;
+  }
+  return true;
+}
+
+Map<String, List<String>>? _reactionsAfterUserChange(
+  Map<String, List<String>>? current, {
+  required String userId,
+  required String? emoji,
+}) {
+  final next = <String, List<String>>{};
+  if (current != null) {
+    for (final entry in current.entries) {
+      final users = entry.value.where((id) => id != userId).toList();
+      if (users.isNotEmpty) next[entry.key] = users;
+    }
+  }
+  final cleanEmoji = emoji?.trim();
+  if (cleanEmoji != null && cleanEmoji.isNotEmpty) {
+    next.putIfAbsent(cleanEmoji, () => []).add(userId);
+  }
+  return next.isEmpty ? null : next;
+}
+
+Message _messageWithReactions(
+  Message message, {
+  required Map<String, List<String>>? reactions,
+}) {
+  return message.map(
+    text: (m) => m.copyWith(reactions: reactions),
+    textStream: (m) => m.copyWith(reactions: reactions),
+    image: (m) => m.copyWith(reactions: reactions),
+    file: (m) => m.copyWith(reactions: reactions),
+    video: (m) => m.copyWith(reactions: reactions),
+    audio: (m) => m.copyWith(reactions: reactions),
+    system: (m) => m.copyWith(reactions: reactions),
+    custom: (m) => m.copyWith(reactions: reactions),
+    unsupported: (m) => m.copyWith(reactions: reactions),
+  );
 }
