@@ -9,12 +9,14 @@ class MessageSelectionActionBar extends StatelessWidget {
   const MessageSelectionActionBar({
     super.key,
     required this.onClose,
+    this.onReply,
     this.onEdit,
     this.onDelete,
     this.onCopy,
   });
 
   final VoidCallback onClose;
+  final VoidCallback? onReply;
   final Future<void> Function()? onEdit;
   final Future<void> Function()? onDelete;
   final VoidCallback? onCopy;
@@ -37,6 +39,12 @@ class MessageSelectionActionBar extends StatelessWidget {
                 tooltip: l10n.commonClose,
                 onPressed: onClose,
               ),
+              if (onReply != null)
+                IconButton(
+                  icon: const Icon(Icons.reply_outlined),
+                  tooltip: l10n.chatReply,
+                  onPressed: onReply,
+                ),
               const Spacer(),
               if (onEdit != null)
                 IconButton(
