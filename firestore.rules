@@ -780,6 +780,7 @@ service cloud.firestore {
             'threadObjectType',
             'threadObjectId',
             'visibilityType',
+            'replyToMessageId',
           ])
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.text is string
@@ -792,6 +793,10 @@ service cloud.firestore {
           && (
             !request.resource.data.keys().hasAny(['visibilityType'])
             || request.resource.data.visibilityType in ['trip_all', 'admins_only', 'object_participants']
+          )
+          && (
+            !request.resource.data.keys().hasAny(['replyToMessageId'])
+            || (request.resource.data.replyToMessageId is string && request.resource.data.replyToMessageId.size() > 0)
           )
           && (
             messageThreadType(request.resource.data) != 'admin'
