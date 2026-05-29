@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -9,6 +7,7 @@ import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/messaging/presentation/whatsapp_emoji_picker.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -98,19 +97,7 @@ class _MessageOptionsSheet extends StatelessWidget {
 
   Future<void> _pickEmoji(BuildContext sheetCtx) async {
     Navigator.pop(sheetCtx);
-    final selected = await showModalBottomSheet<String>(
-      context: outerContext,
-      useSafeArea: true,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (innerCtx) => SizedBox(
-        height: math.min(MediaQuery.sizeOf(innerCtx).height * 0.55, 420),
-        child: EmojiPicker(
-          onEmojiSelected: (_, emoji) => Navigator.pop(innerCtx, emoji.emoji),
-          config: const Config(checkPlatformCompatibility: true),
-        ),
-      ),
-    );
+    final selected = await showPlanerzEmojiReactionPicker(outerContext);
     if (selected == null || !outerContext.mounted) return;
     try {
       if (_currentUserReaction() == selected) {

@@ -4482,6 +4482,12 @@ abstract class AppLocalizations {
   /// **'Plus d\'émojis'**
   String get chatMoreEmojis;
 
+  /// No description provided for @chatInsertEmoji.
+  ///
+  /// In fr, this message translates to:
+  /// **'Émojis'**
+  String get chatInsertEmoji;
+
   /// No description provided for @chatGoBottom.
   ///
   /// In fr, this message translates to:

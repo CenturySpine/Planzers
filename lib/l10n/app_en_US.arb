@@ -917,6 +917,7 @@
   "chatReactWithEmoji": "React with {emoji}",
   "@chatReactWithEmoji": {"placeholders": {"emoji": {}}},
   "chatMoreEmojis": "More emojis",
+  "chatInsertEmoji": "Emojis",
   "chatGoBottom": "Go to bottom",
   "chatEditMessageTitle": "Edit message",
   "chatReply": "Reply",

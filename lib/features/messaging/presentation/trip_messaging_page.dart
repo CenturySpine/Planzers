@@ -20,6 +20,7 @@ import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/features/messaging/presentation/chat_builders.dart';
+import 'package:planerz/features/messaging/presentation/trip_chat_composer.dart';
 import 'package:planerz/features/messaging/presentation/chat_image_viewer.dart';
 import 'package:planerz/features/messaging/presentation/chat_message_text.dart';
 import 'package:planerz/features/messaging/presentation/reply_widgets.dart';
@@ -551,11 +552,12 @@ class _TripThreadMessagingPageState
       },
       composerBuilder: (ctx) {
         final replyTarget = _replyingTo;
-        return Composer(
+        return TripChatComposer(
           hintText: l10n.chatMessageHint,
           maxLines: 5,
           minLines: 1,
           textCapitalization: TextCapitalization.sentences,
+          attachmentEnabled: !_isSendingImage,
           attachmentIcon: _isSendingImage
               ? const SizedBox(
                   width: 24,

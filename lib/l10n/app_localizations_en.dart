@@ -2472,6 +2472,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatMoreEmojis => 'More emojis';
 
   @override
+  String get chatInsertEmoji => 'Emojis';
+
+  @override
   String get chatGoBottom => 'Go to bottom';
 
   @override
@@ -5402,6 +5405,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get chatMoreEmojis => 'More emojis';
+
+  @override
+  String get chatInsertEmoji => 'Emojis';
 
   @override
   String get chatGoBottom => 'Go to bottom';
