@@ -260,6 +260,13 @@ class _TripThreadMessagingPageState
           }
         }
 
+        final radius = _groupedBubbleRadius(
+          isSentByMe: isSentByMe,
+          isFirst: groupStatus?.isFirst ?? true,
+          isLast: groupStatus?.isLast ?? true,
+          hasTopWidget: replyTopWidget != null,
+        );
+
         return ValueListenableBuilder<String?>(
           valueListenable: _highlightedMessageId,
           builder: (ctx2, highlightedId, _) {
@@ -269,6 +276,7 @@ class _TripThreadMessagingPageState
               message: message,
               index: index,
               constraints: BoxConstraints(maxWidth: maxWidth),
+              borderRadius: radius,
               topWidget: replyTopWidget,
               sentBackgroundColor: highlightedId == message.id
                   ? scheme.tertiaryContainer
@@ -399,6 +407,33 @@ class _TripThreadMessagingPageState
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Bubble corner radius ──────────────────────────────────────────────────────
+
+BorderRadius _groupedBubbleRadius({
+  required bool isSentByMe,
+  required bool isFirst,
+  required bool isLast,
+  required bool hasTopWidget,
+}) {
+  const large = Radius.circular(12);
+  const small = Radius.circular(4);
+  if (isSentByMe) {
+    return BorderRadius.only(
+      topLeft: large,
+      bottomLeft: large,
+      topRight: (isFirst || hasTopWidget) ? large : small,
+      bottomRight: isLast ? large : small,
+    );
+  } else {
+    return BorderRadius.only(
+      topRight: large,
+      bottomRight: large,
+      topLeft: (isFirst || hasTopWidget) ? large : small,
+      bottomLeft: isLast ? large : small,
     );
   }
 }
