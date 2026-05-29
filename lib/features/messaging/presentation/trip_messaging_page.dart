@@ -14,7 +14,9 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/messaging/chat_controller/firestore_chat_controller.dart';
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/core/presentation/linkified_text.dart';
 import 'package:planerz/features/messaging/presentation/chat_builders.dart';
+import 'package:planerz/features/messaging/presentation/chat_message_text.dart';
 import 'package:planerz/features/messaging/presentation/reply_widgets.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -295,8 +297,12 @@ class _TripThreadMessagingPageState
           builder: (ctx2, highlightedId, _) {
             final scheme = Theme.of(ctx2).colorScheme;
             final textTheme = Theme.of(ctx2).textTheme;
+            final markdownText = embedPlainUrlsAsMarkdown(message.text);
+            final displayMessage = markdownText == message.text
+                ? message
+                : message.copyWith(text: markdownText);
             return FlyerChatTextMessage(
-              message: message,
+              message: displayMessage,
               index: index,
               constraints: BoxConstraints(maxWidth: maxWidth),
               borderRadius: radius,
@@ -310,6 +316,10 @@ class _TripThreadMessagingPageState
               sentTextStyle: textTheme.bodyMedium?.copyWith(
                 color: scheme.onPrimaryContainer,
               ),
+              sentLinksColor: scheme.primary,
+              receivedLinksColor: scheme.primary,
+              linksDecoration: TextDecoration.underline,
+              onLinkTap: (url, _) => unawaited(openExternalUrl(ctx2, url)),
               timeStyle: isSentByMe
                   ? textTheme.labelSmall?.copyWith(
                       color: scheme.onPrimaryContainer.withValues(alpha: 0.6),
