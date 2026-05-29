@@ -245,8 +245,18 @@ class _TripThreadMessagingPageState
 
     _builders ??= Builders(
       textMessageBuilder: (ctx, message, index,
-              {required isSentByMe, groupStatus}) =>
-          FlyerChatTextMessage(message: message, index: index),
+              {required isSentByMe, groupStatus}) {
+        const avatarSlot = 40.0; // avatar 32px + right padding 8px
+        const sideMargin = 48.0;
+        final w = MediaQuery.sizeOf(ctx).width;
+        final maxWidth =
+            isSentByMe ? w - sideMargin : w - avatarSlot - sideMargin;
+        return FlyerChatTextMessage(
+          message: message,
+          index: index,
+          constraints: BoxConstraints(maxWidth: maxWidth),
+        );
+      },
       chatMessageBuilder: (ctx, message, index, animation, child,
           {isRemoved, required isSentByMe, groupStatus}) {
         final isFirst = groupStatus?.isFirst ?? true;
