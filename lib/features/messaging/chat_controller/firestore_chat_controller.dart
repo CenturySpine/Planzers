@@ -31,7 +31,7 @@ final firestoreChatControllerProvider = Provider.autoDispose
 ///   (older paginated + recent) and calls [setMessages], which lets the
 ///   [ChatAnimatedList] run a diff and animate only what changed.
 /// - [loadOlderPage] fetches older messages and prepends them to the list.
-class FirestoreChatController implements ChatController {
+class FirestoreChatController with ScrollToMessageMixin implements ChatController {
   final InMemoryChatController _inner;
   StreamSubscription<TripChatData>? _sub;
   bool _initialized = false;
@@ -82,6 +82,7 @@ class FirestoreChatController implements ChatController {
 
   @override
   void dispose() {
+    disposeScrollMethods();
     _sub?.cancel();
     _inner.dispose();
   }

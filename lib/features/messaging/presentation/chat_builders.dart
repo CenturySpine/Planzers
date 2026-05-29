@@ -22,6 +22,7 @@ Future<void> showMessageOptions(
   required Future<void> Function(String messageId) onRemoveReaction,
   required Future<void> Function(String messageId, String text) onEdit,
   required Future<void> Function(String messageId) onDelete,
+  required void Function(Message message) onReply,
 }) async {
   if (message is! TextMessage) return;
   final l10n = AppLocalizations.of(context)!;
@@ -39,6 +40,7 @@ Future<void> showMessageOptions(
       onRemoveReaction: onRemoveReaction,
       onEdit: onEdit,
       onDelete: onDelete,
+      onReply: onReply,
     ),
   );
 }
@@ -56,6 +58,7 @@ class _MessageOptionsSheet extends StatelessWidget {
     required this.onRemoveReaction,
     required this.onEdit,
     required this.onDelete,
+    required this.onReply,
   });
 
   final BuildContext outerContext;
@@ -67,6 +70,7 @@ class _MessageOptionsSheet extends StatelessWidget {
   final Future<void> Function(String) onRemoveReaction;
   final Future<void> Function(String, String) onEdit;
   final Future<void> Function(String) onDelete;
+  final void Function(Message) onReply;
 
   String? _currentUserReaction() {
     if (myUid == null || message.reactions == null) return null;
@@ -153,6 +157,14 @@ class _MessageOptionsSheet extends StatelessWidget {
             ),
             const Divider(height: 24),
             ListTile(
+              leading: const Icon(Icons.reply_outlined),
+              title: Text(l10n.chatReply),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                onReply(message);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.copy_outlined),
               title: Text(l10n.chatCopy),
               onTap: () {
@@ -230,6 +242,106 @@ class _MessageOptionsSheet extends StatelessWidget {
                   }
                 },
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Emoji reaction pills overlaid on a chat bubble via a [Stack].
+///
+/// Must be placed inside a [Stack] with [Clip.none]; positioning is the
+/// caller's responsibility.
+class ReactionsRow extends StatelessWidget {
+  final Message message;
+  final String? myUid;
+  final Future<void> Function(String messageId, String emoji) onSetReaction;
+  final Future<void> Function(String messageId) onRemoveReaction;
+
+  const ReactionsRow({
+    super.key,
+    required this.message,
+    required this.myUid,
+    required this.onSetReaction,
+    required this.onRemoveReaction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final reactions = message.reactions;
+    if (reactions == null || reactions.isEmpty) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        for (final entry in reactions.entries)
+          _ReactionPill(
+            emoji: entry.key,
+            count: entry.value.length,
+            isMine: myUid != null && entry.value.contains(myUid),
+            scheme: scheme,
+            textTheme: textTheme,
+            onTap: () {
+              if (myUid != null && entry.value.contains(myUid)) {
+                unawaited(onRemoveReaction(message.id));
+              } else {
+                unawaited(onSetReaction(message.id, entry.key));
+              }
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _ReactionPill extends StatelessWidget {
+  final String emoji;
+  final int count;
+  final bool isMine;
+  final ColorScheme scheme;
+  final TextTheme textTheme;
+  final VoidCallback onTap;
+
+  const _ReactionPill({
+    required this.emoji,
+    required this.count,
+    required this.isMine,
+    required this.scheme,
+    required this.textTheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isMine ? scheme.primaryContainer : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isMine ? scheme.primary : scheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            if (count > 1) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$count',
+                style: textTheme.labelSmall?.copyWith(
+                  color: isMine ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),

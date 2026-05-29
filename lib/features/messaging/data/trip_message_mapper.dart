@@ -25,6 +25,7 @@ Message mapTripMessage(
     updatedAt: m.updatedAt,
     editedAt: m.wasEdited ? m.updatedAt : null,
     reactions: reactions.isEmpty ? null : _mapReactions(reactions),
+    replyToMessageId: m.replyToMessageId,
     metadata: {
       'threadType': m.threadType.firestoreValue,
       'visibilityType': m.visibilityType.firestoreValue,

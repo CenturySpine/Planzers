@@ -12,6 +12,7 @@ class TripMessage {
     this.threadObjectType,
     this.threadObjectId,
     this.updatedAt,
+    this.replyToMessageId,
   });
 
   final String id;
@@ -25,6 +26,9 @@ class TripMessage {
 
   /// Server time of last edit; null if never edited after send.
   final DateTime? updatedAt;
+
+  /// ID of the message this is a reply to, or null if not a reply.
+  final String? replyToMessageId;
 
   bool get wasEdited => updatedAt != null;
 
@@ -58,6 +62,10 @@ class TripMessage {
           (threadObjectId?.isEmpty ?? true) ? null : threadObjectId,
       visibilityType: visibilityType,
       updatedAt: updatedAt,
+      replyToMessageId: () {
+        final s = (data['replyToMessageId'] as String?)?.trim();
+        return (s == null || s.isEmpty) ? null : s;
+      }(),
     );
   }
 }

@@ -957,6 +957,7 @@
   "chatMoreEmojis": "More emojis",
   "chatGoBottom": "Go to bottom",
   "chatEditMessageTitle": "Edit message",
+  "chatReply": "Reply",
   "appCopyright": "© 2026 Bruno Chappe",
   "tripsMemberCount": "{count} member(s)",
   "@tripsMemberCount": {"placeholders": {"count": {}}},

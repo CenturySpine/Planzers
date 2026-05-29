@@ -2497,6 +2497,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatEditMessageTitle => 'Modifier le message';
 
   @override
+  String get chatReply => 'Répondre';
+
+  @override
   String get appCopyright => '© 2026 Bruno Chappe';
 
   @override
@@ -5444,6 +5447,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get chatEditMessageTitle => 'Modifier le message';
+
+  @override
+  String get chatReply => 'Répondre';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';

@@ -209,6 +209,7 @@ class TripMessagesRepository {
     required String tripId,
     required String text,
     TripMessageThreadScope scope = const TripMessageThreadScope.main(),
+    String? replyToMessageId,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -244,6 +245,10 @@ class TripMessagesRepository {
         payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
         payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
       }
+    }
+    final cleanReplyId = replyToMessageId?.trim();
+    if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
+      payload['replyToMessageId'] = cleanReplyId;
     }
     await _messagesCol(cleanTripId).add(payload);
   }

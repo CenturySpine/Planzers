@@ -4494,6 +4494,12 @@ abstract class AppLocalizations {
   /// **'Modifier le message'**
   String get chatEditMessageTitle;
 
+  /// No description provided for @chatReply.
+  ///
+  /// In fr, this message translates to:
+  /// **'Répondre'**
+  String get chatReply;
+
   /// No description provided for @appCopyright.
   ///
   /// In fr, this message translates to:
