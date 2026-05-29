@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flyer_chat_image_message/flyer_chat_image_message.dart';
 import 'package:flyer_chat_text_message/flyer_chat_text_message.dart';
@@ -19,11 +20,13 @@ import 'package:planerz/features/messaging/chat_controller/firestore_chat_contro
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/core/presentation/linkified_text.dart';
+import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:planerz/features/messaging/presentation/chat_builders.dart';
 import 'package:planerz/features/messaging/presentation/trip_chat_composer.dart';
 import 'package:planerz/features/messaging/presentation/chat_image_viewer.dart';
 import 'package:planerz/features/messaging/presentation/chat_message_text.dart';
 import 'package:planerz/features/messaging/presentation/reply_widgets.dart';
+import 'package:planerz/features/messaging/presentation/whatsapp_emoji_picker.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -70,6 +73,8 @@ class _TripThreadMessagingPageState
 
   // Reply state — nulled out whenever _replyingTo changes to force a Builders rebuild.
   Message? _replyingTo;
+  /// Long-press selection — nulled out when cleared to force a [Builders] rebuild.
+  String? _selectedMessageId;
   final _highlightedMessageId = ValueNotifier<String?>(null);
   final _crossCache = CrossCache();
   bool _isSendingImage = false;
@@ -103,6 +108,108 @@ class _TripThreadMessagingPageState
       _replyingTo = null;
       _builders = null;
     });
+  }
+
+  void _clearMessageSelection() {
+    if (_selectedMessageId == null) return;
+    setState(() {
+      _selectedMessageId = null;
+      _builders = null;
+    });
+  }
+
+  void _selectMessage(Message message) {
+    if (message is! TextMessage && message is! ImageMessage) return;
+    setState(() {
+      _selectedMessageId = message.id;
+      _builders = null;
+    });
+  }
+
+  Message? _findMessageById(String id, List<Message> messages) {
+    for (final message in messages) {
+      if (message.id == id) return message;
+    }
+    return null;
+  }
+
+  Future<void> _copySelectedMessage(Message message) async {
+    if (message is! TextMessage) return;
+    await Clipboard.setData(ClipboardData(text: message.text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.chatCopied)),
+    );
+  }
+
+  Future<void> _editSelectedMessage(Message message) async {
+    if (message is! TextMessage) return;
+    final l10n = AppLocalizations.of(context)!;
+    final trip = TripScope.of(context);
+    final scope = widget.scope;
+    final repo = ref.read(tripMessagesRepositoryProvider);
+
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => EditTextDialog(
+        initialText: message.text,
+        title: l10n.chatEditMessageTitle,
+        maxLength: TripMessagesRepository.maxTextLength,
+      ),
+    );
+    if (newText == null || !mounted) return;
+    try {
+      await repo.updateMessage(
+        tripId: trip.id,
+        messageId: message.id,
+        text: newText,
+        scope: scope,
+      );
+      _clearMessageSelection();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.chatEditImpossible(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _deleteSelectedMessage(Message message) async {
+    final l10n = AppLocalizations.of(context)!;
+    final trip = TripScope.of(context);
+    final scope = widget.scope;
+    final repo = ref.read(tripMessagesRepositoryProvider);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(l10n.chatDeleteMessageConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      await repo.deleteMessage(
+        tripId: trip.id,
+        messageId: message.id,
+        scope: scope,
+      );
+      _clearMessageSelection();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.chatDeleteImpossible(e.toString()))),
+      );
+    }
   }
 
   void _markMessagesAsReadIfNeeded(String tripId) {
@@ -290,32 +397,19 @@ class _TripThreadMessagingPageState
       }
     }
 
-    void handleMessageOptions(BuildContext ctx, Message message) {
-      unawaited(
-        showMessageOptions(
-          ctx,
-          message,
-          isMine: myUid != null && message.authorId == myUid,
-          myUid: myUid,
-          onSetReaction: setReaction,
-          onRemoveReaction: removeReaction,
-          onEdit: (msgId, text) => repo.updateMessage(
-            tripId: trip.id,
-            messageId: msgId,
-            text: text,
-            scope: scope,
-          ),
-          onDelete: (msgId) => repo.deleteMessage(
-            tripId: trip.id,
-            messageId: msgId,
-            scope: scope,
-          ),
-          onReply: _startReply,
-        ),
-      );
-    }
-
     final localeTag = Localizations.localeOf(context).toString();
+
+    final selectedMessage = _selectedMessageId == null
+        ? null
+        : _findMessageById(_selectedMessageId!, chatController.messages);
+    if (_selectedMessageId != null && selectedMessage == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _clearMessageSelection();
+      });
+    }
+    final selectedIsMine = selectedMessage != null &&
+        myUid != null &&
+        selectedMessage.authorId == myUid;
 
     _builders ??= Builders(
       textMessageBuilder: (ctx, message, index,
@@ -534,11 +628,57 @@ class _TripThreadMessagingPageState
           child: bubbleChild,
         );
 
-        if (!previousHasReactions) return chatMessage;
-        return Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: chatMessage,
-        );
+        final isSelected = _selectedMessageId == message.id;
+        Widget result = chatMessage;
+        if (!previousHasReactions) {
+          result = chatMessage;
+        } else {
+          result = Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: chatMessage,
+          );
+        }
+        if (isSelected) {
+          result = wrapMessageWithQuickReactionBar(
+            isSentByMe: isSentByMe,
+            onEmojiTap: (emoji) async {
+              try {
+                if (currentUserReactionEmoji(message, myUid) == emoji) {
+                  await removeReaction(message.id);
+                } else {
+                  await setReaction(message.id, emoji);
+                }
+              } catch (e) {
+                if (!ctx.mounted) return;
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.chatReactionImpossible(e.toString())),
+                  ),
+                );
+              }
+            },
+            onMoreTap: () async {
+              final selected = await showPlanerzEmojiReactionPicker(ctx);
+              if (selected == null || !ctx.mounted) return;
+              try {
+                if (currentUserReactionEmoji(message, myUid) == selected) {
+                  await removeReaction(message.id);
+                } else {
+                  await setReaction(message.id, selected);
+                }
+              } catch (e) {
+                if (!ctx.mounted) return;
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.chatReactionImpossible(e.toString())),
+                  ),
+                );
+              }
+            },
+            child: result,
+          );
+        }
+        return result;
       },
       chatAnimatedListBuilder: (ctx, itemBuilder) {
         return ChatAnimatedList(
@@ -580,19 +720,41 @@ class _TripThreadMessagingPageState
       },
     );
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Column(
-        children: [
-          if (canAccessAdminThread)
-            _TripMessagingThreadTabs(
-              selectedScope: scope,
-              onSelectMain: () => context.go('/trips/${trip.id}/messages'),
-              onSelectAdmin: () =>
-                  context.go('/trips/${trip.id}/messages/admin'),
-            ),
-          Expanded(
-            child: Chat(
+    return PopScope(
+      canPop: _selectedMessageId == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selectedMessageId != null) _clearMessageSelection();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Column(
+          children: [
+            if (canAccessAdminThread)
+              _TripMessagingThreadTabs(
+                selectedScope: scope,
+                onSelectMain: () => context.go('/trips/${trip.id}/messages'),
+                onSelectAdmin: () =>
+                    context.go('/trips/${trip.id}/messages/admin'),
+              ),
+            if (selectedMessage != null)
+              MessageSelectionActionBar(
+                onClose: _clearMessageSelection,
+                onReply: () {
+                  _startReply(selectedMessage);
+                  _clearMessageSelection();
+                },
+                onCopy: selectedMessage is TextMessage
+                    ? () => unawaited(_copySelectedMessage(selectedMessage))
+                    : null,
+                onEdit: selectedIsMine && selectedMessage is TextMessage
+                    ? () => _editSelectedMessage(selectedMessage)
+                    : null,
+                onDelete: selectedIsMine
+                    ? () => _deleteSelectedMessage(selectedMessage)
+                    : null,
+              ),
+            Expanded(
+              child: Chat(
               currentUserId: myUid ?? '',
               chatController: chatController,
               crossCache: _crossCache,
@@ -600,6 +762,14 @@ class _TripThreadMessagingPageState
               builders: _builders!,
               onAttachmentTap: _isSendingImage ? null : handleAttachmentTap,
               onMessageTap: (ctx, message, {required index, required details}) {
+                if (_selectedMessageId != null) {
+                  setState(() {
+                    _selectedMessageId =
+                        _selectedMessageId == message.id ? null : message.id;
+                    _builders = null;
+                  });
+                  return;
+                }
                 if (message is! ImageMessage) return;
                 unawaited(
                   showChatImageViewer(
@@ -632,13 +802,14 @@ class _TripThreadMessagingPageState
                 );
               },
               onMessageLongPress: (ctx, msg, {required index, required details}) =>
-                  handleMessageOptions(ctx, msg),
+                  _selectMessage(msg),
               onMessageSecondaryTap: (ctx, msg, {required index, details}) =>
-                  handleMessageOptions(ctx, msg),
+                  _selectMessage(msg),
               timeFormat: DateFormat.Hm(localeTag),
             ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

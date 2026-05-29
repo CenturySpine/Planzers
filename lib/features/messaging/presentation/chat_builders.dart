@@ -1,242 +1,111 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
-import 'package:planerz/core/presentation/message_selection_action_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
-import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
-import 'package:planerz/features/messaging/presentation/whatsapp_emoji_picker.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Shows a bottom sheet with quick reactions and message actions.
-Future<void> showMessageOptions(
-  BuildContext context,
-  Message message, {
-  required bool isMine,
-  required String? myUid,
-  required Future<void> Function(String messageId, String emoji) onSetReaction,
-  required Future<void> Function(String messageId) onRemoveReaction,
-  required Future<void> Function(String messageId, String text) onEdit,
-  required Future<void> Function(String messageId) onDelete,
-  required void Function(Message message) onReply,
-}) async {
-  if (message is! TextMessage && message is! ImageMessage) return;
-  final l10n = AppLocalizations.of(context)!;
-  await showModalBottomSheet<void>(
-    context: context,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (sheetCtx) => _MessageOptionsSheet(
-      outerContext: context,
-      message: message,
-      isMine: isMine,
-      myUid: myUid,
-      l10n: l10n,
-      onSetReaction: onSetReaction,
-      onRemoveReaction: onRemoveReaction,
-      onEdit: onEdit,
-      onDelete: onDelete,
-      onReply: onReply,
-    ),
-  );
+/// Quick reactions shown above a long-pressed message (pre-migration layout).
+const List<String> chatQuickReactionEmojis = ['👍', '❤️', '😂', '😮', '🙏'];
+
+/// Emoji the current user applied on [message], if any.
+String? currentUserReactionEmoji(Message message, String? myUid) {
+  if (myUid == null || message.reactions == null) return null;
+  for (final entry in message.reactions!.entries) {
+    if (entry.value.contains(myUid)) return entry.key;
+  }
+  return null;
 }
 
-class _MessageOptionsSheet extends StatelessWidget {
-  static const List<String> _quickEmojis = ['👍', '❤️', '😂', '😮', '🙏'];
-
-  const _MessageOptionsSheet({
-    required this.outerContext,
-    required this.message,
-    required this.isMine,
-    required this.myUid,
-    required this.l10n,
-    required this.onSetReaction,
-    required this.onRemoveReaction,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onReply,
+/// Pill bar with quick emojis and "+" for the full picker, overlaying the bubble.
+class InlineMessageQuickReactionBar extends StatelessWidget {
+  const InlineMessageQuickReactionBar({
+    super.key,
+    required this.onEmojiTap,
+    required this.onMoreTap,
   });
 
-  final BuildContext outerContext;
-  final Message message;
-  final bool isMine;
-  final String? myUid;
-  final AppLocalizations l10n;
-  final Future<void> Function(String, String) onSetReaction;
-  final Future<void> Function(String) onRemoveReaction;
-  final Future<void> Function(String, String) onEdit;
-  final Future<void> Function(String) onDelete;
-  final void Function(Message) onReply;
-
-  String? _currentUserReaction() {
-    if (myUid == null || message.reactions == null) return null;
-    for (final entry in message.reactions!.entries) {
-      if (entry.value.contains(myUid)) return entry.key;
-    }
-    return null;
-  }
-
-  Future<void> _handleReaction(BuildContext sheetCtx, String emoji) async {
-    Navigator.pop(sheetCtx);
-    try {
-      if (_currentUserReaction() == emoji) {
-        await onRemoveReaction(message.id);
-      } else {
-        await onSetReaction(message.id, emoji);
-      }
-    } catch (e) {
-      if (!outerContext.mounted) return;
-      ScaffoldMessenger.of(outerContext).showSnackBar(
-        SnackBar(content: Text(l10n.chatReactionImpossible(e.toString()))),
-      );
-    }
-  }
-
-  Future<void> _pickEmoji(BuildContext sheetCtx) async {
-    Navigator.pop(sheetCtx);
-    final selected = await showPlanerzEmojiReactionPicker(outerContext);
-    if (selected == null || !outerContext.mounted) return;
-    try {
-      if (_currentUserReaction() == selected) {
-        await onRemoveReaction(message.id);
-      } else {
-        await onSetReaction(message.id, selected);
-      }
-    } catch (e) {
-      if (!outerContext.mounted) return;
-      ScaffoldMessenger.of(outerContext).showSnackBar(
-        SnackBar(content: Text(l10n.chatReactionImpossible(e.toString()))),
-      );
-    }
-  }
+  final Future<void> Function(String emoji) onEmojiTap;
+  final Future<void> Function() onMoreTap;
 
   @override
-  Widget build(BuildContext sheetCtx) {
-    final colorScheme = Theme.of(sheetCtx).colorScheme;
-    return SafeArea(
-      top: false,
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (final emoji in _quickEmojis)
-                  IconButton(
-                    icon: Text(
-                      emoji,
-                      style: Theme.of(sheetCtx).textTheme.titleLarge,
-                    ),
-                    tooltip: l10n.chatReactWithEmoji(emoji),
-                    onPressed: () => unawaited(_handleReaction(sheetCtx, emoji)),
+            for (final emoji in chatQuickReactionEmojis)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1),
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  constraints:
+                      const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: () => unawaited(onEmojiTap(emoji)),
+                  icon: Text(
+                    emoji,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  tooltip: l10n.chatMoreEmojis,
-                  onPressed: () => unawaited(_pickEmoji(sheetCtx)),
+                  tooltip: l10n.chatReactWithEmoji(emoji),
                 ),
-              ],
+              ),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              onPressed: () => unawaited(onMoreTap()),
+              icon: const Icon(Icons.add),
+              tooltip: l10n.chatMoreEmojis,
             ),
-            const Divider(height: 24),
-            ListTile(
-              leading: const Icon(Icons.reply_outlined),
-              title: Text(l10n.chatReply),
-              onTap: () {
-                Navigator.pop(sheetCtx);
-                onReply(message);
-              },
-            ),
-            if (message is TextMessage)
-              ListTile(
-                leading: const Icon(Icons.copy_outlined),
-                title: Text(l10n.chatCopy),
-                onTap: () {
-                  final textMessage = message as TextMessage;
-                  Navigator.pop(sheetCtx);
-                  Clipboard.setData(ClipboardData(text: textMessage.text));
-                  if (outerContext.mounted) {
-                    ScaffoldMessenger.of(outerContext).showSnackBar(
-                      SnackBar(content: Text(l10n.chatCopied)),
-                    );
-                  }
-                },
-              ),
-            if (isMine && message is TextMessage)
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: Text(l10n.chatEditMessageTitle),
-                onTap: () async {
-                  Navigator.pop(sheetCtx);
-                  final textMessage = message as TextMessage;
-                  final newText = await showDialog<String>(
-                    context: outerContext,
-                    builder: (ctx) => EditTextDialog(
-                      initialText: textMessage.text,
-                      title: l10n.chatEditMessageTitle,
-                      maxLength: TripMessagesRepository.maxTextLength,
-                    ),
-                  );
-                  if (newText == null || !outerContext.mounted) return;
-                  try {
-                    await onEdit(message.id, newText);
-                  } catch (e) {
-                    if (!outerContext.mounted) return;
-                    ScaffoldMessenger.of(outerContext).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.chatEditImpossible(e.toString())),
-                      ),
-                    );
-                  }
-                },
-              ),
-            if (isMine)
-              ListTile(
-                leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                title: Text(
-                  l10n.commonDelete,
-                  style: TextStyle(color: colorScheme.error),
-                ),
-                onTap: () async {
-                  Navigator.pop(sheetCtx);
-                  final confirm = await showDialog<bool>(
-                    context: outerContext,
-                    builder: (ctx) => AlertDialog(
-                      content: Text(l10n.chatDeleteMessageConfirm),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l10n.commonCancel),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l10n.commonDelete),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm != true || !outerContext.mounted) return;
-                  try {
-                    await onDelete(message.id);
-                  } catch (e) {
-                    if (!outerContext.mounted) return;
-                    ScaffoldMessenger.of(outerContext).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.chatDeleteImpossible(e.toString())),
-                      ),
-                    );
-                  }
-                },
-              ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Wraps [child] with the quick-reaction bar above the message bubble.
+Widget wrapMessageWithQuickReactionBar({
+  required Widget child,
+  required bool isSentByMe,
+  required Future<void> Function(String emoji) onEmojiTap,
+  required Future<void> Function() onMoreTap,
+}) {
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 34),
+        child: child,
+      ),
+      Positioned(
+        top: 0,
+        left: isSentByMe ? null : 40,
+        right: isSentByMe ? 0 : null,
+        child: InlineMessageQuickReactionBar(
+          onEmojiTap: onEmojiTap,
+          onMoreTap: onMoreTap,
+        ),
+      ),
+    ],
+  );
 }
 
 /// Single combined reaction badge shown below a message bubble (pre-migration style).
@@ -253,7 +122,8 @@ class MessageReactionsBadge extends StatelessWidget {
     if (reactions.isEmpty) return const SizedBox.shrink();
 
     final emojis = _sortedReactionEmojis(reactions);
-    final totalCount = reactions.values.fold<int>(0, (sum, uids) => sum + uids.length);
+    final totalCount =
+        reactions.values.fold<int>(0, (sum, uids) => sum + uids.length);
     final scheme = Theme.of(context).colorScheme;
     final emojisLabel = emojis.join(' ');
     final countLabel = totalCount > 1 ? ' $totalCount' : '';
