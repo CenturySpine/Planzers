@@ -15,6 +15,7 @@ import 'package:planerz/features/messaging/chat_controller/firestore_chat_contro
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/messaging/presentation/chat_builders.dart';
+import 'package:planerz/features/messaging/presentation/reply_widgets.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -59,6 +60,10 @@ class _TripThreadMessagingPageState
   // closures per build() would always compare unequal and force a Chat rebuild.
   Builders? _builders;
 
+  // Reply state — nulled out whenever _replyingTo changes to force a Builders rebuild.
+  Message? _replyingTo;
+  final _highlightedMessageId = ValueNotifier<String?>(null);
+
   @override
   void initState() {
     super.initState();
@@ -67,11 +72,26 @@ class _TripThreadMessagingPageState
 
   @override
   void dispose() {
+    _highlightedMessageId.dispose();
     final tripId = _presenceTripId;
     if (tripId != null && tripId.isNotEmpty) {
       unawaited(_notificationCenter.clearOpenChannel(tripId: tripId));
     }
     super.dispose();
+  }
+
+  void _startReply(Message message) {
+    setState(() {
+      _replyingTo = message;
+      _builders = null;
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingTo = null;
+      _builders = null;
+    });
   }
 
   void _markMessagesAsReadIfNeeded(String tripId) {
@@ -165,12 +185,7 @@ class _TripThreadMessagingPageState
       );
     }
 
-    void handleLongPress(
-      BuildContext ctx,
-      Message message, {
-      required int index,
-      required LongPressStartDetails details,
-    }) {
+    void handleMessageOptions(BuildContext ctx, Message message) {
       unawaited(
         showMessageOptions(
           ctx,
@@ -199,44 +214,7 @@ class _TripThreadMessagingPageState
             messageId: msgId,
             scope: scope,
           ),
-        ),
-      );
-    }
-
-    void handleSecondaryTap(
-      BuildContext ctx,
-      Message message, {
-      required int index,
-      TapUpDetails? details,
-    }) {
-      unawaited(
-        showMessageOptions(
-          ctx,
-          message,
-          isMine: myUid != null && message.authorId == myUid,
-          myUid: myUid,
-          onSetReaction: (msgId, emoji) => repo.setMyReaction(
-            tripId: trip.id,
-            messageId: msgId,
-            emoji: emoji,
-            scope: scope,
-          ),
-          onRemoveReaction: (msgId) => repo.removeMyReaction(
-            tripId: trip.id,
-            messageId: msgId,
-            scope: scope,
-          ),
-          onEdit: (msgId, text) => repo.updateMessage(
-            tripId: trip.id,
-            messageId: msgId,
-            text: text,
-            scope: scope,
-          ),
-          onDelete: (msgId) => repo.deleteMessage(
-            tripId: trip.id,
-            messageId: msgId,
-            scope: scope,
-          ),
+          onReply: _startReply,
         ),
       );
     }
@@ -251,10 +229,63 @@ class _TripThreadMessagingPageState
         final w = MediaQuery.sizeOf(ctx).width;
         final maxWidth =
             isSentByMe ? w - sideMargin : w - avatarSlot - sideMargin;
-        return FlyerChatTextMessage(
-          message: message,
-          index: index,
-          constraints: BoxConstraints(maxWidth: maxWidth),
+
+        // Build reply preview widget if this message is a reply.
+        Widget? replyTopWidget;
+        final replyId = message.replyToMessageId;
+        if (replyId != null) {
+          Message? original;
+          for (final m in chatController.messages) {
+            if (m.id == replyId) {
+              original = m;
+              break;
+            }
+          }
+          if (original is TextMessage) {
+            final orig = original;
+            replyTopWidget = QuotedMessageSnippet(
+              authorId: orig.authorId,
+              text: orig.text,
+              tripId: trip.id,
+              onTap: () {
+                _highlightedMessageId.value = replyId;
+                unawaited(
+                  chatController.scrollToMessage(replyId, alignment: 0.3),
+                );
+                Future.delayed(const Duration(milliseconds: 1200), () {
+                  _highlightedMessageId.value = null;
+                });
+              },
+            );
+          }
+        }
+
+        return ValueListenableBuilder<String?>(
+          valueListenable: _highlightedMessageId,
+          builder: (ctx2, highlightedId, _) {
+            final scheme = Theme.of(ctx2).colorScheme;
+            final textTheme = Theme.of(ctx2).textTheme;
+            return FlyerChatTextMessage(
+              message: message,
+              index: index,
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              topWidget: replyTopWidget,
+              sentBackgroundColor: highlightedId == message.id
+                  ? scheme.tertiaryContainer
+                  : scheme.primaryContainer,
+              receivedBackgroundColor: highlightedId == message.id
+                  ? scheme.tertiaryContainer
+                  : scheme.surfaceContainerHighest,
+              sentTextStyle: textTheme.bodyMedium?.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
+              timeStyle: isSentByMe
+                  ? textTheme.labelSmall?.copyWith(
+                      color: scheme.onPrimaryContainer.withValues(alpha: 0.6),
+                    )
+                  : null,
+            );
+          },
         );
       },
       chatMessageBuilder: (ctx, message, index, animation, child,
@@ -303,11 +334,20 @@ class _TripThreadMessagingPageState
         );
       },
       composerBuilder: (ctx) {
+        final replyTarget = _replyingTo;
         return Composer(
           hintText: l10n.chatMessageHint,
           maxLines: 5,
           minLines: 1,
           textCapitalization: TextCapitalization.sentences,
+          topWidget: replyTarget is TextMessage
+              ? ReplyComposerBanner(
+                  authorId: replyTarget.authorId,
+                  text: replyTarget.text,
+                  tripId: trip.id,
+                  onCancel: _cancelReply,
+                )
+              : null,
         );
       },
     );
@@ -331,12 +371,15 @@ class _TripThreadMessagingPageState
               builders: _builders!,
               onMessageSend: (text) {
                 final messenger = ScaffoldMessenger.maybeOf(context);
+                final replyId = _replyingTo?.id;
+                _cancelReply();
                 unawaited(
                   repo
                       .sendMessage(
                         tripId: trip.id,
                         text: text,
                         scope: scope,
+                        replyToMessageId: replyId,
                       )
                       .catchError((Object e) {
                     messenger?.showSnackBar(
@@ -347,8 +390,10 @@ class _TripThreadMessagingPageState
                   }),
                 );
               },
-              onMessageLongPress: handleLongPress,
-              onMessageSecondaryTap: handleSecondaryTap,
+              onMessageLongPress: (ctx, msg, {required index, required details}) =>
+                  handleMessageOptions(ctx, msg),
+              onMessageSecondaryTap: (ctx, msg, {required index, details}) =>
+                  handleMessageOptions(ctx, msg),
               timeFormat: DateFormat.Hm(localeTag),
             ),
           ),
