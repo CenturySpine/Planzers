@@ -2509,6 +2509,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatImageTooLarge => 'Image trop volumineuse (10 Mo max.)';
 
   @override
+  String get chatCropImageTitle => 'Recadrer la photo';
+
+  @override
   String get appCopyright => '© 2026 Bruno Chappe';
 
   @override
@@ -5468,6 +5471,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get chatImageTooLarge => 'Image trop volumineuse (10 Mo max.)';
+
+  @override
+  String get chatCropImageTitle => 'Recadrer la photo';
 
   @override
   String get appCopyright => '© 2026 Bruno Chappe';

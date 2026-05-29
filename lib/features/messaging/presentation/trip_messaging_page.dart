@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -11,6 +12,7 @@ import 'package:flyer_chat_text_message/flyer_chat_text_message.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -348,17 +350,81 @@ class _TripThreadMessagingPageState
       final uid = myUid;
       if (uid == null) return;
 
+      final source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        showDragHandle: true,
+        builder: (ctx) {
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: Text(l10n.accountChooseFromGallery),
+                  onTap: () =>
+                      Navigator.pop(ctx, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined),
+                  title: Text(l10n.accountTakePhoto),
+                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      if (source == null || !context.mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final colorScheme = Theme.of(context).colorScheme;
+
       final picker = ImagePicker();
       final picked = await picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 4096,
         maxHeight: 4096,
         imageQuality: 92,
       );
       if (picked == null || !context.mounted) return;
-      final messenger = ScaffoldMessenger.maybeOf(context);
 
-      final bytes = await picked.readAsBytes();
+      final screenSize = MediaQuery.sizeOf(context);
+      final webCropWidth =
+          ((screenSize.width - 140).clamp(260.0, 900.0)).round();
+      final webCropHeight =
+          ((screenSize.height - 320).clamp(220.0, 700.0)).round();
+
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: l10n.chatCropImageTitle,
+            toolbarColor: colorScheme.primary,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: colorScheme.primary,
+            dimmedLayerColor: Colors.black54,
+            lockAspectRatio: false,
+            initAspectRatio: CropAspectRatioPreset.original,
+          ),
+          IOSUiSettings(
+            title: l10n.chatCropImageTitle,
+            aspectRatioLockEnabled: false,
+            resetAspectRatioEnabled: true,
+          ),
+          if (kIsWeb)
+            WebUiSettings(
+              context: context,
+              presentStyle: WebPresentStyle.dialog,
+              size: CropperSize(
+                width: webCropWidth,
+                height: webCropHeight,
+              ),
+            ),
+        ],
+      );
+      if (cropped == null || !context.mounted) return;
+
+      final imagePath = cropped.path;
+      final bytes = await XFile(imagePath).readAsBytes();
       if (!context.mounted) return;
       if (bytes.length > TripMessagesRepository.maxImageBytes) {
         messenger?.showSnackBar(
@@ -367,7 +433,7 @@ class _TripThreadMessagingPageState
         return;
       }
 
-      final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(picked.path);
+      final extMatch = RegExp(r'\.([a-zA-Z0-9]+)$').firstMatch(imagePath);
       final ext = extMatch?.group(1)?.toLowerCase() ?? 'jpg';
       final replyId = _replyingTo?.id;
       _cancelReply();

@@ -4518,6 +4518,12 @@ abstract class AppLocalizations {
   /// **'Image trop volumineuse (10 Mo max.)'**
   String get chatImageTooLarge;
 
+  /// No description provided for @chatCropImageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recadrer la photo'**
+  String get chatCropImageTitle;
+
   /// No description provided for @appCopyright.
   ///
   /// In fr, this message translates to:

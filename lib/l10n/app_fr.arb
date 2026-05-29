@@ -961,6 +961,7 @@
   "chatReply": "Répondre",
   "chatQuotedImage": "Photo",
   "chatImageTooLarge": "Image trop volumineuse (10 Mo max.)",
+  "chatCropImageTitle": "Recadrer la photo",
   "appCopyright": "© 2026 Bruno Chappe",
   "tripsMemberCount": "{count} membre(s)",
   "@tripsMemberCount": {"placeholders": {"count": {}}},

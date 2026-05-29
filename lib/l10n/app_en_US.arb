@@ -923,6 +923,7 @@
   "chatReply": "Reply",
   "chatQuotedImage": "Photo",
   "chatImageTooLarge": "Image too large (10 MB max.)",
+  "chatCropImageTitle": "Crop photo",
   "appCopyright": "© 2026 Bruno Chappe",
   "tripsMemberCount": "{count} member(s)",
   "@tripsMemberCount": {"placeholders": {"count": {}}},
