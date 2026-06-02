@@ -507,6 +507,11 @@ function validateExportPayload(payload) {
   if (!payload.trip.path.startsWith('trips/')) {
     throw new Error(`Chemin de voyage inattendu : ${payload.trip.path}`);
   }
+  if (payload.trip.path !== `trips/${payload.tripId}`) {
+    throw new Error(
+      `Chemin de voyage incohérent : ${payload.trip.path} (attendu : trips/${payload.tripId}).`,
+    );
+  }
 }
 
 function flattenTreeWrites(node, writes) {
@@ -522,17 +527,26 @@ function flattenTreeWrites(node, writes) {
   }
 }
 
-async function commitWrites(db, writes, apply) {
+async function commitWrites(db, writes, apply, { merge = false } = {}) {
   if (!apply) return;
 
   for (let offset = 0; offset < writes.length; offset += BATCH_SIZE) {
     const chunk = writes.slice(offset, offset + BATCH_SIZE);
     const batch = db.batch();
     for (const entry of chunk) {
-      batch.set(db.doc(entry.path), entry.data, { merge: false });
+      batch.set(db.doc(entry.path), entry.data, { merge });
     }
     await batch.commit();
   }
+}
+
+async function deleteExistingTripTree(db, tripId) {
+  if (typeof db.recursiveDelete !== 'function') {
+    throw new Error(
+      'Import impossible : cette version de firebase-admin ne fournit pas recursiveDelete.',
+    );
+  }
+  await db.recursiveDelete(db.collection('trips').doc(tripId));
 }
 
 async function runImport(db, opts) {
@@ -582,7 +596,9 @@ async function runImport(db, opts) {
         return;
       }
     } else if (!opts.apply) {
-      console.log('(dry-run : les documents existants seraient remplacés avec --apply)');
+      console.log(
+        '(dry-run : le voyage existant serait supprimé puis réimporté avec --apply)',
+      );
     }
   }
 
@@ -592,11 +608,16 @@ async function runImport(db, opts) {
   }
 
   console.log('\nÉcriture des utilisateurs…');
-  await commitWrites(db, userWrites, true);
-  console.log(`  ${userWrites.length} document(s) users/* écrit(s).`);
+  await commitWrites(db, userWrites, true, { merge: true });
+  console.log(`  ${userWrites.length} document(s) users/* fusionné(s).`);
+
+  if (existingTrip.exists) {
+    console.log('Suppression du voyage existant avant restauration…');
+    await deleteExistingTripTree(db, tripId);
+  }
 
   console.log('Écriture du voyage et des sous-collections…');
-  await commitWrites(db, tripWrites, true);
+  await commitWrites(db, tripWrites, true, { merge: false });
   console.log(`  ${tripWrites.length} document(s) écrit(s).`);
 
   console.log('\nImport terminé.');
@@ -645,7 +666,16 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Erreur fatale :', err.message ?? err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Erreur fatale :', err.message ?? err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  commitWrites,
+  deleteExistingTripTree,
+  runImport,
+  validateExportPayload,
+};
