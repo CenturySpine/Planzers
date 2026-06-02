@@ -45,7 +45,7 @@ function buildExportPayload() {
       data: { title: 'Voyage sauvegardé' },
       subcollections: {
         messages: {
-          message-a: {
+          'message-a': {
             path: 'trips/trip-a/messages/message-a',
             data: { text: 'Bonjour' },
             subcollections: {},
