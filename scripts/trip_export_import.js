@@ -19,7 +19,6 @@
  *   --file <path>       Fichier JSON produit par export (obligatoire)
  *   --apply             Écriture réelle (défaut : dry-run)
  *   --dry-run           Aperçu sans écriture (défaut)
- *   --force             Ne pas demander de confirmation si le voyage existe déjà
  *
  * Exemples :
  *   node trip_export_import.js --key ./planerz-PROD.json export
@@ -128,7 +127,6 @@ Import:
   --file <path>             Fichier JSON à importer (obligatoire)
   --apply                   Écriture Firestore
   --dry-run                 Aperçu (défaut)
-  --force                   Importer sans confirmation si trips/{id} existe
 
 Exemples:
   node trip_export_import.js --key ./planerz-PROD.json export
@@ -535,6 +533,26 @@ async function commitWrites(db, writes, apply) {
   }
 }
 
+async function partitionUserWritesByExistence(db, userWrites) {
+  const missingWrites = [];
+  const existingWrites = [];
+
+  for (let offset = 0; offset < userWrites.length; offset += BATCH_SIZE) {
+    const chunk = userWrites.slice(offset, offset + BATCH_SIZE);
+    const refs = chunk.map((entry) => db.doc(entry.path));
+    const snaps = await db.getAll(...refs);
+    for (let index = 0; index < chunk.length; index++) {
+      if (snaps[index]?.exists) {
+        existingWrites.push(chunk[index]);
+      } else {
+        missingWrites.push(chunk[index]);
+      }
+    }
+  }
+
+  return { missingWrites, existingWrites };
+}
+
 async function runImport(db, opts) {
   if (!opts.filePath) {
     throw new Error('Import : --file <export.json> est obligatoire.');
@@ -575,14 +593,12 @@ async function runImport(db, opts) {
 
   if (existingTrip.exists) {
     console.log(`\nLe voyage trips/${tripId} existe déjà dans ce projet.`);
-    if (!opts.force && opts.apply) {
-      const confirm = await prompt('Écraser ce voyage et réimporter ? (oui/non) : ');
-      if (confirm.toLowerCase() !== 'oui' && confirm.toLowerCase() !== 'o') {
-        console.log('Import annulé.');
-        return;
-      }
+    if (opts.apply) {
+      throw new Error(
+        `Import refusé : trips/${tripId} existe déjà. Supprimez le voyage cible avant de relancer l'import.`
+      );
     } else if (!opts.apply) {
-      console.log('(dry-run : les documents existants seraient remplacés avec --apply)');
+      console.log('(dry-run : --apply serait refusé tant que le voyage existe déjà)');
     }
   }
 
@@ -591,9 +607,16 @@ async function runImport(db, opts) {
     return;
   }
 
-  console.log('\nÉcriture des utilisateurs…');
-  await commitWrites(db, userWrites, true);
-  console.log(`  ${userWrites.length} document(s) users/* écrit(s).`);
+  const userPlan = await partitionUserWritesByExistence(db, userWrites);
+
+  console.log('\nCréation des utilisateurs manquants…');
+  await commitWrites(db, userPlan.missingWrites, true);
+  console.log(`  ${userPlan.missingWrites.length} document(s) users/* créé(s).`);
+  if (userPlan.existingWrites.length > 0) {
+    console.log(
+      `  ${userPlan.existingWrites.length} document(s) users/* existant(s) conservé(s).`
+    );
+  }
 
   console.log('Écriture du voyage et des sous-collections…');
   await commitWrites(db, tripWrites, true);
@@ -645,7 +668,16 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Erreur fatale :', err.message ?? err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Erreur fatale :', err.message ?? err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  parseArgs,
+  partitionUserWritesByExistence,
+  runImport,
+  validateExportPayload,
+};
