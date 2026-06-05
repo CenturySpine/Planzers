@@ -259,13 +259,11 @@ class TripMessagesRepository {
       'authorId': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (!scope.isMain) {
-      payload['threadType'] = scope.threadType.firestoreValue;
-      payload['visibilityType'] = scope.visibilityType.firestoreValue;
-      if (scope.isObject) {
-        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-      }
+    payload['threadType'] = scope.threadType.firestoreValue;
+    payload['visibilityType'] = scope.visibilityType.firestoreValue;
+    if (scope.isObject) {
+      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
     }
     final cleanReplyId = replyToMessageId?.trim();
     if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
@@ -364,13 +362,11 @@ class TripMessagesRepository {
     if (trimmedCaption.isNotEmpty) {
       payload['text'] = trimmedCaption;
     }
-    if (!scope.isMain) {
-      payload['threadType'] = scope.threadType.firestoreValue;
-      payload['visibilityType'] = scope.visibilityType.firestoreValue;
-      if (scope.isObject) {
-        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-      }
+    payload['threadType'] = scope.threadType.firestoreValue;
+    payload['visibilityType'] = scope.visibilityType.firestoreValue;
+    if (scope.isObject) {
+      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
     }
     final cleanReplyId = replyToMessageId?.trim();
     if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
@@ -694,6 +690,9 @@ class TripMessagesRepository {
     required TripMessage message,
     required TripMessageThreadScope scope,
   }) {
+    if (message.visibilityType != scope.visibilityType) {
+      return false;
+    }
     return scope.matchesMessageFields(
       messageThreadType: message.threadType,
       messageThreadObjectType: message.threadObjectType,
@@ -705,9 +704,33 @@ class TripMessagesRepository {
     String tripId, {
     required TripMessageThreadScope scope,
   }) {
-    // Keep query index-free (orderBy only), then filter by scope in-memory.
-    // This avoids requiring composite indexes for admin/object threads.
-    return _messagesCol(tripId);
+    var query = _messagesCol(tripId);
+    if (scope.isMain) {
+      return query.where(
+        'visibilityType',
+        whereIn: <Object?>[
+          TripMessageVisibilityType.tripAll.firestoreValue,
+          null,
+        ],
+      );
+    }
+
+    query = query
+        .where('visibilityType', isEqualTo: scope.visibilityType.firestoreValue)
+        .where('threadType', isEqualTo: scope.threadType.firestoreValue);
+
+    if (scope.isObject) {
+      query = query
+          .where(
+            'threadObjectType',
+            isEqualTo: (scope.threadObjectType ?? '').trim(),
+          )
+          .where(
+            'threadObjectId',
+            isEqualTo: (scope.threadObjectId ?? '').trim(),
+          );
+    }
+    return query;
   }
 
   int _queryPageSizeForRequestedPage(int requestedPageSize) {
