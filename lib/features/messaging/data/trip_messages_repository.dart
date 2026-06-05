@@ -710,7 +710,7 @@ class TripMessagesRepository {
     String tripId, {
     required TripMessageThreadScope scope,
   }) {
-    var query = _messagesCol(tripId);
+    Query<Map<String, dynamic>> query = _messagesCol(tripId);
     if (scope.isMain) {
       return query.where(
         Filter.or(
