@@ -22,8 +22,9 @@ final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   };
   final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
-  final bucketUri =
-      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
+  final bucketUri = effectiveBucket.startsWith('gs://')
+      ? effectiveBucket
+      : 'gs://$effectiveBucket';
   return TripMessagesRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
@@ -52,7 +53,9 @@ final tripMessagesLastReadAtProvider =
 
 final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
     .family<Map<String, List<TripMessageReaction>>, String>((ref, tripId) {
-  return ref.watch(tripMessagesRepositoryProvider).watchReactionsByMessage(tripId);
+  return ref
+      .watch(tripMessagesRepositoryProvider)
+      .watchReactionsByMessage(tripId);
 });
 
 final tripChatDataStreamProvider =
@@ -465,7 +468,9 @@ class TripMessagesRepository {
     if (cleanId.isEmpty) {
       return Stream.value(const <String, List<TripMessageReaction>>{});
     }
-    return _messagesQueryForScope(cleanId, scope: scope).snapshots().map((snap) {
+    return _messagesQueryForScope(cleanId, scope: scope)
+        .snapshots()
+        .map((snap) {
       final result = <String, List<TripMessageReaction>>{};
       for (final messageDoc in snap.docs) {
         final message = TripMessage.fromDoc(messageDoc);
@@ -621,7 +626,8 @@ class TripMessagesRepository {
   }
 
   TripChatData _chatDataFromDocs({
-    required List<QueryDocumentSnapshot<Map<String, dynamic>>> docsDescByCreatedAt,
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>>
+        docsDescByCreatedAt,
     required int pageSize,
     required TripMessageThreadScope scope,
   }) {
@@ -707,11 +713,13 @@ class TripMessagesRepository {
     var query = _messagesCol(tripId);
     if (scope.isMain) {
       return query.where(
-        'visibilityType',
-        whereIn: <Object?>[
-          TripMessageVisibilityType.tripAll.firestoreValue,
-          null,
-        ],
+        Filter.or(
+          Filter(
+            'visibilityType',
+            isEqualTo: TripMessageVisibilityType.tripAll.firestoreValue,
+          ),
+          Filter('visibilityType', isNull: true),
+        ),
       );
     }
 
