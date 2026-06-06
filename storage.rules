@@ -43,10 +43,12 @@ service firebase.storage {
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*')
-        && request.resource.metadata.authorId == request.auth.uid;
+        && request.resource.metadata.keys().hasOnly(['authorId'])
+        && request.resource.metadata['authorId'] == request.auth.uid;
       allow update: if false;
       allow delete: if isTripMember(tripId)
-        && resource.metadata.authorId == request.auth.uid;
+        && resource.metadata.keys().hasAny(['authorId'])
+        && resource.metadata['authorId'] == request.auth.uid;
     }
 
     // Banner assets are stored under:
