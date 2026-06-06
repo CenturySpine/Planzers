@@ -38,10 +38,14 @@ service firebase.storage {
     // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
     match /trips/{tripId}/messages/{fileName} {
       allow read: if isTripMember(tripId);
-      allow write: if isTripMember(tripId)
+      allow create: if isTripMember(tripId)
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.metadata.authorId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isTripMember(tripId)
+        && resource.metadata.authorId == request.auth.uid;
     }
 
     // Banner assets are stored under:

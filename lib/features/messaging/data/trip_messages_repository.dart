@@ -337,7 +337,10 @@ class TripMessagesRepository {
     final objectRef = storage.ref(objectPath);
     final uploadTask = objectRef.putData(
       bytes,
-      SettableMetadata(contentType: contentType),
+      SettableMetadata(
+        contentType: contentType,
+        customMetadata: {'authorId': user.uid},
+      ),
     );
     if (onUploadProgress != null) {
       uploadTask.snapshotEvents.listen((event) {
