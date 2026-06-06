@@ -38,7 +38,8 @@ service firebase.storage {
     // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
     match /trips/{tripId}/messages/{fileName} {
       allow read: if isTripMember(tripId);
-      allow create: if isTripMember(tripId)
+      allow create: if resource == null
+        && isTripMember(tripId)
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*')
