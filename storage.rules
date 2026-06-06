@@ -53,9 +53,15 @@ service firebase.storage {
 
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
+    match /trips/{tripId}/{fileName} {
+      allow read: if isTripMember(tripId);
+      allow write: if isTripOwner(tripId)
+        && fileName.matches('^banner_.*');
+    }
+
     match /trips/{tripId}/{allPaths=**} {
       allow read: if isTripMember(tripId);
-      allow write: if isTripOwner(tripId);
+      allow write: if false;
     }
 
     // Profile assets are stored under:
