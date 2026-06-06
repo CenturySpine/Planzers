@@ -43,6 +43,7 @@ service firebase.storage {
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*')
+        && request.resource.metadata.keys().hasAll(['authorId'])
         && request.resource.metadata.keys().hasOnly(['authorId'])
         && request.resource.metadata['authorId'] == request.auth.uid;
       allow update: if false;
