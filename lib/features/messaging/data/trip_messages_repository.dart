@@ -322,11 +322,19 @@ class TripMessagesRepository {
       throw StateError('Parametres invalides');
     }
 
+    final storageSegmentRe = RegExp(r'^[A-Za-z0-9_-]+$');
+    if (!storageSegmentRe.hasMatch(cleanTripId) ||
+        !storageSegmentRe.hasMatch(cleanMessageId) ||
+        !storageSegmentRe.hasMatch(user.uid)) {
+      throw StateError('Parametres invalides');
+    }
+
     final dimensions = await _decodeImageDimensions(bytes);
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
     final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
-    final objectPath = 'trips/$cleanTripId/messages/$cleanMessageId.$ext';
+    final objectPath = 'trips/$cleanTripId/messages/${user.uid}/'
+        '$cleanMessageId.$ext';
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',
@@ -338,7 +346,10 @@ class TripMessagesRepository {
     final objectRef = storage.ref(objectPath);
     final uploadTask = objectRef.putData(
       bytes,
-      SettableMetadata(contentType: contentType),
+      SettableMetadata(
+        contentType: contentType,
+        customMetadata: {'authorId': user.uid},
+      ),
     );
     if (onUploadProgress != null) {
       uploadTask.snapshotEvents.listen((event) {

@@ -35,20 +35,42 @@ service firebase.storage {
         && tripDoc(tripId).data.ownerId == request.auth.uid;
     }
 
-    // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
-    match /trips/{tripId}/messages/{fileName} {
-      allow read: if isTripMember(tripId);
-      allow write: if isTripMember(tripId)
+    function isValidChatImageUpload(tripId, ownerId, fileName) {
+      return isTripMember(tripId)
+        && ownerId == request.auth.uid
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/.*')
+        && fileName.matches('[A-Za-z0-9._-]+')
+        && request.resource.metadata.authorId == request.auth.uid;
+    }
+
+    function isValidBannerFileName(fileName) {
+      return fileName.matches('banner_[A-Za-z0-9._-]+');
+    }
+
+    // Legacy chat image path kept readable for existing messages.
+    match /trips/{tripId}/messages/{fileName} {
+      allow read: if isTripMember(tripId);
+    }
+
+    // Chat image attachments: trips/{tripId}/messages/{authorUid}/<messageId>.<ext>
+    match /trips/{tripId}/messages/{ownerId}/{fileName} {
+      allow read: if isTripMember(tripId);
+      allow create, update: if isValidChatImageUpload(tripId, ownerId, fileName);
+      allow delete: if isTripMember(tripId)
+        && ownerId == request.auth.uid;
     }
 
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
     match /trips/{tripId}/{allPaths=**} {
       allow read: if isTripMember(tripId);
-      allow write: if isTripOwner(tripId);
+    }
+
+    match /trips/{tripId}/{fileName} {
+      allow write: if isTripOwner(tripId)
+        && isValidBannerFileName(fileName);
     }
 
     // Profile assets are stored under:
