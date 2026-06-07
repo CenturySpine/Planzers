@@ -644,11 +644,16 @@ class TripsRepository {
       }
     }
 
-    await participantRef.update(<String, dynamic>{
+    final update = <String, dynamic>{
       'participantName': name,
       'useProfileName': useProfileName,
-      'isChild': isChild,
-    });
+    };
+    // isChild may only be written for non-registered participants (Firestore rules
+    // block the field on documents that have a userId).
+    if (participantUserId == null || participantUserId.trim().isEmpty) {
+      update['isChild'] = isChild;
+    }
+    await participantRef.update(update);
   }
 
   Future<void> removeTripParticipant({
