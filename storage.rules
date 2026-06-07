@@ -44,20 +44,20 @@ service firebase.storage {
     // Legacy chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
     match /trips/{tripId}/messages/{fileName} {
       allow read: if isTripMember(tripId);
-      allow create: if isTripMember(tripId)
+      allow write: if isTripMember(tripId)
+        && resource == null
         && validChatImageUpload();
-      allow update, delete: if false;
     }
 
     // Chat image attachments: trips/{tripId}/messages/{authorId}/<messageId>.<ext>
     match /trips/{tripId}/messages/{authorId}/{fileName} {
       allow read: if isTripMember(tripId);
-      allow create: if isTripMember(tripId)
+      allow write: if isTripMember(tripId)
         && authorId == request.auth.uid
-        && validChatImageUpload();
-      allow delete: if isTripMember(tripId)
-        && authorId == request.auth.uid;
-      allow update: if false;
+        && (
+          (resource == null && validChatImageUpload())
+          || request.resource == null
+        );
     }
 
     // Banner assets are stored under:
