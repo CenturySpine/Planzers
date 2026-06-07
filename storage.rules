@@ -38,13 +38,11 @@ service firebase.storage {
     // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
     match /trips/{tripId}/messages/{fileName} {
       allow read: if isTripMember(tripId);
-      allow create: if resource == null
-        && isTripMember(tripId)
+      allow create: if isTripMember(tripId)
         && request.resource != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*')
         && request.resource.metadata.keys().hasAll(['authorId'])
-        && request.resource.metadata.keys().hasOnly(['authorId'])
         && request.resource.metadata['authorId'] == request.auth.uid;
       allow update: if false;
       allow delete: if isTripMember(tripId)
@@ -55,7 +53,6 @@ service firebase.storage {
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
     match /trips/{tripId}/{fileName} {
-      allow read: if isTripMember(tripId);
       allow write: if isTripOwner(tripId)
         && fileName.matches('^banner_.*');
     }
