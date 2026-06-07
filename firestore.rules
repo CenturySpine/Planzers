@@ -470,6 +470,35 @@ service cloud.firestore {
         );
     }
 
+    function validStoragePathSegment(value) {
+      return value is string
+        && value.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    function validTripMessageImageStoragePath(tripId, imageStoragePath, authorId) {
+      return imageStoragePath is string
+        && imageStoragePath.size() > 0
+        && validStoragePathSegment(tripId)
+        && validStoragePathSegment(authorId)
+        && imageStoragePath.matches(
+          '^trips/' + tripId + '/messages/' + authorId + '/[A-Za-z0-9._-]+$'
+        );
+    }
+
+    function validTripMessageImageUrl(tripId, imageUrl, authorId) {
+      return imageUrl is string
+        && imageUrl.size() > 0
+        && validStoragePathSegment(tripId)
+        && validStoragePathSegment(authorId)
+        && imageUrl.matches(
+          '^https://firebasestorage[.]googleapis[.]com/v0/b/planerz(-preview)?[.]firebasestorage[.]app/o/trips%2F'
+            + tripId
+            + '%2Fmessages%2F'
+            + authorId
+            + '%2F[A-Za-z0-9._%-]+[?]alt=media(&token=[A-Za-z0-9._%-]+)?$'
+        );
+    }
+
     function tripMessageReactionUpdateOnly() {
       return tripMessageThreadFieldsUnchanged()
         && tripMessageOptionalTextUnchanged()
@@ -861,12 +890,15 @@ service cloud.firestore {
                 'imageHeight',
               ])
               && request.resource.data.type == 'image'
-              && request.resource.data.imageUrl is string
-              && request.resource.data.imageUrl.size() > 0
-              && request.resource.data.imageStoragePath is string
-              && request.resource.data.imageStoragePath.size() > 0
-              && request.resource.data.imageStoragePath.matches(
-                '^trips/' + tripId + '/messages/[A-Za-z0-9._-]+$'
+              && validTripMessageImageUrl(
+                tripId,
+                request.resource.data.imageUrl,
+                request.auth.uid
+              )
+              && validTripMessageImageStoragePath(
+                tripId,
+                request.resource.data.imageStoragePath,
+                request.auth.uid
               )
               && (
                 !request.resource.data.keys().hasAny(['text'])

@@ -2499,7 +2499,7 @@ exports.addTripParticipant = onCall(
     await assertTripParticipantPermission({
       tripData,
       uid,
-      permissionKey: 'createParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
     });
@@ -2557,7 +2557,7 @@ exports.removeTripParticipant = onCall(
     await assertTripParticipantPermission({
       tripData: data,
       uid,
-      permissionKey: 'deletePlaceholderParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour retirer ce voyageur prévu.',
     });
@@ -3312,7 +3312,7 @@ exports.removeTripRegisteredMember = onCall(
     await assertTripParticipantPermission({
       tripData: data,
       uid,
-      permissionKey: 'deleteRegisteredParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour retirer ce participant.',
     });
