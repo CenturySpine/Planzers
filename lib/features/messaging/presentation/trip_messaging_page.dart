@@ -735,6 +735,7 @@ class _TripThreadMessagingPageState
                 } else {
                   await setReaction(message.id, emoji);
                 }
+                if (mounted) _clearMessageSelection();
               } catch (e) {
                 if (!ctx.mounted) return;
                 ScaffoldMessenger.of(ctx).showSnackBar(
@@ -753,6 +754,7 @@ class _TripThreadMessagingPageState
                 } else {
                   await setReaction(message.id, selected);
                 }
+                if (mounted) _clearMessageSelection();
               } catch (e) {
                 if (!ctx.mounted) return;
                 ScaffoldMessenger.of(ctx).showSnackBar(

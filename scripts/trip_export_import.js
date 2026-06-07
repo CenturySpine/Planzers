@@ -19,7 +19,6 @@
  *   --file <path>       Fichier JSON produit par export (obligatoire)
  *   --apply             Écriture réelle (défaut : dry-run)
  *   --dry-run           Aperçu sans écriture (défaut)
- *   --force             Ne pas demander de confirmation si le voyage existe déjà
  *
  * Exemples :
  *   node trip_export_import.js --key ./planerz-PROD.json export
@@ -128,7 +127,6 @@ Import:
   --file <path>             Fichier JSON à importer (obligatoire)
   --apply                   Écriture Firestore
   --dry-run                 Aperçu (défaut)
-  --force                   Importer sans confirmation si trips/{id} existe
 
 Exemples:
   node trip_export_import.js --key ./planerz-PROD.json export
@@ -507,11 +505,6 @@ function validateExportPayload(payload) {
   if (!payload.trip.path.startsWith('trips/')) {
     throw new Error(`Chemin de voyage inattendu : ${payload.trip.path}`);
   }
-  if (payload.trip.path !== `trips/${payload.tripId}`) {
-    throw new Error(
-      `Chemin de voyage incohérent : ${payload.trip.path} (attendu : trips/${payload.tripId}).`,
-    );
-  }
 }
 
 function flattenTreeWrites(node, writes) {
@@ -527,26 +520,37 @@ function flattenTreeWrites(node, writes) {
   }
 }
 
-async function commitWrites(db, writes, apply, { merge = false } = {}) {
+async function commitWrites(db, writes, apply) {
   if (!apply) return;
 
   for (let offset = 0; offset < writes.length; offset += BATCH_SIZE) {
     const chunk = writes.slice(offset, offset + BATCH_SIZE);
     const batch = db.batch();
     for (const entry of chunk) {
-      batch.set(db.doc(entry.path), entry.data, { merge });
+      batch.set(db.doc(entry.path), entry.data, { merge: false });
     }
     await batch.commit();
   }
 }
 
-async function deleteExistingTripTree(db, tripId) {
-  if (typeof db.recursiveDelete !== 'function') {
-    throw new Error(
-      'Import impossible : cette version de firebase-admin ne fournit pas recursiveDelete.',
-    );
+async function partitionUserWritesByExistence(db, userWrites) {
+  const missingWrites = [];
+  const existingWrites = [];
+
+  for (let offset = 0; offset < userWrites.length; offset += BATCH_SIZE) {
+    const chunk = userWrites.slice(offset, offset + BATCH_SIZE);
+    const refs = chunk.map((entry) => db.doc(entry.path));
+    const snaps = await db.getAll(...refs);
+    for (let index = 0; index < chunk.length; index++) {
+      if (snaps[index]?.exists) {
+        existingWrites.push(chunk[index]);
+      } else {
+        missingWrites.push(chunk[index]);
+      }
+    }
   }
-  await db.recursiveDelete(db.collection('trips').doc(tripId));
+
+  return { missingWrites, existingWrites };
 }
 
 async function runImport(db, opts) {
@@ -589,16 +593,12 @@ async function runImport(db, opts) {
 
   if (existingTrip.exists) {
     console.log(`\nLe voyage trips/${tripId} existe déjà dans ce projet.`);
-    if (!opts.force && opts.apply) {
-      const confirm = await prompt('Écraser ce voyage et réimporter ? (oui/non) : ');
-      if (confirm.toLowerCase() !== 'oui' && confirm.toLowerCase() !== 'o') {
-        console.log('Import annulé.');
-        return;
-      }
-    } else if (!opts.apply) {
-      console.log(
-        '(dry-run : le voyage existant serait supprimé puis réimporté avec --apply)',
+    if (opts.apply) {
+      throw new Error(
+        `Import refusé : trips/${tripId} existe déjà. Supprimez le voyage cible avant de relancer l'import.`
       );
+    } else if (!opts.apply) {
+      console.log('(dry-run : --apply serait refusé tant que le voyage existe déjà)');
     }
   }
 
@@ -607,17 +607,19 @@ async function runImport(db, opts) {
     return;
   }
 
-  console.log('\nÉcriture des utilisateurs…');
-  await commitWrites(db, userWrites, true, { merge: true });
-  console.log(`  ${userWrites.length} document(s) users/* fusionné(s).`);
+  const userPlan = await partitionUserWritesByExistence(db, userWrites);
 
-  if (existingTrip.exists) {
-    console.log('Suppression du voyage existant avant restauration…');
-    await deleteExistingTripTree(db, tripId);
+  console.log('\nCréation des utilisateurs manquants…');
+  await commitWrites(db, userPlan.missingWrites, true);
+  console.log(`  ${userPlan.missingWrites.length} document(s) users/* créé(s).`);
+  if (userPlan.existingWrites.length > 0) {
+    console.log(
+      `  ${userPlan.existingWrites.length} document(s) users/* existant(s) conservé(s).`
+    );
   }
 
   console.log('Écriture du voyage et des sous-collections…');
-  await commitWrites(db, tripWrites, true, { merge: false });
+  await commitWrites(db, tripWrites, true);
   console.log(`  ${tripWrites.length} document(s) écrit(s).`);
 
   console.log('\nImport terminé.');
@@ -674,8 +676,8 @@ if (require.main === module) {
 }
 
 module.exports = {
-  commitWrites,
-  deleteExistingTripTree,
+  parseArgs,
+  partitionUserWritesByExistence,
   runImport,
   validateExportPayload,
 };

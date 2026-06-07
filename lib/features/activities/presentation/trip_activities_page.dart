@@ -377,10 +377,18 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       });
     }
 
+    final canCreateMeal = canCreateMealForTrip(
+      trip: trip,
+      userId: myUid,
+    );
+
     return Scaffold(
       body: body,
       floatingActionButton: canSuggestActivity
-          ? _ActivitiesExpandableFab(tripId: trip.id)
+          ? _ActivitiesExpandableFab(
+              tripId: trip.id,
+              canCreateMeal: canCreateMeal,
+            )
           : null,
     );
   }
@@ -727,9 +735,13 @@ String _agendaMonthLabel(DateTime day, String localeTag) {
 }
 
 class _ActivitiesExpandableFab extends StatefulWidget {
-  const _ActivitiesExpandableFab({required this.tripId});
+  const _ActivitiesExpandableFab({
+    required this.tripId,
+    required this.canCreateMeal,
+  });
 
   final String tripId;
+  final bool canCreateMeal;
 
   @override
   State<_ActivitiesExpandableFab> createState() =>
@@ -793,14 +805,16 @@ class _ActivitiesExpandableFabState extends State<_ActivitiesExpandableFab> {
                           [TripActivityCategory.transport]),
                     ),
                     const SizedBox(height: 8),
-                    _FabMenuItem(
-                      heroSuffix: 'repas',
-                      icon: ActivityFilterGroup.repas.filterIcon,
-                      color: ActivityFilterGroup.repas.filterColor,
-                      label: l10n.activitiesFilterRepas,
-                      onTap: _openMealCreate,
-                    ),
-                    const SizedBox(height: 8),
+                    if (widget.canCreateMeal) ...[
+                      _FabMenuItem(
+                        heroSuffix: 'repas',
+                        icon: ActivityFilterGroup.repas.filterIcon,
+                        color: ActivityFilterGroup.repas.filterColor,
+                        label: l10n.activitiesFilterRepas,
+                        onTap: _openMealCreate,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     _FabMenuItem(
                       heroSuffix: 'loisirs',
                       icon: ActivityFilterGroup.loisirs.filterIcon,
