@@ -49,9 +49,13 @@ service firebase.storage {
       return fileName.matches('banner_[A-Za-z0-9._-]+');
     }
 
-    // Legacy chat image path kept readable for existing messages.
+    // Legacy flat path — kept readable for existing messages.
+    // Delete allowed once authorId metadata has been backfilled by the migration script.
     match /trips/{tripId}/messages/{fileName} {
       allow read: if isTripMember(tripId);
+      allow delete: if isTripMember(tripId)
+        && resource.metadata.keys().hasAny(['authorId'])
+        && resource.metadata['authorId'] == request.auth.uid;
     }
 
     // Chat image attachments: trips/{tripId}/messages/{authorUid}/<messageId>.<ext>
@@ -64,13 +68,14 @@ service firebase.storage {
 
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
-    match /trips/{tripId}/{allPaths=**} {
-      allow read: if isTripMember(tripId);
-    }
-
     match /trips/{tripId}/{fileName} {
       allow write: if isTripOwner(tripId)
         && isValidBannerFileName(fileName);
+    }
+
+    match /trips/{tripId}/{allPaths=**} {
+      allow read: if isTripMember(tripId);
+      allow write: if false;
     }
 
     // Profile assets are stored under:
