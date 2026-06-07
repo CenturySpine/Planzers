@@ -35,20 +35,37 @@ service firebase.storage {
         && tripDoc(tripId).data.ownerId == request.auth.uid;
     }
 
-    // Chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
-    match /trips/{tripId}/messages/{fileName} {
-      allow read: if isTripMember(tripId);
-      allow write: if isTripMember(tripId)
-        && request.resource != null
+    function validChatImageUpload() {
+      return request.resource != null
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
+    // Legacy chat image attachments: trips/{tripId}/messages/<messageId>.<ext>
+    match /trips/{tripId}/messages/{fileName} {
+      allow read: if isTripMember(tripId);
+      allow create: if isTripMember(tripId)
+        && validChatImageUpload();
+      allow update, delete: if false;
+    }
+
+    // Chat image attachments: trips/{tripId}/messages/{authorId}/<messageId>.<ext>
+    match /trips/{tripId}/messages/{authorId}/{fileName} {
+      allow read: if isTripMember(tripId);
+      allow create: if isTripMember(tripId)
+        && authorId == request.auth.uid
+        && validChatImageUpload();
+      allow delete: if isTripMember(tripId)
+        && authorId == request.auth.uid;
+      allow update: if false;
+    }
+
     // Banner assets are stored under:
     // trips/{tripId}/banner_<timestamp>.<ext>
-    match /trips/{tripId}/{allPaths=**} {
+    match /trips/{tripId}/{fileName} {
       allow read: if isTripMember(tripId);
-      allow write: if isTripOwner(tripId);
+      allow write: if isTripOwner(tripId)
+        && fileName.matches('banner_[A-Za-z0-9._-]+');
     }
 
     // Profile assets are stored under:

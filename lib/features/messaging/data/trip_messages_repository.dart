@@ -325,7 +325,8 @@ class TripMessagesRepository {
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
     final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
-    final objectPath = 'trips/$cleanTripId/messages/$cleanMessageId.$ext';
+    final objectPath =
+        'trips/$cleanTripId/messages/${user.uid}/$cleanMessageId.$ext';
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',

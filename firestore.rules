@@ -432,6 +432,19 @@ service cloud.firestore {
         );
     }
 
+    function isValidTripMessageImageStoragePath(tripId, storagePath) {
+      return storagePath is string
+        && storagePath.size() > 0
+        && (
+          storagePath.matches(
+            '^trips/' + tripId + '/messages/' + request.auth.uid + '/[A-Za-z0-9._-]+$'
+          )
+          || storagePath.matches(
+            '^trips/' + tripId + '/messages/[A-Za-z0-9._-]+$'
+          )
+        );
+    }
+
     function tripMessageThreadFieldsUnchanged() {
       return request.resource.data.authorId == resource.data.authorId
         && request.resource.data.createdAt == resource.data.createdAt
@@ -863,10 +876,9 @@ service cloud.firestore {
               && request.resource.data.type == 'image'
               && request.resource.data.imageUrl is string
               && request.resource.data.imageUrl.size() > 0
-              && request.resource.data.imageStoragePath is string
-              && request.resource.data.imageStoragePath.size() > 0
-              && request.resource.data.imageStoragePath.matches(
-                '^trips/' + tripId + '/messages/[A-Za-z0-9._-]+$'
+              && isValidTripMessageImageStoragePath(
+                tripId,
+                request.resource.data.imageStoragePath
               )
               && (
                 !request.resource.data.keys().hasAny(['text'])
