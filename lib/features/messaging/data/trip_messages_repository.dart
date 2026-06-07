@@ -321,6 +321,13 @@ class TripMessagesRepository {
       throw StateError('Parametres invalides');
     }
 
+    final storageSegmentRe = RegExp(r'^[A-Za-z0-9_-]+$');
+    if (!storageSegmentRe.hasMatch(cleanTripId) ||
+        !storageSegmentRe.hasMatch(cleanMessageId) ||
+        !storageSegmentRe.hasMatch(user.uid)) {
+      throw StateError('Parametres invalides');
+    }
+
     final dimensions = await _decodeImageDimensions(bytes);
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;

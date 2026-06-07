@@ -495,7 +495,7 @@ service cloud.firestore {
             + tripId
             + '%2Fmessages%2F'
             + authorId
-            + '%2F[A-Za-z0-9._-]+[?]alt=media(&token=[A-Za-z0-9._-]+)?$'
+            + '%2F[A-Za-z0-9._%-]+[?]alt=media(&token=[A-Za-z0-9._%-]+)?$'
         );
     }
 
