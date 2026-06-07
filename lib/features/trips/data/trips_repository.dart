@@ -555,7 +555,7 @@ class TripsRepository {
   }
 
   /// Adds a participant slot. Permission controlled by
-  /// `permissions.participants.createParticipant`.
+  /// `permissions.participants.manageParticipants`.
   Future<void> addTripParticipant({
     required String tripId,
     required String participantName,

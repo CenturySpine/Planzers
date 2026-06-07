@@ -6,7 +6,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "node --test orphan_admin_dismiss_cleanup.test.js expense_settlement.test.js expense_settlement_recalc.test.js activity_driving_route.test.js"
+    "test": "node --test orphan_admin_dismiss_cleanup.test.js expense_settlement.test.js expense_settlement_recalc.test.js activity_driving_route.test.js trip_participant_permission_keys.test.js"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
