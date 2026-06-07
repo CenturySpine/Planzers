@@ -137,14 +137,24 @@ async function loadMessageSnapshots(db, tripId) {
 }
 
 async function commitUpdates(db, actions) {
+  let committed = 0;
   for (let offset = 0; offset < actions.length; offset += BATCH_SIZE) {
     const batch = db.batch();
     const chunk = actions.slice(offset, offset + BATCH_SIZE);
     for (const action of chunk) {
       batch.update(action.ref, action.updates);
     }
-    await batch.commit();
+    try {
+      await batch.commit();
+      committed += chunk.length;
+    } catch (err) {
+      const paths = chunk.map((a) => a.path).join('\n  ');
+      console.error(`\nErreur sur le batch [${offset}–${offset + chunk.length - 1}] :\n  ${paths}`);
+      console.error(err);
+      throw err;
+    }
   }
+  return committed;
 }
 
 async function run() {
@@ -169,7 +179,9 @@ async function run() {
 
   const snap = await loadMessageSnapshots(db, opts.tripId);
   const actions = [];
+  const TRIP_MESSAGE_PATH = /^trips\/[^/]+\/messages\/[^/]+$/;
   snap.forEach((doc) => {
+    if (!TRIP_MESSAGE_PATH.test(doc.ref.path)) return;
     const updates = missingScopeUpdates(doc.data() || {});
     if (Object.keys(updates).length === 0) return;
     actions.push({ ref: doc.ref, path: doc.ref.path, updates });

@@ -696,6 +696,8 @@ class TripMessagesRepository {
     required TripMessage message,
     required TripMessageThreadScope scope,
   }) {
+    // Legacy messages without visibilityType are defaulted to tripAll by
+    // fromFirestore, so they pass this check correctly for the main scope.
     if (message.visibilityType != scope.visibilityType) {
       return false;
     }
@@ -713,13 +715,8 @@ class TripMessagesRepository {
     Query<Map<String, dynamic>> query = _messagesCol(tripId);
     if (scope.isMain) {
       return query.where(
-        Filter.or(
-          Filter(
-            'visibilityType',
-            isEqualTo: TripMessageVisibilityType.tripAll.firestoreValue,
-          ),
-          Filter('visibilityType', isNull: true),
-        ),
+        'visibilityType',
+        isEqualTo: TripMessageVisibilityType.tripAll.firestoreValue,
       );
     }
 
