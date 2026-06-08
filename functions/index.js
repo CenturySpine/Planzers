@@ -882,10 +882,11 @@ async function collectRecipientTokenEntries(db, recipients) {
           const docData = doc.data() || {};
           const t = normalizeString(docData.token);
           if (t && !byToken.has(t)) {
-            byToken.set(t, {
-              ref: doc.ref,
-              platform: normalizeString(docData.platform),
-            });
+            const platform = normalizeString(docData.platform);
+            if (!platform) {
+              console.warn('collectRecipientTokenEntries: token doc missing platform field — web duplicate risk', { uid, docId: doc.id });
+            }
+            byToken.set(t, { ref: doc.ref, platform });
           }
         }
       } catch (e) {
@@ -1408,65 +1409,71 @@ exports.dispatchNotificationQueue = onDocumentCreated(
       data.payload && typeof data.payload === 'object' ? data.payload : {};
 
     if (!channel || !type || !title || candidateRecipients.length === 0) {
+      console.warn('dispatchNotificationQueue: malformed doc discarded', { docId: snap.ref.id, channel, type, title, candidateCount: candidateRecipients.length });
       return;
     }
 
-    const recipients =
-      skipPresenceCheck || !tripId
-        ? candidateRecipients
-        : await recipientsNotActivelyViewingChannel({
-            tripId,
-            recipients: candidateRecipients,
+    try {
+      const recipients =
+        skipPresenceCheck || !tripId
+          ? candidateRecipients
+          : await recipientsNotActivelyViewingChannel({
+              tripId,
+              recipients: candidateRecipients,
+              channel,
+            });
+
+      if (recipients.length > 0 && tripId) {
+        await incrementTripUnreadCounters({ tripId, recipients, channel });
+      }
+
+      const tokenEntries = await collectRecipientTokenEntries(db, recipients);
+      if (tokenEntries.length > 0) {
+        const createdAt =
+          data.createdAt instanceof Timestamp
+            ? data.createdAt
+            : undefined;
+
+        const messages = tokenEntries.map(({ token, platform }) => {
+          const eventData = buildTripNotificationEventData({
             channel,
+            tripId,
+            actorId,
+            type,
+            targetPath,
+            createdAt,
+            payload,
           });
-
-    if (recipients.length > 0 && tripId) {
-      await incrementTripUnreadCounters({ tripId, recipients, channel });
-    }
-
-    const tokenEntries = await collectRecipientTokenEntries(db, recipients);
-    if (tokenEntries.length > 0) {
-      const createdAt =
-        data.createdAt instanceof Timestamp
-          ? data.createdAt
-          : undefined;
-
-      const messages = tokenEntries.map(({ token, platform }) => {
-        const eventData = buildTripNotificationEventData({
-          channel,
-          tripId,
-          actorId,
-          type,
-          targetPath,
-          createdAt,
-          payload,
-        });
-        // Web/PWA: data-only so FCM does not auto-display AND the SW does not
-        // double-show (notification payload + manual showNotification).
-        if (platform === 'web') {
-          return {
+          // Web/PWA: data-only so FCM does not auto-display AND the SW does not
+          // double-show (notification payload + manual showNotification).
+          if (platform === 'web') {
+            return {
+              token,
+              data: {
+                ...eventData,
+                title,
+                body,
+              },
+            };
+          }
+          /** @type {admin.messaging.Message} */
+          const msg = {
             token,
-            data: {
-              ...eventData,
-              title,
-              body,
-            },
+            notification: { title, body },
+            data: eventData,
           };
-        }
-        /** @type {admin.messaging.Message} */
-        const msg = {
-          token,
-          notification: { title, body },
-          data: eventData,
-        };
-        if (androidChannelId) {
-          msg.android = { notification: { channelId: androidChannelId } };
-        }
-        return msg;
-      });
+          if (androidChannelId) {
+            msg.android = { notification: { channelId: androidChannelId } };
+          }
+          return msg;
+        });
 
-      const result = await admin.messaging().sendEach(messages);
-      await cleanupInvalidFcmTokens(db, result, tokenEntries);
+        const result = await admin.messaging().sendEach(messages);
+        await cleanupInvalidFcmTokens(db, result, tokenEntries);
+      }
+    } catch (e) {
+      console.error('dispatchNotificationQueue: post-claim delivery error — notification lost', { docId: snap.ref.id, type, tripId }, e);
+      throw e;
     }
   }
 );
@@ -1490,9 +1497,7 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     const msg = snap.data() || {};
     const authorId = normalizeString(msg.authorId);
     const isImageMessage = normalizeString(msg.type) === 'image';
-    const text = isImageMessage
-      ? normalizeString(msg.text).slice(0, 180)
-      : normalizeString(msg.text).slice(0, 180);
+    const text = normalizeString(msg.text).slice(0, 180);
 
     if (!authorId) return;
     if (!text && !isImageMessage) return;

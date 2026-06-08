@@ -84,7 +84,7 @@ async function enqueueTripNotification(db, { docId, payload }) {
     return { enqueued: true };
   } catch (e) {
     const code = normalizeString(e?.code);
-    if (code === 'already-exists' || code === 'ALREADY_EXISTS' || e?.code === 6) {
+    if (code === 'already-exists' || code === 'ALREADY_EXISTS' || code === '6' || e?.code === 6) {
       return { enqueued: false };
     }
     throw e;
