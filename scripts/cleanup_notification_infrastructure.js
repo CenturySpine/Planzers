@@ -1,6 +1,42 @@
-const admin = require('firebase-admin');
+'use strict';
+
+/**
+ * cleanup_notification_infrastructure.js
+ *
+ * Purge les collections techniques liées à l'ancienne idempotence des notifications
+ * (`functionEventLocks` et `notificationQueue`). À lancer après déploiement des
+ * Cloud Functions refactorées, quelques minutes plus tard et à un moment creux.
+ *
+ * Usage (depuis le dossier scripts/) :
+ *   node cleanup_notification_infrastructure.js --key <service-account.json> [options]
+ *
+ * Options :
+ *   --key <path>       Compte de service Firebase (obligatoire)
+ *   --apply            Suppression réelle (par défaut : dry-run)
+ *   --dry-run          Aperçu sans écriture (défaut)
+ *   --verbose          Lister chaque document concerné
+ *
+ * Collections purgées :
+ *   - functionEventLocks (tous les documents)
+ *   - notificationQueue (tous les documents)
+ *
+ * Exemples :
+ *   node cleanup_notification_infrastructure.js --key ./planerz-PREVIEW.json
+ *   node cleanup_notification_infrastructure.js --key ./planerz-PREVIEW.json --apply
+ */
+
 const fs = require('fs');
 const path = require('path');
+
+function loadFirebaseAdmin() {
+  try {
+    return require('firebase-admin');
+  } catch {
+    return require(path.join(__dirname, 'migration', 'node_modules', 'firebase-admin'));
+  }
+}
+
+const admin = loadFirebaseAdmin();
 
 const DELETE_BATCH_SIZE = 500;
 const TARGET_COLLECTIONS = ['functionEventLocks', 'notificationQueue'];
@@ -54,8 +90,8 @@ function parseCliArguments(argv) {
 
 function printUsageAndExit() {
   console.log(`
-Usage:
-  node scripts/cleanup_notification_infrastructure.js --key <service-account.json> [options]
+Usage (depuis le dossier scripts/) :
+  node cleanup_notification_infrastructure.js --key <service-account.json> [options]
 
 Required:
   --key <path>           Chemin vers le JSON du compte de service Firebase
@@ -70,8 +106,8 @@ Collections purgées:
   - notificationQueue (tous les documents)
 
 Examples:
-  node scripts/cleanup_notification_infrastructure.js --key ./preview-key.json
-  node scripts/cleanup_notification_infrastructure.js --key ./preview-key.json --apply
+  node cleanup_notification_infrastructure.js --key ./planerz-PREVIEW.json
+  node cleanup_notification_infrastructure.js --key ./planerz-PREVIEW.json --apply
 `);
   process.exit(1);
 }
