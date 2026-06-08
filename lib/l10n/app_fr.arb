@@ -67,7 +67,6 @@
   "signInPhoneChangeNumber": "Changer de numéro",
   "signInPhoneResendCode": "Renvoyer le code",
   "signInAuthBetaPill": "BETA",
-  "signInAndroidPwaInstallOverlayMessage": "Pour une meilleure expérience sur Android, installe l'application depuis GitHub.",
   "accountTitle": "Mon compte",
   "accountCropProfilePhotoTitle": "Recadrer la photo de profil",
   "accountPhotoUpdated": "Photo de profil mise à jour",
@@ -207,7 +206,6 @@
       "error": {}
     }
   },
-  "accountDownloadApk": "Télécharger l'APK",
   "accountAdministration": "Administration",
   "accountSignOut": "Se déconnecter",
   "tripLabelGeneric": "Voyage",
@@ -1187,5 +1185,8 @@
       "count": { "type": "int" },
       "parts": { "type": "String" }
     }
-  }
+  },
+  "androidSunsetTitle": "L'application Android n'est plus disponible",
+  "androidSunsetBody": "L'application Android n'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.",
+  "androidSunsetPwaHint": "Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu."
 }

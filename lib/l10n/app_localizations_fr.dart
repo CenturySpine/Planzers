@@ -224,10 +224,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signInAuthBetaPill => 'BETA';
 
   @override
-  String get signInAndroidPwaInstallOverlayMessage =>
-      'Pour une meilleure expérience sur Android, installe l\'application depuis GitHub.';
-
-  @override
   String get accountTitle => 'Mon compte';
 
   @override
@@ -523,9 +519,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String accountAllergensSaveError(Object error) {
     return 'Erreur enregistrement allergènes : $error';
   }
-
-  @override
-  String get accountDownloadApk => 'Télécharger l\'APK';
 
   @override
   String get accountAdministration => 'Administration';
@@ -3038,6 +3031,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String participantGroupsMemberCount(int count, String parts) {
     return '$count membres · $parts parts';
   }
+
+  @override
+  String get androidSunsetTitle =>
+      'L\'application Android n\'est plus disponible';
+
+  @override
+  String get androidSunsetBody =>
+      'L\'application Android n\'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.';
+
+  @override
+  String get androidSunsetPwaHint =>
+      'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -3258,10 +3263,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get signInAuthBetaPill => 'BETA';
-
-  @override
-  String get signInAndroidPwaInstallOverlayMessage =>
-      'Pour une meilleure expérience sur Android, installe l\'application depuis GitHub.';
 
   @override
   String get accountTitle => 'Mon compte';
@@ -3559,9 +3560,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String accountAllergensSaveError(Object error) {
     return 'Erreur enregistrement allergènes : $error';
   }
-
-  @override
-  String get accountDownloadApk => 'Télécharger l\'APK';
 
   @override
   String get accountAdministration => 'Administration';
@@ -6002,4 +6000,16 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String participantGroupsMemberCount(int count, String parts) {
     return '$count membres · $parts parts';
   }
+
+  @override
+  String get androidSunsetTitle =>
+      'L\'application Android n\'est plus disponible';
+
+  @override
+  String get androidSunsetBody =>
+      'L\'application Android n\'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.';
+
+  @override
+  String get androidSunsetPwaHint =>
+      'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.';
 }

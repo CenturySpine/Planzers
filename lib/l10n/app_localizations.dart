@@ -502,12 +502,6 @@ abstract class AppLocalizations {
   /// **'BETA'**
   String get signInAuthBetaPill;
 
-  /// No description provided for @signInAndroidPwaInstallOverlayMessage.
-  ///
-  /// In fr, this message translates to:
-  /// **'Pour une meilleure expérience sur Android, installe l\'application depuis GitHub.'**
-  String get signInAndroidPwaInstallOverlayMessage;
-
   /// No description provided for @accountTitle.
   ///
   /// In fr, this message translates to:
@@ -1041,12 +1035,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Erreur enregistrement allergènes : {error}'**
   String accountAllergensSaveError(Object error);
-
-  /// No description provided for @accountDownloadApk.
-  ///
-  /// In fr, this message translates to:
-  /// **'Télécharger l\'APK'**
-  String get accountDownloadApk;
 
   /// No description provided for @accountAdministration.
   ///
@@ -5450,6 +5438,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{count} membres · {parts} parts'**
   String participantGroupsMemberCount(int count, String parts);
+
+  /// No description provided for @androidSunsetTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'application Android n\'est plus disponible'**
+  String get androidSunsetTitle;
+
+  /// No description provided for @androidSunsetBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'application Android n\'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.'**
+  String get androidSunsetBody;
+
+  /// No description provided for @androidSunsetPwaHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.'**
+  String get androidSunsetPwaHint;
 }
 
 class _AppLocalizationsDelegate
