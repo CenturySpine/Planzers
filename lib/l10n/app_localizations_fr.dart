@@ -3043,6 +3043,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get androidSunsetPwaHint =>
       'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.';
+
+  @override
+  String get androidSunsetUninstallHint =>
+      'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -6012,4 +6016,8 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get androidSunsetPwaHint =>
       'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.';
+
+  @override
+  String get androidSunsetUninstallHint =>
+      'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
 }

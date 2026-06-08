@@ -5456,6 +5456,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l\'écran d\'accueil » dans son menu.'**
   String get androidSunsetPwaHint;
+
+  /// No description provided for @androidSunsetUninstallHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.'**
+  String get androidSunsetUninstallHint;
 }
 
 class _AppLocalizationsDelegate

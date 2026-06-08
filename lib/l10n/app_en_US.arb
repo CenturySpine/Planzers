@@ -1150,5 +1150,6 @@
   },
   "androidSunsetTitle": "The Android app is no longer available",
   "androidSunsetBody": "The Android app is no longer maintained during development. Use Planerz from your browser to continue with all the same features.",
-  "androidSunsetPwaHint": "To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu."
+  "androidSunsetPwaHint": "To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.",
+  "androidSunsetUninstallHint": "This app will no longer receive updates. Uninstall it to free up space on your device."
 }

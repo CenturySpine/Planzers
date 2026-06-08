@@ -61,47 +61,62 @@ class _AndroidSunsetScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  'assets/images/app_icon.png',
-                  width: 96,
-                  height: 96,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.androidSunsetTitle,
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.androidSunsetBody,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                _PwaHintBox(hint: l10n.androidSunsetPwaHint),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () => _openWeb(context),
-                  child: Text(
-                    webAppUri.host,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                      decorationColor: theme.colorScheme.primary,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.contain,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.androidSunsetTitle,
+                      style: theme.textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.androidSunsetBody,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    _PwaHintBox(hint: l10n.androidSunsetPwaHint),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () => _openWeb(context),
+                      child: Text(
+                        webAppUri.host,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: theme.colorScheme.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.androidSunsetUninstallHint,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
