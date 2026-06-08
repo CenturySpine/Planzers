@@ -355,6 +355,7 @@ function defaultTripPermissions() {
       deleteTrip: 'owner',
     },
     participants: {
+      manageParticipants: 'owner',
       createParticipant: 'owner',
       editPlaceholderParticipant: 'owner',
       deletePlaceholderParticipant: 'owner',
@@ -416,11 +417,42 @@ function mergedTripPermissionsWithDefaults(existingPermissions) {
 
     /** @type {Record<string, string>} */
     const mergedSection = {};
+    for (const [actionKey, configuredRole] of Object.entries(existingSection)) {
+      const configured = normalizeString(configuredRole);
+      if (configured) {
+        mergedSection[actionKey] = configured;
+      }
+    }
     for (const [actionKey, defaultRole] of Object.entries(sectionDefaults)) {
-      const configured = normalizeString(existingSection[actionKey]);
-      mergedSection[actionKey] = configured || defaultRole;
+      if (!mergedSection[actionKey]) {
+        mergedSection[actionKey] = defaultRole;
+      }
     }
     next[sectionKey] = mergedSection;
+  }
+
+  for (const [sectionKey, existingSection] of Object.entries(base)) {
+    if (Object.prototype.hasOwnProperty.call(next, sectionKey)) {
+      continue;
+    }
+    if (
+      !existingSection ||
+      typeof existingSection !== 'object' ||
+      Array.isArray(existingSection)
+    ) {
+      continue;
+    }
+    /** @type {Record<string, string>} */
+    const preservedSection = {};
+    for (const [actionKey, configuredRole] of Object.entries(existingSection)) {
+      const configured = normalizeString(configuredRole);
+      if (configured) {
+        preservedSection[actionKey] = configured;
+      }
+    }
+    if (Object.keys(preservedSection).length > 0) {
+      next[sectionKey] = preservedSection;
+    }
   }
 
   return next;
