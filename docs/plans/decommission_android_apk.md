@@ -15,7 +15,7 @@ todos:
     content: Brancher AndroidSunsetGate autour de UpdateGate dans app.dart
     status: pending
   - id: l10n-sunset-keys
-    content: Ajouter clés androidSunset* dans les 4 ARB + regen l10n
+    content: Ajouter clés androidSunsetTitle, androidSunsetBody, androidSunsetOpenWebButton, androidSunsetPwaHint dans les 4 ARB + regen l10n
     status: pending
   - id: tests-analyze
     content: Test widget android_sunset_gate + flutter analyze
@@ -96,7 +96,7 @@ Supprimer :
 - `signInAndroidPwaInstallOverlayMessage`
 - `accountDownloadApk`
 
-Puis `flutter gen-l10n` (ou laisser l'analyse régénérer).
+Puis `flutter gen-l10n`.
 
 **Conservé** (confirmé) : lien « Notes de version » GitHub dans [`help_support_page.dart`](../../lib/features/help_support/presentation/help_support_page.dart) — concerne les releases web, pas le téléchargement APK.
 
@@ -114,7 +114,12 @@ Créer [`lib/app/android_sunset_gate.dart`](../../lib/app/android_sunset_gate.da
   - Icône + titre + corps explicatif (Android n'est plus maintenu, utiliser la web app)
   - Lien cliquable vers `publicAppBaseUriForTarget(ref.watch(firebaseTargetProvider))` ([`app_public_hosts.dart`](../../lib/core/firebase/app_public_hosts.dart))
   - Bouton principal « Ouvrir la version web » (`launchUrl` en `LaunchMode.externalApplication`)
+  - Note explicative sur l'installation en PWA : comment ajouter la web app à l'écran d'accueil via le menu du navigateur, pour retrouver une expérience proche d'une app native
 - **Pas** de bouton téléchargement APK, pas de retry installateur
+
+### Ton et lisibilité
+
+Les informations de la gate doivent être organisées dans un ordre logique : titre → explication → action principale → astuce PWA. Chaque message doit être le plus concis et précis possible, rédigé pour un utilisateur lambda — sans jargon technique, sans surcharge de texte.
 
 ### Nouvelles clés l10n (4 ARB)
 
@@ -125,6 +130,9 @@ Proposition de libellés :
 | `androidSunsetTitle` | Application Android non disponible |
 | `androidSunsetBody` | L'application Android n'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer. |
 | `androidSunsetOpenWebButton` | Ouvrir la version web |
+| `androidSunsetPwaHint` | Pour retrouver une expérience app, ouvre le lien dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu. |
+
+Puis `flutter gen-l10n`.
 
 ### Branchement dans [`app.dart`](../../lib/app/app.dart)
 
@@ -168,6 +176,7 @@ Ajouter `test/app/android_sunset_gate_test.dart` :
 | Web sur Android (Chrome mobile) | Idem — plus d'overlay GitHub |
 | APK actuelle (avant release) | Comportement UpdateGate inchangé |
 | Dernière APK (avec ce code) | Écran sunset immédiat, lien web preview ou prod selon flavor |
+| Dernière APK — note PWA | Note PWA visible et lisible ; bouton « Ouvrir la version web » s'ouvre dans le navigateur externe |
 
 ### CI locale
 
