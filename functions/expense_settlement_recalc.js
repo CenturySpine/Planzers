@@ -16,6 +16,10 @@ const {
   balancesForClientFirestore,
   balancesForSuggestions,
 } = require('./expense_settlement');
+const {
+  buildNotificationQueueDocId,
+  enqueueTripNotification,
+} = require('./notification_queue');
 
 const BATCH_OP_LIMIT = 499;
 
@@ -472,20 +476,26 @@ const markExpenseReimbursementPaid = onCall({}, async (request) => {
       const candidateRecipients = toRecipients
         .map((r) => r.userId)
         .filter((userId) => userId && userId !== uid);
-      if (candidateRecipients.length > 0) {
-        await db.collection('notificationQueue').add({
-          channel: 'expenses',
-          type: 'expense_reimbursement_paid',
+      if (candidateRecipients.length > 0 && createdExpenseId) {
+        const docId = buildNotificationQueueDocId('expense_reimbursement_paid', {
           tripId,
-          actorId: uid,
-          targetPath: `/trips/${tripId}/expenses`,
-          title: `Dépenses · ${tripTitle}`,
-          body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
-          candidateRecipients,
-          skipPresenceCheck: false,
-          androidChannelId: 'planerz_expenses',
-          payload: {},
-          createdAt: FieldValue.serverTimestamp(),
+          expenseId: createdExpenseId,
+        });
+        await enqueueTripNotification(db, {
+          docId,
+          payload: {
+            channel: 'expenses',
+            type: 'expense_reimbursement_paid',
+            tripId,
+            actorId: uid,
+            targetPath: `/trips/${tripId}/expenses`,
+            title: `Dépenses · ${tripTitle}`,
+            body: `${fromName} vous a remboursé ${amountLabel} ${currency}`,
+            candidateRecipients,
+            skipPresenceCheck: false,
+            androidChannelId: 'planerz_expenses',
+            payload: {},
+          },
         });
       }
     }
@@ -583,19 +593,25 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
           .map((r) => r.userId)
           .filter((userId) => userId && userId !== uid);
         if (candidateRecipients.length > 0) {
-          await db.collection('notificationQueue').add({
-            channel: 'expenses',
-            type: 'expense_reimbursement_unpaid',
+          const docId = buildNotificationQueueDocId('expense_reimbursement_unpaid', {
             tripId,
-            actorId: uid,
-            targetPath: `/trips/${tripId}/expenses`,
-            title: `Dépenses · ${tripTitle}`,
-            body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
-            candidateRecipients,
-            skipPresenceCheck: false,
-            androidChannelId: 'planerz_expenses',
-            payload: {},
-            createdAt: FieldValue.serverTimestamp(),
+            expenseId,
+          });
+          await enqueueTripNotification(db, {
+            docId,
+            payload: {
+              channel: 'expenses',
+              type: 'expense_reimbursement_unpaid',
+              tripId,
+              actorId: uid,
+              targetPath: `/trips/${tripId}/expenses`,
+              title: `Dépenses · ${tripTitle}`,
+              body: `${fromName} a annulé un remboursement de ${amountLabel} ${expense.currency}`,
+              candidateRecipients,
+              skipPresenceCheck: false,
+              androidChannelId: 'planerz_expenses',
+              payload: {},
+            },
           });
         }
       }
