@@ -3047,9 +3047,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
-
-  @override
-  String get androidSunsetUninstallButton => 'Désinstaller l\'application';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -6023,7 +6020,4 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
-
-  @override
-  String get androidSunsetUninstallButton => 'Désinstaller l\'application';
 }

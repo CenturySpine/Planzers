@@ -5462,12 +5462,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.'**
   String get androidSunsetUninstallHint;
-
-  /// No description provided for @androidSunsetUninstallButton.
-  ///
-  /// In fr, this message translates to:
-  /// **'Désinstaller l\'application'**
-  String get androidSunsetUninstallButton;
 }
 
 class _AppLocalizationsDelegate

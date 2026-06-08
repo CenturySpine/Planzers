@@ -2,9 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/firebase/app_public_hosts.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -45,8 +43,6 @@ class _AndroidSunsetScreen extends StatelessWidget {
 
   final Uri webAppUri;
 
-  static final _systemChannel = const MethodChannel('fr.centuryspine.planerz/system');
-
   Future<void> _openWeb(BuildContext context) async {
     final launched =
         await launchUrl(webAppUri, mode: LaunchMode.externalApplication);
@@ -56,10 +52,6 @@ class _AndroidSunsetScreen extends StatelessWidget {
         SnackBar(content: Text(l10n.linkOpenImpossible)),
       );
     }
-  }
-
-  Future<void> _requestUninstall() async {
-    await _systemChannel.invokeMethod('requestUninstall');
   }
 
   @override
@@ -121,16 +113,6 @@ class _AndroidSunsetScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: _requestUninstall,
-                      icon: const Icon(Icons.delete_outline),
-                      label: Text(l10n.androidSunsetUninstallButton),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: context.planerzColors.success,
-                        side: BorderSide(color: context.planerzColors.success),
-                      ),
                     ),
                   ],
                 ),
