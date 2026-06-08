@@ -2,6 +2,9 @@
   "name": "planerz-scripts",
   "private": true,
   "description": "Read-only and maintenance scripts (Firebase Admin)",
+  "scripts": {
+    "test": "node --test trip_export_import.test.js"
+  },
   "dependencies": {
     "firebase-admin": "^13.0.0"
   }

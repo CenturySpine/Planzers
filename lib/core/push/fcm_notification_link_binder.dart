@@ -77,8 +77,11 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
       return;
     }
 
-    final title = message.notification?.title ?? '';
-    final body = message.notification?.body ?? '';
+    final title = _stringFromData(message.data, 'title') ??
+        message.notification?.title ??
+        '';
+    final body =
+        _stringFromData(message.data, 'body') ?? message.notification?.body ?? '';
     if (title.isEmpty && body.isEmpty) return;
     if (!mounted) return;
 
@@ -225,6 +228,11 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
 
   static String? _payloadValue(Map<String, dynamic> data, String key) {
     final s = data['payload_$key']?.toString().trim() ?? '';
+    return s.isEmpty ? null : s;
+  }
+
+  static String? _stringFromData(Map<String, dynamic> data, String key) {
+    final s = data[key]?.toString().trim() ?? '';
     return s.isEmpty ? null : s;
   }
 

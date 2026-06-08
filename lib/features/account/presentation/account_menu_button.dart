@@ -3,16 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/core/external_links.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/core/platform/android_pwa_mode_detector.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AccountMenuButton extends ConsumerWidget {
   const AccountMenuButton({super.key});
@@ -20,17 +17,6 @@ class AccountMenuButton extends ConsumerWidget {
   Future<void> _goToAccount(BuildContext context) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     context.push('/account');
-  }
-
-  Future<void> _downloadApk(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    final ok = await launchUrl(appPreviewApkDownloadUri);
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.linkOpenImpossible)),
-      );
-    }
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -72,7 +58,6 @@ class AccountMenuButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final showDownloadApkAction = isAndroidPwaMode();
     final user = FirebaseAuth.instance.currentUser;
     final email = (user?.email ?? '').trim();
     final displayLabel = (user?.displayName ?? '').trim().isNotEmpty
@@ -89,7 +74,6 @@ class AccountMenuButton extends ConsumerWidget {
       return _buildMenu(
         context: context,
         l10n: l10n,
-        showDownloadApkAction: showDownloadApkAction,
         cupidonCount: cupidonCount,
         photoUrl: '',
         displayLabel: displayLabel,
@@ -111,7 +95,6 @@ class AccountMenuButton extends ConsumerWidget {
         return _buildMenu(
           context: context,
           l10n: l10n,
-          showDownloadApkAction: showDownloadApkAction,
           cupidonCount: cupidonCount,
           photoUrl: photoUrl,
           displayLabel: displayLabel,
@@ -124,7 +107,6 @@ class AccountMenuButton extends ConsumerWidget {
   Widget _buildMenu({
     required BuildContext context,
     required AppLocalizations l10n,
-    required bool showDownloadApkAction,
     required int cupidonCount,
     required String photoUrl,
     required String displayLabel,
@@ -152,10 +134,6 @@ class AccountMenuButton extends ConsumerWidget {
           await _goToAccount(context);
           return;
         }
-        if (value == 'download_apk') {
-          await _downloadApk(context);
-          return;
-        }
         if (value == 'administration') {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           context.push(AdministrationPage.routePath);
@@ -181,17 +159,6 @@ class AccountMenuButton extends ConsumerWidget {
             ],
           ),
         ),
-        if (showDownloadApkAction)
-          PopupMenuItem<String>(
-            value: 'download_apk',
-            child: Row(
-              children: [
-                const Icon(Icons.download_outlined, size: 20),
-                const SizedBox(width: 12),
-                Text(l10n.accountDownloadApk),
-              ],
-            ),
-          ),
         if (isApplicationOwner)
           PopupMenuItem<String>(
             value: 'administration',

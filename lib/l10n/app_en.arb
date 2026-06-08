@@ -67,7 +67,6 @@
   "signInPhoneChangeNumber": "Change number",
   "signInPhoneResendCode": "Resend code",
   "signInAuthBetaPill": "BETA",
-  "signInAndroidPwaInstallOverlayMessage": "For a better Android experience, install the app from GitHub.",
   "accountTitle": "My account",
   "accountCropProfilePhotoTitle": "Crop profile photo",
   "accountPhotoUpdated": "Profile photo updated",
@@ -207,7 +206,6 @@
       "error": {}
     }
   },
-  "accountDownloadApk": "Download APK",
   "accountAdministration": "Administration",
   "accountSignOut": "Sign out",
   "tripLabelGeneric": "Trip",
@@ -1187,5 +1185,8 @@
       "count": { "type": "int" },
       "parts": { "type": "String" }
     }
-  }
+  },
+  "androidSunsetTitle": "The Android app is no longer available",
+  "androidSunsetBody": "The Android app is no longer maintained during development. Use Planerz from your browser to continue with all the same features.",
+  "androidSunsetPwaHint": "To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu."
 }

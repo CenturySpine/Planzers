@@ -223,10 +223,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInAuthBetaPill => 'BETA';
 
   @override
-  String get signInAndroidPwaInstallOverlayMessage =>
-      'For a better Android experience, install the app from GitHub.';
-
-  @override
   String get accountTitle => 'My account';
 
   @override
@@ -521,9 +517,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String accountAllergensSaveError(Object error) {
     return 'Error saving allergens: $error';
   }
-
-  @override
-  String get accountDownloadApk => 'Download APK';
 
   @override
   String get accountAdministration => 'Administration';
@@ -3011,6 +3004,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String participantGroupsMemberCount(int count, String parts) {
     return '$count members · $parts shares';
   }
+
+  @override
+  String get androidSunsetTitle => 'The Android app is no longer available';
+
+  @override
+  String get androidSunsetBody =>
+      'The Android app is no longer maintained during development. Use Planerz from your browser to continue with all the same features.';
+
+  @override
+  String get androidSunsetPwaHint =>
+      'To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -3230,10 +3234,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get signInAuthBetaPill => 'BETA';
-
-  @override
-  String get signInAndroidPwaInstallOverlayMessage =>
-      'For a better Android experience, install the app from GitHub.';
 
   @override
   String get accountTitle => 'My account';
@@ -3530,9 +3530,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String accountAllergensSaveError(Object error) {
     return 'Error saving allergens: $error';
   }
-
-  @override
-  String get accountDownloadApk => 'Download APK';
 
   @override
   String get accountAdministration => 'Administration';
@@ -5949,4 +5946,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String participantGroupsMemberCount(int count, String parts) {
     return '$count members · $parts shares';
   }
+
+  @override
+  String get androidSunsetTitle => 'The Android app is no longer available';
+
+  @override
+  String get androidSunsetBody =>
+      'The Android app is no longer maintained during development. Use Planerz from your browser to continue with all the same features.';
+
+  @override
+  String get androidSunsetPwaHint =>
+      'To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.';
 }

@@ -14,6 +14,11 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
+const {
+  buildNotificationQueueDocId,
+  enqueueTripNotification,
+  claimAndDeleteNotificationQueueDoc,
+} = require('./notification_queue');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -860,9 +865,9 @@ async function incrementTripUnreadCounters({ tripId, recipients, channel }) {
 }
 
 async function collectRecipientTokenEntries(db, recipients) {
-  /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference }[]} */
+  /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference, platform: string }[]} */
   const tokenEntries = [];
-  /** @type {Map<string, FirebaseFirestore.DocumentReference>} */
+  /** @type {Map<string, { ref: FirebaseFirestore.DocumentReference, platform: string }>} */
   const byToken = new Map();
   await Promise.all(
     [...new Set(recipients.map((uid) => normalizeString(uid)).filter(Boolean))].map(
@@ -874,9 +879,14 @@ async function collectRecipientTokenEntries(db, recipients) {
           .collection('fcmTokens')
           .get();
         for (const doc of tokensSnap.docs) {
-          const t = normalizeString((doc.data() || {}).token);
+          const docData = doc.data() || {};
+          const t = normalizeString(docData.token);
           if (t && !byToken.has(t)) {
-            byToken.set(t, doc.ref);
+            const platform = normalizeString(docData.platform);
+            if (!platform) {
+              console.warn('collectRecipientTokenEntries: token doc missing platform field — web duplicate risk', { uid, docId: doc.id });
+            }
+            byToken.set(t, { ref: doc.ref, platform });
           }
         }
       } catch (e) {
@@ -884,34 +894,14 @@ async function collectRecipientTokenEntries(db, recipients) {
       }
     })
   );
-  for (const [token, ref] of byToken.entries()) {
-    tokenEntries.push({ token, ref });
+  for (const [token, entry] of byToken.entries()) {
+    tokenEntries.push({
+      token,
+      ref: entry.ref,
+      platform: entry.platform,
+    });
   }
   return tokenEntries;
-}
-
-async function markFunctionEventProcessedOnce(functionName, eventId) {
-  const cleanFunction = normalizeString(functionName);
-  const cleanEventId = normalizeString(eventId);
-  if (!cleanFunction || !cleanEventId) {
-    return true;
-  }
-  const db = admin.firestore();
-  const lockRef = db
-    .collection('functionEventLocks')
-    .doc(`${cleanFunction}__${cleanEventId}`);
-  return db.runTransaction(async (tx) => {
-    const snap = await tx.get(lockRef);
-    if (snap.exists) {
-      return false;
-    }
-    tx.set(lockRef, {
-      functionName: cleanFunction,
-      eventId: cleanEventId,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    return true;
-  });
 }
 
 async function cleanupInvalidFcmTokens(db, sendResult, tokenEntries) {
@@ -1340,39 +1330,54 @@ async function resolveTripMemberProfile(tripData, uid) {
 
 async function sendCupidonMatchPush({
   tripId,
+  matchId,
   tripTitle,
   notifiedUid,
   otherLabel,
   otherPhotoUrl,
 }) {
+  const cleanTripId = normalizeString(tripId);
+  const cleanMatchId = normalizeString(matchId);
+  const cleanNotifiedUid = normalizeString(notifiedUid);
   const cleanTripTitle = normalizeString(tripTitle);
   const cleanOtherLabel = normalizeString(otherLabel);
   const cleanOtherPhotoUrl = normalizeString(otherPhotoUrl);
-  await admin.firestore().collection('notificationQueue').add({
-    channel: TRIP_NOTIFICATION_CHANNELS.CUPIDON,
-    type: CUPIDON_MATCH_TYPE,
-    tripId: normalizeString(tripId),
-    actorId: normalizeString(notifiedUid),
-    targetPath: '/account/cupidon',
-    title: `Mode Cupidon · ${cleanTripTitle || 'Voyage'}`,
-    body: `Match mutuel avec ${cleanOtherLabel || "quelqu'un"}`,
-    candidateRecipients: [normalizeString(notifiedUid)],
-    skipPresenceCheck: true,
-    androidChannelId: ANDROID_CHANNEL_IDS.cupidon,
+  if (!cleanTripId || !cleanMatchId || !cleanNotifiedUid) {
+    return;
+  }
+
+  const db = admin.firestore();
+  const docId = buildNotificationQueueDocId('cupidon_match', {
+    tripId: cleanTripId,
+    matchId: cleanMatchId,
+    notifiedUid: cleanNotifiedUid,
+  });
+  await enqueueTripNotification(db, {
+    docId,
     payload: {
-      tripTitle: cleanTripTitle,
-      otherLabel: cleanOtherLabel,
-      ...(cleanOtherPhotoUrl ? { otherPhotoUrl: cleanOtherPhotoUrl } : {}),
+      channel: TRIP_NOTIFICATION_CHANNELS.CUPIDON,
+      type: CUPIDON_MATCH_TYPE,
+      tripId: cleanTripId,
+      actorId: cleanNotifiedUid,
+      targetPath: '/account/cupidon',
+      title: `Mode Cupidon · ${cleanTripTitle || 'Voyage'}`,
+      body: `Match mutuel avec ${cleanOtherLabel || "quelqu'un"}`,
+      candidateRecipients: [cleanNotifiedUid],
+      skipPresenceCheck: true,
+      androidChannelId: ANDROID_CHANNEL_IDS.cupidon,
+      payload: {
+        tripTitle: cleanTripTitle,
+        otherLabel: cleanOtherLabel,
+        ...(cleanOtherPhotoUrl ? { otherPhotoUrl: cleanOtherPhotoUrl } : {}),
+      },
     },
-    createdAt: FieldValue.serverTimestamp(),
   });
 }
 
 /**
- * Generic notification dispatcher. Reads a notificationQueue document,
+ * Generic notification dispatcher. Atomically claims a notificationQueue document,
  * applies presence filtering (when applicable), increments per-trip unread
  * counters, and delivers FCM messages to all eligible recipient tokens.
- * Deletes the queue document after processing.
  */
 exports.dispatchNotificationQueue = onDocumentCreated(
   {
@@ -1381,16 +1386,13 @@ exports.dispatchNotificationQueue = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
-    const proceed = await markFunctionEventProcessedOnce(
-      'dispatchNotificationQueue',
-      event.id
-    );
-    if (!proceed) return;
-
     const snap = event.data;
     if (!snap) return;
 
-    const data = snap.data() || {};
+    const db = admin.firestore();
+    const data = await claimAndDeleteNotificationQueueDoc(db, snap.ref);
+    if (!data) return;
+
     const channel = normalizeString(data.channel);
     const type = normalizeString(data.type);
     const tripId = normalizeString(data.tripId);
@@ -1407,37 +1409,33 @@ exports.dispatchNotificationQueue = onDocumentCreated(
       data.payload && typeof data.payload === 'object' ? data.payload : {};
 
     if (!channel || !type || !title || candidateRecipients.length === 0) {
-      await snap.ref.delete();
+      console.warn('dispatchNotificationQueue: malformed doc discarded', { docId: snap.ref.id, channel, type, title, candidateCount: candidateRecipients.length });
       return;
     }
 
-    const recipients =
-      skipPresenceCheck || !tripId
-        ? candidateRecipients
-        : await recipientsNotActivelyViewingChannel({
-            tripId,
-            recipients: candidateRecipients,
-            channel,
-          });
+    try {
+      const recipients =
+        skipPresenceCheck || !tripId
+          ? candidateRecipients
+          : await recipientsNotActivelyViewingChannel({
+              tripId,
+              recipients: candidateRecipients,
+              channel,
+            });
 
-    if (recipients.length > 0 && tripId) {
-      await incrementTripUnreadCounters({ tripId, recipients, channel });
-    }
+      if (recipients.length > 0 && tripId) {
+        await incrementTripUnreadCounters({ tripId, recipients, channel });
+      }
 
-    const db = admin.firestore();
-    const tokenEntries = await collectRecipientTokenEntries(db, recipients);
-    if (tokenEntries.length > 0) {
-      const createdAt =
-        data.createdAt instanceof Timestamp
-          ? data.createdAt
-          : undefined;
+      const tokenEntries = await collectRecipientTokenEntries(db, recipients);
+      if (tokenEntries.length > 0) {
+        const createdAt =
+          data.createdAt instanceof Timestamp
+            ? data.createdAt
+            : undefined;
 
-      const messages = tokenEntries.map(({ token }) => {
-        /** @type {admin.messaging.Message} */
-        const msg = {
-          token,
-          notification: { title, body },
-          data: buildTripNotificationEventData({
+        const messages = tokenEntries.map(({ token, platform }) => {
+          const eventData = buildTripNotificationEventData({
             channel,
             tripId,
             actorId,
@@ -1445,19 +1443,38 @@ exports.dispatchNotificationQueue = onDocumentCreated(
             targetPath,
             createdAt,
             payload,
-          }),
-        };
-        if (androidChannelId) {
-          msg.android = { notification: { channelId: androidChannelId } };
-        }
-        return msg;
-      });
+          });
+          // Web/PWA: data-only so FCM does not auto-display AND the SW does not
+          // double-show (notification payload + manual showNotification).
+          if (platform === 'web') {
+            return {
+              token,
+              data: {
+                ...eventData,
+                title,
+                body,
+              },
+            };
+          }
+          /** @type {admin.messaging.Message} */
+          const msg = {
+            token,
+            notification: { title, body },
+            data: eventData,
+          };
+          if (androidChannelId) {
+            msg.android = { notification: { channelId: androidChannelId } };
+          }
+          return msg;
+        });
 
-      const result = await admin.messaging().sendEach(messages);
-      await cleanupInvalidFcmTokens(db, result, tokenEntries);
+        const result = await admin.messaging().sendEach(messages);
+        await cleanupInvalidFcmTokens(db, result, tokenEntries);
+      }
+    } catch (e) {
+      console.error('dispatchNotificationQueue: post-claim delivery error — notification lost', { docId: snap.ref.id, type, tripId }, e);
+      throw e;
     }
-
-    await snap.ref.delete();
   }
 );
 
@@ -1472,22 +1489,15 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
-    const proceed = await markFunctionEventProcessedOnce(
-      'notifyTripMessageRecipients',
-      event.id
-    );
-    if (!proceed) return;
-
     const snap = event.data;
     if (!snap) return;
 
     const tripId = event.params.tripId;
+    const messageId = event.params.messageId;
     const msg = snap.data() || {};
     const authorId = normalizeString(msg.authorId);
     const isImageMessage = normalizeString(msg.type) === 'image';
-    const text = isImageMessage
-      ? normalizeString(msg.text).slice(0, 180)
-      : normalizeString(msg.text).slice(0, 180);
+    const text = normalizeString(msg.text).slice(0, 180);
 
     if (!authorId) return;
     if (!text && !isImageMessage) return;
@@ -1517,25 +1527,28 @@ exports.notifyTripMessageRecipients = onDocumentCreated(
     let authorLabel = await resolveTripMemberLabel(trip, authorId);
     if (!authorLabel) authorLabel = "Quelqu'un";
 
-    await db.collection('notificationQueue').add({
-      channel: TRIP_NOTIFICATION_CHANNELS.MESSAGES,
-      type: 'trip_message',
-      tripId,
-      actorId: authorId,
-      targetPath: isAdminsOnlyMessage
-        ? `/trips/${tripId}/messages/admin`
-        : `/trips/${tripId}/messages`,
-      title: isAdminsOnlyMessage
-        ? `Messagerie admin · ${tripTitle}`
-        : `Messagerie · ${tripTitle}`,
-      body: isImageMessage
-        ? (text ? `${authorLabel} : ${text}` : `${authorLabel} a envoyé une photo`)
-        : `${authorLabel} : ${text}`,
-      candidateRecipients,
-      skipPresenceCheck: false,
-      androidChannelId: ANDROID_CHANNEL_IDS.messages,
-      payload: {},
-      createdAt: FieldValue.serverTimestamp(),
+    const docId = buildNotificationQueueDocId('trip_message', { tripId, messageId });
+    await enqueueTripNotification(db, {
+      docId,
+      payload: {
+        channel: TRIP_NOTIFICATION_CHANNELS.MESSAGES,
+        type: 'trip_message',
+        tripId,
+        actorId: authorId,
+        targetPath: isAdminsOnlyMessage
+          ? `/trips/${tripId}/messages/admin`
+          : `/trips/${tripId}/messages`,
+        title: isAdminsOnlyMessage
+          ? `Messagerie admin · ${tripTitle}`
+          : `Messagerie · ${tripTitle}`,
+        body: isImageMessage
+          ? (text ? `${authorLabel} : ${text}` : `${authorLabel} a envoyé une photo`)
+          : `${authorLabel} : ${text}`,
+        candidateRecipients,
+        skipPresenceCheck: false,
+        androidChannelId: ANDROID_CHANNEL_IDS.messages,
+        payload: {},
+      },
     });
   }
 );
@@ -1547,16 +1560,11 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
-    const proceed = await markFunctionEventProcessedOnce(
-      'notifyTripActivityRecipients',
-      event.id
-    );
-    if (!proceed) return;
-
     const snap = event.data;
     if (!snap) return;
 
     const tripId = event.params.tripId;
+    const activityId = event.params.activityId;
     const activity = snap.data() || {};
     const actorId = normalizeString(activity.createdBy);
     const label = normalizeString(activity.label).slice(0, 180);
@@ -1577,19 +1585,22 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     let actorLabel = await resolveTripMemberLabel(trip, actorId);
     if (!actorLabel) actorLabel = "Quelqu'un";
 
-    await db.collection('notificationQueue').add({
-      channel: TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
-      type: 'trip_activity',
-      tripId,
-      actorId,
-      targetPath: `/trips/${tripId}/activities`,
-      title: `Activités · ${tripTitle}`,
-      body: `${actorLabel} a proposé : ${label}`,
-      candidateRecipients,
-      skipPresenceCheck: false,
-      androidChannelId: ANDROID_CHANNEL_IDS.activities,
-      payload: {},
-      createdAt: FieldValue.serverTimestamp(),
+    const docId = buildNotificationQueueDocId('trip_activity', { tripId, activityId });
+    await enqueueTripNotification(db, {
+      docId,
+      payload: {
+        channel: TRIP_NOTIFICATION_CHANNELS.ACTIVITIES,
+        type: 'trip_activity',
+        tripId,
+        actorId,
+        targetPath: `/trips/${tripId}/activities`,
+        title: `Activités · ${tripTitle}`,
+        body: `${actorLabel} a proposé : ${label}`,
+        candidateRecipients,
+        skipPresenceCheck: false,
+        androidChannelId: ANDROID_CHANNEL_IDS.activities,
+        payload: {},
+      },
     });
   }
 );
@@ -1601,16 +1612,11 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
     memory: '256MiB',
   },
   async (event) => {
-    const proceed = await markFunctionEventProcessedOnce(
-      'notifyTripAnnouncementRecipients',
-      event.id
-    );
-    if (!proceed) return;
-
     const snap = event.data;
     if (!snap) return;
 
     const tripId = event.params.tripId;
+    const announcementId = event.params.announcementId;
     const announcement = snap.data() || {};
     const actorId = normalizeString(announcement.authorId);
     const text = normalizeString(announcement.text).slice(0, 180);
@@ -1631,19 +1637,25 @@ exports.notifyTripAnnouncementRecipients = onDocumentCreated(
     let actorLabel = await resolveTripMemberLabel(trip, actorId);
     if (!actorLabel) actorLabel = "Quelqu'un";
 
-    await db.collection('notificationQueue').add({
-      channel: TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
-      type: 'trip_announcement',
+    const docId = buildNotificationQueueDocId('trip_announcement', {
       tripId,
-      actorId,
-      targetPath: `/trips/${tripId}/announcements`,
-      title: `Annonces · ${tripTitle}`,
-      body: `${actorLabel} : ${text}`,
-      candidateRecipients,
-      skipPresenceCheck: false,
-      androidChannelId: ANDROID_CHANNEL_IDS.announcements,
-      payload: {},
-      createdAt: FieldValue.serverTimestamp(),
+      announcementId,
+    });
+    await enqueueTripNotification(db, {
+      docId,
+      payload: {
+        channel: TRIP_NOTIFICATION_CHANNELS.ANNOUNCEMENTS,
+        type: 'trip_announcement',
+        tripId,
+        actorId,
+        targetPath: `/trips/${tripId}/announcements`,
+        title: `Annonces · ${tripTitle}`,
+        body: `${actorLabel} : ${text}`,
+        candidateRecipients,
+        skipPresenceCheck: false,
+        androidChannelId: ANDROID_CHANNEL_IDS.announcements,
+        payload: {},
+      },
     });
   }
 );
@@ -2499,7 +2511,7 @@ exports.addTripParticipant = onCall(
     await assertTripParticipantPermission({
       tripData,
       uid,
-      permissionKey: 'createParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour ajouter un voyageur prévu.',
     });
@@ -2557,7 +2569,7 @@ exports.removeTripParticipant = onCall(
     await assertTripParticipantPermission({
       tripData: data,
       uid,
-      permissionKey: 'deletePlaceholderParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour retirer ce voyageur prévu.',
     });
@@ -3312,7 +3324,7 @@ exports.removeTripRegisteredMember = onCall(
     await assertTripParticipantPermission({
       tripData: data,
       uid,
-      permissionKey: 'deleteRegisteredParticipant',
+      permissionKey: 'manageParticipants',
       fallbackRole: 'owner',
       deniedMessage: 'Droits insuffisants pour retirer ce participant.',
     });
@@ -3847,19 +3859,19 @@ exports.toggleTripCupidonLike = onCall(
       await Promise.all([
         sendCupidonMatchPush({
           tripId,
+          matchId,
           tripTitle,
           notifiedUid: uid,
           otherLabel: targetProfile.label,
           otherPhotoUrl: targetProfile.photoUrl,
-          createdAt: Timestamp.now(),
         }),
         sendCupidonMatchPush({
           tripId,
+          matchId,
           tripTitle,
           notifiedUid: targetMemberId,
           otherLabel: myProfile.label,
           otherPhotoUrl: myProfile.photoUrl,
-          createdAt: Timestamp.now(),
         }),
       ]);
 

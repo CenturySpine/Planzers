@@ -105,6 +105,7 @@ class _TripThreadMessagingPageState
   }
 
   void _cancelReply() {
+    if (_replyingTo == null) return;
     setState(() {
       _replyingTo = null;
       _builders = null;
@@ -492,7 +493,7 @@ class _TripThreadMessagingPageState
         myUid != null &&
         selectedMessage.authorId == myUid;
 
-    _builders ??= Builders(
+    final chatBuilders = _builders ??= Builders(
       textMessageBuilder: (ctx, message, index,
               {required isSentByMe, groupStatus}) {
         const avatarSlot = 40.0; // avatar 32px + right padding 8px
@@ -839,7 +840,7 @@ class _TripThreadMessagingPageState
               chatController: chatController,
               crossCache: _crossCache,
               resolveUser: resolveUser,
-              builders: _builders!,
+              builders: chatBuilders,
               onAttachmentTap: handleAttachmentTap,
               onMessageTap: (ctx, message, {required index, required details}) {
                 if (_selectedMessageId != null) {

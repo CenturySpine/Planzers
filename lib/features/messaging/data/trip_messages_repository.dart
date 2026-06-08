@@ -22,8 +22,9 @@ final tripMessagesRepositoryProvider = Provider<TripMessagesRepository>((ref) {
   };
   final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
-  final bucketUri =
-      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
+  final bucketUri = effectiveBucket.startsWith('gs://')
+      ? effectiveBucket
+      : 'gs://$effectiveBucket';
   return TripMessagesRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
@@ -52,7 +53,9 @@ final tripMessagesLastReadAtProvider =
 
 final tripMessageReactionsStreamProvider = StreamProvider.autoDispose
     .family<Map<String, List<TripMessageReaction>>, String>((ref, tripId) {
-  return ref.watch(tripMessagesRepositoryProvider).watchReactionsByMessage(tripId);
+  return ref
+      .watch(tripMessagesRepositoryProvider)
+      .watchReactionsByMessage(tripId);
 });
 
 final tripChatDataStreamProvider =
@@ -259,13 +262,11 @@ class TripMessagesRepository {
       'authorId': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (!scope.isMain) {
-      payload['threadType'] = scope.threadType.firestoreValue;
-      payload['visibilityType'] = scope.visibilityType.firestoreValue;
-      if (scope.isObject) {
-        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-      }
+    payload['threadType'] = scope.threadType.firestoreValue;
+    payload['visibilityType'] = scope.visibilityType.firestoreValue;
+    if (scope.isObject) {
+      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
     }
     final cleanReplyId = replyToMessageId?.trim();
     if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
@@ -321,11 +322,19 @@ class TripMessagesRepository {
       throw StateError('Parametres invalides');
     }
 
+    final storageSegmentRe = RegExp(r'^[A-Za-z0-9_-]+$');
+    if (!storageSegmentRe.hasMatch(cleanTripId) ||
+        !storageSegmentRe.hasMatch(cleanMessageId) ||
+        !storageSegmentRe.hasMatch(user.uid)) {
+      throw StateError('Parametres invalides');
+    }
+
     final dimensions = await _decodeImageDimensions(bytes);
     final safeExt = fileExt.trim().toLowerCase().replaceAll('.', '');
     final ext = safeExt.isEmpty ? 'jpg' : safeExt;
     final messageRef = _messagesCol(cleanTripId).doc(cleanMessageId);
-    final objectPath = 'trips/$cleanTripId/messages/$cleanMessageId.$ext';
+    final objectPath = 'trips/$cleanTripId/messages/${user.uid}/'
+        '$cleanMessageId.$ext';
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',
@@ -337,7 +346,10 @@ class TripMessagesRepository {
     final objectRef = storage.ref(objectPath);
     final uploadTask = objectRef.putData(
       bytes,
-      SettableMetadata(contentType: contentType),
+      SettableMetadata(
+        contentType: contentType,
+        customMetadata: {'authorId': user.uid},
+      ),
     );
     if (onUploadProgress != null) {
       uploadTask.snapshotEvents.listen((event) {
@@ -364,13 +376,11 @@ class TripMessagesRepository {
     if (trimmedCaption.isNotEmpty) {
       payload['text'] = trimmedCaption;
     }
-    if (!scope.isMain) {
-      payload['threadType'] = scope.threadType.firestoreValue;
-      payload['visibilityType'] = scope.visibilityType.firestoreValue;
-      if (scope.isObject) {
-        payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
-        payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
-      }
+    payload['threadType'] = scope.threadType.firestoreValue;
+    payload['visibilityType'] = scope.visibilityType.firestoreValue;
+    if (scope.isObject) {
+      payload['threadObjectType'] = (scope.threadObjectType ?? '').trim();
+      payload['threadObjectId'] = (scope.threadObjectId ?? '').trim();
     }
     final cleanReplyId = replyToMessageId?.trim();
     if (cleanReplyId != null && cleanReplyId.isNotEmpty) {
@@ -469,7 +479,9 @@ class TripMessagesRepository {
     if (cleanId.isEmpty) {
       return Stream.value(const <String, List<TripMessageReaction>>{});
     }
-    return _messagesQueryForScope(cleanId, scope: scope).snapshots().map((snap) {
+    return _messagesQueryForScope(cleanId, scope: scope)
+        .snapshots()
+        .map((snap) {
       final result = <String, List<TripMessageReaction>>{};
       for (final messageDoc in snap.docs) {
         final message = TripMessage.fromDoc(messageDoc);
@@ -625,7 +637,8 @@ class TripMessagesRepository {
   }
 
   TripChatData _chatDataFromDocs({
-    required List<QueryDocumentSnapshot<Map<String, dynamic>>> docsDescByCreatedAt,
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>>
+        docsDescByCreatedAt,
     required int pageSize,
     required TripMessageThreadScope scope,
   }) {
@@ -694,6 +707,11 @@ class TripMessagesRepository {
     required TripMessage message,
     required TripMessageThreadScope scope,
   }) {
+    // Legacy messages without visibilityType are defaulted to tripAll by
+    // fromFirestore, so they pass this check correctly for the main scope.
+    if (message.visibilityType != scope.visibilityType) {
+      return false;
+    }
     return scope.matchesMessageFields(
       messageThreadType: message.threadType,
       messageThreadObjectType: message.threadObjectType,
@@ -705,9 +723,30 @@ class TripMessagesRepository {
     String tripId, {
     required TripMessageThreadScope scope,
   }) {
-    // Keep query index-free (orderBy only), then filter by scope in-memory.
-    // This avoids requiring composite indexes for admin/object threads.
-    return _messagesCol(tripId);
+    Query<Map<String, dynamic>> query = _messagesCol(tripId);
+    if (scope.isMain) {
+      return query.where(
+        'visibilityType',
+        isEqualTo: TripMessageVisibilityType.tripAll.firestoreValue,
+      );
+    }
+
+    query = query
+        .where('visibilityType', isEqualTo: scope.visibilityType.firestoreValue)
+        .where('threadType', isEqualTo: scope.threadType.firestoreValue);
+
+    if (scope.isObject) {
+      query = query
+          .where(
+            'threadObjectType',
+            isEqualTo: (scope.threadObjectType ?? '').trim(),
+          )
+          .where(
+            'threadObjectId',
+            isEqualTo: (scope.threadObjectId ?? '').trim(),
+          );
+    }
+    return query;
   }
 
   int _queryPageSizeForRequestedPage(int requestedPageSize) {
