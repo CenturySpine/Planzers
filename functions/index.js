@@ -865,9 +865,9 @@ async function incrementTripUnreadCounters({ tripId, recipients, channel }) {
 }
 
 async function collectRecipientTokenEntries(db, recipients) {
-  /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference }[]} */
+  /** @type {{ token: string, ref: FirebaseFirestore.DocumentReference, platform: string }[]} */
   const tokenEntries = [];
-  /** @type {Map<string, FirebaseFirestore.DocumentReference>} */
+  /** @type {Map<string, { ref: FirebaseFirestore.DocumentReference, platform: string }>} */
   const byToken = new Map();
   await Promise.all(
     [...new Set(recipients.map((uid) => normalizeString(uid)).filter(Boolean))].map(
@@ -879,9 +879,13 @@ async function collectRecipientTokenEntries(db, recipients) {
           .collection('fcmTokens')
           .get();
         for (const doc of tokensSnap.docs) {
-          const t = normalizeString((doc.data() || {}).token);
+          const docData = doc.data() || {};
+          const t = normalizeString(docData.token);
           if (t && !byToken.has(t)) {
-            byToken.set(t, doc.ref);
+            byToken.set(t, {
+              ref: doc.ref,
+              platform: normalizeString(docData.platform),
+            });
           }
         }
       } catch (e) {
@@ -889,8 +893,12 @@ async function collectRecipientTokenEntries(db, recipients) {
       }
     })
   );
-  for (const [token, ref] of byToken.entries()) {
-    tokenEntries.push({ token, ref });
+  for (const [token, entry] of byToken.entries()) {
+    tokenEntries.push({
+      token,
+      ref: entry.ref,
+      platform: entry.platform,
+    });
   }
   return tokenEntries;
 }
@@ -1423,20 +1431,33 @@ exports.dispatchNotificationQueue = onDocumentCreated(
           ? data.createdAt
           : undefined;
 
-      const messages = tokenEntries.map(({ token }) => {
+      const messages = tokenEntries.map(({ token, platform }) => {
+        const eventData = buildTripNotificationEventData({
+          channel,
+          tripId,
+          actorId,
+          type,
+          targetPath,
+          createdAt,
+          payload,
+        });
+        // Web/PWA: data-only so FCM does not auto-display AND the SW does not
+        // double-show (notification payload + manual showNotification).
+        if (platform === 'web') {
+          return {
+            token,
+            data: {
+              ...eventData,
+              title,
+              body,
+            },
+          };
+        }
         /** @type {admin.messaging.Message} */
         const msg = {
           token,
           notification: { title, body },
-          data: buildTripNotificationEventData({
-            channel,
-            tripId,
-            actorId,
-            type,
-            targetPath,
-            createdAt,
-            payload,
-          }),
+          data: eventData,
         };
         if (androidChannelId) {
           msg.android = { notification: { channelId: androidChannelId } };

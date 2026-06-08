@@ -36,8 +36,8 @@ messaging.onBackgroundMessage(async (payload) => {
 
   const notification = payload.notification || {};
   const data = payload.data || {};
-  const title = notification.title || 'Planerz';
-  const body = notification.body || '';
+  const title = data.title || notification.title || 'Planerz';
+  const body = data.body || notification.body || '';
   const tripId = typeof data.tripId === 'string' ? data.tripId.trim() : '';
   const type = typeof data.type === 'string' ? data.type.trim() : '';
   const targetPathRaw =
