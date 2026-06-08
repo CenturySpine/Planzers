@@ -3015,6 +3015,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get androidSunsetPwaHint =>
       'To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.';
+
+  @override
+  String get androidSunsetUninstallHint =>
+      'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get androidSunsetUninstallButton => 'Uninstall the app';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5957,4 +5964,11 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get androidSunsetPwaHint =>
       'To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.';
+
+  @override
+  String get androidSunsetUninstallHint =>
+      'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get androidSunsetUninstallButton => 'Uninstall the app';
 }

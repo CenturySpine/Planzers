@@ -1150,5 +1150,7 @@
   },
   "androidSunsetTitle": "L'application Android n'est plus disponible",
   "androidSunsetBody": "L'application Android n'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.",
-  "androidSunsetPwaHint": "Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu."
+  "androidSunsetPwaHint": "Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu.",
+  "androidSunsetUninstallHint": "Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l'espace sur ton appareil.",
+  "androidSunsetUninstallButton": "Désinstaller l'application"
 }

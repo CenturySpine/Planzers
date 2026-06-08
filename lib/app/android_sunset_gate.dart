@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/firebase/app_public_hosts.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -43,6 +45,8 @@ class _AndroidSunsetScreen extends StatelessWidget {
 
   final Uri webAppUri;
 
+  static final _systemChannel = const MethodChannel('fr.centuryspine.planerz/system');
+
   Future<void> _openWeb(BuildContext context) async {
     final launched =
         await launchUrl(webAppUri, mode: LaunchMode.externalApplication);
@@ -54,6 +58,10 @@ class _AndroidSunsetScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _requestUninstall() async {
+    await _systemChannel.invokeMethod('requestUninstall');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -61,47 +69,72 @@ class _AndroidSunsetScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset(
-                  'assets/images/app_icon.png',
-                  width: 96,
-                  height: 96,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.androidSunsetTitle,
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.androidSunsetBody,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                _PwaHintBox(hint: l10n.androidSunsetPwaHint),
-                const SizedBox(height: 24),
-                GestureDetector(
-                  onTap: () => _openWeb(context),
-                  child: Text(
-                    webAppUri.host,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                      decorationColor: theme.colorScheme.primary,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.contain,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.androidSunsetTitle,
+                      style: theme.textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.androidSunsetBody,
+                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    _PwaHintBox(hint: l10n.androidSunsetPwaHint),
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      onTap: () => _openWeb(context),
+                      child: Text(
+                        webAppUri.host,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          decorationColor: theme.colorScheme.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.androidSunsetUninstallHint,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _requestUninstall,
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text(l10n.androidSunsetUninstallButton),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: context.planerzColors.success,
+                        side: BorderSide(color: context.planerzColors.success),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
