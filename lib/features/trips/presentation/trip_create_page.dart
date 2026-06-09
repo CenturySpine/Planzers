@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/auth/data/display_name_length.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripCreatePage extends ConsumerStatefulWidget {
@@ -18,8 +22,9 @@ class TripCreatePage extends ConsumerStatefulWidget {
 class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
-  late final TextEditingController _creatorNameController;
   late TripMemberStay _stay;
+  String? _creatorName;
+  bool _useProfileName = false;
   String? _errorMessage;
   bool _saving = false;
 
@@ -28,7 +33,6 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     super.initState();
     _titleController = TextEditingController();
     _destinationController = TextEditingController();
-    _creatorNameController = TextEditingController();
     _stay = TripMemberStay.defaultForNewTripEditor();
   }
 
@@ -36,8 +40,44 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
-    _creatorNameController.dispose();
     super.dispose();
+  }
+
+  bool get _isCreatorNameValid => isDisplayNameLengthValid(_creatorName ?? '');
+
+  Future<String?> _loadMyProfileName() async {
+    final snap =
+        await ref.read(accountRepositoryProvider).watchMyUserDocument().first;
+    return profileNameFromData(snap.data());
+  }
+
+  Future<void> _pickCreatorName() async {
+    final profileName = await _loadMyProfileName();
+    if (!mounted) return;
+
+    final choice = await showDialog<TripParticipantNameDialogResult>(
+      context: context,
+      builder: (dialogContext) => TripParticipantNameDialog(
+        initialName: _creatorName ?? '',
+        initialUseProfileName: _useProfileName,
+        initialIsChild: false,
+        isClaimed: true,
+        profileName: profileName,
+      ),
+    );
+    if (!mounted || choice == null) return;
+
+    final displayName = resolveTripParticipantDisplayName(
+      result: choice,
+      profileName: profileName,
+    );
+    if (displayName == null) return;
+
+    setState(() {
+      _creatorName = displayName;
+      _useProfileName = choice.useProfileName;
+      _errorMessage = null;
+    });
   }
 
   Future<void> _submit() async {
@@ -45,9 +85,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final l10n = AppLocalizations.of(context)!;
     final title = _titleController.text.trim();
     final destination = _destinationController.text.trim();
-    final creatorName = _creatorNameController.text.trim();
+    final creatorName = _creatorName?.trim() ?? '';
 
-    if (title.isEmpty || destination.isEmpty || creatorName.isEmpty) {
+    if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
       setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
       return;
     }
@@ -73,6 +113,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             title: title,
             destination: destination,
             creatorName: creatorName,
+            useProfileName: _useProfileName,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: _stay.startDayPart,
@@ -122,16 +163,25 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             },
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _creatorNameController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: l10n.tripsCreateCreatorNameLabel,
-              border: const OutlineInputBorder(),
+          InkWell(
+            onTap: _saving ? null : _pickCreatorName,
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: l10n.tripsCreateCreatorNameLabel,
+                border: const OutlineInputBorder(),
+                suffixIcon: const Icon(Icons.edit_outlined),
+              ),
+              child: Text(
+                _isCreatorNameValid
+                    ? _creatorName!.trim()
+                    : l10n.commonNotProvided,
+                style: _isCreatorNameValid
+                    ? null
+                    : TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+              ),
             ),
-            onChanged: (_) {
-              if (_errorMessage != null) setState(() => _errorMessage = null);
-            },
           ),
           const SizedBox(height: 16),
           TripCalendarStayBoundsField(

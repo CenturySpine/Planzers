@@ -214,6 +214,7 @@ class TripsRepository {
     required String title,
     required String destination,
     required String creatorName,
+    bool useProfileName = false,
     String address = '',
     String linkUrl = '',
     DateTime? startDate,
@@ -269,6 +270,9 @@ class TripsRepository {
       'phoneVisibility': 'nobody',
       'createdAt': FieldValue.serverTimestamp(),
     });
+    if (useProfileName) {
+      await participantRef.update({'useProfileName': true});
+    }
 
     final defaultGroupRef = doc.collection('expenseGroups').doc();
     await defaultGroupRef.set({

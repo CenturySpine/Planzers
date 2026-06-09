@@ -626,10 +626,14 @@ service cloud.firestore {
               request.resource.data.keys().hasOnly([
                 'participantName', 'createdAt', 'userId',
                 'stayStartDateKey', 'stayStartDayPart', 'stayEndDateKey', 'stayEndDayPart',
-                'cupidonEnabled', 'phoneVisibility'
+                'cupidonEnabled', 'phoneVisibility', 'useProfileName'
               ])
               && request.resource.data.userId == request.auth.uid
               && tripDoc(tripId).data.ownerId == request.auth.uid
+              && (
+                !request.resource.data.keys().hasAny(['useProfileName'])
+                || request.resource.data.useProfileName == true
+              )
             )
           );
         allow update: if (

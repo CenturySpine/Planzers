@@ -70,7 +70,8 @@ class _TripParticipantNameDialogState extends State<TripParticipantNameDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
-    _useProfileName = widget.initialUseProfileName && _profileOptionEnabled;
+    _useProfileName = _profileOptionEnabled &&
+        (widget.initialUseProfileName || widget.initialName.trim().isEmpty);
     _isChild = widget.initialIsChild && !widget.isClaimed;
     _nameController.addListener(_onNameChanged);
   }
