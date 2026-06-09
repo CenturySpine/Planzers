@@ -108,8 +108,53 @@ async function claimAndDeleteNotificationQueueDoc(db, ref) {
   });
 }
 
+/**
+ * Sends a claimed notification batch and increments unread counters only after
+ * FCM accepts the delivery request.
+ * @param {{
+ *   db: FirebaseFirestore.Firestore,
+ *   tokenEntries: unknown[],
+ *   messages: unknown[],
+ *   tripId: string,
+ *   recipients: string[],
+ *   channel: string,
+ *   sendEach: (messages: unknown[]) => Promise<unknown>,
+ *   incrementTripUnreadCounters: (args: { tripId: string, recipients: string[], channel: string }) => Promise<void>,
+ *   cleanupInvalidFcmTokens: (db: FirebaseFirestore.Firestore, result: unknown, tokenEntries: unknown[]) => Promise<void>,
+ * }} options
+ * @returns {Promise<void>}
+ */
+async function deliverNotificationBatch(options) {
+  const tokenEntries = Array.isArray(options.tokenEntries)
+    ? options.tokenEntries
+    : [];
+  const messages = Array.isArray(options.messages) ? options.messages : [];
+  let sendResult = null;
+
+  if (tokenEntries.length > 0) {
+    sendResult = await options.sendEach(messages);
+  }
+
+  if (options.recipients.length > 0 && options.tripId) {
+    await options.incrementTripUnreadCounters({
+      tripId: options.tripId,
+      recipients: options.recipients,
+      channel: options.channel,
+    });
+  }
+
+  if (sendResult) {
+    await options.cleanupInvalidFcmTokens(
+      options.db,
+      sendResult,
+      tokenEntries,
+    );
+  }
+}
+
 module.exports = {
   buildNotificationQueueDocId,
   enqueueTripNotification,
   claimAndDeleteNotificationQueueDoc,
+  deliverNotificationBatch,
 };

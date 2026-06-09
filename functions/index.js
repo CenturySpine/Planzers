@@ -18,6 +18,7 @@ const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
   claimAndDeleteNotificationQueueDoc,
+  deliverNotificationBatch,
 } = require('./notification_queue');
 
 admin.initializeApp();
@@ -1423,18 +1424,15 @@ exports.dispatchNotificationQueue = onDocumentCreated(
               channel,
             });
 
-      if (recipients.length > 0 && tripId) {
-        await incrementTripUnreadCounters({ tripId, recipients, channel });
-      }
-
       const tokenEntries = await collectRecipientTokenEntries(db, recipients);
+      let messages = [];
       if (tokenEntries.length > 0) {
         const createdAt =
           data.createdAt instanceof Timestamp
             ? data.createdAt
             : undefined;
 
-        const messages = tokenEntries.map(({ token, platform }) => {
+        messages = tokenEntries.map(({ token, platform }) => {
           const eventData = buildTripNotificationEventData({
             channel,
             tripId,
@@ -1467,10 +1465,18 @@ exports.dispatchNotificationQueue = onDocumentCreated(
           }
           return msg;
         });
-
-        const result = await admin.messaging().sendEach(messages);
-        await cleanupInvalidFcmTokens(db, result, tokenEntries);
       }
+      await deliverNotificationBatch({
+        db,
+        tokenEntries,
+        messages,
+        tripId,
+        recipients,
+        channel,
+        sendEach: (batchMessages) => admin.messaging().sendEach(batchMessages),
+        incrementTripUnreadCounters,
+        cleanupInvalidFcmTokens,
+      });
     } catch (e) {
       console.error('dispatchNotificationQueue: post-claim delivery error — notification lost', { docId: snap.ref.id, type, tripId }, e);
       throw e;
