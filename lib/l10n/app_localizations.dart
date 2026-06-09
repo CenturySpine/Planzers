@@ -856,6 +856,42 @@ abstract class AppLocalizations {
   /// **'Titre, destination et votre nom sont obligatoires'**
   String get tripsCreateValidationRequired;
 
+  /// No description provided for @tripsCreateLifecycleLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de voyage'**
+  String get tripsCreateLifecycleLabel;
+
+  /// No description provided for @tripsCreateLifecyclePlanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prévu'**
+  String get tripsCreateLifecyclePlanned;
+
+  /// No description provided for @tripsCreateLifecyclePreparation.
+  ///
+  /// In fr, this message translates to:
+  /// **'En préparation'**
+  String get tripsCreateLifecyclePreparation;
+
+  /// No description provided for @tripsCreateValidationRequiredPreparation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Titre et votre nom sont obligatoires'**
+  String get tripsCreateValidationRequiredPreparation;
+
+  /// No description provided for @tripPreparationPromoteAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Passer en mode prévu'**
+  String get tripPreparationPromoteAction;
+
+  /// No description provided for @tripLifecyclePreparationLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'En préparation'**
+  String get tripLifecyclePreparationLabel;
+
   /// No description provided for @tripsCreateValidationDateOrder.
   ///
   /// In fr, this message translates to:

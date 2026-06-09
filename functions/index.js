@@ -2477,6 +2477,7 @@ exports.getInviteJoinContext = onCall(
       cupidonModeEnabled: data.cupidonModeEnabled !== false,
       tripStartDate,
       tripEndDate,
+      lifecycleStatus: normalizeString(data.lifecycleStatus) || 'planned',
     };
   }
 );

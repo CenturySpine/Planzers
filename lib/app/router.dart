@@ -40,6 +40,8 @@ import 'package:planerz/features/trips/presentation/trip_settings_general_page.d
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
+import 'package:planerz/features/trips/presentation/trip_entry_route.dart';
+import 'package:planerz/features/trips/presentation/trip_preparation_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/account/presentation/public_profile_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
@@ -152,10 +154,11 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/trips/:tripId',
-      redirect: (context, state) {
+      redirect: (context, state) async {
         final segs = state.uri.pathSegments;
         if (segs.length == 2) {
-          return '/trips/${state.pathParameters['tripId']}/overview';
+          final tripId = state.pathParameters['tripId']!;
+          return resolveTripEntryRedirect(tripId);
         }
         return null;
       },
@@ -275,6 +278,12 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'games',
           builder: (context, state) => TripGamesPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'preparation',
+          builder: (context, state) => TripPreparationPage(
             tripId: state.pathParameters['tripId']!,
           ),
         ),

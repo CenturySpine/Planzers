@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
+import 'package:planerz/features/trips/presentation/trip_entry_route.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -23,6 +25,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
   late TripMemberStay _stay;
+  TripLifecycleStatus _lifecycleStatus = TripLifecycleStatus.planned;
   String? _creatorName;
   bool _useProfileName = false;
   String? _errorMessage;
@@ -42,6 +45,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _destinationController.dispose();
     super.dispose();
   }
+
+  bool get _isPreparation =>
+      _lifecycleStatus == TripLifecycleStatus.preparation;
 
   bool get _isCreatorNameValid => isDisplayNameLengthValid(_creatorName ?? '');
 
@@ -87,21 +93,30 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final destination = _destinationController.text.trim();
     final creatorName = _creatorName?.trim() ?? '';
 
-    if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
-      setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
-      return;
-    }
+    if (_isPreparation) {
+      if (title.isEmpty || !_isCreatorNameValid) {
+        setState(
+          () => _errorMessage = l10n.tripsCreateValidationRequiredPreparation,
+        );
+        return;
+      }
+    } else {
+      if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
+        setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
+        return;
+      }
 
-    if (!TripMemberStay.isChronological(_stay)) {
-      setState(() => _errorMessage = l10n.tripStayInvalidRange);
-      return;
-    }
+      if (!TripMemberStay.isChronological(_stay)) {
+        setState(() => _errorMessage = l10n.tripStayInvalidRange);
+        return;
+      }
 
-    final startDate = TripMemberStay.parseDateKey(_stay.startDateKey);
-    final endDate = TripMemberStay.parseDateKey(_stay.endDateKey);
-    if (startDate == null || endDate == null) {
-      setState(() => _errorMessage = l10n.tripStayInvalidRange);
-      return;
+      final startDate = TripMemberStay.parseDateKey(_stay.startDateKey);
+      final endDate = TripMemberStay.parseDateKey(_stay.endDateKey);
+      if (startDate == null || endDate == null) {
+        setState(() => _errorMessage = l10n.tripStayInvalidRange);
+        return;
+      }
     }
 
     setState(() {
@@ -109,18 +124,29 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       _errorMessage = null;
     });
     try {
-      await ref.read(tripsRepositoryProvider).createTrip(
+      final DateTime? startDate;
+      final DateTime? endDate;
+      if (_isPreparation) {
+        startDate = null;
+        endDate = null;
+      } else {
+        startDate = TripMemberStay.parseDateKey(_stay.startDateKey);
+        endDate = TripMemberStay.parseDateKey(_stay.endDateKey);
+      }
+
+      final tripId = await ref.read(tripsRepositoryProvider).createTrip(
             title: title,
-            destination: destination,
+            destination: _isPreparation ? '' : destination,
             creatorName: creatorName,
             useProfileName: _useProfileName,
             startDate: startDate,
             endDate: endDate,
-            tripStartDayPart: _stay.startDayPart,
-            tripEndDayPart: _stay.endDayPart,
+            tripStartDayPart: _isPreparation ? null : _stay.startDayPart,
+            tripEndDayPart: _isPreparation ? null : _stay.endDayPart,
+            lifecycleStatus: _lifecycleStatus,
           );
       if (!mounted) return;
-      context.pop();
+      context.go(tripEntryPath(tripId, _lifecycleStatus));
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());
@@ -139,6 +165,34 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          Text(
+            l10n.tripsCreateLifecycleLabel,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<TripLifecycleStatus>(
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment<TripLifecycleStatus>(
+                value: TripLifecycleStatus.planned,
+                label: Text(l10n.tripsCreateLifecyclePlanned),
+              ),
+              ButtonSegment<TripLifecycleStatus>(
+                value: TripLifecycleStatus.preparation,
+                label: Text(l10n.tripsCreateLifecyclePreparation),
+              ),
+            ],
+            selected: {_lifecycleStatus},
+            onSelectionChanged: _saving
+                ? null
+                : (selection) {
+                    setState(() {
+                      _lifecycleStatus = selection.first;
+                      _errorMessage = null;
+                    });
+                  },
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _titleController,
             textInputAction: TextInputAction.next,
@@ -150,18 +204,20 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
               if (_errorMessage != null) setState(() => _errorMessage = null);
             },
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _destinationController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: l10n.tripsDestinationLabel,
-              border: const OutlineInputBorder(),
+          if (!_isPreparation) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _destinationController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.tripsDestinationLabel,
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (_errorMessage != null) setState(() => _errorMessage = null);
+              },
             ),
-            onChanged: (_) {
-              if (_errorMessage != null) setState(() => _errorMessage = null);
-            },
-          ),
+          ],
           const SizedBox(height: 12),
           InkWell(
             onTap: _saving ? null : _pickCreatorName,
@@ -183,18 +239,20 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          TripCalendarStayBoundsField(
-            tripStartDate: null,
-            tripEndDate: null,
-            value: _stay,
-            onChanged: (next) {
-              setState(() {
-                _stay = next;
-                _errorMessage = null;
-              });
-            },
-          ),
+          if (!_isPreparation) ...[
+            const SizedBox(height: 16),
+            TripCalendarStayBoundsField(
+              tripStartDate: null,
+              tripEndDate: null,
+              value: _stay,
+              onChanged: (next) {
+                setState(() {
+                  _stay = next;
+                  _errorMessage = null;
+                });
+              },
+            ),
+          ],
           if (_errorMessage != null) ...[
             const SizedBox(height: 12),
             Text(

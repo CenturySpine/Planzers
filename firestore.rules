@@ -602,6 +602,7 @@ service cloud.firestore {
             'endDate',
             'tripStartDayPart',
             'tripEndDayPart',
+            'lifecycleStatus',
           ])
         ) ||
         (

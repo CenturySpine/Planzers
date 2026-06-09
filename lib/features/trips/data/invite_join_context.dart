@@ -1,3 +1,5 @@
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
+
 class InviteJoinParticipantOption {
   const InviteJoinParticipantOption({
     required this.id,
@@ -18,6 +20,7 @@ class InviteJoinContext {
     required this.cupidonModeEnabled,
     this.tripStartDate,
     this.tripEndDate,
+    this.lifecycleStatus = TripLifecycleStatus.planned,
   });
 
   final String tripId;
@@ -29,4 +32,8 @@ class InviteJoinContext {
   /// From Cloud Function [getInviteJoinContext] (ISO), for stay bounds UI.
   final DateTime? tripStartDate;
   final DateTime? tripEndDate;
+  final TripLifecycleStatus lifecycleStatus;
+
+  bool get isInPreparation =>
+      lifecycleStatus == TripLifecycleStatus.preparation;
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 
 class Trip {
@@ -32,6 +33,7 @@ class Trip {
     this.shoppingPermissions = TripShoppingPermissions.defaults,
     this.carpoolPermissions = TripCarpoolPermissions.defaults,
     this.participantCount,
+    this.lifecycleStatus = TripLifecycleStatus.planned,
   });
 
   final String id;
@@ -50,6 +52,9 @@ class Trip {
   /// Total number of participants (real users + placeholders).
   /// Maintained by Firestore triggers. Null on legacy docs before migration.
   final int? participantCount;
+
+  /// Trip lifecycle: [TripLifecycleStatus.planned] (default) or preparation.
+  final TripLifecycleStatus lifecycleStatus;
 
   /// Co-admins (trip creator is always admin via [ownerId]).
   final List<String> adminMemberIds;
@@ -168,6 +173,9 @@ class Trip {
       carpoolPermissions: TripCarpoolPermissions.fromFirestore(
         (data['permissions'] as Map<String, dynamic>?)?['carpool'],
       ),
+      lifecycleStatus: tripLifecycleStatusFromFirestore(
+        data['lifecycleStatus'] as String?,
+      ),
     );
   }
 
@@ -197,6 +205,9 @@ class Trip {
       if ((bannerImagePath ?? '').trim().isNotEmpty)
         'bannerImagePath': bannerImagePath!.trim(),
       if (adminMemberIds.isNotEmpty) 'adminMemberIds': adminMemberIds,
+      if (lifecycleStatus == TripLifecycleStatus.preparation)
+        'lifecycleStatus':
+            tripLifecycleStatusToFirestore(lifecycleStatus),
       'permissions': <String, dynamic>{
         'tripGeneral': generalPermissions.toFirestore(),
         'participants': participantsPermissions.toFirestore(),

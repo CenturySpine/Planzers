@@ -14,6 +14,7 @@ import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
@@ -210,7 +211,7 @@ class TripsRepository {
     return trips;
   }
 
-  Future<void> createTrip({
+  Future<String> createTrip({
     required String title,
     required String destination,
     required String creatorName,
@@ -221,15 +222,17 @@ class TripsRepository {
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
+    TripLifecycleStatus lifecycleStatus = TripLifecycleStatus.planned,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
     }
 
+    final isPreparation = lifecycleStatus == TripLifecycleStatus.preparation;
     final data = <String, dynamic>{
       'title': title.trim(),
-      'destination': destination.trim(),
+      'destination': isPreparation ? '' : destination.trim(),
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
       'cupidonModeEnabled': true,
@@ -238,6 +241,10 @@ class TripsRepository {
       'permissions': _defaultPermissionsFirestoreMap(),
       'createdAt': FieldValue.serverTimestamp(),
     };
+    if (isPreparation) {
+      data['lifecycleStatus'] =
+          tripLifecycleStatusToFirestore(TripLifecycleStatus.preparation);
+    }
     if (startDate != null) {
       final d = DateTime(startDate.year, startDate.month, startDate.day);
       data['startDate'] = Timestamp.fromDate(d);
@@ -258,18 +265,21 @@ class TripsRepository {
 
     // Create the creator's participant document first to get its stable ID.
     // Firestore rules for expense groups read the parent trip document (already created above).
-    final defaultStay = TripMemberStay.defaultForInviteContext(
-      tripStartDate: startDate,
-      tripEndDate: endDate,
-    );
-    final participantRef = await doc.collection('participants').add({
+    final participantData = <String, dynamic>{
       'participantName': creatorName.trim(),
       'userId': user.uid,
-      ...defaultStay.toFirestoreMap(),
       'cupidonEnabled': false,
       'phoneVisibility': 'nobody',
       'createdAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (!isPreparation) {
+      final defaultStay = TripMemberStay.defaultForInviteContext(
+        tripStartDate: startDate,
+        tripEndDate: endDate,
+      );
+      participantData.addAll(defaultStay.toFirestoreMap());
+    }
+    final participantRef = await doc.collection('participants').add(participantData);
     if (useProfileName) {
       await participantRef.update({'useProfileName': true});
     }
@@ -281,6 +291,38 @@ class TripsRepository {
       'isDefault': true,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
+    });
+
+    return doc.id;
+  }
+
+  Future<void> promoteTripToPlanned({required String tripId}) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    if (cleanTripId.isEmpty) {
+      throw StateError('Voyage invalide');
+    }
+
+    final docRef = firestore.collection('trips').doc(cleanTripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final tripData = snapshot.data() ?? const <String, dynamic>{};
+    final trip = Trip.fromMap(snapshot.id, tripData);
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.editGeneralInfoMinRole,
+    );
+
+    await docRef.update({
+      'lifecycleStatus': tripLifecycleStatusToFirestore(TripLifecycleStatus.planned),
     });
   }
 
@@ -512,6 +554,9 @@ class TripsRepository {
       cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
       tripStartDate: parseIso(raw['tripStartDate'] as String?),
       tripEndDate: parseIso(raw['tripEndDate'] as String?),
+      lifecycleStatus: tripLifecycleStatusFromFirestore(
+        raw['lifecycleStatus'] as String?,
+      ),
     );
   }
 
