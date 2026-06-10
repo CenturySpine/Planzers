@@ -17,7 +17,9 @@ const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate'
 const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
-  claimAndDeleteNotificationQueueDoc,
+  claimNotificationQueueDoc,
+  releaseNotificationQueueDoc,
+  completeNotificationQueueDoc,
 } = require('./notification_queue');
 
 admin.initializeApp();
@@ -1390,8 +1392,14 @@ exports.dispatchNotificationQueue = onDocumentCreated(
     if (!snap) return;
 
     const db = admin.firestore();
-    const data = await claimAndDeleteNotificationQueueDoc(db, snap.ref);
-    if (!data) return;
+    const claim = await claimNotificationQueueDoc(db, snap.ref);
+    if (!claim.claimed) {
+      if (claim.retry) {
+        throw new Error(`Notification ${snap.ref.id} is already being processed`);
+      }
+      return;
+    }
+    const data = claim.data;
 
     const channel = normalizeString(data.channel);
     const type = normalizeString(data.type);
@@ -1410,6 +1418,12 @@ exports.dispatchNotificationQueue = onDocumentCreated(
 
     if (!channel || !type || !title || candidateRecipients.length === 0) {
       console.warn('dispatchNotificationQueue: malformed doc discarded', { docId: snap.ref.id, channel, type, title, candidateCount: candidateRecipients.length });
+      await completeNotificationQueueDoc(db, snap.ref, {
+        docId: snap.ref.id,
+        channel,
+        type,
+        tripId,
+      });
       return;
     }
 
@@ -1471,8 +1485,20 @@ exports.dispatchNotificationQueue = onDocumentCreated(
         const result = await admin.messaging().sendEach(messages);
         await cleanupInvalidFcmTokens(db, result, tokenEntries);
       }
+
+      await completeNotificationQueueDoc(db, snap.ref, {
+        docId: snap.ref.id,
+        channel,
+        type,
+        tripId,
+      });
     } catch (e) {
-      console.error('dispatchNotificationQueue: post-claim delivery error — notification lost', { docId: snap.ref.id, type, tripId }, e);
+      try {
+        await releaseNotificationQueueDoc(db, snap.ref, e);
+      } catch (releaseError) {
+        console.error('dispatchNotificationQueue: failed to release queue doc after delivery error', { docId: snap.ref.id, type, tripId }, releaseError);
+      }
+      console.error('dispatchNotificationQueue: post-claim delivery error; notification left pending for retry', { docId: snap.ref.id, type, tripId }, e);
       throw e;
     }
   }
