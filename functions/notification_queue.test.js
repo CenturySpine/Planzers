@@ -3,8 +3,29 @@ const assert = require('node:assert/strict');
 const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
-  claimAndDeleteNotificationQueueDoc,
+  claimNotificationQueueDoc,
+  releaseNotificationQueueDoc,
+  completeNotificationQueueDoc,
 } = require('./notification_queue');
+
+function ref(collection, id) {
+  return { collection, id, path: `${collection}/${id}` };
+}
+
+function dbWithTransaction(createTransaction) {
+  return {
+    collection(collection) {
+      return {
+        doc(id) {
+          return ref(collection, id);
+        },
+      };
+    },
+    runTransaction(transactionCallback) {
+      return transactionCallback(createTransaction());
+    },
+  };
+}
 
 test('buildNotificationQueueDocId for trip_message', () => {
   assert.equal(
@@ -66,19 +87,14 @@ test('buildNotificationQueueDocId for expense reimbursement types', () => {
 
 test('enqueueTripNotification returns enqueued true on create', async () => {
   const createCalls = [];
-  const db = {
-    collection() {
-      return {
-        doc(docId) {
-          return {
-            async create(payload) {
-              createCalls.push({ docId, payload });
-            },
-          };
-        },
-      };
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return { exists: false };
     },
-  };
+    create(documentRef, payload) {
+      createCalls.push({ documentRef, payload });
+    },
+  }));
 
   const result = await enqueueTripNotification(db, {
     docId: 'trip_message__t__m',
@@ -87,27 +103,22 @@ test('enqueueTripNotification returns enqueued true on create', async () => {
 
   assert.deepEqual(result, { enqueued: true });
   assert.equal(createCalls.length, 1);
-  assert.equal(createCalls[0].docId, 'trip_message__t__m');
+  assert.equal(createCalls[0].documentRef.path, 'notificationQueue/trip_message__t__m');
   assert.equal(createCalls[0].payload.type, 'trip_message');
+  assert.equal(createCalls[0].payload.status, 'pending');
   assert.ok(createCalls[0].payload.createdAt);
 });
 
-test('enqueueTripNotification returns enqueued false on ALREADY_EXISTS', async () => {
-  const db = {
-    collection() {
-      return {
-        doc() {
-          return {
-            async create() {
-              const error = new Error('already exists');
-              error.code = 'already-exists';
-              throw error;
-            },
-          };
-        },
-      };
+test('enqueueTripNotification returns enqueued false when queue doc exists', async () => {
+  const createCalls = [];
+  const db = dbWithTransaction(() => ({
+    async get(documentRef) {
+      return { exists: documentRef.collection === 'notificationQueue' };
     },
-  };
+    create(documentRef, payload) {
+      createCalls.push({ documentRef, payload });
+    },
+  }));
 
   const result = await enqueueTripNotification(db, {
     docId: 'trip_message__t__m',
@@ -115,51 +126,170 @@ test('enqueueTripNotification returns enqueued false on ALREADY_EXISTS', async (
   });
 
   assert.deepEqual(result, { enqueued: false });
+  assert.equal(createCalls.length, 0);
 });
 
-test('claimAndDeleteNotificationQueueDoc returns null when doc absent', async () => {
-  const db = {
-    runTransaction(callback) {
-      const tx = {
-        async get() {
-          return { exists: false };
-        },
-        delete() {
-          throw new Error('delete should not be called');
+test('enqueueTripNotification returns enqueued false when already processed', async () => {
+  const createCalls = [];
+  const db = dbWithTransaction(() => ({
+    async get(documentRef) {
+      return { exists: documentRef.collection === 'notificationQueueProcessed' };
+    },
+    create(documentRef, payload) {
+      createCalls.push({ documentRef, payload });
+    },
+  }));
+
+  const result = await enqueueTripNotification(db, {
+    docId: 'trip_message__t__m',
+    payload: { type: 'trip_message' },
+  });
+
+  assert.deepEqual(result, { enqueued: false });
+  assert.equal(createCalls.length, 0);
+});
+
+test('claimNotificationQueueDoc returns absent when doc missing', async () => {
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return { exists: false };
+    },
+    update() {
+      throw new Error('update should not be called');
+    },
+  }));
+
+  const result = await claimNotificationQueueDoc(db, ref('notificationQueue', 'x'));
+  assert.deepEqual(result, { claimed: false, retry: false, reason: 'absent' });
+});
+
+test('claimNotificationQueueDoc marks pending doc as processing', async () => {
+  let updatedRef = null;
+  let updatedPayload = null;
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return {
+        exists: true,
+        data() {
+          return { type: 'trip_message', tripId: 't', status: 'pending' };
         },
       };
-      return callback(tx);
     },
-  };
+    update(documentRef, payload) {
+      updatedRef = documentRef;
+      updatedPayload = payload;
+    },
+  }));
 
-  const result = await claimAndDeleteNotificationQueueDoc(db, { path: 'notificationQueue/x' });
-  assert.equal(result, null);
+  const queueRef = ref('notificationQueue', 'x');
+  const result = await claimNotificationQueueDoc(db, queueRef);
+
+  assert.deepEqual(result, {
+    claimed: true,
+    data: { type: 'trip_message', tripId: 't', status: 'pending' },
+  });
+  assert.equal(updatedRef, queueRef);
+  assert.equal(updatedPayload.status, 'processing');
+  assert.ok(updatedPayload.processingLeaseExpiresAt);
 });
 
-test('claimAndDeleteNotificationQueueDoc deletes and returns data when doc present', async () => {
-  let deletedRef = null;
-  const db = {
-    runTransaction(callback) {
-      const tx = {
-        async get() {
+test('claimNotificationQueueDoc asks retry while another worker owns the lease', async () => {
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return {
+        exists: true,
+        data() {
           return {
-            exists: true,
-            data() {
-              return { type: 'trip_message', tripId: 't' };
-            },
+            status: 'processing',
+            processingLeaseExpiresAt: { toMillis: () => Date.now() + 60_000 },
           };
         },
-        delete(ref) {
-          deletedRef = ref;
-        },
       };
-      return callback(tx);
     },
-  };
+    update() {
+      throw new Error('update should not be called');
+    },
+  }));
 
-  const ref = { path: 'notificationQueue/x' };
-  const result = await claimAndDeleteNotificationQueueDoc(db, ref);
+  const result = await claimNotificationQueueDoc(db, ref('notificationQueue', 'x'));
 
-  assert.deepEqual(result, { type: 'trip_message', tripId: 't' });
-  assert.equal(deletedRef, ref);
+  assert.deepEqual(result, { claimed: false, retry: true, reason: 'processing' });
+});
+
+test('releaseNotificationQueueDoc restores pending status after failure', async () => {
+  let updatedPayload = null;
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return { exists: true };
+    },
+    update(_documentRef, payload) {
+      updatedPayload = payload;
+    },
+  }));
+
+  const result = await releaseNotificationQueueDoc(
+    db,
+    ref('notificationQueue', 'x'),
+    new Error('send failed')
+  );
+
+  assert.equal(result, true);
+  assert.equal(updatedPayload.status, 'pending');
+  assert.equal(updatedPayload.lastError, 'send failed');
+  assert.ok(updatedPayload.processingLeaseExpiresAt);
+});
+
+test('completeNotificationQueueDoc writes processed marker and deletes queue doc', async () => {
+  const createCalls = [];
+  let deletedRef = null;
+  const db = dbWithTransaction(() => ({
+    async get(documentRef) {
+      return { exists: documentRef.collection === 'notificationQueue' };
+    },
+    create(documentRef, payload) {
+      createCalls.push({ documentRef, payload });
+    },
+    delete(documentRef) {
+      deletedRef = documentRef;
+    },
+  }));
+
+  const queueRef = ref('notificationQueue', 'trip_message__t__m');
+  const result = await completeNotificationQueueDoc(db, queueRef, {
+    docId: 'trip_message__t__m',
+    channel: 'messages',
+    type: 'trip_message',
+    tripId: 't',
+  });
+
+  assert.equal(result, true);
+  assert.equal(createCalls.length, 1);
+  assert.equal(createCalls[0].documentRef.path, 'notificationQueueProcessed/trip_message__t__m');
+  assert.equal(createCalls[0].payload.type, 'trip_message');
+  assert.equal(deletedRef, queueRef);
+});
+
+test('completeNotificationQueueDoc only deletes queue doc when marker already exists', async () => {
+  const createCalls = [];
+  let deletedRef = null;
+  const db = dbWithTransaction(() => ({
+    async get() {
+      return { exists: true };
+    },
+    create(documentRef, payload) {
+      createCalls.push({ documentRef, payload });
+    },
+    delete(documentRef) {
+      deletedRef = documentRef;
+    },
+  }));
+
+  const queueRef = ref('notificationQueue', 'trip_message__t__m');
+  const result = await completeNotificationQueueDoc(db, queueRef, {
+    docId: 'trip_message__t__m',
+  });
+
+  assert.equal(result, false);
+  assert.equal(createCalls.length, 0);
+  assert.equal(deletedRef, queueRef);
 });

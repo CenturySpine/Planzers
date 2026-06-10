@@ -1038,5 +1038,10 @@ service cloud.firestore {
     match /notificationQueue/{notifId} {
       allow read, write: if false;
     }
+
+    // Durable completion markers for Cloud Functions notification idempotency.
+    match /notificationQueueProcessed/{notifId} {
+      allow read, write: if false;
+    }
   }
 }
