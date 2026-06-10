@@ -1386,6 +1386,7 @@ exports.dispatchNotificationQueue = onDocumentCreated(
     document: 'notificationQueue/{notifId}',
     timeoutSeconds: 60,
     memory: '256MiB',
+    retry: true,
   },
   async (event) => {
     const snap = event.data;
