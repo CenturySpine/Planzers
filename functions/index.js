@@ -19,6 +19,7 @@ const {
   enqueueTripNotification,
   claimAndDeleteNotificationQueueDoc,
 } = require('./notification_queue');
+const { defaultStayForTrip } = require('./trip_stay_defaults');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -1108,61 +1109,6 @@ function tripIdFromCupidonMatchDocId(matchDocId) {
 
 function hasCupidonEnabled(memberData) {
   return !!(memberData && memberData.cupidonEnabled === true);
-}
-
-function _dateKey(d) {
-  const y = d.getFullYear().toString().padStart(4, '0');
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const day = d.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function _startOfDay(d) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
-/**
- * Builds the default stay fields for a new participant slot using the trip's calendar bounds.
- * Mirrors TripMemberStay.defaultForInviteContext() from the Flutter client.
- * @param {object} tripData - Firestore trip document data
- * @returns {object} Firestore-ready stay fields
- */
-function defaultStayForTrip(tripData) {
-  const parseDate = (raw) => {
-    if (!raw) return null;
-    const d = typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
-    if (isNaN(d.getTime())) return null;
-    // Trip dates are stored as midnight local time (e.g. UTC+2), which arrives
-    // as 22:00 UTC the day before on the server. Adding 12h normalises any
-    // UTC offset up to ±12h before the day is extracted.
-    return new Date(d.getTime() + 12 * 60 * 60 * 1000);
-  };
-  const tripStartDate = parseDate(tripData.startDate);
-  const tripEndDate = parseDate(tripData.endDate);
-
-  if (!tripStartDate && !tripEndDate) {
-    const now = new Date();
-    const start = _startOfDay(now);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    return {
-      stayStartDateKey: _dateKey(start),
-      stayStartDayPart: 'evening',
-      stayEndDateKey: _dateKey(end),
-      stayEndDayPart: 'morning',
-    };
-  }
-
-  const start = tripStartDate ? _startOfDay(tripStartDate) : _startOfDay(new Date());
-  const end = tripEndDate ? _startOfDay(tripEndDate) : start;
-  const later = end < start ? start : end;
-  const isSingleDay = start.getTime() === later.getTime();
-  return {
-    stayStartDateKey: _dateKey(start),
-    stayStartDayPart: isSingleDay ? 'morning' : 'evening',
-    stayEndDateKey: _dateKey(later),
-    stayEndDayPart: isSingleDay ? 'evening' : 'morning',
-  };
 }
 
 /**
