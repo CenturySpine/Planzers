@@ -428,7 +428,6 @@ service cloud.firestore {
         && (
           messageVisibilityType(messageData) == 'trip_all'
           || (messageVisibilityType(messageData) == 'admins_only' && tripCallerRoleRank(tripId) >= 2)
-          || messageVisibilityType(messageData) == 'object_participants'
         );
     }
 
@@ -928,7 +927,7 @@ service cloud.firestore {
           )
           && (
             !request.resource.data.keys().hasAny(['visibilityType'])
-            || request.resource.data.visibilityType in ['trip_all', 'admins_only', 'object_participants']
+            || request.resource.data.visibilityType in ['trip_all', 'admins_only']
           )
           && (
             !request.resource.data.keys().hasAny(['replyToMessageId'])
