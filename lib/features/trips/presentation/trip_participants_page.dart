@@ -301,10 +301,15 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
 
   void _openParticipantEditor({
     required _ParticipantRow row,
+    required String? myParticipantId,
   }) {
     final myUidTrim = (widget.myUid ?? '').trim();
-    final rowUidTrim = row.userId?.trim() ?? '';
-    if (rowUidTrim.isNotEmpty && rowUidTrim == myUidTrim) {
+    final isOwnParticipant = _isOwnParticipantRow(
+      row: row,
+      myParticipantId: myParticipantId,
+      myUidTrim: myUidTrim,
+    );
+    if (isOwnParticipant) {
       context.push('/trips/${widget.tripId}/preferences');
       return;
     }
@@ -439,6 +444,11 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
         ref.watch(tripCupidonEnabledMemberIdsProvider(widget.tripId));
     final myLikesAsync =
         ref.watch(myCupidonLikedTargetIdsProvider(widget.tripId));
+    final myParticipantId = ref
+        .watch(myTripMemberStreamProvider(widget.tripId))
+        .asData
+        ?.value
+        ?.id;
 
     return Stack(
       children: [
@@ -565,10 +575,23 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                   Theme.of(context).colorScheme;
                               final canCycleRole =
                                   canToggleAdminRole && !isOwnerRow && row.isClaimed;
-                              final canDeleteThisRow =
-                                  widget.canManageParticipants &&
-                                      !isOwnerRow &&
-                                      row.userId?.trim() != myUidTrim;
+                              final isOwnParticipantRow = _isOwnParticipantRow(
+                                row: row,
+                                myParticipantId: myParticipantId,
+                                myUidTrim: myUidTrim,
+                              );
+                              final showEditIcon = _shouldShowParticipantEditIcon(
+                                isOwnParticipantRow: isOwnParticipantRow,
+                                canManageParticipants:
+                                    widget.canManageParticipants,
+                              );
+                              final showDeleteIcon =
+                                  _shouldShowParticipantDeleteIcon(
+                                canManageParticipants:
+                                    widget.canManageParticipants,
+                                isOwnerRow: isOwnerRow,
+                                isOwnParticipantRow: isOwnParticipantRow,
+                              );
 
                               return Card(
                                 child: ListTile(
@@ -658,17 +681,18 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                                       .error,
                                                 ),
                                         ),
-                                      if (widget.canManageParticipants ||
-                                          row.userId?.trim() ==
-                                              myUidTrim)
+                                      if (showEditIcon)
                                         IconButton(
                                           tooltip: l10n.commonEdit,
                                           icon: const Icon(
                                               Icons.edit_outlined),
                                           onPressed: () =>
-                                              _openParticipantEditor(row: row),
+                                              _openParticipantEditor(
+                                            row: row,
+                                            myParticipantId: myParticipantId,
+                                          ),
                                         ),
-                                      if (canDeleteThisRow)
+                                      if (showDeleteIcon)
                                         IconButton(
                                           tooltip: l10n
                                               .tripParticipantsRemoveAction,
@@ -1262,6 +1286,39 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
 // ---------------------------------------------------------------------------
 // Helpers (unchanged from original file)
 // ---------------------------------------------------------------------------
+
+bool _isOwnParticipantRow({
+  required _ParticipantRow row,
+  required String? myParticipantId,
+  required String myUidTrim,
+}) {
+  final ownParticipantId = myParticipantId?.trim() ?? '';
+  if (ownParticipantId.isNotEmpty &&
+      row.participantId.trim() == ownParticipantId) {
+    return true;
+  }
+  final rowUid = row.userId?.trim() ?? '';
+  return myUidTrim.isNotEmpty && rowUid.isNotEmpty && rowUid == myUidTrim;
+}
+
+bool _shouldShowParticipantEditIcon({
+  required bool isOwnParticipantRow,
+  required bool canManageParticipants,
+}) {
+  if (isOwnParticipantRow) return true;
+  return canManageParticipants;
+}
+
+bool _shouldShowParticipantDeleteIcon({
+  required bool canManageParticipants,
+  required bool isOwnerRow,
+  required bool isOwnParticipantRow,
+}) {
+  if (!canManageParticipants || isOwnerRow || isOwnParticipantRow) {
+    return false;
+  }
+  return true;
+}
 
 TripPermissionRole? _minRoleForPhoneVisibility(TripMemberPhoneVisibility vis) {
   return switch (vis) {
