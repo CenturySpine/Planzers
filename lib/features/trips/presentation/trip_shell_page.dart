@@ -7,7 +7,9 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_entry_route.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -169,6 +171,17 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
             if (mounted) context.go('/trips');
           });
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (trip.isInPreparation) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.go(tripEntryPath(tripId, trip.lifecycleStatus));
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         final titleForAppBar =

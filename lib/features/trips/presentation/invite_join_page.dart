@@ -9,12 +9,14 @@ import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/features/trips/presentation/trip_entry_route.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -342,10 +344,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
-          _stayDraft = TripMemberStay.defaultForInviteContext(
-            tripStartDate: ctx.tripStartDate,
-            tripEndDate: ctx.tripEndDate,
-          );
+          _stayDraft = ctx.isInPreparation
+              ? null
+              : TripMemberStay.defaultForInviteContext(
+                  tripStartDate: ctx.tripStartDate,
+                  tripEndDate: ctx.tripEndDate,
+                );
         } else {
           _inviteFormStep = 1;
           _joinUsingCurrentProfile = true;
@@ -353,10 +357,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           _bypassUseProfileName = false;
           _suggestedPlaceholderId = null;
           _selectedPlaceholderId = null;
-          _stayDraft = TripMemberStay.defaultForInviteContext(
-            tripStartDate: ctx.tripStartDate,
-            tripEndDate: ctx.tripEndDate,
-          );
+          _stayDraft = ctx.isInPreparation
+              ? null
+              : TripMemberStay.defaultForInviteContext(
+                  tripStartDate: ctx.tripStartDate,
+                  tripEndDate: ctx.tripEndDate,
+                );
         }
       });
       if (!ctx.requiresParticipantChoice) {
@@ -471,7 +477,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final ctx = _context;
     final stay = _stayDraft;
     final id = _selectedPlaceholderId?.trim();
-    if (ctx == null || stay == null) return;
+    if (ctx == null) return;
+    if (!ctx.isInPreparation && stay == null) return;
     if (!_joinUsingCurrentProfile && (id == null || id.isEmpty)) return;
     if (_joinUsingCurrentProfile &&
         !_isBypassParticipantNameValid(_bypassParticipantName)) {
@@ -481,21 +488,23 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       return;
     }
 
-    if (!TripMemberStay.isChronological(stay)) {
-      setState(() {
-        _error = AppLocalizations.of(context)!.tripStayInvalidRange;
-      });
-      return;
-    }
-    if (!TripMemberStay.withinInviteDateBounds(
-      stay: stay,
-      tripStartDate: ctx.tripStartDate,
-      tripEndDate: ctx.tripEndDate,
-    )) {
-      setState(() {
-        _error = AppLocalizations.of(context)!.tripStayOutOfTripBounds;
-      });
-      return;
+    if (!ctx.isInPreparation && stay != null) {
+      if (!TripMemberStay.isChronological(stay)) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.tripStayInvalidRange;
+        });
+        return;
+      }
+      if (!TripMemberStay.withinInviteDateBounds(
+        stay: stay,
+        tripStartDate: ctx.tripStartDate,
+        tripEndDate: ctx.tripEndDate,
+      )) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.tripStayOutOfTripBounds;
+        });
+        return;
+      }
     }
 
     await _join(
@@ -508,18 +517,21 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     if (!_joined || !mounted) return;
 
     try {
-      final myParticipant = await ref
-          .read(tripMembersRepositoryProvider)
-          .watchMyParticipant(widget.tripId)
-          .first;
-      if (myParticipant != null) {
-        final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
-        await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
-              tripId: widget.tripId,
-              participantId: myParticipant.id,
-              stay: stay,
-              phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
-            );
+      if (!ctx.isInPreparation && stay != null) {
+        final myParticipant = await ref
+            .read(tripMembersRepositoryProvider)
+            .watchMyParticipant(widget.tripId)
+            .first;
+        if (myParticipant != null) {
+          final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
+          await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
+                tripId: widget.tripId,
+                participantId: myParticipant.id,
+                stay: stay,
+                phoneVisibility:
+                    myPhoneNumber != null ? _phoneVisibilityDraft : null,
+              );
+        }
       }
       await _persistCupidonPreferenceForTrip();
     } catch (e) {
@@ -712,7 +724,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                               ),
                               const SizedBox(height: 12),
                             ],
-                            if (_stayDraft != null)
+                            if (!ctx.isInPreparation && _stayDraft != null)
                               TripMemberStayOptionsEditor(
                                 mode: TripMemberStayOptionsEditorMode.draft,
                                 tripStartDate: ctx.tripStartDate,
@@ -888,8 +900,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   ),
                   const SizedBox(height: 20),
                   FilledButton(
-                    onPressed: () =>
-                        context.go('/trips/${widget.tripId}/overview'),
+                    onPressed: () => context.go(
+                      tripEntryPath(
+                        widget.tripId,
+                        _context?.lifecycleStatus ??
+                            TripLifecycleStatus.planned,
+                      ),
+                    ),
                     child: Text(l10n.inviteOpenTrip),
                   ),
                   const SizedBox(height: 8),

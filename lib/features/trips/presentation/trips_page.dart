@@ -9,8 +9,10 @@ import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle_status.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
+import 'package:planerz/features/trips/presentation/trip_entry_route.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/app/theme/static_colors.dart';
@@ -258,26 +260,38 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                       const [],
                                   titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyPast,
-                                  onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                  onOpenTrip: (trip) => context.push(
+                                        tripEntryPath(
+                                          trip.id,
+                                          trip.lifecycleStatus,
+                                        ),
+                                      ),
                                 ),
                                 _TripsTimelineList(
                                   trips:
                                       grouped[_TripTimelineCategory.ongoing] ??
-                                          const [],
+                                      const [],
                                   titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyOngoing,
-                                  onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                  onOpenTrip: (trip) => context.push(
+                                        tripEntryPath(
+                                          trip.id,
+                                          trip.lifecycleStatus,
+                                        ),
+                                      ),
                                 ),
                                 _TripsTimelineList(
                                   trips:
                                       grouped[_TripTimelineCategory.upcoming] ??
-                                          const [],
+                                      const [],
                                   titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyUpcoming,
-                                  onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                  onOpenTrip: (trip) => context.push(
+                                        tripEntryPath(
+                                          trip.id,
+                                          trip.lifecycleStatus,
+                                        ),
+                                      ),
                                 ),
                               ],
                             ),
@@ -579,7 +593,7 @@ class _TripsTimelineList extends StatelessWidget {
   final List<Trip> trips;
   final Color titleColor;
   final String emptyMessage;
-  final ValueChanged<String> onOpenTrip;
+  final ValueChanged<Trip> onOpenTrip;
 
   @override
   Widget build(BuildContext context) {
@@ -618,18 +632,21 @@ class _TripsTimelineList extends StatelessWidget {
         itemCount: trips.length,
         itemBuilder: (context, index) {
           final trip = trips[index];
-          final dateLine = formatTripDateRange(
-            context,
-            trip.startDate,
-            trip.endDate,
-          );
+          final listL10n = AppLocalizations.of(context)!;
+          final dateLine = trip.isInPreparation
+              ? listL10n.tripLifecyclePreparationLabel
+              : formatTripDateRange(
+                  context,
+                  trip.startDate,
+                  trip.endDate,
+                );
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _TripCard(
               trip: trip,
               titleColor: titleColor,
               dateLine: dateLine,
-              onTap: () => onOpenTrip(trip.id),
+              onTap: () => onOpenTrip(trip),
             ),
           );
         },

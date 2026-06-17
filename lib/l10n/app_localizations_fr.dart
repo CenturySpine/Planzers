@@ -417,6 +417,25 @@ class AppLocalizationsFr extends AppLocalizations {
       'Titre, destination et votre nom sont obligatoires';
 
   @override
+  String get tripsCreateLifecycleLabel => 'Type de voyage';
+
+  @override
+  String get tripsCreateLifecyclePlanned => 'Prévu';
+
+  @override
+  String get tripsCreateLifecyclePreparation => 'En préparation';
+
+  @override
+  String get tripsCreateValidationRequiredPreparation =>
+      'Titre et votre nom sont obligatoires';
+
+  @override
+  String get tripPreparationPromoteAction => 'Passer en mode prévu';
+
+  @override
+  String get tripLifecyclePreparationLabel => 'En préparation';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'La date de fin doit être le même jour ou après la date de début';
 
@@ -3460,6 +3479,25 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripsCreateValidationRequired =>
       'Titre, destination et votre nom sont obligatoires';
+
+  @override
+  String get tripsCreateLifecycleLabel => 'Type de voyage';
+
+  @override
+  String get tripsCreateLifecyclePlanned => 'Prévu';
+
+  @override
+  String get tripsCreateLifecyclePreparation => 'En préparation';
+
+  @override
+  String get tripsCreateValidationRequiredPreparation =>
+      'Titre et votre nom sont obligatoires';
+
+  @override
+  String get tripPreparationPromoteAction => 'Passer en mode prévu';
+
+  @override
+  String get tripLifecyclePreparationLabel => 'En préparation';
 
   @override
   String get tripsCreateValidationDateOrder =>
