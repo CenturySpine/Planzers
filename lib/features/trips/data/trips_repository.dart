@@ -522,10 +522,25 @@ class TripsRepository {
         final id = (item['id'] as String?)?.trim() ?? '';
         if (id.isEmpty) continue;
         final name = (item['displayName'] as String?)?.trim() ?? '';
+        TripMemberStay? stay;
+        final stayMap = <String, dynamic>{
+          if (item['stayStartDateKey'] != null)
+            'stayStartDateKey': item['stayStartDateKey'],
+          if (item['stayStartDayPart'] != null)
+            'stayStartDayPart': item['stayStartDayPart'],
+          if (item['stayEndDateKey'] != null)
+            'stayEndDateKey': item['stayEndDateKey'],
+          if (item['stayEndDayPart'] != null)
+            'stayEndDayPart': item['stayEndDayPart'],
+        };
+        if (stayMap.isNotEmpty) {
+          stay = TripMemberStay.tryFromFirestore(stayMap);
+        }
         list.add(
           InviteJoinParticipantOption(
             id: id,
             displayName: name.isEmpty ? 'Voyageur' : name,
+            stay: stay,
           ),
         );
       }

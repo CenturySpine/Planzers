@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
-import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_name_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripMemberPreferencesPage extends ConsumerStatefulWidget {
@@ -72,21 +73,8 @@ class _TripMemberPreferencesPageState
 
   Future<void> _updateStayLive({
     required TripMemberStay stay,
-    required Trip trip,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    if (!TripMemberStay.isChronological(stay)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayInvalidRange)),
-      );
-      throw Exception('Stay validation failed: not chronological');
-    }
-    if (!TripMemberStay.withinTripCalendarBounds(stay: stay, trip: trip)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayOutOfTripBounds)),
-      );
-      throw Exception('Stay validation failed: out of trip bounds');
-    }
     try {
       final myParticipant =
           ref.read(myTripMemberStreamProvider(widget.tripId)).asData?.value;
@@ -99,6 +87,35 @@ class _TripMemberPreferencesPageState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripStayUpdated)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> _saveParticipantName(
+    TripParticipantNameDialogResult result,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final myParticipant =
+        ref.read(myTripMemberStreamProvider(widget.tripId)).asData?.value;
+    if (myParticipant == null) throw StateError('Participant introuvable');
+    if (result.name.isEmpty && !result.useProfileName) return;
+    try {
+      await ref.read(tripsRepositoryProvider).updateTripParticipantName(
+            tripId: widget.tripId,
+            participantId: myParticipant.id,
+            participantName: result.name,
+            useProfileName: result.useProfileName,
+            isChild: result.isChild,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripParticipantsNameUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -188,7 +205,7 @@ class _TripMemberPreferencesPageState
         ref.watch(myTripCupidonEnabledProvider(widget.tripId));
     final myPhoneNumberAsync = ref.watch(myPhoneNumberProvider);
     final myPhoneVisibilityAsync = ref.watch(tripMemberPhoneVisibilityStreamProvider(widget.tripId));
-    ref.watch(myTripMemberStreamProvider(widget.tripId));
+    final myParticipantAsync = ref.watch(myTripMemberStreamProvider(widget.tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim() ?? '';
 
     return tripAsync.when(
@@ -228,6 +245,7 @@ class _TripMemberPreferencesPageState
           );
         }
 
+        final myParticipant = myParticipantAsync.asData?.value;
         final currentStay = stayAsync.asData?.value ?? TripMemberStay.defaultForTrip(trip);
         final myCupidonEnabled = myCupidonEnabledAsync.asData?.value ?? false;
         final myPhoneNumber = myPhoneNumberAsync.asData?.value;
@@ -246,10 +264,36 @@ class _TripMemberPreferencesPageState
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (myParticipant != null)
+                StreamBuilder(
+                  stream: ref
+                      .read(accountRepositoryProvider)
+                      .watchMyUserDocument(),
+                  builder: (context, snapshot) {
+                    final profileName =
+                        profileNameFromData(snapshot.data?.data());
+                    return TripParticipantNameEditor(
+                      key: ValueKey(
+                        '${myParticipant.id}_'
+                        '${myParticipant.participantName}_'
+                        '${myParticipant.useProfileName}_'
+                        '${myParticipant.isChild}',
+                      ),
+                      initialName: myParticipant.participantName,
+                      initialUseProfileName: myParticipant.useProfileName,
+                      initialIsChild: myParticipant.isChild,
+                      isClaimed: true,
+                      profileName: profileName,
+                      onSave: _saveParticipantName,
+                    );
+                  },
+                ),
+              if (myParticipant != null) const SizedBox(height: 12),
               TripMemberStayOptionsEditor(
                 mode: TripMemberStayOptionsEditorMode.live,
                 tripStartDate: trip.startDate,
                 tripEndDate: trip.endDate,
+                trip: trip,
                 showStayDates: !trip.isDayTrip,
                 isCupidonModeEnabled: trip.cupidonModeEnabled,
                 initialStay: currentStay,
@@ -258,10 +302,7 @@ class _TripMemberPreferencesPageState
                     myPhoneNumber == null ? null : currentPhoneVisibility,
                 onLiveStayChanged: trip.isDayTrip
                     ? null
-                    : (value) => _updateStayLive(
-                          stay: value,
-                          trip: trip,
-                        ),
+                    : (value) => _updateStayLive(stay: value),
                 onLiveCupidonChanged: (enabled) =>
                     _toggleCupidon(enabled: enabled),
                 cupidonTitle: l10n.cupidonModeTitle,

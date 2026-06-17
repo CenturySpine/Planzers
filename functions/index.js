@@ -2453,10 +2453,29 @@ exports.getInviteJoinContext = onCall(
         const isChild = d.data().isChild === true;
         return !userId && !isChild;
       })
-      .map((d) => ({
-        id: d.id,
-        displayName: normalizeString(d.data().participantName) || 'Voyageur',
-      }));
+      .map((d) => {
+        const data = d.data();
+        const slot = {
+          id: d.id,
+          displayName: normalizeString(data.participantName) || 'Voyageur',
+        };
+        const stayStartDateKey = normalizeString(data.stayStartDateKey);
+        const stayStartDayPart = normalizeString(data.stayStartDayPart);
+        const stayEndDateKey = normalizeString(data.stayEndDateKey);
+        const stayEndDayPart = normalizeString(data.stayEndDayPart);
+        if (
+          stayStartDateKey &&
+          stayStartDayPart &&
+          stayEndDateKey &&
+          stayEndDayPart
+        ) {
+          slot.stayStartDateKey = stayStartDateKey;
+          slot.stayStartDayPart = stayStartDayPart;
+          slot.stayEndDateKey = stayEndDateKey;
+          slot.stayEndDayPart = stayEndDayPart;
+        }
+        return slot;
+      });
 
     const startTs = data.startDate;
     const endTs = data.endDate;

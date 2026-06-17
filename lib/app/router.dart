@@ -27,6 +27,7 @@ import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
 import 'package:planerz/features/trips/presentation/trip_announcements_page.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_page.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_travel_info_page.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_expenses_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_activities_permissions_page.dart';
@@ -283,6 +284,15 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => TripParticipantsPage(
             tripId: state.pathParameters['tripId']!,
           ),
+          routes: [
+            GoRoute(
+              path: ':participantId',
+              builder: (context, state) => TripParticipantTravelInfoPage(
+                tripId: state.pathParameters['tripId']!,
+                participantId: state.pathParameters['participantId']!,
+              ),
+            ),
+          ],
         ),
         GoRoute(
           path: 'preferences',

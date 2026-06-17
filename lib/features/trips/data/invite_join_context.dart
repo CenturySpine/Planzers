@@ -1,12 +1,18 @@
+import 'package:planerz/features/trips/data/trip_member_stay.dart';
+
 class InviteJoinParticipantOption {
   const InviteJoinParticipantOption({
     required this.id,
     required this.displayName,
+    this.stay,
   });
 
   /// TripMember document ID.
   final String id;
   final String displayName;
+
+  /// Stay bounds stored on the participant document, when available.
+  final TripMemberStay? stay;
 }
 
 class InviteJoinContext {

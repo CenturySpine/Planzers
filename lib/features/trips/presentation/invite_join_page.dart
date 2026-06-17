@@ -216,6 +216,13 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               ? null
               : () => setState(() {
                     _selectedPlaceholderId = option.id;
+                    final ctx = _context;
+                    if (ctx != null) {
+                      _stayDraft = _stayDraftForContext(
+                        ctx: ctx,
+                        participantId: option.id,
+                      );
+                    }
                   }),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -320,6 +327,23 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     } catch (_) {}
   }
 
+  TripMemberStay _stayDraftForContext({
+    required InviteJoinContext ctx,
+    String? participantId,
+  }) {
+    if (participantId != null) {
+      for (final option in ctx.participants) {
+        if (option.id == participantId && option.stay != null) {
+          return option.stay!;
+        }
+      }
+    }
+    return TripMemberStay.defaultForInviteContext(
+      tripStartDate: ctx.tripStartDate,
+      tripEndDate: ctx.tripEndDate,
+    );
+  }
+
   Future<void> _loadContextAndMaybeJoin() async {
     if (!mounted) return;
     setState(() {
@@ -342,9 +366,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
-          _stayDraft = TripMemberStay.defaultForInviteContext(
-            tripStartDate: ctx.tripStartDate,
-            tripEndDate: ctx.tripEndDate,
+          _stayDraft = _stayDraftForContext(
+            ctx: ctx,
+            participantId: _selectedPlaceholderId,
           );
         } else {
           _inviteFormStep = 1;
@@ -353,10 +377,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           _bypassUseProfileName = false;
           _suggestedPlaceholderId = null;
           _selectedPlaceholderId = null;
-          _stayDraft = TripMemberStay.defaultForInviteContext(
-            tripStartDate: ctx.tripStartDate,
-            tripEndDate: ctx.tripEndDate,
-          );
+          _stayDraft = _stayDraftForContext(ctx: ctx);
         }
       });
       if (!ctx.requiresParticipantChoice) {
@@ -523,7 +544,6 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
             );
       }
-      await _persistCupidonPreferenceForTrip();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

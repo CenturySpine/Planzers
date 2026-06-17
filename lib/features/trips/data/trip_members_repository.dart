@@ -27,6 +27,23 @@ final myTripMemberStreamProvider =
   return ref.watch(tripMembersRepositoryProvider).watchMyParticipant(tripId);
 });
 
+typedef TripParticipantByIdArgs = ({String tripId, String participantId});
+
+/// A single [TripMember] for a trip, derived from [tripParticipantsStreamProvider].
+final tripParticipantByIdProvider =
+    Provider.autoDispose.family<TripMember?, TripParticipantByIdArgs>(
+        (ref, args) {
+  final participants =
+      ref.watch(tripParticipantsStreamProvider(args.tripId)).asData?.value ??
+          [];
+  for (final member in participants) {
+    if (member.id == args.participantId) {
+      return member;
+    }
+  }
+  return null;
+});
+
 /// The current user's [TripMemberStay] for a trip, derived from their participant doc.
 final tripMemberStayStreamProvider =
     StreamProvider.autoDispose.family<TripMemberStay?, String>((ref, tripId) {

@@ -375,6 +375,12 @@
   "tripParticipantsEditNameModeProfile": "Pseudo du profil",
   "tripParticipantsEditNameProfileRequiresClaim": "Disponible une fois le voyageur inscrit au voyage.",
   "tripParticipantsNameUpdated": "Nom mis à jour",
+  "tripParticipantTravelInfoTitle": "Informations de voyage",
+  "tripParticipantTravelInfoSubtitle": "{participantName}",
+  "@tripParticipantTravelInfoSubtitle": {
+    "placeholders": {"participantName": {}}
+  },
+  "tripParticipantNotFound": "Participant introuvable.",
   "tripParticipantsUseProfileName": "Utiliser le pseudo du profil",
   "tripParticipantsProfileNameDisplay": "Pseudo du profil : {name}",
   "@tripParticipantsProfileNameDisplay": {

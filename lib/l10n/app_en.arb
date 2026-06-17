@@ -413,6 +413,12 @@
   "tripParticipantsEditNameModeProfile": "Profile username",
   "tripParticipantsEditNameProfileRequiresClaim": "Available once the traveler has joined the trip.",
   "tripParticipantsNameUpdated": "Name updated",
+  "tripParticipantTravelInfoTitle": "Travel information",
+  "tripParticipantTravelInfoSubtitle": "{participantName}",
+  "@tripParticipantTravelInfoSubtitle": {
+    "placeholders": {"participantName": {}}
+  },
+  "tripParticipantNotFound": "Participant not found.",
   "tripParticipantsUseProfileName": "Use profile username",
   "tripParticipantsProfileNameDisplay": "Profile username: {name}",
   "@tripParticipantsProfileNameDisplay": {

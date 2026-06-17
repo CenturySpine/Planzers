@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
-import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_stay_dates_editor.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 enum TripMemberStayOptionsEditorMode {
@@ -39,6 +40,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
     this.phoneVisibilityTitle,
     this.isCupidonModeEnabled = true,
     this.showStayDates = true,
+    this.trip,
   }) : assert(
           mode == TripMemberStayOptionsEditorMode.draft
               ? onDraftChanged != null
@@ -62,6 +64,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
   final String? phoneVisibilityTitle;
   final bool isCupidonModeEnabled;
   final bool showStayDates;
+  final Trip? trip;
 
   @override
   State<TripMemberStayOptionsEditor> createState() =>
@@ -74,7 +77,6 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
   late TripMemberStay _stay;
   late bool _cupidonEnabled;
   TripMemberPhoneVisibility? _phoneVisibility;
-  bool _isUpdatingStay = false;
   bool _isUpdatingCupidon = false;
   bool _isUpdatingPhoneVisibility = false;
 
@@ -110,11 +112,6 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           : null;
     }
     if (!_isDraft &&
-        !_isUpdatingStay &&
-        oldWidget.initialStay != widget.initialStay) {
-      _stay = widget.initialStay;
-    }
-    if (!_isDraft &&
         !_isUpdatingCupidon &&
         oldWidget.initialCupidonEnabled != widget.initialCupidonEnabled) {
       _cupidonEnabled = widget.initialCupidonEnabled;
@@ -123,6 +120,9 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
         !_isUpdatingPhoneVisibility &&
         oldWidget.initialPhoneVisibility != widget.initialPhoneVisibility) {
       _phoneVisibility = widget.initialPhoneVisibility;
+    }
+    if (_isDraft && oldWidget.initialStay != widget.initialStay) {
+      _stay = widget.initialStay;
     }
   }
 
@@ -134,30 +134,6 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
         phoneVisibility: _phoneVisibility,
       ),
     );
-  }
-
-  Future<void> _handleStayChanged(TripMemberStay nextStay) async {
-    if (_isDraft) {
-      setState(() => _stay = nextStay);
-      _emitDraft();
-      return;
-    }
-    if (_isUpdatingStay || widget.onLiveStayChanged == null) return;
-    final previousStay = _stay;
-    setState(() {
-      _stay = nextStay;
-      _isUpdatingStay = true;
-    });
-    try {
-      await widget.onLiveStayChanged!(nextStay);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _stay = previousStay);
-    } finally {
-      if (mounted) {
-        setState(() => _isUpdatingStay = false);
-      }
-    }
   }
 
   Future<void> _handleCupidonChanged(bool enabled) async {
@@ -360,16 +336,20 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
           const SizedBox(height: 12),
         ],
         if (showStayTab)
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TripCalendarStayBoundsField(
-                tripStartDate: widget.tripStartDate,
-                tripEndDate: widget.tripEndDate,
-                value: _stay,
-                onChanged: _handleStayChanged,
-              ),
-            ),
+          TripParticipantStayDatesEditor(
+            mode: widget.mode,
+            tripStartDate: widget.tripStartDate,
+            tripEndDate: widget.tripEndDate,
+            initialStay: _stay,
+            trip: widget.trip,
+            showTitle: false,
+            onDraftChanged: _isDraft
+                ? (stay) {
+                    setState(() => _stay = stay);
+                    _emitDraft();
+                  }
+                : null,
+            onLiveChanged: !_isDraft ? widget.onLiveStayChanged : null,
           ),
         if (showOptionsTab) _buildOptionsTab(context),
       ],

@@ -1051,6 +1051,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
+  String get tripParticipantTravelInfoTitle => 'Travel information';
+
+  @override
+  String tripParticipantTravelInfoSubtitle(Object participantName) {
+    return '$participantName';
+  }
+
+  @override
+  String get tripParticipantNotFound => 'Participant not found.';
+
+  @override
   String get tripParticipantsUseProfileName => 'Use profile username';
 
   @override
@@ -4005,6 +4016,17 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsNameUpdated => 'Name updated';
+
+  @override
+  String get tripParticipantTravelInfoTitle => 'Travel information';
+
+  @override
+  String tripParticipantTravelInfoSubtitle(Object participantName) {
+    return '$participantName';
+  }
+
+  @override
+  String get tripParticipantNotFound => 'Participant not found.';
 
   @override
   String get tripParticipantsUseProfileName => 'Use profile username';

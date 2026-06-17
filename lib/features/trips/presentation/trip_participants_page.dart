@@ -20,7 +20,6 @@ import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/core/presentation/planerz_info_callout.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
-import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TripParticipantsPage extends ConsumerStatefulWidget {
@@ -300,49 +299,18 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     }
   }
 
-  Future<void> _openEditParticipantDialog({
-    required String participantId,
-    required String currentName,
-    required bool currentUseProfileName,
-    required bool currentIsChild,
-    required bool isClaimed,
-    Map<String, dynamic>? profileData,
-  }) async {
-    final l10n = AppLocalizations.of(context)!;
-    final profileName = profileNameFromData(profileData);
-
-    final result = await showDialog<TripParticipantNameDialogResult>(
-      context: context,
-      builder: (ctx) => TripParticipantNameDialog(
-        initialName: currentName,
-        initialUseProfileName: currentUseProfileName,
-        initialIsChild: currentIsChild,
-        isClaimed: isClaimed,
-        profileName: profileName,
-      ),
-    );
-
-    if (result == null || !mounted) return;
-    final name = result.name;
-    final savedUseProfileName = result.useProfileName;
-    final savedIsChild = result.isChild;
-    if (name.isEmpty && !savedUseProfileName) return;
-    try {
-      await ref.read(tripsRepositoryProvider).updateTripParticipantName(
-            tripId: widget.tripId,
-            participantId: participantId,
-            participantName: name,
-            useProfileName: savedUseProfileName,
-            isChild: savedIsChild,
-          );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripParticipantsNameUpdated)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.messageForError(context, e))),
+  void _openParticipantEditor({
+    required _ParticipantRow row,
+  }) {
+    final myUidTrim = (widget.myUid ?? '').trim();
+    final rowUidTrim = row.userId?.trim() ?? '';
+    if (rowUidTrim.isNotEmpty && rowUidTrim == myUidTrim) {
+      context.push('/trips/${widget.tripId}/preferences');
+      return;
+    }
+    if (widget.canManageParticipants) {
+      context.push(
+        '/trips/${widget.tripId}/participants/${row.participantId}',
       );
     }
   }
@@ -698,18 +666,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                           icon: const Icon(
                                               Icons.edit_outlined),
                                           onPressed: () =>
-                                              _openEditParticipantDialog(
-                                            participantId:
-                                                row.participantId,
-                                            currentName:
-                                                row.rawParticipantName,
-                                            currentUseProfileName:
-                                                row.useProfileName,
-                                            currentIsChild: row.isChild,
-                                            isClaimed: row.isClaimed,
-                                            profileData:
-                                                row.profileData,
-                                          ),
+                                              _openParticipantEditor(row: row),
                                         ),
                                       if (canDeleteThisRow)
                                         IconButton(

@@ -1973,6 +1973,24 @@ abstract class AppLocalizations {
   /// **'Nom mis à jour'**
   String get tripParticipantsNameUpdated;
 
+  /// No description provided for @tripParticipantTravelInfoTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations de voyage'**
+  String get tripParticipantTravelInfoTitle;
+
+  /// No description provided for @tripParticipantTravelInfoSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'{participantName}'**
+  String tripParticipantTravelInfoSubtitle(Object participantName);
+
+  /// No description provided for @tripParticipantNotFound.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participant introuvable.'**
+  String get tripParticipantNotFound;
+
   /// No description provided for @tripParticipantsUseProfileName.
   ///
   /// In fr, this message translates to:
