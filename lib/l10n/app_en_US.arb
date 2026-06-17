@@ -192,6 +192,7 @@
   "tripCreateMealDinner": "Dinner",
   "tripCreateDescriptionLabel": "Description",
   "tripCreateDescriptionPlaceholder": "A few words about the plan…",
+  "tripCreateLinkPlaceholder": "Paste an Airbnb link, etc.",
   "tripCreateCreatorNameEmpty": "Not provided",
   "tripCreateCreatorNameHintProfile": "Profile nickname",
   "tripCreateCreatorNameHintCustom": "Custom name",

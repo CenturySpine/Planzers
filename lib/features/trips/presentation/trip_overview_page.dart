@@ -30,11 +30,8 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
-import 'package:planerz/features/trips/data/trip_member_stay.dart';
-import 'package:planerz/features/trips/data/trip_day_part.dart';
-import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
+import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
-import 'package:planerz/features/trips/presentation/trip_single_day_date_field.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
@@ -45,186 +42,15 @@ class TripOverviewPage extends ConsumerStatefulWidget {
 }
 
 class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleController;
-  late final TextEditingController _destinationController;
-  late final TextEditingController _addressController;
-  late final TextEditingController _linkController;
-  bool _isEditing = false;
-  bool _isSaving = false;
   bool _inviteClipboardBusy = false;
   bool _isBannerBusy = false;
-  bool _isDayTrip = false;
-  DateTime? _singleDayDate;
-  TripMemberStay? _editStayBounds;
   Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
   String? _usersDataStreamKey;
 
   Trip get _trip => TripScope.of(context);
 
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController();
-    _destinationController = TextEditingController();
-    _addressController = TextEditingController();
-    _linkController = TextEditingController();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final trip = TripScope.of(context);
-    if (!_isEditing) {
-      _titleController.text = trip.title;
-      _destinationController.text = trip.destination;
-      _addressController.text = trip.address;
-      _linkController.text = trip.linkUrl;
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _destinationController.dispose();
-    _addressController.dispose();
-    _linkController.dispose();
-    super.dispose();
-  }
-
-  void _startEditing() {
-    final trip = TripScope.of(context);
-    setState(() {
-      _isEditing = true;
-      _isDayTrip = trip.isDayTrip;
-      _titleController.text = trip.title;
-      _destinationController.text = trip.destination;
-      _addressController.text = trip.address;
-      _linkController.text = trip.linkUrl;
-      if (trip.isDayTrip) {
-        _singleDayDate = trip.startDate != null
-            ? DateUtils.dateOnly(trip.startDate!)
-            : DateUtils.dateOnly(DateTime.now());
-        _editStayBounds = null;
-      } else {
-        _singleDayDate = null;
-        _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
-      }
-    });
-  }
-
-  void _cancelEditing() {
-    final trip = TripScope.of(context);
-    setState(() {
-      _isEditing = false;
-      _isDayTrip = trip.isDayTrip;
-      _titleController.text = trip.title;
-      _destinationController.text = trip.destination;
-      _addressController.text = trip.address;
-      _linkController.text = trip.linkUrl;
-      if (trip.isDayTrip) {
-        _singleDayDate = trip.startDate != null
-            ? DateUtils.dateOnly(trip.startDate!)
-            : DateUtils.dateOnly(DateTime.now());
-        _editStayBounds = null;
-      } else {
-        _singleDayDate = null;
-        _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
-      }
-    });
-  }
-
-  void _onDayTripToggleChanged(bool enabled) {
-    setState(() {
-      _isDayTrip = enabled;
-      if (enabled) {
-        final fromBounds = _editStayBounds != null
-            ? TripMemberStay.parseDateKey(_editStayBounds!.startDateKey)
-            : null;
-        _singleDayDate = fromBounds ??
-            (_trip.startDate != null
-                ? DateUtils.dateOnly(_trip.startDate!)
-                : DateUtils.dateOnly(DateTime.now()));
-        _editStayBounds = null;
-        _destinationController.clear();
-        _addressController.clear();
-      } else {
-        _editStayBounds = TripMemberStay.defaultForNewTripEditor();
-        _singleDayDate = null;
-      }
-    });
-  }
-
-  Future<void> _save() async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_isSaving) return;
-    final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
-
-    if (!_isDayTrip) {
-      final bounds = _editStayBounds;
-      if (bounds != null && !TripMemberStay.isChronological(bounds)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.tripStayInvalidRange)),
-        );
-        return;
-      }
-    }
-
-    setState(() => _isSaving = true);
-    try {
-      final title = _titleController.text.trim();
-      final destination =
-          _isDayTrip ? '' : _destinationController.text.trim();
-      final address = _isDayTrip ? '' : _addressController.text.trim();
-      final linkUrl = _linkController.text.trim();
-
-      DateTime? startDate;
-      DateTime? endDate;
-      TripDayPart? tripStartDayPart;
-      TripDayPart? tripEndDayPart;
-      if (_isDayTrip) {
-        startDate = _singleDayDate;
-        endDate = _singleDayDate;
-      } else {
-        final bounds = _editStayBounds;
-        if (bounds != null) {
-          startDate = TripMemberStay.parseDateKey(bounds.startDateKey);
-          endDate = TripMemberStay.parseDateKey(bounds.endDateKey);
-          tripStartDayPart = bounds.startDayPart;
-          tripEndDayPart = bounds.endDayPart;
-        }
-      }
-
-      await ref.read(tripsRepositoryProvider).updateTrip(
-            tripId: _trip.id,
-            title: title,
-            destination: destination,
-            address: address,
-            linkUrl: linkUrl,
-            startDate: startDate,
-            endDate: endDate,
-            tripStartDayPart: tripStartDayPart,
-            tripEndDayPart: tripEndDayPart,
-            isDayTrip: _isDayTrip,
-          );
-
-      if (!mounted) return;
-      setState(() => _isEditing = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewUpdated)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripOverviewUpdateError(e.toString()))),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
+  void _openEditTripPage() {
+    context.push(TripCreatePage.editRoutePath(_trip.id));
   }
 
   Future<void> _copyInviteCode() async {
@@ -601,8 +427,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         final liveBannerImageUrl =
             (liveData?['bannerImageUrl'] as String?)?.trim() ??
                 (_trip.bannerImageUrl ?? '').trim();
-        final linkUrlForUi =
-            _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
+        final linkUrlForUi = liveLinkUrl.trim();
         final photosStorageUrl =
             ((liveData?['photosStorageUrl'] as String?) ?? '').trim();
         final tripDateLabel = _trip.isDayTrip
@@ -772,8 +597,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           ? _pickAndUploadBannerImage
                           : null,
                     ),
-                    if (!_isEditing)
-                      Positioned(
+                    Positioned(
                         left: 16,
                         right: 16,
                         bottom: 16,
@@ -849,7 +673,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                             }
                                             if (value == 'edit' &&
                                                 canEditGeneralInfo) {
-                                              _startEditing();
+                                              _openEditTripPage();
                                               return;
                                             }
                                             if (value == 'settings' &&
@@ -977,7 +801,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           }
                                           if (value == 'edit' &&
                                               canEditGeneralInfo) {
-                                            _startEditing();
+                                            _openEditTripPage();
                                             return;
                                           }
                                           if (value == 'settings' &&
@@ -1150,166 +974,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Column(
                     children: [
-                      if (_isEditing) ...[
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: _titleController,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: l10n.tripsTitleLabel,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return l10n.tripOverviewTitleRequired;
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              SwitchListTile.adaptive(
-                                contentPadding: EdgeInsets.zero,
-                                value: _isDayTrip,
-                                onChanged: _isSaving
-                                    ? null
-                                    : _onDayTripToggleChanged,
-                                title: Text(l10n.tripDayTripLabel),
-                              ),
-                              if (!_isDayTrip) ...[
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _destinationController,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.tripsDestinationLabel,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return l10n.tripOverviewDestinationRequired;
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                              const SizedBox(height: 8),
-                              if (_isDayTrip)
-                                TripSingleDayDateField(
-                                  label: l10n.tripCreateSingleDayDateLabel,
-                                  value: _singleDayDate,
-                                  onChanged: (next) =>
-                                      setState(() => _singleDayDate = next),
-                                )
-                              else if (_editStayBounds == null)
-                                FilledButton.tonal(
-                                  onPressed: _isSaving
-                                      ? null
-                                      : () => setState(() {
-                                            _editStayBounds = TripMemberStay
-                                                .defaultForNewTripEditor();
-                                          }),
-                                  child:
-                                      Text(l10n.tripOverviewEditAddTripDates),
-                                )
-                              else ...[
-                                TripCalendarStayBoundsField(
-                                  tripStartDate: null,
-                                  tripEndDate: null,
-                                  value: _editStayBounds!,
-                                  onChanged: (next) =>
-                                      setState(() => _editStayBounds = next),
-                                ),
-                                Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: TextButton(
-                                    onPressed: _isSaving
-                                        ? null
-                                        : () => setState(
-                                              () => _editStayBounds = null,
-                                            ),
-                                    child: Text(
-                                        l10n.tripOverviewEditRemoveTripDates),
-                                  ),
-                                ),
-                              ],
-                              if (!_isDayTrip) ...[
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _addressController,
-                                  textInputAction: TextInputAction.next,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.tripOverviewAddressLabel,
-                                    hintText: l10n.tripOverviewAddressHint,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 12),
-                              TextFormField(
-                                controller: _linkController,
-                                textInputAction: TextInputAction.done,
-                                decoration: InputDecoration(
-                                  labelText: l10n.tripOverviewLinkLabel,
-                                  hintText: l10n.tripOverviewLinkHint,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                keyboardType: TextInputType.url,
-                                validator: (value) {
-                                  final v = (value ?? '').trim();
-                                  if (v.isEmpty) return null;
-                                  final uri = Uri.tryParse(v);
-                                  if (uri == null || !uri.isAbsolute) {
-                                    return l10n.tripOverviewLinkInvalid;
-                                  }
-                                  if (uri.scheme != 'http' &&
-                                      uri.scheme != 'https') {
-                                    return l10n
-                                        .tripOverviewLinkMustStartWithHttp;
-                                  }
-                                  return null;
-                                },
-                                onFieldSubmitted: (_) => _save(),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                      ] else ...[
-                        const SizedBox(height: 10),
-                      ],
-                      if (canEditGeneralInfo && _isEditing)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Wrap(
-                            alignment: WrapAlignment.end,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              if (_isEditing) ...[
-                                IconButton(
-                                  tooltip: l10n.commonCancel,
-                                  onPressed: _isSaving ? null : _cancelEditing,
-                                  icon: const Icon(Icons.close),
-                                ),
-                                IconButton(
-                                  tooltip: l10n.commonSave,
-                                  onPressed: _isSaving ? null : _save,
-                                  icon: _isSaving
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.check),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 10),
                       if (linkUrlForUi.isNotEmpty)
                         Builder(builder: (context) {
                           final cs = Theme.of(context).colorScheme;
@@ -1346,9 +1011,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                 : null,
                           );
                         }),
-                      if (!_isEditing) ...[
-                        const SizedBox(height: 12),
-                        Builder(builder: (context) {
+                      const SizedBox(height: 12),
+                      Builder(builder: (context) {
                           final cs = Theme.of(context).colorScheme;
                           const tileSpacing = 10.0;
                           return Theme(
@@ -1493,7 +1157,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             ),
                           );
                         }),
-                      ],
                     ],
                   ),
                 ),

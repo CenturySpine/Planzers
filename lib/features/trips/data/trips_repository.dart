@@ -324,6 +324,7 @@ class TripsRepository {
     required String destination,
     required String address,
     required String linkUrl,
+    String description = '',
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -359,11 +360,16 @@ class TripsRepository {
 
     final savingAsDayTrip = isDayTrip ?? trip.isDayTrip;
 
+    final trimmedDescription = description.trim();
     final update = <String, dynamic>{
       'title': title.trim(),
       'destination': savingAsDayTrip ? '' : destination.trim(),
       'address': savingAsDayTrip ? '' : address.trim(),
       'linkUrl': linkUrl.trim(),
+      if (trimmedDescription.isNotEmpty)
+        'description': trimmedDescription
+      else
+        'description': FieldValue.delete(),
     };
 
     if (isDayTrip != null) {

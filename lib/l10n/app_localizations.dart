@@ -1006,6 +1006,12 @@ abstract class AppLocalizations {
   /// **'Un mot sur le programme…'**
   String get tripCreateDescriptionPlaceholder;
 
+  /// No description provided for @tripCreateLinkPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Coller un lien Airbnb, etc.'**
+  String get tripCreateLinkPlaceholder;
+
   /// No description provided for @tripCreateCreatorNameEmpty.
   ///
   /// In fr, this message translates to:

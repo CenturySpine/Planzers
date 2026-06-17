@@ -501,6 +501,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
 
   @override
+  String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
+
+  @override
   String get tripCreateCreatorNameEmpty => 'Not provided';
 
   @override
@@ -3636,6 +3639,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
+
+  @override
+  String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
 
   @override
   String get tripCreateCreatorNameEmpty => 'Not provided';

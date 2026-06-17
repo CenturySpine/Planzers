@@ -109,6 +109,12 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const TripCreatePage(),
     ),
     GoRoute(
+      path: '/trips/:tripId/edit',
+      builder: (context, state) => TripCreatePage(
+        tripId: state.pathParameters['tripId'],
+      ),
+    ),
+    GoRoute(
       path: '/account',
       builder: (context, state) => const AccountPage(),
     ),

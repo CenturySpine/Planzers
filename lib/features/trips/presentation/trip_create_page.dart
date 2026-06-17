@@ -8,8 +8,11 @@ import 'package:intl/intl.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
+import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_create_neon_palette.dart';
@@ -18,9 +21,16 @@ import 'package:planerz/features/trips/presentation/trip_participant_name_dialog
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripCreatePage extends ConsumerStatefulWidget {
-  const TripCreatePage({super.key});
+  const TripCreatePage({super.key, this.tripId});
 
   static const String routePath = '/trips/new';
+
+  static String editRoutePath(String tripId) => '/trips/$tripId/edit';
+
+  /// When set, the page edits an existing trip instead of creating one.
+  final String? tripId;
+
+  bool get isEditing => tripId != null && tripId!.trim().isNotEmpty;
 
   @override
   ConsumerState<TripCreatePage> createState() => _TripCreatePageState();
@@ -29,6 +39,7 @@ class TripCreatePage extends ConsumerStatefulWidget {
 class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
+  late final TextEditingController _linkController;
   late final TextEditingController _descriptionController;
   late TripMemberStay _stay;
   DateTime? _singleDayDate;
@@ -36,6 +47,10 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   String? _profileName;
   String _customName = '';
   bool _useProfileName = false;
+  String _preservedAddress = '';
+  bool _tripLoaded = false;
+  bool _creatorNameLoaded = false;
+  String? _creatorParticipantId;
   String? _errorMessage;
   bool _saving = false;
   bool _isCoverBusy = false;
@@ -55,11 +70,14 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
         textSecondary: TripCreateNeonPalette.text700,
       );
 
+  bool get _isEditing => widget.isEditing;
+
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController();
     _destinationController = TextEditingController();
+    _linkController = TextEditingController();
     _descriptionController = TextEditingController();
     _stay = TripMemberStay.defaultForNewTripEditor();
     _singleDayDate = DateUtils.dateOnly(DateTime.now());
@@ -70,8 +88,56 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   void dispose() {
     _titleController.dispose();
     _destinationController.dispose();
+    _linkController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _seedFromTripOnce(Trip trip) {
+    if (_tripLoaded) return;
+    _tripLoaded = true;
+    _preservedAddress = trip.address;
+    _titleController.text = trip.title;
+    _destinationController.text = trip.destination;
+    _linkController.text = trip.linkUrl;
+    _descriptionController.text = trip.description;
+    _isDayTrip = trip.isDayTrip;
+    if (trip.isDayTrip) {
+      _singleDayDate = trip.startDate != null
+          ? DateUtils.dateOnly(trip.startDate!)
+          : DateUtils.dateOnly(DateTime.now());
+    } else {
+      _stay = TripMemberStay.stayDraftForTripCalendarEdit(trip);
+    }
+    final bannerUrl = trip.bannerImageUrl?.trim();
+    if (bannerUrl != null && bannerUrl.isNotEmpty) {
+      _coverPreview = NetworkImage(bannerUrl);
+    }
+  }
+
+  void _seedFromCreatorOnce(TripMember member) {
+    if (_creatorNameLoaded) return;
+    _creatorNameLoaded = true;
+    _creatorParticipantId = member.id;
+    _customName = member.participantName;
+    _useProfileName = member.useProfileName;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  String? _validateLinkUrl(String raw) {
+    final l10n = AppLocalizations.of(context)!;
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null || !uri.isAbsolute) {
+      return l10n.tripOverviewLinkInvalid;
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return l10n.tripOverviewLinkMustStartWithHttp;
+    }
+    return null;
   }
 
   TripParticipantNameDialogResult get _nameResult =>
@@ -283,30 +349,150 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final title = _titleController.text.trim();
     final destination = _destinationController.text.trim();
     final description = _descriptionController.text.trim();
+    final linkUrl = _linkController.text.trim();
 
-    if (!_isCreatorNameValid) {
-      await _pickCreatorName();
-      if (!mounted) return;
+    final linkError = _validateLinkUrl(linkUrl);
+    if (linkError != null) {
+      setState(() => _errorMessage = linkError);
+      return;
     }
-    final creatorName = _resolvedCreatorName?.trim() ?? '';
 
-    if (_isDayTrip) {
-      if (title.isEmpty || !_isCreatorNameValid) {
-        setState(() => _errorMessage = l10n.tripsCreateValidationRequiredDayTrip);
-        return;
+    if (_isEditing) {
+      if (!_isCreatorNameValid) {
+        await _pickCreatorName();
+        if (!mounted) return;
+      }
+
+      if (_isDayTrip) {
+        if (title.isEmpty || !_isCreatorNameValid) {
+          setState(
+            () => _errorMessage = l10n.tripsCreateValidationRequiredDayTrip,
+          );
+          return;
+        }
+      } else {
+        if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
+          setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
+          return;
+        }
+        if (!TripMemberStay.isChronological(_stay)) {
+          setState(() => _errorMessage = l10n.tripStayInvalidRange);
+          return;
+        }
       }
     } else {
-      if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
-        setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
-        return;
+      if (!_isCreatorNameValid) {
+        await _pickCreatorName();
+        if (!mounted) return;
+      }
+      final creatorName = _resolvedCreatorName?.trim() ?? '';
+
+      if (_isDayTrip) {
+        if (title.isEmpty || !_isCreatorNameValid) {
+          setState(
+            () => _errorMessage = l10n.tripsCreateValidationRequiredDayTrip,
+          );
+          return;
+        }
+      } else {
+        if (title.isEmpty || destination.isEmpty || !_isCreatorNameValid) {
+          setState(() => _errorMessage = l10n.tripsCreateValidationRequired);
+          return;
+        }
+
+        if (!TripMemberStay.isChronological(_stay)) {
+          setState(() => _errorMessage = l10n.tripStayInvalidRange);
+          return;
+        }
       }
 
-      if (!TripMemberStay.isChronological(_stay)) {
+      await _submitCreate(
+        title: title,
+        destination: destination,
+        description: description,
+        linkUrl: linkUrl,
+        creatorName: creatorName,
+      );
+      return;
+    }
+
+    DateTime? startDate;
+    DateTime? endDate;
+    TripDayPart? tripStartDayPart;
+    TripDayPart? tripEndDayPart;
+    final creatorName = _resolvedCreatorName?.trim() ?? '';
+    if (_isDayTrip) {
+      startDate = _singleDayDate;
+      endDate = _singleDayDate;
+    } else {
+      startDate = TripMemberStay.parseDateKey(_stay.startDateKey);
+      endDate = TripMemberStay.parseDateKey(_stay.endDateKey);
+      if (startDate == null || endDate == null) {
         setState(() => _errorMessage = l10n.tripStayInvalidRange);
         return;
       }
+      tripStartDayPart = _stay.startDayPart;
+      tripEndDayPart = _stay.endDayPart;
     }
 
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
+    try {
+      final tripId = widget.tripId!.trim();
+      await ref.read(tripsRepositoryProvider).updateTrip(
+            tripId: tripId,
+            title: title,
+            destination: _isDayTrip ? '' : destination,
+            address: _isDayTrip ? '' : _preservedAddress,
+            linkUrl: linkUrl,
+            description: description,
+            startDate: startDate,
+            endDate: endDate,
+            tripStartDayPart: tripStartDayPart,
+            tripEndDayPart: tripEndDayPart,
+            isDayTrip: _isDayTrip,
+          );
+
+      final participantId = _creatorParticipantId?.trim() ?? '';
+      if (participantId.isNotEmpty) {
+        await ref.read(tripsRepositoryProvider).updateTripParticipantName(
+              tripId: tripId,
+              participantId: participantId,
+              participantName: creatorName,
+              useProfileName: _useProfileName,
+            );
+      }
+
+      if (_coverBytes != null && _coverExt != null) {
+        await ref.read(tripsRepositoryProvider).upsertTripBannerImage(
+              tripId: tripId,
+              bytes: _coverBytes!,
+              fileExt: _coverExt!,
+            );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripOverviewUpdated)),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = e.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _submitCreate({
+    required String title,
+    required String destination,
+    required String description,
+    required String linkUrl,
+    required String creatorName,
+  }) async {
     DateTime? startDate;
     DateTime? endDate;
     if (_isDayTrip) {
@@ -316,7 +502,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       startDate = TripMemberStay.parseDateKey(_stay.startDateKey);
       endDate = TripMemberStay.parseDateKey(_stay.endDateKey);
       if (startDate == null || endDate == null) {
-        setState(() => _errorMessage = l10n.tripStayInvalidRange);
+        setState(
+          () => _errorMessage = AppLocalizations.of(context)!.tripStayInvalidRange,
+        );
         return;
       }
     }
@@ -332,6 +520,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             description: description,
             creatorName: creatorName,
             useProfileName: _useProfileName,
+            linkUrl: linkUrl,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: _isDayTrip ? null : _stay.startDayPart,
@@ -359,62 +548,105 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
 
   @override
   Widget build(BuildContext context) {
+    final tripId = widget.tripId?.trim();
+    if (tripId != null && tripId.isNotEmpty) {
+      final tripAsync = ref.watch(tripStreamProvider(tripId));
+      if (tripAsync.isLoading && !_tripLoaded) {
+        return _buildShell(
+          context,
+          title: AppLocalizations.of(context)!.tripOverviewEditTrip,
+          body: const Center(child: CircularProgressIndicator()),
+        );
+      }
+      if (tripAsync.hasError) {
+        return _buildShell(
+          context,
+          title: AppLocalizations.of(context)!.tripOverviewEditTrip,
+          body: Center(child: Text(tripAsync.error.toString())),
+        );
+      }
+      final trip = tripAsync.value;
+      if (trip == null) {
+        return _buildShell(
+          context,
+          title: AppLocalizations.of(context)!.tripOverviewEditTrip,
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.tripsJoinCodeNotFound),
+          ),
+        );
+      }
+      _seedFromTripOnce(trip);
+      final myMember = ref.watch(myTripMemberStreamProvider(tripId)).value;
+      if (myMember != null) {
+        _seedFromCreatorOnce(myMember);
+      }
+    }
+
     final l10n = AppLocalizations.of(context)!;
-    return Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: TripCreateNeonPalette.scaffoldBackground,
-        splashColor: TripCreateNeonPalette.primary.withValues(alpha: 0.08),
-        highlightColor: TripCreateNeonPalette.primary.withValues(alpha: 0.05),
-      ),
-      child: Scaffold(
-        backgroundColor: TripCreateNeonPalette.scaffoldBackground,
-        appBar: AppBar(
-          backgroundColor: TripCreateNeonPalette.scaffoldBackground,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          toolbarHeight: 52,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            color: TripCreateNeonPalette.deep,
-            onPressed: _saving ? null : () => context.pop(),
-          ),
-          title: Text(
-            l10n.tripsCreateDialogTitle,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              color: TripCreateNeonPalette.deep,
-            ),
-          ),
-          centerTitle: false,
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.only(bottom: 16),
-                children: [
-                  _CoverPhotoPicker(
-                    preview: _coverPreview,
-                    busy: _isCoverBusy,
-                    onTap: _pickCoverPhoto,
+    return _buildShell(
+      context,
+      title: _isEditing ? l10n.tripOverviewEditTrip : l10n.tripsCreateDialogTitle,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 16),
+              children: [
+                _CoverPhotoPicker(
+                  preview: _coverPreview,
+                  busy: _isCoverBusy,
+                  onTap: _pickCoverPhoto,
+                ),
+                _FormSection(
+                  child: _DayTripToggleCard(
+                    value: _isDayTrip,
+                    enabled: !_saving,
+                    onChanged: _toggleDayTrip,
                   ),
-                  _FormSection(
-                    child: _DayTripToggleCard(
-                      value: _isDayTrip,
+                ),
+                _FormSection(
+                  child: _TripCreateLabel(
+                    label: l10n.tripsTitleLabel,
+                    required: true,
+                    child: _TripCreateInputShell(
+                      icon: Icons.luggage_outlined,
                       enabled: !_saving,
-                      onChanged: _toggleDayTrip,
+                      builder: (focusNode) => TextField(
+                        controller: _titleController,
+                        focusNode: focusNode,
+                        enabled: !_saving,
+                        textInputAction: TextInputAction.next,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: TripCreateNeonPalette.deep,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: l10n.tripCreateTitlePlaceholder,
+                          hintStyle: const TextStyle(
+                            color: TripCreateNeonPalette.outline,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (_) {
+                          if (_errorMessage != null) {
+                            setState(() => _errorMessage = null);
+                          }
+                        },
+                      ),
                     ),
                   ),
+                ),
+                if (!_isDayTrip) ...[
                   _FormSection(
                     child: _TripCreateLabel(
-                      label: l10n.tripsTitleLabel,
-                      required: true,
+                      label: l10n.tripsDestinationLabel,
                       child: _TripCreateInputShell(
-                        icon: Icons.luggage_outlined,
+                        icon: Icons.location_on_outlined,
                         enabled: !_saving,
                         builder: (focusNode) => TextField(
-                          controller: _titleController,
+                          controller: _destinationController,
                           focusNode: focusNode,
                           enabled: !_saving,
                           textInputAction: TextInputAction.next,
@@ -423,7 +655,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                             color: TripCreateNeonPalette.deep,
                           ),
                           decoration: InputDecoration(
-                            hintText: l10n.tripCreateTitlePlaceholder,
+                            hintText: l10n.tripCreateDestinationPlaceholder,
                             hintStyle: const TextStyle(
                               color: TripCreateNeonPalette.outline,
                             ),
@@ -440,41 +672,41 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                       ),
                     ),
                   ),
-                  if (!_isDayTrip) ...[
-                    _FormSection(
-                      child: _TripCreateLabel(
-                        label: l10n.tripsDestinationLabel,
-                        child: _TripCreateInputShell(
-                          icon: Icons.location_on_outlined,
-                          enabled: !_saving,
-                          builder: (focusNode) => TextField(
-                            controller: _destinationController,
-                            focusNode: focusNode,
-                            enabled: !_saving,
-                            textInputAction: TextInputAction.next,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: TripCreateNeonPalette.deep,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: l10n.tripCreateDestinationPlaceholder,
-                              hintStyle: const TextStyle(
-                                color: TripCreateNeonPalette.outline,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            onChanged: (_) {
-                              if (_errorMessage != null) {
-                                setState(() => _errorMessage = null);
-                              }
-                            },
-                          ),
+                ],
+                _FormSection(
+                  child: _TripCreateLabel(
+                    label: l10n.tripOverviewLinkLabel,
+                    child: _TripCreateInputShell(
+                      icon: Icons.link_outlined,
+                      enabled: !_saving,
+                      builder: (focusNode) => TextField(
+                        controller: _linkController,
+                        focusNode: focusNode,
+                        enabled: !_saving,
+                        keyboardType: TextInputType.url,
+                        textInputAction: TextInputAction.next,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: TripCreateNeonPalette.deep,
                         ),
+                        decoration: InputDecoration(
+                          hintText: l10n.tripCreateLinkPlaceholder,
+                          hintStyle: const TextStyle(
+                            color: TripCreateNeonPalette.outline,
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (_) {
+                          if (_errorMessage != null) {
+                            setState(() => _errorMessage = null);
+                          }
+                        },
                       ),
                     ),
-                  ],
+                  ),
+                ),
                   if (_isDayTrip)
                     _FormSection(
                       child: _TripCreateLabel(
@@ -666,9 +898,48 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             _CreateTripCtaBar(
               saving: _saving,
               onPressed: _submit,
+              actionLabel:
+                  _isEditing ? l10n.commonSave : l10n.tripsCreateAction,
             ),
           ],
         ),
+    );
+  }
+
+  Widget _buildShell(
+    BuildContext context, {
+    required String title,
+    required Widget body,
+  }) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        scaffoldBackgroundColor: TripCreateNeonPalette.scaffoldBackground,
+        splashColor: TripCreateNeonPalette.primary.withValues(alpha: 0.08),
+        highlightColor: TripCreateNeonPalette.primary.withValues(alpha: 0.05),
+      ),
+      child: Scaffold(
+        backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+        appBar: AppBar(
+          backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          toolbarHeight: 52,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            color: TripCreateNeonPalette.deep,
+            onPressed: _saving ? null : () => context.pop(),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: TripCreateNeonPalette.deep,
+            ),
+          ),
+          centerTitle: false,
+        ),
+        body: body,
       ),
     );
   }
@@ -1285,14 +1556,15 @@ class _CreateTripCtaBar extends StatelessWidget {
   const _CreateTripCtaBar({
     required this.saving,
     required this.onPressed,
+    required this.actionLabel,
   });
 
   final bool saving;
   final VoidCallback onPressed;
+  final String actionLabel;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: TripCreateNeonPalette.scaffoldBackground,
@@ -1331,7 +1603,7 @@ class _CreateTripCtaBar extends StatelessWidget {
                     )
                   : const Icon(Icons.check, size: 20),
               label: Text(
-                l10n.tripsCreateAction,
+                actionLabel,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

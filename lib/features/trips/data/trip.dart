@@ -9,6 +9,7 @@ class Trip {
     required this.destination,
     required this.address,
     required this.linkUrl,
+    this.description = '',
     this.shoppingMeetupLinkUrl = '',
     required this.photosStorageUrl,
     required this.cupidonModeEnabled,
@@ -40,6 +41,7 @@ class Trip {
   final String destination;
   final String address;
   final String linkUrl;
+  final String description;
   final String shoppingMeetupLinkUrl;
   final String photosStorageUrl;
   final bool cupidonModeEnabled;
@@ -125,6 +127,7 @@ class Trip {
       destination: (data['destination'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',
       linkUrl: (data['linkUrl'] as String?) ?? '',
+      description: (data['description'] as String?)?.trim() ?? '',
       shoppingMeetupLinkUrl:
           (data['shoppingMeetupLinkUrl'] as String?)?.trim().isNotEmpty == true
               ? (data['shoppingMeetupLinkUrl'] as String).trim()
@@ -182,6 +185,7 @@ class Trip {
       'destination': destination,
       'address': address,
       'linkUrl': linkUrl,
+      if (description.trim().isNotEmpty) 'description': description.trim(),
       if (shoppingMeetupLinkUrl.trim().isNotEmpty)
         'shoppingMeetupLinkUrl': shoppingMeetupLinkUrl.trim(),
       if (shoppingMeetupLinkPreview.isNotEmpty)
