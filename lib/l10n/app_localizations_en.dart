@@ -417,6 +417,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Title, destination and your name are required';
 
   @override
+  String get tripsCreateLifecycleLabel => 'Trip type';
+
+  @override
+  String get tripsCreateLifecyclePlanned => 'Planned';
+
+  @override
+  String get tripsCreateLifecyclePreparation => 'In preparation';
+
+  @override
+  String get tripsCreateValidationRequiredPreparation =>
+      'Title and your name are required';
+
+  @override
+  String get tripPreparationPromoteAction => 'Switch to planned mode';
+
+  @override
+  String get tripLifecyclePreparationLabel => 'In preparation';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
@@ -3432,6 +3451,25 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripsCreateValidationRequired =>
       'Title, destination and your name are required';
+
+  @override
+  String get tripsCreateLifecycleLabel => 'Trip type';
+
+  @override
+  String get tripsCreateLifecyclePlanned => 'Planned';
+
+  @override
+  String get tripsCreateLifecyclePreparation => 'In preparation';
+
+  @override
+  String get tripsCreateValidationRequiredPreparation =>
+      'Title and your name are required';
+
+  @override
+  String get tripPreparationPromoteAction => 'Switch to planned mode';
+
+  @override
+  String get tripLifecyclePreparationLabel => 'In preparation';
 
   @override
   String get tripsCreateValidationDateOrder =>
