@@ -38,10 +38,12 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
     this.cupidonSubtitle,
     this.phoneVisibilityTitle,
     this.isCupidonModeEnabled = true,
+    this.showStayDates = true,
   }) : assert(
           mode == TripMemberStayOptionsEditorMode.draft
               ? onDraftChanged != null
-              : onLiveStayChanged != null && onLiveCupidonChanged != null,
+              : onLiveCupidonChanged != null &&
+                  (showStayDates ? onLiveStayChanged != null : true),
         );
 
   final TripMemberStayOptionsEditorMode mode;
@@ -59,6 +61,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
   final String? cupidonSubtitle;
   final String? phoneVisibilityTitle;
   final bool isCupidonModeEnabled;
+  final bool showStayDates;
 
   @override
   State<TripMemberStayOptionsEditor> createState() =>
@@ -67,7 +70,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
 
 class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEditor>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   late TripMemberStay _stay;
   late bool _cupidonEnabled;
   TripMemberPhoneVisibility? _phoneVisibility;
@@ -76,12 +79,15 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
   bool _isUpdatingPhoneVisibility = false;
 
   bool get _isDraft => widget.mode == TripMemberStayOptionsEditorMode.draft;
+  bool get _showStayDates => widget.showStayDates;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {}));
+    if (_showStayDates) {
+      _tabController = TabController(length: 2, vsync: this)
+        ..addListener(() => setState(() {}));
+    }
     _stay = widget.initialStay;
     _cupidonEnabled = widget.initialCupidonEnabled;
     _phoneVisibility = widget.initialPhoneVisibility;
@@ -89,13 +95,20 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant TripMemberStayOptionsEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.showStayDates != widget.showStayDates) {
+      _tabController?.dispose();
+      _tabController = widget.showStayDates
+          ? (TabController(length: 2, vsync: this)
+            ..addListener(() => setState(() {})))
+          : null;
+    }
     if (!_isDraft &&
         !_isUpdatingStay &&
         oldWidget.initialStay != widget.initialStay) {
@@ -200,8 +213,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOptionsTab(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cupidonSectionEnabled = widget.isCupidonModeEnabled;
     final cupidonDescription = cupidonSectionEnabled
@@ -215,78 +227,29 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_isDraft) ...[
-          Card(
-            color: context.planerzColors.successContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n.inviteOptionsEditableAfterJoinInfo,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _cupidonEnabled,
+              onChanged: (_isUpdatingCupidon || !cupidonSectionEnabled)
+                  ? null
+                  : _handleCupidonChanged,
+              title: Text(widget.cupidonTitle),
+              subtitle: Text(cupidonDescription),
             ),
           ),
-          const SizedBox(height: 6),
-        ],
-        TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: l10n.tripStayPresenceDatesTitle),
-            Tab(text: l10n.tripMemberStayOptionsTab),
-          ],
         ),
-        const SizedBox(height: 12),
-        if (_tabController.index == 0)
+        if (widget.phoneVisibilityTitle != null) ...[
+          const SizedBox(height: 6),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TripCalendarStayBoundsField(
-                tripStartDate: widget.tripStartDate,
-                tripEndDate: widget.tripEndDate,
-                value: _stay,
-                onChanged: _handleStayChanged,
-              ),
-            ),
-          ),
-        if (_tabController.index == 1) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: _cupidonEnabled,
-                onChanged: (_isUpdatingCupidon || !cupidonSectionEnabled)
-                    ? null
-                    : _handleCupidonChanged,
-                title: Text(widget.cupidonTitle),
-                subtitle: Text(cupidonDescription),
-              ),
-            ),
-          ),
-          if (widget.phoneVisibilityTitle != null) ...[
-            const SizedBox(height: 6),
-            Card(
-              child: Opacity(
-                opacity: hasPhoneNumber ? 1.0 : 0.38,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+            child: Opacity(
+              opacity: hasPhoneNumber ? 1.0 : 0.38,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Column(
@@ -340,12 +303,75 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                       }).toList(),
                     ),
                   ],
-                  ),
                 ),
               ),
             ),
-          ],
+          ),
         ],
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final showStayTab = _showStayDates && (_tabController?.index ?? 0) == 0;
+    final showOptionsTab = !_showStayDates || (_tabController?.index ?? 1) == 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_isDraft) ...[
+          Card(
+            color: context.planerzColors.successContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l10n.inviteOptionsEditableAfterJoinInfo,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+        if (_showStayDates) ...[
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: l10n.tripStayPresenceDatesTitle),
+              Tab(text: l10n.tripMemberStayOptionsTab),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (showStayTab)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TripCalendarStayBoundsField(
+                tripStartDate: widget.tripStartDate,
+                tripEndDate: widget.tripEndDate,
+                value: _stay,
+                onChanged: _handleStayChanged,
+              ),
+            ),
+          ),
+        if (showOptionsTab) _buildOptionsTab(context),
       ],
     );
   }

@@ -26,6 +26,13 @@ String formatTripDateRange(BuildContext context, DateTime? start, DateTime? end)
   return '';
 }
 
+/// Single calendar day for day-trip outings.
+String formatTripSingleDayDate(BuildContext context, DateTime? date) {
+  if (date == null) return '';
+  return DateFormat.yMMMEd(Localizations.localeOf(context).toString())
+      .format(date);
+}
+
 /// Compares calendar days in local time.
 bool isEndBeforeStart(DateTime? start, DateTime? end) {
   if (start == null || end == null) return false;

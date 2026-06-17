@@ -19,6 +19,7 @@ class Trip {
     this.endDate,
     this.tripStartDayPart,
     this.tripEndDayPart,
+    this.isDayTrip = false,
     this.bannerImageUrl,
     this.bannerImagePath,
     this.linkPreview = const {},
@@ -70,6 +71,9 @@ class Trip {
 
   /// Last included day-part for the trip calendar span (Firestore: `tripEndDayPart`).
   final TripDayPart? tripEndDayPart;
+
+  /// Single-day outing; hides destination, lodging, and multi-day stay UI.
+  final bool isDayTrip;
 
   final String? bannerImageUrl;
   final String? bannerImagePath;
@@ -138,6 +142,7 @@ class Trip {
       tripStartDayPart:
           tripDayPartFromFirestore(data['tripStartDayPart'] as String?),
       tripEndDayPart: tripDayPartFromFirestore(data['tripEndDayPart'] as String?),
+      isDayTrip: data['isDayTrip'] == true,
       bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       linkPreview:
@@ -192,6 +197,7 @@ class Trip {
         'tripStartDayPart': tripDayPartToFirestore(tripStartDayPart!),
       if (tripEndDayPart != null)
         'tripEndDayPart': tripDayPartToFirestore(tripEndDayPart!),
+      if (isDayTrip) 'isDayTrip': true,
       if ((bannerImageUrl ?? '').trim().isNotEmpty)
         'bannerImageUrl': bannerImageUrl!.trim(),
       if ((bannerImagePath ?? '').trim().isNotEmpty)

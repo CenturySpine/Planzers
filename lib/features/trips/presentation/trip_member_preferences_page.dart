@@ -250,15 +250,18 @@ class _TripMemberPreferencesPageState
                 mode: TripMemberStayOptionsEditorMode.live,
                 tripStartDate: trip.startDate,
                 tripEndDate: trip.endDate,
+                showStayDates: !trip.isDayTrip,
                 isCupidonModeEnabled: trip.cupidonModeEnabled,
                 initialStay: currentStay,
                 initialCupidonEnabled: myCupidonEnabled,
                 initialPhoneVisibility:
                     myPhoneNumber == null ? null : currentPhoneVisibility,
-                onLiveStayChanged: (value) => _updateStayLive(
-                  stay: value,
-                  trip: trip,
-                ),
+                onLiveStayChanged: trip.isDayTrip
+                    ? null
+                    : (value) => _updateStayLive(
+                          stay: value,
+                          trip: trip,
+                        ),
                 onLiveCupidonChanged: (enabled) =>
                     _toggleCupidon(enabled: enabled),
                 cupidonTitle: l10n.cupidonModeTitle,

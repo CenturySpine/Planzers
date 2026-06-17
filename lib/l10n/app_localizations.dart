@@ -856,6 +856,24 @@ abstract class AppLocalizations {
   /// **'Titre, destination et votre nom sont obligatoires'**
   String get tripsCreateValidationRequired;
 
+  /// No description provided for @tripsCreateValidationRequiredDayTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Titre et votre nom sont obligatoires'**
+  String get tripsCreateValidationRequiredDayTrip;
+
+  /// No description provided for @tripCreateSingleDayDateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date de la sortie'**
+  String get tripCreateSingleDayDateLabel;
+
+  /// No description provided for @tripDayTripLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'À la journée'**
+  String get tripDayTripLabel;
+
   /// No description provided for @tripsCreateValidationDateOrder.
   ///
   /// In fr, this message translates to:

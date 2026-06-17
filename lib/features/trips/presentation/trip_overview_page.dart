@@ -31,8 +31,10 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/presentation/trip_calendar_stay_bounds_field.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
+import 'package:planerz/features/trips/presentation/trip_single_day_date_field.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
@@ -52,6 +54,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   bool _isSaving = false;
   bool _inviteClipboardBusy = false;
   bool _isBannerBusy = false;
+  bool _isDayTrip = false;
+  DateTime? _singleDayDate;
   TripMemberStay? _editStayBounds;
   Stream<Map<String, Map<String, dynamic>>>? _usersDataStreamCache;
   String? _usersDataStreamKey;
@@ -92,11 +96,20 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final trip = TripScope.of(context);
     setState(() {
       _isEditing = true;
+      _isDayTrip = trip.isDayTrip;
       _titleController.text = trip.title;
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
-      _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
+      if (trip.isDayTrip) {
+        _singleDayDate = trip.startDate != null
+            ? DateUtils.dateOnly(trip.startDate!)
+            : DateUtils.dateOnly(DateTime.now());
+        _editStayBounds = null;
+      } else {
+        _singleDayDate = null;
+        _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
+      }
     });
   }
 
@@ -104,11 +117,41 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final trip = TripScope.of(context);
     setState(() {
       _isEditing = false;
+      _isDayTrip = trip.isDayTrip;
       _titleController.text = trip.title;
       _destinationController.text = trip.destination;
       _addressController.text = trip.address;
       _linkController.text = trip.linkUrl;
-      _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
+      if (trip.isDayTrip) {
+        _singleDayDate = trip.startDate != null
+            ? DateUtils.dateOnly(trip.startDate!)
+            : DateUtils.dateOnly(DateTime.now());
+        _editStayBounds = null;
+      } else {
+        _singleDayDate = null;
+        _editStayBounds = TripMemberStay.stayDraftForTripOverviewEditOrNull(trip);
+      }
+    });
+  }
+
+  void _onDayTripToggleChanged(bool enabled) {
+    setState(() {
+      _isDayTrip = enabled;
+      if (enabled) {
+        final fromBounds = _editStayBounds != null
+            ? TripMemberStay.parseDateKey(_editStayBounds!.startDateKey)
+            : null;
+        _singleDayDate = fromBounds ??
+            (_trip.startDate != null
+                ? DateUtils.dateOnly(_trip.startDate!)
+                : DateUtils.dateOnly(DateTime.now()));
+        _editStayBounds = null;
+        _destinationController.clear();
+        _addressController.clear();
+      } else {
+        _editStayBounds = TripMemberStay.defaultForNewTripEditor();
+        _singleDayDate = null;
+      }
     });
   }
 
@@ -118,26 +161,39 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
-    final bounds = _editStayBounds;
-    if (bounds != null && !TripMemberStay.isChronological(bounds)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripStayInvalidRange)),
-      );
-      return;
+    if (!_isDayTrip) {
+      final bounds = _editStayBounds;
+      if (bounds != null && !TripMemberStay.isChronological(bounds)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.tripStayInvalidRange)),
+        );
+        return;
+      }
     }
 
     setState(() => _isSaving = true);
     try {
       final title = _titleController.text.trim();
-      final destination = _destinationController.text.trim();
-      final address = _addressController.text.trim();
+      final destination =
+          _isDayTrip ? '' : _destinationController.text.trim();
+      final address = _isDayTrip ? '' : _addressController.text.trim();
       final linkUrl = _linkController.text.trim();
 
       DateTime? startDate;
       DateTime? endDate;
-      if (bounds != null) {
-        startDate = TripMemberStay.parseDateKey(bounds.startDateKey);
-        endDate = TripMemberStay.parseDateKey(bounds.endDateKey);
+      TripDayPart? tripStartDayPart;
+      TripDayPart? tripEndDayPart;
+      if (_isDayTrip) {
+        startDate = _singleDayDate;
+        endDate = _singleDayDate;
+      } else {
+        final bounds = _editStayBounds;
+        if (bounds != null) {
+          startDate = TripMemberStay.parseDateKey(bounds.startDateKey);
+          endDate = TripMemberStay.parseDateKey(bounds.endDateKey);
+          tripStartDayPart = bounds.startDayPart;
+          tripEndDayPart = bounds.endDayPart;
+        }
       }
 
       await ref.read(tripsRepositoryProvider).updateTrip(
@@ -148,8 +204,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             linkUrl: linkUrl,
             startDate: startDate,
             endDate: endDate,
-            tripStartDayPart: bounds?.startDayPart,
-            tripEndDayPart: bounds?.endDayPart,
+            tripStartDayPart: tripStartDayPart,
+            tripEndDayPart: tripEndDayPart,
+            isDayTrip: _isDayTrip,
           );
 
       if (!mounted) return;
@@ -548,8 +605,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             _isEditing ? _linkController.text.trim() : liveLinkUrl.trim();
         final photosStorageUrl =
             ((liveData?['photosStorageUrl'] as String?) ?? '').trim();
-        final tripDateLabel =
-            formatTripDateRange(context, _trip.startDate, _trip.endDate);
+        final tripDateLabel = _trip.isDayTrip
+            ? formatTripSingleDayDate(context, _trip.startDate)
+            : formatTripDateRange(context, _trip.startDate, _trip.endDate);
         final isTripMember = myUid != null &&
             participants.any((m) => m.userId?.trim() == myUid);
         final canViewParticipants = canEdit || isTripMember;
@@ -746,15 +804,16 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                       ?.copyWith(color: Colors.white),
                                 ),
                                 const SizedBox(height: 6),
-                                Text(
-                                  _trip.destination.isEmpty
-                                      ? l10n.tripOverviewUnknownDestination
-                                      : _trip.destination,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(color: Colors.white),
-                                ),
+                                if (!_trip.isDayTrip)
+                                  Text(
+                                    _trip.destination.isEmpty
+                                        ? l10n.tripOverviewUnknownDestination
+                                        : _trip.destination,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(color: Colors.white),
+                                  ),
                                 if (tripDateLabel.isNotEmpty) ...[
                                   const SizedBox(height: 6),
                                   Row(
@@ -1111,22 +1170,40 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                 },
                               ),
                               const SizedBox(height: 12),
-                              TextFormField(
-                                controller: _destinationController,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: l10n.tripsDestinationLabel,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return l10n.tripOverviewDestinationRequired;
-                                  }
-                                  return null;
-                                },
+                              SwitchListTile.adaptive(
+                                contentPadding: EdgeInsets.zero,
+                                value: _isDayTrip,
+                                onChanged: _isSaving
+                                    ? null
+                                    : _onDayTripToggleChanged,
+                                title: Text(l10n.tripDayTripLabel),
                               ),
+                              if (!_isDayTrip) ...[
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _destinationController,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.tripsDestinationLabel,
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return l10n.tripOverviewDestinationRequired;
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
                               const SizedBox(height: 8),
-                              if (_editStayBounds == null)
+                              if (_isDayTrip)
+                                TripSingleDayDateField(
+                                  label: l10n.tripCreateSingleDayDateLabel,
+                                  value: _singleDayDate,
+                                  onChanged: (next) =>
+                                      setState(() => _singleDayDate = next),
+                                )
+                              else if (_editStayBounds == null)
                                 FilledButton.tonal(
                                   onPressed: _isSaving
                                       ? null
@@ -1158,16 +1235,18 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 12),
-                              TextFormField(
-                                controller: _addressController,
-                                textInputAction: TextInputAction.next,
-                                decoration: InputDecoration(
-                                  labelText: l10n.tripOverviewAddressLabel,
-                                  hintText: l10n.tripOverviewAddressHint,
-                                  border: const OutlineInputBorder(),
+                              if (!_isDayTrip) ...[
+                                const SizedBox(height: 12),
+                                TextFormField(
+                                  controller: _addressController,
+                                  textInputAction: TextInputAction.next,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.tripOverviewAddressLabel,
+                                    hintText: l10n.tripOverviewAddressHint,
+                                    border: const OutlineInputBorder(),
+                                  ),
                                 ),
-                              ),
+                              ],
                               const SizedBox(height: 12),
                               TextFormField(
                                 controller: _linkController,
@@ -1237,7 +1316,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           final isMapsLink =
                               livePreview['isGoogleMaps'] == true;
                           final hasAddress = _trip.address.trim().isNotEmpty;
-                          final showDirections = isMapsLink || hasAddress;
+                          final showDirections = !_trip.isDayTrip &&
+                              (isMapsLink || hasAddress);
                           return LinkPreviewCompact(
                             url: linkUrlForUi,
                             preview: livePreview,
@@ -1326,28 +1406,31 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: tileSpacing),
-                                      Expanded(
-                                        child: _CategoryAccessTile(
-                                          label: l10n.tripOverviewTileRooms,
-                                          icon: Icons.bed_outlined,
-                                          countLabel: '$roomsCount',
-                                          viewLabel: l10n.tripOverviewViewRooms,
-                                          primaryColor: ActivityFilterGroup
-                                              .nuits.filterColor,
-                                          lightBgColor: ActivityFilterGroup
-                                              .nuits.filterLightBgColor,
-                                          borderColor: ActivityFilterGroup
-                                              .nuits.filterBorderColor,
-                                          detailLines: roomsDetailLines,
-                                          wrapDetailLines: true,
-                                          emphasizedDetailLineIndex: 1,
-                                          emptyStateMessage: l10n
-                                              .tripOverviewTileNoAssignedRoom,
-                                          onTap: () => context
-                                              .go('/trips/${_trip.id}/rooms'),
+                                      if (!_trip.isDayTrip) ...[
+                                        const SizedBox(width: tileSpacing),
+                                        Expanded(
+                                          child: _CategoryAccessTile(
+                                            label: l10n.tripOverviewTileRooms,
+                                            icon: Icons.bed_outlined,
+                                            countLabel: '$roomsCount',
+                                            viewLabel:
+                                                l10n.tripOverviewViewRooms,
+                                            primaryColor: ActivityFilterGroup
+                                                .nuits.filterColor,
+                                            lightBgColor: ActivityFilterGroup
+                                                .nuits.filterLightBgColor,
+                                            borderColor: ActivityFilterGroup
+                                                .nuits.filterBorderColor,
+                                            detailLines: roomsDetailLines,
+                                            wrapDetailLines: true,
+                                            emphasizedDetailLineIndex: 1,
+                                            emptyStateMessage: l10n
+                                                .tripOverviewTileNoAssignedRoom,
+                                            onTap: () => context.go(
+                                                '/trips/${_trip.id}/rooms'),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   ),
                                 ),

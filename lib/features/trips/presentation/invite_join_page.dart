@@ -481,21 +481,23 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       return;
     }
 
-    if (!TripMemberStay.isChronological(stay)) {
-      setState(() {
-        _error = AppLocalizations.of(context)!.tripStayInvalidRange;
-      });
-      return;
-    }
-    if (!TripMemberStay.withinInviteDateBounds(
-      stay: stay,
-      tripStartDate: ctx.tripStartDate,
-      tripEndDate: ctx.tripEndDate,
-    )) {
-      setState(() {
-        _error = AppLocalizations.of(context)!.tripStayOutOfTripBounds;
-      });
-      return;
+    if (!ctx.isDayTrip) {
+      if (!TripMemberStay.isChronological(stay)) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.tripStayInvalidRange;
+        });
+        return;
+      }
+      if (!TripMemberStay.withinInviteDateBounds(
+        stay: stay,
+        tripStartDate: ctx.tripStartDate,
+        tripEndDate: ctx.tripEndDate,
+      )) {
+        setState(() {
+          _error = AppLocalizations.of(context)!.tripStayOutOfTripBounds;
+        });
+        return;
+      }
     }
 
     await _join(
@@ -517,7 +519,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
               tripId: widget.tripId,
               participantId: myParticipant.id,
-              stay: stay,
+              stay: ctx.isDayTrip ? null : stay,
               phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
             );
       }
@@ -717,6 +719,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                                 mode: TripMemberStayOptionsEditorMode.draft,
                                 tripStartDate: ctx.tripStartDate,
                                 tripEndDate: ctx.tripEndDate,
+                                showStayDates: !ctx.isDayTrip,
                                 isCupidonModeEnabled: tripCupidonModeEnabled,
                                 initialStay: _stayDraft!,
                                 initialCupidonEnabled: _inviteCupidonEnabled,

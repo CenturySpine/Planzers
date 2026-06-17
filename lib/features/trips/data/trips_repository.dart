@@ -221,6 +221,7 @@ class TripsRepository {
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
+    bool isDayTrip = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -229,7 +230,7 @@ class TripsRepository {
 
     final data = <String, dynamic>{
       'title': title.trim(),
-      'destination': destination.trim(),
+      'destination': isDayTrip ? '' : destination.trim(),
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
       'cupidonModeEnabled': true,
@@ -238,19 +239,28 @@ class TripsRepository {
       'permissions': _defaultPermissionsFirestoreMap(),
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (startDate != null) {
-      final d = DateTime(startDate.year, startDate.month, startDate.day);
-      data['startDate'] = Timestamp.fromDate(d);
-      data['tripStartDayPart'] = tripDayPartToFirestore(
-        tripStartDayPart ?? TripDayPart.evening,
-      );
-    }
-    if (endDate != null) {
-      final d = DateTime(endDate.year, endDate.month, endDate.day);
-      data['endDate'] = Timestamp.fromDate(d);
-      data['tripEndDayPart'] = tripDayPartToFirestore(
-        tripEndDayPart ?? TripDayPart.morning,
-      );
+    if (isDayTrip) {
+      data['isDayTrip'] = true;
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        data['startDate'] = Timestamp.fromDate(d);
+        data['endDate'] = Timestamp.fromDate(d);
+      }
+    } else {
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        data['startDate'] = Timestamp.fromDate(d);
+        data['tripStartDayPart'] = tripDayPartToFirestore(
+          tripStartDayPart ?? TripDayPart.evening,
+        );
+      }
+      if (endDate != null) {
+        final d = DateTime(endDate.year, endDate.month, endDate.day);
+        data['endDate'] = Timestamp.fromDate(d);
+        data['tripEndDayPart'] = tripDayPartToFirestore(
+          tripEndDayPart ?? TripDayPart.morning,
+        );
+      }
     }
 
     final doc = firestore.collection('trips').doc();
@@ -313,6 +323,7 @@ class TripsRepository {
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
+    bool? isDayTrip,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -341,36 +352,60 @@ class TripsRepository {
       throw StateError('Droits insuffisants pour modifier le voyage');
     }
 
+    final savingAsDayTrip = isDayTrip ?? trip.isDayTrip;
+
     final update = <String, dynamic>{
       'title': title.trim(),
-      'destination': destination.trim(),
-      'address': address.trim(),
+      'destination': savingAsDayTrip ? '' : destination.trim(),
+      'address': savingAsDayTrip ? '' : address.trim(),
       'linkUrl': linkUrl.trim(),
-      'startDate': startDate != null
+    };
+
+    if (isDayTrip != null) {
+      if (isDayTrip) {
+        update['isDayTrip'] = true;
+      } else {
+        update['isDayTrip'] = FieldValue.delete();
+      }
+    }
+
+    if (savingAsDayTrip) {
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        update['startDate'] = Timestamp.fromDate(d);
+        update['endDate'] = Timestamp.fromDate(d);
+      } else {
+        update['startDate'] = FieldValue.delete();
+        update['endDate'] = FieldValue.delete();
+      }
+      update['tripStartDayPart'] = FieldValue.delete();
+      update['tripEndDayPart'] = FieldValue.delete();
+    } else {
+      update['startDate'] = startDate != null
           ? Timestamp.fromDate(
               DateTime(startDate.year, startDate.month, startDate.day),
             )
-          : FieldValue.delete(),
-      'endDate': endDate != null
+          : FieldValue.delete();
+      update['endDate'] = endDate != null
           ? Timestamp.fromDate(
               DateTime(endDate.year, endDate.month, endDate.day),
             )
-          : FieldValue.delete(),
-    };
+          : FieldValue.delete();
 
-    if (startDate == null) {
-      update['tripStartDayPart'] = FieldValue.delete();
-    } else {
-      update['tripStartDayPart'] = tripDayPartToFirestore(
-        tripStartDayPart ?? TripDayPart.evening,
-      );
-    }
-    if (endDate == null) {
-      update['tripEndDayPart'] = FieldValue.delete();
-    } else {
-      update['tripEndDayPart'] = tripDayPartToFirestore(
-        tripEndDayPart ?? TripDayPart.morning,
-      );
+      if (startDate == null) {
+        update['tripStartDayPart'] = FieldValue.delete();
+      } else {
+        update['tripStartDayPart'] = tripDayPartToFirestore(
+          tripStartDayPart ?? TripDayPart.evening,
+        );
+      }
+      if (endDate == null) {
+        update['tripEndDayPart'] = FieldValue.delete();
+      } else {
+        update['tripEndDayPart'] = tripDayPartToFirestore(
+          tripEndDayPart ?? TripDayPart.morning,
+        );
+      }
     }
 
     await docRef.update(update);
@@ -512,6 +547,7 @@ class TripsRepository {
       cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
       tripStartDate: parseIso(raw['tripStartDate'] as String?),
       tripEndDate: parseIso(raw['tripEndDate'] as String?),
+      isDayTrip: raw['isDayTrip'] == true,
     );
   }
 

@@ -417,6 +417,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Title, destination and your name are required';
 
   @override
+  String get tripsCreateValidationRequiredDayTrip =>
+      'Title and your name are required';
+
+  @override
+  String get tripCreateSingleDayDateLabel => 'Trip date';
+
+  @override
+  String get tripDayTripLabel => 'Day trip';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
@@ -3432,6 +3442,16 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripsCreateValidationRequired =>
       'Title, destination and your name are required';
+
+  @override
+  String get tripsCreateValidationRequiredDayTrip =>
+      'Title and your name are required';
+
+  @override
+  String get tripCreateSingleDayDateLabel => 'Trip date';
+
+  @override
+  String get tripDayTripLabel => 'Day trip';
 
   @override
   String get tripsCreateValidationDateOrder =>

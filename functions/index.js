@@ -2477,6 +2477,7 @@ exports.getInviteJoinContext = onCall(
       cupidonModeEnabled: data.cupidonModeEnabled !== false,
       tripStartDate,
       tripEndDate,
+      isDayTrip: data.isDayTrip === true,
     };
   }
 );

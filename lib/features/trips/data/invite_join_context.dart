@@ -18,6 +18,7 @@ class InviteJoinContext {
     required this.cupidonModeEnabled,
     this.tripStartDate,
     this.tripEndDate,
+    this.isDayTrip = false,
   });
 
   final String tripId;
@@ -29,4 +30,7 @@ class InviteJoinContext {
   /// From Cloud Function [getInviteJoinContext] (ISO), for stay bounds UI.
   final DateTime? tripStartDate;
   final DateTime? tripEndDate;
+
+  /// When true, stay-date UI is hidden on the invite join flow.
+  final bool isDayTrip;
 }
