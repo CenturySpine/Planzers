@@ -144,8 +144,8 @@
   "tripsEmptyPast": "No past trips.",
   "tripsEmptyOngoing": "No ongoing trips.",
   "tripsEmptyUpcoming": "No upcoming trips.",
-  "tripsCreateDialogTitle": "Create a trip",
-  "tripsTitleLabel": "Title",
+  "tripsCreateDialogTitle": "New trip",
+  "tripsTitleLabel": "Trip name",
   "tripsDestinationLabel": "Destination",
   "tripsCreateCreatorNameLabel": "Your name",
   "tripsStartDateLabel": "Start date",
@@ -154,8 +154,54 @@
   "tripsCreateValidationRequiredDayTrip": "Title and your name are required",
   "tripCreateSingleDayDateLabel": "Trip date",
   "tripDayTripLabel": "Day trip",
+  "tripCreateDayTripSubtitle": "A single-day outing with no overnight stay.",
+  "tripCreateCoverPhotoLabel": "Add a cover photo",
+  "tripCreateCoverPhotoOptional": "Optional",
+  "tripCreateTitlePlaceholder": "E.g. Weekend in Lisbon",
+  "tripCreateDestinationPlaceholder": "City, place or address",
+  "tripCreateDatesLabel": "Dates",
+  "tripCreateDateLabel": "Date",
+  "tripCreateDateStartLabel": "Start",
+  "tripCreateDateEndLabel": "End",
+  "tripCreateSingleDayFieldLabel": "Outing day",
+  "tripCreateNightsDays": "{nights} nights · {days} days",
+  "@tripCreateNightsDays": {
+    "placeholders": {
+      "nights": {"type": "int"},
+      "days": {"type": "int"}
+    }
+  },
+  "tripCreateMealsSectionLabel": "Meals — first and last",
+  "tripCreateMealsHint": "Align meal planning with your arrival and departure times.",
+  "tripCreateArrivalMealDay": "Arrival · {date}",
+  "@tripCreateArrivalMealDay": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "tripCreateDepartureMealDay": "Departure · {date}",
+  "@tripCreateDepartureMealDay": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "tripCreateFirstMealQuestion": "First meal on site",
+  "tripCreateLastMealQuestion": "Last meal on site",
+  "tripCreateMealBreakfast": "Breakfast",
+  "tripCreateMealLunch": "Lunch",
+  "tripCreateMealDinner": "Dinner",
+  "tripCreateDescriptionLabel": "Description",
+  "tripCreateDescriptionPlaceholder": "A few words about the plan…",
+  "tripCreateCreatorNameEmpty": "Not provided",
+  "tripCreateCreatorNameHintProfile": "Profile nickname",
+  "tripCreateCreatorNameHintCustom": "Custom name",
+  "tripCreateCreatorNameCustomPlaceholder": "How do you want to appear?",
+  "tripDatePickerRangeKicker": "Select period",
+  "tripDatePickerSingleKicker": "Select date",
+  "tripDatePickerChooseEnd": "Choose end date",
+  "tripDatePickerSingleSummary": "Day trip",
   "tripsCreateValidationDateOrder": "End date must be on or after start date",
-  "tripsCreateAction": "Create",
+  "tripsCreateAction": "Create trip",
   "tripsDeleteDialogTitle": "Delete this trip?",
   "tripsDeleteDialogBody": "This action is permanent.\n\nTrip: {tripTitle}",
   "@tripsDeleteDialogBody": {

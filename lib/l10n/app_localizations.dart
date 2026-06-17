@@ -817,13 +817,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateDialogTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Créer un voyage'**
+  /// **'Nouveau voyage'**
   String get tripsCreateDialogTitle;
 
   /// No description provided for @tripsTitleLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Titre'**
+  /// **'Nom du voyage'**
   String get tripsTitleLabel;
 
   /// No description provided for @tripsDestinationLabel.
@@ -874,6 +874,186 @@ abstract class AppLocalizations {
   /// **'À la journée'**
   String get tripDayTripLabel;
 
+  /// No description provided for @tripCreateDayTripSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une sortie sur une seule journée, sans nuit sur place.'**
+  String get tripCreateDayTripSubtitle;
+
+  /// No description provided for @tripCreateCoverPhotoLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une photo de couverture'**
+  String get tripCreateCoverPhotoLabel;
+
+  /// No description provided for @tripCreateCoverPhotoOptional.
+  ///
+  /// In fr, this message translates to:
+  /// **'Optionnel'**
+  String get tripCreateCoverPhotoOptional;
+
+  /// No description provided for @tripCreateTitlePlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ex. Week-end à Lisbonne'**
+  String get tripCreateTitlePlaceholder;
+
+  /// No description provided for @tripCreateDestinationPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ville, lieu ou adresse'**
+  String get tripCreateDestinationPlaceholder;
+
+  /// No description provided for @tripCreateDatesLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dates'**
+  String get tripCreateDatesLabel;
+
+  /// No description provided for @tripCreateDateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date'**
+  String get tripCreateDateLabel;
+
+  /// No description provided for @tripCreateDateStartLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Début'**
+  String get tripCreateDateStartLabel;
+
+  /// No description provided for @tripCreateDateEndLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fin'**
+  String get tripCreateDateEndLabel;
+
+  /// No description provided for @tripCreateSingleDayFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jour de la sortie'**
+  String get tripCreateSingleDayFieldLabel;
+
+  /// No description provided for @tripCreateNightsDays.
+  ///
+  /// In fr, this message translates to:
+  /// **'{nights} nuits · {days} jours'**
+  String tripCreateNightsDays(int nights, int days);
+
+  /// No description provided for @tripCreateMealsSectionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas — premier et dernier'**
+  String get tripCreateMealsSectionLabel;
+
+  /// No description provided for @tripCreateMealsHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cale le planning repas sur tes horaires d\'arrivée et de départ.'**
+  String get tripCreateMealsHint;
+
+  /// No description provided for @tripCreateArrivalMealDay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Arrivée · {date}'**
+  String tripCreateArrivalMealDay(Object date);
+
+  /// No description provided for @tripCreateDepartureMealDay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Départ · {date}'**
+  String tripCreateDepartureMealDay(Object date);
+
+  /// No description provided for @tripCreateFirstMealQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Premier repas sur place'**
+  String get tripCreateFirstMealQuestion;
+
+  /// No description provided for @tripCreateLastMealQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dernier repas sur place'**
+  String get tripCreateLastMealQuestion;
+
+  /// No description provided for @tripCreateMealBreakfast.
+  ///
+  /// In fr, this message translates to:
+  /// **'Petit-déj'**
+  String get tripCreateMealBreakfast;
+
+  /// No description provided for @tripCreateMealLunch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Midi'**
+  String get tripCreateMealLunch;
+
+  /// No description provided for @tripCreateMealDinner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dîner'**
+  String get tripCreateMealDinner;
+
+  /// No description provided for @tripCreateDescriptionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Description'**
+  String get tripCreateDescriptionLabel;
+
+  /// No description provided for @tripCreateDescriptionPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un mot sur le programme…'**
+  String get tripCreateDescriptionPlaceholder;
+
+  /// No description provided for @tripCreateCreatorNameEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non renseigné'**
+  String get tripCreateCreatorNameEmpty;
+
+  /// No description provided for @tripCreateCreatorNameHintProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil'**
+  String get tripCreateCreatorNameHintProfile;
+
+  /// No description provided for @tripCreateCreatorNameHintCustom.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom personnalisé'**
+  String get tripCreateCreatorNameHintCustom;
+
+  /// No description provided for @tripCreateCreatorNameCustomPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Comment veux-tu apparaître ?'**
+  String get tripCreateCreatorNameCustomPlaceholder;
+
+  /// No description provided for @tripDatePickerRangeKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner la période'**
+  String get tripDatePickerRangeKicker;
+
+  /// No description provided for @tripDatePickerSingleKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner la date'**
+  String get tripDatePickerSingleKicker;
+
+  /// No description provided for @tripDatePickerChooseEnd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis la date de fin'**
+  String get tripDatePickerChooseEnd;
+
+  /// No description provided for @tripDatePickerSingleSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sortie à la journée'**
+  String get tripDatePickerSingleSummary;
+
   /// No description provided for @tripsCreateValidationDateOrder.
   ///
   /// In fr, this message translates to:
@@ -883,7 +1063,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateAction.
   ///
   /// In fr, this message translates to:
-  /// **'Créer'**
+  /// **'Créer le voyage'**
   String get tripsCreateAction;
 
   /// No description provided for @tripsDeleteDialogTitle.

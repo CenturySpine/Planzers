@@ -210,13 +210,14 @@ class TripsRepository {
     return trips;
   }
 
-  Future<void> createTrip({
+  Future<String> createTrip({
     required String title,
     required String destination,
     required String creatorName,
     bool useProfileName = false,
     String address = '',
     String linkUrl = '',
+    String description = '',
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -228,11 +229,13 @@ class TripsRepository {
       throw StateError('Utilisateur non connecte');
     }
 
+    final trimmedDescription = description.trim();
     final data = <String, dynamic>{
       'title': title.trim(),
       'destination': isDayTrip ? '' : destination.trim(),
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
+      if (trimmedDescription.isNotEmpty) 'description': trimmedDescription,
       'cupidonModeEnabled': true,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
@@ -292,6 +295,8 @@ class TripsRepository {
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
     });
+
+    return doc.id;
   }
 
   Future<void> deleteTrip({

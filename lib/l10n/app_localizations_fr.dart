@@ -395,10 +395,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripsEmptyUpcoming => 'Aucun voyage à venir.';
 
   @override
-  String get tripsCreateDialogTitle => 'Créer un voyage';
+  String get tripsCreateDialogTitle => 'Nouveau voyage';
 
   @override
-  String get tripsTitleLabel => 'Titre';
+  String get tripsTitleLabel => 'Nom du voyage';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -427,11 +427,110 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripDayTripLabel => 'À la journée';
 
   @override
+  String get tripCreateDayTripSubtitle =>
+      'Une sortie sur une seule journée, sans nuit sur place.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Ajouter une photo de couverture';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optionnel';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'Ex. Week-end à Lisbonne';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'Ville, lieu ou adresse';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Début';
+
+  @override
+  String get tripCreateDateEndLabel => 'Fin';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Jour de la sortie';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nuits · $days jours';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Repas — premier et dernier';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Cale le planning repas sur tes horaires d\'arrivée et de départ.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrivée · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Départ · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'Premier repas sur place';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Dernier repas sur place';
+
+  @override
+  String get tripCreateMealBreakfast => 'Petit-déj';
+
+  @override
+  String get tripCreateMealLunch => 'Midi';
+
+  @override
+  String get tripCreateMealDinner => 'Dîner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'Un mot sur le programme…';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Non renseigné';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Pseudo du profil';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Nom personnalisé';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'Comment veux-tu apparaître ?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Sélectionner la période';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Sélectionner la date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choisis la date de fin';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Sortie à la journée';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'La date de fin doit être le même jour ou après la date de début';
 
   @override
-  String get tripsCreateAction => 'Créer';
+  String get tripsCreateAction => 'Créer le voyage';
 
   @override
   String get tripsDeleteDialogTitle => 'Supprimer ce voyage ?';
@@ -3461,10 +3560,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripsEmptyUpcoming => 'Aucun voyage à venir.';
 
   @override
-  String get tripsCreateDialogTitle => 'Créer un voyage';
+  String get tripsCreateDialogTitle => 'Nouveau voyage';
 
   @override
-  String get tripsTitleLabel => 'Titre';
+  String get tripsTitleLabel => 'Nom du voyage';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -3493,11 +3592,110 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripDayTripLabel => 'À la journée';
 
   @override
+  String get tripCreateDayTripSubtitle =>
+      'Une sortie sur une seule journée, sans nuit sur place.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Ajouter une photo de couverture';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optionnel';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'Ex. Week-end à Lisbonne';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'Ville, lieu ou adresse';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Début';
+
+  @override
+  String get tripCreateDateEndLabel => 'Fin';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Jour de la sortie';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nuits · $days jours';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Repas — premier et dernier';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Cale le planning repas sur tes horaires d\'arrivée et de départ.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrivée · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Départ · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'Premier repas sur place';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Dernier repas sur place';
+
+  @override
+  String get tripCreateMealBreakfast => 'Petit-déj';
+
+  @override
+  String get tripCreateMealLunch => 'Midi';
+
+  @override
+  String get tripCreateMealDinner => 'Dîner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'Un mot sur le programme…';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Non renseigné';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Pseudo du profil';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Nom personnalisé';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'Comment veux-tu apparaître ?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Sélectionner la période';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Sélectionner la date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choisis la date de fin';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Sortie à la journée';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'La date de fin doit être le même jour ou après la date de début';
 
   @override
-  String get tripsCreateAction => 'Créer';
+  String get tripsCreateAction => 'Créer le voyage';
 
   @override
   String get tripsDeleteDialogTitle => 'Supprimer ce voyage ?';

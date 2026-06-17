@@ -144,8 +144,8 @@
   "tripsEmptyPast": "Aucun voyage passé.",
   "tripsEmptyOngoing": "Aucun voyage en cours.",
   "tripsEmptyUpcoming": "Aucun voyage à venir.",
-  "tripsCreateDialogTitle": "Créer un voyage",
-  "tripsTitleLabel": "Titre",
+  "tripsCreateDialogTitle": "Nouveau voyage",
+  "tripsTitleLabel": "Nom du voyage",
   "tripsDestinationLabel": "Destination",
   "tripsCreateCreatorNameLabel": "Votre nom",
   "tripsStartDateLabel": "Date de début",
@@ -154,8 +154,54 @@
   "tripsCreateValidationRequiredDayTrip": "Titre et votre nom sont obligatoires",
   "tripCreateSingleDayDateLabel": "Date de la sortie",
   "tripDayTripLabel": "À la journée",
+  "tripCreateDayTripSubtitle": "Une sortie sur une seule journée, sans nuit sur place.",
+  "tripCreateCoverPhotoLabel": "Ajouter une photo de couverture",
+  "tripCreateCoverPhotoOptional": "Optionnel",
+  "tripCreateTitlePlaceholder": "Ex. Week-end à Lisbonne",
+  "tripCreateDestinationPlaceholder": "Ville, lieu ou adresse",
+  "tripCreateDatesLabel": "Dates",
+  "tripCreateDateLabel": "Date",
+  "tripCreateDateStartLabel": "Début",
+  "tripCreateDateEndLabel": "Fin",
+  "tripCreateSingleDayFieldLabel": "Jour de la sortie",
+  "tripCreateNightsDays": "{nights} nuits · {days} jours",
+  "@tripCreateNightsDays": {
+    "placeholders": {
+      "nights": {"type": "int"},
+      "days": {"type": "int"}
+    }
+  },
+  "tripCreateMealsSectionLabel": "Repas — premier et dernier",
+  "tripCreateMealsHint": "Cale le planning repas sur tes horaires d'arrivée et de départ.",
+  "tripCreateArrivalMealDay": "Arrivée · {date}",
+  "@tripCreateArrivalMealDay": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "tripCreateDepartureMealDay": "Départ · {date}",
+  "@tripCreateDepartureMealDay": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "tripCreateFirstMealQuestion": "Premier repas sur place",
+  "tripCreateLastMealQuestion": "Dernier repas sur place",
+  "tripCreateMealBreakfast": "Petit-déj",
+  "tripCreateMealLunch": "Midi",
+  "tripCreateMealDinner": "Dîner",
+  "tripCreateDescriptionLabel": "Description",
+  "tripCreateDescriptionPlaceholder": "Un mot sur le programme…",
+  "tripCreateCreatorNameEmpty": "Non renseigné",
+  "tripCreateCreatorNameHintProfile": "Pseudo du profil",
+  "tripCreateCreatorNameHintCustom": "Nom personnalisé",
+  "tripCreateCreatorNameCustomPlaceholder": "Comment veux-tu apparaître ?",
+  "tripDatePickerRangeKicker": "Sélectionner la période",
+  "tripDatePickerSingleKicker": "Sélectionner la date",
+  "tripDatePickerChooseEnd": "Choisis la date de fin",
+  "tripDatePickerSingleSummary": "Sortie à la journée",
   "tripsCreateValidationDateOrder": "La date de fin doit être le même jour ou après la date de début",
-  "tripsCreateAction": "Créer",
+  "tripsCreateAction": "Créer le voyage",
   "tripsDeleteDialogTitle": "Supprimer ce voyage ?",
   "tripsDeleteDialogBody": "Cette action est définitive.\n\nVoyage : {tripTitle}",
   "@tripsDeleteDialogBody": {

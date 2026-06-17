@@ -395,10 +395,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsEmptyUpcoming => 'No upcoming trips.';
 
   @override
-  String get tripsCreateDialogTitle => 'Create a trip';
+  String get tripsCreateDialogTitle => 'New trip';
 
   @override
-  String get tripsTitleLabel => 'Title';
+  String get tripsTitleLabel => 'Trip name';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -427,11 +427,110 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDayTripLabel => 'Day trip';
 
   @override
+  String get tripCreateDayTripSubtitle =>
+      'A single-day outing with no overnight stay.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Add a cover photo';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optional';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'E.g. Weekend in Lisbon';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'City, place or address';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Start';
+
+  @override
+  String get tripCreateDateEndLabel => 'End';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Outing day';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nights · $days days';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Meals — first and last';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Align meal planning with your arrival and departure times.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrival · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Departure · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'First meal on site';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Last meal on site';
+
+  @override
+  String get tripCreateMealBreakfast => 'Breakfast';
+
+  @override
+  String get tripCreateMealLunch => 'Lunch';
+
+  @override
+  String get tripCreateMealDinner => 'Dinner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Not provided';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Profile nickname';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Custom name';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'How do you want to appear?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Select period';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Select date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choose end date';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Day trip';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
   @override
-  String get tripsCreateAction => 'Create';
+  String get tripsCreateAction => 'Create trip';
 
   @override
   String get tripsDeleteDialogTitle => 'Delete this trip?';
@@ -3433,10 +3532,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripsEmptyUpcoming => 'No upcoming trips.';
 
   @override
-  String get tripsCreateDialogTitle => 'Create a trip';
+  String get tripsCreateDialogTitle => 'New trip';
 
   @override
-  String get tripsTitleLabel => 'Title';
+  String get tripsTitleLabel => 'Trip name';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -3465,11 +3564,110 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripDayTripLabel => 'Day trip';
 
   @override
+  String get tripCreateDayTripSubtitle =>
+      'A single-day outing with no overnight stay.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Add a cover photo';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optional';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'E.g. Weekend in Lisbon';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'City, place or address';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Start';
+
+  @override
+  String get tripCreateDateEndLabel => 'End';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Outing day';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nights · $days days';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Meals — first and last';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Align meal planning with your arrival and departure times.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrival · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Departure · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'First meal on site';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Last meal on site';
+
+  @override
+  String get tripCreateMealBreakfast => 'Breakfast';
+
+  @override
+  String get tripCreateMealLunch => 'Lunch';
+
+  @override
+  String get tripCreateMealDinner => 'Dinner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Not provided';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Profile nickname';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Custom name';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'How do you want to appear?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Select period';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Select date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choose end date';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Day trip';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
   @override
-  String get tripsCreateAction => 'Create';
+  String get tripsCreateAction => 'Create trip';
 
   @override
   String get tripsDeleteDialogTitle => 'Delete this trip?';
