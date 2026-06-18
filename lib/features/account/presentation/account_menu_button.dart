@@ -12,7 +12,9 @@ import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class AccountMenuButton extends ConsumerWidget {
-  const AccountMenuButton({super.key});
+  const AccountMenuButton({super.key, this.brandedHeader = false});
+
+  final bool brandedHeader;
 
   Future<void> _goToAccount(BuildContext context) async {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -30,11 +32,20 @@ class AccountMenuButton extends ConsumerWidget {
   }
 
   Widget _buildAvatar(String photoUrl, String displayLabel) {
+    final avatarRadius = brandedHeader ? 18.0 : 14.0;
+    final avatarSize = avatarRadius * 2;
     final fallback = CircleAvatar(
-      radius: 14,
+      radius: avatarRadius,
+      backgroundColor: brandedHeader
+          ? Colors.white.withValues(alpha: 0.2)
+          : null,
+      foregroundColor: brandedHeader ? Colors.white : null,
       child: Text(
         avatarInitialFromDisplayLabel(displayLabel),
-        style: const TextStyle(fontSize: 12),
+        style: TextStyle(
+          fontSize: brandedHeader ? 14 : 12,
+          fontWeight: brandedHeader ? FontWeight.w700 : FontWeight.w400,
+        ),
       ),
     );
 
@@ -43,8 +54,8 @@ class AccountMenuButton extends ConsumerWidget {
     }
 
     return SizedBox(
-      width: 28,
-      height: 28,
+      width: avatarSize,
+      height: avatarSize,
       child: ClipOval(
         child: Image.network(
           photoUrl,
@@ -192,7 +203,9 @@ class AccountMenuButton extends ConsumerWidget {
         ),
       ],
       child: Padding(
-        padding: const EdgeInsets.only(left: 4, right: 12),
+        padding: brandedHeader
+            ? EdgeInsets.zero
+            : const EdgeInsets.only(left: 4, right: 12),
         child: avatarWithBadge,
       ),
     );

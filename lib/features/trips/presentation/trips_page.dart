@@ -1,19 +1,24 @@
+import 'dart:ui';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/app_version_provider.dart';
+import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
-import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/about/presentation/about_page.dart';
-import 'package:planerz/features/legal/presentation/legal_information_page.dart';
+import 'package:planerz/features/account/presentation/account_menu_button.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
+import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
+import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/features/trips/presentation/trip_create_neon_palette.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
-import 'package:planerz/app/app_version_provider.dart';
-import 'package:planerz/app/theme/static_colors.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
@@ -28,7 +33,7 @@ enum _TripTimelineCategory { past, ongoing, upcoming }
 class _TripsPageState extends ConsumerState<TripsPage>
     with SingleTickerProviderStateMixin {
   static const double _legalLinkFontSize = 12;
-  static const double _floatingActionButtonsBottomOffset = 34;
+  static const double _speedDialBottomOffset = 36;
   TabController? _tabController;
   bool _isFabMenuOpen = false;
   @override
@@ -45,7 +50,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final legalLinkColor = Theme.of(context).colorScheme.onSurfaceVariant;
+    final legalLinkColor = TripCreateNeonPalette.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
     final isApplicationOwner =
@@ -53,131 +58,37 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final showNonMemberTrips =
         ref.watch(applicationOwnerShowNonMemberTripsProvider);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const _TripsAppBranding(),
-        actions: const [
-          AdminAnnouncementsBellButton(),
-          AccountAppBarActions(),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: _floatingActionButtonsBottomOffset,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
+      child: Scaffold(
+        backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+        body: Stack(
           children: [
-            if (_isFabMenuOpen) ...[
-              FloatingActionButton.extended(
-                heroTag: 'trips_join_invite',
-                tooltip: l10n.tripsJoinWithInviteTooltip,
-                onPressed: () {
-                  setState(() => _isFabMenuOpen = false);
-                  _openJoinByInviteCodeDialog(context);
-                },
-                icon: const Icon(Icons.vpn_key_outlined),
-                label: Text(l10n.tripsJoinWithInviteTooltip),
+            const Positioned.fill(child: ColoredBox(color: Colors.white)),
+            Positioned.fill(
+              top: 240,
+              child: Image.asset(
+                'assets/images/app_background.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
               ),
-              const SizedBox(height: 12),
-              FloatingActionButton.extended(
-                heroTag: 'trips_create',
-                tooltip: l10n.tripsNewTripTooltip,
-                onPressed: () {
-                  setState(() => _isFabMenuOpen = false);
-                  context.push(TripCreatePage.routePath);
-                },
-                icon: const Icon(Icons.add),
-                label: Text(l10n.tripsNewTripTooltip),
-              ),
-              const SizedBox(height: 12),
-            ],
-            FloatingActionButton(
-              heroTag: 'trips_main_fab',
-              tooltip: l10n.tripsNewTripTooltip,
-              onPressed: () {
-                setState(() => _isFabMenuOpen = !_isFabMenuOpen);
-              },
-              child: Icon(_isFabMenuOpen ? Icons.close : Icons.add),
             ),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: ColoredBox(color: Colors.white)),
-          Positioned.fill(
-            top: 240,
-            child: Image.asset(
-              'assets/images/app_background.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
-          ),
-          SafeArea(
-            bottom: false,
-            child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: StaticColors.lightBackground,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.explore_outlined,
-                          size: 20,
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          l10n.tripsMyTrips,
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (isApplicationOwner)
+            const Positioned.fill(child: _TripsBackgroundVeil()),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _TripsBrandHeader(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Material(
-                    color: StaticColors.lightBackground,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: SwitchListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                      ),
-                      title: Text(
-                        l10n.tripsApplicationOwnerShowNonMemberTrips,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                            ),
-                      ),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: _TripsPagePill(label: l10n.tripsMyTrips),
+                ),
+                if (isApplicationOwner)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                    child: _TripsFilterRow(
+                      label: l10n.tripsApplicationOwnerShowNonMemberTrips,
                       value: showNonMemberTrips,
                       onChanged: (value) {
                         ref
@@ -189,10 +100,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       },
                     ),
                   ),
-                ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                Expanded(
                   child: tripsAsync.when(
                     data: (trips) {
                       final grouped = _groupTripsByTimeline(trips);
@@ -212,13 +120,10 @@ class _TripsPageState extends ConsumerState<TripsPage>
                         grouped[_TripTimelineCategory.upcoming] ?? const [],
                         unreadByTrip,
                       );
-                      final colorScheme = Theme.of(context).colorScheme;
-
-                      final titleColor = colorScheme.primary;
 
                       return Column(
                         children: [
-                          TabBar(
+                          _TripsTimelineTabBar(
                             controller: tabController,
                             tabs: [
                               _buildTimelineTab(
@@ -254,27 +159,27 @@ class _TripsPageState extends ConsumerState<TripsPage>
                               controller: tabController,
                               children: [
                                 _TripsTimelineList(
+                                  category: _TripTimelineCategory.past,
                                   trips: grouped[_TripTimelineCategory.past] ??
                                       const [],
-                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyPast,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
                                 ),
                                 _TripsTimelineList(
+                                  category: _TripTimelineCategory.ongoing,
                                   trips:
                                       grouped[_TripTimelineCategory.ongoing] ??
                                           const [],
-                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyOngoing,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
                                 ),
                                 _TripsTimelineList(
+                                  category: _TripTimelineCategory.upcoming,
                                   trips:
                                       grouped[_TripTimelineCategory.upcoming] ??
                                           const [],
-                                  titleColor: titleColor,
                                   emptyMessage: l10n.tripsEmptyUpcoming,
                                   onOpenTrip: (tripId) =>
                                       context.push('/trips/$tripId/overview'),
@@ -290,73 +195,109 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     error: (error, stackTrace) => Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text(l10n.tripsFirestoreError(error.toString())),
+                        child: Text(
+                          l10n.tripsFirestoreError(error.toString()),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SafeArea(
+              top: false,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    children: [
+                      TextButton(
+                        onPressed: () =>
+                            context.push(LegalInformationPage.routePath),
+                        style: TextButton.styleFrom(
+                          foregroundColor: legalLinkColor,
+                          textStyle: const TextStyle(
+                            fontSize: _legalLinkFontSize,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          overlayColor: Colors.transparent,
+                          minimumSize: Size.zero,
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(l10n.legalInfoTitle),
+                      ),
+                      _FooterSeparator(color: legalLinkColor),
+                      TextButton(
+                        onPressed: () => context.push(AboutPage.routePath),
+                        style: TextButton.styleFrom(
+                          foregroundColor: legalLinkColor,
+                          textStyle: const TextStyle(
+                            fontSize: _legalLinkFontSize,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          overlayColor: Colors.transparent,
+                          minimumSize: Size.zero,
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(l10n.aboutTitle),
+                      ),
+                      _FooterSeparator(color: legalLinkColor),
+                      Text(
+                        l10n.appCopyright,
+                        style: TextStyle(
+                          fontSize: _legalLinkFontSize,
+                          fontWeight: FontWeight.w400,
+                          color: legalLinkColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (_isFabMenuOpen)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => setState(() => _isFabMenuOpen = false),
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+                      child: ColoredBox(
+                        color: TripCreateNeonPalette.deep.withValues(alpha: 0.30),
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-          ),
-          SafeArea(
-            top: false,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  children: [
-                    TextButton(
-                      onPressed: () =>
-                          context.push(LegalInformationPage.routePath),
-                      style: TextButton.styleFrom(
-                        foregroundColor: legalLinkColor,
-                        textStyle: const TextStyle(
-                          fontSize: _legalLinkFontSize,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        overlayColor: Colors.transparent,
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(l10n.legalInfoTitle),
-                    ),
-                    _FooterSeparator(color: legalLinkColor),
-                    TextButton(
-                      onPressed: () => context.push(AboutPage.routePath),
-                      style: TextButton.styleFrom(
-                        foregroundColor: legalLinkColor,
-                        textStyle: const TextStyle(
-                          fontSize: _legalLinkFontSize,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        overlayColor: Colors.transparent,
-                        minimumSize: Size.zero,
-                        padding: EdgeInsets.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(l10n.aboutTitle),
-                    ),
-                    _FooterSeparator(color: legalLinkColor),
-                    Text(
-                      l10n.appCopyright,
-                      style: TextStyle(
-                        fontSize: _legalLinkFontSize,
-                        fontWeight: FontWeight.w400,
-                        color: legalLinkColor,
-                      ),
-                    ),
-                  ],
+            Positioned(
+              right: 16,
+              bottom: _speedDialBottomOffset,
+              child: SafeArea(
+                top: false,
+                child: _TripsSpeedDial(
+                isOpen: _isFabMenuOpen,
+                joinLabel: l10n.tripsJoinWithInviteTooltip,
+                createLabel: l10n.tripsNewTripTooltip,
+                onToggle: () => setState(() => _isFabMenuOpen = !_isFabMenuOpen),
+                onJoin: () {
+                  setState(() => _isFabMenuOpen = false);
+                  _openJoinByInviteCodeDialog(context);
+                },
+                onCreate: () {
+                  setState(() => _isFabMenuOpen = false);
+                  context.push(TripCreatePage.routePath);
+                },
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -365,10 +306,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
       Map<_TripTimelineCategory, List<Trip>> grouped) {
     if (_tabController != null) return;
 
-    final ongoingTrips = grouped[_TripTimelineCategory.ongoing] ?? const [];
-    final initialIndex = ongoingTrips.isEmpty ? 2 : 1;
     _tabController =
-        TabController(length: 3, vsync: this, initialIndex: initialIndex);
+        TabController(length: 3, vsync: this, initialIndex: 2);
   }
 
   Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(
@@ -444,9 +383,11 @@ class _TripsPageState extends ConsumerState<TripsPage>
     required int tripCount,
     required int unreadCount,
   }) {
-    final labelStyle = Theme.of(
-      context,
-    ).textTheme.labelSmall?.copyWith(height: 1.0);
+    const countStyle = TextStyle(
+      fontSize: 11,
+      height: 1.0,
+      fontWeight: FontWeight.w500,
+    );
     return Tab(
       height: 44,
       child: Column(
@@ -461,13 +402,21 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 const SizedBox(width: 6),
                 Badge.count(
                   count: unreadCount,
+                  backgroundColor: TripCreateNeonPalette.accent,
                   child: const SizedBox(width: 10, height: 10),
                 ),
               ],
             ],
           ),
           const SizedBox(height: 1),
-          Text('($tripCount)', style: labelStyle),
+          Text(
+            '($tripCount)',
+            style: countStyle.copyWith(
+              color: TripCreateNeonPalette.onSurfaceVariant.withValues(
+                alpha: 0.7,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -526,58 +475,537 @@ class _FooterSeparator extends StatelessWidget {
   }
 }
 
-class _TripsAppBranding extends ConsumerWidget {
-  const _TripsAppBranding();
+class _TripsBackgroundVeil extends StatelessWidget {
+  const _TripsBackgroundVeil();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0x8CFFFFFF),
+            Color(0x4DFFFFFF),
+            Color(0x8CFFFFFF),
+          ],
+          stops: [0.0, 0.30, 1.0],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsBrandHeader extends ConsumerWidget {
+  const _TripsBrandHeader();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final version = ref.watch(appVersionProvider).asData?.value;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.asset(
-            'assets/images/app_icon.png',
-            width: 28,
-            height: 28,
-            fit: BoxFit.cover,
-          ),
+    final isPreview =
+        ref.watch(firebaseTargetProvider) == FirebaseTarget.preview;
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment(-0.9, -0.4),
+          end: Alignment(1.0, 1.0),
+          colors: [
+            TripCreateNeonPalette.deep,
+            TripCreateNeonPalette.primary,
+            Color(0xFF5B6FC9),
+          ],
+          stops: [0.0, 0.72, 1.0],
         ),
-        const SizedBox(width: 10),
-        Text(
-          'PLANERZ',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
-        ),
-        if (version != null) ...[
-          const SizedBox(width: 8),
-          Text(
-            version,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF757575),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 66,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 12, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      const _BrandAppIcon(),
+                      const SizedBox(width: 11),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'PLANERZ',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: Colors.white,
+                              height: 1,
+                            ),
+                          ),
+                          if (version != null || isPreview)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (version != null)
+                                    Text(
+                                      version,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.4,
+                                        color: Colors.white.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        height: 1,
+                                      ),
+                                    ),
+                                  if (isPreview) ...[
+                                    if (version != null)
+                                      const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.science_outlined,
+                                      size: 14,
+                                      color: TripCreateNeonPalette.accent,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'preview',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.3,
+                                        color: TripCreateNeonPalette.accent,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    iconTheme: const IconThemeData(color: Colors.white),
+                  ),
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: const SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: AdminAnnouncementsBellButton(brandedHeader: true),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(left: 10),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.55),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: const AccountMenuButton(brandedHeader: true),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandAppIcon extends StatelessWidget {
+  const _BrandAppIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: TripCreateNeonPalette.deep.withValues(alpha: 0.35),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          'assets/images/app_icon.png',
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsPagePill extends StatelessWidget {
+  const _TripsPagePill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: TripCreateNeonPalette.primaryTint,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: TripCreateNeonPalette.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox(
+                width: 28,
+                height: 28,
+                child: Icon(
+                  Icons.explore_outlined,
+                  size: 18,
+                  color: TripCreateNeonPalette.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: TripCreateNeonPalette.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsFilterRow extends StatelessWidget {
+  const _TripsFilterRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.groups_outlined,
+                size: 18,
+                color: TripCreateNeonPalette.onSurfaceVariant,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: TripCreateNeonPalette.onSurfaceVariant,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              _TripsCompactSwitch(
+                value: value,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsCompactSwitch extends StatelessWidget {
+  const _TripsCompactSwitch({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        width: 38,
+        height: 22,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(9999),
+          color: value
+              ? TripCreateNeonPalette.primary
+              : TripCreateNeonPalette.onSurfaceVariant.withValues(alpha: 0.4),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.all(3),
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsTimelineTabBar extends StatelessWidget {
+  const _TripsTimelineTabBar({
+    required this.controller,
+    required this.tabs,
+  });
+
+  final TabController controller;
+  final List<Tab> tabs;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.55),
+            border: const Border(
+              bottom: BorderSide(color: TripCreateNeonPalette.divider),
+            ),
+          ),
+          child: TabBar(
+            controller: controller,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            dividerHeight: 0,
+            labelColor: TripCreateNeonPalette.primary,
+            unselectedLabelColor: TripCreateNeonPalette.onSurfaceVariant,
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+            indicator: const UnderlineTabIndicator(
+              borderSide: BorderSide(
+                color: TripCreateNeonPalette.primary,
+                width: 2,
+              ),
+              insets: EdgeInsets.symmetric(horizontal: 16),
+            ),
+            tabs: tabs,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripsSpeedDial extends StatelessWidget {
+  const _TripsSpeedDial({
+    required this.isOpen,
+    required this.joinLabel,
+    required this.createLabel,
+    required this.onToggle,
+    required this.onJoin,
+    required this.onCreate,
+  });
+
+  final bool isOpen;
+  final String joinLabel;
+  final String createLabel;
+  final VoidCallback onToggle;
+  final VoidCallback onJoin;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (isOpen) ...[
+          _SpeedDialAction(
+            label: joinLabel,
+            icon: Icons.vpn_key_outlined,
+            isPrimary: false,
+            onPressed: onJoin,
+          ),
+          const SizedBox(height: 12),
+          _SpeedDialAction(
+            label: createLabel,
+            icon: Icons.add,
+            isPrimary: true,
+            onPressed: onCreate,
+          ),
+          const SizedBox(height: 14),
+        ],
+        Material(
+          elevation: 8,
+          shadowColor: Colors.black.withValues(alpha: 0.08),
+          color: isOpen
+              ? TripCreateNeonPalette.deep
+              : TripCreateNeonPalette.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(18),
+            child: AnimatedRotation(
+              turns: isOpen ? 0.25 : 0,
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOut,
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: Icon(
+                  isOpen ? Icons.close : Icons.add,
+                  size: 26,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _SpeedDialAction extends StatelessWidget {
+  const _SpeedDialAction({
+    required this.label,
+    required this.icon,
+    required this.isPrimary,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isPrimary;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final joinBorderColor = Color.lerp(
+      TripCreateNeonPalette.accent,
+      TripCreateNeonPalette.divider,
+      0.68,
+    )!;
+
+    return Material(
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.06),
+      color: isPrimary ? TripCreateNeonPalette.primary : TripCreateNeonPalette.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: isPrimary
+            ? BorderSide.none
+            : BorderSide(color: joinBorderColor, width: 1.5),
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(17, 0, 22, 0),
+          child: SizedBox(
+            height: 52,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: isPrimary ? 22 : 21,
+                  color:
+                      isPrimary ? Colors.white : TripCreateNeonPalette.accent,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        isPrimary ? Colors.white : TripCreateNeonPalette.accent,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
 class _TripsTimelineList extends StatelessWidget {
   const _TripsTimelineList({
+    required this.category,
     required this.trips,
-    required this.titleColor,
     required this.emptyMessage,
     required this.onOpenTrip,
   });
 
+  final _TripTimelineCategory category;
   final List<Trip> trips;
-  final Color titleColor;
   final String emptyMessage;
   final ValueChanged<String> onOpenTrip;
 
@@ -591,49 +1019,37 @@ class _TripsTimelineList extends StatelessWidget {
           child: Text(
             emptyMessage,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: TripCreateNeonPalette.onSurfaceVariant,
+            ),
           ),
         ),
       );
     }
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        cardTheme: CardThemeData(
-          color: StaticColors.cardBackground,
-          elevation: 4,
-          shadowColor: StaticColors.cardShadowColor,
-          surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: StaticColors.cardBorder),
+    return ListView.builder(
+      clipBehavior: Clip.none,
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 110),
+      itemCount: trips.length,
+      itemBuilder: (context, index) {
+        final trip = trips[index];
+        final dateLine = formatTripDateRange(
+          context,
+          trip.startDate,
+          trip.endDate,
+        );
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: _TripCard(
+            trip: trip,
+            category: category,
+            dateLine: dateLine,
+            onTap: () => onOpenTrip(trip.id),
           ),
-        ),
-      ),
-      child: ListView.builder(
-        clipBehavior: Clip.none,
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 96),
-        itemCount: trips.length,
-        itemBuilder: (context, index) {
-          final trip = trips[index];
-          final dateLine = formatTripDateRange(
-            context,
-            trip.startDate,
-            trip.endDate,
-          );
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _TripCard(
-              trip: trip,
-              titleColor: titleColor,
-              dateLine: dateLine,
-              onTap: () => onOpenTrip(trip.id),
-            ),
-          );
-        },
-      ),
+        );
+      },
     );
   }
 }
@@ -641,89 +1057,132 @@ class _TripsTimelineList extends StatelessWidget {
 class _TripCard extends ConsumerWidget {
   const _TripCard({
     required this.trip,
-    required this.titleColor,
+    required this.category,
     required this.dateLine,
     required this.onTap,
   });
 
   final Trip trip;
-  final Color titleColor;
+  final _TripTimelineCategory category;
   final String dateLine;
   final VoidCallback onTap;
+
+  Color get _accentColor => switch (category) {
+        _TripTimelineCategory.upcoming => TripCreateNeonPalette.secondary,
+        _TripTimelineCategory.ongoing => TripCreateNeonPalette.primary,
+        _TripTimelineCategory.past => TripCreateNeonPalette.outline,
+      };
+
+  Color get _titleColor => category == _TripTimelineCategory.past
+      ? TripCreateNeonPalette.text700
+      : TripCreateNeonPalette.primary;
+
+  double get _cardOpacity =>
+      category == _TripTimelineCategory.past ? 0.92 : 1.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final countersAsync = ref.watch(tripNotificationCountersProvider(trip.id));
     final unreadCount = countersAsync.asData?.value?.tripShellUnreadTotal ?? 0;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+
+    return Opacity(
+      opacity: _cardOpacity,
+      child: Material(
+        color: TripCreateNeonPalette.surface,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.04),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: TripCreateNeonPalette.divider),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
             children: [
-              _TripCardLeadingImage(
-                imageUrl: trip.bannerImageUrl?.isNotEmpty == true
-                    ? trip.bannerImageUrl
-                    : (trip.linkPreview['imageUrl'] as String?)?.trim(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      trip.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: titleColor,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    _TripCardLeadingImage(
+                      imageUrl: trip.bannerImageUrl?.isNotEmpty == true
+                          ? trip.bannerImageUrl
+                          : (trip.linkPreview['imageUrl'] as String?)?.trim(),
                     ),
-                    const SizedBox(height: 4),
-                    if (dateLine.isNotEmpty)
-                      Text(
-                        dateLine,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    if (trip.destination.trim().isNotEmpty) ...[
-                      if (dateLine.isNotEmpty) const SizedBox(height: 2),
-                      Text(
-                        trip.destination,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            trip.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              height: 20 / 15,
+                              fontWeight: FontWeight.w700,
+                              color: _titleColor,
                             ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      AppLocalizations.of(context)!.tripsMemberCount(
-                        trip.participantCount ?? trip.memberUserIds.length,
-                      ),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
+                          if (dateLine.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              dateLine,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: TripCreateNeonPalette.deep,
+                              ),
+                            ),
+                          ],
+                          if (trip.destination.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              trip.destination,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: TripCreateNeonPalette.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 2),
+                          Text(
+                            AppLocalizations.of(context)!.tripsMemberCount(
+                              trip.participantCount ??
+                                  trip.memberUserIds.length,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: TripCreateNeonPalette.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    if (unreadCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Badge.count(
+                          count: unreadCount,
+                          backgroundColor: TripCreateNeonPalette.accent,
+                          child: const Icon(
+                            Icons.notifications_none_outlined,
+                            color: TripCreateNeonPalette.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (unreadCount > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4, bottom: 2),
-                      child: Badge.count(
-                        count: unreadCount,
-                        child: const Icon(Icons.notifications_none_outlined),
-                      ),
-                    ),
-                ],
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 3,
+                  color: _accentColor,
+                ),
               ),
             ],
           ),
@@ -746,16 +1205,35 @@ class _TripCardLeadingImage extends StatelessWidget {
       child: Container(
         width: 64,
         height: 64,
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              TripCreateNeonPalette.primary,
+              TripCreateNeonPalette.secondary,
+            ],
+          ),
+        ),
         child: cleanUrl.isNotEmpty
             ? Image.network(
                 cleanUrl,
                 fit: BoxFit.cover,
+                width: 64,
+                height: 64,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.photo_outlined);
+                  return const Icon(
+                    Icons.landscape_outlined,
+                    color: Colors.white,
+                    size: 26,
+                  );
                 },
               )
-            : const Icon(Icons.landscape_outlined),
+            : const Icon(
+                Icons.landscape_outlined,
+                color: Colors.white,
+                size: 26,
+              ),
       ),
     );
   }
