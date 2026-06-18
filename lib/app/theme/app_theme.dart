@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/app/theme/static_colors.dart';
 
 class AppTheme {
   const AppTheme._();
+
+  static const String _fontFamily = 'Geist';
 
   static ThemeData light(BrandPaletteData p) {
     final colorScheme = ColorScheme(
@@ -39,10 +40,13 @@ class AppTheme {
       inversePrimary: p.primarySoft,
     );
 
+    final baseTextTheme = ThemeData.light(useMaterial3: true).textTheme;
+
     return ThemeData(
       useMaterial3: true,
+      fontFamily: _fontFamily,
       colorScheme: colorScheme,
-      textTheme: GoogleFonts.geistTextTheme(),
+      textTheme: baseTextTheme.apply(fontFamily: _fontFamily),
       scaffoldBackgroundColor: StaticColors.background,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
