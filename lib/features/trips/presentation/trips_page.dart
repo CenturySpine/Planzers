@@ -16,7 +16,7 @@ import 'package:planerz/features/administration/presentation/admin_announcements
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/features/trips/presentation/trip_create_neon_palette.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -50,7 +50,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final legalLinkColor = TripCreateNeonPalette.onSurfaceVariant;
+    final legalLinkColor = NeonPalette.onSurfaceVariant;
     final tripsAsync = ref.watch(tripsStreamProvider);
     final unreadByTripAsync = ref.watch(myTripUnreadTotalsProvider);
     final isApplicationOwner =
@@ -63,7 +63,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+        backgroundColor: NeonPalette.scaffoldBackground,
         body: Stack(
           children: [
             const Positioned.fill(child: ColoredBox(color: Colors.white)),
@@ -269,7 +269,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
                       child: ColoredBox(
-                        color: TripCreateNeonPalette.deep.withValues(alpha: 0.30),
+                        color: NeonPalette.deep.withValues(alpha: 0.30),
                       ),
                     ),
                   ),
@@ -402,7 +402,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 const SizedBox(width: 6),
                 Badge.count(
                   count: unreadCount,
-                  backgroundColor: TripCreateNeonPalette.accent,
+                  backgroundColor: NeonPalette.accent,
                   child: const SizedBox(width: 10, height: 10),
                 ),
               ],
@@ -412,7 +412,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
           Text(
             '($tripCount)',
             style: countStyle.copyWith(
-              color: TripCreateNeonPalette.onSurfaceVariant.withValues(
+              color: NeonPalette.onSurfaceVariant.withValues(
                 alpha: 0.7,
               ),
             ),
@@ -512,8 +512,8 @@ class _TripsBrandHeader extends ConsumerWidget {
           begin: Alignment(-0.9, -0.4),
           end: Alignment(1.0, 1.0),
           colors: [
-            TripCreateNeonPalette.deep,
-            TripCreateNeonPalette.primary,
+            NeonPalette.deep,
+            NeonPalette.primary,
             Color(0xFF5B6FC9),
           ],
           stops: [0.0, 0.72, 1.0],
@@ -571,7 +571,7 @@ class _TripsBrandHeader extends ConsumerWidget {
                                     const Icon(
                                       Icons.science_outlined,
                                       size: 14,
-                                      color: TripCreateNeonPalette.accent,
+                                      color: NeonPalette.accent,
                                     ),
                                     const SizedBox(width: 4),
                                     const Text(
@@ -580,7 +580,7 @@ class _TripsBrandHeader extends ConsumerWidget {
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.3,
-                                        color: TripCreateNeonPalette.accent,
+                                        color: NeonPalette.accent,
                                         height: 1,
                                       ),
                                     ),
@@ -641,7 +641,7 @@ class _BrandAppIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: TripCreateNeonPalette.deep.withValues(alpha: 0.35),
+            color: NeonPalette.deep.withValues(alpha: 0.35),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -669,7 +669,7 @@ class _TripsPagePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: TripCreateNeonPalette.primaryTint,
+        color: NeonPalette.primaryTint,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Padding(
@@ -678,7 +678,7 @@ class _TripsPagePill extends StatelessWidget {
           children: [
             DecoratedBox(
               decoration: BoxDecoration(
-                color: TripCreateNeonPalette.primarySoft,
+                color: NeonPalette.primarySoft,
                 shape: BoxShape.circle,
               ),
               child: const SizedBox(
@@ -687,7 +687,7 @@ class _TripsPagePill extends StatelessWidget {
                 child: Icon(
                   Icons.explore_outlined,
                   size: 18,
-                  color: TripCreateNeonPalette.primary,
+                  color: NeonPalette.primary,
                 ),
               ),
             ),
@@ -697,7 +697,7 @@ class _TripsPagePill extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: TripCreateNeonPalette.primary,
+                color: NeonPalette.primary,
               ),
             ),
           ],
@@ -732,7 +732,7 @@ class _TripsFilterRow extends StatelessWidget {
               const Icon(
                 Icons.groups_outlined,
                 size: 18,
-                color: TripCreateNeonPalette.onSurfaceVariant,
+                color: NeonPalette.onSurfaceVariant,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -741,7 +741,7 @@ class _TripsFilterRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: TripCreateNeonPalette.onSurfaceVariant,
+                    color: NeonPalette.onSurfaceVariant,
                     height: 1.3,
                   ),
                 ),
@@ -779,8 +779,8 @@ class _TripsCompactSwitch extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9999),
           color: value
-              ? TripCreateNeonPalette.primary
-              : TripCreateNeonPalette.onSurfaceVariant.withValues(alpha: 0.4),
+              ? NeonPalette.primary
+              : NeonPalette.onSurfaceVariant.withValues(alpha: 0.4),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
@@ -826,15 +826,15 @@ class _TripsTimelineTabBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.55),
             border: const Border(
-              bottom: BorderSide(color: TripCreateNeonPalette.divider),
+              bottom: BorderSide(color: NeonPalette.divider),
             ),
           ),
           child: TabBar(
             controller: controller,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             dividerHeight: 0,
-            labelColor: TripCreateNeonPalette.primary,
-            unselectedLabelColor: TripCreateNeonPalette.onSurfaceVariant,
+            labelColor: NeonPalette.primary,
+            unselectedLabelColor: NeonPalette.onSurfaceVariant,
             labelStyle: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -845,7 +845,7 @@ class _TripsTimelineTabBar extends StatelessWidget {
             ),
             indicator: const UnderlineTabIndicator(
               borderSide: BorderSide(
-                color: TripCreateNeonPalette.primary,
+                color: NeonPalette.primary,
                 width: 2,
               ),
               insets: EdgeInsets.symmetric(horizontal: 16),
@@ -901,8 +901,8 @@ class _TripsSpeedDial extends StatelessWidget {
           elevation: 8,
           shadowColor: Colors.black.withValues(alpha: 0.08),
           color: isOpen
-              ? TripCreateNeonPalette.deep
-              : TripCreateNeonPalette.primary,
+              ? NeonPalette.deep
+              : NeonPalette.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -946,15 +946,15 @@ class _SpeedDialAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final joinBorderColor = Color.lerp(
-      TripCreateNeonPalette.accent,
-      TripCreateNeonPalette.divider,
+      NeonPalette.accent,
+      NeonPalette.divider,
       0.68,
     )!;
 
     return Material(
       elevation: 4,
       shadowColor: Colors.black.withValues(alpha: 0.06),
-      color: isPrimary ? TripCreateNeonPalette.primary : TripCreateNeonPalette.surface,
+      color: isPrimary ? NeonPalette.primary : NeonPalette.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isPrimary
@@ -975,7 +975,7 @@ class _SpeedDialAction extends StatelessWidget {
                   icon,
                   size: isPrimary ? 22 : 21,
                   color:
-                      isPrimary ? Colors.white : TripCreateNeonPalette.accent,
+                      isPrimary ? Colors.white : NeonPalette.accent,
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -984,7 +984,7 @@ class _SpeedDialAction extends StatelessWidget {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color:
-                        isPrimary ? Colors.white : TripCreateNeonPalette.accent,
+                        isPrimary ? Colors.white : NeonPalette.accent,
                   ),
                 ),
               ],
@@ -1022,7 +1022,7 @@ class _TripsTimelineList extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: TripCreateNeonPalette.onSurfaceVariant,
+              color: NeonPalette.onSurfaceVariant,
             ),
           ),
         ),
@@ -1068,14 +1068,14 @@ class _TripCard extends ConsumerWidget {
   final VoidCallback onTap;
 
   Color get _accentColor => switch (category) {
-        _TripTimelineCategory.upcoming => TripCreateNeonPalette.secondary,
-        _TripTimelineCategory.ongoing => TripCreateNeonPalette.primary,
-        _TripTimelineCategory.past => TripCreateNeonPalette.outline,
+        _TripTimelineCategory.upcoming => NeonPalette.secondary,
+        _TripTimelineCategory.ongoing => NeonPalette.primary,
+        _TripTimelineCategory.past => NeonPalette.outline,
       };
 
   Color get _titleColor => category == _TripTimelineCategory.past
-      ? TripCreateNeonPalette.text700
-      : TripCreateNeonPalette.primary;
+      ? NeonPalette.text700
+      : NeonPalette.primary;
 
   double get _cardOpacity =>
       category == _TripTimelineCategory.past ? 0.92 : 1.0;
@@ -1088,12 +1088,12 @@ class _TripCard extends ConsumerWidget {
     return Opacity(
       opacity: _cardOpacity,
       child: Material(
-        color: TripCreateNeonPalette.surface,
+        color: NeonPalette.surface,
         elevation: 1,
         shadowColor: Colors.black.withValues(alpha: 0.04),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: TripCreateNeonPalette.divider),
+          side: const BorderSide(color: NeonPalette.divider),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -1132,7 +1132,7 @@ class _TripCard extends ConsumerWidget {
                               dateLine,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: TripCreateNeonPalette.deep,
+                                color: NeonPalette.deep,
                               ),
                             ),
                           ],
@@ -1142,7 +1142,7 @@ class _TripCard extends ConsumerWidget {
                               trip.destination,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: TripCreateNeonPalette.onSurfaceVariant,
+                                color: NeonPalette.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -1154,7 +1154,7 @@ class _TripCard extends ConsumerWidget {
                             ),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: TripCreateNeonPalette.onSurfaceVariant,
+                              color: NeonPalette.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -1165,10 +1165,10 @@ class _TripCard extends ConsumerWidget {
                         padding: const EdgeInsets.only(right: 4),
                         child: Badge.count(
                           count: unreadCount,
-                          backgroundColor: TripCreateNeonPalette.accent,
+                          backgroundColor: NeonPalette.accent,
                           child: const Icon(
                             Icons.notifications_none_outlined,
-                            color: TripCreateNeonPalette.onSurfaceVariant,
+                            color: NeonPalette.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -1210,8 +1210,8 @@ class _TripCardLeadingImage extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              TripCreateNeonPalette.primary,
-              TripCreateNeonPalette.secondary,
+              NeonPalette.primary,
+              NeonPalette.secondary,
             ],
           ),
         ),

@@ -447,11 +447,32 @@
     "placeholders": {"label": {}}
   },
   "tripParticipantsRemovedFromTrip": "Participant removed from trip",
-  "tripParticipantsAdminHint": "Click the icon on the left of a traveler (planned or joined) to grant or remove admin role (except owner).",
+  "tripParticipantsAdminHint": "Tap a traveler to open their actions: you can grant or remove admin role, edit their trip info, or remove them from the trip (except the owner).",
   "tripParticipantsUnlike": "Remove like",
   "tripParticipantsLike": "Like",
   "tripParticipantsChangeRole": "Change role",
   "tripParticipantsOpenDialer": "Open dialer",
+  "tripParticipantsRoleChipOwner": "Organizer",
+  "tripParticipantsRoleChipChildPlanned": "Child · planned",
+  "tripParticipantsRoleChipPlanned": "Planned",
+  "tripParticipantsRoleChipYou": "you",
+  "tripParticipantsSheetYouSuffix": "(you)",
+  "tripParticipantsSheetViewProfile": "View user profile",
+  "tripParticipantsSheetViewProfileSubtitle": "Public user profile",
+  "tripParticipantsSheetViewTravelInfo": "View trip information",
+  "tripParticipantsSheetViewTravelInfoSubtitle": "Preferences and info for this participant on this trip",
+  "tripParticipantsSheetCall": "Call",
+  "tripParticipantsSheetPromoteAdmin": "Promote to admin",
+  "tripParticipantsSheetDemoteAdmin": "Remove admin rights",
+  "tripParticipantsSheetPromoteAdminSubtitle": "Will be able to manage participants and groups",
+  "tripParticipantsSheetDemoteAdminSubtitle": "{label} becomes a regular member again",
+  "@tripParticipantsSheetDemoteAdminSubtitle": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "tripParticipantsSheetRemoveFromTrip": "Remove from trip",
+  "tripParticipantsRemoveDefinitiveWarning": "This action is permanent.",
   "tripNotFound": "Trip not found",
   "commonName": "Name",
   "commonAdd": "Add",

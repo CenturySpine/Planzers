@@ -1,12 +1,10 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
-import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -18,8 +16,9 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/core/presentation/planerz_info_callout.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TripParticipantsPage extends ConsumerStatefulWidget {
@@ -84,35 +83,40 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage>
           isApplicationOwner: isApplicationOwner,
         );
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(l10n.tripParticipantsTitle),
-            bottom: TabBar(
+        return Theme(
+          data: NeonPalette.overlayOn(Theme.of(context)),
+          child: Scaffold(
+            backgroundColor: NeonPalette.scaffoldBackground,
+            appBar: AppBar(
+              title: Text(l10n.tripParticipantsTitle),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: TripParticipantsTabBar(
+                  controller: _tabController,
+                  participantsLabel: l10n.tripSectionParticipants,
+                  groupsLabel: l10n.participantGroupsTabLabel,
+                ),
+              ),
+            ),
+            body: TabBarView(
               controller: _tabController,
-              tabs: [
-                Tab(text: l10n.tripSectionParticipants),
-                Tab(text: l10n.participantGroupsTabLabel),
+              children: [
+                _ParticipantsTab(
+                  tripId: widget.tripId,
+                  trip: trip,
+                  canManageParticipants: canManageParticipants,
+                  myUid: myUid,
+                  isApplicationOwner: isApplicationOwner,
+                  messageForError: _messageForError,
+                ),
+                _GroupsTab(
+                  tripId: widget.tripId,
+                  trip: trip,
+                  canManageParticipants: canManageParticipants,
+                  messageForError: _messageForError,
+                ),
               ],
             ),
-          ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              _ParticipantsTab(
-                tripId: widget.tripId,
-                trip: trip,
-                canManageParticipants: canManageParticipants,
-                myUid: myUid,
-                isApplicationOwner: isApplicationOwner,
-                messageForError: _messageForError,
-              ),
-              _GroupsTab(
-                tripId: widget.tripId,
-                trip: trip,
-                canManageParticipants: canManageParticipants,
-                messageForError: _messageForError,
-              ),
-            ],
           ),
         );
       },
@@ -231,46 +235,80 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     var isChild = false;
     final ok = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.42),
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(l10n.tripParticipantsAddPlannedTravelerTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: l10n.commonName,
-                  border: const OutlineInputBorder(),
+        builder: (context, setDialogState) {
+          return TripParticipantsDialogShell(
+            title: l10n.tripParticipantsAddPlannedTravelerTitle,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.commonName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: NeonPalette.onSurfaceVariant,
+                  ),
                 ),
-                textInputAction: TextInputAction.done,
+                const SizedBox(height: 6),
+                TripParticipantsInputShell(
+                  icon: Icons.badge_outlined,
+                  child: TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    style: const TextStyle(fontSize: 15, color: NeonPalette.deep),
+                    decoration: InputDecoration(
+                      hintText: l10n.commonName,
+                      hintStyle: const TextStyle(color: NeonPalette.outline),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Divider(height: 1, color: NeonPalette.divider),
+                const SizedBox(height: 2),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 14),
+                      child: TripChildCareIcon(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(l10n.tripParticipantsIsChildLabel),
+                        subtitle: Text(l10n.tripParticipantsIsChildSubtitle),
+                        value: isChild,
+                        onChanged: (value) =>
+                            setDialogState(() => isChild = value),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              tripParticipantsDialogButton(
+                context: context,
+                label: l10n.commonCancel,
+                onPressed: () => Navigator.pop(ctx, false),
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                secondary: Text(
-                  tripMemberChildLabelEmoji,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                title: Text(l10n.tripParticipantsIsChildLabel),
-                subtitle: Text(l10n.tripParticipantsIsChildSubtitle),
-                value: isChild,
-                onChanged: (value) => setDialogState(() => isChild = value),
+              tripParticipantsDialogButton(
+                context: context,
+                label: l10n.commonAdd,
+                primary: true,
+                onPressed: () => Navigator.pop(ctx, true),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.commonCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.commonAdd),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
     final name = ok == true ? controller.text.trim() : '';
@@ -320,27 +358,224 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     }
   }
 
+  Future<void> _openParticipantSheet({
+    required _ParticipantRow row,
+    required String? myParticipantId,
+    required bool canManageParticipants,
+    required bool canToggleAdminRole,
+    required bool myCupidonEnabled,
+    required bool isOwnerRow,
+    required bool isOwnParticipantRow,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    final secondaryTone = NeonPalette.participantsChipAdminFg;
+    final actions = <TripParticipantSheetAction>[];
+
+    void closeSheetThen(VoidCallback action) {
+      Navigator.of(context).pop();
+      action();
+    }
+
+    if (row.isClaimed && row.userId != null) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: Icons.account_circle_outlined,
+          label: l10n.tripParticipantsSheetViewProfile,
+          subtitle: l10n.tripParticipantsSheetViewProfileSubtitle,
+          showChevron: true,
+          onTap: () => closeSheetThen(
+            () => context.push(
+              '/users/${row.userId}/profile?label=${Uri.encodeComponent(row.displayLabel)}',
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isOwnParticipantRow || canManageParticipants) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: Icons.luggage_outlined,
+          label: l10n.tripParticipantsSheetViewTravelInfo,
+          subtitle: l10n.tripParticipantsSheetViewTravelInfoSubtitle,
+          showChevron: true,
+          onTap: () => closeSheetThen(
+            () => _openParticipantEditor(
+              row: row,
+              myParticipantId: myParticipantId,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (row.phoneUri != null) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: Icons.phone_outlined,
+          label: l10n.tripParticipantsSheetCall,
+          onTap: () => closeSheetThen(
+            () => launchUrl(Uri.parse(row.phoneUri!)),
+          ),
+        ),
+      );
+    }
+
+    if (myCupidonEnabled &&
+        row.isClaimed &&
+        row.userId != null &&
+        !isOwnParticipantRow) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: row.likedByMe ? Icons.favorite : Icons.favorite_border,
+          filledIcon: row.likedByMe,
+          label: row.likedByMe
+              ? l10n.tripParticipantsUnlike
+              : l10n.tripParticipantsLike,
+          iconColor: NeonPalette.accent,
+          onTap: () => closeSheetThen(
+            () => _toggleCupidonLike(
+              targetMemberId: row.userId!,
+              currentlyLiked: row.likedByMe,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (canToggleAdminRole &&
+        row.isClaimed &&
+        !isOwnerRow &&
+        !isOwnParticipantRow &&
+        row.userId != null) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: Icons.shield_rounded,
+          filledIcon: row.isAdmin,
+          label: row.isAdmin
+              ? l10n.tripParticipantsSheetDemoteAdmin
+              : l10n.tripParticipantsSheetPromoteAdmin,
+          subtitle: row.isAdmin
+              ? l10n.tripParticipantsSheetDemoteAdminSubtitle(row.displayLabel)
+              : l10n.tripParticipantsSheetPromoteAdminSubtitle,
+          iconColor: secondaryTone,
+          onTap: () => closeSheetThen(
+            () => _cycleMemberAdminRole(
+              memberId: row.userId!,
+              displayLabel: row.displayLabel,
+              wasAdmin: row.isAdmin,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (canManageParticipants && !isOwnerRow && !isOwnParticipantRow) {
+      actions.add(
+        TripParticipantSheetAction(
+          icon: Icons.person_remove_outlined,
+          label: l10n.tripParticipantsSheetRemoveFromTrip,
+          danger: true,
+          onTap: () => closeSheetThen(
+            () => row.isClaimed
+                ? _confirmRemoveMember(
+                    memberId: row.userId!,
+                    label: row.displayLabel,
+                    row: row,
+                    isOwnerRow: isOwnerRow,
+                  )
+                : _confirmRemoveParticipant(
+                    participantId: row.participantId,
+                    label: row.displayLabel,
+                    row: row,
+                    isOwnerRow: isOwnerRow,
+                  ),
+          ),
+        ),
+      );
+    }
+
+    await showTripParticipantActionSheet(
+      context: context,
+      displayLabel: row.displayLabel,
+      isOwnParticipantRow: isOwnParticipantRow,
+      isOwnerRow: isOwnerRow,
+      isAdmin: row.isAdmin,
+      isClaimed: row.isClaimed,
+      isChild: row.isChild,
+      profileData: row.profileData,
+      actions: actions,
+    );
+  }
+
   Future<void> _confirmRemoveParticipant({
     required String participantId,
     required String label,
+    required _ParticipantRow row,
+    required bool isOwnerRow,
   }) async {
     final l10n = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.tripParticipantsRemovePlannedTravelerTitle),
-        content: Text(l10n.tripParticipantsRemovePlannedTravelerBody(label)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.commonCancel),
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      builder: (ctx) {
+        return TripParticipantsDialogShell(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TripParticipantRemoveDialogHeader(
+                displayLabel: label,
+                isOwnerRow: isOwnerRow,
+                isAdmin: row.isAdmin,
+                isClaimed: row.isClaimed,
+                isChild: row.isChild,
+                profileData: row.profileData,
+              ),
+              Text(
+                l10n.tripParticipantsRemovePlannedTravelerTitle,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  color: NeonPalette.deep,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.tripParticipantsRemovePlannedTravelerBody(label),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.55,
+                  color: NeonPalette.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.tripParticipantsRemoveDefinitiveWarning,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: NeonPalette.accent,
+                ),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.tripParticipantsRemoveAction),
-          ),
-        ],
-      ),
+          actions: [
+            tripParticipantsDialogButton(
+              context: context,
+              label: l10n.commonCancel,
+              onPressed: () => Navigator.pop(ctx, false),
+            ),
+            tripParticipantsDialogButton(
+              context: context,
+              label: l10n.tripParticipantsRemoveAction,
+              danger: true,
+              onPressed: () => Navigator.pop(ctx, true),
+            ),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
     try {
@@ -363,6 +598,8 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
   Future<void> _confirmRemoveMember({
     required String memberId,
     required String label,
+    required _ParticipantRow row,
+    required bool isOwnerRow,
   }) async {
     final l10n = AppLocalizations.of(context)!;
     final cleanId = memberId.trim();
@@ -370,20 +607,65 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.tripParticipantsRemoveParticipantTitle),
-        content: Text(l10n.tripParticipantsRemoveParticipantBody(label)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.commonCancel),
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      builder: (ctx) {
+        return TripParticipantsDialogShell(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TripParticipantRemoveDialogHeader(
+                displayLabel: label,
+                isOwnerRow: isOwnerRow,
+                isAdmin: row.isAdmin,
+                isClaimed: row.isClaimed,
+                isChild: row.isChild,
+                profileData: row.profileData,
+              ),
+              Text(
+                l10n.tripParticipantsRemoveParticipantTitle,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  color: NeonPalette.deep,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.tripParticipantsRemoveParticipantBody(label),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.55,
+                  color: NeonPalette.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l10n.tripParticipantsRemoveDefinitiveWarning,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: NeonPalette.accent,
+                ),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.tripParticipantsRemoveAction),
-          ),
-        ],
-      ),
+          actions: [
+            tripParticipantsDialogButton(
+              context: context,
+              label: l10n.commonCancel,
+              onPressed: () => Navigator.pop(ctx, false),
+            ),
+            tripParticipantsDialogButton(
+              context: context,
+              label: l10n.tripParticipantsRemoveAction,
+              danger: true,
+              onPressed: () => Navigator.pop(ctx, true),
+            ),
+          ],
+        );
+      },
     );
     if (ok != true || !mounted) return;
 
@@ -489,7 +771,6 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
               membersPhoneVisibility: membersPhoneVisibility,
               currentUserRole: currentUserRole,
             );
-            final myUidTrim = (myUid ?? '').trim();
             final myCupidonEnabled = enabledCupidonMemberIds
                 .contains((myUid ?? '').trim());
             final searchQuery = _participantSearchController.text;
@@ -506,18 +787,18 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 if (widget.canManageParticipants)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: PlanerzInfoCallout(
+                    child: TripParticipantsPrimaryCallout(
                       message: l10n.tripParticipantsAdminHint,
                     ),
                   ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     16,
-                    widget.canManageParticipants ? 8 : 12,
+                    widget.canManageParticipants ? 10 : 12,
                     16,
-                    8,
+                    0,
                   ),
-                  child: NameListSearchTextField(
+                  child: TripParticipantsSearchField(
                     controller: _participantSearchController,
                     onChanged: (_) => setState(() {}),
                   ),
@@ -547,16 +828,19 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                     .textTheme
                                     .bodyLarge
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
+                                      color: NeonPalette
                                           .onSurfaceVariant,
                                     ),
                               ),
                             ),
                           )
                         : ListView.separated(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            padding: EdgeInsets.fromLTRB(
+                              16,
+                              10,
+                              16,
+                              widget.canManageParticipants ? 88 : 32,
+                            ),
                             itemCount: visibleRows.length,
                             separatorBuilder: (_, __) =>
                                 const SizedBox(height: 8),
@@ -565,170 +849,30 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                               final isOwnerRow =
                                   row.userId?.trim() ==
                                       widget.trip.ownerId.trim();
-                              final isRemoving =
-                                  _removingMemberIds.contains(
-                                      row.participantId.trim());
-                              final isCycling =
-                                  _cyclingMemberIds.contains(
-                                      row.participantId.trim());
-                              final scheme =
-                                  Theme.of(context).colorScheme;
-                              final canCycleRole =
-                                  canToggleAdminRole && !isOwnerRow && row.isClaimed;
+                              final myUidTrim = (widget.myUid ?? '').trim();
                               final isOwnParticipantRow = _isOwnParticipantRow(
                                 row: row,
                                 myParticipantId: myParticipantId,
                                 myUidTrim: myUidTrim,
                               );
-                              final showEditIcon = _shouldShowParticipantEditIcon(
-                                isOwnParticipantRow: isOwnParticipantRow,
-                                canManageParticipants:
-                                    widget.canManageParticipants,
-                              );
-                              final showDeleteIcon =
-                                  _shouldShowParticipantDeleteIcon(
-                                canManageParticipants:
-                                    widget.canManageParticipants,
-                                isOwnerRow: isOwnerRow,
-                                isOwnParticipantRow: isOwnParticipantRow,
-                              );
 
-                              return Card(
-                                child: ListTile(
-                                  onTap: row.isClaimed &&
-                                          row.userId != null
-                                      ? () => context.push(
-                                            '/users/${row.userId}/profile?label=${Uri.encodeComponent(row.displayLabel)}',
-                                          )
-                                      : null,
-                                  leading:
-                                      _participantRoleLeading(
-                                    context: context,
-                                    scheme: scheme,
-                                    row: row,
-                                    isOwnerRow: isOwnerRow,
-                                    showAdminIcon: row.isAdmin,
-                                    canCycleRole: canCycleRole,
-                                    isCycling: isCycling,
-                                    onCycle: canCycleRole &&
-                                            !isCycling &&
-                                            row.userId != null
-                                        ? () =>
-                                            _cycleMemberAdminRole(
-                                              memberId: row.userId!,
-                                              displayLabel:
-                                                  row.displayLabel,
-                                              wasAdmin: row.isAdmin,
-                                            )
-                                        : null,
-                                  ),
-                                  title: Text(row.displayLabel),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (row.phoneUri != null)
-                                        IconButton(
-                                          tooltip: l10n
-                                              .tripParticipantsOpenDialer,
-                                          icon: const Icon(
-                                              Icons.phone_outlined),
-                                          onPressed: () =>
-                                              launchUrl(Uri.parse(
-                                                  row.phoneUri!)),
-                                        ),
-                                      if (row.isClaimed &&
-                                          row.userId?.trim() !=
-                                              myUidTrim &&
-                                          myCupidonEnabled)
-                                        IconButton(
-                                          tooltip: row.likedByMe
-                                              ? l10n
-                                                  .tripParticipantsUnlike
-                                              : l10n
-                                                  .tripParticipantsLike,
-                                          onPressed: _likingMemberIds
-                                                  .contains(
-                                                      row.userId
-                                                          ?.trim() ?? '')
-                                              ? null
-                                              : () =>
-                                                  _toggleCupidonLike(
-                                                    targetMemberId:
-                                                        row.userId!,
-                                                    currentlyLiked:
-                                                        row.likedByMe,
-                                                  ),
-                                          icon: _likingMemberIds
-                                                  .contains(row
-                                                      .userId
-                                                      ?.trim() ?? '')
-                                              ? const SizedBox(
-                                                  width: 22,
-                                                  height: 22,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  row.likedByMe
-                                                      ? Icons.favorite
-                                                      : Icons
-                                                          .favorite_border,
-                                                  color: Theme.of(
-                                                          context)
-                                                      .colorScheme
-                                                      .error,
-                                                ),
-                                        ),
-                                      if (showEditIcon)
-                                        IconButton(
-                                          tooltip: l10n.commonEdit,
-                                          icon: const Icon(
-                                              Icons.edit_outlined),
-                                          onPressed: () =>
-                                              _openParticipantEditor(
-                                            row: row,
-                                            myParticipantId: myParticipantId,
-                                          ),
-                                        ),
-                                      if (showDeleteIcon)
-                                        IconButton(
-                                          tooltip: l10n
-                                              .tripParticipantsRemoveAction,
-                                          icon: row.isClaimed &&
-                                                  isRemoving
-                                              ? const SizedBox(
-                                                  width: 22,
-                                                  height: 22,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : Icon(
-                                                  Icons.delete_outline,
-                                                  color: scheme.error,
-                                                ),
-                                          onPressed: row.isClaimed &&
-                                                  isRemoving
-                                              ? null
-                                              : () => row.isClaimed
-                                                  ? _confirmRemoveMember(
-                                                      memberId:
-                                                          row.userId!,
-                                                      label: row
-                                                          .displayLabel,
-                                                    )
-                                                  : _confirmRemoveParticipant(
-                                                      participantId:
-                                                          row.participantId,
-                                                      label: row
-                                                          .displayLabel,
-                                                    ),
-                                        ),
-                                    ],
-                                  ),
+                              return TripParticipantRowCard(
+                                displayLabel: row.displayLabel,
+                                isOwnParticipantRow: isOwnParticipantRow,
+                                isOwnerRow: isOwnerRow,
+                                isAdmin: row.isAdmin,
+                                isClaimed: row.isClaimed,
+                                isChild: row.isChild,
+                                profileData: row.profileData,
+                                onTap: () => _openParticipantSheet(
+                                  row: row,
+                                  myParticipantId: myParticipantId,
+                                  canManageParticipants:
+                                      widget.canManageParticipants,
+                                  canToggleAdminRole: canToggleAdminRole,
+                                  myCupidonEnabled: myCupidonEnabled,
+                                  isOwnerRow: isOwnerRow,
+                                  isOwnParticipantRow: isOwnParticipantRow,
                                 ),
                               );
                             },
@@ -748,11 +892,10 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
         Positioned(
           right: 16,
           bottom: 16,
-          child: FloatingActionButton(
+          child: TripParticipantsFab(
             heroTag: 'add_participant',
             onPressed: _openAddDialog,
             tooltip: l10n.tripParticipantsAddPlannedTravelerTitle,
-            child: const Icon(Icons.add),
           ),
         ),
     ],
@@ -914,7 +1057,6 @@ class _GroupsTabState extends ConsumerState<_GroupsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final cs = Theme.of(context).colorScheme;
     final groupsAsync =
         ref.watch(tripParticipantGroupsStreamProvider(widget.tripId));
     final memberLabels =
@@ -929,107 +1071,52 @@ class _GroupsTabState extends ConsumerState<_GroupsTab> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: PlanerzInfoCallout(
+                  child: TripParticipantsPrimaryCallout(
                     message: l10n.participantGroupsTabHint,
                   ),
                 ),
                 Expanded(
                   child: groups.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(
-                              l10n.participantGroupsEmpty,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                            ),
-                          ),
+                      ? TripParticipantsGroupsEmpty(
+                          message: l10n.participantGroupsEmpty,
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 88),
                           itemCount: groups.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final group = groups[index];
-                      final memberNames = group.memberIds
-                          .map((id) =>
-                              memberLabels[id] ??
-                              l10n.tripParticipantsTraveler)
-                          .join(', ');
-                      final partsLabel =
-                          group.parts == group.parts.truncateToDouble()
-                              ? group.parts.toInt().toString()
-                              : group.parts.toStringAsFixed(1);
-                      final subtitle = l10n.participantGroupsMemberCount(
-                        group.memberIds.length,
-                        partsLabel,
-                      );
-                      final isDeleting =
-                          _deletingGroupIds.contains(group.id);
-                      return Card(
-                        child: ListTile(
-                          title: Text(
-                            group.label.isNotEmpty
-                                ? group.label
-                                : group.id,
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(subtitle),
-                              if (memberNames.isNotEmpty)
-                                Text(
-                                  memberNames,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: cs.onSurfaceVariant,
-                                      ),
-                                ),
-                            ],
-                          ),
-                          isThreeLine: memberNames.isNotEmpty,
-                          trailing: widget.canManageParticipants
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      tooltip: l10n.commonEdit,
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: isDeleting
-                                          ? null
-                                          : () => _openGroupEditor(
-                                              existing: group),
-                                    ),
-                                    IconButton(
-                                      tooltip:
-                                          l10n.tripParticipantsRemoveAction,
-                                      icon: isDeleting
-                                          ? const SizedBox(
-                                              width: 22,
-                                              height: 22,
-                                              child:
-                                                  CircularProgressIndicator(
-                                                      strokeWidth: 2),
-                                            )
-                                          : Icon(Icons.delete_outline,
-                                              color: cs.error),
-                                      onPressed: isDeleting
-                                          ? null
-                                          : () => _confirmDelete(group),
-                                    ),
-                                  ],
-                                )
-                              : null,
-                        ),
-                      );
-                    },
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final group = groups[index];
+                            final memberNames = group.memberIds
+                                .map((id) =>
+                                    memberLabels[id] ??
+                                    l10n.tripParticipantsTraveler)
+                                .join(', ');
+                            final partsLabel =
+                                group.parts == group.parts.truncateToDouble()
+                                    ? group.parts.toInt().toString()
+                                    : group.parts.toStringAsFixed(1);
+                            final metaLine = l10n.participantGroupsMemberCount(
+                              group.memberIds.length,
+                              partsLabel,
+                            );
+                            final isDeleting =
+                                _deletingGroupIds.contains(group.id);
+                            return TripParticipantGroupCard(
+                              label: group.label.isNotEmpty
+                                  ? group.label
+                                  : group.id,
+                              metaLine: metaLine,
+                              memberNamesLine: memberNames,
+                              isDeleting: isDeleting,
+                              onEdit: widget.canManageParticipants
+                                  ? () => _openGroupEditor(existing: group)
+                                  : null,
+                              onDelete: widget.canManageParticipants
+                                  ? () => _confirmDelete(group)
+                                  : null,
+                            );
+                          },
                         ),
                 ),
               ],
@@ -1038,11 +1125,10 @@ class _GroupsTabState extends ConsumerState<_GroupsTab> {
               Positioned(
                 right: 16,
                 bottom: 16,
-                child: FloatingActionButton(
+                child: TripParticipantsFab(
                   heroTag: 'add_participant_group',
                   tooltip: l10n.participantGroupsAddTitle,
                   onPressed: () => _openGroupEditor(),
-                  child: const Icon(Icons.add),
                 ),
               ),
           ],
@@ -1194,91 +1280,184 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final cs = Theme.of(context).colorScheme;
     final title = widget.existing == null
         ? l10n.participantGroupsAddTitle
         : l10n.participantGroupsEditTitle;
 
-    return AlertDialog(
-      title: Text(title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _labelController,
-              autofocus: true,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: l10n.participantGroupsLabelField,
-                border: const OutlineInputBorder(),
+    return Dialog(
+      backgroundColor: NeonPalette.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 340, maxHeight: 660),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: NeonPalette.deep,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.participantGroupsMembersField,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 4),
-            for (final m in widget.participants)
-              Builder(builder: (context) {
-                final ownerGroup = _groupOwnerOf(m.id);
-                final alreadyInOtherGroup =
-                    ownerGroup != null && !_selectedMemberIds.contains(m.id);
-                final label = widget.memberLabels[m.id] ??
-                    l10n.tripParticipantsTraveler;
-                return CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: Text(
-                    label,
-                    style: alreadyInOtherGroup
-                        ? TextStyle(color: cs.onSurfaceVariant)
-                        : null,
+              const SizedBox(height: 18),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.participantGroupsLabelField,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TripParticipantsInputShell(
+                        icon: Icons.label_outline,
+                        child: TextField(
+                          controller: _labelController,
+                          autofocus: true,
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(fontSize: 14, color: NeonPalette.deep),
+                          decoration: InputDecoration(
+                            hintText: l10n.participantGroupsLabelField,
+                            hintStyle: const TextStyle(color: NeonPalette.outline),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.participantGroupsMembersField,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      for (final member in widget.participants)
+                        Builder(builder: (context) {
+                          final ownerGroup = _groupOwnerOf(member.id);
+                          final alreadyInOtherGroup = ownerGroup != null &&
+                              !_selectedMemberIds.contains(member.id);
+                          final rawLabel = widget.memberLabels[member.id] ??
+                              l10n.tripParticipantsTraveler;
+                          final label = member.isChild
+                              ? tripParticipantVisibleName(
+                                  rawLabel,
+                                  isChild: true,
+                                )
+                              : rawLabel;
+                          final displayLabel = member.isChild
+                              ? '$label (${l10n.tripParticipantsIsChildLabel.toLowerCase()})'
+                              : label;
+                          return Opacity(
+                            opacity: alreadyInOtherGroup ? 0.5 : 1,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: Checkbox(
+                                      value:
+                                          _selectedMemberIds.contains(member.id),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      onChanged: alreadyInOtherGroup
+                                          ? null
+                                          : (value) => _onMemberToggled(
+                                                member.id,
+                                                value == true,
+                                              ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          displayLabel,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: alreadyInOtherGroup
+                                                ? NeonPalette.onSurfaceVariant
+                                                : NeonPalette.deep,
+                                          ),
+                                        ),
+                                        if (alreadyInOtherGroup)
+                                          Text(
+                                            l10n.participantGroupsAlreadyInGroup(
+                                              label,
+                                              ownerGroup,
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: NeonPalette.accent,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.participantGroupsPartsField,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TripParticipantsPartsField(
+                        controller: _partsController,
+                        onChanged: () => setState(() {}),
+                      ),
+                    ],
                   ),
-                  subtitle: alreadyInOtherGroup
-                      ? Text(
-                          l10n.participantGroupsAlreadyInGroup(
-                              label, ownerGroup),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: cs.error),
-                        )
-                      : null,
-                  value: _selectedMemberIds.contains(m.id),
-                  onChanged: alreadyInOtherGroup
-                      ? null
-                      : (v) => _onMemberToggled(m.id, v == true),
-                );
-              }),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _partsController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: InputDecoration(
-                labelText: l10n.participantGroupsPartsField,
-                border: const OutlineInputBorder(),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  tripParticipantsDialogButton(
+                    context: context,
+                    label: l10n.commonCancel,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  tripParticipantsDialogButton(
+                    context: context,
+                    label: l10n.commonSave,
+                    primary: true,
+                    onPressed: _submit,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(l10n.commonSave),
-        ),
-      ],
     );
   }
 }
@@ -1299,25 +1478,6 @@ bool _isOwnParticipantRow({
   }
   final rowUid = row.userId?.trim() ?? '';
   return myUidTrim.isNotEmpty && rowUid.isNotEmpty && rowUid == myUidTrim;
-}
-
-bool _shouldShowParticipantEditIcon({
-  required bool isOwnParticipantRow,
-  required bool canManageParticipants,
-}) {
-  if (isOwnParticipantRow) return true;
-  return canManageParticipants;
-}
-
-bool _shouldShowParticipantDeleteIcon({
-  required bool canManageParticipants,
-  required bool isOwnerRow,
-  required bool isOwnParticipantRow,
-}) {
-  if (!canManageParticipants || isOwnerRow || isOwnParticipantRow) {
-    return false;
-  }
-  return true;
 }
 
 TripPermissionRole? _minRoleForPhoneVisibility(TripMemberPhoneVisibility vis) {
@@ -1392,101 +1552,6 @@ List<_ParticipantRow> _participantRowsForTrip(
     (a, b) => compareDisplayNamesForSort(a.displayLabel, b.displayLabel),
   );
   return rows;
-}
-
-const double _kParticipantRoleLeadingExtent = 48;
-
-Widget _participantRoleLeading({
-  required BuildContext context,
-  required ColorScheme scheme,
-  required _ParticipantRow row,
-  required bool isOwnerRow,
-  required bool showAdminIcon,
-  required bool canCycleRole,
-  required bool isCycling,
-  required VoidCallback? onCycle,
-}) {
-  Widget inFixedBox(Widget child) {
-    return SizedBox(
-      width: _kParticipantRoleLeadingExtent,
-      height: _kParticipantRoleLeadingExtent,
-      child: Center(child: child),
-    );
-  }
-
-  if (isCycling) {
-    return inFixedBox(
-      const SizedBox(
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
-  }
-
-  final tooltip = canCycleRole
-      ? AppLocalizations.of(context)!.tripParticipantsChangeRole
-      : (isOwnerRow
-          ? AppLocalizations.of(context)!.roleOwner
-          : (showAdminIcon
-              ? AppLocalizations.of(context)!.roleAdmin
-              : null));
-
-  final baseBadge = buildProfileBadge(
-    context: context,
-    displayLabel: row.displayLabel,
-    userData: row.profileData,
-    size: 28,
-    isChild: row.isChild,
-  );
-
-  final icon = showAdminIcon
-      ? Stack(
-          clipBehavior: Clip.none,
-          children: [
-            baseBadge,
-            Positioned(
-              right: -4,
-              bottom: -4,
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: scheme.surface,
-                  border: Border.all(color: scheme.primary, width: 1),
-                ),
-                child: Icon(
-                  Icons.verified_user,
-                  size: 10,
-                  color: scheme.primary,
-                ),
-              ),
-            ),
-          ],
-        )
-      : baseBadge;
-
-  if (!canCycleRole) {
-    final fixed = inFixedBox(icon);
-    if (tooltip == null || tooltip.trim().isEmpty) {
-      return fixed;
-    }
-    return Tooltip(message: tooltip, child: fixed);
-  }
-
-  return Tooltip(
-    message: tooltip ?? '',
-    child: SizedBox(
-      width: _kParticipantRoleLeadingExtent,
-      height: _kParticipantRoleLeadingExtent,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onLongPress: onCycle,
-        child: Center(child: icon),
-      ),
-    ),
-  );
 }
 
 class _ParticipantRow {

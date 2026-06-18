@@ -1219,7 +1219,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Clique sur l’icône à gauche d’un voyageur (prévu ou inscrit) pour lui donner ou retirer le rôle administrateur (sauf le créateur).';
+      'Appuie sur un voyageur pour ouvrir ses actions : tu peux y attribuer ou retirer le rôle administrateur, modifier ses informations ou le retirer du voyage (sauf le créateur).';
 
   @override
   String get tripParticipantsUnlike => 'Retirer le like';
@@ -1232,6 +1232,61 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripParticipantsOpenDialer => 'Ouvrir le composeur';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organisateur';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Enfant · planifié';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planifié';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'toi';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(toi)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'Voir le profil utilisateur';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle =>
+      'Profil public de l\'utilisateur';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo =>
+      'Voir les informations de voyage';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Préférences et infos de ce participant pour le voyage';
+
+  @override
+  String get tripParticipantsSheetCall => 'Appeler';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promouvoir administrateur';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Retirer les droits admin';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Pourra gérer participants et groupes';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label redevient membre classique';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Retirer du voyage';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'Cette action est définitive.';
 
   @override
   String get tripNotFound => 'Voyage introuvable';
@@ -4315,7 +4370,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Clique sur l’icône à gauche d’un voyageur (prévu ou inscrit) pour lui donner ou retirer le rôle administrateur (sauf le créateur).';
+      'Appuie sur un voyageur pour ouvrir ses actions : tu peux y attribuer ou retirer le rôle administrateur, modifier ses informations ou le retirer du voyage (sauf le créateur).';
 
   @override
   String get tripParticipantsUnlike => 'Retirer le like';
@@ -4328,6 +4383,61 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripParticipantsOpenDialer => 'Ouvrir le composeur';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organisateur';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Enfant · planifié';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planifié';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'toi';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(toi)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'Voir le profil utilisateur';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle =>
+      'Profil public de l\'utilisateur';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo =>
+      'Voir les informations de voyage';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Préférences et infos de ce participant pour le voyage';
+
+  @override
+  String get tripParticipantsSheetCall => 'Appeler';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promouvoir administrateur';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Retirer les droits admin';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Pourra gérer participants et groupes';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label redevient membre classique';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Retirer du voyage';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'Cette action est définitive.';
 
   @override
   String get tripNotFound => 'Voyage introuvable';

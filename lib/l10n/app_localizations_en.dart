@@ -1205,7 +1205,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Click the icon on the left of a traveler (planned or joined) to grant or remove admin role (except owner).';
+      'Tap a traveler to open their actions: you can grant or remove admin role, edit their trip info, or remove them from the trip (except the owner).';
 
   @override
   String get tripParticipantsUnlike => 'Remove like';
@@ -1218,6 +1218,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripParticipantsOpenDialer => 'Open dialer';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organizer';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Child · planned';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planned';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'you';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(you)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'View user profile';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle => 'Public user profile';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo => 'View trip information';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Preferences and info for this participant on this trip';
+
+  @override
+  String get tripParticipantsSheetCall => 'Call';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promote to admin';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Remove admin rights';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Will be able to manage participants and groups';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label becomes a regular member again';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Remove from trip';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'This action is permanent.';
 
   @override
   String get tripNotFound => 'Trip not found';
@@ -4274,7 +4327,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Click the icon on the left of a traveler (planned or joined) to grant or remove admin role (except owner).';
+      'Tap a traveler to open their actions: you can grant or remove admin role, edit their trip info, or remove them from the trip (except the owner).';
 
   @override
   String get tripParticipantsUnlike => 'Remove like';
@@ -4287,6 +4340,59 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsOpenDialer => 'Open dialer';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organizer';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Child · planned';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planned';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'you';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(you)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'View user profile';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle => 'Public user profile';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo => 'View trip information';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Preferences and info for this participant on this trip';
+
+  @override
+  String get tripParticipantsSheetCall => 'Call';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promote to admin';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Remove admin rights';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Will be able to manage participants and groups';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label becomes a regular member again';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Remove from trip';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'This action is permanent.';
 
   @override
   String get tripNotFound => 'Trip not found';

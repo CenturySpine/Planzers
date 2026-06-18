@@ -2240,7 +2240,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripParticipantsAdminHint.
   ///
   /// In fr, this message translates to:
-  /// **'Clique sur l’icône à gauche d’un voyageur (prévu ou inscrit) pour lui donner ou retirer le rôle administrateur (sauf le créateur).'**
+  /// **'Appuie sur un voyageur pour ouvrir ses actions : tu peux y attribuer ou retirer le rôle administrateur, modifier ses informations ou le retirer du voyage (sauf le créateur).'**
   String get tripParticipantsAdminHint;
 
   /// No description provided for @tripParticipantsUnlike.
@@ -2266,6 +2266,102 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ouvrir le composeur'**
   String get tripParticipantsOpenDialer;
+
+  /// No description provided for @tripParticipantsRoleChipOwner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organisateur'**
+  String get tripParticipantsRoleChipOwner;
+
+  /// No description provided for @tripParticipantsRoleChipChildPlanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enfant · planifié'**
+  String get tripParticipantsRoleChipChildPlanned;
+
+  /// No description provided for @tripParticipantsRoleChipPlanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planifié'**
+  String get tripParticipantsRoleChipPlanned;
+
+  /// No description provided for @tripParticipantsRoleChipYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'toi'**
+  String get tripParticipantsRoleChipYou;
+
+  /// No description provided for @tripParticipantsSheetYouSuffix.
+  ///
+  /// In fr, this message translates to:
+  /// **'(toi)'**
+  String get tripParticipantsSheetYouSuffix;
+
+  /// No description provided for @tripParticipantsSheetViewProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir le profil utilisateur'**
+  String get tripParticipantsSheetViewProfile;
+
+  /// No description provided for @tripParticipantsSheetViewProfileSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil public de l\'utilisateur'**
+  String get tripParticipantsSheetViewProfileSubtitle;
+
+  /// No description provided for @tripParticipantsSheetViewTravelInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les informations de voyage'**
+  String get tripParticipantsSheetViewTravelInfo;
+
+  /// No description provided for @tripParticipantsSheetViewTravelInfoSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préférences et infos de ce participant pour le voyage'**
+  String get tripParticipantsSheetViewTravelInfoSubtitle;
+
+  /// No description provided for @tripParticipantsSheetCall.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appeler'**
+  String get tripParticipantsSheetCall;
+
+  /// No description provided for @tripParticipantsSheetPromoteAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Promouvoir administrateur'**
+  String get tripParticipantsSheetPromoteAdmin;
+
+  /// No description provided for @tripParticipantsSheetDemoteAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer les droits admin'**
+  String get tripParticipantsSheetDemoteAdmin;
+
+  /// No description provided for @tripParticipantsSheetPromoteAdminSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pourra gérer participants et groupes'**
+  String get tripParticipantsSheetPromoteAdminSubtitle;
+
+  /// No description provided for @tripParticipantsSheetDemoteAdminSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} redevient membre classique'**
+  String tripParticipantsSheetDemoteAdminSubtitle(String label);
+
+  /// No description provided for @tripParticipantsSheetRemoveFromTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer du voyage'**
+  String get tripParticipantsSheetRemoveFromTrip;
+
+  /// No description provided for @tripParticipantsRemoveDefinitiveWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action est définitive.'**
+  String get tripParticipantsRemoveDefinitiveWarning;
 
   /// No description provided for @tripNotFound.
   ///

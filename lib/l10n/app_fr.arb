@@ -485,11 +485,32 @@
     "placeholders": {"label": {}}
   },
   "tripParticipantsRemovedFromTrip": "Participant retiré du voyage",
-  "tripParticipantsAdminHint": "Clique sur l’icône à gauche d’un voyageur (prévu ou inscrit) pour lui donner ou retirer le rôle administrateur (sauf le créateur).",
+  "tripParticipantsAdminHint": "Appuie sur un voyageur pour ouvrir ses actions : tu peux y attribuer ou retirer le rôle administrateur, modifier ses informations ou le retirer du voyage (sauf le créateur).",
   "tripParticipantsUnlike": "Retirer le like",
   "tripParticipantsLike": "Liker",
   "tripParticipantsChangeRole": "Changer le rôle",
   "tripParticipantsOpenDialer": "Ouvrir le composeur",
+  "tripParticipantsRoleChipOwner": "Organisateur",
+  "tripParticipantsRoleChipChildPlanned": "Enfant · planifié",
+  "tripParticipantsRoleChipPlanned": "Planifié",
+  "tripParticipantsRoleChipYou": "toi",
+  "tripParticipantsSheetYouSuffix": "(toi)",
+  "tripParticipantsSheetViewProfile": "Voir le profil utilisateur",
+  "tripParticipantsSheetViewProfileSubtitle": "Profil public de l'utilisateur",
+  "tripParticipantsSheetViewTravelInfo": "Voir les informations de voyage",
+  "tripParticipantsSheetViewTravelInfoSubtitle": "Préférences et infos de ce participant pour le voyage",
+  "tripParticipantsSheetCall": "Appeler",
+  "tripParticipantsSheetPromoteAdmin": "Promouvoir administrateur",
+  "tripParticipantsSheetDemoteAdmin": "Retirer les droits admin",
+  "tripParticipantsSheetPromoteAdminSubtitle": "Pourra gérer participants et groupes",
+  "tripParticipantsSheetDemoteAdminSubtitle": "{label} redevient membre classique",
+  "@tripParticipantsSheetDemoteAdminSubtitle": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "tripParticipantsSheetRemoveFromTrip": "Retirer du voyage",
+  "tripParticipantsRemoveDefinitiveWarning": "Cette action est définitive.",
   "tripNotFound": "Voyage introuvable",
   "commonName": "Nom",
   "commonAdd": "Ajouter",

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
-import 'package:planerz/features/trips/presentation/trip_create_neon_palette.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -101,7 +101,7 @@ class _TripCreateCreatorNameDialogState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Dialog(
-      backgroundColor: TripCreateNeonPalette.surface,
+      backgroundColor: NeonPalette.surface,
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -119,7 +119,7 @@ class _TripCreateCreatorNameDialogState
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: TripCreateNeonPalette.deep,
+                  color: NeonPalette.deep,
                 ),
               ),
               const SizedBox(height: 18),
@@ -138,12 +138,12 @@ class _TripCreateCreatorNameDialogState
                     focusNode: _customNameFocusNode,
                     style: const TextStyle(
                       fontSize: 15,
-                      color: TripCreateNeonPalette.deep,
+                      color: NeonPalette.deep,
                     ),
                     decoration: InputDecoration(
                       hintText: l10n.tripCreateCreatorNameCustomPlaceholder,
                       hintStyle: const TextStyle(
-                        color: TripCreateNeonPalette.outline,
+                        color: NeonPalette.outline,
                       ),
                       border: InputBorder.none,
                       isDense: true,
@@ -179,7 +179,7 @@ class _TripCreateCreatorNameDialogState
                       l10n.commonCancel,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: TripCreateNeonPalette.text700,
+                        color: NeonPalette.text700,
                       ),
                     ),
                   ),
@@ -190,8 +190,8 @@ class _TripCreateCreatorNameDialogState
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: _canSave
-                            ? TripCreateNeonPalette.primary
-                            : TripCreateNeonPalette.outline,
+                            ? NeonPalette.primary
+                            : NeonPalette.outline,
                       ),
                     ),
                   ),
@@ -225,15 +225,15 @@ class _NameOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = selected
-        ? TripCreateNeonPalette.primary
-        : TripCreateNeonPalette.divider;
+        ? NeonPalette.primary
+        : NeonPalette.divider;
     final borderWidth = selected ? 2.0 : 1.5;
     final padding = selected ? 13.0 : 14.0;
 
     return Material(
       color: selected
-          ? TripCreateNeonPalette.nameOptionActiveBackground
-          : TripCreateNeonPalette.surface,
+          ? NeonPalette.nameOptionActiveBackground
+          : NeonPalette.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: borderColor, width: borderWidth),
@@ -247,7 +247,7 @@ class _NameOptionCard extends StatelessWidget {
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: TripCreateNeonPalette.nameIconBackground,
+                  color: NeonPalette.nameIconBackground,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: SizedBox(
@@ -257,8 +257,8 @@ class _NameOptionCard extends StatelessWidget {
                     icon,
                     size: 20,
                     color: enabled
-                        ? TripCreateNeonPalette.primary
-                        : TripCreateNeonPalette.outline,
+                        ? NeonPalette.primary
+                        : NeonPalette.outline,
                   ),
                 ),
               ),
@@ -273,8 +273,8 @@ class _NameOptionCard extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: enabled
-                            ? TripCreateNeonPalette.deep
-                            : TripCreateNeonPalette.outline,
+                            ? NeonPalette.deep
+                            : NeonPalette.outline,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -284,8 +284,8 @@ class _NameOptionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: enabled
-                              ? TripCreateNeonPalette.onSurfaceVariant
-                              : TripCreateNeonPalette.outline,
+                              ? NeonPalette.onSurfaceVariant
+                              : NeonPalette.outline,
                         ),
                       ),
                     ],
@@ -316,8 +316,8 @@ class _NeonRadioIndicator extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(
           color: selected
-              ? TripCreateNeonPalette.primary
-              : TripCreateNeonPalette.outline,
+              ? NeonPalette.primary
+              : NeonPalette.outline,
           width: 2,
         ),
       ),
@@ -328,7 +328,7 @@ class _NeonRadioIndicator extends StatelessWidget {
                 height: 12,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: TripCreateNeonPalette.primary,
+                  color: NeonPalette.primary,
                 ),
               ),
             )
@@ -366,12 +366,12 @@ class _DialogInputShellState extends State<_DialogInputShell> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
-        color: TripCreateNeonPalette.surface,
+        color: NeonPalette.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: focused
-              ? TripCreateNeonPalette.primary
-              : TripCreateNeonPalette.divider,
+              ? NeonPalette.primary
+              : NeonPalette.divider,
           width: focused ? 2 : 1.5,
         ),
       ),
@@ -381,8 +381,8 @@ class _DialogInputShellState extends State<_DialogInputShell> {
             Icons.edit_outlined,
             size: 18,
             color: focused
-                ? TripCreateNeonPalette.primary
-                : TripCreateNeonPalette.onSurfaceVariant,
+                ? NeonPalette.primary
+                : NeonPalette.onSurfaceVariant,
           ),
           const SizedBox(width: 10),
           Expanded(child: widget.child),
@@ -420,14 +420,14 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
     final l10n = AppLocalizations.of(context)!;
     final hasValue = widget.displayName?.trim().isNotEmpty == true;
     final borderColor = _hovered && widget.enabled
-        ? TripCreateNeonPalette.dateBorderSet
-        : TripCreateNeonPalette.divider;
+        ? NeonPalette.dateBorderSet
+        : NeonPalette.divider;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Material(
-        color: TripCreateNeonPalette.surface,
+        color: NeonPalette.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: borderColor, width: 1.5),
@@ -441,7 +441,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: TripCreateNeonPalette.nameIconBackground,
+                    color: NeonPalette.nameIconBackground,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: SizedBox(
@@ -452,7 +452,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                           ? Icons.badge_outlined
                           : Icons.edit_outlined,
                       size: 20,
-                      color: TripCreateNeonPalette.primary,
+                      color: NeonPalette.primary,
                     ),
                   ),
                 ),
@@ -470,8 +470,8 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                           fontWeight:
                               hasValue ? FontWeight.w600 : FontWeight.w400,
                           color: hasValue
-                              ? TripCreateNeonPalette.deep
-                              : TripCreateNeonPalette.outline,
+                              ? NeonPalette.deep
+                              : NeonPalette.outline,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -481,7 +481,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                             : l10n.tripCreateCreatorNameHintCustom,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: TripCreateNeonPalette.onSurfaceVariant,
+                          color: NeonPalette.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -490,7 +490,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                 DecoratedBox(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: TripCreateNeonPalette.nameEditPillBackground,
+                    color: NeonPalette.nameEditPillBackground,
                   ),
                   child: const SizedBox(
                     width: 34,
@@ -498,7 +498,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                     child: Icon(
                       Icons.edit_outlined,
                       size: 18,
-                      color: TripCreateNeonPalette.primary,
+                      color: NeonPalette.primary,
                     ),
                   ),
                 ),

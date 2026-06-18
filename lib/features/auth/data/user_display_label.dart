@@ -3,6 +3,10 @@ import 'package:planerz/features/trips/data/trip_member.dart';
 /// Canonical child marker prepended to resolved participant display labels.
 const String tripMemberChildLabelEmoji = '👶';
 
+/// Removes the child label prefix from [label] when present.
+String stripTripMemberChildLabelPrefix(String label) =>
+    _stripChildLabelPrefix(label);
+
 String _withChildLabelPrefix(String label, {required bool isChild}) {
   final trimmedLabel = label.trim();
   if (!isChild || trimmedLabel.isEmpty) {
@@ -16,10 +20,10 @@ String _withChildLabelPrefix(String label, {required bool isChild}) {
 }
 
 String _stripChildLabelPrefix(String label) {
-  final trimmedLabel = label.trim();
-  final canonicalPrefix = '$tripMemberChildLabelEmoji ';
-  if (trimmedLabel.startsWith(canonicalPrefix)) {
-    return trimmedLabel.substring(canonicalPrefix.length).trimLeft();
+  var trimmedLabel = label.trim();
+  while (trimmedLabel.startsWith(tripMemberChildLabelEmoji)) {
+    trimmedLabel =
+        trimmedLabel.substring(tripMemberChildLabelEmoji.length).trimLeft();
   }
   return trimmedLabel;
 }

@@ -15,7 +15,7 @@ import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
-import 'package:planerz/features/trips/presentation/trip_create_neon_palette.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/trip_date_range_picker_sheet.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -59,15 +59,15 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   ImageProvider? _coverPreview;
 
   TripDateRangePickerStyle get _pickerStyle => TripDateRangePickerStyle(
-        primary: TripCreateNeonPalette.primary,
-        primarySoft: TripCreateNeonPalette.primarySoft,
-        primaryTint: TripCreateNeonPalette.primaryTint,
-        deep: TripCreateNeonPalette.deep,
-        onSurfaceVariant: TripCreateNeonPalette.onSurfaceVariant,
-        divider: TripCreateNeonPalette.divider,
-        outline: TripCreateNeonPalette.outline,
-        surface: TripCreateNeonPalette.surface,
-        textSecondary: TripCreateNeonPalette.text700,
+        primary: NeonPalette.primary,
+        primarySoft: NeonPalette.primarySoft,
+        primaryTint: NeonPalette.primaryTint,
+        deep: NeonPalette.deep,
+        onSurfaceVariant: NeonPalette.onSurfaceVariant,
+        divider: NeonPalette.divider,
+        outline: NeonPalette.outline,
+        surface: NeonPalette.surface,
+        textSecondary: NeonPalette.text700,
       );
 
   bool get _isEditing => widget.isEditing;
@@ -214,9 +214,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: l10n.tripOverviewCropBanner,
-            toolbarColor: TripCreateNeonPalette.primary,
+            toolbarColor: NeonPalette.primary,
             toolbarWidgetColor: Colors.white,
-            activeControlsWidgetColor: TripCreateNeonPalette.primary,
+            activeControlsWidgetColor: NeonPalette.primary,
             dimmedLayerColor: Colors.black54,
             lockAspectRatio: false,
             initAspectRatio: CropAspectRatioPreset.ratio16x9,
@@ -618,12 +618,12 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                         textInputAction: TextInputAction.next,
                         style: const TextStyle(
                           fontSize: 15,
-                          color: TripCreateNeonPalette.deep,
+                          color: NeonPalette.deep,
                         ),
                         decoration: InputDecoration(
                           hintText: l10n.tripCreateTitlePlaceholder,
                           hintStyle: const TextStyle(
-                            color: TripCreateNeonPalette.outline,
+                            color: NeonPalette.outline,
                           ),
                           border: InputBorder.none,
                           isDense: true,
@@ -652,12 +652,12 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                           textInputAction: TextInputAction.next,
                           style: const TextStyle(
                             fontSize: 15,
-                            color: TripCreateNeonPalette.deep,
+                            color: NeonPalette.deep,
                           ),
                           decoration: InputDecoration(
                             hintText: l10n.tripCreateDestinationPlaceholder,
                             hintStyle: const TextStyle(
-                              color: TripCreateNeonPalette.outline,
+                              color: NeonPalette.outline,
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -687,12 +687,12 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                         textInputAction: TextInputAction.next,
                         style: const TextStyle(
                           fontSize: 15,
-                          color: TripCreateNeonPalette.deep,
+                          color: NeonPalette.deep,
                         ),
                         decoration: InputDecoration(
                           hintText: l10n.tripCreateLinkPlaceholder,
                           hintStyle: const TextStyle(
-                            color: TripCreateNeonPalette.outline,
+                            color: NeonPalette.outline,
                           ),
                           border: InputBorder.none,
                           isDense: true,
@@ -770,7 +770,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: TripCreateNeonPalette.primary,
+                                color: NeonPalette.primary,
                               ),
                             ),
                           ],
@@ -787,7 +787,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: TripCreateNeonPalette.text700,
+                              color: NeonPalette.text700,
                               letterSpacing: 0.2,
                             ),
                           ),
@@ -797,7 +797,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                             style: const TextStyle(
                               fontSize: 12,
                               height: 1.45,
-                              color: TripCreateNeonPalette.onSurfaceVariant,
+                              color: NeonPalette.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -866,12 +866,12 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                           style: const TextStyle(
                             fontSize: 15,
                             height: 1.45,
-                            color: TripCreateNeonPalette.deep,
+                            color: NeonPalette.deep,
                           ),
                           decoration: InputDecoration(
                             hintText: l10n.tripCreateDescriptionPlaceholder,
                             hintStyle: const TextStyle(
-                              color: TripCreateNeonPalette.outline,
+                              color: NeonPalette.outline,
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -913,20 +913,20 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   }) {
     return Theme(
       data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: TripCreateNeonPalette.scaffoldBackground,
-        splashColor: TripCreateNeonPalette.primary.withValues(alpha: 0.08),
-        highlightColor: TripCreateNeonPalette.primary.withValues(alpha: 0.05),
+        scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
+        splashColor: NeonPalette.primary.withValues(alpha: 0.08),
+        highlightColor: NeonPalette.primary.withValues(alpha: 0.05),
       ),
       child: Scaffold(
-        backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+        backgroundColor: NeonPalette.scaffoldBackground,
         appBar: AppBar(
-          backgroundColor: TripCreateNeonPalette.scaffoldBackground,
+          backgroundColor: NeonPalette.scaffoldBackground,
           elevation: 0,
           scrolledUnderElevation: 0,
           toolbarHeight: 52,
           leading: IconButton(
             icon: const Icon(Icons.close),
-            color: TripCreateNeonPalette.deep,
+            color: NeonPalette.deep,
             onPressed: _saving ? null : () => context.pop(),
           ),
           title: Text(
@@ -934,7 +934,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
-              color: TripCreateNeonPalette.deep,
+              color: NeonPalette.deep,
             ),
           ),
           centerTitle: false,
@@ -983,14 +983,14 @@ class _TripCreateLabel extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: TripCreateNeonPalette.text700,
+                color: NeonPalette.text700,
                 letterSpacing: 0.2,
               ),
               children: [
                 if (required)
                   const TextSpan(
                     text: '*',
-                    style: TextStyle(color: TripCreateNeonPalette.accent),
+                    style: TextStyle(color: NeonPalette.accent),
                   ),
               ],
             ),
@@ -1050,12 +1050,12 @@ class _TripCreateInputShellState extends State<_TripCreateInputShell> {
       ),
       alignment: widget.multiline ? Alignment.topLeft : Alignment.centerLeft,
       decoration: BoxDecoration(
-        color: TripCreateNeonPalette.surface,
+        color: NeonPalette.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: focused
-              ? TripCreateNeonPalette.primary
-              : TripCreateNeonPalette.divider,
+              ? NeonPalette.primary
+              : NeonPalette.divider,
           width: focused ? 2 : 1.5,
         ),
       ),
@@ -1070,8 +1070,8 @@ class _TripCreateInputShellState extends State<_TripCreateInputShell> {
                 widget.icon,
                 size: 20,
                 color: focused
-                    ? TripCreateNeonPalette.primary
-                    : TripCreateNeonPalette.onSurfaceVariant,
+                    ? NeonPalette.primary
+                    : NeonPalette.onSurfaceVariant,
               ),
             ),
             const SizedBox(width: 10),
@@ -1112,7 +1112,7 @@ class _CoverPhotoPicker extends StatelessWidget {
                   ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: TripCreateNeonPalette.coverGradient,
+                      colors: NeonPalette.coverGradient,
                     )
                   : null,
               image: preview != null
@@ -1195,14 +1195,14 @@ class _DayTripToggleCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Material(
       color: value
-          ? TripCreateNeonPalette.dayTripBackgroundActive
-          : TripCreateNeonPalette.surface,
+          ? NeonPalette.dayTripBackgroundActive
+          : NeonPalette.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: value
-              ? TripCreateNeonPalette.dayTripBorderActive
-              : TripCreateNeonPalette.divider,
+              ? NeonPalette.dayTripBorderActive
+              : NeonPalette.divider,
           width: 1.5,
         ),
       ),
@@ -1216,8 +1216,8 @@ class _DayTripToggleCard extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   color: value
-                      ? TripCreateNeonPalette.dayTripIconBackgroundActive
-                      : TripCreateNeonPalette.dayTripIconBackgroundRest,
+                      ? NeonPalette.dayTripIconBackgroundActive
+                      : NeonPalette.dayTripIconBackgroundRest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: SizedBox(
@@ -1227,8 +1227,8 @@ class _DayTripToggleCard extends StatelessWidget {
                     Icons.wb_sunny_outlined,
                     size: 20,
                     color: value
-                        ? TripCreateNeonPalette.primary
-                        : TripCreateNeonPalette.dayTripIconColorRest,
+                        ? NeonPalette.primary
+                        : NeonPalette.dayTripIconColorRest,
                   ),
                 ),
               ),
@@ -1242,7 +1242,7 @@ class _DayTripToggleCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: TripCreateNeonPalette.deep,
+                        color: NeonPalette.deep,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1251,7 +1251,7 @@ class _DayTripToggleCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.4,
-                        color: TripCreateNeonPalette.onSurfaceVariant,
+                        color: NeonPalette.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -1293,8 +1293,8 @@ class _NeonSwitch extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             color: value
-                ? TripCreateNeonPalette.primary
-                : TripCreateNeonPalette.divider,
+                ? NeonPalette.primary
+                : NeonPalette.divider,
           ),
           child: AnimatedAlign(
             duration: const Duration(milliseconds: 150),
@@ -1337,11 +1337,11 @@ class _TripCreateDateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: TripCreateNeonPalette.surface,
+      color: NeonPalette.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: TripCreateNeonPalette.dateBorderSet,
+          color: NeonPalette.dateBorderSet,
           width: 1.5,
         ),
       ),
@@ -1358,7 +1358,7 @@ class _TripCreateDateCard extends StatelessWidget {
                   Icon(
                     kickerIcon,
                     size: 14,
-                    color: TripCreateNeonPalette.primary,
+                    color: NeonPalette.primary,
                   ),
                   const SizedBox(width: 5),
                   Text(
@@ -1367,7 +1367,7 @@ class _TripCreateDateCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
-                      color: TripCreateNeonPalette.onSurfaceVariant,
+                      color: NeonPalette.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -1378,7 +1378,7 @@ class _TripCreateDateCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: TripCreateNeonPalette.deep,
+                  color: NeonPalette.deep,
                 ),
               ),
             ],
@@ -1430,10 +1430,10 @@ class _MealBoundCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: TripCreateNeonPalette.surface,
+        color: NeonPalette.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: TripCreateNeonPalette.divider,
+          color: NeonPalette.divider,
           width: 1.5,
         ),
       ),
@@ -1444,7 +1444,7 @@ class _MealBoundCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(dayIcon, size: 16, color: TripCreateNeonPalette.primary),
+                Icon(dayIcon, size: 16, color: NeonPalette.primary),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -1452,7 +1452,7 @@ class _MealBoundCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: TripCreateNeonPalette.deep,
+                      color: NeonPalette.deep,
                     ),
                   ),
                 ),
@@ -1464,13 +1464,13 @@ class _MealBoundCard extends StatelessWidget {
                 question,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: TripCreateNeonPalette.onSurfaceVariant,
+                  color: NeonPalette.onSurfaceVariant,
                 ),
               ),
             ),
             DecoratedBox(
               decoration: BoxDecoration(
-                color: TripCreateNeonPalette.segmentTrack,
+                color: NeonPalette.segmentTrack,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Padding(
@@ -1513,7 +1513,7 @@ class _MealSegmentOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? TripCreateNeonPalette.surface : Colors.transparent,
+      color: selected ? NeonPalette.surface : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       elevation: selected ? 1 : 0,
       shadowColor: Colors.black.withValues(alpha: 0.10),
@@ -1528,8 +1528,8 @@ class _MealSegmentOption extends StatelessWidget {
                 icon,
                 size: 18,
                 color: selected
-                    ? TripCreateNeonPalette.primary
-                    : TripCreateNeonPalette.onSurfaceVariant,
+                    ? NeonPalette.primary
+                    : NeonPalette.onSurfaceVariant,
               ),
               const SizedBox(height: 3),
               Text(
@@ -1540,8 +1540,8 @@ class _MealSegmentOption extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.1,
                   color: selected
-                      ? TripCreateNeonPalette.primary
-                      : TripCreateNeonPalette.onSurfaceVariant,
+                      ? NeonPalette.primary
+                      : NeonPalette.onSurfaceVariant,
                 ),
               ),
             ],
@@ -1567,8 +1567,8 @@ class _CreateTripCtaBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: TripCreateNeonPalette.scaffoldBackground,
-        border: Border(top: BorderSide(color: TripCreateNeonPalette.divider)),
+        color: NeonPalette.scaffoldBackground,
+        border: Border(top: BorderSide(color: NeonPalette.divider)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
@@ -1578,14 +1578,14 @@ class _CreateTripCtaBar extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              boxShadow: saving ? null : [TripCreateNeonPalette.ctaShadow],
+              boxShadow: saving ? null : [NeonPalette.ctaShadow],
             ),
             child: FilledButton.icon(
               onPressed: saving ? null : onPressed,
               style: FilledButton.styleFrom(
-                backgroundColor: TripCreateNeonPalette.primary,
+                backgroundColor: NeonPalette.primary,
                 disabledBackgroundColor:
-                    TripCreateNeonPalette.primary.withValues(alpha: 0.5),
+                    NeonPalette.primary.withValues(alpha: 0.5),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
