@@ -508,6 +508,30 @@ abstract class AppLocalizations {
   /// **'Mon compte'**
   String get accountTitle;
 
+  /// No description provided for @accountPersonalInfoSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations personnelles'**
+  String get accountPersonalInfoSectionTitle;
+
+  /// No description provided for @accountEmailAddressLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse e-mail'**
+  String get accountEmailAddressLabel;
+
+  /// No description provided for @accountFoodAllergensSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pris en compte dans la planification des repas'**
+  String get accountFoodAllergensSubtitle;
+
+  /// No description provided for @accountPhotoSheetTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo de profil'**
+  String get accountPhotoSheetTitle;
+
   /// No description provided for @accountCropProfilePhotoTitle.
   ///
   /// In fr, this message translates to:

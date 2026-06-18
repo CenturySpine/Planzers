@@ -227,6 +227,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountTitle => 'Mon compte';
 
   @override
+  String get accountPersonalInfoSectionTitle => 'Informations personnelles';
+
+  @override
+  String get accountEmailAddressLabel => 'Adresse e-mail';
+
+  @override
+  String get accountFoodAllergensSubtitle =>
+      'Pris en compte dans la planification des repas';
+
+  @override
+  String get accountPhotoSheetTitle => 'Photo de profil';
+
+  @override
   String get accountCropProfilePhotoTitle => 'Recadrer la photo de profil';
 
   @override
@@ -3448,6 +3461,19 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get accountTitle => 'Mon compte';
+
+  @override
+  String get accountPersonalInfoSectionTitle => 'Informations personnelles';
+
+  @override
+  String get accountEmailAddressLabel => 'Adresse e-mail';
+
+  @override
+  String get accountFoodAllergensSubtitle =>
+      'Pris en compte dans la planification des repas';
+
+  @override
+  String get accountPhotoSheetTitle => 'Photo de profil';
 
   @override
   String get accountCropProfilePhotoTitle => 'Recadrer la photo de profil';
