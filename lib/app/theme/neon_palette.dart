@@ -73,6 +73,65 @@ class NeonPalette {
   static Color get participantsGroupIconFg => dayTripIconColorRest;
   static Color get participantsAdminBadgeBg => dayTripIconColorRest;
 
+  // --- Trip bottom navigation (handoff tokens) ---
+
+  static const Color primaryDark = Color(0xFF5036AD);
+
+  static const double bottomNavBarHeight = 72;
+  static const double bottomNavFabSize = 60;
+  static const double bottomNavFabOverflow = 24;
+  static const double bottomNavFabBorderWidth = 4;
+  static const double bottomNavFabIconSize = 27;
+  static const double bottomNavTabIconSize = 24;
+  static const double bottomNavIndicatorWidth = 18;
+  static const double bottomNavIndicatorHeight = 3;
+  static const double bottomNavIndicatorTop = 6;
+
+  static LinearGradient get bottomNavFabGradient => const LinearGradient(
+        colors: [primary, primaryDark],
+        transform: GradientRotation(1.0471975511965976), // CSS 150deg
+      );
+
+  static List<BoxShadow> get bottomNavElevation => const [
+        BoxShadow(
+          color: Color(0x14000000),
+          blurRadius: 8,
+          spreadRadius: 3,
+          offset: Offset(0, 4),
+        ),
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+      ];
+
+  static List<BoxShadow> get bottomNavFabShadow => [
+        BoxShadow(
+          color: primary.withValues(alpha: 0.70),
+          blurRadius: 22,
+          spreadRadius: -6,
+          offset: const Offset(0, 10),
+        ),
+        const BoxShadow(
+          color: Color(0x2E000000),
+          blurRadius: 6,
+          offset: Offset(0, 2),
+        ),
+      ];
+
+  static List<BoxShadow> get bottomNavFabShadowSelected => [
+        const BoxShadow(
+          color: surface,
+          spreadRadius: 3,
+        ),
+        const BoxShadow(
+          color: primary,
+          spreadRadius: 6,
+        ),
+        ...bottomNavFabShadow,
+      ];
+
   /// Local theme overlay so Material widgets on Néon screens use these tokens.
   static ThemeData overlayOn(ThemeData base) {
     return base.copyWith(

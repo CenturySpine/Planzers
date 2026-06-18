@@ -8,6 +8,7 @@ import 'package:planerz/features/account/presentation/account_app_bar_actions.da
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -266,6 +267,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                           'Planning': unreadActivities,
                           'Dépenses': unreadExpenses,
                         },
+                        localizedLabel: localizedNavLabel,
                       ),
               );
             },
@@ -305,230 +307,261 @@ class _TripNavDestination {
   final IconData selectedIcon;
 }
 
-/// Material 3–style bottom destinations equally distributed across width.
-/// The Planning tab (center) is rendered as a floating FAB-style button that
-/// visually rises above the bar surface.
+/// Néon bottom navigation: five destinations with a raised Planning FAB.
 class _TripMobileScrollableNavBar extends StatelessWidget {
   const _TripMobileScrollableNavBar({
     required this.selectedIndex,
     required this.onDestinationSelected,
     required this.destinations,
     required this.unreadByTabLabel,
+    required this.localizedLabel,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<_TripNavDestination> destinations;
   final Map<String, int> unreadByTabLabel;
+  final String Function(String label) localizedLabel;
 
-  static const double _barHeight = 62;
-  static const double _planningButtonSize = 56;
-  // Target visual pixels the Planning button floats above the bar's visible top edge.
-  static const double _planningFloat = 8;
-  // Index of the Planning tab inside [destinations].
   static const int _planningIdx = 2;
+  static const Curve _tabCurve = Cubic(0.2, 0, 0, 1);
+  static const Curve _fabCurve = Cubic(0.2, 0, 0, 1);
+  static const Duration _tabDuration = Duration(milliseconds: 150);
+  static const Duration _fabDuration = Duration(milliseconds: 250);
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bg = NavigationBarTheme.of(context).backgroundColor ??
-        colorScheme.surfaceContainer;
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final tabDuration = disableAnimations ? Duration.zero : _tabDuration;
+    final fabDuration = disableAnimations ? Duration.zero : _fabDuration;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final planningOverflow = NeonPalette.bottomNavFabOverflow + bottomInset;
     final planningSelected = selectedIndex == _planningIdx;
     final planningDest = destinations[_planningIdx];
     final planningUnread = unreadByTabLabel['Planning'] ?? 0;
-    // Flutter web does not relay OS window insets to MediaQuery.padding, so
-    // padding.bottom is 0 on all web variants. Computing the overflow from the
-    // inset keeps the visual float consistent across native and web.
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    final planningOverflow = _planningFloat + bottomInset;
 
     return SizedBox(
-      height: _barHeight + planningOverflow,
+      height: NeonPalette.bottomNavBarHeight + planningOverflow,
       child: Stack(
         clipBehavior: Clip.none,
-        alignment: Alignment.topCenter,
+        alignment: Alignment.bottomCenter,
         children: [
-          // ── Bar surface ──────────────────────────────────────────────────
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Material(
-              color: bg,
-              elevation: 3,
-              shadowColor: Colors.transparent,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: NeonPalette.surface,
+                boxShadow: NeonPalette.bottomNavElevation,
+              ),
               child: SafeArea(
                 top: false,
                 child: SizedBox(
-                  height: _barHeight,
+                  height: NeonPalette.bottomNavBarHeight,
                   child: Row(
                     children: [
                       for (var index = 0;
                           index < destinations.length;
                           index++)
-                        Expanded(
-                          child: index == _planningIdx
-                              // Centre slot: just the selection dot, taps handled
-                              // by the floating button above.
-                              ? GestureDetector(
-                                  onTap: () => onDestinationSelected(index),
-                                  behavior: HitTestBehavior.opaque,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      AnimatedContainer(
-                                        duration: const Duration(
-                                            milliseconds: 200),
-                                        curve: Curves.easeOutCubic,
-                                        width: 6,
-                                        height: 6,
-                                        margin: const EdgeInsets.only(
-                                            bottom: 4),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: planningSelected
-                                              ? colorScheme.primary
-                                              : Colors.transparent,
-                                        ),
-                                      ),
-                                    ],
+                        if (index == _planningIdx)
+                          Expanded(
+                            flex: 11,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              alignment: Alignment.topCenter,
+                              children: [
+                                Positioned(
+                                  top: -NeonPalette.bottomNavFabOverflow,
+                                  child: _TripPlanningFab(
+                                    selected: planningSelected,
+                                    icon: planningSelected
+                                        ? planningDest.selectedIcon
+                                        : planningDest.icon,
+                                    unreadCount: planningUnread,
+                                    onTap: () =>
+                                        onDestinationSelected(_planningIdx),
+                                    fabDuration: fabDuration,
                                   ),
-                                )
-                              : Builder(
-                                  builder: (context) {
-                                    final d = destinations[index];
-                                    final selected = selectedIndex == index;
-                                    return GestureDetector(
-                                      onTap: () =>
-                                          onDestinationSelected(index),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Column(
-                                        children: [
-                                          AnimatedContainer(
-                                            duration: const Duration(
-                                                milliseconds: 200),
-                                            curve: Curves.easeOutCubic,
-                                            height: 3,
-                                            decoration: BoxDecoration(
-                                              color: selected
-                                                  ? colorScheme.primary
-                                                  : Colors.transparent,
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                bottomLeft:
-                                                    Radius.circular(2),
-                                                bottomRight:
-                                                    Radius.circular(2),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                _buildNavIcon(
-                                                  icon: selected
-                                                      ? d.selectedIcon
-                                                      : d.icon,
-                                                  unreadCount:
-                                                      unreadByTabLabel[
-                                                              d.label] ??
-                                                          0,
-                                                  showBadge:
-                                                      d.label == 'Messagerie' ||
-                                                      d.label == 'Dépenses',
-                                                  color: selected
-                                                      ? colorScheme.primary
-                                                      : colorScheme
-                                                          .onSurfaceVariant,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          AnimatedContainer(
-                                            duration: const Duration(
-                                                milliseconds: 200),
-                                            curve: Curves.easeOutCubic,
-                                            width: 6,
-                                            height: 6,
-                                            margin: const EdgeInsets.only(
-                                                bottom: 4),
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: selected
-                                                  ? colorScheme.primary
-                                                  : Colors.transparent,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
                                 ),
-                        ),
+                              ],
+                            ),
+                          )
+                        else
+                          Expanded(
+                            flex: 10,
+                            child: _TripBottomNavTab(
+                              destination: destinations[index],
+                              selected: selectedIndex == index,
+                              label:
+                                  localizedLabel(destinations[index].label),
+                              unreadCount: unreadByTabLabel[
+                                      destinations[index].label] ??
+                                  0,
+                              showBadge: destinations[index].label ==
+                                      'Messagerie' ||
+                                  destinations[index].label == 'Dépenses',
+                              expensesAccent:
+                                  destinations[index].label == 'Dépenses',
+                              onTap: () => onDestinationSelected(index),
+                              tabDuration: tabDuration,
+                            ),
+                          ),
                     ],
                   ),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
 
-          // ── Planning floating button ──────────────────────────────────────
-          Positioned(
-            top: 0,
-            child: GestureDetector(
-              onTap: () => onDestinationSelected(_planningIdx),
+class _TripBottomNavTab extends StatelessWidget {
+  const _TripBottomNavTab({
+    required this.destination,
+    required this.selected,
+    required this.label,
+    required this.unreadCount,
+    required this.showBadge,
+    required this.expensesAccent,
+    required this.onTap,
+    required this.tabDuration,
+  });
+
+  final _TripNavDestination destination;
+  final bool selected;
+  final String label;
+  final int unreadCount;
+  final bool showBadge;
+  final bool expensesAccent;
+  final VoidCallback onTap;
+  final Duration tabDuration;
+
+  Color get _activeColor =>
+      expensesAccent ? NeonPalette.accent : NeonPalette.primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        selected ? _activeColor : NeonPalette.onSurfaceVariant;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (selected)
+            Positioned(
+              top: NeonPalette.bottomNavIndicatorTop,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                width: _planningButtonSize,
-                height: _planningButtonSize,
+                duration: tabDuration,
+                curve: _TripMobileScrollableNavBar._tabCurve,
+                width: NeonPalette.bottomNavIndicatorWidth,
+                height: NeonPalette.bottomNavIndicatorHeight,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.primary,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x28000000),
-                      blurRadius: 6,
-                      spreadRadius: 0,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      planningSelected
-                          ? planningDest.selectedIcon
-                          : planningDest.icon,
-                      color: colorScheme.onPrimary,
-                      size: 26,
-                    ),
-                    if (planningUnread > 0)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colorScheme.error,
-                            border: Border.all(
-                              color: colorScheme.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  color: _activeColor,
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
             ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildNavIcon(
+                icon: selected ? destination.selectedIcon : destination.icon,
+                unreadCount: unreadCount,
+                showBadge: showBadge,
+                color: color,
+                size: NeonPalette.bottomNavTabIconSize,
+              ),
+              const SizedBox(height: 3),
+              AnimatedDefaultTextStyle(
+                duration: tabDuration,
+                curve: _TripMobileScrollableNavBar._tabCurve,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
+                  height: 1,
+                  color: color,
+                ),
+                child: Text(label),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TripPlanningFab extends StatelessWidget {
+  const _TripPlanningFab({
+    required this.selected,
+    required this.icon,
+    required this.unreadCount,
+    required this.onTap,
+    required this.fabDuration,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final int unreadCount;
+  final VoidCallback onTap;
+  final Duration fabDuration;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: fabDuration,
+        curve: _TripMobileScrollableNavBar._fabCurve,
+        width: NeonPalette.bottomNavFabSize,
+        height: NeonPalette.bottomNavFabSize,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: NeonPalette.bottomNavFabGradient,
+          border: Border.all(
+            color: NeonPalette.surface,
+            width: NeonPalette.bottomNavFabBorderWidth,
+          ),
+          boxShadow: selected
+              ? NeonPalette.bottomNavFabShadowSelected
+              : NeonPalette.bottomNavFabShadow,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: NeonPalette.bottomNavFabIconSize,
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: NeonPalette.accent,
+                    border: Border.all(
+                      color: NeonPalette.surface,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
