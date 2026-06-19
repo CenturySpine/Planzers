@@ -1,6 +1,6 @@
 ---
 description: Clean code, modular architecture, reusable design, performance-first
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Engineering Standards: Clean, Modular, Fast
