@@ -122,12 +122,6 @@ class TripSettingsPage extends ConsumerWidget {
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions'),
               ),
-              _SettingsSectionCard(
-                title: l10n.tripSettingsGeneralComingSoonTitle,
-                icon: Icons.tune_outlined,
-                description: l10n.tripSettingsGeneralSectionDescription,
-                onTap: () => context.push('/trips/$tripId/settings/general'),
-              ),
             ],
           ),
         );

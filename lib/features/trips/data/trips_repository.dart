@@ -218,6 +218,8 @@ class TripsRepository {
     String address = '',
     String linkUrl = '',
     String description = '',
+    String photosStorageUrl = '',
+    bool cupidonModeEnabled = false,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -236,7 +238,8 @@ class TripsRepository {
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
       if (trimmedDescription.isNotEmpty) 'description': trimmedDescription,
-      'cupidonModeEnabled': true,
+      'photosStorageUrl': photosStorageUrl.trim(),
+      'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
@@ -325,6 +328,8 @@ class TripsRepository {
     required String address,
     required String linkUrl,
     String description = '',
+    String photosStorageUrl = '',
+    bool? cupidonModeEnabled,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -370,6 +375,8 @@ class TripsRepository {
         'description': trimmedDescription
       else
         'description': FieldValue.delete(),
+      'photosStorageUrl': photosStorageUrl.trim(),
+      if (cupidonModeEnabled != null) 'cupidonModeEnabled': cupidonModeEnabled,
     };
 
     if (isDayTrip != null) {
@@ -420,38 +427,6 @@ class TripsRepository {
     }
 
     await docRef.update(update);
-  }
-
-  Future<void> updateTripGeneralSettings({
-    required String tripId,
-    required String photosStorageUrl,
-    required bool cupidonModeEnabled,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-
-    final tripRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await tripRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    if (!trip.memberHasAdminRole(user.uid)) {
-      throw StateError('Droits insuffisants pour modifier ces reglages');
-    }
-
-    await tripRef.update(<String, dynamic>{
-      'photosStorageUrl': photosStorageUrl.trim(),
-      'cupidonModeEnabled': cupidonModeEnabled,
-    });
   }
 
   /// Invite secret shared with guests (same value as the `token` query param

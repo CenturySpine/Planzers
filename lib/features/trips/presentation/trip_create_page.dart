@@ -40,10 +40,12 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   late final TextEditingController _titleController;
   late final TextEditingController _destinationController;
   late final TextEditingController _linkController;
+  late final TextEditingController _photosStorageController;
   late final TextEditingController _descriptionController;
   late TripMemberStay _stay;
   DateTime? _singleDayDate;
   bool _isDayTrip = false;
+  bool _cupidonModeEnabled = false;
   String? _profileName;
   String _customName = '';
   bool _useProfileName = false;
@@ -78,6 +80,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _titleController = TextEditingController();
     _destinationController = TextEditingController();
     _linkController = TextEditingController();
+    _photosStorageController = TextEditingController();
     _descriptionController = TextEditingController();
     _stay = TripMemberStay.defaultForNewTripEditor();
     _singleDayDate = DateUtils.dateOnly(DateTime.now());
@@ -89,6 +92,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _titleController.dispose();
     _destinationController.dispose();
     _linkController.dispose();
+    _photosStorageController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -100,7 +104,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _titleController.text = trip.title;
     _destinationController.text = trip.destination;
     _linkController.text = trip.linkUrl;
+    _photosStorageController.text = trip.photosStorageUrl;
     _descriptionController.text = trip.description;
+    _cupidonModeEnabled = trip.cupidonModeEnabled;
     _isDayTrip = trip.isDayTrip;
     if (trip.isDayTrip) {
       _singleDayDate = trip.startDate != null
@@ -350,6 +356,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     final destination = _destinationController.text.trim();
     final description = _descriptionController.text.trim();
     final linkUrl = _linkController.text.trim();
+    final photosStorageUrl = _photosStorageController.text.trim();
 
     final linkError = _validateLinkUrl(linkUrl);
     if (linkError != null) {
@@ -411,6 +418,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
         destination: destination,
         description: description,
         linkUrl: linkUrl,
+        photosStorageUrl: photosStorageUrl,
         creatorName: creatorName,
       );
       return;
@@ -448,6 +456,8 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             address: _isDayTrip ? '' : _preservedAddress,
             linkUrl: linkUrl,
             description: description,
+            photosStorageUrl: photosStorageUrl,
+            cupidonModeEnabled: _cupidonModeEnabled,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: tripStartDayPart,
@@ -491,6 +501,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     required String destination,
     required String description,
     required String linkUrl,
+    required String photosStorageUrl,
     required String creatorName,
   }) async {
     DateTime? startDate;
@@ -521,6 +532,8 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             creatorName: creatorName,
             useProfileName: _useProfileName,
             linkUrl: linkUrl,
+            photosStorageUrl: photosStorageUrl,
+            cupidonModeEnabled: _cupidonModeEnabled,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: _isDayTrip ? null : _stay.startDayPart,
@@ -881,6 +894,47 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                       ),
                     ),
                   ),
+                  _FormSection(
+                    child: _TripCreateLabel(
+                      label: l10n.tripCreatePhotosStorageLabel,
+                      child: _TripCreateInputShell(
+                        icon: Icons.link_outlined,
+                        enabled: !_saving,
+                        builder: (focusNode) => TextField(
+                          controller: _photosStorageController,
+                          focusNode: focusNode,
+                          enabled: !_saving,
+                          keyboardType: TextInputType.url,
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: NeonPalette.deep,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: l10n.tripCreatePhotosStoragePlaceholder,
+                            hintStyle: const TextStyle(
+                              color: NeonPalette.outline,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  _FormSection(
+                    child: _NeonFeatureToggleCard(
+                      value: _cupidonModeEnabled,
+                      enabled: !_saving,
+                      icon: Icons.favorite_outline,
+                      title: l10n.tripCreateCupidonModeLabel,
+                      subtitle: l10n.tripCreateCupidonModeSubtitle,
+                      onChanged: (enabled) {
+                        setState(() => _cupidonModeEnabled = enabled);
+                      },
+                    ),
+                  ),
                   if (_errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -1179,20 +1233,25 @@ class _CoverPhotoPicker extends StatelessWidget {
   }
 }
 
-class _DayTripToggleCard extends StatelessWidget {
-  const _DayTripToggleCard({
+class _NeonFeatureToggleCard extends StatelessWidget {
+  const _NeonFeatureToggleCard({
     required this.value,
     required this.enabled,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.onChanged,
   });
 
   final bool value;
   final bool enabled;
+  final IconData icon;
+  final String title;
+  final String subtitle;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: value
           ? NeonPalette.dayTripBackgroundActive
@@ -1224,7 +1283,7 @@ class _DayTripToggleCard extends StatelessWidget {
                   width: 38,
                   height: 38,
                   child: Icon(
-                    Icons.wb_sunny_outlined,
+                    icon,
                     size: 20,
                     color: value
                         ? NeonPalette.primary
@@ -1238,7 +1297,7 @@ class _DayTripToggleCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.tripDayTripLabel,
+                      title,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1247,7 +1306,7 @@ class _DayTripToggleCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      l10n.tripCreateDayTripSubtitle,
+                      subtitle,
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.4,
@@ -1265,6 +1324,31 @@ class _DayTripToggleCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DayTripToggleCard extends StatelessWidget {
+  const _DayTripToggleCard({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return _NeonFeatureToggleCard(
+      value: value,
+      enabled: enabled,
+      icon: Icons.wb_sunny_outlined,
+      title: l10n.tripDayTripLabel,
+      subtitle: l10n.tripCreateDayTripSubtitle,
+      onChanged: onChanged,
     );
   }
 }

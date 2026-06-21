@@ -37,7 +37,6 @@ import 'package:planerz/features/trips/presentation/trip_shopping_permissions_pa
 import 'package:planerz/features/trips/presentation/trip_carpool_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_permissions_page.dart';
-import 'package:planerz/features/trips/presentation/trip_settings_general_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
@@ -238,9 +237,8 @@ final GoRouter appRouter = GoRouter(
             ),
             GoRoute(
               path: 'general',
-              builder: (context, state) => TripSettingsGeneralPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
+              redirect: (context, state) =>
+                  '/trips/${state.pathParameters['tripId']!}/settings',
             ),
             GoRoute(
               path: 'trip',

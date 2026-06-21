@@ -514,6 +514,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripCreateDescriptionPlaceholder => 'Un mot sur le programme…';
 
   @override
+  String get tripCreatePhotosStorageLabel => 'Lien de stockage des photos';
+
+  @override
+  String get tripCreatePhotosStoragePlaceholder =>
+      'Lien du dossier ou service de stockage partagé';
+
+  @override
+  String get tripCreateCupidonModeLabel => 'Mode Cupidon';
+
+  @override
+  String get tripCreateCupidonModeSubtitle =>
+      'Active la fonctionnalité « Aimer » entre participants du voyage.';
+
+  @override
   String get tripCreateLinkPlaceholder => 'Coller un lien Airbnb, etc.';
 
   @override
@@ -661,7 +675,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripBackToTrip => 'Retour au voyage';
 
   @override
-  String get tripSettingsTitle => 'Paramètres du voyage';
+  String get tripSettingsTitle => 'Permissions';
 
   @override
   String get tripUserPreferencesTitle => 'Mes préférences du voyage';
@@ -716,40 +730,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get tripSettingsPermissionsSectionDescription =>
       'Définis les rôles minimaux pour chaque domaine du voyage.';
-
-  @override
-  String get tripSettingsGeneralSectionTitle => 'Paramètres généraux';
-
-  @override
-  String get tripSettingsGeneralSectionDescription =>
-      'Réglages transverses du voyage (hors permissions).';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageTitle => 'Stockage des photos';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageDescription =>
-      'Lien du dossier ou service de stockage partagé pour les photos du voyage.';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldLabel =>
-      'Lien de stockage photos';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldHint =>
-      'https://drive.google.com/... ou https://photos.app.goo.gl/...';
-
-  @override
-  String get tripSettingsGeneralCupidonModeDescription =>
-      'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.';
-
-  @override
-  String get tripSettingsGeneralComingSoonTitle =>
-      'Paramètres généraux du voyage';
-
-  @override
-  String get tripSettingsGeneralComingSoonDescription =>
-      'Cette section arrive bientôt.';
 
   @override
   String get roleOwner => 'Créateur';
@@ -3750,6 +3730,20 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripCreateDescriptionPlaceholder => 'Un mot sur le programme…';
 
   @override
+  String get tripCreatePhotosStorageLabel => 'Lien de stockage des photos';
+
+  @override
+  String get tripCreatePhotosStoragePlaceholder =>
+      'Lien du dossier ou service de stockage partagé';
+
+  @override
+  String get tripCreateCupidonModeLabel => 'Mode Cupidon';
+
+  @override
+  String get tripCreateCupidonModeSubtitle =>
+      'Active la fonctionnalité « Aimer » entre participants du voyage.';
+
+  @override
   String get tripCreateLinkPlaceholder => 'Coller un lien Airbnb, etc.';
 
   @override
@@ -3897,7 +3891,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripBackToTrip => 'Retour au voyage';
 
   @override
-  String get tripSettingsTitle => 'Paramètres du voyage';
+  String get tripSettingsTitle => 'Permissions';
 
   @override
   String get tripUserPreferencesTitle => 'Mes préférences du voyage';
@@ -3952,40 +3946,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripSettingsPermissionsSectionDescription =>
       'Définis les rôles minimaux pour chaque domaine du voyage.';
-
-  @override
-  String get tripSettingsGeneralSectionTitle => 'Paramètres généraux';
-
-  @override
-  String get tripSettingsGeneralSectionDescription =>
-      'Réglages transverses du voyage (hors permissions).';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageTitle => 'Stockage des photos';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageDescription =>
-      'Lien du dossier ou service de stockage partagé pour les photos du voyage.';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldLabel =>
-      'Lien de stockage photos';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldHint =>
-      'https://drive.google.com/... ou https://photos.app.goo.gl/...';
-
-  @override
-  String get tripSettingsGeneralCupidonModeDescription =>
-      'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.';
-
-  @override
-  String get tripSettingsGeneralComingSoonTitle =>
-      'Paramètres généraux du voyage';
-
-  @override
-  String get tripSettingsGeneralComingSoonDescription =>
-      'Cette section arrive bientôt.';
 
   @override
   String get roleOwner => 'Créateur';
