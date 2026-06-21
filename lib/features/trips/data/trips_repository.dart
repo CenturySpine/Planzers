@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -150,10 +150,22 @@ class TripsRepository {
     }
   }
 
+  static const _inviteTokenChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  static final _inviteTokenRandom = Random.secure();
+
   String _generateInviteToken() {
-    final now = DateTime.now().microsecondsSinceEpoch.toString();
-    final uid = auth.currentUser?.uid ?? 'anon';
-    return sha256.convert('$uid-$now'.codeUnits).toString().substring(0, 32);
+    String segment() => String.fromCharCodes(
+          List.generate(
+            3,
+            (_) => _inviteTokenChars.codeUnitAt(
+              _inviteTokenRandom.nextInt(_inviteTokenChars.length),
+            ),
+          ),
+        );
+    final token = '${segment()}-${segment()}';
+    // ponytail: format guard; upgrade path is a dedicated test if rules tighten.
+    assert(RegExp(r'^[A-Z0-9]{3}-[A-Z0-9]{3}$').hasMatch(token));
+    return token;
   }
 
   Stream<Trip?> watchTrip(String tripId) {
@@ -243,6 +255,7 @@ class TripsRepository {
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
+      'inviteToken': _generateInviteToken(),
       'createdAt': FieldValue.serverTimestamp(),
     };
     if (isDayTrip) {
