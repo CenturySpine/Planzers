@@ -2789,6 +2789,33 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewTopTabAnnouncements => 'Annonces';
 
   @override
+  String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionGroup => 'Le groupe';
+
+  @override
+  String get tripOverviewSectionModules => 'Modules du voyage';
+
+  @override
+  String get tripOverviewSectionSettings => 'Réglages du voyage';
+
+  @override
+  String get tripOverviewInviteCodeLabel => 'Code';
+
+  @override
+  String get tripOverviewShareCode => 'Partager';
+
+  @override
+  String get tripOverviewPhotosAction => 'Photos';
+
+  @override
+  String get tripOverviewBannerEmpty => 'Aucune photo';
+
+  @override
+  String get tripOverviewBannerAddPhoto => 'Ajouter une photo de couverture';
+
+  @override
   String get tripAnnouncementsPageTitle => 'Annonces des organisateurs';
 
   @override
@@ -5931,6 +5958,33 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Annonces';
+
+  @override
+  String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionGroup => 'Le groupe';
+
+  @override
+  String get tripOverviewSectionModules => 'Modules du voyage';
+
+  @override
+  String get tripOverviewSectionSettings => 'Réglages du voyage';
+
+  @override
+  String get tripOverviewInviteCodeLabel => 'Code';
+
+  @override
+  String get tripOverviewShareCode => 'Partager';
+
+  @override
+  String get tripOverviewPhotosAction => 'Photos';
+
+  @override
+  String get tripOverviewBannerEmpty => 'Aucune photo';
+
+  @override
+  String get tripOverviewBannerAddPhoto => 'Ajouter une photo de couverture';
 
   @override
   String get tripAnnouncementsPageTitle => 'Annonces des organisateurs';

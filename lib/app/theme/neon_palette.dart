@@ -73,6 +73,33 @@ class NeonPalette {
   static Color get participantsGroupIconFg => dayTripIconColorRest;
   static Color get participantsAdminBadgeBg => dayTripIconColorRest;
 
+  // --- Trip overview screen (handoff tokens) ---
+
+  static const Color success = Color(0xFF2EB37F);
+  static const Color error = Color(0xFFBA1A1A);
+  static const Color surfaceHighest = Color(0xFFEEEFF2);
+
+  static Color get accentSoft => Color.lerp(surface, accent, 0.16)!;
+
+  static List<BoxShadow> get elev1 => const [
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 3,
+          offset: Offset(0, 1),
+        ),
+        BoxShadow(
+          color: Color(0x0F000000),
+          blurRadius: 2,
+          offset: Offset(0, 1),
+        ),
+      ];
+
+  static List<Color> get overviewBannerGradient => [
+        deep,
+        primary,
+        Color.lerp(primary, secondary, 0.55)!,
+      ];
+
   // --- Trip bottom navigation (handoff tokens) ---
 
   static const Color primaryDark = Color(0xFF5036AD);
@@ -149,6 +176,15 @@ class NeonPalette {
       ),
       splashColor: primary.withValues(alpha: 0.08),
       highlightColor: primary.withValues(alpha: 0.05),
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.04),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: divider),
+        ),
+      ),
       colorScheme: base.colorScheme.copyWith(
         primary: primary,
         onPrimary: Colors.white,
@@ -161,6 +197,7 @@ class NeonPalette {
         outline: outline,
         outlineVariant: divider,
         error: accent,
+        surfaceTint: Colors.transparent,
         surfaceContainerHighest: segmentTrack,
       ),
     );

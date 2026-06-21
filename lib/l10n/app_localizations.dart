@@ -5028,6 +5028,60 @@ abstract class AppLocalizations {
   /// **'Annonces'**
   String get tripOverviewTopTabAnnouncements;
 
+  /// No description provided for @tripOverviewSectionAccommodation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destination'**
+  String get tripOverviewSectionAccommodation;
+
+  /// No description provided for @tripOverviewSectionGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le groupe'**
+  String get tripOverviewSectionGroup;
+
+  /// No description provided for @tripOverviewSectionModules.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modules du voyage'**
+  String get tripOverviewSectionModules;
+
+  /// No description provided for @tripOverviewSectionSettings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages du voyage'**
+  String get tripOverviewSectionSettings;
+
+  /// No description provided for @tripOverviewInviteCodeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code'**
+  String get tripOverviewInviteCodeLabel;
+
+  /// No description provided for @tripOverviewShareCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partager'**
+  String get tripOverviewShareCode;
+
+  /// No description provided for @tripOverviewPhotosAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photos'**
+  String get tripOverviewPhotosAction;
+
+  /// No description provided for @tripOverviewBannerEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune photo'**
+  String get tripOverviewBannerEmpty;
+
+  /// No description provided for @tripOverviewBannerAddPhoto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une photo de couverture'**
+  String get tripOverviewBannerAddPhoto;
+
   /// No description provided for @tripAnnouncementsPageTitle.
   ///
   /// In fr, this message translates to:
