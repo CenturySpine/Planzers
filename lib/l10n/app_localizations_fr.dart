@@ -681,10 +681,32 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'Mes préférences du voyage';
+  String get tripUserPreferencesTitle => 'Mes préférences';
 
   @override
   String get tripUserPreferencesMenuAction => 'Mes préférences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'Mes préférences pour le voyage';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'Ces réglages ne concernent que toi. Tu peux les changer à tout moment.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'Mon profil sur ce voyage';
+
+  @override
+  String get tripUserPreferencesStaySection => 'Mon séjour';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & confidentialité';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'Tu participes en tant que';
+
+  @override
+  String get tripUserPreferencesSaved => 'Préférences enregistrées';
 
   @override
   String get tripPhoneVisibilityTitle =>
@@ -3941,10 +3963,32 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'Mes préférences du voyage';
+  String get tripUserPreferencesTitle => 'Mes préférences';
 
   @override
   String get tripUserPreferencesMenuAction => 'Mes préférences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'Mes préférences pour le voyage';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'Ces réglages ne concernent que toi. Tu peux les changer à tout moment.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'Mon profil sur ce voyage';
+
+  @override
+  String get tripUserPreferencesStaySection => 'Mon séjour';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & confidentialité';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'Tu participes en tant que';
+
+  @override
+  String get tripUserPreferencesSaved => 'Préférences enregistrées';
 
   @override
   String get tripPhoneVisibilityTitle =>

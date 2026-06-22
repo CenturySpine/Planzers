@@ -679,10 +679,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'My trip preferences';
+  String get tripUserPreferencesTitle => 'My preferences';
 
   @override
   String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'My preferences for the trip';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'These settings only apply to you. You can change them at any time.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'My profile on this trip';
+
+  @override
+  String get tripUserPreferencesStaySection => 'My stay';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & privacy';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'You are participating as';
+
+  @override
+  String get tripUserPreferencesSaved => 'Preferences saved';
 
   @override
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
@@ -3911,10 +3933,32 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'My trip preferences';
+  String get tripUserPreferencesTitle => 'My preferences';
 
   @override
   String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'My preferences for the trip';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'These settings only apply to you. You can change them at any time.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'My profile on this trip';
+
+  @override
+  String get tripUserPreferencesStaySection => 'My stay';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & privacy';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'You are participating as';
+
+  @override
+  String get tripUserPreferencesSaved => 'Preferences saved';
 
   @override
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';

@@ -1333,7 +1333,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripUserPreferencesTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Mes préférences du voyage'**
+  /// **'Mes préférences'**
   String get tripUserPreferencesTitle;
 
   /// No description provided for @tripUserPreferencesMenuAction.
@@ -1341,6 +1341,48 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Mes préférences'**
   String get tripUserPreferencesMenuAction;
+
+  /// No description provided for @tripUserPreferencesHeadKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes préférences pour le voyage'**
+  String get tripUserPreferencesHeadKicker;
+
+  /// No description provided for @tripUserPreferencesHeadSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces réglages ne concernent que toi. Tu peux les changer à tout moment.'**
+  String get tripUserPreferencesHeadSubtitle;
+
+  /// No description provided for @tripUserPreferencesProfileSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon profil sur ce voyage'**
+  String get tripUserPreferencesProfileSection;
+
+  /// No description provided for @tripUserPreferencesStaySection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon séjour'**
+  String get tripUserPreferencesStaySection;
+
+  /// No description provided for @tripUserPreferencesOptionsSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Options & confidentialité'**
+  String get tripUserPreferencesOptionsSection;
+
+  /// No description provided for @tripUserPreferencesParticipatingAs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu participes en tant que'**
+  String get tripUserPreferencesParticipatingAs;
+
+  /// No description provided for @tripUserPreferencesSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préférences enregistrées'**
+  String get tripUserPreferencesSaved;
 
   /// No description provided for @tripPhoneVisibilityTitle.
   ///

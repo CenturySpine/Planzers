@@ -25,6 +25,41 @@ TripDateRangePickerStyle neonTripDateRangePickerStyle() {
   );
 }
 
+class TripNeonPrefGroup extends StatelessWidget {
+  const TripNeonPrefGroup({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: NeonPalette.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: NeonPalette.divider),
+          boxShadow: NeonPalette.elev1,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0)
+                const Divider(height: 1, thickness: 1, color: NeonPalette.divider),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: children[i],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class TripNeonSectionHeader extends StatelessWidget {
   const TripNeonSectionHeader({
     super.key,
@@ -134,6 +169,7 @@ class TripMealBoundCard extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.enabled = true,
+    this.bordered = true,
   });
 
   final String dayLabel;
@@ -142,6 +178,7 @@ class TripMealBoundCard extends StatelessWidget {
   final TripDayPart selected;
   final ValueChanged<TripDayPart>? onSelected;
   final bool enabled;
+  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +204,69 @@ class TripMealBoundCard extends StatelessWidget {
       ),
     ];
 
+    final inner = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(dayIcon, size: 16, color: NeonPalette.primary),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                dayLabel,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: NeonPalette.deep,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 22, top: 2, bottom: 10),
+          child: Text(
+            question,
+            style: const TextStyle(
+              fontSize: 12,
+              color: NeonPalette.onSurfaceVariant,
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: NeonPalette.segmentTrack,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                for (final option in options) ...[
+                  Expanded(
+                    child: _MealSegmentOption(
+                      label: option.$2,
+                      outlinedIcon: option.$3,
+                      filledIcon: option.$4,
+                      selected: selected == option.$1,
+                      enabled: enabled,
+                      onTap: onSelected == null
+                          ? null
+                          : () => onSelected!(option.$1),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (!bordered) {
+      return inner;
+    }
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: NeonPalette.surface,
@@ -176,77 +276,27 @@ class TripMealBoundCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(dayIcon, size: 16, color: NeonPalette.primary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    dayLabel,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: NeonPalette.deep,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 22, top: 2, bottom: 10),
-              child: Text(
-                question,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: NeonPalette.onSurfaceVariant,
-                ),
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: NeonPalette.segmentTrack,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  children: [
-                    for (final option in options)
-                      Expanded(
-                        child: _TripMealSegmentOption(
-                          label: option.$2,
-                          icon: selected == option.$1 ? option.$4 : option.$3,
-                          selected: selected == option.$1,
-                          onTap: enabled && onSelected != null
-                              ? () => onSelected!(option.$1)
-                              : null,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: inner,
       ),
     );
   }
 }
 
-class _TripMealSegmentOption extends StatelessWidget {
-  const _TripMealSegmentOption({
+class _MealSegmentOption extends StatelessWidget {
+  const _MealSegmentOption({
     required this.label,
-    required this.icon,
+    required this.outlinedIcon,
+    required this.filledIcon,
     required this.selected,
+    required this.enabled,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final IconData outlinedIcon;
+  final IconData filledIcon;
   final bool selected;
+  final bool enabled;
   final VoidCallback? onTap;
 
   @override
@@ -254,29 +304,29 @@ class _TripMealSegmentOption extends StatelessWidget {
     return Material(
       color: selected ? NeonPalette.surface : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
-      elevation: selected ? 1 : 0,
-      shadowColor: Colors.black.withValues(alpha: 0.10),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                icon,
+                selected ? filledIcon : outlinedIcon,
                 size: 18,
                 color: selected
                     ? NeonPalette.primary
                     : NeonPalette.onSurfaceVariant,
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: 4),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: 0.1,
                   color: selected
                       ? NeonPalette.primary
