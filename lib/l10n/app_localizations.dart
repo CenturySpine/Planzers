@@ -2213,6 +2213,42 @@ abstract class AppLocalizations {
   /// **'{participantName}'**
   String tripParticipantTravelInfoSubtitle(Object participantName);
 
+  /// No description provided for @tripParticipantTravelInfoHeadKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations pour le voyage'**
+  String get tripParticipantTravelInfoHeadKicker;
+
+  /// No description provided for @tripParticipantTravelInfoHeadSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces réglages concernent uniquement ce participant. Ils peuvent être modifiés à tout moment.'**
+  String get tripParticipantTravelInfoHeadSubtitle;
+
+  /// No description provided for @tripParticipantTravelInfoProfileSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil sur ce voyage'**
+  String get tripParticipantTravelInfoProfileSection;
+
+  /// No description provided for @tripParticipantTravelInfoStaySection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séjour'**
+  String get tripParticipantTravelInfoStaySection;
+
+  /// No description provided for @tripParticipantTravelInfoParticipatingAs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participe en tant que'**
+  String get tripParticipantTravelInfoParticipatingAs;
+
+  /// No description provided for @tripParticipantTravelInfoSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations enregistrées'**
+  String get tripParticipantTravelInfoSaved;
+
   /// No description provided for @tripParticipantNotFound.
   ///
   /// In fr, this message translates to:

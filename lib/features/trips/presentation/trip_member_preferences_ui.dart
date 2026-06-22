@@ -2,18 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-class TripMemberPreferencesHead extends StatelessWidget {
-  const TripMemberPreferencesHead({
+class TripNeonPrefsScreenHead extends StatelessWidget {
+  const TripNeonPrefsScreenHead({
     super.key,
-    required this.tripName,
+    required this.kicker,
+    required this.centerTitle,
+    required this.subtitle,
+    this.icon = Icons.tune,
   });
 
-  final String tripName;
+  final String kicker;
+  final String centerTitle;
+  final String subtitle;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final trimmed = tripName.trim();
+    final trimmed = centerTitle.trim();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 6),
@@ -22,16 +27,18 @@ class TripMemberPreferencesHead extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.tune, size: 15, color: NeonPalette.primary),
+              Icon(icon, size: 15, color: NeonPalette.primary),
               const SizedBox(width: 6),
-              Text(
-                l10n.tripUserPreferencesHeadKicker.toUpperCase(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4,
-                  color: NeonPalette.primary,
+              Flexible(
+                child: Text(
+                  kicker.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                    color: NeonPalette.primary,
+                  ),
                 ),
               ),
             ],
@@ -51,7 +58,7 @@ class TripMemberPreferencesHead extends StatelessWidget {
           ],
           const SizedBox(height: 7),
           Text(
-            l10n.tripUserPreferencesHeadSubtitle,
+            subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
@@ -65,13 +72,34 @@ class TripMemberPreferencesHead extends StatelessWidget {
   }
 }
 
-class TripMemberPreferencesNameRow extends StatelessWidget {
-  const TripMemberPreferencesNameRow({
+class TripMemberPreferencesHead extends StatelessWidget {
+  const TripMemberPreferencesHead({
     super.key,
+    required this.tripName,
+  });
+
+  final String tripName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return TripNeonPrefsScreenHead(
+      kicker: l10n.tripUserPreferencesHeadKicker,
+      centerTitle: tripName,
+      subtitle: l10n.tripUserPreferencesHeadSubtitle,
+    );
+  }
+}
+
+class TripNeonPrefsNameRow extends StatelessWidget {
+  const TripNeonPrefsNameRow({
+    super.key,
+    required this.leadLabel,
     required this.displayName,
     required this.onEdit,
   });
 
+  final String leadLabel;
   final String displayName;
   final VoidCallback onEdit;
 
@@ -88,7 +116,7 @@ class TripMemberPreferencesNameRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.tripUserPreferencesParticipatingAs,
+                leadLabel,
                 style: const TextStyle(
                   fontSize: 14,
                   color: NeonPalette.text700,
@@ -122,6 +150,27 @@ class TripMemberPreferencesNameRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class TripMemberPreferencesNameRow extends StatelessWidget {
+  const TripMemberPreferencesNameRow({
+    super.key,
+    required this.displayName,
+    required this.onEdit,
+  });
+
+  final String displayName;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return TripNeonPrefsNameRow(
+      leadLabel: l10n.tripUserPreferencesParticipatingAs,
+      displayName: displayName,
+      onEdit: onEdit,
     );
   }
 }

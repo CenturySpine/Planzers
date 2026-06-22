@@ -44,6 +44,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
     this.showStayDates = true,
     this.trip,
     this.grouped = false,
+    this.showOptionsSection = true,
     this.staySectionLabel,
     this.optionsSectionLabel,
   }) : assert(
@@ -71,6 +72,7 @@ class TripMemberStayOptionsEditor extends StatefulWidget {
   final bool showStayDates;
   final Trip? trip;
   final bool grouped;
+  final bool showOptionsSection;
   final String? staySectionLabel;
   final String? optionsSectionLabel;
 
@@ -590,17 +592,19 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
             ],
           ),
         ],
-        TripNeonSectionHeader(
-          icon: Icons.tune,
-          label: optionsLabel,
-        ),
-        TripNeonPrefGroup(
-          children: [
-            _buildCupidonRow(context),
-            if (widget.phoneVisibilityTitle != null)
-              _buildPhoneVisibilityRow(context),
-          ],
-        ),
+        if (widget.showOptionsSection) ...[
+          TripNeonSectionHeader(
+            icon: Icons.tune,
+            label: optionsLabel,
+          ),
+          TripNeonPrefGroup(
+            children: [
+              _buildCupidonRow(context),
+              if (widget.phoneVisibilityTitle != null)
+                _buildPhoneVisibilityRow(context),
+            ],
+          ),
+        ],
         const SizedBox(height: 8),
       ],
     );

@@ -1194,6 +1194,27 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Informations pour le voyage';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'Ces réglages concernent uniquement ce participant. Ils peuvent être modifiés à tout moment.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profil sur ce voyage';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Séjour';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs =>
+      'Participe en tant que';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Informations enregistrées';
+
+  @override
   String get tripParticipantNotFound => 'Participant introuvable.';
 
   @override
@@ -4402,6 +4423,27 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String tripParticipantTravelInfoSubtitle(Object participantName) {
     return '$participantName';
   }
+
+  @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Informations pour le voyage';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'Ces réglages concernent uniquement ce participant. Ils peuvent être modifiés à tout moment.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profil sur ce voyage';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Séjour';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs =>
+      'Participe en tant que';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Informations enregistrées';
 
   @override
   String get tripParticipantNotFound => 'Participant introuvable.';

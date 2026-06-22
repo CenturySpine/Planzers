@@ -3,19 +3,44 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
+import 'package:planerz/features/trips/data/trip_member.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/features/trips/presentation/trip_participant_name_editor.dart';
-import 'package:planerz/features/trips/presentation/trip_participant_stay_dates_editor.dart';
+import 'package:planerz/features/trips/presentation/invite_join_widgets.dart';
+import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
+import 'package:planerz/features/trips/presentation/trip_member_preferences_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
+import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-class TripParticipantTravelInfoPage extends ConsumerWidget {
+class _TravelInfoSnapshot {
+  const _TravelInfoSnapshot({
+    required this.stay,
+    required this.name,
+  });
+
+  final TripMemberStay stay;
+  final TripParticipantNameDialogResult name;
+
+  bool equalsDraft({
+    required TripMemberStay stay,
+    required TripParticipantNameDialogResult name,
+  }) {
+    return this.stay == stay &&
+        this.name.name == name.name &&
+        this.name.useProfileName == name.useProfileName &&
+        this.name.isChild == name.isChild;
+  }
+}
+
+class TripParticipantTravelInfoPage extends ConsumerStatefulWidget {
   const TripParticipantTravelInfoPage({
     super.key,
     required this.tripId,
@@ -24,6 +49,20 @@ class TripParticipantTravelInfoPage extends ConsumerWidget {
 
   final String tripId;
   final String participantId;
+
+  @override
+  ConsumerState<TripParticipantTravelInfoPage> createState() =>
+      _TripParticipantTravelInfoPageState();
+}
+
+class _TripParticipantTravelInfoPageState
+    extends ConsumerState<TripParticipantTravelInfoPage> {
+  bool _isSaving = false;
+  bool _draftReady = false;
+
+  TripMemberStay? _stayDraft;
+  TripParticipantNameDialogResult? _nameDraft;
+  _TravelInfoSnapshot? _savedSnapshot;
 
   static String _messageForError(BuildContext context, Object error) {
     final l10n = AppLocalizations.of(context)!;
@@ -36,23 +75,195 @@ class TripParticipantTravelInfoPage extends ConsumerWidget {
     return l10n.commonErrorWithDetails(error.toString());
   }
 
+  bool get _dirty {
+    final snapshot = _savedSnapshot;
+    final name = _nameDraft;
+    final stay = _stayDraft;
+    if (!_draftReady || snapshot == null || name == null || stay == null) {
+      return false;
+    }
+    return !snapshot.equalsDraft(stay: stay, name: name);
+  }
+
+  void _seedDraftIfNeeded({
+    required TripMemberStay stay,
+    required TripParticipantNameDialogResult name,
+  }) {
+    if (_draftReady) return;
+    _stayDraft = stay;
+    _nameDraft = name;
+    _savedSnapshot = _TravelInfoSnapshot(stay: stay, name: name);
+    _draftReady = true;
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void didUpdateWidget(covariant TripParticipantTravelInfoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.participantId != widget.participantId ||
+        oldWidget.tripId != widget.tripId) {
+      _draftReady = false;
+      _savedSnapshot = null;
+      _stayDraft = null;
+      _nameDraft = null;
+    }
+  }
+
+  Future<void> _openNameDialog({
+    required TripMember participant,
+    required String? profileName,
+  }) async {
+    final current = _nameDraft;
+    if (current == null) return;
+
+    final TripParticipantNameDialogResult? result;
+    if (participant.isClaimed) {
+      result = await showTripCreateCreatorNameDialog(
+        context: context,
+        initialCustomName: current.useProfileName ? '' : current.name,
+        initialUseProfileName: current.useProfileName,
+        profileName: profileName,
+      );
+    } else {
+      result = await showDialog<TripParticipantNameDialogResult>(
+        context: context,
+        builder: (dialogContext) => TripParticipantNameDialog(
+          initialName: current.name,
+          initialUseProfileName: current.useProfileName,
+          initialIsChild: current.isChild,
+          isClaimed: false,
+          profileName: profileName,
+        ),
+      );
+    }
+
+    if (!mounted || result == null) return;
+    setState(() => _nameDraft = result);
+  }
+
+  Future<void> _saveAll() async {
     final l10n = AppLocalizations.of(context)!;
-    final tripAsync = ref.watch(tripStreamProvider(tripId));
-    final participant = ref.watch(
-      tripParticipantByIdProvider(
-        (tripId: tripId, participantId: participantId),
+    final snapshot = _savedSnapshot;
+    final stay = _stayDraft;
+    final name = _nameDraft;
+    if (!_dirty || _isSaving || snapshot == null || stay == null || name == null) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final futures = <Future<void>>[];
+
+      if (snapshot.stay != stay) {
+        futures.add(
+          ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
+                tripId: widget.tripId,
+                participantId: widget.participantId,
+                stay: stay,
+              ),
+        );
+      }
+
+      final nameChanged = snapshot.name.name != name.name ||
+          snapshot.name.useProfileName != name.useProfileName ||
+          snapshot.name.isChild != name.isChild;
+      if (nameChanged) {
+        if (name.name.isEmpty && !name.useProfileName) {
+          throw StateError('Nom invalide');
+        }
+        futures.add(
+          ref.read(tripsRepositoryProvider).updateTripParticipantName(
+                tripId: widget.tripId,
+                participantId: widget.participantId,
+                participantName: name.name,
+                useProfileName: name.useProfileName,
+                isChild: name.isChild,
+              ),
+        );
+      }
+
+      await Future.wait(futures);
+
+      if (!mounted) return;
+      setState(() {
+        _savedSnapshot = _TravelInfoSnapshot(stay: stay, name: name);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripParticipantTravelInfoSaved)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageForError(context, error))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
+    return AppBar(
+      toolbarHeight: 52,
+      title: Text(l10n.tripParticipantTravelInfoTitle),
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: const Icon(Icons.arrow_back),
       ),
     );
-    final participantsAsync = ref.watch(tripParticipantsStreamProvider(tripId));
+  }
+
+  Widget _buildScaffold({
+    required AppLocalizations l10n,
+    required Widget body,
+    Widget? bottomBar,
+  }) {
+    return Theme(
+      data: NeonPalette.overlayOn(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: NeonPalette.scaffoldBackground,
+        appBar: _buildAppBar(l10n),
+        body: body,
+        bottomNavigationBar: bottomBar,
+      ),
+    );
+  }
+
+  Widget _scaffoldWithMessage({
+    required AppLocalizations l10n,
+    required String message,
+  }) {
+    return _buildScaffold(
+      l10n: l10n,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
+    final participant = ref.watch(
+      tripParticipantByIdProvider(
+        (tripId: widget.tripId, participantId: widget.participantId),
+      ),
+    );
+    final participantsAsync =
+        ref.watch(tripParticipantsStreamProvider(widget.tripId));
 
     return tripAsync.when(
       data: (trip) {
         if (trip == null) {
           return _scaffoldWithMessage(
-            context: context,
-            title: l10n.tripParticipantTravelInfoTitle,
+            l10n: l10n,
             message: l10n.tripNotFoundOrNoAccess,
           );
         }
@@ -67,25 +278,22 @@ class TripParticipantTravelInfoPage extends ConsumerWidget {
         );
         if (!canManageParticipants) {
           return _scaffoldWithMessage(
-            context: context,
-            title: l10n.tripParticipantTravelInfoTitle,
+            l10n: l10n,
             message: l10n.tripNotFoundOrNoAccess,
           );
         }
 
         if (participantsAsync.isLoading && participant == null) {
-          return Scaffold(
-            appBar: AppBar(title: Text(l10n.tripParticipantTravelInfoTitle)),
+          return _buildScaffold(
+            l10n: l10n,
             body: const Center(child: CircularProgressIndicator()),
           );
         }
 
         if (participant == null) {
           return _scaffoldWithMessage(
-            context: context,
-            title: l10n.tripParticipantTravelInfoTitle,
+            l10n: l10n,
             message: l10n.tripParticipantNotFound,
-            onBack: () => context.pop(),
           );
         }
 
@@ -112,132 +320,96 @@ class TripParticipantTravelInfoPage extends ConsumerWidget {
         final currentStay =
             participant.stay ?? TripMemberStay.defaultForTrip(trip);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.tripParticipantTravelInfoTitle),
-                if (displayLabel.trim().isNotEmpty)
-                  Text(
-                    l10n.tripParticipantTravelInfoSubtitle(displayLabel),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant,
-                        ),
-                  ),
-              ],
-            ),
+        _seedDraftIfNeeded(
+          stay: currentStay,
+          name: TripParticipantNameDialogResult(
+            name: participant.participantName,
+            useProfileName: participant.useProfileName,
+            isChild: participant.isChild,
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
+        );
+
+        final stayDraft = _stayDraft!;
+        final nameDraft = _nameDraft!;
+        final resolvedDisplayName = resolveTripParticipantDisplayName(
+              result: nameDraft,
+              profileName: profileName,
+            ) ??
+            displayLabel;
+
+        return _buildScaffold(
+          l10n: l10n,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TripParticipantNameEditor(
-                initialName: participant.participantName,
-                initialUseProfileName: participant.useProfileName,
-                initialIsChild: participant.isChild,
-                isClaimed: participant.isClaimed,
-                profileName: profileName,
-                onSave: (result) async {
-                  final name = result.name;
-                  if (name.isEmpty && !result.useProfileName) return;
-                  try {
-                    await ref.read(tripsRepositoryProvider).updateTripParticipantName(
-                          tripId: tripId,
-                          participantId: participantId,
-                          participantName: name,
-                          useProfileName: result.useProfileName,
-                          isChild: result.isChild,
-                        );
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.tripParticipantsNameUpdated),
-                      ),
-                    );
-                  } catch (error) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(_messageForError(context, error)),
-                      ),
-                    );
-                    rethrow;
-                  }
-                },
-              ),
-              if (!trip.isDayTrip) ...[
-                const SizedBox(height: 12),
-                TripParticipantStayDatesEditor(
-                  mode: TripMemberStayOptionsEditorMode.live,
-                  tripStartDate: trip.startDate,
-                  tripEndDate: trip.endDate,
-                  initialStay: currentStay,
-                  trip: trip,
-                  onLiveChanged: (stay) async {
-                    try {
-                      await ref
-                          .read(tripMembersRepositoryProvider)
-                          .updateParticipantProfile(
-                            tripId: tripId,
-                            participantId: participantId,
-                            stay: stay,
-                          );
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(l10n.tripStayUpdated)),
-                      );
-                    } catch (error) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_messageForError(context, error)),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  children: [
+                    TripNeonPrefsScreenHead(
+                      kicker: l10n.tripParticipantTravelInfoHeadKicker,
+                      centerTitle: resolvedDisplayName,
+                      subtitle: l10n.tripParticipantTravelInfoHeadSubtitle,
+                      icon: Icons.badge_outlined,
+                    ),
+                    TripNeonSectionHeader(
+                      icon: Icons.badge_outlined,
+                      label: l10n.tripParticipantTravelInfoProfileSection,
+                    ),
+                    TripNeonPrefGroup(
+                      children: [
+                        TripNeonPrefsNameRow(
+                          leadLabel: l10n.tripParticipantTravelInfoParticipatingAs,
+                          displayName: resolvedDisplayName,
+                          onEdit: () => _openNameDialog(
+                            participant: participant,
+                            profileName: profileName,
+                          ),
                         ),
-                      );
-                      rethrow;
-                    }
-                  },
+                      ],
+                    ),
+                    if (!trip.isDayTrip)
+                      TripMemberStayOptionsEditor(
+                        mode: TripMemberStayOptionsEditorMode.draft,
+                        grouped: true,
+                        showOptionsSection: false,
+                        staySectionLabel:
+                            l10n.tripParticipantTravelInfoStaySection,
+                        tripStartDate: trip.startDate,
+                        tripEndDate: trip.endDate,
+                        trip: trip,
+                        showStayDates: true,
+                        isCupidonModeEnabled: false,
+                        initialStay: stayDraft,
+                        initialCupidonEnabled: false,
+                        onDraftChanged: (draft) => setState(() {
+                          _stayDraft = draft.stay;
+                        }),
+                        cupidonTitle: l10n.cupidonModeTitle,
+                      ),
+                  ],
                 ),
-              ],
+              ),
             ],
+          ),
+          bottomBar: InviteJoinDualCtaBar(
+            secondaryLabel: l10n.commonCancel,
+            primaryLabel: l10n.commonSave,
+            secondaryEnabled: !_isSaving,
+            primaryEnabled: _dirty && !_isSaving,
+            busy: _isSaving,
+            onSecondary: () => context.pop(),
+            onPrimary: _saveAll,
           ),
         );
       },
-      loading: () => Scaffold(
-        appBar: AppBar(title: Text(l10n.tripParticipantTravelInfoTitle)),
+      loading: () => _buildScaffold(
+        l10n: l10n,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => _scaffoldWithMessage(
-        context: context,
-        title: l10n.tripParticipantTravelInfoTitle,
+        l10n: l10n,
         message: l10n.commonErrorWithDetails(error.toString()),
-      ),
-    );
-  }
-
-  Widget _scaffoldWithMessage({
-    required BuildContext context,
-    required String title,
-    required String message,
-    VoidCallback? onBack,
-  }) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        leading: IconButton(
-          onPressed: onBack ?? () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-          ),
-        ),
       ),
     );
   }

@@ -1181,6 +1181,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Travel information for the trip';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'These settings only apply to this participant. They can be changed at any time.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profile on this trip';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Stay';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs => 'Participating as';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Information saved';
+
+  @override
   String get tripParticipantNotFound => 'Participant not found.';
 
   @override
@@ -4362,6 +4382,26 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String tripParticipantTravelInfoSubtitle(Object participantName) {
     return '$participantName';
   }
+
+  @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Travel information for the trip';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'These settings only apply to this participant. They can be changed at any time.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profile on this trip';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Stay';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs => 'Participating as';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Information saved';
 
   @override
   String get tripParticipantNotFound => 'Participant not found.';

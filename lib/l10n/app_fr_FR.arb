@@ -434,6 +434,12 @@
   "@tripParticipantTravelInfoSubtitle": {
     "placeholders": {"participantName": {}}
   },
+  "tripParticipantTravelInfoHeadKicker": "Informations pour le voyage",
+  "tripParticipantTravelInfoHeadSubtitle": "Ces réglages concernent uniquement ce participant. Ils peuvent être modifiés à tout moment.",
+  "tripParticipantTravelInfoProfileSection": "Profil sur ce voyage",
+  "tripParticipantTravelInfoStaySection": "Séjour",
+  "tripParticipantTravelInfoParticipatingAs": "Participe en tant que",
+  "tripParticipantTravelInfoSaved": "Informations enregistrées",
   "tripParticipantNotFound": "Participant introuvable.",
   "tripParticipantsUseProfileName": "Utiliser le pseudo du profil",
   "tripParticipantsProfileNameDisplay": "Pseudo du profil : {name}",
