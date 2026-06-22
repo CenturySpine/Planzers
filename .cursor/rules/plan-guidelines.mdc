@@ -1,0 +1,64 @@
+---
+description: Structured feature plan writing — product and screens first, then technical impact
+globs: docs/plans/**
+alwaysApply: false
+---
+
+# Plan Guidelines
+
+Use this rule when **creating or updating** a feature plan in the repository.
+
+## Location and naming
+
+- All plans live under [`docs/plans/`](../../docs/plans/).
+- Use a short, descriptive filename in **snake_case** (e.g. `infos_voyage_participant.md`).
+- Write plans in **French** (product language), with proper accents.
+
+## Mandatory structure (strict order)
+
+### 1) Présentation fonctionnelle (always first)
+
+- State the **user need**, the **business goal**, and the **expected outcome**.
+- Describe **who** can do **what**, under which **conditions** (permissions, roles, edge cases).
+- Record **validated product decisions** in a clear table when choices have been made.
+- Do not start with file paths, class names, or implementation details.
+
+### 2) Écrans et parcours (second)
+
+Immediately after the functional section, cover UI impact so a **design-oriented agent** can work from the plan alone:
+
+- **Écrans existants modifiés** — for each affected screen: what changes visually and behaviourally (navigation, controls shown/hidden, copy, empty states, feedback).
+- **Nouveaux écrans** — if applicable: purpose, entry points, main sections, key interactions, and constraints (permissions, responsive, platform). Write as **design brief** instructions, not widget trees.
+- **Parcours utilisateur** — flows between screens (before / after), including redirects and permission-driven branches.
+
+Use diagrams (mermaid) when flows are non-trivial.
+
+### 3) Plan d'implémentation et détails techniques (third)
+
+Only after sections 1 and 2:
+
+- **État actuel** — relevant existing code, routes, data models, Cloud Functions; link to real files.
+- **Impacts mesurés** — list affected layers (UI, domain, data, backend, l10n, routing, tests) and estimate scope.
+- **Étapes** — ordered, actionable implementation steps an agent can follow.
+- **Modèle de données** — Firestore collections/documents, new or changed fields, indexes if needed.
+- **Règles Firestore et Storage** — explicitly evaluate whether rules must change; describe the rule intent, not only the syntax.
+- **Cloud Functions** — new or updated callables/triggers, permissions, idempotency, region (`europe-west9`).
+- **Permissions produit** — reuse existing permissions when possible; flag any new action that may need a dedicated permission (product owner check-in).
+- **Localisation** — new or updated ARB keys (except administration section, which stays hardcoded French).
+- **Risques, rétrocompatibilité, migration** — data backfill, feature flags, rollout notes.
+- **Critères de validation** — how to verify the feature end-to-end.
+
+## Engineering expectations
+
+- **Ground plans in the codebase** — search and read existing patterns before proposing new ones.
+- **Prefer minimal diffs** — extend what exists; justify new abstractions only when reuse is real.
+- **No invented scope** — do not add features, copy, or permissions not requested or validated.
+- **Align with project guidelines** — respect [`planerz-guidelines.mdc`](planerz-guidelines.mdc) (l10n, permissions UI, deploy constraints, etc.).
+
+## Style
+
+- **Version finale uniquement** — le plan est un document abouti, pas un journal d'élaboration. Ne jamais y faire apparaître les échanges question / réponse entre l'agent et l'utilisateur (hypothèses en suspens, alternatives écartées, « à confirmer », historique de la discussion). Intégrer directement les décisions retenues, comme si le plan avait toujours été rédigé dans sa forme définitive.
+- Product-first, then screens, then technical depth — same descending order as release notes.
+- Use tables and bullet lists for scanability.
+- Link to real repository paths; avoid pseudo-code unless it clarifies a non-obvious contract.
+- Keep sections that add no value out of the document.

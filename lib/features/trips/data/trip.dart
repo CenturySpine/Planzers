@@ -9,6 +9,7 @@ class Trip {
     required this.destination,
     required this.address,
     required this.linkUrl,
+    this.description = '',
     this.shoppingMeetupLinkUrl = '',
     required this.photosStorageUrl,
     required this.cupidonModeEnabled,
@@ -19,6 +20,7 @@ class Trip {
     this.endDate,
     this.tripStartDayPart,
     this.tripEndDayPart,
+    this.isDayTrip = false,
     this.bannerImageUrl,
     this.bannerImagePath,
     this.linkPreview = const {},
@@ -39,6 +41,7 @@ class Trip {
   final String destination;
   final String address;
   final String linkUrl;
+  final String description;
   final String shoppingMeetupLinkUrl;
   final String photosStorageUrl;
   final bool cupidonModeEnabled;
@@ -70,6 +73,9 @@ class Trip {
 
   /// Last included day-part for the trip calendar span (Firestore: `tripEndDayPart`).
   final TripDayPart? tripEndDayPart;
+
+  /// Single-day outing; hides destination, lodging, and multi-day stay UI.
+  final bool isDayTrip;
 
   final String? bannerImageUrl;
   final String? bannerImagePath;
@@ -121,6 +127,7 @@ class Trip {
       destination: (data['destination'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',
       linkUrl: (data['linkUrl'] as String?) ?? '',
+      description: (data['description'] as String?)?.trim() ?? '',
       shoppingMeetupLinkUrl:
           (data['shoppingMeetupLinkUrl'] as String?)?.trim().isNotEmpty == true
               ? (data['shoppingMeetupLinkUrl'] as String).trim()
@@ -138,6 +145,7 @@ class Trip {
       tripStartDayPart:
           tripDayPartFromFirestore(data['tripStartDayPart'] as String?),
       tripEndDayPart: tripDayPartFromFirestore(data['tripEndDayPart'] as String?),
+      isDayTrip: data['isDayTrip'] == true,
       bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       linkPreview:
@@ -177,6 +185,7 @@ class Trip {
       'destination': destination,
       'address': address,
       'linkUrl': linkUrl,
+      if (description.trim().isNotEmpty) 'description': description.trim(),
       if (shoppingMeetupLinkUrl.trim().isNotEmpty)
         'shoppingMeetupLinkUrl': shoppingMeetupLinkUrl.trim(),
       if (shoppingMeetupLinkPreview.isNotEmpty)
@@ -192,6 +201,7 @@ class Trip {
         'tripStartDayPart': tripDayPartToFirestore(tripStartDayPart!),
       if (tripEndDayPart != null)
         'tripEndDayPart': tripDayPartToFirestore(tripEndDayPart!),
+      if (isDayTrip) 'isDayTrip': true,
       if ((bannerImageUrl ?? '').trim().isNotEmpty)
         'bannerImageUrl': bannerImageUrl!.trim(),
       if ((bannerImagePath ?? '').trim().isNotEmpty)

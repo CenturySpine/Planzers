@@ -6,7 +6,9 @@ import 'package:planerz/features/administration/presentation/global_announcement
 import 'package:planerz/l10n/app_localizations.dart';
 
 class AdminAnnouncementsBellButton extends ConsumerWidget {
-  const AdminAnnouncementsBellButton({super.key});
+  const AdminAnnouncementsBellButton({super.key, this.brandedHeader = false});
+
+  final bool brandedHeader;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,17 +24,22 @@ class AdminAnnouncementsBellButton extends ConsumerWidget {
     return IconButton(
       tooltip: l10n.globalAnnouncementsBellTooltip,
       style: IconButton.styleFrom(
-        padding: const EdgeInsets.only(left: 10, right: 2, top: 8, bottom: 8),
-        minimumSize: Size.zero,
+        padding: brandedHeader
+            ? EdgeInsets.zero
+            : const EdgeInsets.only(left: 10, right: 2, top: 8, bottom: 8),
+        minimumSize: brandedHeader ? const Size(42, 42) : Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       icon: SizedBox(
-        width: 24,
-        height: 24,
+        width: brandedHeader ? 22 : 24,
+        height: brandedHeader ? 22 : 24,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.notifications_outlined),
+            Icon(
+              Icons.notifications_outlined,
+              size: brandedHeader ? 22 : 24,
+            ),
             if (showUnreadDot)
               Positioned(
                 right: 3,

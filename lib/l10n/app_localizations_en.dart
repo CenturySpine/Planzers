@@ -226,6 +226,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountTitle => 'My account';
 
   @override
+  String get accountPersonalInfoSectionTitle => 'Personal information';
+
+  @override
+  String get accountEmailAddressLabel => 'Email address';
+
+  @override
+  String get accountFoodAllergensSubtitle =>
+      'Taken into account when planning meals';
+
+  @override
+  String get accountPhotoSheetTitle => 'Profile photo';
+
+  @override
   String get accountCropProfilePhotoTitle => 'Crop profile photo';
 
   @override
@@ -395,10 +408,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsEmptyUpcoming => 'No upcoming trips.';
 
   @override
-  String get tripsCreateDialogTitle => 'Create a trip';
+  String get tripsCreateDialogTitle => 'New trip';
 
   @override
-  String get tripsTitleLabel => 'Title';
+  String get tripsTitleLabel => 'Trip name';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -417,11 +430,137 @@ class AppLocalizationsEn extends AppLocalizations {
       'Title, destination and your name are required';
 
   @override
+  String get tripsCreateValidationRequiredDayTrip =>
+      'Title and your name are required';
+
+  @override
+  String get tripCreateSingleDayDateLabel => 'Trip date';
+
+  @override
+  String get tripDayTripLabel => 'Day trip';
+
+  @override
+  String get tripCreateDayTripSubtitle =>
+      'A single-day outing with no overnight stay.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Add a cover photo';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optional';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'E.g. Weekend in Lisbon';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'City, place or address';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Start';
+
+  @override
+  String get tripCreateDateEndLabel => 'End';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Outing day';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nights · $days days';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Meals — first and last';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Align meal planning with your arrival and departure times.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrival · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Departure · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'First meal on site';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Last meal on site';
+
+  @override
+  String get tripCreateMealBreakfast => 'Breakfast';
+
+  @override
+  String get tripCreateMealLunch => 'Lunch';
+
+  @override
+  String get tripCreateMealDinner => 'Dinner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
+
+  @override
+  String get tripCreatePhotosStorageLabel => 'Photo storage link';
+
+  @override
+  String get tripCreatePhotosStoragePlaceholder =>
+      'Link to the shared folder or storage service';
+
+  @override
+  String get tripCreateCupidonModeLabel => 'Cupidon mode';
+
+  @override
+  String get tripCreateCupidonModeSubtitle =>
+      'Enables the \"Like\" feature between trip participants.';
+
+  @override
+  String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Not provided';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Profile nickname';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Custom name';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'How do you want to appear?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Select period';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Select date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choose end date';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Day trip';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
   @override
-  String get tripsCreateAction => 'Create';
+  String get tripsCreateAction => 'Create trip';
 
   @override
   String get tripsDeleteDialogTitle => 'Delete this trip?';
@@ -465,6 +604,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tripsJoinCodeDialogHelp =>
       'Paste the code sent by the trip organizer.';
+
+  @override
+  String get tripsJoinCodePaste => 'Paste code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -534,13 +676,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripBackToTrip => 'Back to trip';
 
   @override
-  String get tripSettingsTitle => 'Trip settings';
+  String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'My trip preferences';
+  String get tripUserPreferencesTitle => 'My preferences';
 
   @override
   String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'My preferences for the trip';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'These settings only apply to you. You can change them at any time.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'My profile on this trip';
+
+  @override
+  String get tripUserPreferencesStaySection => 'My stay';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & privacy';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'You are participating as';
+
+  @override
+  String get tripUserPreferencesSaved => 'Preferences saved';
 
   @override
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
@@ -588,38 +752,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tripSettingsPermissionsSectionDescription =>
       'Set the minimum roles for each trip domain.';
-
-  @override
-  String get tripSettingsGeneralSectionTitle => 'General settings';
-
-  @override
-  String get tripSettingsGeneralSectionDescription =>
-      'Cross-cutting trip settings (outside permissions).';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageDescription =>
-      'Link to the shared folder or storage service used for trip photos.';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldHint =>
-      'https://drive.google.com/... or https://photos.app.goo.gl/...';
-
-  @override
-  String get tripSettingsGeneralCupidonModeDescription =>
-      'Enable or disable Cupidon mode for all participants in this trip.';
-
-  @override
-  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
-
-  @override
-  String get tripSettingsGeneralComingSoonDescription =>
-      'This section is coming soon.';
 
   @override
   String get roleOwner => 'Owner';
@@ -1041,6 +1173,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
+  String get tripParticipantTravelInfoTitle => 'Travel information';
+
+  @override
+  String tripParticipantTravelInfoSubtitle(Object participantName) {
+    return '$participantName';
+  }
+
+  @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Travel information for the trip';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'These settings only apply to this participant. They can be changed at any time.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profile on this trip';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Stay';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs => 'Participating as';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Information saved';
+
+  @override
+  String get tripParticipantNotFound => 'Participant not found.';
+
+  @override
   String get tripParticipantsUseProfileName => 'Use profile username';
 
   @override
@@ -1082,7 +1245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Click the icon on the left of a traveler (planned or joined) to grant or remove admin role (except owner).';
+      'Tap a traveler to open their actions: you can grant or remove admin role, edit their trip info, or remove them from the trip (except the owner).';
 
   @override
   String get tripParticipantsUnlike => 'Remove like';
@@ -1095,6 +1258,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripParticipantsOpenDialer => 'Open dialer';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organizer';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Child · planned';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planned';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'you';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(you)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'View user profile';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle => 'Public user profile';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo => 'View trip information';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Preferences and info for this participant on this trip';
+
+  @override
+  String get tripParticipantsSheetCall => 'Call';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promote to admin';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Remove admin rights';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Will be able to manage participants and groups';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label becomes a regular member again';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Remove from trip';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'This action is permanent.';
 
   @override
   String get tripNotFound => 'Trip not found';
@@ -1376,6 +1592,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteJoinTripStepTwo => 'Join trip 2/2';
+
+  @override
+  String get inviteJoinTripHeadline => 'Join trip';
+
+  @override
+  String inviteJoinTripStepLabel(Object step, Object total) {
+    return 'Step $step/$total';
+  }
+
+  @override
+  String get inviteJoinNameSectionTitle => 'Your name on this trip';
+
+  @override
+  String get inviteJoinProfileNotFoundShort => 'Can\'t find your name?';
 
   @override
   String get inviteChooseTravelerWarning =>
@@ -2596,6 +2826,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
+
+  @override
+  String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionGroup => 'The group';
+
+  @override
+  String get tripOverviewSectionModules => 'Trip modules';
+
+  @override
+  String get tripOverviewSectionSettings => 'Trip settings';
+
+  @override
+  String get tripOverviewInviteCodeLabel => 'Code';
+
+  @override
+  String get tripOverviewShareCode => 'Share';
+
+  @override
+  String get tripOverviewPhotosAction => 'Photos';
+
+  @override
+  String get tripOverviewBannerEmpty => 'No photo';
+
+  @override
+  String get tripOverviewBannerAddPhoto => 'Add a cover photo';
 
   @override
   String get tripAnnouncementsPageTitle => 'Organizers announcements';
@@ -3243,6 +3500,19 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get accountTitle => 'My account';
 
   @override
+  String get accountPersonalInfoSectionTitle => 'Personal information';
+
+  @override
+  String get accountEmailAddressLabel => 'Email address';
+
+  @override
+  String get accountFoodAllergensSubtitle =>
+      'Taken into account when planning meals';
+
+  @override
+  String get accountPhotoSheetTitle => 'Profile photo';
+
+  @override
   String get accountCropProfilePhotoTitle => 'Crop profile photo';
 
   @override
@@ -3412,10 +3682,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripsEmptyUpcoming => 'No upcoming trips.';
 
   @override
-  String get tripsCreateDialogTitle => 'Create a trip';
+  String get tripsCreateDialogTitle => 'New trip';
 
   @override
-  String get tripsTitleLabel => 'Title';
+  String get tripsTitleLabel => 'Trip name';
 
   @override
   String get tripsDestinationLabel => 'Destination';
@@ -3434,11 +3704,137 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Title, destination and your name are required';
 
   @override
+  String get tripsCreateValidationRequiredDayTrip =>
+      'Title and your name are required';
+
+  @override
+  String get tripCreateSingleDayDateLabel => 'Trip date';
+
+  @override
+  String get tripDayTripLabel => 'Day trip';
+
+  @override
+  String get tripCreateDayTripSubtitle =>
+      'A single-day outing with no overnight stay.';
+
+  @override
+  String get tripCreateCoverPhotoLabel => 'Add a cover photo';
+
+  @override
+  String get tripCreateCoverPhotoOptional => 'Optional';
+
+  @override
+  String get tripCreateTitlePlaceholder => 'E.g. Weekend in Lisbon';
+
+  @override
+  String get tripCreateDestinationPlaceholder => 'City, place or address';
+
+  @override
+  String get tripCreateDatesLabel => 'Dates';
+
+  @override
+  String get tripCreateDateLabel => 'Date';
+
+  @override
+  String get tripCreateDateStartLabel => 'Start';
+
+  @override
+  String get tripCreateDateEndLabel => 'End';
+
+  @override
+  String get tripCreateSingleDayFieldLabel => 'Outing day';
+
+  @override
+  String tripCreateNightsDays(int nights, int days) {
+    return '$nights nights · $days days';
+  }
+
+  @override
+  String get tripCreateMealsSectionLabel => 'Meals — first and last';
+
+  @override
+  String get tripCreateMealsHint =>
+      'Align meal planning with your arrival and departure times.';
+
+  @override
+  String tripCreateArrivalMealDay(Object date) {
+    return 'Arrival · $date';
+  }
+
+  @override
+  String tripCreateDepartureMealDay(Object date) {
+    return 'Departure · $date';
+  }
+
+  @override
+  String get tripCreateFirstMealQuestion => 'First meal on site';
+
+  @override
+  String get tripCreateLastMealQuestion => 'Last meal on site';
+
+  @override
+  String get tripCreateMealBreakfast => 'Breakfast';
+
+  @override
+  String get tripCreateMealLunch => 'Lunch';
+
+  @override
+  String get tripCreateMealDinner => 'Dinner';
+
+  @override
+  String get tripCreateDescriptionLabel => 'Description';
+
+  @override
+  String get tripCreateDescriptionPlaceholder => 'A few words about the plan…';
+
+  @override
+  String get tripCreatePhotosStorageLabel => 'Photo storage link';
+
+  @override
+  String get tripCreatePhotosStoragePlaceholder =>
+      'Link to the shared folder or storage service';
+
+  @override
+  String get tripCreateCupidonModeLabel => 'Cupidon mode';
+
+  @override
+  String get tripCreateCupidonModeSubtitle =>
+      'Enables the \"Like\" feature between trip participants.';
+
+  @override
+  String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
+
+  @override
+  String get tripCreateCreatorNameEmpty => 'Not provided';
+
+  @override
+  String get tripCreateCreatorNameHintProfile => 'Profile nickname';
+
+  @override
+  String get tripCreateCreatorNameHintCustom => 'Custom name';
+
+  @override
+  String get tripCreateCreatorNameCustomPlaceholder =>
+      'How do you want to appear?';
+
+  @override
+  String get tripDatePickerRangeKicker => 'Select period';
+
+  @override
+  String get tripDatePickerSingleKicker => 'Select date';
+
+  @override
+  String get tripDatePickerChooseEnd => 'Choose end date';
+
+  @override
+  String get tripDatePickerSingleSummary => 'Day trip';
+
+  @override
   String get tripsCreateValidationDateOrder =>
       'End date must be on or after start date';
 
   @override
-  String get tripsCreateAction => 'Create';
+  String get tripsCreateAction => 'Create trip';
 
   @override
   String get tripsDeleteDialogTitle => 'Delete this trip?';
@@ -3482,6 +3878,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripsJoinCodeDialogHelp =>
       'Paste the code sent by the trip organizer.';
+
+  @override
+  String get tripsJoinCodePaste => 'Paste code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -3551,13 +3950,35 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripBackToTrip => 'Back to trip';
 
   @override
-  String get tripSettingsTitle => 'Trip settings';
+  String get tripSettingsTitle => 'Permissions';
 
   @override
-  String get tripUserPreferencesTitle => 'My trip preferences';
+  String get tripUserPreferencesTitle => 'My preferences';
 
   @override
   String get tripUserPreferencesMenuAction => 'My preferences';
+
+  @override
+  String get tripUserPreferencesHeadKicker => 'My preferences for the trip';
+
+  @override
+  String get tripUserPreferencesHeadSubtitle =>
+      'These settings only apply to you. You can change them at any time.';
+
+  @override
+  String get tripUserPreferencesProfileSection => 'My profile on this trip';
+
+  @override
+  String get tripUserPreferencesStaySection => 'My stay';
+
+  @override
+  String get tripUserPreferencesOptionsSection => 'Options & privacy';
+
+  @override
+  String get tripUserPreferencesParticipatingAs => 'You are participating as';
+
+  @override
+  String get tripUserPreferencesSaved => 'Preferences saved';
 
   @override
   String get tripPhoneVisibilityTitle => 'Minimum role to see my phone number';
@@ -3605,38 +4026,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get tripSettingsPermissionsSectionDescription =>
       'Set the minimum roles for each trip domain.';
-
-  @override
-  String get tripSettingsGeneralSectionTitle => 'General settings';
-
-  @override
-  String get tripSettingsGeneralSectionDescription =>
-      'Cross-cutting trip settings (outside permissions).';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageTitle => 'Photo storage';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageDescription =>
-      'Link to the shared folder or storage service used for trip photos.';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldLabel => 'Photo storage link';
-
-  @override
-  String get tripSettingsGeneralPhotosStorageFieldHint =>
-      'https://drive.google.com/... or https://photos.app.goo.gl/...';
-
-  @override
-  String get tripSettingsGeneralCupidonModeDescription =>
-      'Enable or disable Cupidon mode for all participants in this trip.';
-
-  @override
-  String get tripSettingsGeneralComingSoonTitle => 'General trip settings';
-
-  @override
-  String get tripSettingsGeneralComingSoonDescription =>
-      'This section is coming soon.';
 
   @override
   String get roleOwner => 'Owner';
@@ -3987,6 +4376,37 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripParticipantsNameUpdated => 'Name updated';
 
   @override
+  String get tripParticipantTravelInfoTitle => 'Travel information';
+
+  @override
+  String tripParticipantTravelInfoSubtitle(Object participantName) {
+    return '$participantName';
+  }
+
+  @override
+  String get tripParticipantTravelInfoHeadKicker =>
+      'Travel information for the trip';
+
+  @override
+  String get tripParticipantTravelInfoHeadSubtitle =>
+      'These settings only apply to this participant. They can be changed at any time.';
+
+  @override
+  String get tripParticipantTravelInfoProfileSection => 'Profile on this trip';
+
+  @override
+  String get tripParticipantTravelInfoStaySection => 'Stay';
+
+  @override
+  String get tripParticipantTravelInfoParticipatingAs => 'Participating as';
+
+  @override
+  String get tripParticipantTravelInfoSaved => 'Information saved';
+
+  @override
+  String get tripParticipantNotFound => 'Participant not found.';
+
+  @override
   String get tripParticipantsUseProfileName => 'Use profile username';
 
   @override
@@ -4028,7 +4448,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsAdminHint =>
-      'Click the icon on the left of a traveler (planned or joined) to grant or remove admin role (except owner).';
+      'Tap a traveler to open their actions: you can grant or remove admin role, edit their trip info, or remove them from the trip (except the owner).';
 
   @override
   String get tripParticipantsUnlike => 'Remove like';
@@ -4041,6 +4461,59 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripParticipantsOpenDialer => 'Open dialer';
+
+  @override
+  String get tripParticipantsRoleChipOwner => 'Organizer';
+
+  @override
+  String get tripParticipantsRoleChipChildPlanned => 'Child · planned';
+
+  @override
+  String get tripParticipantsRoleChipPlanned => 'Planned';
+
+  @override
+  String get tripParticipantsRoleChipYou => 'you';
+
+  @override
+  String get tripParticipantsSheetYouSuffix => '(you)';
+
+  @override
+  String get tripParticipantsSheetViewProfile => 'View user profile';
+
+  @override
+  String get tripParticipantsSheetViewProfileSubtitle => 'Public user profile';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfo => 'View trip information';
+
+  @override
+  String get tripParticipantsSheetViewTravelInfoSubtitle =>
+      'Preferences and info for this participant on this trip';
+
+  @override
+  String get tripParticipantsSheetCall => 'Call';
+
+  @override
+  String get tripParticipantsSheetPromoteAdmin => 'Promote to admin';
+
+  @override
+  String get tripParticipantsSheetDemoteAdmin => 'Remove admin rights';
+
+  @override
+  String get tripParticipantsSheetPromoteAdminSubtitle =>
+      'Will be able to manage participants and groups';
+
+  @override
+  String tripParticipantsSheetDemoteAdminSubtitle(String label) {
+    return '$label becomes a regular member again';
+  }
+
+  @override
+  String get tripParticipantsSheetRemoveFromTrip => 'Remove from trip';
+
+  @override
+  String get tripParticipantsRemoveDefinitiveWarning =>
+      'This action is permanent.';
 
   @override
   String get tripNotFound => 'Trip not found';
@@ -4322,6 +4795,20 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get inviteJoinTripStepTwo => 'Join trip 2/2';
+
+  @override
+  String get inviteJoinTripHeadline => 'Join trip';
+
+  @override
+  String inviteJoinTripStepLabel(Object step, Object total) {
+    return 'Step $step/$total';
+  }
+
+  @override
+  String get inviteJoinNameSectionTitle => 'Your name on this trip';
+
+  @override
+  String get inviteJoinProfileNotFoundShort => 'Can\'t find your name?';
 
   @override
   String get inviteChooseTravelerWarning =>
@@ -5542,6 +6029,33 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewTopTabAnnouncements => 'Announcements';
+
+  @override
+  String get tripOverviewSectionAccommodation => 'Destination';
+
+  @override
+  String get tripOverviewSectionGroup => 'The group';
+
+  @override
+  String get tripOverviewSectionModules => 'Trip modules';
+
+  @override
+  String get tripOverviewSectionSettings => 'Trip settings';
+
+  @override
+  String get tripOverviewInviteCodeLabel => 'Code';
+
+  @override
+  String get tripOverviewShareCode => 'Share';
+
+  @override
+  String get tripOverviewPhotosAction => 'Photos';
+
+  @override
+  String get tripOverviewBannerEmpty => 'No photo';
+
+  @override
+  String get tripOverviewBannerAddPhoto => 'Add a cover photo';
 
   @override
   String get tripAnnouncementsPageTitle => 'Organizers announcements';

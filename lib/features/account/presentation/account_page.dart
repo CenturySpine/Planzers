@@ -2,16 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
+import 'package:planerz/features/account/presentation/account_page_ui.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -43,6 +44,16 @@ class _AccountPageState extends ConsumerState<AccountPage> {
   bool _isEnablingPush = false;
   bool _isPhotoBusy = false;
   bool _isUpdatingLanguage = false;
+
+  static const InputDecoration _inlineFieldDecoration = InputDecoration(
+    isDense: true,
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+    errorBorder: InputBorder.none,
+    focusedErrorBorder: InputBorder.none,
+    contentPadding: EdgeInsets.zero,
+  );
 
   @override
   void initState() {
@@ -138,24 +149,22 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
-  Future<void> _removeProfilePhoto() async {
+  Future<void> _removeProfilePhoto({
+    required String photoUrl,
+    required String displayLabel,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     if (_isPhotoBusy) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.accountRemovePhotoDialogTitle),
-        content: Text(l10n.accountRemovePhotoDialogBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.commonDelete),
-          ),
-        ],
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      builder: (ctx) => AccountRemovePhotoDialog(
+        title: l10n.accountRemovePhotoDialogTitle,
+        body: l10n.accountRemovePhotoDialogBody,
+        cancelLabel: l10n.commonCancel,
+        deleteLabel: l10n.commonDelete,
+        photoUrl: photoUrl,
+        displayLabel: displayLabel,
       ),
     );
     if (confirmed != true) return;
@@ -179,29 +188,41 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
-  Widget _buildAvatar(String photoUrl, String displayLabel) {
-    final fallback = CircleAvatar(
-      radius: 42,
-      child: Text(
-        avatarInitialFromDisplayLabel(displayLabel),
-        style: const TextStyle(fontSize: 24),
-      ),
-    );
+  Future<void> _showPhotoSheet({
+    required String photoUrl,
+    required String displayLabel,
+  }) async {
+    final l10n = AppLocalizations.of(context)!;
+    if (_isPhotoBusy) return;
 
-    if (photoUrl.isEmpty) {
-      return fallback;
-    }
-
-    return SizedBox(
-      width: 84,
-      height: 84,
-      child: ClipOval(
-        child: Image.network(
-          photoUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallback,
-        ),
-      ),
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        return AccountPhotoBottomSheet(
+          title: l10n.accountPhotoSheetTitle,
+          galleryLabel: l10n.accountChooseFromGallery,
+          cameraLabel: l10n.accountTakePhoto,
+          deleteLabel: l10n.commonDelete,
+          showDelete: photoUrl.isNotEmpty,
+          onGallery: () {
+            Navigator.of(sheetContext).pop();
+            _pickAndUploadProfilePhoto(ImageSource.gallery);
+          },
+          onCamera: () {
+            Navigator.of(sheetContext).pop();
+            _pickAndUploadProfilePhoto(ImageSource.camera);
+          },
+          onDelete: () {
+            Navigator.of(sheetContext).pop();
+            _removeProfilePhoto(
+              photoUrl: photoUrl,
+              displayLabel: displayLabel,
+            );
+          },
+        );
+      },
     );
   }
 
@@ -218,7 +239,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingName) return;
     final nameField = _accountNameFieldKey.currentState;
-    if (nameField == null || !nameField.validate()) return;
+    if (nameField == null || !nameField.validate()) {
+      setState(() {});
+      return;
+    }
 
     setState(() => _isSavingName = true);
     try {
@@ -250,7 +274,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     if (countryField == null || numberField == null) return;
     final validCountry = countryField.validate();
     final validNumber = numberField.validate();
-    if (!validCountry || !validNumber) return;
+    if (!validCountry || !validNumber) {
+      setState(() {});
+      return;
+    }
 
     setState(() => _isSavingPhone = true);
     try {
@@ -279,7 +306,10 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     final l10n = AppLocalizations.of(context)!;
     if (_isSavingEmail) return;
     final emailField = _accountEmailFieldKey.currentState;
-    if (emailField == null || !emailField.validate()) return;
+    if (emailField == null || !emailField.validate()) {
+      setState(() {});
+      return;
+    }
 
     setState(() => _isSavingEmail = true);
     try {
@@ -308,100 +338,338 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     return RegExp(pattern).hasMatch(value);
   }
 
-  Widget _buildReadOnlyField({
-    required BuildContext context,
-    required IconData leadingIcon,
-    required String value,
-    required VoidCallback onEdit,
+  void _startEditingEmail(String email) {
+    setState(() {
+      _accountEmailController.text = email;
+      _isEditingEmail = true;
+      _isEditingName = false;
+      _isEditingPhone = false;
+    });
+  }
+
+  void _startEditingName(String accountName) {
+    setState(() {
+      _accountNameController.text = accountName;
+      _isEditingName = true;
+      _isEditingEmail = false;
+      _isEditingPhone = false;
+    });
+  }
+
+  void _startEditingPhone({
+    required String phoneCountryCode,
+    required String phoneNumber,
   }) {
-    final resolvedValue = value.trim().isEmpty ? '—' : value.trim();
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(
-          leadingIcon,
-          size: 18,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+    setState(() {
+      _phoneCountryCodeController.text = phoneCountryCode;
+      _phoneNumberController.text = phoneNumber;
+      _isEditingPhone = true;
+      _isEditingEmail = false;
+      _isEditingName = false;
+    });
+  }
+
+  Widget _buildEmailRow({
+    required AppLocalizations l10n,
+    required String email,
+  }) {
+    if (_isEditingEmail) {
+      final emailError = _accountEmailFieldKey.currentState?.errorText;
+      return AccountEditWrap(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: AccountInputShell(
+                    icon: Icons.alternate_email_rounded,
+                    hasError: emailError != null,
+                    child: TextFormField(
+                      key: _accountEmailFieldKey,
+                      controller: _accountEmailController,
+                      autofocus: true,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: NeonPalette.deep,
+                      ),
+                      decoration: _inlineFieldDecoration,
+                      validator: (value) {
+                        final trimmed = (value ?? '').trim();
+                        if (trimmed.isEmpty) {
+                          return l10n.accountEmailUnavailable;
+                        }
+                        if (!_isValidEmail(trimmed)) {
+                          return l10n.signInEmailLinkInvalidEmail;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AccountEditActions(
+                  isSaving: _isSavingEmail,
+                  onSave: _saveEmail,
+                  onCancel: () => setState(() {
+                    _accountEmailController.text = email;
+                    _isEditingEmail = false;
+                  }),
+                  saveTooltip: l10n.signInEmailFieldLabel,
+                  cancelTooltip: l10n.commonCancel,
+                ),
+              ],
+            ),
+            if (emailError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 6),
+                child: Text(
+                  emailError,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFBA1A1A),
+                  ),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            resolvedValue,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 18,
-          tooltip: AppLocalizations.of(context)!.commonEdit,
-          onPressed: onEdit,
-          icon: const Icon(Icons.edit_outlined),
-        ),
-      ],
+      );
+    }
+
+    return AccountInfoRow(
+      icon: Icons.alternate_email_rounded,
+      label: l10n.accountEmailAddressLabel,
+      value: email,
+      editTooltip: l10n.commonEdit,
+      onEdit: () => _startEditingEmail(email),
     );
   }
 
-  Widget _buildEditCancelButton({
-    required bool isSaving,
-    required VoidCallback onPressed,
-    required String tooltip,
+  Widget _buildNameRow({
+    required AppLocalizations l10n,
+    required String accountName,
   }) {
-    return IconButton.outlined(
-      visualDensity: VisualDensity.compact,
-      iconSize: 20,
-      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-      onPressed: isSaving ? null : onPressed,
-      tooltip: tooltip,
-      icon: const Icon(Icons.close_rounded),
+    if (_isEditingName) {
+      return AccountEditWrap(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: AccountInputShell(
+                    icon: Icons.badge_outlined,
+                    child: TextFormField(
+                      key: _accountNameFieldKey,
+                      controller: _accountNameController,
+                      autofocus: true,
+                      maxLength: kDisplayNameMaxLength,
+                      textCapitalization: TextCapitalization.words,
+                      onChanged: (_) => setState(() {}),
+                      buildCounter: (
+                        context, {
+                        required currentLength,
+                        required isFocused,
+                        required maxLength,
+                      }) =>
+                          null,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: NeonPalette.deep,
+                      ),
+                      decoration: _inlineFieldDecoration.copyWith(
+                        hintText: l10n.accountNameHint,
+                        hintStyle: const TextStyle(
+                          color: NeonPalette.outline,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (!isDisplayNameLengthValid(value ?? '')) {
+                          return l10n.inviteBypassFirstNameInvalid;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AccountEditActions(
+                  isSaving: _isSavingName,
+                  onSave: _saveName,
+                  onCancel: () => setState(() {
+                    _accountNameController.text = accountName;
+                    _isEditingName = false;
+                  }),
+                  saveTooltip: l10n.accountSaveNameTooltip,
+                  cancelTooltip: l10n.commonCancel,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6, right: 6),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${_accountNameController.text.length}/$kDisplayNameMaxLength',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: NeonPalette.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AccountInfoRow(
+      icon: Icons.badge_outlined,
+      label: l10n.accountNameLabel,
+      value: accountName,
+      editTooltip: l10n.commonEdit,
+      onEdit: () => _startEditingName(accountName),
     );
   }
 
-  /// Width reserved for save + cancel buttons beside an editable field.
-  static const double _editActionsSlotWidth = 86;
-
-  Widget _buildEditActions({
-    required bool isSaving,
-    required VoidCallback onSave,
-    required VoidCallback onCancel,
-    required String saveTooltip,
-    required String cancelTooltip,
+  Widget _buildPhoneRow({
+    required AppLocalizations l10n,
+    required String phoneCountryCode,
+    required String phoneNumber,
+    required String phoneDisplay,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildEditSaveButton(
-          isSaving: isSaving,
-          onPressed: onSave,
-          tooltip: saveTooltip,
+    if (_isEditingPhone) {
+      return AccountEditWrap(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 92,
+                  child: AccountInputShell(
+                    icon: Icons.add,
+                    child: TextFormField(
+                      key: _phoneCountryCodeFieldKey,
+                      controller: _phoneCountryCodeController,
+                      autofocus: true,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: NeonPalette.deep,
+                      ),
+                      decoration: _inlineFieldDecoration.copyWith(
+                        hintText: l10n.accountPhoneCountryCodeHint,
+                        hintStyle: const TextStyle(
+                          color: NeonPalette.outline,
+                        ),
+                      ),
+                      validator: (_) {
+                        final countryCode =
+                            _phoneCountryCodeController.text.trim();
+                        final phoneNumberValue =
+                            _phoneNumberController.text.trim();
+                        final hasAnyPhonePart = countryCode.isNotEmpty ||
+                            phoneNumberValue.isNotEmpty;
+                        if (!hasAnyPhonePart) {
+                          return null;
+                        }
+                        if (countryCode.isEmpty &&
+                            RegExp(r'^\+[0-9 ]{6,20}$')
+                                .hasMatch(phoneNumberValue)) {
+                          return null;
+                        }
+                        if (countryCode.isEmpty) {
+                          return l10n.accountPhoneCountryCodeRequired;
+                        }
+                        if (!RegExp(r'^\+[0-9]{1,4}$').hasMatch(countryCode)) {
+                          return l10n.accountPhoneCountryCodeInvalid;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: AccountInputShell(
+                    icon: Icons.phone_outlined,
+                    child: TextFormField(
+                      key: _phoneNumberFieldKey,
+                      controller: _phoneNumberController,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: NeonPalette.deep,
+                      ),
+                      decoration: _inlineFieldDecoration.copyWith(
+                        hintText: l10n.accountPhoneNumberHint,
+                        hintStyle: const TextStyle(
+                          color: NeonPalette.outline,
+                        ),
+                      ),
+                      validator: (_) {
+                        final countryCode =
+                            _phoneCountryCodeController.text.trim();
+                        final phoneNumberValue =
+                            _phoneNumberController.text.trim();
+                        final hasAnyPhonePart = countryCode.isNotEmpty ||
+                            phoneNumberValue.isNotEmpty;
+                        if (!hasAnyPhonePart) {
+                          return null;
+                        }
+                        if (countryCode.isEmpty &&
+                            RegExp(r'^\+[0-9 ]{6,20}$')
+                                .hasMatch(phoneNumberValue)) {
+                          return null;
+                        }
+                        if (phoneNumberValue.isEmpty) {
+                          return l10n.accountPhoneNumberRequired;
+                        }
+                        if (!RegExp(r'^[0-9 ]{4,20}$')
+                            .hasMatch(phoneNumberValue)) {
+                          return l10n.accountPhoneNumberInvalid;
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: AccountEditActions(
+                isSaving: _isSavingPhone,
+                onSave: _savePhone,
+                onCancel: () => setState(() {
+                  _phoneCountryCodeController.text = phoneCountryCode;
+                  _phoneNumberController.text = phoneNumber;
+                  _isEditingPhone = false;
+                }),
+                saveTooltip: l10n.accountSavePhoneTooltip,
+                cancelTooltip: l10n.commonCancel,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 6),
-        _buildEditCancelButton(
-          isSaving: isSaving,
-          onPressed: onCancel,
-          tooltip: cancelTooltip,
-        ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildEditSaveButton({
-    required bool isSaving,
-    required VoidCallback onPressed,
-    required String tooltip,
-  }) {
-    return IconButton.filled(
-      visualDensity: VisualDensity.compact,
-      iconSize: 20,
-      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-      onPressed: isSaving ? null : onPressed,
-      tooltip: tooltip,
-      icon: isSaving
-          ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.check_rounded),
+    return AccountInfoRow(
+      icon: Icons.phone_outlined,
+      label: l10n.accountPhoneNumberLabel,
+      value: phoneDisplay,
+      editTooltip: l10n.commonEdit,
+      onEdit: () => _startEditingPhone(
+        phoneCountryCode: phoneCountryCode,
+        phoneNumber: phoneNumber,
+      ),
     );
   }
 
@@ -464,7 +732,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     );
   }
 
-
+  String _languageSubtitle(AppLanguage language, AppLocalizations l10n) {
+    return switch (language) {
+      AppLanguage.frFr => l10n.languageFrench,
+      AppLanguage.enUs => l10n.languageEnglishUs,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -480,517 +753,154 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.accountTitle),
-      ),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: ref.read(accountRepositoryProvider).watchMyUserDocument(),
-        builder: (
-          BuildContext context,
-          AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot,
-        ) {
-          if (snapshot.connectionState == ConnectionState.waiting &&
-              !snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return Theme(
+      data: NeonPalette.overlayOn(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: NeonPalette.scaffoldBackground,
+        appBar: AppBar(
+          title: Text(l10n.accountTitle),
+          titleTextStyle: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+            color: NeonPalette.deep,
+            height: 28 / 20,
+          ),
+        ),
+        body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: ref.read(accountRepositoryProvider).watchMyUserDocument(),
+          builder: (
+            BuildContext context,
+            AsyncSnapshot<DocumentSnapshot<Map<String, dynamic>>> snapshot,
+          ) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final data = snapshot.data?.data() ?? const <String, dynamic>{};
-          final account =
-              (data['account'] as Map<String, dynamic>?) ?? const {};
+            final data = snapshot.data?.data() ?? const <String, dynamic>{};
+            final account =
+                (data['account'] as Map<String, dynamic>?) ?? const {};
 
-          final email = (account['email'] as String?)?.trim().isNotEmpty == true
-              ? (account['email'] as String).trim()
-              : (data['email'] as String?)?.trim().isNotEmpty == true
-                  ? (data['email'] as String).trim()
-                  : (authUser.email ?? '').trim();
-          final photoUrl =
-              (account['photoUrl'] as String?)?.trim().isNotEmpty == true
-                  ? (account['photoUrl'] as String).trim()
-                  : (data['photoUrl'] as String?)?.trim().isNotEmpty == true
-                      ? (data['photoUrl'] as String).trim()
-                      : '';
-          final accountName = (account['name'] as String?)?.trim() ?? '';
-          final phoneCountryCode =
-              (account['phoneCountryCode'] as String?)?.trim() ?? '';
-          final phoneNumber = (account['phoneNumber'] as String?)?.trim() ?? '';
-          final phoneDisplay = [
-            phoneCountryCode,
-            phoneNumber,
-          ].where((part) => part.trim().isNotEmpty).join(' ');
-          final displayLabel = accountName.isNotEmpty
-              ? accountName
-              : (authUser.displayName ?? '').trim().isNotEmpty
-                  ? (authUser.displayName ?? '').trim()
-                  : displayLabelFromEmail(email);
+            final email = (account['email'] as String?)?.trim().isNotEmpty == true
+                ? (account['email'] as String).trim()
+                : (data['email'] as String?)?.trim().isNotEmpty == true
+                    ? (data['email'] as String).trim()
+                    : (authUser.email ?? '').trim();
+            final photoUrl =
+                (account['photoUrl'] as String?)?.trim().isNotEmpty == true
+                    ? (account['photoUrl'] as String).trim()
+                    : (data['photoUrl'] as String?)?.trim().isNotEmpty == true
+                        ? (data['photoUrl'] as String).trim()
+                        : '';
+            final accountName = (account['name'] as String?)?.trim() ?? '';
+            final phoneCountryCode =
+                (account['phoneCountryCode'] as String?)?.trim() ?? '';
+            final phoneNumber = (account['phoneNumber'] as String?)?.trim() ?? '';
+            final phoneDisplay = [
+              phoneCountryCode,
+              phoneNumber,
+            ].where((part) => part.trim().isNotEmpty).join(' ');
+            final displayLabel = accountName.isNotEmpty
+                ? accountName
+                : (authUser.displayName ?? '').trim().isNotEmpty
+                    ? (authUser.displayName ?? '').trim()
+                    : displayLabelFromEmail(email);
 
-          if (!_didInitFromFirestore) {
-            _accountNameController.text = accountName;
-            _accountEmailController.text = email;
-            _phoneCountryCodeController.text = phoneCountryCode;
-            _phoneNumberController.text = phoneNumber;
-            _didInitFromFirestore = true;
-          }
+            if (!_didInitFromFirestore) {
+              _accountNameController.text = accountName;
+              _accountEmailController.text = email;
+              _phoneCountryCodeController.text = phoneCountryCode;
+              _phoneNumberController.text = phoneNumber;
+              _didInitFromFirestore = true;
+            }
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _buildAvatar(photoUrl, displayLabel),
-                    Positioned(
-                      right: -6,
-                      bottom: -6,
-                      child: Material(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(999),
-                        child: PopupMenuButton<String>(
-                          tooltip: l10n.accountPhotoActionsTooltip,
-                          enabled: !_isPhotoBusy,
-                          padding: EdgeInsets.zero,
-                          onSelected: (value) {
-                            if (value == 'gallery') {
-                              _pickAndUploadProfilePhoto(ImageSource.gallery);
-                              return;
-                            }
-                            if (value == 'camera') {
-                              _pickAndUploadProfilePhoto(ImageSource.camera);
-                              return;
-                            }
-                            if (value == 'remove') {
-                              _removeProfilePhoto();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'gallery',
-                              child: Text(l10n.accountChooseFromGallery),
-                            ),
-                            PopupMenuItem(
-                              value: 'camera',
-                              child: Text(l10n.accountTakePhoto),
-                            ),
-                            if (photoUrl.isNotEmpty)
-                              PopupMenuItem(
-                                value: 'remove',
-                                child: Text(l10n.commonDelete),
-                              ),
-                          ],
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Center(
-                              child: _isPhotoBusy
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 1.8,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.photo_camera_outlined,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_isEditingEmail)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: _accountEmailFieldKey,
-                            controller: _accountEmailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: l10n.signInEmailFieldLabel,
-                              border: const OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              final trimmed = (value ?? '').trim();
-                              if (trimmed.isEmpty) {
-                                return l10n.accountEmailUnavailable;
-                              }
-                              if (!_isValidEmail(trimmed)) {
-                                return l10n.signInEmailLinkInvalidEmail;
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildEditActions(
-                          isSaving: _isSavingEmail,
-                          onSave: _saveEmail,
-                          onCancel: () => setState(() {
-                            _accountEmailController.text = email;
-                            _isEditingEmail = false;
-                          }),
-                          saveTooltip: l10n.signInEmailFieldLabel,
-                          cancelTooltip: l10n.commonCancel,
-                        ),
-                      ],
-                    )
-                  else
-                    _buildReadOnlyField(
-                      context: context,
-                      leadingIcon: Icons.alternate_email_rounded,
-                      value: email,
-                      onEdit: () {
-                        setState(() {
-                          _accountEmailController.text = email;
-                          _isEditingEmail = true;
-                          _isEditingName = false;
-                          _isEditingPhone = false;
-                        });
-                      },
-                    ),
-                  const SizedBox(height: 12),
-                  if (_isEditingName)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                key: _accountNameFieldKey,
-                                controller: _accountNameController,
-                                maxLength: kDisplayNameMaxLength,
-                                textCapitalization: TextCapitalization.words,
-                                onChanged: (_) => setState(() {}),
-                                buildCounter: (
-                                  context, {
-                                  required currentLength,
-                                  required isFocused,
-                                  required maxLength,
-                                }) =>
-                                    null,
-                                decoration: InputDecoration(
-                                  labelText: l10n.accountNameLabel,
-                                  hintText: l10n.accountNameHint,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                validator: (value) {
-                                  if (!isDisplayNameLengthValid(value ?? '')) {
-                                    return l10n.inviteBypassFirstNameInvalid;
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _buildEditActions(
-                              isSaving: _isSavingName,
-                              onSave: _saveName,
-                              onCancel: () => setState(() {
-                                _accountNameController.text = accountName;
-                                _isEditingName = false;
-                              }),
-                              saveTooltip: l10n.accountSaveNameTooltip,
-                              cancelTooltip: l10n.commonCancel,
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 4,
-                                  left: 16,
-                                  right: 16,
-                                ),
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Text(
-                                    '${_accountNameController.text.length}/$kDisplayNameMaxLength',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: _editActionsSlotWidth + 8),
-                          ],
-                        ),
-                      ],
-                    )
-                  else
-                    _buildReadOnlyField(
-                      context: context,
-                      leadingIcon: Icons.person_outline_rounded,
-                      value: accountName,
-                      onEdit: () {
-                        setState(() {
-                          _accountNameController.text = accountName;
-                          _isEditingName = true;
-                          _isEditingEmail = false;
-                          _isEditingPhone = false;
-                        });
-                      },
-                    ),
-                  const SizedBox(height: 12),
-                  if (_isEditingPhone)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 108,
-                          child: TextFormField(
-                            key: _phoneCountryCodeFieldKey,
-                            controller: _phoneCountryCodeController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              labelText: l10n.accountPhoneCountryCodeLabel,
-                              hintText: l10n.accountPhoneCountryCodeHint,
-                              border: const OutlineInputBorder(),
-                            ),
-                            validator: (_) {
-                              final countryCode =
-                                  _phoneCountryCodeController.text.trim();
-                              final phoneNumber =
-                                  _phoneNumberController.text.trim();
-                              final hasAnyPhonePart = countryCode.isNotEmpty ||
-                                  phoneNumber.isNotEmpty;
-                              if (!hasAnyPhonePart) {
-                                return null;
-                              }
-                              if (countryCode.isEmpty &&
-                                  RegExp(r'^\+[0-9 ]{6,20}$')
-                                      .hasMatch(phoneNumber)) {
-                                return null;
-                              }
-                              if (countryCode.isEmpty) {
-                                return l10n.accountPhoneCountryCodeRequired;
-                              }
-                              if (!RegExp(r'^\+[0-9]{1,4}$')
-                                  .hasMatch(countryCode)) {
-                                return l10n.accountPhoneCountryCodeInvalid;
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            key: _phoneNumberFieldKey,
-                            controller: _phoneNumberController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              labelText: l10n.accountPhoneNumberLabel,
-                              hintText: l10n.accountPhoneNumberHint,
-                              border: const OutlineInputBorder(),
-                            ),
-                            validator: (_) {
-                              final countryCode =
-                                  _phoneCountryCodeController.text.trim();
-                              final phoneNumber =
-                                  _phoneNumberController.text.trim();
-                              final hasAnyPhonePart = countryCode.isNotEmpty ||
-                                  phoneNumber.isNotEmpty;
-                              if (!hasAnyPhonePart) {
-                                return null;
-                              }
-                              if (countryCode.isEmpty &&
-                                  RegExp(r'^\+[0-9 ]{6,20}$')
-                                      .hasMatch(phoneNumber)) {
-                                return null;
-                              }
-                              if (phoneNumber.isEmpty) {
-                                return l10n.accountPhoneNumberRequired;
-                              }
-                              if (!RegExp(r'^[0-9 ]{4,20}$')
-                                  .hasMatch(phoneNumber)) {
-                                return l10n.accountPhoneNumberInvalid;
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildEditActions(
-                          isSaving: _isSavingPhone,
-                          onSave: _savePhone,
-                          onCancel: () => setState(() {
-                            _phoneCountryCodeController.text = phoneCountryCode;
-                            _phoneNumberController.text = phoneNumber;
-                            _isEditingPhone = false;
-                          }),
-                          saveTooltip: l10n.accountSavePhoneTooltip,
-                          cancelTooltip: l10n.commonCancel,
-                        ),
-                      ],
-                    )
-                  else
-                    _buildReadOnlyField(
-                      context: context,
-                      leadingIcon: Icons.phone_outlined,
-                      value: phoneDisplay,
-                      onEdit: () {
-                        setState(() {
-                          _phoneCountryCodeController.text = phoneCountryCode;
-                          _phoneNumberController.text = phoneNumber;
-                          _isEditingPhone = true;
-                          _isEditingEmail = false;
-                          _isEditingName = false;
-                        });
-                      },
-                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.accountPhonePrivacyHelp,
-                    style: Theme.of(context).textTheme.bodySmall,
+            return ListView(
+              padding: const EdgeInsets.only(bottom: 28),
+              children: [
+                AccountProfileHeader(
+                  photoUrl: photoUrl,
+                  displayLabel: displayLabel,
+                  email: email,
+                  isPhotoBusy: _isPhotoBusy,
+                  cameraTooltip: l10n.accountPhotoActionsTooltip,
+                  onCameraTap: () => _showPhotoSheet(
+                    photoUrl: photoUrl,
+                    displayLabel: displayLabel,
                   ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.accountFoodAllergens),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _openAllergensPage(data),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.accountCupidonSpace),
-                subtitle: Text(l10n.accountCupidonHistory),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/account/cupidon'),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.accountPreferencesSectionTitle,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.accountLanguageTitle),
-                subtitle: Text(l10n.accountLanguageSubtitle),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Material(
-                      color: currentLanguage == AppLanguage.frFr
-                          ? Theme.of(
-                              context,
-                            )
-                              .colorScheme
-                              .primaryContainer
-                              .withValues(alpha: 0.75)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(999),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(999),
-                        onTap: _isUpdatingLanguage
-                            ? null
-                            : () => _updatePreferredLanguage(AppLanguage.frFr),
-                        child: Tooltip(
-                          message: l10n.languageFrench,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/images/flag_fr.svg',
-                              width: 18,
-                              height: 18,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Material(
-                      color: currentLanguage == AppLanguage.enUs
-                          ? Theme.of(
-                              context,
-                            )
-                              .colorScheme
-                              .primaryContainer
-                              .withValues(alpha: 0.75)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(999),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(999),
-                        onTap: _isUpdatingLanguage
-                            ? null
-                            : () => _updatePreferredLanguage(AppLanguage.enUs),
-                        child: Tooltip(
-                          message: l10n.languageEnglishUs,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            child: SvgPicture.asset(
-                              'assets/images/flag_us.svg',
-                              width: 18,
-                              height: 18,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-              if (kIsWeb) ...[
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
+                AccountSectionHeader(
+                  label: l10n.accountPersonalInfoSectionTitle,
+                ),
+                AccountCard(
+                  child: Column(
+                    children: [
+                      _buildEmailRow(l10n: l10n, email: email),
+                      const AccountCardDivider(),
+                      _buildNameRow(l10n: l10n, accountName: accountName),
+                      const AccountCardDivider(),
+                      _buildPhoneRow(
+                        l10n: l10n,
+                        phoneCountryCode: phoneCountryCode,
+                        phoneNumber: phoneNumber,
+                        phoneDisplay: phoneDisplay,
+                      ),
+                    ],
+                  ),
+                ),
+                AccountHelpText(text: l10n.accountPhonePrivacyHelp),
+                AccountSectionHeader(
+                  label: l10n.accountPreferencesSectionTitle,
+                ),
+                AccountCard(
+                  child: Column(
+                    children: [
+                      AccountPrefTile(
+                        icon: Icons.restaurant_outlined,
+                        tint: AccountIconTint.warning,
+                        title: l10n.accountFoodAllergens,
+                        subtitle: l10n.accountFoodAllergensSubtitle,
+                        onTap: () => _openAllergensPage(data),
+                      ),
+                      const AccountCardDivider(),
+                      AccountPrefTile(
+                        icon: Icons.favorite,
+                        tint: AccountIconTint.accent,
+                        filled: true,
+                        title: l10n.accountCupidonSpace,
+                        subtitle: l10n.accountCupidonHistory,
+                        onTap: () => context.push('/account/cupidon'),
+                      ),
+                      const AccountCardDivider(),
+                      AccountPrefTile(
+                        icon: Icons.language_outlined,
+                        title: l10n.accountLanguageTitle,
+                        subtitle: _languageSubtitle(currentLanguage, l10n),
+                        trailing: AccountLanguageSelector(
+                          currentLanguage: currentLanguage,
+                          isUpdating: _isUpdatingLanguage,
+                          frenchTooltip: l10n.languageFrench,
+                          englishTooltip: l10n.languageEnglishUs,
+                          onSelect: _updatePreferredLanguage,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (kIsWeb) ...[
+                  AccountNotificationsButton(
+                    label: _isEnablingPush
+                        ? l10n.accountEnabling
+                        : l10n.accountEnableNotifications,
+                    isEnabling: _isEnablingPush,
                     onPressed:
                         _isEnablingPush ? null : _enablePushNotifications,
-                    icon: _isEnablingPush
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.notifications_active_outlined),
-                    label: Text(
-                      _isEnablingPush
-                          ? l10n.accountEnabling
-                          : l10n.accountEnableNotifications,
-                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.accountWebPushHelp,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                  AccountHelpText(text: l10n.accountWebPushHelp),
+                ],
               ],
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

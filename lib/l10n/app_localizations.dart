@@ -508,6 +508,30 @@ abstract class AppLocalizations {
   /// **'Mon compte'**
   String get accountTitle;
 
+  /// No description provided for @accountPersonalInfoSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations personnelles'**
+  String get accountPersonalInfoSectionTitle;
+
+  /// No description provided for @accountEmailAddressLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse e-mail'**
+  String get accountEmailAddressLabel;
+
+  /// No description provided for @accountFoodAllergensSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pris en compte dans la planification des repas'**
+  String get accountFoodAllergensSubtitle;
+
+  /// No description provided for @accountPhotoSheetTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo de profil'**
+  String get accountPhotoSheetTitle;
+
   /// No description provided for @accountCropProfilePhotoTitle.
   ///
   /// In fr, this message translates to:
@@ -817,13 +841,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateDialogTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Créer un voyage'**
+  /// **'Nouveau voyage'**
   String get tripsCreateDialogTitle;
 
   /// No description provided for @tripsTitleLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Titre'**
+  /// **'Nom du voyage'**
   String get tripsTitleLabel;
 
   /// No description provided for @tripsDestinationLabel.
@@ -856,6 +880,234 @@ abstract class AppLocalizations {
   /// **'Titre, destination et votre nom sont obligatoires'**
   String get tripsCreateValidationRequired;
 
+  /// No description provided for @tripsCreateValidationRequiredDayTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Titre et votre nom sont obligatoires'**
+  String get tripsCreateValidationRequiredDayTrip;
+
+  /// No description provided for @tripCreateSingleDayDateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date de la sortie'**
+  String get tripCreateSingleDayDateLabel;
+
+  /// No description provided for @tripDayTripLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'À la journée'**
+  String get tripDayTripLabel;
+
+  /// No description provided for @tripCreateDayTripSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une sortie sur une seule journée, sans nuit sur place.'**
+  String get tripCreateDayTripSubtitle;
+
+  /// No description provided for @tripCreateCoverPhotoLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une photo de couverture'**
+  String get tripCreateCoverPhotoLabel;
+
+  /// No description provided for @tripCreateCoverPhotoOptional.
+  ///
+  /// In fr, this message translates to:
+  /// **'Optionnel'**
+  String get tripCreateCoverPhotoOptional;
+
+  /// No description provided for @tripCreateTitlePlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ex. Week-end à Lisbonne'**
+  String get tripCreateTitlePlaceholder;
+
+  /// No description provided for @tripCreateDestinationPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ville, lieu ou adresse'**
+  String get tripCreateDestinationPlaceholder;
+
+  /// No description provided for @tripCreateDatesLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dates'**
+  String get tripCreateDatesLabel;
+
+  /// No description provided for @tripCreateDateLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date'**
+  String get tripCreateDateLabel;
+
+  /// No description provided for @tripCreateDateStartLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Début'**
+  String get tripCreateDateStartLabel;
+
+  /// No description provided for @tripCreateDateEndLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fin'**
+  String get tripCreateDateEndLabel;
+
+  /// No description provided for @tripCreateSingleDayFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jour de la sortie'**
+  String get tripCreateSingleDayFieldLabel;
+
+  /// No description provided for @tripCreateNightsDays.
+  ///
+  /// In fr, this message translates to:
+  /// **'{nights} nuits · {days} jours'**
+  String tripCreateNightsDays(int nights, int days);
+
+  /// No description provided for @tripCreateMealsSectionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repas — premier et dernier'**
+  String get tripCreateMealsSectionLabel;
+
+  /// No description provided for @tripCreateMealsHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cale le planning repas sur tes horaires d\'arrivée et de départ.'**
+  String get tripCreateMealsHint;
+
+  /// No description provided for @tripCreateArrivalMealDay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Arrivée · {date}'**
+  String tripCreateArrivalMealDay(Object date);
+
+  /// No description provided for @tripCreateDepartureMealDay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Départ · {date}'**
+  String tripCreateDepartureMealDay(Object date);
+
+  /// No description provided for @tripCreateFirstMealQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Premier repas sur place'**
+  String get tripCreateFirstMealQuestion;
+
+  /// No description provided for @tripCreateLastMealQuestion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dernier repas sur place'**
+  String get tripCreateLastMealQuestion;
+
+  /// No description provided for @tripCreateMealBreakfast.
+  ///
+  /// In fr, this message translates to:
+  /// **'Petit-déj'**
+  String get tripCreateMealBreakfast;
+
+  /// No description provided for @tripCreateMealLunch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Midi'**
+  String get tripCreateMealLunch;
+
+  /// No description provided for @tripCreateMealDinner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dîner'**
+  String get tripCreateMealDinner;
+
+  /// No description provided for @tripCreateDescriptionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Description'**
+  String get tripCreateDescriptionLabel;
+
+  /// No description provided for @tripCreateDescriptionPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un mot sur le programme…'**
+  String get tripCreateDescriptionPlaceholder;
+
+  /// No description provided for @tripCreatePhotosStorageLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien de stockage des photos'**
+  String get tripCreatePhotosStorageLabel;
+
+  /// No description provided for @tripCreatePhotosStoragePlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien du dossier ou service de stockage partagé'**
+  String get tripCreatePhotosStoragePlaceholder;
+
+  /// No description provided for @tripCreateCupidonModeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode Cupidon'**
+  String get tripCreateCupidonModeLabel;
+
+  /// No description provided for @tripCreateCupidonModeSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Active la fonctionnalité « Aimer » entre participants du voyage.'**
+  String get tripCreateCupidonModeSubtitle;
+
+  /// No description provided for @tripCreateLinkPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Coller un lien Airbnb, etc.'**
+  String get tripCreateLinkPlaceholder;
+
+  /// No description provided for @tripCreateCreatorNameEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non renseigné'**
+  String get tripCreateCreatorNameEmpty;
+
+  /// No description provided for @tripCreateCreatorNameHintProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pseudo du profil'**
+  String get tripCreateCreatorNameHintProfile;
+
+  /// No description provided for @tripCreateCreatorNameHintCustom.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom personnalisé'**
+  String get tripCreateCreatorNameHintCustom;
+
+  /// No description provided for @tripCreateCreatorNameCustomPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Comment veux-tu apparaître ?'**
+  String get tripCreateCreatorNameCustomPlaceholder;
+
+  /// No description provided for @tripDatePickerRangeKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner la période'**
+  String get tripDatePickerRangeKicker;
+
+  /// No description provided for @tripDatePickerSingleKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner la date'**
+  String get tripDatePickerSingleKicker;
+
+  /// No description provided for @tripDatePickerChooseEnd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis la date de fin'**
+  String get tripDatePickerChooseEnd;
+
+  /// No description provided for @tripDatePickerSingleSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sortie à la journée'**
+  String get tripDatePickerSingleSummary;
+
   /// No description provided for @tripsCreateValidationDateOrder.
   ///
   /// In fr, this message translates to:
@@ -865,7 +1117,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsCreateAction.
   ///
   /// In fr, this message translates to:
-  /// **'Créer'**
+  /// **'Créer le voyage'**
   String get tripsCreateAction;
 
   /// No description provided for @tripsDeleteDialogTitle.
@@ -939,6 +1191,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Colle le code envoyé par l\'organisateur du voyage.'**
   String get tripsJoinCodeDialogHelp;
+
+  /// No description provided for @tripsJoinCodePaste.
+  ///
+  /// In fr, this message translates to:
+  /// **'Coller le code'**
+  String get tripsJoinCodePaste;
 
   /// No description provided for @tripsJoinCodeLabel.
   ///
@@ -1069,13 +1327,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripSettingsTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Paramètres du voyage'**
+  /// **'Permissions'**
   String get tripSettingsTitle;
 
   /// No description provided for @tripUserPreferencesTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Mes préférences du voyage'**
+  /// **'Mes préférences'**
   String get tripUserPreferencesTitle;
 
   /// No description provided for @tripUserPreferencesMenuAction.
@@ -1083,6 +1341,48 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Mes préférences'**
   String get tripUserPreferencesMenuAction;
+
+  /// No description provided for @tripUserPreferencesHeadKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes préférences pour le voyage'**
+  String get tripUserPreferencesHeadKicker;
+
+  /// No description provided for @tripUserPreferencesHeadSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces réglages ne concernent que toi. Tu peux les changer à tout moment.'**
+  String get tripUserPreferencesHeadSubtitle;
+
+  /// No description provided for @tripUserPreferencesProfileSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon profil sur ce voyage'**
+  String get tripUserPreferencesProfileSection;
+
+  /// No description provided for @tripUserPreferencesStaySection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mon séjour'**
+  String get tripUserPreferencesStaySection;
+
+  /// No description provided for @tripUserPreferencesOptionsSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Options & confidentialité'**
+  String get tripUserPreferencesOptionsSection;
+
+  /// No description provided for @tripUserPreferencesParticipatingAs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu participes en tant que'**
+  String get tripUserPreferencesParticipatingAs;
+
+  /// No description provided for @tripUserPreferencesSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préférences enregistrées'**
+  String get tripUserPreferencesSaved;
 
   /// No description provided for @tripPhoneVisibilityTitle.
   ///
@@ -1161,60 +1461,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Définis les rôles minimaux pour chaque domaine du voyage.'**
   String get tripSettingsPermissionsSectionDescription;
-
-  /// No description provided for @tripSettingsGeneralSectionTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Paramètres généraux'**
-  String get tripSettingsGeneralSectionTitle;
-
-  /// No description provided for @tripSettingsGeneralSectionDescription.
-  ///
-  /// In fr, this message translates to:
-  /// **'Réglages transverses du voyage (hors permissions).'**
-  String get tripSettingsGeneralSectionDescription;
-
-  /// No description provided for @tripSettingsGeneralPhotosStorageTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Stockage des photos'**
-  String get tripSettingsGeneralPhotosStorageTitle;
-
-  /// No description provided for @tripSettingsGeneralPhotosStorageDescription.
-  ///
-  /// In fr, this message translates to:
-  /// **'Lien du dossier ou service de stockage partagé pour les photos du voyage.'**
-  String get tripSettingsGeneralPhotosStorageDescription;
-
-  /// No description provided for @tripSettingsGeneralPhotosStorageFieldLabel.
-  ///
-  /// In fr, this message translates to:
-  /// **'Lien de stockage photos'**
-  String get tripSettingsGeneralPhotosStorageFieldLabel;
-
-  /// No description provided for @tripSettingsGeneralPhotosStorageFieldHint.
-  ///
-  /// In fr, this message translates to:
-  /// **'https://drive.google.com/... ou https://photos.app.goo.gl/...'**
-  String get tripSettingsGeneralPhotosStorageFieldHint;
-
-  /// No description provided for @tripSettingsGeneralCupidonModeDescription.
-  ///
-  /// In fr, this message translates to:
-  /// **'Active ou désactive le mode Cupidon pour tous les participants de ce voyage.'**
-  String get tripSettingsGeneralCupidonModeDescription;
-
-  /// No description provided for @tripSettingsGeneralComingSoonTitle.
-  ///
-  /// In fr, this message translates to:
-  /// **'Paramètres généraux du voyage'**
-  String get tripSettingsGeneralComingSoonTitle;
-
-  /// No description provided for @tripSettingsGeneralComingSoonDescription.
-  ///
-  /// In fr, this message translates to:
-  /// **'Cette section arrive bientôt.'**
-  String get tripSettingsGeneralComingSoonDescription;
 
   /// No description provided for @roleOwner.
   ///
@@ -1955,6 +2201,60 @@ abstract class AppLocalizations {
   /// **'Nom mis à jour'**
   String get tripParticipantsNameUpdated;
 
+  /// No description provided for @tripParticipantTravelInfoTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations de voyage'**
+  String get tripParticipantTravelInfoTitle;
+
+  /// No description provided for @tripParticipantTravelInfoSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'{participantName}'**
+  String tripParticipantTravelInfoSubtitle(Object participantName);
+
+  /// No description provided for @tripParticipantTravelInfoHeadKicker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations pour le voyage'**
+  String get tripParticipantTravelInfoHeadKicker;
+
+  /// No description provided for @tripParticipantTravelInfoHeadSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces réglages concernent uniquement ce participant. Ils peuvent être modifiés à tout moment.'**
+  String get tripParticipantTravelInfoHeadSubtitle;
+
+  /// No description provided for @tripParticipantTravelInfoProfileSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil sur ce voyage'**
+  String get tripParticipantTravelInfoProfileSection;
+
+  /// No description provided for @tripParticipantTravelInfoStaySection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séjour'**
+  String get tripParticipantTravelInfoStaySection;
+
+  /// No description provided for @tripParticipantTravelInfoParticipatingAs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participe en tant que'**
+  String get tripParticipantTravelInfoParticipatingAs;
+
+  /// No description provided for @tripParticipantTravelInfoSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations enregistrées'**
+  String get tripParticipantTravelInfoSaved;
+
+  /// No description provided for @tripParticipantNotFound.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participant introuvable.'**
+  String get tripParticipantNotFound;
+
   /// No description provided for @tripParticipantsUseProfileName.
   ///
   /// In fr, this message translates to:
@@ -2018,7 +2318,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripParticipantsAdminHint.
   ///
   /// In fr, this message translates to:
-  /// **'Clique sur l’icône à gauche d’un voyageur (prévu ou inscrit) pour lui donner ou retirer le rôle administrateur (sauf le créateur).'**
+  /// **'Appuie sur un voyageur pour ouvrir ses actions : tu peux y attribuer ou retirer le rôle administrateur, modifier ses informations ou le retirer du voyage (sauf le créateur).'**
   String get tripParticipantsAdminHint;
 
   /// No description provided for @tripParticipantsUnlike.
@@ -2044,6 +2344,102 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ouvrir le composeur'**
   String get tripParticipantsOpenDialer;
+
+  /// No description provided for @tripParticipantsRoleChipOwner.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organisateur'**
+  String get tripParticipantsRoleChipOwner;
+
+  /// No description provided for @tripParticipantsRoleChipChildPlanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enfant · planifié'**
+  String get tripParticipantsRoleChipChildPlanned;
+
+  /// No description provided for @tripParticipantsRoleChipPlanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planifié'**
+  String get tripParticipantsRoleChipPlanned;
+
+  /// No description provided for @tripParticipantsRoleChipYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'toi'**
+  String get tripParticipantsRoleChipYou;
+
+  /// No description provided for @tripParticipantsSheetYouSuffix.
+  ///
+  /// In fr, this message translates to:
+  /// **'(toi)'**
+  String get tripParticipantsSheetYouSuffix;
+
+  /// No description provided for @tripParticipantsSheetViewProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir le profil utilisateur'**
+  String get tripParticipantsSheetViewProfile;
+
+  /// No description provided for @tripParticipantsSheetViewProfileSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil public de l\'utilisateur'**
+  String get tripParticipantsSheetViewProfileSubtitle;
+
+  /// No description provided for @tripParticipantsSheetViewTravelInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les informations de voyage'**
+  String get tripParticipantsSheetViewTravelInfo;
+
+  /// No description provided for @tripParticipantsSheetViewTravelInfoSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Préférences et infos de ce participant pour le voyage'**
+  String get tripParticipantsSheetViewTravelInfoSubtitle;
+
+  /// No description provided for @tripParticipantsSheetCall.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appeler'**
+  String get tripParticipantsSheetCall;
+
+  /// No description provided for @tripParticipantsSheetPromoteAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Promouvoir administrateur'**
+  String get tripParticipantsSheetPromoteAdmin;
+
+  /// No description provided for @tripParticipantsSheetDemoteAdmin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer les droits admin'**
+  String get tripParticipantsSheetDemoteAdmin;
+
+  /// No description provided for @tripParticipantsSheetPromoteAdminSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pourra gérer participants et groupes'**
+  String get tripParticipantsSheetPromoteAdminSubtitle;
+
+  /// No description provided for @tripParticipantsSheetDemoteAdminSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} redevient membre classique'**
+  String tripParticipantsSheetDemoteAdminSubtitle(String label);
+
+  /// No description provided for @tripParticipantsSheetRemoveFromTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer du voyage'**
+  String get tripParticipantsSheetRemoveFromTrip;
+
+  /// No description provided for @tripParticipantsRemoveDefinitiveWarning.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action est définitive.'**
+  String get tripParticipantsRemoveDefinitiveWarning;
 
   /// No description provided for @tripNotFound.
   ///
@@ -2543,6 +2939,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Rejoindre le voyage 2/2'**
   String get inviteJoinTripStepTwo;
+
+  /// No description provided for @inviteJoinTripHeadline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre le voyage'**
+  String get inviteJoinTripHeadline;
+
+  /// No description provided for @inviteJoinTripStepLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape {step}/{total}'**
+  String inviteJoinTripStepLabel(Object step, Object total);
+
+  /// No description provided for @inviteJoinNameSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ton nom dans ce voyage'**
+  String get inviteJoinNameSectionTitle;
+
+  /// No description provided for @inviteJoinProfileNotFoundShort.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu ne trouves pas ton nom ?'**
+  String get inviteJoinProfileNotFoundShort;
 
   /// No description provided for @inviteChooseTravelerWarning.
   ///
@@ -4715,6 +5135,60 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Annonces'**
   String get tripOverviewTopTabAnnouncements;
+
+  /// No description provided for @tripOverviewSectionAccommodation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destination'**
+  String get tripOverviewSectionAccommodation;
+
+  /// No description provided for @tripOverviewSectionGroup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le groupe'**
+  String get tripOverviewSectionGroup;
+
+  /// No description provided for @tripOverviewSectionModules.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modules du voyage'**
+  String get tripOverviewSectionModules;
+
+  /// No description provided for @tripOverviewSectionSettings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages du voyage'**
+  String get tripOverviewSectionSettings;
+
+  /// No description provided for @tripOverviewInviteCodeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code'**
+  String get tripOverviewInviteCodeLabel;
+
+  /// No description provided for @tripOverviewShareCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partager'**
+  String get tripOverviewShareCode;
+
+  /// No description provided for @tripOverviewPhotosAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photos'**
+  String get tripOverviewPhotosAction;
+
+  /// No description provided for @tripOverviewBannerEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune photo'**
+  String get tripOverviewBannerEmpty;
+
+  /// No description provided for @tripOverviewBannerAddPhoto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une photo de couverture'**
+  String get tripOverviewBannerAddPhoto;
 
   /// No description provided for @tripAnnouncementsPageTitle.
   ///

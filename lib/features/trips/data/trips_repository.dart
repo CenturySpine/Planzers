@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -150,10 +150,22 @@ class TripsRepository {
     }
   }
 
+  static const _inviteTokenChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  static final _inviteTokenRandom = Random.secure();
+
   String _generateInviteToken() {
-    final now = DateTime.now().microsecondsSinceEpoch.toString();
-    final uid = auth.currentUser?.uid ?? 'anon';
-    return sha256.convert('$uid-$now'.codeUnits).toString().substring(0, 32);
+    String segment() => String.fromCharCodes(
+          List.generate(
+            3,
+            (_) => _inviteTokenChars.codeUnitAt(
+              _inviteTokenRandom.nextInt(_inviteTokenChars.length),
+            ),
+          ),
+        );
+    final token = '${segment()}-${segment()}';
+    // ponytail: format guard; upgrade path is a dedicated test if rules tighten.
+    assert(RegExp(r'^[A-Z0-9]{3}-[A-Z0-9]{3}$').hasMatch(token));
+    return token;
   }
 
   Stream<Trip?> watchTrip(String tripId) {
@@ -210,46 +222,64 @@ class TripsRepository {
     return trips;
   }
 
-  Future<void> createTrip({
+  Future<String> createTrip({
     required String title,
     required String destination,
     required String creatorName,
+    bool useProfileName = false,
     String address = '',
     String linkUrl = '',
+    String description = '',
+    String photosStorageUrl = '',
+    bool cupidonModeEnabled = false,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
+    bool isDayTrip = false,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
     }
 
+    final trimmedDescription = description.trim();
     final data = <String, dynamic>{
       'title': title.trim(),
-      'destination': destination.trim(),
+      'destination': isDayTrip ? '' : destination.trim(),
       'address': address.trim(),
       'linkUrl': linkUrl.trim(),
-      'cupidonModeEnabled': true,
+      if (trimmedDescription.isNotEmpty) 'description': trimmedDescription,
+      'photosStorageUrl': photosStorageUrl.trim(),
+      'cupidonModeEnabled': cupidonModeEnabled,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
+      'inviteToken': _generateInviteToken(),
       'createdAt': FieldValue.serverTimestamp(),
     };
-    if (startDate != null) {
-      final d = DateTime(startDate.year, startDate.month, startDate.day);
-      data['startDate'] = Timestamp.fromDate(d);
-      data['tripStartDayPart'] = tripDayPartToFirestore(
-        tripStartDayPart ?? TripDayPart.evening,
-      );
-    }
-    if (endDate != null) {
-      final d = DateTime(endDate.year, endDate.month, endDate.day);
-      data['endDate'] = Timestamp.fromDate(d);
-      data['tripEndDayPart'] = tripDayPartToFirestore(
-        tripEndDayPart ?? TripDayPart.morning,
-      );
+    if (isDayTrip) {
+      data['isDayTrip'] = true;
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        data['startDate'] = Timestamp.fromDate(d);
+        data['endDate'] = Timestamp.fromDate(d);
+      }
+    } else {
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        data['startDate'] = Timestamp.fromDate(d);
+        data['tripStartDayPart'] = tripDayPartToFirestore(
+          tripStartDayPart ?? TripDayPart.evening,
+        );
+      }
+      if (endDate != null) {
+        final d = DateTime(endDate.year, endDate.month, endDate.day);
+        data['endDate'] = Timestamp.fromDate(d);
+        data['tripEndDayPart'] = tripDayPartToFirestore(
+          tripEndDayPart ?? TripDayPart.morning,
+        );
+      }
     }
 
     final doc = firestore.collection('trips').doc();
@@ -257,9 +287,24 @@ class TripsRepository {
 
     // Create the creator's participant document first to get its stable ID.
     // Firestore rules for expense groups read the parent trip document (already created above).
-    final defaultStay = TripMemberStay.defaultForInviteContext(
-      tripStartDate: startDate,
-      tripEndDate: endDate,
+    final defaultStay = TripMemberStay.stayDraftForTripCalendarEdit(
+      Trip(
+        id: doc.id,
+        title: title.trim(),
+        destination: isDayTrip ? '' : destination.trim(),
+        address: address.trim(),
+        linkUrl: linkUrl.trim(),
+        photosStorageUrl: photosStorageUrl.trim(),
+        cupidonModeEnabled: cupidonModeEnabled,
+        ownerId: user.uid,
+        memberUserIds: [user.uid],
+        createdAt: DateTime.now(),
+        startDate: startDate,
+        endDate: endDate,
+        tripStartDayPart: isDayTrip ? null : tripStartDayPart,
+        tripEndDayPart: isDayTrip ? null : tripEndDayPart,
+        isDayTrip: isDayTrip,
+      ),
     );
     final participantRef = await doc.collection('participants').add({
       'participantName': creatorName.trim(),
@@ -269,6 +314,9 @@ class TripsRepository {
       'phoneVisibility': 'nobody',
       'createdAt': FieldValue.serverTimestamp(),
     });
+    if (useProfileName) {
+      await participantRef.update({'useProfileName': true});
+    }
 
     final defaultGroupRef = doc.collection('expenseGroups').doc();
     await defaultGroupRef.set({
@@ -278,6 +326,8 @@ class TripsRepository {
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
     });
+
+    return doc.id;
   }
 
   Future<void> deleteTrip({
@@ -305,10 +355,14 @@ class TripsRepository {
     required String destination,
     required String address,
     required String linkUrl,
+    String description = '',
+    String photosStorageUrl = '',
+    bool? cupidonModeEnabled,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
     TripDayPart? tripEndDayPart,
+    bool? isDayTrip,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -337,71 +391,70 @@ class TripsRepository {
       throw StateError('Droits insuffisants pour modifier le voyage');
     }
 
+    final savingAsDayTrip = isDayTrip ?? trip.isDayTrip;
+
+    final trimmedDescription = description.trim();
     final update = <String, dynamic>{
       'title': title.trim(),
-      'destination': destination.trim(),
-      'address': address.trim(),
+      'destination': savingAsDayTrip ? '' : destination.trim(),
+      'address': savingAsDayTrip ? '' : address.trim(),
       'linkUrl': linkUrl.trim(),
-      'startDate': startDate != null
+      if (trimmedDescription.isNotEmpty)
+        'description': trimmedDescription
+      else
+        'description': FieldValue.delete(),
+      'photosStorageUrl': photosStorageUrl.trim(),
+      if (cupidonModeEnabled != null) 'cupidonModeEnabled': cupidonModeEnabled,
+    };
+
+    if (isDayTrip != null) {
+      if (isDayTrip) {
+        update['isDayTrip'] = true;
+      } else {
+        update['isDayTrip'] = FieldValue.delete();
+      }
+    }
+
+    if (savingAsDayTrip) {
+      if (startDate != null) {
+        final d = DateTime(startDate.year, startDate.month, startDate.day);
+        update['startDate'] = Timestamp.fromDate(d);
+        update['endDate'] = Timestamp.fromDate(d);
+      } else {
+        update['startDate'] = FieldValue.delete();
+        update['endDate'] = FieldValue.delete();
+      }
+      update['tripStartDayPart'] = FieldValue.delete();
+      update['tripEndDayPart'] = FieldValue.delete();
+    } else {
+      update['startDate'] = startDate != null
           ? Timestamp.fromDate(
               DateTime(startDate.year, startDate.month, startDate.day),
             )
-          : FieldValue.delete(),
-      'endDate': endDate != null
+          : FieldValue.delete();
+      update['endDate'] = endDate != null
           ? Timestamp.fromDate(
               DateTime(endDate.year, endDate.month, endDate.day),
             )
-          : FieldValue.delete(),
-    };
+          : FieldValue.delete();
 
-    if (startDate == null) {
-      update['tripStartDayPart'] = FieldValue.delete();
-    } else {
-      update['tripStartDayPart'] = tripDayPartToFirestore(
-        tripStartDayPart ?? TripDayPart.evening,
-      );
-    }
-    if (endDate == null) {
-      update['tripEndDayPart'] = FieldValue.delete();
-    } else {
-      update['tripEndDayPart'] = tripDayPartToFirestore(
-        tripEndDayPart ?? TripDayPart.morning,
-      );
+      if (startDate == null) {
+        update['tripStartDayPart'] = FieldValue.delete();
+      } else {
+        update['tripStartDayPart'] = tripDayPartToFirestore(
+          tripStartDayPart ?? TripDayPart.evening,
+        );
+      }
+      if (endDate == null) {
+        update['tripEndDayPart'] = FieldValue.delete();
+      } else {
+        update['tripEndDayPart'] = tripDayPartToFirestore(
+          tripEndDayPart ?? TripDayPart.morning,
+        );
+      }
     }
 
     await docRef.update(update);
-  }
-
-  Future<void> updateTripGeneralSettings({
-    required String tripId,
-    required String photosStorageUrl,
-    required bool cupidonModeEnabled,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-
-    final tripRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await tripRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-    final data = snapshot.data() ?? const <String, dynamic>{};
-    final trip = Trip.fromMap(snapshot.id, data);
-    if (!trip.memberHasAdminRole(user.uid)) {
-      throw StateError('Droits insuffisants pour modifier ces reglages');
-    }
-
-    await tripRef.update(<String, dynamic>{
-      'photosStorageUrl': photosStorageUrl.trim(),
-      'cupidonModeEnabled': cupidonModeEnabled,
-    });
   }
 
   /// Invite secret shared with guests (same value as the `token` query param
@@ -483,21 +536,38 @@ class TripsRepository {
         final id = (item['id'] as String?)?.trim() ?? '';
         if (id.isEmpty) continue;
         final name = (item['displayName'] as String?)?.trim() ?? '';
+        TripMemberStay? stay;
+        final stayMap = <String, dynamic>{
+          if (item['stayStartDateKey'] != null)
+            'stayStartDateKey': item['stayStartDateKey'],
+          if (item['stayStartDayPart'] != null)
+            'stayStartDayPart': item['stayStartDayPart'],
+          if (item['stayEndDateKey'] != null)
+            'stayEndDateKey': item['stayEndDateKey'],
+          if (item['stayEndDayPart'] != null)
+            'stayEndDayPart': item['stayEndDayPart'],
+        };
+        if (stayMap.isNotEmpty) {
+          stay = TripMemberStay.tryFromFirestore(stayMap);
+        }
         list.add(
           InviteJoinParticipantOption(
             id: id,
             displayName: name.isEmpty ? 'Voyageur' : name,
+            stay: stay,
           ),
         );
       }
     }
-    DateTime? parseIso(String? s) {
-      final t = s?.trim() ?? '';
-      if (t.isEmpty) return null;
-      final parsed = DateTime.tryParse(t);
+    DateTime? parseTripCalendarDate(Object? raw) {
+      if (raw is! String) return null;
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return null;
+      final fromKey = TripMemberStay.parseDateKey(trimmed);
+      if (fromKey != null) return fromKey;
+      final parsed = DateTime.tryParse(trimmed);
       if (parsed == null) return null;
-      // Normalize to local calendar day to avoid off-by-one in date pickers.
-      return parsed.toLocal();
+      return DateTime(parsed.year, parsed.month, parsed.day);
     }
 
     return InviteJoinContext(
@@ -506,8 +576,17 @@ class TripsRepository {
       participants: list,
       requiresParticipantChoice: requires,
       cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
-      tripStartDate: parseIso(raw['tripStartDate'] as String?),
-      tripEndDate: parseIso(raw['tripEndDate'] as String?),
+      tripStartDate: parseTripCalendarDate(
+        raw['tripStartDateKey'] ?? raw['tripStartDate'],
+      ),
+      tripEndDate: parseTripCalendarDate(
+        raw['tripEndDateKey'] ?? raw['tripEndDate'],
+      ),
+      tripStartDayPart:
+          tripDayPartFromFirestore(raw['tripStartDayPart'] as String?),
+      tripEndDayPart:
+          tripDayPartFromFirestore(raw['tripEndDayPart'] as String?),
+      isDayTrip: raw['isDayTrip'] == true,
     );
   }
 
