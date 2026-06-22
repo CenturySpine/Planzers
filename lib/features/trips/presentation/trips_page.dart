@@ -1,6 +1,5 @@
 import 'dart:ui';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +16,7 @@ import 'package:planerz/features/legal/presentation/legal_information_page.dart'
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -423,36 +423,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
   }
 
   Future<void> _openJoinByInviteCodeDialog(BuildContext parentContext) async {
-    await showDialog<void>(
-      context: parentContext,
-      builder: (dialogRouteContext) => _JoinTripByCodeDialog(
-        parentContext: parentContext,
-        navigatorContext: dialogRouteContext,
-      ),
-    );
-  }
-
-  static String _messageForJoinByCodeError(BuildContext context, Object e) {
-    final l10n = AppLocalizations.of(context)!;
-    if (e is FirebaseFunctionsException) {
-      switch (e.code) {
-        case 'not-found':
-          return l10n.tripsJoinCodeNotFound;
-        case 'permission-denied':
-          return l10n.tripsJoinCodeNotValid;
-        case 'invalid-argument':
-          return l10n.tripsJoinCodeInvalid;
-        case 'unauthenticated':
-          return l10n.tripsJoinCodeUnauthenticated;
-        default:
-          break;
-      }
-      final m = e.message;
-      if (m != null && m.trim().isNotEmpty) {
-        return m.trim();
-      }
-    }
-    return e.toString();
+    await showJoinTripByCodeDialog(parentContext: parentContext);
   }
 
 }
@@ -1235,144 +1206,6 @@ class _TripCardLeadingImage extends StatelessWidget {
                 size: 26,
               ),
       ),
-    );
-  }
-}
-
-class _JoinTripByCodeDialog extends ConsumerStatefulWidget {
-  const _JoinTripByCodeDialog({
-    required this.parentContext,
-    required this.navigatorContext,
-  });
-
-  /// Context of [TripsPage] (valid for [GoRouter] / [ScaffoldMessenger] after close).
-  final BuildContext parentContext;
-
-  /// Context passed to [showDialog] (valid for [Navigator.pop] only).
-  final BuildContext navigatorContext;
-
-  @override
-  ConsumerState<_JoinTripByCodeDialog> createState() =>
-      _JoinTripByCodeDialogState();
-}
-
-class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
-  late final TextEditingController _codeController;
-  String? _error;
-  bool _isSubmitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _codeController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _openInviteJoinPage({
-    required String tripId,
-    required String token,
-  }) async {
-    if (!widget.navigatorContext.mounted) return;
-    Navigator.of(widget.navigatorContext).pop();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!widget.parentContext.mounted) return;
-      final route = Uri(
-        path: '/join-with-code',
-        queryParameters: <String, String>{
-          'tripId': tripId,
-          'token': token,
-        },
-      ).toString();
-      widget.parentContext.go(route);
-    });
-  }
-
-  Future<void> _submitEnterCode() async {
-    final l10n = AppLocalizations.of(context)!;
-    final code = _codeController.text.trim();
-    if (code.isEmpty) {
-      setState(() => _error = l10n.tripsJoinCodeRequired);
-      return;
-    }
-    setState(() {
-      _isSubmitting = true;
-      _error = null;
-    });
-    try {
-      final ctx = await ref.read(tripsRepositoryProvider).getInviteJoinContext(
-            token: code,
-          );
-      if (!mounted) return;
-      await _openInviteJoinPage(tripId: ctx.tripId, token: code);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSubmitting = false;
-        _error = _TripsPageState._messageForJoinByCodeError(context, e);
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.tripsJoinCodeDialogTitle),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.tripsJoinCodeDialogHelp,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                labelText: l10n.tripsJoinCodeLabel,
-                border: const OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.done,
-              autocorrect: false,
-              enableSuggestions: false,
-              onSubmitted: _isSubmitting ? null : (_) => _submitEnterCode(),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting
-              ? null
-              : () => Navigator.of(widget.navigatorContext).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        FilledButton(
-          onPressed: _isSubmitting ? null : _submitEnterCode,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(l10n.tripsJoinCodeAction),
-        ),
-      ],
     );
   }
 }

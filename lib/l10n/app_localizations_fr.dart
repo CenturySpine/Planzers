@@ -605,7 +605,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage.';
+      'Colle le code envoyé par l\'organisateur du voyage — pas le lien, uniquement le code.';
+
+  @override
+  String get tripsJoinCodePaste => 'Coller le code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -3862,7 +3865,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage.';
+      'Colle le code envoyé par l\'organisateur du voyage — pas le lien, uniquement le code.';
+
+  @override
+  String get tripsJoinCodePaste => 'Coller le code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';

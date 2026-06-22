@@ -603,7 +603,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Paste the code sent by the trip organizer.';
+      'Paste the code sent by the trip organizer — not the link, only the code.';
+
+  @override
+  String get tripsJoinCodePaste => 'Paste code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
@@ -3832,7 +3835,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Paste the code sent by the trip organizer.';
+      'Paste the code sent by the trip organizer — not the link, only the code.';
+
+  @override
+  String get tripsJoinCodePaste => 'Paste code';
 
   @override
   String get tripsJoinCodeLabel => 'Code';
