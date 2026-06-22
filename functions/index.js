@@ -1117,6 +1117,22 @@ function _dateKey(d) {
   return `${y}-${m}-${day}`;
 }
 
+/** Normalises a Firestore trip date timestamp to a local calendar day on the server. */
+function parseTripCalendarDate(raw) {
+  if (!raw) return null;
+  const d = typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
+  if (isNaN(d.getTime())) return null;
+  // Trip dates are stored as midnight local time (e.g. UTC+2), which arrives
+  // as 22:00 UTC the day before on the server. Adding 12h normalises any
+  // UTC offset up to ±12h before the day is extracted.
+  return new Date(d.getTime() + 12 * 60 * 60 * 1000);
+}
+
+function tripCalendarDateKey(raw) {
+  const d = parseTripCalendarDate(raw);
+  return d ? _dateKey(d) : null;
+}
+
 function _startOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -1128,17 +1144,8 @@ function _startOfDay(d) {
  * @returns {object} Firestore-ready stay fields
  */
 function defaultStayForTrip(tripData) {
-  const parseDate = (raw) => {
-    if (!raw) return null;
-    const d = typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
-    if (isNaN(d.getTime())) return null;
-    // Trip dates are stored as midnight local time (e.g. UTC+2), which arrives
-    // as 22:00 UTC the day before on the server. Adding 12h normalises any
-    // UTC offset up to ±12h before the day is extracted.
-    return new Date(d.getTime() + 12 * 60 * 60 * 1000);
-  };
-  const tripStartDate = parseDate(tripData.startDate);
-  const tripEndDate = parseDate(tripData.endDate);
+  const tripStartDate = parseTripCalendarDate(tripData.startDate);
+  const tripEndDate = parseTripCalendarDate(tripData.endDate);
 
   if (!tripStartDate && !tripEndDate) {
     const now = new Date();
@@ -1156,12 +1163,13 @@ function defaultStayForTrip(tripData) {
   const start = tripStartDate ? _startOfDay(tripStartDate) : _startOfDay(new Date());
   const end = tripEndDate ? _startOfDay(tripEndDate) : start;
   const later = end < start ? start : end;
-  const isSingleDay = start.getTime() === later.getTime();
+  const sp = normalizeString(tripData.tripStartDayPart) || 'evening';
+  const ep = normalizeString(tripData.tripEndDayPart) || 'morning';
   return {
     stayStartDateKey: _dateKey(start),
-    stayStartDayPart: isSingleDay ? 'morning' : 'evening',
+    stayStartDayPart: sp,
     stayEndDateKey: _dateKey(later),
-    stayEndDayPart: isSingleDay ? 'evening' : 'morning',
+    stayEndDayPart: ep,
   };
 }
 
@@ -2035,6 +2043,79 @@ exports.disableTripCupidonForAllMembers = onDocumentUpdated(
   }
 );
 
+function tripCalendarFieldsChanged(before, after) {
+  if (tripCalendarDateKey(before.startDate) !== tripCalendarDateKey(after.startDate)) {
+    return true;
+  }
+  if (tripCalendarDateKey(before.endDate) !== tripCalendarDateKey(after.endDate)) {
+    return true;
+  }
+  if (normalizeString(before.tripStartDayPart) !== normalizeString(after.tripStartDayPart)) {
+    return true;
+  }
+  if (normalizeString(before.tripEndDayPart) !== normalizeString(after.tripEndDayPart)) {
+    return true;
+  }
+  return (before.isDayTrip === true) !== (after.isDayTrip === true);
+}
+
+/** Stay fields to write on a participant when the trip calendar or type changes. */
+function participantStayFieldsForTrip(tripData) {
+  if (tripData.isDayTrip === true) {
+    return {
+      stayStartDateKey: FieldValue.delete(),
+      stayStartDayPart: FieldValue.delete(),
+      stayEndDateKey: FieldValue.delete(),
+      stayEndDayPart: FieldValue.delete(),
+    };
+  }
+  return defaultStayForTrip(tripData);
+}
+
+/**
+ * When an organizer changes trip dates or day-trip vs stay mode, reset every
+ * participant stay to the new trip defaults (custom stays are invalid anyway).
+ */
+exports.syncParticipantStaysOnTripCalendarChange = onDocumentUpdated(
+  {
+    document: 'trips/{tripId}',
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  async (event) => {
+    const beforeSnap = event.data.before;
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+
+    const before = beforeSnap.exists ? beforeSnap.data() || {} : {};
+    const after = afterSnap.data() || {};
+    if (!tripCalendarFieldsChanged(before, after)) {
+      return;
+    }
+
+    const tripRef = afterSnap.ref;
+    const participantsSnap = await tripRef.collection('participants').get();
+    if (participantsSnap.empty) return;
+
+    const stayUpdate = participantStayFieldsForTrip(after);
+    const db = admin.firestore();
+    let batch = db.batch();
+    let writeCount = 0;
+    for (const participantDoc of participantsSnap.docs) {
+      batch.update(participantDoc.ref, stayUpdate);
+      writeCount++;
+      if (writeCount >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        writeCount = 0;
+      }
+    }
+    if (writeCount > 0) {
+      await batch.commit();
+    }
+  }
+);
+
 /**
  * Shared logic: fetch and store a link preview on any Firestore document.
  * @param {FirebaseFirestore.DocumentReference} docRef
@@ -2479,14 +2560,6 @@ exports.getInviteJoinContext = onCall(
 
     const startTs = data.startDate;
     const endTs = data.endDate;
-    const tripStartDate =
-      startTs && typeof startTs.toDate === 'function'
-        ? startTs.toDate().toISOString()
-        : null;
-    const tripEndDate =
-      endTs && typeof endTs.toDate === 'function'
-        ? endTs.toDate().toISOString()
-        : null;
 
     return {
       tripId: tripRef.id,
@@ -2494,8 +2567,10 @@ exports.getInviteJoinContext = onCall(
       participants: unclaimedSlots,
       requiresParticipantChoice: unclaimedSlots.length > 0,
       cupidonModeEnabled: data.cupidonModeEnabled !== false,
-      tripStartDate,
-      tripEndDate,
+      tripStartDateKey: tripCalendarDateKey(startTs),
+      tripEndDateKey: tripCalendarDateKey(endTs),
+      tripStartDayPart: normalizeString(data.tripStartDayPart) || null,
+      tripEndDayPart: normalizeString(data.tripEndDayPart) || null,
       isDayTrip: data.isDayTrip === true,
     };
   }

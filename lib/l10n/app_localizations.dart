@@ -2856,6 +2856,30 @@ abstract class AppLocalizations {
   /// **'Rejoindre le voyage 2/2'**
   String get inviteJoinTripStepTwo;
 
+  /// No description provided for @inviteJoinTripHeadline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre le voyage'**
+  String get inviteJoinTripHeadline;
+
+  /// No description provided for @inviteJoinTripStepLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape {step}/{total}'**
+  String inviteJoinTripStepLabel(Object step, Object total);
+
+  /// No description provided for @inviteJoinNameSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ton nom dans ce voyage'**
+  String get inviteJoinNameSectionTitle;
+
+  /// No description provided for @inviteJoinProfileNotFoundShort.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu ne trouves pas ton nom ?'**
+  String get inviteJoinProfileNotFoundShort;
+
   /// No description provided for @inviteChooseTravelerWarning.
   ///
   /// In fr, this message translates to:

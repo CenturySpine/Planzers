@@ -113,26 +113,6 @@ class TripMemberStay {
     );
   }
 
-  static TripMemberStay defaultForInviteContext({
-    required DateTime? tripStartDate,
-    required DateTime? tripEndDate,
-  }) {
-    final start = tripStartDate != null
-        ? DateUtils.dateOnly(tripStartDate)
-        : DateUtils.dateOnly(DateTime.now());
-    final end = tripEndDate != null
-        ? DateUtils.dateOnly(tripEndDate)
-        : start;
-    final later = end.isBefore(start) ? start : end;
-    final isSingleDay = start.isAtSameMomentAs(later);
-    return TripMemberStay(
-      startDateKey: dateKeyFromDateTime(start),
-      startDayPart: isSingleDay ? TripDayPart.morning : TripDayPart.evening,
-      endDateKey: dateKeyFromDateTime(later),
-      endDayPart: isSingleDay ? TripDayPart.evening : TripDayPart.morning,
-    );
-  }
-
   static String dateKeyFromDateTime(DateTime d) {
     final local = DateUtils.dateOnly(d);
     final y = local.year.toString().padLeft(4, '0');

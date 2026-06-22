@@ -1549,6 +1549,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteJoinTripStepTwo => 'Join trip 2/2';
 
   @override
+  String get inviteJoinTripHeadline => 'Join trip';
+
+  @override
+  String inviteJoinTripStepLabel(Object step, Object total) {
+    return 'Step $step/$total';
+  }
+
+  @override
+  String get inviteJoinNameSectionTitle => 'Your name on this trip';
+
+  @override
+  String get inviteJoinProfileNotFoundShort => 'Can\'t find your name?';
+
+  @override
   String get inviteChooseTravelerWarning =>
       'You can make this choice only once for this trip.';
 
@@ -4691,6 +4705,20 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get inviteJoinTripStepTwo => 'Join trip 2/2';
+
+  @override
+  String get inviteJoinTripHeadline => 'Join trip';
+
+  @override
+  String inviteJoinTripStepLabel(Object step, Object total) {
+    return 'Step $step/$total';
+  }
+
+  @override
+  String get inviteJoinNameSectionTitle => 'Your name on this trip';
+
+  @override
+  String get inviteJoinProfileNotFoundShort => 'Can\'t find your name?';
 
   @override
   String get inviteChooseTravelerWarning =>

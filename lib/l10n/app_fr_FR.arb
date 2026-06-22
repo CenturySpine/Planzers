@@ -617,6 +617,16 @@
   "inviteChooseTravelerError": "Choisis un voyageur sur la liste.",
   "inviteJoinTripStepOne": "Rejoindre le voyage 1/2",
   "inviteJoinTripStepTwo": "Rejoindre le voyage 2/2",
+  "inviteJoinTripHeadline": "Rejoindre le voyage",
+  "inviteJoinTripStepLabel": "Étape {step}/{total}",
+  "@inviteJoinTripStepLabel": {
+    "placeholders": {
+      "step": {},
+      "total": {}
+    }
+  },
+  "inviteJoinNameSectionTitle": "Ton nom dans ce voyage",
+  "inviteJoinProfileNotFoundShort": "Tu ne trouves pas ton nom ?",
   "inviteChooseTravelerWarning": "Tu ne pourras faire ce choix qu’une seule fois pour ce voyage.",
   "inviteWhoAreYouInTrip": "Qui es-tu dans ce voyage ?",
   "inviteCupidonSubtitle": "Tu pourras liker des participants du voyage.",

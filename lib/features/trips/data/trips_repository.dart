@@ -287,9 +287,24 @@ class TripsRepository {
 
     // Create the creator's participant document first to get its stable ID.
     // Firestore rules for expense groups read the parent trip document (already created above).
-    final defaultStay = TripMemberStay.defaultForInviteContext(
-      tripStartDate: startDate,
-      tripEndDate: endDate,
+    final defaultStay = TripMemberStay.stayDraftForTripCalendarEdit(
+      Trip(
+        id: doc.id,
+        title: title.trim(),
+        destination: isDayTrip ? '' : destination.trim(),
+        address: address.trim(),
+        linkUrl: linkUrl.trim(),
+        photosStorageUrl: photosStorageUrl.trim(),
+        cupidonModeEnabled: cupidonModeEnabled,
+        ownerId: user.uid,
+        memberUserIds: [user.uid],
+        createdAt: DateTime.now(),
+        startDate: startDate,
+        endDate: endDate,
+        tripStartDayPart: isDayTrip ? null : tripStartDayPart,
+        tripEndDayPart: isDayTrip ? null : tripEndDayPart,
+        isDayTrip: isDayTrip,
+      ),
     );
     final participantRef = await doc.collection('participants').add({
       'participantName': creatorName.trim(),
@@ -544,13 +559,15 @@ class TripsRepository {
         );
       }
     }
-    DateTime? parseIso(String? s) {
-      final t = s?.trim() ?? '';
-      if (t.isEmpty) return null;
-      final parsed = DateTime.tryParse(t);
+    DateTime? parseTripCalendarDate(Object? raw) {
+      if (raw is! String) return null;
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return null;
+      final fromKey = TripMemberStay.parseDateKey(trimmed);
+      if (fromKey != null) return fromKey;
+      final parsed = DateTime.tryParse(trimmed);
       if (parsed == null) return null;
-      // Normalize to local calendar day to avoid off-by-one in date pickers.
-      return parsed.toLocal();
+      return DateTime(parsed.year, parsed.month, parsed.day);
     }
 
     return InviteJoinContext(
@@ -559,8 +576,16 @@ class TripsRepository {
       participants: list,
       requiresParticipantChoice: requires,
       cupidonModeEnabled: raw['cupidonModeEnabled'] != false,
-      tripStartDate: parseIso(raw['tripStartDate'] as String?),
-      tripEndDate: parseIso(raw['tripEndDate'] as String?),
+      tripStartDate: parseTripCalendarDate(
+        raw['tripStartDateKey'] ?? raw['tripStartDate'],
+      ),
+      tripEndDate: parseTripCalendarDate(
+        raw['tripEndDateKey'] ?? raw['tripEndDate'],
+      ),
+      tripStartDayPart:
+          tripDayPartFromFirestore(raw['tripStartDayPart'] as String?),
+      tripEndDayPart:
+          tripDayPartFromFirestore(raw['tripEndDayPart'] as String?),
       isDayTrip: raw['isDayTrip'] == true,
     );
   }

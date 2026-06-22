@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
@@ -14,9 +14,11 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/trips/presentation/invite_join_widgets.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
+import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
@@ -146,14 +148,25 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
-  List<Color> _joinOptionAccentColors(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final pz = context.planerzColors;
-    return <Color>[
-      cs.secondary,
-      cs.tertiary,
-      pz.warning,
-    ];
+  String? _joinDisplayName(InviteJoinContext ctx) {
+    if (_joinUsingCurrentProfile) {
+      final name = _bypassParticipantName?.trim();
+      return name != null && name.isNotEmpty ? name : null;
+    }
+    final id = _selectedPlaceholderId;
+    if (id == null) return null;
+    for (final option in ctx.participants) {
+      if (option.id == id) return option.displayName;
+    }
+    return null;
+  }
+
+  String? _stepLabel(InviteJoinContext ctx) {
+    if (!ctx.requiresParticipantChoice) return null;
+    return AppLocalizations.of(context)!.inviteJoinTripStepLabel(
+      _inviteFormStep + 1,
+      2,
+    );
   }
 
   List<InviteJoinParticipantOption> _sortedPlaceholders(
@@ -189,70 +202,21 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   Widget _placeholderChoiceTile({
     required InviteJoinParticipantOption option,
-    required int accentIndex,
-    required bool isSuggested,
   }) {
-    final accents = _joinOptionAccentColors(context);
-    final accent = accents[accentIndex % accents.length];
     final selected = _selectedPlaceholderId == option.id;
-    final borderWidth = selected ? 2.5 : 1.5;
-    final fillOpacity = selected ? 0.2 : 0.1;
-    final borderOpacity = selected ? 1.0 : 0.7;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        color: accent.withValues(alpha: fillOpacity),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: accent.withValues(alpha: borderOpacity),
-            width: borderWidth,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: _joining
-              ? null
-              : () => setState(() {
-                    _selectedPlaceholderId = option.id;
-                    final ctx = _context;
-                    if (ctx != null) {
-                      _stayDraft = _stayDraftForContext(
-                        ctx: ctx,
-                        participantId: option.id,
-                      );
-                    }
-                  }),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    option.displayName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w500,
-                        ),
-                  ),
-                ),
-                if (selected)
-                  Icon(
-                    Icons.check_circle,
-                    color: accent,
-                    size: 26,
-                  )
-                else if (isSuggested)
-                  Icon(
-                    Icons.auto_awesome,
-                    color: accent,
-                    size: 26,
-                  ),
-              ],
-            ),
-          ),
-        ),
+      child: InviteJoinParticipantTile(
+        displayName: option.displayName,
+        selected: selected,
+        enabled: !_joining,
+        onTap: () => setState(() {
+          _selectedPlaceholderId = option.id;
+          final ctx = _context;
+          if (ctx != null) {
+            _stayDraft = _stayDraftForContext(ctx: ctx);
+          }
+        }),
       ),
     );
   }
@@ -327,21 +291,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     } catch (_) {}
   }
 
-  TripMemberStay _stayDraftForContext({
-    required InviteJoinContext ctx,
-    String? participantId,
-  }) {
-    if (participantId != null) {
-      for (final option in ctx.participants) {
-        if (option.id == participantId && option.stay != null) {
-          return option.stay!;
-        }
-      }
-    }
-    return TripMemberStay.defaultForInviteContext(
-      tripStartDate: ctx.tripStartDate,
-      tripEndDate: ctx.tripEndDate,
-    );
+  TripMemberStay _stayDraftForContext({required InviteJoinContext ctx}) {
+    return ctx.stayDraftForJoin(selectedParticipantId: _selectedPlaceholderId);
   }
 
   Future<void> _loadContextAndMaybeJoin() async {
@@ -366,10 +317,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           final sorted = _sortedPlaceholders(ctx);
           _suggestedPlaceholderId = _findSuggestedPlaceholderId(sorted);
           _selectedPlaceholderId = _suggestedPlaceholderId;
-          _stayDraft = _stayDraftForContext(
-            ctx: ctx,
-            participantId: _selectedPlaceholderId,
-          );
+          _stayDraft = _stayDraftForContext(ctx: ctx);
         } else {
           _inviteFormStep = 1;
           _joinUsingCurrentProfile = true;
@@ -560,19 +508,40 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   PreferredSizeWidget _buildAppBar() {
     final l10n = AppLocalizations.of(context)!;
-    final showCancel = !_joined;
     final placeholderPick = _context != null &&
         !_loadingContext &&
-        !_joining;
+        !_joining &&
+        !_joined;
+    VoidCallback? onBack;
+    if (placeholderPick &&
+        _inviteFormStep == 1 &&
+        (_context?.requiresParticipantChoice ?? false)) {
+      onBack = _joining ? null : _backToNameStep;
+    } else if (!_joined) {
+      onBack = _loadingContext || _joining ? null : _goToTripsList;
+    }
+
     return AppBar(
-      title: Text(l10n.inviteTitle),
-      actions: [
-        if (showCancel && !placeholderPick)
-          TextButton(
-            onPressed: _loadingContext || _joining ? null : _goToTripsList,
-            child: Text(l10n.commonCancel),
-          ),
-      ],
+      backgroundColor: NeonPalette.scaffoldBackground,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      toolbarHeight: 52,
+      automaticallyImplyLeading: false,
+      leading: onBack == null
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.arrow_back),
+              color: NeonPalette.deep,
+              onPressed: onBack,
+            ),
+      title: Text(
+        l10n.inviteTitle,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w500,
+          color: NeonPalette.deep,
+        ),
+      ),
     );
   }
 
@@ -583,236 +552,213 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final tripCupidonModeEnabled = ctx.cupidonModeEnabled;
     final sorted = _sortedPlaceholders(ctx);
     final filtered = _filteredPlaceholders(sorted);
-    final stepTitle = !ctx.requiresParticipantChoice
-        ? l10n.inviteJoinThisTrip
-        : (_inviteFormStep == 0
-            ? l10n.inviteJoinTripStepOne
-            : l10n.inviteJoinTripStepTwo);
+    final joinName = _joinDisplayName(ctx);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: 420,
-              maxHeight: constraints.maxHeight,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    stepTitle,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+    if (_inviteFormStep == 0) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 8),
+              children: [
+                InviteJoinHead(
+                  title: l10n.inviteJoinTripHeadline,
+                  tripName: tripTitle,
+                  stepLabel: _stepLabel(ctx),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                  child: Text(
+                    l10n.inviteChooseTravelerWarning,
                     textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      height: 1.45,
+                      color: NeonPalette.onSurfaceVariant,
+                    ),
                   ),
-                  if (tripTitle.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '« $tripTitle »',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                      textAlign: TextAlign.center,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                  child: Text(
+                    l10n.inviteWhoAreYouInTrip,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: NeonPalette.deep,
                     ),
-                  ],
-                  if (_inviteFormStep == 0) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.inviteChooseTravelerWarning,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.inviteWhoAreYouInTrip,
-                      style: Theme.of(context).textTheme.titleSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    NameListSearchTextField(
-                      controller: _placeholderSearchController,
-                      onChanged: (_) => _onPlaceholderSearchChanged(sorted),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? Center(
-                              child: Text(
-                                nameListSearchEmptyMessage(context),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              itemCount: filtered.length,
-                              itemBuilder: (context, index) {
-                                final option = filtered[index];
-                                final accentIndex =
-                                    sorted.indexWhere((e) => e.id == option.id);
-                                return _placeholderChoiceTile(
-                                  option: option,
-                                  accentIndex:
-                                      accentIndex >= 0 ? accentIndex : index,
-                                  isSuggested:
-                                      _suggestedPlaceholderId == option.id,
-                                );
-                              },
+                  ),
+                ),
+                InviteJoinSearchField(
+                  controller: _placeholderSearchController,
+                  hintText: l10n.nameSearchLabel,
+                  onChanged: (_) => _onPlaceholderSearchChanged(sorted),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: filtered.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Text(
+                            nameListSearchEmptyMessage(context),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: NeonPalette.onSurfaceVariant,
                             ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      l10n.inviteJoinWithCurrentProfileHint,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
                           ),
-                    ),
-                    const SizedBox(height: 2),
-                    Align(
-                      alignment: Alignment.center,
-                      child: TextButton.icon(
-                        onPressed: _joining ? null : _continueWithCurrentProfile,
-                        icon: const Icon(Icons.person_add_alt_1_outlined),
-                        label: Text(l10n.inviteJoinWithCurrentProfileAction),
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                        )
+                      : Column(
                           children: [
-                            if (_joinUsingCurrentProfile &&
-                                _isBypassParticipantNameValid(
-                                    _bypassParticipantName)) ...[
-                              Text(
-                                l10n.inviteBypassJoiningAs(
-                                  _bypassParticipantName!.trim(),
-                                ),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              Align(
-                                alignment: Alignment.center,
-                                child: TextButton(
-                                  onPressed: _joining
-                                      ? null
-                                      : () async {
-                                          await _pickBypassParticipantName(
-                                            initialName:
-                                                _bypassParticipantName ?? '',
-                                            initialUseProfileName:
-                                                _bypassUseProfileName,
-                                          );
-                                        },
-                                  child: Text(l10n.inviteBypassChangeName),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                            if (_stayDraft != null)
-                              TripMemberStayOptionsEditor(
-                                mode: TripMemberStayOptionsEditorMode.draft,
-                                tripStartDate: ctx.tripStartDate,
-                                tripEndDate: ctx.tripEndDate,
-                                showStayDates: !ctx.isDayTrip,
-                                isCupidonModeEnabled: tripCupidonModeEnabled,
-                                initialStay: _stayDraft!,
-                                initialCupidonEnabled: _inviteCupidonEnabled,
-                                initialPhoneVisibility:
-                                    myPhoneNumber == null
-                                        ? null
-                                        : _phoneVisibilityDraft,
-                                onDraftChanged: (draft) => setState(() {
-                                  _stayDraft = draft.stay;
-                                  _inviteCupidonEnabled = draft.cupidonEnabled;
-                                  _phoneVisibilityDraft =
-                                      draft.phoneVisibility ??
-                                          TripMemberPhoneVisibility.nobody;
-                                }),
-                                cupidonTitle: l10n.cupidonModeTitle,
-                                phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
-                              ),
+                            for (final option in filtered)
+                              _placeholderChoiceTile(option: option),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                  if (_error != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _error!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Row(
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 4),
+                  child: Column(
                     children: [
-                      if (_inviteFormStep == 1 && ctx.requiresParticipantChoice) ...[
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _joining ? null : _backToNameStep,
-                            child: Text(l10n.inviteBack),
+                      Text(
+                        l10n.inviteJoinProfileNotFoundShort,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontStyle: FontStyle.italic,
+                          height: 1.5,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton.icon(
+                        onPressed:
+                            _joining ? null : _continueWithCurrentProfile,
+                        style: TextButton.styleFrom(
+                          foregroundColor: NeonPalette.primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                      ],
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _joining ? null : _goToTripsList,
-                          child: Text(l10n.commonCancel),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: (_joining || !_canProceedFromCurrentStep())
-                              ? null
-                              : (_inviteFormStep == 0
-                                  ? _continueFromNameStep
-                                  : _completeInviteWithDetails),
-                          child: Text(
-                            _inviteFormStep == 0
-                                ? l10n.commonContinue
-                                : l10n.commonConfirm,
+                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 20),
+                        label: Text(
+                          l10n.inviteJoinWithCurrentProfileAction,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                    child: Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: NeonPalette.error),
+                    ),
+                  ),
+              ],
             ),
           ),
-        );
-      },
+          InviteJoinDualCtaBar(
+            secondaryLabel: l10n.commonCancel,
+            primaryLabel: l10n.commonContinue,
+            secondaryEnabled: !_joining,
+            primaryEnabled: !_joining && _canProceedFromCurrentStep(),
+            onSecondary: _goToTripsList,
+            onPrimary: _continueFromNameStep,
+            primaryIcon: Icons.arrow_forward,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 8),
+            children: [
+              InviteJoinHead(
+                title: l10n.inviteJoinThisTrip,
+                tripName: tripTitle,
+                stepLabel: ctx.requiresParticipantChoice ? _stepLabel(ctx) : null,
+              ),
+              InviteJoinInfoBanner(
+                message: l10n.inviteOptionsEditableAfterJoinInfo,
+              ),
+              if (joinName != null) ...[
+                TripNeonSectionHeader(
+                  icon: Icons.person_outline,
+                  label: l10n.inviteJoinNameSectionTitle,
+                ),
+                InviteJoinNameRow(
+                  displayName: joinName,
+                  editLabel: _joinUsingCurrentProfile
+                      ? l10n.inviteBypassChangeName
+                      : null,
+                  onEdit: _joinUsingCurrentProfile
+                      ? () async {
+                          await _pickBypassParticipantName(
+                            initialName: _bypassParticipantName ?? '',
+                            initialUseProfileName: _bypassUseProfileName,
+                          );
+                        }
+                      : null,
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (_stayDraft != null)
+                TripMemberStayOptionsEditor(
+                  mode: TripMemberStayOptionsEditorMode.draft,
+                  tripStartDate: ctx.tripStartDate,
+                  tripEndDate: ctx.tripEndDate,
+                  showStayDates: !ctx.isDayTrip,
+                  isCupidonModeEnabled: tripCupidonModeEnabled,
+                  initialStay: _stayDraft!,
+                  initialCupidonEnabled: _inviteCupidonEnabled,
+                  initialPhoneVisibility: myPhoneNumber == null
+                      ? null
+                      : _phoneVisibilityDraft,
+                  onDraftChanged: (draft) => setState(() {
+                    _stayDraft = draft.stay;
+                    _inviteCupidonEnabled = draft.cupidonEnabled;
+                    _phoneVisibilityDraft = draft.phoneVisibility ??
+                        TripMemberPhoneVisibility.nobody;
+                  }),
+                  cupidonTitle: l10n.cupidonModeTitle,
+                  phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
+                ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                  child: Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: NeonPalette.error),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        InviteJoinDualCtaBar(
+          secondaryLabel: l10n.commonCancel,
+          primaryLabel: l10n.commonConfirm,
+          secondaryEnabled: !_joining,
+          primaryEnabled: !_joining && _canProceedFromCurrentStep(),
+          busy: _joining,
+          onSecondary: _goToTripsList,
+          onPrimary: _completeInviteWithDetails,
+        ),
+      ],
     );
   }
 
@@ -822,32 +768,44 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     final hasInvalidParams =
         widget.tripId.trim().isEmpty || widget.token.trim().isEmpty;
     if (hasInvalidParams) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.inviteTitle),
-          actions: [
-            TextButton(
-              onPressed: _goToTripsList,
-              child: Text(l10n.commonCancel),
-            ),
-          ],
+      return Theme(
+        data: Theme.of(context).copyWith(
+          scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  l10n.inviteInvalidLink,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton(
-                  onPressed: _goToTripsList,
-                  child: Text(l10n.inviteBackToTrips),
-                ),
-              ],
+        child: Scaffold(
+          backgroundColor: NeonPalette.scaffoldBackground,
+          appBar: AppBar(
+            backgroundColor: NeonPalette.scaffoldBackground,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            toolbarHeight: 52,
+            title: Text(
+              l10n.inviteTitle,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: NeonPalette.deep,
+              ),
+            ),
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    l10n.inviteInvalidLink,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: NeonPalette.text700),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton(
+                    onPressed: _goToTripsList,
+                    child: Text(l10n.inviteBackToTrips),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -866,7 +824,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     final Widget bodyChild;
     if (placeholderPick) {
-      bodyChild = _buildPlaceholderChoiceLayout(tripTitle);
+      bodyChild = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: _buildPlaceholderChoiceLayout(tripTitle),
+        ),
+      );
     } else {
       bodyChild = Center(
         child: ConstrainedBox(
@@ -877,151 +840,106 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (_loadingContext) ...[
-                  const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.inviteChecking,
-                    textAlign: TextAlign.center,
-                  ),
+                  InviteJoinLoadingStatus(message: l10n.inviteChecking),
                 ] else if (_joining) ...[
-                  const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: 16),
-                  Text(
-                    tripTitle.isEmpty
+                  InviteJoinLoadingStatus(
+                    message: tripTitle.isEmpty
                         ? l10n.inviteJoiningInProgress
                         : l10n.inviteJoiningTripWithTitle(tripTitle),
-                    textAlign: TextAlign.center,
                   ),
                 ] else if (_joined) ...[
-                  Icon(
-                    Icons.check_circle,
-                    color: context.planerzColors.success,
-                    size: 52,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.inviteAccepted,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.inviteAcceptedSubtitle,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: () =>
+                  InviteJoinSuccessStatus(
+                    title: l10n.inviteAccepted,
+                    subtitle: l10n.inviteAcceptedSubtitle,
+                    primaryLabel: l10n.inviteOpenTrip,
+                    secondaryLabel: l10n.inviteSeeMyTrips,
+                    onPrimary: () =>
                         context.go('/trips/${widget.tripId}/overview'),
-                    child: Text(l10n.inviteOpenTrip),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _goToTripsList,
-                    child: Text(l10n.inviteSeeMyTrips),
+                    onSecondary: _goToTripsList,
                   ),
                 ] else if (_context != null &&
                     !_context!.requiresParticipantChoice &&
                     !_joined) ...[
                   Text(
                     tripHeadline,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
                     textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: NeonPalette.deep,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     l10n.inviteCouldNotFinalizeJoin,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.35,
-                        ),
                     textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      color: NeonPalette.onSurfaceVariant,
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+                      style: const TextStyle(color: NeonPalette.error),
                     ),
                   ],
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _joining ? null : _goToTripsList,
-                          child: Text(l10n.commonCancel),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed: _joining
-                              ? null
-                              : () => _join(participantId: null),
-                          child: Text(l10n.commonRetry),
-                        ),
-                      ),
-                    ],
+                  InviteJoinDualCtaBar(
+                    secondaryLabel: l10n.commonCancel,
+                    primaryLabel: l10n.commonRetry,
+                    secondaryEnabled: !_joining,
+                    primaryEnabled: !_joining,
+                    onSecondary: _goToTripsList,
+                    onPrimary: () => _join(participantId: null),
+                    primaryIcon: Icons.refresh,
                   ),
                 ] else ...[
                   Icon(
                     Icons.group_add_outlined,
                     size: 52,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: NeonPalette.primary,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     l10n.inviteJoinATrip,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
                     textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: NeonPalette.deep,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     l10n.inviteOpenFailed,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.35,
-                        ),
                     textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      color: NeonPalette.onSurfaceVariant,
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+                      style: const TextStyle(color: NeonPalette.error),
                     ),
                   ],
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _loadingContext ? null : _goToTripsList,
-                          child: Text(l10n.commonCancel),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: FilledButton(
-                          onPressed:
-                              _loadingContext ? null : _loadContextAndMaybeJoin,
-                          child: Text(l10n.commonRetry),
-                        ),
-                      ),
-                    ],
+                  InviteJoinDualCtaBar(
+                    secondaryLabel: l10n.commonCancel,
+                    primaryLabel: l10n.commonRetry,
+                    secondaryEnabled: !_loadingContext,
+                    primaryEnabled: !_loadingContext,
+                    onSecondary: _goToTripsList,
+                    onPrimary: _loadContextAndMaybeJoin,
+                    primaryIcon: Icons.refresh,
                   ),
                 ],
               ],
@@ -1031,9 +949,15 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       );
     }
 
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: SafeArea(child: bodyChild),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
+      ),
+      child: Scaffold(
+        backgroundColor: NeonPalette.scaffoldBackground,
+        appBar: _buildAppBar(),
+        body: SafeArea(child: bodyChild),
+      ),
     );
   }
 }
