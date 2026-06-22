@@ -1189,7 +1189,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsJoinCodeDialogHelp.
   ///
   /// In fr, this message translates to:
-  /// **'Colle le code envoyé par l\'organisateur du voyage — pas le lien, uniquement le code.'**
+  /// **'Colle le code envoyé par l\'organisateur du voyage.'**
   String get tripsJoinCodeDialogHelp;
 
   /// No description provided for @tripsJoinCodePaste.

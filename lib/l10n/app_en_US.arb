@@ -237,7 +237,7 @@
   "tripsJoinCodeUnauthenticated": "Sign in to join a trip.",
   "tripsJoinCodeRequired": "Enter the invite code.",
   "tripsJoinCodeDialogTitle": "Invite code",
-  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer — not the link, only the code.",
+  "tripsJoinCodeDialogHelp": "Paste the code sent by the trip organizer.",
   "tripsJoinCodePaste": "Paste code",
   "tripsJoinCodeLabel": "Code",
   "tripsJoinCodeAction": "Join",

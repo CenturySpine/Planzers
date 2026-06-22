@@ -605,7 +605,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage — pas le lien, uniquement le code.';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodePaste => 'Coller le code';
@@ -3865,7 +3865,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripsJoinCodeDialogHelp =>
-      'Colle le code envoyé par l\'organisateur du voyage — pas le lien, uniquement le code.';
+      'Colle le code envoyé par l\'organisateur du voyage.';
 
   @override
   String get tripsJoinCodePaste => 'Coller le code';
