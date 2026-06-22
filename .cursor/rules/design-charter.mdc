@@ -1,0 +1,24 @@
+---
+description: Visual UI work must follow DESIGN_CHARTER.md; charter overrides handoff packages
+alwaysApply: true
+---
+
+# Design charter (visual UI)
+
+## Mandatory application
+
+Any implementation that touches **visual UI** — widgets, layouts, colors, typography, spacing, radius, elevation, icons, motion, dialogs, sheets, empty states, theming — **must** follow [`DESIGN_CHARTER.md`](../../DESIGN_CHARTER.md).
+
+Before coding or changing such UI, read the relevant sections of the charter (tokens, component specs, typography, iconography).
+
+Map values through existing Flutter theme APIs (`Theme.of(context).colorScheme`, `context.planerzColors`, `AppTheme`) as documented in the charter; do not invent parallel one-off styles.
+
+## Precedence over handoffs
+
+Claude Design handoff packages (HTML/React ZIPs) are **reference prototypes**, not a second source of truth.
+
+When a handoff disagrees with the charter — including **future** handoff packages — **`DESIGN_CHARTER.md` wins**.
+
+Resolved cross-package deltas and final arbitrations live in [`DESIGN_CHARTER_INCOHERENCES.md`](../../DESIGN_CHARTER_INCOHERENCES.md). If a new handoff reintroduces an old inconsistency, apply the charter (and the incoherences doc if still listed); do not copy the handoff value blindly.
+
+Handoffs remain useful for **layout, copy, and interaction flow**; visual tokens and component rules come from the charter.
