@@ -159,6 +159,15 @@ class NeonPalette {
         ...bottomNavFabShadow,
       ];
 
+  // --- Board games screen (handoff tokens) ---
+
+  static Color get gamesIconTileBg => Color.lerp(surface, success, 0.16)!;
+
+  static Color get gamesCalloutBg => Color.lerp(surface, success, 0.14)!;
+
+  static Color get gamesCalloutBorder =>
+      Color.lerp(divider, success, 0.28)!;
+
   /// Local theme overlay so Material widgets on Néon screens use these tokens.
   static ThemeData overlayOn(ThemeData base) {
     return base.copyWith(
