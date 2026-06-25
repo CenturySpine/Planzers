@@ -2457,6 +2457,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get expensesBalancesByCurrency => 'Soldes (par devise)';
 
   @override
+  String expensesBalancesCardTitle(String currency) {
+    return 'Soldes — $currency';
+  }
+
+  @override
+  String get expensesBalancesNetHint =>
+      'Position nette de chacun une fois le poste partagé.';
+
+  @override
+  String get expensesPaidButton => 'Payé';
+
+  @override
+  String get expensesLockToMarkPaidTooltip =>
+      'Verrouille le poste pour marquer payé.';
+
+  @override
   String get expensesAddToSeeBreakdown =>
       'Ajoute des dépenses pour voir la répartition.';
 
@@ -2527,6 +2543,79 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get expensesPostTotal => 'Total du poste';
+
+  @override
+  String get expensesIconExpenseTitle => 'Icône de la dépense';
+
+  @override
+  String get expensesIconPostTitle => 'Icône du poste';
+
+  @override
+  String get expensesRemainToSplit => 'Reste à répartir';
+
+  @override
+  String get expensesSplitComplete => 'Réparti — tout est attribué';
+
+  @override
+  String get expensesSplitOver => 'Dépassement du total';
+
+  @override
+  String expensesNetOwedToYou(Object amount) {
+    return 'On te doit $amount';
+  }
+
+  @override
+  String expensesNetYouOwe(Object amount) {
+    return 'Tu dois $amount';
+  }
+
+  @override
+  String get expensesEditExpenseTitle => 'Modifier la dépense';
+
+  @override
+  String get expensesAddExpenseAction => 'Ajouter la dépense';
+
+  @override
+  String get expensesSaveExpenseChanges => 'Enregistrer les modifications';
+
+  @override
+  String get expensesSplitModeEqualShort => 'Équitable';
+
+  @override
+  String expensesEqualSplitSummary(Object count, Object amount) {
+    return '$count pers. · $amount chacun';
+  }
+
+  @override
+  String get expensesPostPreviewLabel => 'Poste de dépense';
+
+  @override
+  String get expenseGroupSaveAction => 'Enregistrer le poste';
+
+  @override
+  String get expensesFabAddPost => 'Poste';
+
+  @override
+  String get expensesLockPostMenu => 'Verrouiller les dépenses';
+
+  @override
+  String get expensesUnlockPostMenu => 'Déverrouiller les dépenses';
+
+  @override
+  String get expensesLockPostBar =>
+      'Verrouille les dépenses du poste pour figer les saisies et marquer les remboursements payés.';
+
+  @override
+  String expensesListYouOwe(Object amount) {
+    return 'Tu dois $amount';
+  }
+
+  @override
+  String get expensesChooseIcon => 'Icône';
+
+  @override
+  String get expensesGroupWhoSeesHint =>
+      'Seuls les membres activés voient ce poste et peuvent y ajouter des dépenses.';
 
   @override
   String get expensesSettlementType => 'Remboursement';
@@ -5688,6 +5777,22 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get expensesBalancesByCurrency => 'Soldes (par devise)';
 
   @override
+  String expensesBalancesCardTitle(String currency) {
+    return 'Soldes — $currency';
+  }
+
+  @override
+  String get expensesBalancesNetHint =>
+      'Position nette de chacun une fois le poste partagé.';
+
+  @override
+  String get expensesPaidButton => 'Payé';
+
+  @override
+  String get expensesLockToMarkPaidTooltip =>
+      'Verrouille le poste pour marquer payé.';
+
+  @override
   String get expensesAddToSeeBreakdown =>
       'Ajoute des dépenses pour voir la répartition.';
 
@@ -5758,6 +5863,79 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get expensesPostTotal => 'Total du poste';
+
+  @override
+  String get expensesIconExpenseTitle => 'Icône de la dépense';
+
+  @override
+  String get expensesIconPostTitle => 'Icône du poste';
+
+  @override
+  String get expensesRemainToSplit => 'Reste à répartir';
+
+  @override
+  String get expensesSplitComplete => 'Réparti — tout est attribué';
+
+  @override
+  String get expensesSplitOver => 'Dépassement du total';
+
+  @override
+  String expensesNetOwedToYou(Object amount) {
+    return 'On te doit $amount';
+  }
+
+  @override
+  String expensesNetYouOwe(Object amount) {
+    return 'Tu dois $amount';
+  }
+
+  @override
+  String get expensesEditExpenseTitle => 'Modifier la dépense';
+
+  @override
+  String get expensesAddExpenseAction => 'Ajouter la dépense';
+
+  @override
+  String get expensesSaveExpenseChanges => 'Enregistrer les modifications';
+
+  @override
+  String get expensesSplitModeEqualShort => 'Équitable';
+
+  @override
+  String expensesEqualSplitSummary(Object count, Object amount) {
+    return '$count pers. · $amount chacun';
+  }
+
+  @override
+  String get expensesPostPreviewLabel => 'Poste de dépense';
+
+  @override
+  String get expenseGroupSaveAction => 'Enregistrer le poste';
+
+  @override
+  String get expensesFabAddPost => 'Poste';
+
+  @override
+  String get expensesLockPostMenu => 'Verrouiller les dépenses';
+
+  @override
+  String get expensesUnlockPostMenu => 'Déverrouiller les dépenses';
+
+  @override
+  String get expensesLockPostBar =>
+      'Verrouille les dépenses du poste pour figer les saisies et marquer les remboursements payés.';
+
+  @override
+  String expensesListYouOwe(Object amount) {
+    return 'Tu dois $amount';
+  }
+
+  @override
+  String get expensesChooseIcon => 'Icône';
+
+  @override
+  String get expensesGroupWhoSeesHint =>
+      'Seuls les membres activés voient ce poste et peuvent y ajouter des dépenses.';
 
   @override
   String get expensesSettlementType => 'Remboursement';

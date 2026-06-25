@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/firebase_functions_region.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expense_group_state.dart';
 import 'package:planerz/features/expenses/data/expense_group_summary.dart';
 import 'package:planerz/features/expenses/data/expenses_states.dart';
@@ -300,6 +301,7 @@ class ExpensesRepository {
     required String tripId,
     required String title,
     required List<String> visibleToMemberIds,
+    String icon = kDefaultExpensePostIconKey,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -331,8 +333,11 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.createExpensePostMinRole,
     );
 
+    final cleanIcon = icon.trim().isEmpty ? kDefaultExpensePostIconKey : icon.trim();
+
     await _expenseGroupsCol(cleanTripId).add({
       'title': cleanTitle,
+      'icon': cleanIcon,
       'visibleToMemberIds': visibleTo,
       'createdAt': FieldValue.serverTimestamp(),
       'createdBy': user.uid,
@@ -344,6 +349,7 @@ class ExpensesRepository {
     required String groupId,
     required String title,
     required List<String> visibleToMemberIds,
+    String icon = kDefaultExpensePostIconKey,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -385,8 +391,11 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.editExpensePostMinRole,
     );
 
+    final cleanIcon = icon.trim().isEmpty ? kDefaultExpensePostIconKey : icon.trim();
+
     await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).update({
       'title': cleanTitle,
+      'icon': cleanIcon,
       'visibleToMemberIds': visibleTo,
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': user.uid,
@@ -489,7 +498,9 @@ class ExpensesRepository {
     required String paidBy,
     required List<String> participantIds,
     required DateTime expenseDate,
-    String category = 'other',
+    String icon = kDefaultExpenseIconKey,
+    ExpenseSplitMode splitMode = ExpenseSplitMode.equal,
+    Map<String, double>? participantShares,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -532,6 +543,24 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
+    final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
+    Map<String, double>? customShares;
+    if (splitMode == ExpenseSplitMode.customAmounts) {
+      customShares = <String, double>{};
+      var sum = 0.0;
+      for (final id in participants) {
+        final share = (participantShares ?? const {})[id] ?? 0.0;
+        if (share < 0) {
+          throw StateError('Part invalide');
+        }
+        customShares[id] = share;
+        sum += share;
+      }
+      if ((sum - amount).abs() > 0.02) {
+        throw StateError('Somme des parts invalide');
+      }
+    }
+
     final draft = TripExpense(
       id: '',
       groupId: cleanGroupId,
@@ -540,7 +569,7 @@ class ExpensesRepository {
       currency: cleanCurrency,
       paidBy: cleanPaidBy,
       participantIds: participants,
-      category: category,
+      icon: cleanIcon,
       createdAt: DateTime.now(),
       expenseDate: DateTime(
         expenseDate.year,
@@ -548,8 +577,8 @@ class ExpensesRepository {
         expenseDate.day,
       ),
       createdBy: user.uid,
-      splitMode: ExpenseSplitMode.equal,
-      participantShares: const {},
+      splitMode: splitMode,
+      participantShares: customShares ?? const {},
     );
 
     await _expensesCol(cleanTripId).add(
@@ -570,7 +599,7 @@ class ExpensesRepository {
     required String paidBy,
     required List<String> participantIds,
     required DateTime expenseDate,
-    String category = 'other',
+    String icon = kDefaultExpenseIconKey,
     ExpenseSplitMode splitMode = ExpenseSplitMode.equal,
     Map<String, double>? participantShares,
   }) async {
@@ -611,13 +640,15 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
+    final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
+
     final update = <String, dynamic>{
       'title': cleanTitle,
       'amount': amount,
       'currency': cleanCurrency,
       'paidBy': cleanPaidBy,
       'participantIds': participants,
-      'category': category.trim().isEmpty ? 'other' : category.trim(),
+      'icon': cleanIcon,
       'expenseDate': Timestamp.fromDate(
         DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
       ),

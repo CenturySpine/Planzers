@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
+import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/presentation/expense_icon_picker_sheet.dart';
 import 'package:planerz/l10n/app_localizations.dart';
-
-const double _kGroupVisibilityColumnWidth = 48;
 
 /// Create a new expense post or edit title + who can see it.
 class ExpenseGroupEditorPage extends ConsumerStatefulWidget {
@@ -32,6 +33,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late Set<String> _visibleToIds;
+  late String _iconKey;
   bool _saving = false;
 
   List<String> get _cleanMembers => widget.memberIds
@@ -47,6 +49,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
     final members = _cleanMembers.toSet();
     final ex = widget.existing;
     _titleController = TextEditingController(text: ex?.title ?? '');
+    _iconKey = ex?.icon ?? kDefaultExpensePostIconKey;
     if (ex == null) {
       final myMemberId = widget.currentUserMemberId?.trim();
       if (myMemberId != null && myMemberId.isNotEmpty && members.contains(myMemberId)) {
@@ -61,12 +64,30 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
         _visibleToIds = {...members};
       }
     }
+    _titleController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     super.dispose();
+  }
+
+  String _memberLabel(String id, AppLocalizations l10n) {
+    final base = widget.memberLabels[id] ?? l10n.tripParticipantsTraveler;
+    if (widget.currentUserMemberId == id) {
+      return '$base · ${l10n.commonMe.toLowerCase()}';
+    }
+    return base;
+  }
+
+  Future<void> _pickIcon() async {
+    final picked = await showExpenseIconPickerSheet(
+      context,
+      currentKey: _iconKey,
+      title: AppLocalizations.of(context)!.expensesIconPostTitle,
+    );
+    if (picked != null) setState(() => _iconKey = picked);
   }
 
   Future<void> _save() async {
@@ -91,6 +112,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
           groupId: widget.existing!.id,
           title: _titleController.text,
           visibleToMemberIds: _visibleToIds.toList(),
+          icon: _iconKey,
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +123,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
           tripId: widget.tripId,
           title: _titleController.text,
           visibleToMemberIds: _visibleToIds.toList(),
+          icon: _iconKey,
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,138 +150,233 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final members = _cleanMembers;
+    final previewTitle =
+        _titleController.text.trim().isEmpty ? l10n.activitiesUntitled : _titleController.text;
+
     return Scaffold(
+      backgroundColor: NeonPalette.scaffoldBackground,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(_isEdit ? l10n.expenseGroupEditTitle : l10n.expenseGroupNewTitle),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.expenseGroupNameLabel,
-                  hintText: l10n.expenseGroupNameHint,
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? l10n.commonRequired : null,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(
-                    Icons.visibility_outlined,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.expenseGroupWhoSees,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (members.isEmpty)
-                Text(
-                  l10n.tripParticipantsEmpty,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: NeonPalette.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: NeonPalette.divider),
                       ),
-                )
-              else
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(l10n.tripParticipantsTraveler)),
-                            SizedBox(
-                              width: _kGroupVisibilityColumnWidth,
-                              child: Center(
-                                child: Tooltip(
-                                  message: l10n.expenseGroupCanSee,
-                                  child: Icon(
-                                    Icons.visibility_outlined,
-                                    size: 18,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
+                      child: Row(
+                        children: [
+                          Material(
+                            color: NeonPalette.accentSoft,
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              onTap: _pickIcon,
+                              borderRadius: BorderRadius.circular(14),
+                              child: SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: Icon(
+                                  expenseIconForPost(_iconKey),
+                                  color: NeonPalette.accent,
+                                  size: 28,
                                 ),
                               ),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.expensesPostPreviewLabel,
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        color: NeonPalette.onSurfaceVariant,
+                                      ),
+                                ),
+                                Text(
+                                  previewTitle,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _pickIcon,
+                            icon: const Icon(Icons.palette_outlined, size: 18),
+                            label: Text(l10n.expensesChooseIcon),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.expenseGroupNameLabel,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: l10n.expenseGroupNameHint,
+                        prefixIcon: const Icon(Icons.sell_outlined),
+                        filled: true,
+                        fillColor: NeonPalette.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      const Divider(height: 1),
-                      ...members.map((id) {
-                        final label =
-                            widget.memberLabels[id] ?? l10n.tripParticipantsTraveler;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 2,
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? l10n.commonRequired : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.expenseGroupWhoSees,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  label,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(
-                                width: _kGroupVisibilityColumnWidth,
-                                child: Center(
-                                  child: Checkbox(
-                                    value: _visibleToIds.contains(id),
-                                    onChanged: (checked) {
-                                      setState(() {
-                                        if (checked == true) {
-                                          _visibleToIds.add(id);
-                                        } else {
-                                          _visibleToIds.remove(id);
-                                        }
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.expensesGroupWhoSeesHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: NeonPalette.onSurfaceVariant,
+                            height: 1.35,
                           ),
-                        );
-                      }),
-                    ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (members.isEmpty)
+                      Text(
+                        l10n.tripParticipantsEmpty,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      )
+                    else
+                      for (final id in members)
+                        _VisibilityRow(
+                          label: _memberLabel(id, l10n),
+                          value: _visibleToIds.contains(id),
+                          onChanged: (on) {
+                            setState(() {
+                              if (on) {
+                                _visibleToIds.add(id);
+                              } else {
+                                _visibleToIds.remove(id);
+                              }
+                            });
+                          },
+                        ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: FilledButton.icon(
+                onPressed:
+                    _saving || members.isEmpty || _visibleToIds.isEmpty ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: NeonPalette.accent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _saving || members.isEmpty || _visibleToIds.isEmpty
-                    ? null
-                    : _save,
-                child: _saving
+                icon: _saving
                     ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : Text(
-                        _isEdit ? l10n.commonSave : l10n.expenseGroupCreateAction,
-                      ),
+                    : Icon(_isEdit ? Icons.check : Icons.create_new_folder_outlined),
+                label: Text(
+                  _isEdit ? l10n.expenseGroupSaveAction : l10n.expenseGroupCreateAction,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VisibilityRow extends StatelessWidget {
+  const _VisibilityRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: NeonPalette.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: NeonPalette.divider),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: NeonPalette.primarySoft,
+                child: Text(
+                  label.characters.first.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: NeonPalette.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Switch(
+                value: value,
+                activeThumbColor: Colors.white,
+                activeTrackColor: NeonPalette.accent,
+                onChanged: onChanged,
               ),
             ],
           ),

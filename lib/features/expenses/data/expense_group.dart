@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 
 /// Expense post for a trip: visibility and title are scoped to the whole post.
 ///
@@ -9,12 +10,16 @@ class TripExpenseGroup {
     required this.title,
     required this.visibleToMemberIds,
     required this.createdAt,
+    this.icon = kDefaultExpensePostIconKey,
     this.createdBy,
     this.isDefault = false,
   });
 
   final String id;
   final String title;
+
+  /// Material Symbol key (see [kExpenseIconCatalog]).
+  final String icon;
 
   /// Members who see this post and its expenses. Must be non-empty in normal data.
   final List<String> visibleToMemberIds;
@@ -33,9 +38,16 @@ class TripExpenseGroup {
       _ => DateTime.now(),
     };
 
+    final iconRaw = (data['icon'] as String?)?.trim() ?? '';
+    final isDefault = data['isDefault'] == true;
+    final icon = iconRaw.isNotEmpty
+        ? iconRaw
+        : (isDefault ? kDefaultExpensePostIconKey : kDefaultExpensePostIconKey);
+
     return TripExpenseGroup(
       id: doc.id,
       title: (data['title'] as String?)?.trim() ?? '',
+      icon: icon,
       visibleToMemberIds:
           ((data['visibleToMemberIds'] as List<dynamic>?) ?? const [])
               .map((e) => e.toString())
@@ -43,7 +55,7 @@ class TripExpenseGroup {
               .toList(),
       createdAt: createdAt,
       createdBy: (data['createdBy'] as String?)?.trim(),
-      isDefault: data['isDefault'] == true,
+      isDefault: isDefault,
     );
   }
 

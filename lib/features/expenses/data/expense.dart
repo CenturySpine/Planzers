@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 
 /// Expense currencies supported by the app (display + separate balance buckets).
 const Set<String> kSupportedExpenseCurrencies = {'EUR', 'USD'};
@@ -11,7 +12,7 @@ enum ExpenseOperationType {
 
 /// How the expense total is allocated across [participantIds].
 enum ExpenseSplitMode {
-  /// Same amount for each participant (`total / count`).
+  /// Weighted by billing-unit parts (`total * parts / sum(parts)`).
   equal,
 
   /// Each participant has an explicit share in [participantShares].
@@ -28,9 +29,9 @@ class TripExpense {
     required this.currency,
     required this.paidBy,
     required this.participantIds,
-    required this.category,
     required this.createdAt,
     required this.expenseDate,
+    this.icon = kDefaultExpenseIconKey,
     this.createdBy,
     this.operationType = ExpenseOperationType.expense,
     this.splitMode = ExpenseSplitMode.equal,
@@ -46,7 +47,9 @@ class TripExpense {
   final String currency;
   final String paidBy;
   final List<String> participantIds;
-  final String category;
+
+  /// Material Symbol key (see [kExpenseIconCatalog]).
+  final String icon;
   final DateTime createdAt;
   final DateTime expenseDate;
   final String? createdBy;
@@ -85,6 +88,9 @@ class TripExpense {
       _ => 0.0,
     };
 
+    final iconRaw = (data['icon'] as String?)?.trim() ?? '';
+    final icon = iconRaw.isNotEmpty ? iconRaw : kDefaultExpenseIconKey;
+
     return TripExpense(
       id: doc.id,
       groupId: (data['groupId'] as String?)?.trim() ?? '',
@@ -96,7 +102,7 @@ class TripExpense {
           .map((e) => e.toString())
           .where((id) => id.trim().isNotEmpty)
           .toList(),
-      category: ((data['category'] as String?) ?? 'other').trim(),
+      icon: icon,
       createdAt: createdAt,
       expenseDate: DateTime(
         expenseDate.year,
@@ -123,6 +129,7 @@ class TripExpense {
       'currency': currency.trim().toUpperCase(),
       'paidBy': paidBy.trim(),
       'participantIds': participantIds,
+      'icon': icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim(),
       'expenseDate': Timestamp.fromDate(
         DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
       ),
