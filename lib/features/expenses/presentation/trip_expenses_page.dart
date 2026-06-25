@@ -324,26 +324,24 @@ class _TripExpensesBody extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     if (visibleGroups.isEmpty) {
-      return Expanded(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
-          child: Column(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 48,
-                color: cs.primary.withValues(alpha: 0.35),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.expensesNoPostYet,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-              ),
-            ],
-          ),
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
+        child: Column(
+          children: [
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 48,
+              color: cs.primary.withValues(alpha: 0.35),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.expensesNoPostYet,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+            ),
+          ],
         ),
       );
     }
@@ -359,43 +357,41 @@ class _TripExpensesBody extends StatelessWidget {
       userId: viewerId,
     );
 
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _ExpensePostTabs(
-            groups: visibleGroups,
-            activeGroupId: activeId,
-            canCreatePost: canCreatePost,
-            onGroupSelected: onActiveGroupChanged,
-            onAddPost: () => _TripExpensesPageState._openExpenseGroupEditor(
-              context,
-              trip.id,
-              memberIds,
-              memberLabels,
-              currentUserMemberId,
-              existing: null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ExpensePostTabs(
+          groups: visibleGroups,
+          activeGroupId: activeId,
+          canCreatePost: canCreatePost,
+          onGroupSelected: onActiveGroupChanged,
+          onAddPost: () => _TripExpensesPageState._openExpenseGroupEditor(
+            context,
+            trip.id,
+            memberIds,
+            memberLabels,
+            currentUserMemberId,
+            existing: null,
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            child: _ExpensePostPanel(
+              trip: trip,
+              group: activeGroup,
+              groupExpenses:
+                  expenses.where((e) => e.groupId == activeGroup.id).toList(),
+              participants: participants,
+              memberIds: memberIds,
+              memberLabels: memberLabels,
+              currentUserMemberId: currentUserMemberId,
+              viewerUserId: viewerId,
+              isAdminOrAbove: isAdminOrAbove,
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-              child: _ExpensePostPanel(
-                trip: trip,
-                group: activeGroup,
-                groupExpenses:
-                    expenses.where((e) => e.groupId == activeGroup.id).toList(),
-                participants: participants,
-                memberIds: memberIds,
-                memberLabels: memberLabels,
-                currentUserMemberId: currentUserMemberId,
-                viewerUserId: viewerId,
-                isAdminOrAbove: isAdminOrAbove,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
