@@ -39,6 +39,9 @@ double expenseShareForUnit({
   required String splitModeKey,
   required Map<String, double> participantShares,
 }) {
+  if (unitId.trim().isEmpty || !participantIds.contains(unitId)) {
+    return 0.0;
+  }
   if (splitModeKey == 'custom') {
     return participantShares[unitId] ?? 0.0;
   }

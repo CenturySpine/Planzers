@@ -28,7 +28,7 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
-import 'package:planerz/features/auth/data/user_display_label.dart';
+import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// Billing unit IDs (ungrouped member IDs + applicable group IDs) for an expense post.
@@ -474,7 +474,10 @@ class _PostTab extends StatelessWidget {
             ? Color.lerp(NeonPalette.divider, NeonPalette.accent, 0.45)!
             : NeonPalette.divider;
     final backgroundColor = selected
-        ? Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.09)!
+        ? Color.alphaBlend(
+            NeonPalette.accent.withValues(alpha: 0.09),
+            NeonPalette.surface,
+          )
         : NeonPalette.surface;
     final labelColor = dashed
         ? NeonPalette.onSurfaceVariant
@@ -486,43 +489,35 @@ class _PostTab extends StatelessWidget {
         : Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.14)!;
     final iconColor = selected ? Colors.white : NeonPalette.accent;
 
-    final content = Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: SizedBox(
-          height: 38,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(dashed ? 14 : 10, 0, 14, 0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (dashed)
-                  Icon(icon, size: 16, color: NeonPalette.onSurfaceVariant)
-                else
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: iconBoxColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, size: 15, color: iconColor),
-                  ),
-                const SizedBox(width: 7),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: labelColor,
-                  ),
+    final tabContent = SizedBox(
+      height: 38,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(dashed ? 14 : 10, 0, 14, 0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (dashed)
+              Icon(icon, size: 16, color: NeonPalette.onSurfaceVariant)
+            else
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: iconBoxColor,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+                child: Icon(icon, size: 15, color: iconColor),
+              ),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: labelColor,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -530,16 +525,32 @@ class _PostTab extends StatelessWidget {
     if (dashed) {
       return CustomPaint(
         painter: _DashedPillBorderPainter(color: borderColor),
-        child: content,
+        child: Material(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(999),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: tabContent,
+          ),
+        ),
       );
     }
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: borderColor, width: 1.5),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: borderColor, width: 1.5),
+          ),
+          child: tabContent,
+        ),
       ),
-      child: content,
     );
   }
 }
@@ -1569,6 +1580,28 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
     return _formatMoney(currency, effectiveAmount);
   }
 
+  Widget _profileBadgeForBillingUnit(
+    BuildContext context, {
+    required String unitId,
+    required String displayLabel,
+    required Map<String, TripMember> memberById,
+    required Map<String, String> photoUrlsByUserId,
+    double size = 34,
+  }) {
+    final member = memberById[unitId];
+    final userId = member?.userId?.trim();
+    final photoUrl = (userId != null && userId.isNotEmpty)
+        ? photoUrlsByUserId[userId]
+        : null;
+    return buildProfileBadge(
+      context: context,
+      displayLabel: displayLabel,
+      photoUrl: photoUrl,
+      isChild: member?.isChild ?? false,
+      size: size,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -1584,6 +1617,13 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
 
     final viewerBillingUnitId =
         ref.watch(viewerBillingUnitIdProvider(widget.tripId))?.trim();
+
+    final participants =
+        ref.watch(tripParticipantsStreamProvider(widget.tripId)).asData?.value ??
+            const <TripMember>[];
+    final memberById = {for (final m in participants) m.id: m};
+    final photoUrlsByUserId =
+        ref.watch(tripMemberPhotoUrlsProvider(widget.tripId));
 
     final balances = balancesAsync.asData?.value ?? const [];
     final allSuggestions = suggestionsAsync.asData?.value ?? const [];
@@ -1719,8 +1759,12 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                   _SettlementBalanceRow(
                     name: _participantLabel(memberId),
                     showMeSuffix: _isViewerUnit(memberId, viewerBillingUnitId),
-                    initial: avatarInitialFromDisplayLabel(
-                      _participantLabel(memberId),
+                    badge: _profileBadgeForBillingUnit(
+                      context,
+                      unitId: memberId,
+                      displayLabel: _participantLabel(memberId),
+                      memberById: memberById,
+                      photoUrlsByUserId: photoUrlsByUserId,
                     ),
                     amountLabel: _formatSignedBalance(
                       balance.currency,
@@ -1786,11 +1830,21 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             return _SettlementReimburseCard(
               fromName: _participantLabel(suggestion.fromParticipantId),
               toName: _participantLabel(suggestion.toParticipantId),
-              fromInitial: avatarInitialFromDisplayLabel(
-                _participantLabel(suggestion.fromParticipantId),
+              fromBadge: _profileBadgeForBillingUnit(
+                context,
+                unitId: suggestion.fromParticipantId,
+                displayLabel: _participantLabel(suggestion.fromParticipantId),
+                memberById: memberById,
+                photoUrlsByUserId: photoUrlsByUserId,
+                size: 32,
               ),
-              toInitial: avatarInitialFromDisplayLabel(
-                _participantLabel(suggestion.toParticipantId),
+              toBadge: _profileBadgeForBillingUnit(
+                context,
+                unitId: suggestion.toParticipantId,
+                displayLabel: _participantLabel(suggestion.toParticipantId),
+                memberById: memberById,
+                photoUrlsByUserId: photoUrlsByUserId,
+                size: 32,
               ),
               amountLabel: _formatMoney(suggestion.currency, suggestion.amount),
               payEnabled: canMark,
@@ -1823,10 +1877,22 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
             return _SettlementReimburseCard(
               fromName: _participantLabel(settlement.paidBy),
               toName: _participantLabel(toId),
-              fromInitial: avatarInitialFromDisplayLabel(
-                _participantLabel(settlement.paidBy),
+              fromBadge: _profileBadgeForBillingUnit(
+                context,
+                unitId: settlement.paidBy,
+                displayLabel: _participantLabel(settlement.paidBy),
+                memberById: memberById,
+                photoUrlsByUserId: photoUrlsByUserId,
+                size: 32,
               ),
-              toInitial: avatarInitialFromDisplayLabel(_participantLabel(toId)),
+              toBadge: _profileBadgeForBillingUnit(
+                context,
+                unitId: toId,
+                displayLabel: _participantLabel(toId),
+                memberById: memberById,
+                photoUrlsByUserId: photoUrlsByUserId,
+                size: 32,
+              ),
               amountLabel: _formatMoney(settlement.currency, settlement.amount),
               payEnabled: canMark,
               isRecorded: true,
@@ -1900,14 +1966,14 @@ class _SettlementBalanceRow extends StatelessWidget {
   const _SettlementBalanceRow({
     required this.name,
     required this.showMeSuffix,
-    required this.initial,
+    required this.badge,
     required this.amountLabel,
     required this.amount,
   });
 
   final String name;
   final bool showMeSuffix;
-  final String initial;
+  final Widget badge;
   final String amountLabel;
   final double amount;
 
@@ -1924,10 +1990,6 @@ class _SettlementBalanceRow extends StatelessWidget {
         : isDebtor
             ? NeonPalette.accent
             : cs.onSurfaceVariant;
-    final avatarBg = Color.alphaBlend(
-      NeonPalette.primary.withValues(alpha: 0.16),
-      cs.surface,
-    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
@@ -1936,23 +1998,7 @@ class _SettlementBalanceRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: avatarBg,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              initial,
-              style: TextStyle(
-                color: NeonPalette.primary,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          badge,
           const SizedBox(width: 12),
           Expanded(
             child: showMeSuffix
@@ -2008,8 +2054,8 @@ class _SettlementReimburseCard extends StatelessWidget {
   const _SettlementReimburseCard({
     required this.fromName,
     required this.toName,
-    required this.fromInitial,
-    required this.toInitial,
+    required this.fromBadge,
+    required this.toBadge,
     required this.amountLabel,
     required this.payEnabled,
     required this.busy,
@@ -2019,8 +2065,8 @@ class _SettlementReimburseCard extends StatelessWidget {
 
   final String fromName;
   final String toName;
-  final String fromInitial;
-  final String toInitial;
+  final Widget fromBadge;
+  final Widget toBadge;
   final String amountLabel;
   final bool payEnabled;
   final bool busy;
@@ -2081,12 +2127,7 @@ class _SettlementReimburseCard extends StatelessWidget {
               children: [
                 _SettlementFlowParticipant(
                   name: fromName,
-                  initial: fromInitial,
-                  tint: NeonPalette.accent,
-                  background: Color.alphaBlend(
-                    NeonPalette.accent.withValues(alpha: 0.18),
-                    cs.surface,
-                  ),
+                  badge: fromBadge,
                 ),
                 Expanded(
                   child: Column(
@@ -2111,12 +2152,7 @@ class _SettlementReimburseCard extends StatelessWidget {
                 ),
                 _SettlementFlowParticipant(
                   name: toName,
-                  initial: toInitial,
-                  tint: pz.success,
-                  background: Color.alphaBlend(
-                    pz.success.withValues(alpha: 0.20),
-                    cs.surface,
-                  ),
+                  badge: toBadge,
                 ),
               ],
             ),
@@ -2193,15 +2229,11 @@ class _SettlementReimburseCard extends StatelessWidget {
 class _SettlementFlowParticipant extends StatelessWidget {
   const _SettlementFlowParticipant({
     required this.name,
-    required this.initial,
-    required this.tint,
-    required this.background,
+    required this.badge,
   });
 
   final String name;
-  final String initial;
-  final Color tint;
-  final Color background;
+  final Widget badge;
 
   @override
   Widget build(BuildContext context) {
@@ -2210,23 +2242,7 @@ class _SettlementFlowParticipant extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: background,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              initial,
-              style: TextStyle(
-                color: tint,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          badge,
           const SizedBox(height: 4),
           Text(
             name,
