@@ -106,7 +106,7 @@ class NeonPalette {
 
   static const double bottomNavBarHeight = 72;
   static const double bottomNavFabSize = 60;
-  static const double bottomNavFabOverflow = 24;
+  static const double bottomNavFabOverflow = 16;
   static const double bottomNavFabBorderWidth = 4;
   static const double bottomNavFabIconSize = 27;
   static const double bottomNavTabIconSize = 24;
