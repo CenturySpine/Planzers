@@ -2438,6 +2438,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesBalancesByCurrency => 'Balances (by currency)';
 
   @override
+  String expensesBalancesCardTitle(String currency) {
+    return 'Balances — $currency';
+  }
+
+  @override
+  String get expensesBalancesNetHint =>
+      'Each person\'s net position once the post is shared.';
+
+  @override
+  String get expensesPaidButton => 'Paid';
+
+  @override
+  String get expensesLockToMarkPaidTooltip => 'Lock the post to mark as paid.';
+
+  @override
   String get expensesAddToSeeBreakdown => 'Add expenses to see the breakdown.';
 
   @override
@@ -2507,6 +2522,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expensesPostTotal => 'Post total';
+
+  @override
+  String get expensesIconExpenseTitle => 'Expense icon';
+
+  @override
+  String get expensesIconPostTitle => 'Post icon';
+
+  @override
+  String get expensesRemainToSplit => 'Remaining to split';
+
+  @override
+  String get expensesSplitComplete => 'Fully allocated';
+
+  @override
+  String get expensesSplitOver => 'Total exceeded';
+
+  @override
+  String expensesNetOwedToYou(Object amount) {
+    return 'You are owed $amount';
+  }
+
+  @override
+  String expensesNetYouOwe(Object amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String get expensesEditExpenseTitle => 'Edit expense';
+
+  @override
+  String get expensesAddExpenseAction => 'Add expense';
+
+  @override
+  String get expensesSaveExpenseChanges => 'Save changes';
+
+  @override
+  String get expensesSplitModeEqualShort => 'Equal';
+
+  @override
+  String expensesEqualSplitSummary(Object count, Object amount) {
+    return '$count people · $amount each';
+  }
+
+  @override
+  String get expensesPostPreviewLabel => 'Expense post';
+
+  @override
+  String get expenseGroupSaveAction => 'Save post';
+
+  @override
+  String get expensesFabAddPost => 'Post';
+
+  @override
+  String get expensesLockPostMenu => 'Lock expenses';
+
+  @override
+  String get expensesUnlockPostMenu => 'Unlock expenses';
+
+  @override
+  String get expensesLockPostBar =>
+      'Lock this post to freeze entries and mark reimbursements as paid.';
+
+  @override
+  String expensesListYouOwe(Object amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String get expensesChooseIcon => 'Icon';
+
+  @override
+  String get expensesGroupWhoSeesHint =>
+      'Only enabled members can see this post and add expenses to it.';
 
   @override
   String get expensesSettlementType => 'Reimbursement';
@@ -5641,6 +5729,21 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get expensesBalancesByCurrency => 'Balances (by currency)';
 
   @override
+  String expensesBalancesCardTitle(String currency) {
+    return 'Balances — $currency';
+  }
+
+  @override
+  String get expensesBalancesNetHint =>
+      'Each person\'s net position once the post is shared.';
+
+  @override
+  String get expensesPaidButton => 'Paid';
+
+  @override
+  String get expensesLockToMarkPaidTooltip => 'Lock the post to mark as paid.';
+
+  @override
   String get expensesAddToSeeBreakdown => 'Add expenses to see the breakdown.';
 
   @override
@@ -5710,6 +5813,79 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesPostTotal => 'Post total';
+
+  @override
+  String get expensesIconExpenseTitle => 'Expense icon';
+
+  @override
+  String get expensesIconPostTitle => 'Post icon';
+
+  @override
+  String get expensesRemainToSplit => 'Remaining to split';
+
+  @override
+  String get expensesSplitComplete => 'Fully allocated';
+
+  @override
+  String get expensesSplitOver => 'Total exceeded';
+
+  @override
+  String expensesNetOwedToYou(Object amount) {
+    return 'You are owed $amount';
+  }
+
+  @override
+  String expensesNetYouOwe(Object amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String get expensesEditExpenseTitle => 'Edit expense';
+
+  @override
+  String get expensesAddExpenseAction => 'Add expense';
+
+  @override
+  String get expensesSaveExpenseChanges => 'Save changes';
+
+  @override
+  String get expensesSplitModeEqualShort => 'Equal';
+
+  @override
+  String expensesEqualSplitSummary(Object count, Object amount) {
+    return '$count people · $amount each';
+  }
+
+  @override
+  String get expensesPostPreviewLabel => 'Expense post';
+
+  @override
+  String get expenseGroupSaveAction => 'Save post';
+
+  @override
+  String get expensesFabAddPost => 'Post';
+
+  @override
+  String get expensesLockPostMenu => 'Lock expenses';
+
+  @override
+  String get expensesUnlockPostMenu => 'Unlock expenses';
+
+  @override
+  String get expensesLockPostBar =>
+      'Lock this post to freeze entries and mark reimbursements as paid.';
+
+  @override
+  String expensesListYouOwe(Object amount) {
+    return 'You owe $amount';
+  }
+
+  @override
+  String get expensesChooseIcon => 'Icon';
+
+  @override
+  String get expensesGroupWhoSeesHint =>
+      'Only enabled members can see this post and add expenses to it.';
 
   @override
   String get expensesSettlementType => 'Reimbursement';

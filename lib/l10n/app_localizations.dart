@@ -4458,6 +4458,30 @@ abstract class AppLocalizations {
   /// **'Soldes (par devise)'**
   String get expensesBalancesByCurrency;
 
+  /// No description provided for @expensesBalancesCardTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Soldes — {currency}'**
+  String expensesBalancesCardTitle(String currency);
+
+  /// No description provided for @expensesBalancesNetHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Position nette de chacun une fois le poste partagé.'**
+  String get expensesBalancesNetHint;
+
+  /// No description provided for @expensesPaidButton.
+  ///
+  /// In fr, this message translates to:
+  /// **'Payé'**
+  String get expensesPaidButton;
+
+  /// No description provided for @expensesLockToMarkPaidTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouille le poste pour marquer payé.'**
+  String get expensesLockToMarkPaidTooltip;
+
   /// No description provided for @expensesAddToSeeBreakdown.
   ///
   /// In fr, this message translates to:
@@ -4583,6 +4607,132 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Total du poste'**
   String get expensesPostTotal;
+
+  /// No description provided for @expensesIconExpenseTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Icône de la dépense'**
+  String get expensesIconExpenseTitle;
+
+  /// No description provided for @expensesIconPostTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Icône du poste'**
+  String get expensesIconPostTitle;
+
+  /// No description provided for @expensesRemainToSplit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Reste à répartir'**
+  String get expensesRemainToSplit;
+
+  /// No description provided for @expensesSplitComplete.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réparti — tout est attribué'**
+  String get expensesSplitComplete;
+
+  /// No description provided for @expensesSplitOver.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dépassement du total'**
+  String get expensesSplitOver;
+
+  /// No description provided for @expensesNetOwedToYou.
+  ///
+  /// In fr, this message translates to:
+  /// **'On te doit {amount}'**
+  String expensesNetOwedToYou(Object amount);
+
+  /// No description provided for @expensesNetYouOwe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu dois {amount}'**
+  String expensesNetYouOwe(Object amount);
+
+  /// No description provided for @expensesEditExpenseTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la dépense'**
+  String get expensesEditExpenseTitle;
+
+  /// No description provided for @expensesAddExpenseAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter la dépense'**
+  String get expensesAddExpenseAction;
+
+  /// No description provided for @expensesSaveExpenseChanges.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer les modifications'**
+  String get expensesSaveExpenseChanges;
+
+  /// No description provided for @expensesSplitModeEqualShort.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équitable'**
+  String get expensesSplitModeEqualShort;
+
+  /// No description provided for @expensesEqualSplitSummary.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} pers. · {amount} chacun'**
+  String expensesEqualSplitSummary(Object count, Object amount);
+
+  /// No description provided for @expensesPostPreviewLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poste de dépense'**
+  String get expensesPostPreviewLabel;
+
+  /// No description provided for @expenseGroupSaveAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer le poste'**
+  String get expenseGroupSaveAction;
+
+  /// No description provided for @expensesFabAddPost.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poste'**
+  String get expensesFabAddPost;
+
+  /// No description provided for @expensesLockPostMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouiller les dépenses'**
+  String get expensesLockPostMenu;
+
+  /// No description provided for @expensesUnlockPostMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller les dépenses'**
+  String get expensesUnlockPostMenu;
+
+  /// No description provided for @expensesLockPostBar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Verrouille les dépenses du poste pour figer les saisies et marquer les remboursements payés.'**
+  String get expensesLockPostBar;
+
+  /// No description provided for @expensesListYouOwe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu dois {amount}'**
+  String expensesListYouOwe(Object amount);
+
+  /// No description provided for @expensesChooseIcon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Icône'**
+  String get expensesChooseIcon;
+
+  /// No description provided for @expensesGroupWhoSeesHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Seuls les membres activés voient ce poste et peuvent y ajouter des dépenses.'**
+  String get expensesGroupWhoSeesHint;
 
   /// No description provided for @expensesSettlementType.
   ///
