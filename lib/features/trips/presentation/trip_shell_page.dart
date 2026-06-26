@@ -191,8 +191,17 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
               final currentPath = GoRouterState.of(context).uri.path;
               final isOnTripOverview = currentPath.endsWith('/overview');
 
-              return Scaffold(
-                appBar: AppBar(
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  bottomNavigationBarTheme:
+                      Theme.of(context).bottomNavigationBarTheme.copyWith(
+                            backgroundColor: Colors.transparent,
+                            elevation: 0,
+                          ),
+                ),
+                child: Scaffold(
+                  extendBody: !useRail,
+                  appBar: AppBar(
                   automaticallyImplyLeading: false,
                   title: GestureDetector(
                     onTap: isOnTripOverview ? null : _goToOverview,
@@ -269,6 +278,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                         },
                         localizedLabel: localizedNavLabel,
                       ),
+                ),
               );
             },
           ),
@@ -340,7 +350,9 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
     final planningDest = destinations[_planningIdx];
     final planningUnread = unreadByTabLabel['Planning'] ?? 0;
 
-    return SizedBox(
+    return Material(
+      type: MaterialType.transparency,
+      child: SizedBox(
       height: NeonPalette.bottomNavBarHeight + planningOverflow,
       child: Stack(
         clipBehavior: Clip.none,
@@ -414,6 +426,7 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

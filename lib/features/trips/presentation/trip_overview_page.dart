@@ -793,7 +793,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
               return ColoredBox(
                 color: NeonPalette.scaffoldBackground,
                 child: ListView(
-                  padding: const EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.only(
+                    bottom: NeonPalette.bottomNavBarHeight +
+                        MediaQuery.paddingOf(context).bottom,
+                  ),
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
