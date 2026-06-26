@@ -200,7 +200,9 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                           ),
                 ),
                 child: Scaffold(
-                  extendBody: !useRail,
+                  // Branch pages use nested Scaffolds with FABs; extendBody would
+                  // let the body draw behind the bottom nav and hide those FABs.
+                  extendBody: false,
                   appBar: AppBar(
                   automaticallyImplyLeading: false,
                   title: GestureDetector(
