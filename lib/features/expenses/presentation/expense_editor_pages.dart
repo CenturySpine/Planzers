@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,30 @@ Future<DateTime?> _pickExpenseDate(
     lastDate: DateTime(now.year + 10, 12, 31),
   );
   return result?.start;
+}
+
+@visibleForTesting
+List<String> expenseDetailBillingUnitIds({
+  required Iterable<String> participantScopeMemberIds,
+  required String? paidBy,
+  required Iterable<String> participantIds,
+}) {
+  final billingUnitIds = <String>{};
+
+  void addBillingUnitId(String? rawId) {
+    final id = rawId?.trim() ?? '';
+    if (id.isNotEmpty) billingUnitIds.add(id);
+  }
+
+  for (final id in participantScopeMemberIds) {
+    addBillingUnitId(id);
+  }
+  addBillingUnitId(paidBy);
+  for (final id in participantIds) {
+    addBillingUnitId(id);
+  }
+
+  return billingUnitIds.toList();
 }
 
 // --- Add expense ---
@@ -343,10 +368,15 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
   @override
   void initState() {
     super.initState();
-    final scope = widget.participantScopeMemberIds
+    final visibleScope = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toSet();
+    final detailBillingUnitIds = expenseDetailBillingUnitIds(
+      participantScopeMemberIds: widget.participantScopeMemberIds,
+      paidBy: widget.expense.paidBy,
+      participantIds: widget.expense.participantIds,
+    ).toSet();
     _titleController = TextEditingController(text: widget.expense.title);
     _amountController = TextEditingController(
       text: widget.expense.amount.toStringAsFixed(2),
@@ -354,13 +384,15 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
     _currency = widget.expense.currency;
     _iconKey = widget.expense.icon;
     final paid = widget.expense.paidBy.trim();
-    _paidBy = scope.contains(paid) ? paid : null;
+    _paidBy = detailBillingUnitIds.contains(paid) ? paid : null;
     _participantIds = widget.expense.participantIds
-        .where((id) => scope.contains(id.trim()))
+        .where((id) => detailBillingUnitIds.contains(id.trim()))
         .map((id) => id.trim())
         .toSet();
-    if (_participantIds.isEmpty && scope.isNotEmpty) _participantIds = {...scope};
-    if (_paidBy == null && scope.isNotEmpty) _paidBy = scope.first;
+    if (_participantIds.isEmpty && visibleScope.isNotEmpty) {
+      _participantIds = {...visibleScope};
+    }
+    if (_paidBy == null && visibleScope.isNotEmpty) _paidBy = visibleScope.first;
     _expenseDate = DateTime(
       widget.expense.expenseDate.year,
       widget.expense.expenseDate.month,
@@ -554,10 +586,11 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final members = widget.participantScopeMemberIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
+    final members = expenseDetailBillingUnitIds(
+      participantScopeMemberIds: widget.participantScopeMemberIds,
+      paidBy: _paidBy,
+      participantIds: _participantIds,
+    );
     final groups =
         ref.watch(tripParticipantGroupsStreamProvider(widget.tripId)).asData?.value ??
             const <ParticipantGroup>[];
