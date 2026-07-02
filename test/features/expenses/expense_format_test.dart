@@ -32,7 +32,7 @@ void main() {
       (sum, share) => sum + share,
     );
     expect(roundedTotal, closeTo(100, 0.001));
-    expect(shares.values.where((share) => share == 14.29).length, 6);
-    expect(shares.values.where((share) => share == 14.26).length, 1);
+    expect(shares.values.where((share) => share == 14.29).length, 4);
+    expect(shares.values.where((share) => share == 14.28).length, 3);
   });
 }
