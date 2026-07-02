@@ -306,16 +306,6 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                             fit: BoxFit.contain,
                           ),
                           const SizedBox(height: 28),
-                          const Text(
-                            'PLANERZ',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 56,
-                              fontWeight: FontWeight.bold,
-                              height: 1.0,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
