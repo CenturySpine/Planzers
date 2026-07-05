@@ -100,6 +100,14 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/invite',
+      builder: (context, state) {
+        final tripId = state.uri.queryParameters['tripId'] ?? '';
+        final token = state.uri.queryParameters['token'] ?? '';
+        return InviteJoinPage(tripId: tripId, token: token);
+      },
+    ),
+    GoRoute(
       path: '/trips',
       builder: (context, state) => const TripsPage(),
     ),
