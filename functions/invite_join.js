@@ -117,27 +117,30 @@ async function completeJoinTripWithInvite({
 
     let claimedParticipantRef = null;
 
-    if (unclaimedSlots.length > 0 && !bypass) {
-      if (!slotArg) {
+    if (!bypass) {
+      const slotDoc = slotArg
+        ? participantsSnap.docs.find((doc) => doc.id === slotArg)
+        : null;
+      if (slotArg) {
+        if (!slotDoc || normalizeString(slotDoc.data().userId)) {
+          throw new HttpsError(
+            'failed-precondition',
+            'Ce voyageur a déjà été choisi ou est introuvable.'
+          );
+        }
+        if (slotDoc.data().isChild === true) {
+          throw new HttpsError(
+            'failed-precondition',
+            'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
+          );
+        }
+        claimedParticipantRef = slotDoc.ref;
+      } else if (unclaimedSlots.length > 0) {
         throw new HttpsError(
           'invalid-argument',
           'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
         );
       }
-      const slotDoc = participantsSnap.docs.find((doc) => doc.id === slotArg);
-      if (!slotDoc || normalizeString(slotDoc.data().userId)) {
-        throw new HttpsError(
-          'failed-precondition',
-          'Ce voyageur a déjà été choisi ou est introuvable.'
-        );
-      }
-      if (slotDoc.data().isChild === true) {
-        throw new HttpsError(
-          'failed-precondition',
-          'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
-        );
-      }
-      claimedParticipantRef = slotDoc.ref;
     }
 
     if (claimedParticipantRef) {
