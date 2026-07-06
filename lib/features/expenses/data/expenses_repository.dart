@@ -66,6 +66,27 @@ final tripExpensesStatesStreamProvider =
   return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
 });
 
+Map<String, double> validatedExpenseCustomShares({
+  required List<String> participantIds,
+  required Map<String, double>? participantShares,
+  required double amount,
+}) {
+  final customShares = <String, double>{};
+  var sum = 0.0;
+  for (final id in participantIds) {
+    final share = (participantShares ?? const {})[id] ?? 0.0;
+    if (share < 0) {
+      throw StateError('Part invalide');
+    }
+    customShares[id] = share;
+    sum += share;
+  }
+  if ((sum - amount).abs() > 0.02) {
+    throw StateError('Somme des parts invalide');
+  }
+  return customShares;
+}
+
 /// Live lock state for a single expense post.
 final expenseGroupStateStreamProvider = StreamProvider.autoDispose
     .family<TripExpenseGroupState, ExpenseGroupScope>((ref, scope) {
@@ -546,19 +567,11 @@ class ExpensesRepository {
     final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
     Map<String, double>? customShares;
     if (splitMode == ExpenseSplitMode.customAmounts) {
-      customShares = <String, double>{};
-      var sum = 0.0;
-      for (final id in participants) {
-        final share = (participantShares ?? const {})[id] ?? 0.0;
-        if (share < 0) {
-          throw StateError('Part invalide');
-        }
-        customShares[id] = share;
-        sum += share;
-      }
-      if ((sum - amount).abs() > 0.02) {
-        throw StateError('Somme des parts invalide');
-      }
+      customShares = validatedExpenseCustomShares(
+        participantIds: participants,
+        participantShares: participantShares,
+        amount: amount,
+      );
     }
 
     final draft = TripExpense(
@@ -641,6 +654,14 @@ class ExpensesRepository {
     }
 
     final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
+    Map<String, double>? customShares;
+    if (splitMode == ExpenseSplitMode.customAmounts) {
+      customShares = validatedExpenseCustomShares(
+        participantIds: participants,
+        participantShares: participantShares,
+        amount: amount,
+      );
+    }
 
     final update = <String, dynamic>{
       'title': cleanTitle,
@@ -658,10 +679,7 @@ class ExpensesRepository {
 
     if (splitMode == ExpenseSplitMode.customAmounts) {
       update['splitMode'] = 'custom';
-      update['participantShares'] = {
-        for (final id in participants)
-          id: (participantShares ?? const {})[id] ?? 0.0,
-      };
+      update['participantShares'] = customShares;
     } else {
       update['splitMode'] = 'equal';
       update['participantShares'] = FieldValue.delete();
