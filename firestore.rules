@@ -176,8 +176,8 @@ service cloud.firestore {
     }
 
     function expenseGroupLocked(tripId, groupId) {
-      return get(/databases/$(database)/documents/trips/$(tripId)/expenseGroups/$(groupId)/state/current)
-        .data.expensesLocked == true;
+      let statePath = /databases/$(database)/documents/trips/$(tripId)/expenseGroups/$(groupId)/state/current;
+      return exists(statePath) && get(statePath).data.expensesLocked == true;
     }
 
     function expenseCreateTargetsUnlockedPost(tripId) {
