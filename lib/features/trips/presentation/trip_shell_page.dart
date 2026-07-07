@@ -7,8 +7,10 @@ import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/account/presentation/account_app_bar_actions.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
+import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -100,6 +102,13 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     final countersAsync = ref.watch(tripNotificationCountersProvider(tripId));
     final messagesAsync = ref.watch(tripMessagesStreamProvider(tripId));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(tripId));
+    final announcementsAsync =
+        ref.watch(tripAnnouncementsStreamProvider(tripId));
+    final announcementsLastReadAtAsync = ref.watch(
+      tripChannelLastReadAtProvider(
+        (tripId: tripId, channel: TripNotificationChannel.announcements),
+      ),
+    );
     final lastReadAtAsync = ref.watch(
       tripChannelLastReadAtProvider(
         (tripId: tripId, channel: TripNotificationChannel.messages),
@@ -115,9 +124,13 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     var unreadMessages = 0;
     var unreadActivities = 0;
     var unreadExpenses = 0;
+    var unreadAnnouncements = 0;
     final messages = messagesAsync.asData?.value;
     final activities = activitiesAsync.asData?.value;
+    final announcements = announcementsAsync.asData?.value;
     final lastReadAt = lastReadAtAsync.asData?.value?.toUtc();
+    final announcementsLastReadAt =
+        announcementsLastReadAtAsync.asData?.value?.toUtc();
     final activitiesLastReadAt =
         activitiesLastReadAtAsync.asData?.value?.toUtc();
     final counters = countersAsync.asData?.value;
@@ -144,6 +157,19 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
     if (counters != null &&
         counters.hasChannel(TripNotificationChannel.expenses)) {
       unreadExpenses = counters.unreadFor(TripNotificationChannel.expenses);
+    }
+    if (counters != null &&
+        counters.hasChannel(TripNotificationChannel.announcements)) {
+      unreadAnnouncements =
+          counters.unreadFor(TripNotificationChannel.announcements);
+    } else if (myUid != null && myUid.isNotEmpty && announcements != null) {
+      unreadAnnouncements = announcements.where((announcement) {
+        if (announcement.authorId == myUid) return false;
+        if (announcementsLastReadAt == null) return true;
+        return announcement.createdAt
+            .toUtc()
+            .isAfter(announcementsLastReadAt);
+      }).length;
     }
 
     int unreadForLabel(String label) => switch (label) {
@@ -219,8 +245,14 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                         ? l10n.tripsMyTrips
                         : l10n.tripTabOverview,
                   ),
-                  actions: const [
-                    AccountAppBarActions(),
+                  actions: [
+                    TripOverviewAnnouncementsAppBarAction(
+                      tooltip: l10n.tripOverviewTopTabAnnouncements,
+                      hasUnread: unreadAnnouncements > 0,
+                      onTap: () =>
+                          context.push('/trips/$tripId/announcements'),
+                    ),
+                    const AccountAppBarActions(),
                   ],
                 ),
                 body: Row(

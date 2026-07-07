@@ -5328,6 +5328,18 @@ abstract class AppLocalizations {
   /// **'Photos'**
   String get tripOverviewPhotosAction;
 
+  /// No description provided for @tripOverviewPhotosOpenAlbum.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir l\'album partagé'**
+  String get tripOverviewPhotosOpenAlbum;
+
+  /// No description provided for @tripOverviewAddModule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un module'**
+  String get tripOverviewAddModule;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:
@@ -5399,30 +5411,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'({count} de plus)'**
   String tripOverviewTileGamesAndMore(int count);
-
-  /// No description provided for @tripOverviewViewActivities.
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir le planning'**
-  String get tripOverviewViewActivities;
-
-  /// No description provided for @tripOverviewViewRooms.
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir les chambres'**
-  String get tripOverviewViewRooms;
-
-  /// No description provided for @tripOverviewViewCarpool.
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir le covoiturage'**
-  String get tripOverviewViewCarpool;
-
-  /// No description provided for @tripOverviewViewGames.
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir les jeux'**
-  String get tripOverviewViewGames;
 
   /// No description provided for @tripOverviewTileComingSoon.
   ///

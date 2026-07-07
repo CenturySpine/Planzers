@@ -2937,6 +2937,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewPhotosAction => 'Photos';
 
   @override
+  String get tripOverviewPhotosOpenAlbum => 'Open shared album';
+
+  @override
+  String get tripOverviewAddModule => 'Add a module';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -2974,18 +2980,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
-
-  @override
-  String get tripOverviewViewActivities => 'View schedule';
-
-  @override
-  String get tripOverviewViewRooms => 'View rooms';
-
-  @override
-  String get tripOverviewViewCarpool => 'View carpool';
-
-  @override
-  String get tripOverviewViewGames => 'View games';
 
   @override
   String get tripOverviewTileComingSoon => '[Coming soon]';
@@ -6228,6 +6222,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripOverviewPhotosAction => 'Photos';
 
   @override
+  String get tripOverviewPhotosOpenAlbum => 'Open shared album';
+
+  @override
+  String get tripOverviewAddModule => 'Add a module';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -6265,18 +6265,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
-
-  @override
-  String get tripOverviewViewActivities => 'View schedule';
-
-  @override
-  String get tripOverviewViewRooms => 'View rooms';
-
-  @override
-  String get tripOverviewViewCarpool => 'View carpool';
-
-  @override
-  String get tripOverviewViewGames => 'View games';
 
   @override
   String get tripOverviewTileComingSoon => '[Coming soon]';

@@ -1097,6 +1097,8 @@
   "tripOverviewInviteCodeLabel": "Code",
   "tripOverviewShareCode": "Share",
   "tripOverviewPhotosAction": "Photos",
+  "tripOverviewPhotosOpenAlbum": "Open shared album",
+  "tripOverviewAddModule": "Add a module",
   "tripOverviewBannerEmpty": "No photo",
   "tripOverviewBannerAddPhoto": "Add a cover photo",
   "tripAnnouncementsPageTitle": "Organizers announcements",
@@ -1116,10 +1118,6 @@
       }
     }
   },
-  "tripOverviewViewActivities": "View schedule",
-  "tripOverviewViewRooms": "View rooms",
-  "tripOverviewViewCarpool": "View carpool",
-  "tripOverviewViewGames": "View games",
   "tripOverviewTileComingSoon": "[Coming soon]",
   "tripCarpoolDriverLabel": "Driver",
   "tripCarpoolShoppingFlag": "Shopping",

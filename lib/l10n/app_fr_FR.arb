@@ -1097,6 +1097,8 @@
   "tripOverviewInviteCodeLabel": "Code",
   "tripOverviewShareCode": "Partager",
   "tripOverviewPhotosAction": "Photos",
+  "tripOverviewPhotosOpenAlbum": "Ouvrir l'album partagé",
+  "tripOverviewAddModule": "Ajouter un module",
   "tripOverviewBannerEmpty": "Aucune photo",
   "tripOverviewBannerAddPhoto": "Ajouter une photo de couverture",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",
@@ -1116,10 +1118,6 @@
       }
     }
   },
-  "tripOverviewViewActivities": "Voir le planning",
-  "tripOverviewViewRooms": "Voir les chambres",
-  "tripOverviewViewCarpool": "Voir le covoiturage",
-  "tripOverviewViewGames": "Voir les jeux",
   "tripOverviewTileComingSoon": "[À venir]",
   "tripCarpoolDriverLabel": "Conducteur",
   "tripCarpoolShoppingFlag": "Courses",

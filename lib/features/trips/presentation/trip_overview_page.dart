@@ -12,8 +12,6 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
-import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
@@ -22,10 +20,8 @@ import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
-import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/data/trip.dart';
-import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -113,10 +109,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
   void _openParticipantsPage() {
     context.push('/trips/${_trip.id}/participants');
-  }
-
-  void _openAnnouncementsPage() {
-    context.push('/trips/${_trip.id}/announcements');
   }
 
   void _openTripUserPreferencesPage() {
@@ -506,20 +498,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final l10n = AppLocalizations.of(context)!;
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
-    final announcementsAsync =
-        ref.watch(tripAnnouncementsStreamProvider(_trip.id));
-    final activitiesCountersAsync =
-        ref.watch(tripNotificationCountersProvider(_trip.id));
-    final announcementsLastReadAtAsync = ref.watch(
-      tripChannelLastReadAtProvider(
-        (tripId: _trip.id, channel: TripNotificationChannel.announcements),
-      ),
-    );
-    final activitiesLastReadAtAsync = ref.watch(
-      tripChannelLastReadAtProvider(
-        (tripId: _trip.id, channel: TripNotificationChannel.activities),
-      ),
-    );
     final rooms = roomsAsync.asData?.value ?? const [];
     final carpools =
         ref.watch(tripCarpoolsStreamProvider(_trip.id)).asData?.value ??
@@ -719,44 +697,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     ];
                   }(),
               ];
-              final activitiesCounters = activitiesCountersAsync.asData?.value;
-              var unreadActivities = 0;
-              var unreadAnnouncements = 0;
-              if (activitiesCounters != null &&
-                  activitiesCounters
-                      .hasChannel(TripNotificationChannel.activities)) {
-                unreadActivities = activitiesCounters
-                    .unreadFor(TripNotificationChannel.activities);
-              } else if (myUid != null && myUid.isNotEmpty) {
-                final allActivities = activitiesAsync.asData?.value;
-                final lastReadAt =
-                    activitiesLastReadAtAsync.asData?.value?.toUtc();
-                if (allActivities != null) {
-                  unreadActivities = allActivities.where((activity) {
-                    if (activity.createdBy == myUid) return false;
-                    if (lastReadAt == null) return true;
-                    return activity.createdAt.toUtc().isAfter(lastReadAt);
-                  }).length;
-                }
-              }
-              if (activitiesCounters != null &&
-                  activitiesCounters
-                      .hasChannel(TripNotificationChannel.announcements)) {
-                unreadAnnouncements = activitiesCounters
-                    .unreadFor(TripNotificationChannel.announcements);
-              } else if (myUid != null && myUid.isNotEmpty) {
-                final allAnnouncements = announcementsAsync.asData?.value;
-                final lastReadAt =
-                    announcementsLastReadAtAsync.asData?.value?.toUtc();
-                if (allAnnouncements != null) {
-                  unreadAnnouncements = allAnnouncements.where((announcement) {
-                    if (announcement.authorId == myUid) return false;
-                    if (lastReadAt == null) return true;
-                    return announcement.createdAt.toUtc().isAfter(lastReadAt);
-                  }).length;
-                }
-              }
-
               final activitiesToday = (activitiesAsync.asData?.value ??
                       const <TripActivity>[])
                   .where((activity) => activity.plannedAt != null)
@@ -812,21 +752,6 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             : null,
                         emptyLabel: l10n.tripOverviewBannerEmpty,
                         addPhotoLabel: l10n.tripOverviewBannerAddPhoto,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                      child: TripOverviewActionPills(
-                        announcementsLabel:
-                            l10n.tripOverviewTopTabAnnouncements,
-                        announcementsAlertCount: unreadAnnouncements,
-                        onAnnouncementsTap: _openAnnouncementsPage,
-                        photosLabel: photosStorageUrl.isNotEmpty
-                            ? l10n.tripOverviewPhotosAction
-                            : null,
-                        onPhotosTap: photosStorageUrl.isNotEmpty
-                            ? () => _openLinkUrl(photosStorageUrl)
-                            : null,
                       ),
                     ),
                     if (linkUrlForUi.isNotEmpty) ...[
@@ -896,108 +821,101 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: TripOverviewModuleTile(
-                                    label: l10n.tripOverviewTileActivities,
-                                    icon: Icons.event_available_outlined,
-                                    countLabel: '$plannedActivitiesCount',
-                                    viewLabel: l10n.tripOverviewViewActivities,
-                                    tileColor: ActivityFilterGroup
-                                        .repas.filterLightBgColor,
-                                    inkColor:
-                                        ActivityFilterGroup.repas.filterColor,
-                                    alertCount: unreadActivities,
-                                    statusText: _moduleStatusText(
-                                      detailLines: activitiesTodayLabels,
-                                      emptyStateMessage: l10n
-                                          .tripOverviewTileNoActivitiesToday,
-                                    ),
-                                    onTap: () => context.go(
-                                      '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(_resolvedAgendaDay(today))}',
-                                    ),
-                                  ),
-                                ),
-                                if (!_trip.isDayTrip) ...[
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: TripOverviewModuleTile(
-                                      label: l10n.tripOverviewTileRooms,
-                                      icon: Icons.king_bed_outlined,
-                                      countLabel: '$roomsCount',
-                                      viewLabel: l10n.tripOverviewViewRooms,
-                                      tileColor: ActivityFilterGroup
-                                          .nuits.filterLightBgColor,
-                                      inkColor:
-                                          ActivityFilterGroup.nuits.filterColor,
-                                      statusText: _moduleStatusText(
-                                        detailLines: roomsDetailLines.length > 1
-                                            ? [roomsDetailLines.last]
-                                            : const [],
-                                        emptyStateMessage: l10n
-                                            .tripOverviewTileNoAssignedRoom,
-                                      ),
-                                      onTap: () => context
-                                          .go('/trips/${_trip.id}/rooms'),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                          TripOverviewModuleCard(
+                            label: l10n.tripOverviewTileActivities,
+                            icon: Icons.event_available_outlined,
+                            count: plannedActivitiesCount,
+                            tileColor: NeonPalette.overviewModulePlanningTile,
+                            inkColor: NeonPalette.overviewModulePlanningInk,
+                            statusText: _moduleStatusText(
+                              detailLines: activitiesTodayLabels,
+                              emptyStateMessage:
+                                  l10n.tripOverviewTileNoActivitiesToday,
+                            ),
+                            onTap: () => context.go(
+                              '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(_resolvedAgendaDay(today))}',
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: TripOverviewModuleTile(
-                                    label: l10n.tripOverviewTileCarpool,
-                                    icon: Icons.directions_car_outlined,
-                                    countLabel: '${carpools.length}',
-                                    viewLabel: l10n.tripOverviewViewCarpool,
-                                    tileColor: ActivityFilterGroup
-                                        .trajets.filterLightBgColor,
-                                    inkColor:
-                                        ActivityFilterGroup.trajets.filterColor,
-                                    statusText: _moduleStatusText(
-                                      detailLines: myCarpoolDetailLines,
-                                      emptyStateMessage:
-                                          l10n.tripCarpoolTileNoAssignment,
-                                    ),
-                                    onTap: () => context
-                                        .go('/trips/${_trip.id}/carpool'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: TripOverviewModuleTile(
-                                    label: l10n.tripOverviewTileGames,
-                                    icon: Icons.sports_esports_outlined,
-                                    countLabel: '$boardGamesCount',
-                                    viewLabel: l10n.tripOverviewViewGames,
-                                    tileColor: ActivityFilterGroup
-                                        .loisirs.filterLightBgColor,
-                                    inkColor:
-                                        ActivityFilterGroup.loisirs.filterColor,
-                                    statusText: _moduleStatusText(
-                                      detailLines: boardGamesDetailLines,
-                                      emptyStateMessage: l10n
-                                          .tripOverviewTileNoBoardGames,
-                                      moreDetailsLabelBuilder: (extraCount) =>
-                                          l10n.tripOverviewTileGamesAndMore(
-                                              extraCount),
-                                    ),
-                                    onTap: () => context
-                                        .push('/trips/${_trip.id}/games'),
-                                  ),
-                                ),
-                              ],
+                          if (!_trip.isDayTrip) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripOverviewTileRooms,
+                              icon: Icons.king_bed_outlined,
+                              count: roomsCount,
+                              tileColor: NeonPalette.overviewModuleRoomsTile,
+                              inkColor: NeonPalette.overviewModuleRoomsInk,
+                              statusText: _moduleStatusText(
+                                detailLines: roomsDetailLines.length > 1
+                                    ? [roomsDetailLines.last]
+                                    : const [],
+                                emptyStateMessage:
+                                    l10n.tripOverviewTileNoAssignedRoom,
+                              ),
+                              onTap: () =>
+                                  context.go('/trips/${_trip.id}/rooms'),
                             ),
+                          ],
+                          const SizedBox(height: 10),
+                          TripOverviewModuleCard(
+                            label: l10n.tripOverviewTileCarpool,
+                            icon: Icons.directions_car_outlined,
+                            count: carpools.length,
+                            tileColor: NeonPalette.overviewModuleCarpoolTile,
+                            inkColor: NeonPalette.overviewModuleCarpoolInk,
+                            statusText: _moduleStatusText(
+                              detailLines: myCarpoolDetailLines,
+                              emptyStateMessage:
+                                  l10n.tripCarpoolTileNoAssignment,
+                            ),
+                            onTap: () =>
+                                context.go('/trips/${_trip.id}/carpool'),
                           ),
+                          const SizedBox(height: 10),
+                          TripOverviewModuleCard(
+                            label: l10n.tripOverviewTileGames,
+                            icon: Icons.sports_esports_outlined,
+                            count: boardGamesCount,
+                            tileColor: NeonPalette.overviewModuleGamesTile,
+                            inkColor: NeonPalette.overviewModuleGamesInk,
+                            statusText: _moduleStatusText(
+                              detailLines: boardGamesDetailLines,
+                              emptyStateMessage:
+                                  l10n.tripOverviewTileNoBoardGames,
+                              moreDetailsLabelBuilder: (extraCount) =>
+                                  l10n.tripOverviewTileGamesAndMore(
+                                      extraCount),
+                            ),
+                            onTap: () =>
+                                context.push('/trips/${_trip.id}/games'),
+                          ),
+                          if (photosStorageUrl.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripOverviewPhotosAction,
+                              icon: Icons.photo_library_outlined,
+                              count: 0,
+                              showCount: false,
+                              tileColor: NeonPalette.overviewModulePhotosTile,
+                              inkColor: NeonPalette.overviewModulePhotosInk,
+                              statusText: l10n.tripOverviewPhotosOpenAlbum,
+                              onTap: () => _openLinkUrl(photosStorageUrl),
+                            ),
+                          ],
+                          if (canManageTripSettings) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleAddCard(
+                              label: l10n.tripOverviewAddModule,
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      l10n.tripOverviewTileComingSoon,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ],
                       ),
                     ),

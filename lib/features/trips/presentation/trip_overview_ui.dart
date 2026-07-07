@@ -264,103 +264,64 @@ class TripOverviewBanner extends StatelessWidget {
   }
 }
 
-class TripOverviewActionPills extends StatelessWidget {
-  const TripOverviewActionPills({
+class TripOverviewAnnouncementsAppBarAction extends StatelessWidget {
+  const TripOverviewAnnouncementsAppBarAction({
     super.key,
-    required this.announcementsLabel,
-    required this.announcementsAlertCount,
-    required this.onAnnouncementsTap,
-    this.photosLabel,
-    this.onPhotosTap,
-  });
-
-  final String announcementsLabel;
-  final int announcementsAlertCount;
-  final VoidCallback onAnnouncementsTap;
-  final String? photosLabel;
-  final VoidCallback? onPhotosTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _TripOverviewActionPill(
-            label: announcementsLabel,
-            icon: Icons.campaign_outlined,
-            alertCount: announcementsAlertCount,
-            onTap: onAnnouncementsTap,
-          ),
-        ),
-        if (photosLabel != null && onPhotosTap != null) ...[
-          const SizedBox(width: 10),
-          Expanded(
-            child: _TripOverviewActionPill(
-              label: photosLabel!,
-              icon: Icons.photo_library_outlined,
-              onTap: onPhotosTap!,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _TripOverviewActionPill extends StatelessWidget {
-  const _TripOverviewActionPill({
-    required this.label,
-    required this.icon,
+    required this.tooltip,
+    required this.hasUnread,
     required this.onTap,
-    this.alertCount = 0,
   });
 
-  final String label;
-  final IconData icon;
+  final String tooltip;
+  final bool hasUnread;
   final VoidCallback onTap;
-  final int alertCount;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: NeonPalette.primaryTint,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: NeonPalette.primarySoft),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: SizedBox(
-          height: 46,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: NeonPalette.primary),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: NeonPalette.primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: NeonPalette.nameEditPillBackground,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 34,
+              height: 34,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Center(
+                    child: Icon(
+                      Icons.campaign_outlined,
+                      size: 20,
+                      color: NeonPalette.primary,
+                    ),
                   ),
-                ),
+                  if (hasUnread)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: NeonPalette.error,
+                          border: Border.all(
+                            color: NeonPalette.scaffoldBackground,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              if (alertCount > 0) ...[
-                const SizedBox(width: 6),
-                Badge.count(
-                  count: alertCount,
-                  child: const SizedBox(width: 8, height: 8),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -733,29 +694,27 @@ class _AvatarBubble extends StatelessWidget {
   }
 }
 
-class TripOverviewModuleTile extends StatelessWidget {
-  const TripOverviewModuleTile({
+class TripOverviewModuleCard extends StatelessWidget {
+  const TripOverviewModuleCard({
     super.key,
     required this.label,
     required this.icon,
-    required this.countLabel,
-    required this.viewLabel,
+    required this.count,
     required this.tileColor,
     required this.inkColor,
     required this.onTap,
     this.statusText,
-    this.alertCount = 0,
+    this.showCount = true,
   });
 
   final String label;
   final IconData icon;
-  final String countLabel;
-  final String viewLabel;
+  final int count;
   final Color tileColor;
   final Color inkColor;
   final VoidCallback onTap;
   final String? statusText;
-  final int alertCount;
+  final bool showCount;
 
   @override
   Widget build(BuildContext context) {
@@ -772,24 +731,22 @@ class TripOverviewModuleTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(13, 13, 13, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          padding: const EdgeInsets.fromLTRB(13, 12, 12, 12),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Text(
-                    countLabel,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: inkColor,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
+              _TripOverviewModuleIconBadge(
+                icon: icon,
+                tileColor: tileColor,
+                inkColor: inkColor,
+                count: count,
+                showCount: showCount,
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -797,74 +754,177 @@ class TripOverviewModuleTile extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: NeonPalette.deep,
+                        height: 1.2,
                       ),
                     ),
-                  ),
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: tileColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Badge.count(
-                      count: alertCount,
-                      isLabelVisible: alertCount > 0,
-                      child: Icon(icon, size: 20, color: inkColor),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 34,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    statusText ?? '',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      height: 1.4,
-                      color: NeonPalette.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: tileColor,
-                  borderRadius: BorderRadius.circular(9999),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        viewLabel,
-                        maxLines: 1,
+                    if (statusText != null && statusText!.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        statusText!,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: inkColor,
+                        style: const TextStyle(
                           fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
+                          height: 1.35,
+                          color: NeonPalette.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: inkColor, size: 16),
+                    ],
                   ],
                 ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: NeonPalette.outline,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _TripOverviewModuleIconBadge extends StatelessWidget {
+  const _TripOverviewModuleIconBadge({
+    required this.icon,
+    required this.tileColor,
+    required this.inkColor,
+    required this.count,
+    required this.showCount,
+  });
+
+  final IconData icon;
+  final Color tileColor;
+  final Color inkColor;
+  final int count;
+  final bool showCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: tileColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 24, color: inkColor),
+          ),
+          if (showCount)
+            Positioned(
+              top: -5,
+              right: -5,
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 18),
+                height: 18,
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(
+                  color: inkColor,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: NeonPalette.surface, width: 2),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class TripOverviewModuleAddCard extends StatelessWidget {
+  const TripOverviewModuleAddCard({
+    super.key,
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _TripOverviewDashedCardBorderPainter(
+        color: NeonPalette.overviewModuleAddBorder,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add, size: 20, color: NeonPalette.primary),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: NeonPalette.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripOverviewDashedCardBorderPainter extends CustomPainter {
+  const _TripOverviewDashedCardBorderPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0.75, 0.75, size.width - 1.5, size.height - 1.5),
+      const Radius.circular(16),
+    );
+    final path = Path()..addRRect(rect);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = distance + 5;
+        canvas.drawPath(metric.extractPath(distance, end), paint);
+        distance = end + 4;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TripOverviewDashedCardBorderPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 
