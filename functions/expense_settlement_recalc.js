@@ -22,6 +22,8 @@ const {
 } = require('./notification_queue');
 
 const BATCH_OP_LIMIT = 499;
+const SUPPORTED_EXPENSE_CURRENCIES = new Set(['EUR', 'USD']);
+const DEFAULT_EXPENSE_ICON_KEY = 'receipt_long';
 
 function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
@@ -191,7 +193,7 @@ async function assertExpenseGroupVisibleToCaller({
     throw new HttpsError('permission-denied', 'Poste non visible');
   }
 
-  return { groupSnap, callerParticipantId };
+  return { groupSnap, callerParticipantId, tripData: tripSnap.data() || {} };
 }
 
 function roleRank(role) {
@@ -223,6 +225,140 @@ function deleteExpensePostMinRole(tripData) {
       ? expenses.deleteExpensePost
       : 'participant';
   return roleRank(raw);
+}
+
+function expenseLineMinRole(tripData, permissionKey) {
+  const expenses = tripData?.permissions?.expenses;
+  const raw =
+    expenses && typeof expenses[permissionKey] === 'string'
+      ? expenses[permissionKey]
+      : 'participant';
+  return roleRank(raw);
+}
+
+function normalizedIdList(raw) {
+  return (Array.isArray(raw) ? raw : [])
+    .map((v) => String(v).trim())
+    .filter((id) => id.length > 0);
+}
+
+function normalizeExpenseDate(raw) {
+  if (typeof raw === 'string') {
+    const match = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const date = new Date(Date.UTC(year, month - 1, day));
+      if (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      ) {
+        return Timestamp.fromDate(date);
+      }
+    }
+  }
+  throw new HttpsError('invalid-argument', 'Date invalide');
+}
+
+function normalizeExpensePayload(input) {
+  const groupId = normalizeString(input?.groupId);
+  const title = normalizeString(input?.title);
+  const amountRaw = input?.amount;
+  const amount =
+    typeof amountRaw === 'number' && Number.isFinite(amountRaw)
+      ? amountRaw
+      : Number(amountRaw);
+  const currency = normalizeString(input?.currency).toUpperCase();
+  const paidBy = normalizeString(input?.paidBy);
+  const participantIds = normalizedIdList(input?.participantIds);
+  const icon = normalizeString(input?.icon) || DEFAULT_EXPENSE_ICON_KEY;
+  const splitMode =
+    normalizeString(input?.splitMode).toLowerCase() === 'custom'
+      ? 'custom'
+      : 'equal';
+  const expenseDate = normalizeExpenseDate(input?.expenseDate);
+
+  if (!groupId || !title || !Number.isFinite(amount) || amount <= 0) {
+    throw new HttpsError('invalid-argument', 'Paramètres invalides');
+  }
+  if (!SUPPORTED_EXPENSE_CURRENCIES.has(currency)) {
+    throw new HttpsError('invalid-argument', 'Devise non supportée');
+  }
+  if (!paidBy || participantIds.length === 0) {
+    throw new HttpsError('invalid-argument', 'Participants invalides');
+  }
+
+  const payload = {
+    groupId,
+    operationType: 'expense',
+    title,
+    amount,
+    currency,
+    paidBy,
+    participantIds,
+    icon,
+    expenseDate,
+    splitMode,
+  };
+
+  if (splitMode === 'custom') {
+    const rawShares =
+      input?.participantShares &&
+      typeof input.participantShares === 'object' &&
+      !Array.isArray(input.participantShares)
+        ? input.participantShares
+        : {};
+    let sum = 0;
+    payload.participantShares = {};
+    for (const id of participantIds) {
+      const rawShare = rawShares[id];
+      const share =
+        typeof rawShare === 'number' && Number.isFinite(rawShare)
+          ? rawShare
+          : Number(rawShare);
+      if (!Number.isFinite(share) || share < 0) {
+        throw new HttpsError('invalid-argument', 'Part invalide');
+      }
+      payload.participantShares[id] = share;
+      sum += share;
+    }
+    if (Math.abs(sum - amount) > 0.02) {
+      throw new HttpsError('invalid-argument', 'Somme des parts invalide');
+    }
+  }
+
+  return payload;
+}
+
+function assertExpenseLineRole(tripData, uid, permissionKey) {
+  const memberUserIds = tripData?.memberUserIds;
+  if (!Array.isArray(memberUserIds) || !memberUserIds.includes(uid)) {
+    throw new HttpsError('permission-denied', 'Accès refusé');
+  }
+  if (tripCallerRoleRank(tripData, uid) < expenseLineMinRole(tripData, permissionKey)) {
+    throw new HttpsError('permission-denied', 'Droits insuffisants');
+  }
+}
+
+async function assertExpenseLineMutationAllowed({
+  db,
+  tripId,
+  groupId,
+  uid,
+  permissionKey,
+}) {
+  const { tripData } = await assertExpenseGroupVisibleToCaller({
+    db,
+    tripId,
+    groupId,
+    uid,
+  });
+  assertExpenseLineRole(tripData, uid, permissionKey);
+  if (await isExpenseGroupLocked(db, tripId, groupId)) {
+    throw new HttpsError('failed-precondition', 'Les dépenses de ce poste sont verrouillées');
+  }
 }
 
 async function loadGroupExpenses(db, tripId, groupId) {
@@ -623,6 +759,120 @@ const unmarkExpenseReimbursementPaid = onCall({}, async (request) => {
   return { ok: true };
 });
 
+const createTripExpense = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const tripId = normalizeString(request.data?.tripId);
+  if (!tripId) {
+    throw new HttpsError('invalid-argument', 'Voyage invalide');
+  }
+
+  const payload = normalizeExpensePayload(request.data);
+  const db = admin.firestore();
+  await assertExpenseLineMutationAllowed({
+    db,
+    tripId,
+    groupId: payload.groupId,
+    uid,
+    permissionKey: 'createExpense',
+  });
+
+  const docRef = await expensesCol(db, tripId).add({
+    ...payload,
+    createdAt: FieldValue.serverTimestamp(),
+    createdBy: uid,
+  });
+  return { expenseId: docRef.id };
+});
+
+const updateTripExpense = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const tripId = normalizeString(request.data?.tripId);
+  const expenseId = normalizeString(request.data?.expenseId);
+  if (!tripId || !expenseId) {
+    throw new HttpsError('invalid-argument', 'Paramètres invalides');
+  }
+
+  const payload = normalizeExpensePayload(request.data);
+  const db = admin.firestore();
+  const expenseRef = expensesCol(db, tripId).doc(expenseId);
+  const expenseSnap = await expenseRef.get();
+  if (!expenseSnap.exists) {
+    throw new HttpsError('not-found', 'Dépense introuvable');
+  }
+  const currentData = expenseSnap.data() || {};
+  if (normalizeString(currentData.operationType) === 'settlement') {
+    throw new HttpsError('failed-precondition', 'Remboursement non modifiable ici');
+  }
+
+  const currentGroupId = normalizeString(currentData.groupId);
+  const groupIds = new Set([currentGroupId, payload.groupId].filter(Boolean));
+  for (const groupId of groupIds) {
+    await assertExpenseLineMutationAllowed({
+      db,
+      tripId,
+      groupId,
+      uid,
+      permissionKey: 'editExpense',
+    });
+  }
+
+  const update = {
+    ...payload,
+    operationType: 'expense',
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: uid,
+  };
+  if (payload.splitMode !== 'custom') {
+    delete update.participantShares;
+    update.participantShares = FieldValue.delete();
+  }
+  await expenseRef.update(update);
+  return { ok: true };
+});
+
+const deleteTripExpense = onCall({}, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const tripId = normalizeString(request.data?.tripId);
+  const expenseId = normalizeString(request.data?.expenseId);
+  if (!tripId || !expenseId) {
+    throw new HttpsError('invalid-argument', 'Paramètres invalides');
+  }
+
+  const db = admin.firestore();
+  const expenseRef = expensesCol(db, tripId).doc(expenseId);
+  const expenseSnap = await expenseRef.get();
+  if (!expenseSnap.exists) {
+    throw new HttpsError('not-found', 'Dépense introuvable');
+  }
+  const expenseData = expenseSnap.data() || {};
+  if (normalizeString(expenseData.operationType) === 'settlement') {
+    throw new HttpsError('failed-precondition', 'Remboursement non supprimable ici');
+  }
+
+  await assertExpenseLineMutationAllowed({
+    db,
+    tripId,
+    groupId: normalizeString(expenseData.groupId),
+    uid,
+    permissionKey: 'deleteExpense',
+  });
+
+  await expenseRef.delete();
+  return { ok: true };
+});
+
 async function commitBatches(db, ops) {
   for (let i = 0; i < ops.length; i += BATCH_OP_LIMIT) {
     const batch = db.batch();
@@ -741,9 +991,14 @@ module.exports = {
   recomputeExpenseGroupSettlement,
   markExpenseReimbursementPaid,
   unmarkExpenseReimbursementPaid,
+  createTripExpense,
+  updateTripExpense,
+  deleteTripExpense,
   deleteExpenseGroup,
   recomputeExpenseGroupSettlementForGroup,
   refreshExpenseGroupSettlement,
+  normalizeExpensePayload,
+  expenseLineMinRole,
   tripCallerRoleRank,
   roleRank,
 };

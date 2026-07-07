@@ -2450,29 +2450,56 @@ async function completeJoinTripWithInvite(
     claimedParticipantRef = slotDoc.ref;
   }
 
-  // Claim an existing slot or create a new participant document.
-  if (claimedParticipantRef) {
-    await claimedParticipantRef.update({ userId: uid });
-  } else {
-    const participantName = assertParticipantNameForNewJoin(newParticipantName);
-    const defaultStay = defaultStayForTrip(data);
-    const newParticipantDoc = {
-      participantName,
-      userId: uid,
-      ...defaultStay,
-      cupidonEnabled: false,
-      phoneVisibility: 'nobody',
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    if (useProfileNameForJoin === true) {
-      newParticipantDoc.useProfileName = true;
+  // Claim an existing slot or create a new participant document atomically with
+  // membership so concurrent joins cannot leave a member without a participant.
+  await db.runTransaction(async (tx) => {
+    const freshTripSnap = await tx.get(tripRef);
+    if (!freshTripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    await tripRef.collection('participants').add(newParticipantDoc);
-  }
+    const freshTripData = freshTripSnap.data() || {};
+    assertTripInviteToken(freshTripData, token);
+    const freshMemberUserIds = Array.isArray(freshTripData.memberUserIds)
+      ? freshTripData.memberUserIds.map((v) => String(v))
+      : [];
+    if (freshMemberUserIds.includes(uid)) {
+      return;
+    }
 
-  await tripRef.update({
-    memberUserIds: FieldValue.arrayUnion(uid),
-    updatedAt: FieldValue.serverTimestamp(),
+    if (claimedParticipantRef) {
+      const freshSlotSnap = await tx.get(claimedParticipantRef);
+      if (
+        !freshSlotSnap.exists ||
+        normalizeString(freshSlotSnap.data()?.userId) ||
+        freshSlotSnap.data()?.isChild === true
+      ) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce voyageur a déjà été choisi ou est introuvable.'
+        );
+      }
+      tx.update(claimedParticipantRef, { userId: uid });
+    } else {
+      const participantName = assertParticipantNameForNewJoin(newParticipantName);
+      const defaultStay = defaultStayForTrip(freshTripData);
+      const newParticipantDoc = {
+        participantName,
+        userId: uid,
+        ...defaultStay,
+        cupidonEnabled: false,
+        phoneVisibility: 'nobody',
+        createdAt: FieldValue.serverTimestamp(),
+      };
+      if (useProfileNameForJoin === true) {
+        newParticipantDoc.useProfileName = true;
+      }
+      tx.set(tripRef.collection('participants').doc(), newParticipantDoc);
+    }
+
+    tx.update(tripRef, {
+      memberUserIds: FieldValue.arrayUnion(uid),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
 }
 
@@ -5080,6 +5107,9 @@ const {
   recomputeExpenseGroupSettlement,
   markExpenseReimbursementPaid,
   unmarkExpenseReimbursementPaid,
+  createTripExpense,
+  updateTripExpense,
+  deleteTripExpense,
   deleteExpenseGroup,
   refreshExpenseGroupSettlement,
 } = require('./expense_settlement_recalc');
@@ -5087,6 +5117,9 @@ const {
 exports.recomputeExpenseGroupSettlement = recomputeExpenseGroupSettlement;
 exports.markExpenseReimbursementPaid = markExpenseReimbursementPaid;
 exports.unmarkExpenseReimbursementPaid = unmarkExpenseReimbursementPaid;
+exports.createTripExpense = createTripExpense;
+exports.updateTripExpense = updateTripExpense;
+exports.deleteTripExpense = deleteTripExpense;
 exports.deleteExpenseGroup = deleteExpenseGroup;
 exports.refreshExpenseGroupSettlement = refreshExpenseGroupSettlement;
 
