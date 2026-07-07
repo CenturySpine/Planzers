@@ -81,6 +81,23 @@ class NeonPalette {
 
   static Color get accentSoft => Color.lerp(surface, accent, 0.16)!;
 
+  static Color get overviewModulePlanningTile =>
+      Color.lerp(surface, primary, 0.13)!;
+  static const Color overviewModulePlanningInk = primary;
+  static Color get overviewModuleRoomsTile =>
+      Color.lerp(surface, secondary, 0.22)!;
+  static Color get overviewModuleRoomsInk => Color.lerp(deep, secondary, 0.66)!;
+  static Color get overviewModuleCarpoolTile => accentSoft;
+  static const Color overviewModuleCarpoolInk = accent;
+  static Color get overviewModuleGamesTile =>
+      Color.lerp(surface, success, 0.16)!;
+  static const Color overviewModuleGamesInk = success;
+  static Color get overviewModulePhotosTile =>
+      Color.lerp(surface, secondary, 0.18)!;
+  static Color get overviewModulePhotosInk => Color.lerp(deep, secondary, 0.64)!;
+  static Color get overviewModuleAddBorder =>
+      Color.lerp(divider, primary, 0.28)!;
+
   static List<BoxShadow> get elev1 => const [
         BoxShadow(
           color: Color(0x0F000000),

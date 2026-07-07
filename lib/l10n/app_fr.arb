@@ -1135,6 +1135,8 @@
   "tripOverviewInviteCodeLabel": "Code",
   "tripOverviewShareCode": "Partager",
   "tripOverviewPhotosAction": "Photos",
+  "tripOverviewPhotosOpenAlbum": "Ouvrir l'album partagé",
+  "tripOverviewAddModule": "Ajouter un module",
   "tripOverviewBannerEmpty": "Aucune photo",
   "tripOverviewBannerAddPhoto": "Ajouter une photo de couverture",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",

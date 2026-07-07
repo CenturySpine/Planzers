@@ -5328,6 +5328,18 @@ abstract class AppLocalizations {
   /// **'Photos'**
   String get tripOverviewPhotosAction;
 
+  /// No description provided for @tripOverviewPhotosOpenAlbum.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir l\'album partagé'**
+  String get tripOverviewPhotosOpenAlbum;
+
+  /// No description provided for @tripOverviewAddModule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un module'**
+  String get tripOverviewAddModule;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:

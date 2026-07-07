@@ -2959,6 +2959,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewPhotosAction => 'Photos';
 
   @override
+  String get tripOverviewPhotosOpenAlbum => 'Ouvrir l\'album partagé';
+
+  @override
+  String get tripOverviewAddModule => 'Ajouter un module';
+
+  @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
 
   @override
@@ -6277,6 +6283,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewPhotosAction => 'Photos';
+
+  @override
+  String get tripOverviewPhotosOpenAlbum => 'Ouvrir l\'album partagé';
+
+  @override
+  String get tripOverviewAddModule => 'Ajouter un module';
 
   @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
