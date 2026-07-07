@@ -68,7 +68,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
           children: [
             const Positioned.fill(child: ColoredBox(color: Colors.white)),
             Positioned.fill(
-              top: 240,
+              top: 0,
               child: Image.asset(
                 'assets/images/app_background.png',
                 fit: BoxFit.cover,
