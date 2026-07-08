@@ -46,6 +46,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
   DateTime? _singleDayDate;
   bool _isDayTrip = false;
   bool _cupidonModeEnabled = false;
+  bool _carpoolModuleEnabled = false;
+  bool _roomsModuleEnabled = false;
+  bool _gamesModuleEnabled = false;
   String? _profileName;
   String _customName = '';
   bool _useProfileName = false;
@@ -81,10 +84,15 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _destinationController = TextEditingController();
     _linkController = TextEditingController();
     _photosStorageController = TextEditingController();
+    _photosStorageController.addListener(_onPhotosStorageChanged);
     _descriptionController = TextEditingController();
     _stay = TripMemberStay.defaultForNewTripEditor();
     _singleDayDate = DateUtils.dateOnly(DateTime.now());
     WidgetsBinding.instance.addPostFrameCallback((_) => _initCreatorName());
+  }
+
+  void _onPhotosStorageChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -92,6 +100,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _titleController.dispose();
     _destinationController.dispose();
     _linkController.dispose();
+    _photosStorageController.removeListener(_onPhotosStorageChanged);
     _photosStorageController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -107,6 +116,10 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
     _photosStorageController.text = trip.photosStorageUrl;
     _descriptionController.text = trip.description;
     _cupidonModeEnabled = trip.cupidonModeEnabled;
+    _carpoolModuleEnabled = trip.carpoolModuleEnabled;
+    _roomsModuleEnabled =
+        trip.isDayTrip ? false : trip.roomsModuleEnabled;
+    _gamesModuleEnabled = trip.gamesModuleEnabled;
     _isDayTrip = trip.isDayTrip;
     if (trip.isDayTrip) {
       _singleDayDate = trip.startDate != null
@@ -268,6 +281,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       _isDayTrip = enabled;
       _errorMessage = null;
       if (enabled) {
+        _roomsModuleEnabled = false;
         final day = _singleDayDate ??
             TripMemberStay.parseDateKey(_stay.startDateKey) ??
             DateUtils.dateOnly(DateTime.now());
@@ -458,6 +472,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             description: description,
             photosStorageUrl: photosStorageUrl,
             cupidonModeEnabled: _cupidonModeEnabled,
+            carpoolModuleEnabled: _carpoolModuleEnabled,
+            roomsModuleEnabled: _isDayTrip ? false : _roomsModuleEnabled,
+            gamesModuleEnabled: _gamesModuleEnabled,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: tripStartDayPart,
@@ -534,6 +551,9 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
             linkUrl: linkUrl,
             photosStorageUrl: photosStorageUrl,
             cupidonModeEnabled: _cupidonModeEnabled,
+            carpoolModuleEnabled: _carpoolModuleEnabled,
+            roomsModuleEnabled: _isDayTrip ? false : _roomsModuleEnabled,
+            gamesModuleEnabled: _gamesModuleEnabled,
             startDate: startDate,
             endDate: endDate,
             tripStartDayPart: _isDayTrip ? null : _stay.startDayPart,
@@ -895,42 +915,24 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                     ),
                   ),
                   _FormSection(
-                    child: _TripCreateLabel(
-                      label: l10n.tripCreatePhotosStorageLabel,
-                      child: _TripCreateInputShell(
-                        icon: Icons.link_outlined,
-                        enabled: !_saving,
-                        builder: (focusNode) => TextField(
-                          controller: _photosStorageController,
-                          focusNode: focusNode,
-                          enabled: !_saving,
-                          keyboardType: TextInputType.url,
-                          textInputAction: TextInputAction.next,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: NeonPalette.deep,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: l10n.tripCreatePhotosStoragePlaceholder,
-                            hintStyle: const TextStyle(
-                              color: NeonPalette.outline,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _FormSection(
-                    child: _NeonFeatureToggleCard(
-                      value: _cupidonModeEnabled,
-                      enabled: !_saving,
-                      icon: Icons.favorite_outline,
-                      title: l10n.tripCreateCupidonModeLabel,
-                      subtitle: l10n.tripCreateCupidonModeSubtitle,
-                      onChanged: (enabled) {
+                    child: _TripCreateModulesSection(
+                      isDayTrip: _isDayTrip,
+                      saving: _saving,
+                      carpoolEnabled: _carpoolModuleEnabled,
+                      roomsEnabled: _roomsModuleEnabled,
+                      gamesEnabled: _gamesModuleEnabled,
+                      cupidonEnabled: _cupidonModeEnabled,
+                      photosController: _photosStorageController,
+                      onCarpoolChanged: (enabled) {
+                        setState(() => _carpoolModuleEnabled = enabled);
+                      },
+                      onRoomsChanged: (enabled) {
+                        setState(() => _roomsModuleEnabled = enabled);
+                      },
+                      onGamesChanged: (enabled) {
+                        setState(() => _gamesModuleEnabled = enabled);
+                      },
+                      onCupidonChanged: (enabled) {
                         setState(() => _cupidonModeEnabled = enabled);
                       },
                     ),
@@ -1400,6 +1402,537 @@ class _NeonSwitch extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TripCreateModulesSection extends StatelessWidget {
+  const _TripCreateModulesSection({
+    required this.isDayTrip,
+    required this.saving,
+    required this.carpoolEnabled,
+    required this.roomsEnabled,
+    required this.gamesEnabled,
+    required this.cupidonEnabled,
+    required this.photosController,
+    required this.onCarpoolChanged,
+    required this.onRoomsChanged,
+    required this.onGamesChanged,
+    required this.onCupidonChanged,
+  });
+
+  final bool isDayTrip;
+  final bool saving;
+  final bool carpoolEnabled;
+  final bool roomsEnabled;
+  final bool gamesEnabled;
+  final bool cupidonEnabled;
+  final TextEditingController photosController;
+  final ValueChanged<bool> onCarpoolChanged;
+  final ValueChanged<bool> onRoomsChanged;
+  final ValueChanged<bool> onGamesChanged;
+  final ValueChanged<bool> onCupidonChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final photosActive = photosController.text.trim().isNotEmpty;
+    final roomsToggleEnabled = !saving && !isDayTrip;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+          child: Text(
+            l10n.tripOverviewSectionModules,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: NeonPalette.text700,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+          child: Text(
+            l10n.tripCreateModulesHint,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: NeonPalette.onSurfaceVariant,
+            ),
+          ),
+        ),
+        _TripCreateLockedModuleRow(
+          title: l10n.tripCreateModulePlanningTitle,
+          subtitle: l10n.tripCreateModulePlanningSubtitle,
+          includedLabel: l10n.tripCreateModuleIncluded,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: carpoolEnabled,
+          enabled: !saving,
+          icon: Icons.directions_car_outlined,
+          title: l10n.tripOverviewTileCarpool,
+          subtitle: l10n.tripCreateModuleCarpoolSubtitle,
+          onChanged: onCarpoolChanged,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: roomsEnabled,
+          enabled: roomsToggleEnabled,
+          muted: isDayTrip,
+          icon: Icons.king_bed_outlined,
+          title: l10n.tripOverviewTileRooms,
+          subtitle: isDayTrip
+              ? l10n.tripCreateModuleRoomsDayTripUnavailable
+              : l10n.tripCreateModuleRoomsSubtitle,
+          onChanged: onRoomsChanged,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: gamesEnabled,
+          enabled: !saving,
+          icon: Icons.casino_outlined,
+          title: l10n.tripOverviewTileGames,
+          subtitle: l10n.tripCreateModuleGamesSubtitle,
+          onChanged: onGamesChanged,
+        ),
+        const SizedBox(height: 8),
+        _TripCreatePhotosModuleCard(
+          active: photosActive,
+          enabled: !saving,
+          controller: photosController,
+          title: l10n.tripOverviewPhotosAction,
+          subtitle: l10n.tripCreateModulePhotosSubtitle,
+          placeholder: l10n.tripCreateModulePhotosPlaceholder,
+        ),
+        const SizedBox(height: 8),
+        _TripCreateModuleToggleRow(
+          value: cupidonEnabled,
+          enabled: !saving,
+          icon: Icons.favorite_outline,
+          title: l10n.tripCreateCupidonModeLabel,
+          subtitle: l10n.tripCreateCupidonModeSubtitle,
+          onChanged: onCupidonChanged,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.info_outline,
+              size: 14,
+              color: NeonPalette.primary,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                l10n.tripCreateModulesNote,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: NeonPalette.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TripCreateLockedModuleRow extends StatelessWidget {
+  const _TripCreateLockedModuleRow({
+    required this.title,
+    required this.subtitle,
+    required this.includedLabel,
+  });
+
+  final String title;
+  final String subtitle;
+  final String includedLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.06),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(
+          color: NeonPalette.divider,
+          width: 1.5,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          children: [
+            _TripCreateModuleIconBadge(
+              icon: Icons.event_available_outlined,
+              active: true,
+              locked: true,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: NeonPalette.deep,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: NeonPalette.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: NeonPalette.dayTripIconBackgroundActive,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 13,
+                      color: NeonPalette.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      includedLabel,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                        color: NeonPalette.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripCreateModuleToggleRow extends StatelessWidget {
+  const _TripCreateModuleToggleRow({
+    required this.value,
+    required this.enabled,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onChanged,
+    this.muted = false,
+  });
+
+  final bool value;
+  final bool enabled;
+  final bool muted;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = value && !muted;
+    final titleColor = muted ? NeonPalette.onSurfaceVariant : NeonPalette.deep;
+    final subtitleColor =
+        muted ? NeonPalette.outline : NeonPalette.onSurfaceVariant;
+
+    return Material(
+      color: active
+          ? NeonPalette.dayTripBackgroundActive
+          : NeonPalette.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: active
+              ? NeonPalette.dayTripBorderActive
+              : NeonPalette.divider,
+          width: 1.5,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: enabled ? () => onChanged(!value) : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: Row(
+            children: [
+              _TripCreateModuleIconBadge(
+                icon: icon,
+                active: active,
+                muted: muted,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.35,
+                        color: subtitleColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _NeonSwitch(
+                value: muted ? false : value,
+                onChanged: enabled ? onChanged : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TripCreatePhotosModuleCard extends StatelessWidget {
+  const _TripCreatePhotosModuleCard({
+    required this.active,
+    required this.enabled,
+    required this.controller,
+    required this.title,
+    required this.subtitle,
+    required this.placeholder,
+  });
+
+  final bool active;
+  final bool enabled;
+  final TextEditingController controller;
+  final String title;
+  final String subtitle;
+  final String placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: active
+          ? NeonPalette.dayTripBackgroundActive
+          : NeonPalette.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: active
+              ? NeonPalette.dayTripBorderActive
+              : NeonPalette.divider,
+          width: 1.5,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                _TripCreateModuleIconBadge(
+                  icon: Icons.photo_library_outlined,
+                  active: active,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.deep,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 11),
+            _TripCreatePhotosModuleInput(
+              enabled: enabled,
+              controller: controller,
+              placeholder: placeholder,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripCreatePhotosModuleInput extends StatefulWidget {
+  const _TripCreatePhotosModuleInput({
+    required this.enabled,
+    required this.controller,
+    required this.placeholder,
+  });
+
+  final bool enabled;
+  final TextEditingController controller;
+  final String placeholder;
+
+  @override
+  State<_TripCreatePhotosModuleInput> createState() =>
+      _TripCreatePhotosModuleInputState();
+}
+
+class _TripCreatePhotosModuleInputState
+    extends State<_TripCreatePhotosModuleInput> {
+  late final FocusNode _focusNode = FocusNode()..addListener(_onFocusChanged);
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final focused = _focusNode.hasFocus;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: focused
+            ? NeonPalette.surface
+            : Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.08),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: focused ? NeonPalette.primary : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.link,
+            size: 18,
+            color: focused
+                ? NeonPalette.primary
+                : NeonPalette.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: widget.controller,
+              focusNode: _focusNode,
+              enabled: widget.enabled,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              style: const TextStyle(
+                fontSize: 14,
+                color: NeonPalette.deep,
+              ),
+              decoration: InputDecoration(
+                hintText: widget.placeholder,
+                hintStyle: const TextStyle(
+                  color: NeonPalette.outline,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripCreateModuleIconBadge extends StatelessWidget {
+  const _TripCreateModuleIconBadge({
+    required this.icon,
+    required this.active,
+    this.locked = false,
+    this.muted = false,
+  });
+
+  final IconData icon;
+  final bool active;
+  final bool locked;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color background;
+    final Color foreground;
+    if (muted) {
+      background = NeonPalette.segmentTrack;
+      foreground = NeonPalette.outline;
+    } else if (active || locked) {
+      background = NeonPalette.dayTripIconBackgroundActive;
+      foreground = NeonPalette.primary;
+    } else {
+      background = NeonPalette.dayTripIconBackgroundRest;
+      foreground = NeonPalette.dayTripIconColorRest;
+    }
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: SizedBox(
+        width: 34,
+        height: 34,
+        child: Icon(icon, size: 19, color: foreground),
       ),
     );
   }

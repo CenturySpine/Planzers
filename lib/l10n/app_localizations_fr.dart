@@ -528,6 +528,47 @@ class AppLocalizationsFr extends AppLocalizations {
       'Active la fonctionnalité « Aimer » entre participants du voyage.';
 
   @override
+  String get tripCreateModulesHint =>
+      'Choisis les cartes visibles dans l\'aperçu du voyage.';
+
+  @override
+  String get tripCreateModulePlanningTitle => 'Planning & activités';
+
+  @override
+  String get tripCreateModulePlanningSubtitle =>
+      'Toujours inclus dans le voyage.';
+
+  @override
+  String get tripCreateModuleIncluded => 'Inclus';
+
+  @override
+  String get tripCreateModuleCarpoolSubtitle =>
+      'Organise les trajets et les places dispo.';
+
+  @override
+  String get tripCreateModuleRoomsSubtitle => 'Répartis qui dort où sur place.';
+
+  @override
+  String get tripCreateModuleRoomsDayTripUnavailable =>
+      'Indisponible pour une sortie à la journée.';
+
+  @override
+  String get tripCreateModuleGamesSubtitle =>
+      'Propose des jeux et défis pour le groupe.';
+
+  @override
+  String get tripCreateModulePhotosSubtitle =>
+      'Ajoute un lien de stockage pour activer la carte.';
+
+  @override
+  String get tripCreateModulePhotosPlaceholder =>
+      'Colle le lien du dossier partagé';
+
+  @override
+  String get tripCreateModulesNote =>
+      'Ces options sont modifiables à tout moment après la création.';
+
+  @override
   String get tripCreateLinkPlaceholder => 'Coller un lien Airbnb, etc.';
 
   @override
@@ -3912,6 +3953,47 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripCreateCupidonModeSubtitle =>
       'Active la fonctionnalité « Aimer » entre participants du voyage.';
+
+  @override
+  String get tripCreateModulesHint =>
+      'Choisis les cartes visibles dans l\'aperçu du voyage.';
+
+  @override
+  String get tripCreateModulePlanningTitle => 'Planning & activités';
+
+  @override
+  String get tripCreateModulePlanningSubtitle =>
+      'Toujours inclus dans le voyage.';
+
+  @override
+  String get tripCreateModuleIncluded => 'Inclus';
+
+  @override
+  String get tripCreateModuleCarpoolSubtitle =>
+      'Organise les trajets et les places dispo.';
+
+  @override
+  String get tripCreateModuleRoomsSubtitle => 'Répartis qui dort où sur place.';
+
+  @override
+  String get tripCreateModuleRoomsDayTripUnavailable =>
+      'Indisponible pour une sortie à la journée.';
+
+  @override
+  String get tripCreateModuleGamesSubtitle =>
+      'Propose des jeux et défis pour le groupe.';
+
+  @override
+  String get tripCreateModulePhotosSubtitle =>
+      'Ajoute un lien de stockage pour activer la carte.';
+
+  @override
+  String get tripCreateModulePhotosPlaceholder =>
+      'Colle le lien du dossier partagé';
+
+  @override
+  String get tripCreateModulesNote =>
+      'Ces options sont modifiables à tout moment après la création.';
 
   @override
   String get tripCreateLinkPlaceholder => 'Coller un lien Airbnb, etc.';
