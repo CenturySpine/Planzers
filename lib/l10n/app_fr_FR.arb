@@ -254,6 +254,7 @@
   "tripsJoinCodeAction": "Rejoindre",
   "commonSave": "Enregistrer",
   "commonClose": "Fermer",
+  "commonComingSoon": "Bientôt disponible",
   "commonErrorWithDetails": "Erreur : {error}",
   "@commonErrorWithDetails": {
     "placeholders": {
@@ -693,6 +694,9 @@
   "activitiesFilterNuits": "Nuits",
   "activitiesFilterLoisirs": "Loisirs",
   "activitiesFilterTrajets": "Trajets",
+  "activitiesFilterPresences": "Présences",
+  "activitiesSearchHint": "Rechercher",
+  "activitiesSearchEmpty": "Aucun résultat.",
   "activitiesVote": "Voter",
   "activitiesUnvote": "Retirer mon vote",
   "activitiesNoSuggestion": "Aucune suggestion.",

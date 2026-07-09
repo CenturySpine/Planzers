@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
-import 'package:planerz/features/trips/presentation/name_list_search.dart';
+import 'package:planerz/l10n/app_localizations.dart';
 
 /// Search field + scrollable list of [TripActivitiesListEntry] rows (activity cards
 /// and optional day separators).
@@ -42,8 +43,8 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: NameListSearchTextField(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: TripActivitiesSearchField(
             controller: searchController,
             onChanged: onSearchChanged,
           ),
@@ -56,7 +57,7 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                     child: Text(
                       searchController.text.trim().isEmpty
                           ? emptyMessage
-                          : nameListSearchEmptyMessage(context),
+                          : AppLocalizations.of(context)!.activitiesSearchEmpty,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color:
@@ -68,12 +69,13 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
               : ListView.separated(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, bottomListPadding),
                   itemCount: entries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: tripActivitiesCardGap),
                   itemBuilder: (context, index) {
                     final entry = entries[index];
                     final dayLabel = entry.daySeparatorLabel;
                     if (dayLabel != null) {
-                      return TripActivityDaySeparatorPill(label: dayLabel);
+                      return TripActivityDaySeparatorRail(label: dayLabel);
                     }
                     final activity = entry.activity;
                     if (activity == null) {
@@ -109,38 +111,6 @@ class TripActivitiesSearchableTabList extends StatelessWidget {
                 ),
         ),
       ],
-    );
-  }
-}
-
-class TripActivityDaySeparatorPill extends StatelessWidget {
-  const TripActivityDaySeparatorPill({super.key, required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Center(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

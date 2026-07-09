@@ -1288,6 +1288,12 @@ abstract class AppLocalizations {
   /// **'Fermer'**
   String get commonClose;
 
+  /// No description provided for @commonComingSoon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bientôt disponible'**
+  String get commonComingSoon;
+
   /// No description provided for @commonErrorWithDetails.
   ///
   /// In fr, this message translates to:
@@ -3251,6 +3257,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Trajets'**
   String get activitiesFilterTrajets;
+
+  /// No description provided for @activitiesFilterPresences.
+  ///
+  /// In fr, this message translates to:
+  /// **'Présences'**
+  String get activitiesFilterPresences;
+
+  /// No description provided for @activitiesSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher'**
+  String get activitiesSearchHint;
+
+  /// No description provided for @activitiesSearchEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun résultat.'**
+  String get activitiesSearchEmpty;
 
   /// No description provided for @activitiesVote.
   ///

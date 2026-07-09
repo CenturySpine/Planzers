@@ -664,6 +664,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonClose => 'Fermer';
 
   @override
+  String get commonComingSoon => 'Bientôt disponible';
+
+  @override
   String commonErrorWithDetails(Object error) {
     return 'Erreur : $error';
   }
@@ -1789,6 +1792,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get activitiesFilterTrajets => 'Trajets';
+
+  @override
+  String get activitiesFilterPresences => 'Présences';
+
+  @override
+  String get activitiesSearchHint => 'Rechercher';
+
+  @override
+  String get activitiesSearchEmpty => 'Aucun résultat.';
 
   @override
   String get activitiesVote => 'Voter';
@@ -4091,6 +4103,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get commonClose => 'Fermer';
 
   @override
+  String get commonComingSoon => 'Bientôt disponible';
+
+  @override
   String commonErrorWithDetails(Object error) {
     return 'Erreur : $error';
   }
@@ -5144,6 +5159,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activitiesFilterTrajets => 'Trajets';
+
+  @override
+  String get activitiesFilterPresences => 'Présences';
+
+  @override
+  String get activitiesSearchHint => 'Rechercher';
+
+  @override
+  String get activitiesSearchEmpty => 'Aucun résultat.';
 
   @override
   String get activitiesVote => 'Voter';
