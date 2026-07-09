@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDelete => 'Delete';
 
   @override
-  String get aboutTitle => 'About';
+  String get aboutTitle => 'About the team';
 
   @override
   String get aboutLoadError => 'Unable to load the About page.';
@@ -65,7 +65,47 @@ class AppLocalizationsEn extends AppLocalizations {
       'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
 
   @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
+  String get aboutMemberBrunoNameAndAge => 'Bruno Chappe, 48';
+
+  @override
+  String get aboutMemberBrunoRole =>
+      'Creator · Designer · Editor · Publication director · Screen design · Design';
+
+  @override
+  String get aboutMemberFlorentName => 'Florent Parpillon';
+
+  @override
+  String get aboutMemberFlorentRole =>
+      'Tester · Idea incubator · Screen layout';
+
+  @override
+  String get aboutComingSoon => 'coming soon';
+
+  @override
+  String get aboutPhotoComingSoon => 'photo — coming soon';
+
+  @override
+  String get aboutBuyMeACoffee => 'Buy me a coffee';
+
+  @override
+  String get aboutMemberPrevious => 'Previous member';
+
+  @override
+  String get aboutMemberNext => 'Next member';
+
+  @override
+  String get aboutPhotoPrevious => 'Previous photo';
+
+  @override
+  String get aboutPhotoNext => 'Next photo';
+
+  @override
+  String get aboutQuote1 =>
+      '\"All of humanity\'s problems stem from man\'s inability to sit quietly in a room alone\" (Pascal)';
+
+  @override
+  String get aboutQuote2 =>
+      '\"Appearance is nothing; the wound lies deep in the heart\" (Euripides)';
 
   @override
   String get aboutIntroText =>
@@ -3429,7 +3469,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get commonDelete => 'Delete';
 
   @override
-  String get aboutTitle => 'About';
+  String get aboutTitle => 'About the team';
 
   @override
   String get aboutLoadError => 'Unable to load the About page.';
@@ -3473,7 +3513,47 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
 
   @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
+  String get aboutMemberBrunoNameAndAge => 'Bruno Chappe, 48';
+
+  @override
+  String get aboutMemberBrunoRole =>
+      'Creator · Designer · Editor · Publication director · Screen design · Design';
+
+  @override
+  String get aboutMemberFlorentName => 'Florent Parpillon';
+
+  @override
+  String get aboutMemberFlorentRole =>
+      'Tester · Idea incubator · Screen layout';
+
+  @override
+  String get aboutComingSoon => 'coming soon';
+
+  @override
+  String get aboutPhotoComingSoon => 'photo — coming soon';
+
+  @override
+  String get aboutBuyMeACoffee => 'Buy me a coffee';
+
+  @override
+  String get aboutMemberPrevious => 'Previous member';
+
+  @override
+  String get aboutMemberNext => 'Next member';
+
+  @override
+  String get aboutPhotoPrevious => 'Previous photo';
+
+  @override
+  String get aboutPhotoNext => 'Next photo';
+
+  @override
+  String get aboutQuote1 =>
+      '\"All of humanity\'s problems stem from man\'s inability to sit quietly in a room alone\" (Pascal)';
+
+  @override
+  String get aboutQuote2 =>
+      '\"Appearance is nothing; the wound lies deep in the heart\" (Euripides)';
 
   @override
   String get aboutIntroText =>
