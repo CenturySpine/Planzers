@@ -27,8 +27,9 @@ final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   };
   final rawBucket = (Firebase.app().options.storageBucket ?? '').trim();
   final effectiveBucket = rawBucket.isEmpty ? configuredBucket : rawBucket;
-  final bucketUri =
-      effectiveBucket.startsWith('gs://') ? effectiveBucket : 'gs://$effectiveBucket';
+  final bucketUri = effectiveBucket.startsWith('gs://')
+      ? effectiveBucket
+      : 'gs://$effectiveBucket';
   return TripsRepository(
     firestore: FirebaseFirestore.instance,
     auth: FirebaseAuth.instance,
@@ -39,8 +40,8 @@ final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
 /// In-memory only (not persisted). Application owners: include non-member trips.
 final applicationOwnerShowNonMemberTripsProvider =
     NotifierProvider<ApplicationOwnerShowNonMemberTripsNotifier, bool>(
-  ApplicationOwnerShowNonMemberTripsNotifier.new,
-);
+      ApplicationOwnerShowNonMemberTripsNotifier.new,
+    );
 
 class ApplicationOwnerShowNonMemberTripsNotifier extends Notifier<bool> {
   @override
@@ -55,8 +56,9 @@ final tripsStreamProvider = StreamProvider<List<Trip>>((ref) {
   final repo = ref.watch(tripsRepositoryProvider);
   final isApplicationOwner =
       ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
-  final showNonMemberTrips =
-      ref.watch(applicationOwnerShowNonMemberTripsProvider);
+  final showNonMemberTrips = ref.watch(
+    applicationOwnerShowNonMemberTripsProvider,
+  );
   if (isApplicationOwner && showNonMemberTrips) {
     return repo.watchAllTrips();
   }
@@ -64,10 +66,18 @@ final tripsStreamProvider = StreamProvider<List<Trip>>((ref) {
 });
 
 /// Single trip document stream (for trip hub shell and deep links).
-final tripStreamProvider =
-    StreamProvider.autoDispose.family<Trip?, String>((ref, tripId) {
+final tripStreamProvider = StreamProvider.autoDispose.family<Trip?, String>((
+  ref,
+  tripId,
+) {
   return ref.watch(tripsRepositoryProvider).watchTrip(tripId);
 });
+
+class JoinTripWithInviteResult {
+  const JoinTripWithInviteResult({required this.alreadyMember});
+
+  final bool alreadyMember;
+}
 
 class TripsRepository {
   TripsRepository({
@@ -121,11 +131,10 @@ class TripsRepository {
         final regionFunctions = FirebaseFunctions.instanceFor(
           region: kFirebaseFunctionsRegion,
         );
-        final callable =
-            regionFunctions.httpsCallable('backfillLegacyTripPermissions');
-        await callable.call(<String, dynamic>{
-          'tripId': tripId,
-        });
+        final callable = regionFunctions.httpsCallable(
+          'backfillLegacyTripPermissions',
+        );
+        await callable.call(<String, dynamic>{'tripId': tripId});
       } catch (_) {
         // Best-effort migration from legacy trips; keep read flow resilient.
       } finally {
@@ -139,10 +148,7 @@ class TripsRepository {
     required String userId,
     required TripPermissionRole requiredRole,
   }) {
-    final callerRole = resolveTripPermissionRole(
-      trip: trip,
-      userId: userId,
-    );
+    final callerRole = resolveTripPermissionRole(trip: trip, userId: userId);
     final isMember = trip.memberUserIds.contains(userId);
     if (!isMember ||
         !isTripRoleAllowed(currentRole: callerRole, minRole: requiredRole)) {
@@ -155,13 +161,13 @@ class TripsRepository {
 
   String _generateInviteToken() {
     String segment() => String.fromCharCodes(
-          List.generate(
-            3,
-            (_) => _inviteTokenChars.codeUnitAt(
-              _inviteTokenRandom.nextInt(_inviteTokenChars.length),
-            ),
-          ),
-        );
+      List.generate(
+        3,
+        (_) => _inviteTokenChars.codeUnitAt(
+          _inviteTokenRandom.nextInt(_inviteTokenChars.length),
+        ),
+      ),
+    );
     final token = '${segment()}-${segment()}';
     // ponytail: format guard; upgrade path is a dedicated test if rules tighten.
     assert(RegExp(r'^[A-Z0-9]{3}-[A-Z0-9]{3}$').hasMatch(token));
@@ -207,7 +213,10 @@ class TripsRepository {
       return Stream.value(const <Trip>[]);
     }
 
-    return firestore.collection('trips').snapshots().map(_tripsFromQuerySnapshot);
+    return firestore
+        .collection('trips')
+        .snapshots()
+        .map(_tripsFromQuerySnapshot);
   }
 
   List<Trip> _tripsFromQuerySnapshot(
@@ -339,9 +348,7 @@ class TripsRepository {
     return doc.id;
   }
 
-  Future<void> deleteTrip({
-    required String tripId,
-  }) async {
+  Future<void> deleteTrip({required String tripId}) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
@@ -390,10 +397,7 @@ class TripsRepository {
     final data = snapshot.data();
     final tripData = data ?? const <String, dynamic>{};
     final trip = Trip.fromMap(snapshot.id, tripData);
-    final callerRole = resolveTripPermissionRole(
-      trip: trip,
-      userId: user.uid,
-    );
+    final callerRole = resolveTripPermissionRole(trip: trip, userId: user.uid);
     final requiredRole = TripGeneralPermissions.fromFirestore(
       (tripData['permissions'] as Map<String, dynamic>?)?['tripGeneral'],
     ).editGeneralInfoMinRole;
@@ -476,9 +480,7 @@ class TripsRepository {
 
   /// Invite secret shared with guests (same value as the `token` query param
   /// in the invite link). Controlled by trip share permission.
-  Future<String> getOrCreateInviteToken({
-    required String tripId,
-  }) async {
+  Future<String> getOrCreateInviteToken({required String tripId}) async {
     final user = auth.currentUser;
     if (user == null) {
       throw StateError('Utilisateur non connecte');
@@ -599,15 +601,18 @@ class TripsRepository {
       tripEndDate: parseTripCalendarDate(
         raw['tripEndDateKey'] ?? raw['tripEndDate'],
       ),
-      tripStartDayPart:
-          tripDayPartFromFirestore(raw['tripStartDayPart'] as String?),
-      tripEndDayPart:
-          tripDayPartFromFirestore(raw['tripEndDayPart'] as String?),
+      tripStartDayPart: tripDayPartFromFirestore(
+        raw['tripStartDayPart'] as String?,
+      ),
+      tripEndDayPart: tripDayPartFromFirestore(
+        raw['tripEndDayPart'] as String?,
+      ),
       isDayTrip: raw['isDayTrip'] == true,
+      alreadyMember: raw['alreadyMember'] == true,
     );
   }
 
-  Future<void> joinTripWithInvite({
+  Future<JoinTripWithInviteResult> joinTripWithInvite({
     required String tripId,
     required String token,
     String? participantId,
@@ -647,7 +652,11 @@ class TripsRepository {
         payload['useProfileName'] = true;
       }
     }
-    await callable.call(payload);
+    final result = await callable.call(payload);
+    final raw = result.data;
+    return JoinTripWithInviteResult(
+      alreadyMember: raw is Map && raw['alreadyMember'] == true,
+    );
   }
 
   /// Adds a participant slot. Permission controlled by
@@ -727,8 +736,7 @@ class TripsRepository {
     final isOwnParticipant = participantUserId?.trim() == user.uid;
 
     if (!isOwnParticipant) {
-      final ownerSnap =
-          await firestore.collection('users').doc(user.uid).get();
+      final ownerSnap = await firestore.collection('users').doc(user.uid).get();
       final isApplicationOwner =
           ownerSnap.data()?['isApplicationOwner'] == true;
       if (!isApplicationOwner) {
@@ -802,8 +810,9 @@ class TripsRepository {
     final regionFunctions = FirebaseFunctions.instanceFor(
       region: kFirebaseFunctionsRegion,
     );
-    final callable =
-        regionFunctions.httpsCallable('removeTripRegisteredMember');
+    final callable = regionFunctions.httpsCallable(
+      'removeTripRegisteredMember',
+    );
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
       'memberId': cleanMemberId,
@@ -842,8 +851,7 @@ class TripsRepository {
     final regionFunctions = FirebaseFunctions.instanceFor(
       region: kFirebaseFunctionsRegion,
     );
-    final callable =
-        regionFunctions.httpsCallable('cycleTripMemberAdminRole');
+    final callable = regionFunctions.httpsCallable('cycleTripMemberAdminRole');
     await callable.call(<String, dynamic>{
       'tripId': cleanTripId,
       'memberId': cleanMemberId,
@@ -913,10 +921,7 @@ class TripsRepository {
       _ => 'image/jpeg',
     };
     final objectRef = storage.ref(objectPath);
-    await objectRef.putData(
-      bytes,
-      SettableMetadata(contentType: contentType),
-    );
+    await objectRef.putData(bytes, SettableMetadata(contentType: contentType));
     final url = await objectRef.getDownloadURL();
 
     await tripRef.update(<String, dynamic>{
@@ -1007,7 +1012,8 @@ class TripsRepository {
     final fieldName = switch (action) {
       TripGeneralPermissionAction.editGeneralInfo => 'editGeneralInfo',
       TripGeneralPermissionAction.manageBanner => 'manageBanner',
-      TripGeneralPermissionAction.publishAnnouncements => 'publishAnnouncements',
+      TripGeneralPermissionAction.publishAnnouncements =>
+        'publishAnnouncements',
       TripGeneralPermissionAction.shareAccess => 'shareAccess',
       TripGeneralPermissionAction.manageTripSettings => 'manageTripSettings',
       TripGeneralPermissionAction.deleteTrip => 'deleteTrip',
@@ -1080,7 +1086,8 @@ class TripsRepository {
     );
 
     final fieldName = switch (action) {
-      TripParticipantsPermissionAction.manageParticipants => 'manageParticipants',
+      TripParticipantsPermissionAction.manageParticipants =>
+        'manageParticipants',
       TripParticipantsPermissionAction.toggleAdminRole => 'toggleAdminRole',
     };
 
@@ -1117,7 +1124,8 @@ class TripsRepository {
     );
 
     await tripRef.update(<String, dynamic>{
-      'permissions.participants': TripParticipantsPermissions.defaults.toFirestore(),
+      'permissions.participants': TripParticipantsPermissions.defaults
+          .toFirestore(),
     });
   }
 
@@ -1265,7 +1273,8 @@ class TripsRepository {
     );
 
     await tripRef.update(<String, dynamic>{
-      'permissions.activities': TripActivitiesPermissions.defaults.toFirestore(),
+      'permissions.activities': TripActivitiesPermissions.defaults
+          .toFirestore(),
     });
   }
 

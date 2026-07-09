@@ -22,11 +22,7 @@ import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart'
 import 'package:planerz/l10n/app_localizations.dart';
 
 class InviteJoinPage extends ConsumerStatefulWidget {
-  const InviteJoinPage({
-    super.key,
-    required this.tripId,
-    required this.token,
-  });
+  const InviteJoinPage({super.key, required this.tripId, required this.token});
 
   final String tripId;
   final String token;
@@ -75,8 +71,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       isDisplayNameLengthValid(name ?? '');
 
   Future<String?> _loadMyProfileName() async {
-    final snap =
-        await ref.read(accountRepositoryProvider).watchMyUserDocument().first;
+    final snap = await ref
+        .read(accountRepositoryProvider)
+        .watchMyUserDocument()
+        .first;
     return profileNameFromData(snap.data());
   }
 
@@ -163,15 +161,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   String? _stepLabel(InviteJoinContext ctx) {
     if (!ctx.requiresParticipantChoice) return null;
-    return AppLocalizations.of(context)!.inviteJoinTripStepLabel(
-      _inviteFormStep + 1,
-      2,
-    );
+    return AppLocalizations.of(
+      context,
+    )!.inviteJoinTripStepLabel(_inviteFormStep + 1, 2);
   }
 
-  List<InviteJoinParticipantOption> _sortedPlaceholders(
-    InviteJoinContext ctx,
-  ) {
+  List<InviteJoinParticipantOption> _sortedPlaceholders(InviteJoinContext ctx) {
     final list = List<InviteJoinParticipantOption>.from(ctx.participants);
     list.sort(
       (a, b) => compareDisplayNamesForSort(a.displayName, b.displayName),
@@ -188,9 +183,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         .toList();
   }
 
-  void _onPlaceholderSearchChanged(
-    List<InviteJoinParticipantOption> sorted,
-  ) {
+  void _onPlaceholderSearchChanged(List<InviteJoinParticipantOption> sorted) {
     final filtered = _filteredPlaceholders(sorted);
     setState(() {
       final id = _selectedPlaceholderId;
@@ -200,9 +193,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     });
   }
 
-  Widget _placeholderChoiceTile({
-    required InviteJoinParticipantOption option,
-  }) {
+  Widget _placeholderChoiceTile({required InviteJoinParticipantOption option}) {
     final selected = _selectedPlaceholderId == option.id;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -244,9 +235,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         },
       ).toString();
       if (mounted) {
-        context.go(
-          '/sign-in?redirect=${Uri.encodeComponent(redirect)}',
-        );
+        context.go('/sign-in?redirect=${Uri.encodeComponent(redirect)}');
       }
       return;
     }
@@ -302,15 +291,15 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       _error = null;
     });
     try {
-      final ctx = await ref.read(tripsRepositoryProvider).getInviteJoinContext(
-            tripId: widget.tripId,
-            token: widget.token,
-          );
+      final ctx = await ref
+          .read(tripsRepositoryProvider)
+          .getInviteJoinContext(tripId: widget.tripId, token: widget.token);
       if (!mounted) return;
       setState(() {
         _context = ctx;
         _phoneVisibilityDraft = TripMemberPhoneVisibility.nobody;
         _placeholderSearchController.clear();
+        _joined = ctx.alreadyMember;
         if (ctx.requiresParticipantChoice && ctx.participants.isNotEmpty) {
           _inviteFormStep = 0;
           _joinUsingCurrentProfile = false;
@@ -328,7 +317,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           _stayDraft = _stayDraftForContext(ctx: ctx);
         }
       });
-      if (!ctx.requiresParticipantChoice) {
+      if (!ctx.alreadyMember && !ctx.requiresParticipantChoice) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           unawaited(_ensureBypassParticipantNameOnEntry());
         });
@@ -345,19 +334,21 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
   }
 
-  Future<void> _join({
+  Future<bool> _join({
     String? participantId,
     String? participantName,
     bool bypassParticipantChoice = false,
     bool useProfileName = false,
   }) async {
-    if (_joining || _joined) return;
+    if (_joining || _joined) return false;
     setState(() {
       _joining = true;
       _error = null;
     });
     try {
-      await ref.read(tripsRepositoryProvider).joinTripWithInvite(
+      final result = await ref
+          .read(tripsRepositoryProvider)
+          .joinTripWithInvite(
             tripId: widget.tripId,
             token: widget.token,
             participantId: participantId,
@@ -365,22 +356,26 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             bypassParticipantChoice: bypassParticipantChoice,
             useProfileName: useProfileName,
           );
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _joined = true;
       });
-      await _persistCupidonPreferenceForTrip();
-      if (!mounted) return;
+      if (!result.alreadyMember) {
+        await _persistCupidonPreferenceForTrip();
+      }
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.inviteJoinedTrip)),
       );
+      return !result.alreadyMember;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       final message = _messageForError(context, e);
       setState(() {
         _error = message;
       });
       _showJoinErrorSnackBar(message);
+      return false;
     } finally {
       if (mounted) {
         setState(() {
@@ -392,7 +387,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   Future<void> _persistCupidonPreferenceForTrip() async {
     try {
-      await ref.read(cupidonRepositoryProvider).setMyTripCupidonEnabled(
+      await ref
+          .read(cupidonRepositoryProvider)
+          .setMyTripCupidonEnabled(
             tripId: widget.tripId,
             enabled: _inviteCupidonEnabled,
           );
@@ -444,7 +441,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     if (!_joinUsingCurrentProfile && (id == null || id.isEmpty)) return;
     if (_joinUsingCurrentProfile &&
         !_isBypassParticipantNameValid(_bypassParticipantName)) {
-      final message = AppLocalizations.of(context)!.inviteBypassFirstNameRequired;
+      final message = AppLocalizations.of(
+        context,
+      )!.inviteBypassFirstNameRequired;
       setState(() => _error = message);
       _showJoinErrorSnackBar(message);
       return;
@@ -469,14 +468,15 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       }
     }
 
-    await _join(
+    final joinedNow = await _join(
       participantId: _joinUsingCurrentProfile ? null : id,
-      participantName:
-          _joinUsingCurrentProfile ? _bypassParticipantName!.trim() : null,
+      participantName: _joinUsingCurrentProfile
+          ? _bypassParticipantName!.trim()
+          : null,
       bypassParticipantChoice: _joinUsingCurrentProfile,
       useProfileName: _joinUsingCurrentProfile && _bypassUseProfileName,
     );
-    if (!_joined || !mounted) return;
+    if (!joinedNow || !mounted) return;
 
     try {
       final myParticipant = await ref
@@ -485,11 +485,15 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           .first;
       if (myParticipant != null) {
         final myPhoneNumber = ref.read(myPhoneNumberProvider).asData?.value;
-        await ref.read(tripMembersRepositoryProvider).updateParticipantProfile(
+        await ref
+            .read(tripMembersRepositoryProvider)
+            .updateParticipantProfile(
               tripId: widget.tripId,
               participantId: myParticipant.id,
               stay: ctx.isDayTrip ? null : stay,
-              phoneVisibility: myPhoneNumber != null ? _phoneVisibilityDraft : null,
+              phoneVisibility: myPhoneNumber != null
+                  ? _phoneVisibilityDraft
+                  : null,
             );
       }
     } catch (e) {
@@ -508,10 +512,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
   PreferredSizeWidget _buildAppBar() {
     final l10n = AppLocalizations.of(context)!;
-    final placeholderPick = _context != null &&
-        !_loadingContext &&
-        !_joining &&
-        !_joined;
+    final placeholderPick =
+        _context != null && !_loadingContext && !_joining && !_joined;
     VoidCallback? onBack;
     if (placeholderPick &&
         _inviteFormStep == 1 &&
@@ -634,8 +636,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       ),
                       const SizedBox(height: 10),
                       TextButton.icon(
-                        onPressed:
-                            _joining ? null : _continueWithCurrentProfile,
+                        onPressed: _joining
+                            ? null
+                            : _continueWithCurrentProfile,
                         style: TextButton.styleFrom(
                           foregroundColor: NeonPalette.primary,
                           padding: const EdgeInsets.symmetric(
@@ -643,7 +646,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                             vertical: 8,
                           ),
                         ),
-                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 20),
+                        icon: const Icon(
+                          Icons.person_add_alt_1_outlined,
+                          size: 20,
+                        ),
                         label: Text(
                           l10n.inviteJoinWithCurrentProfileAction,
                           style: const TextStyle(
@@ -690,7 +696,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               InviteJoinHead(
                 title: l10n.inviteJoinThisTrip,
                 tripName: tripTitle,
-                stepLabel: ctx.requiresParticipantChoice ? _stepLabel(ctx) : null,
+                stepLabel: ctx.requiresParticipantChoice
+                    ? _stepLabel(ctx)
+                    : null,
               ),
               InviteJoinInfoBanner(
                 message: l10n.inviteOptionsEditableAfterJoinInfo,
@@ -731,7 +739,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   onDraftChanged: (draft) => setState(() {
                     _stayDraft = draft.stay;
                     _inviteCupidonEnabled = draft.cupidonEnabled;
-                    _phoneVisibilityDraft = draft.phoneVisibility ??
+                    _phoneVisibilityDraft =
+                        draft.phoneVisibility ??
                         TripMemberPhoneVisibility.nobody;
                   }),
                   cupidonTitle: l10n.cupidonModeTitle,
@@ -769,9 +778,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         widget.tripId.trim().isEmpty || widget.token.trim().isEmpty;
     if (hasInvalidParams) {
       return Theme(
-        data: Theme.of(context).copyWith(
-          scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
-        ),
+        data: Theme.of(
+          context,
+        ).copyWith(scaffoldBackgroundColor: NeonPalette.scaffoldBackground),
         child: Scaffold(
           backgroundColor: NeonPalette.scaffoldBackground,
           appBar: AppBar(
@@ -817,10 +826,8 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         ? l10n.inviteJoinThisTrip
         : l10n.inviteJoinTripWithTitle(tripTitle);
 
-    final placeholderPick = _context != null &&
-        !_loadingContext &&
-        !_joining &&
-        !_joined;
+    final placeholderPick =
+        _context != null && !_loadingContext && !_joining && !_joined;
 
     final Widget bodyChild;
     if (placeholderPick) {
@@ -950,9 +957,9 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
 
     return Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
-      ),
+      data: Theme.of(
+        context,
+      ).copyWith(scaffoldBackgroundColor: NeonPalette.scaffoldBackground),
       child: Scaffold(
         backgroundColor: NeonPalette.scaffoldBackground,
         appBar: _buildAppBar(),
