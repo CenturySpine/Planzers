@@ -281,7 +281,6 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       _isDayTrip = enabled;
       _errorMessage = null;
       if (enabled) {
-        _roomsModuleEnabled = false;
         final day = _singleDayDate ??
             TripMemberStay.parseDateKey(_stay.startDateKey) ??
             DateUtils.dateOnly(DateTime.now());
@@ -1483,6 +1482,7 @@ class _TripCreateModulesSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _TripCreateModuleToggleRow(
+          switchKey: const ValueKey('trip-create-rooms-module-switch'),
           value: roomsEnabled,
           enabled: roomsToggleEnabled,
           muted: isDayTrip,
@@ -1647,6 +1647,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onChanged,
+    this.switchKey,
     this.muted = false,
   });
 
@@ -1657,6 +1658,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final ValueChanged<bool> onChanged;
+  final Key? switchKey;
 
   @override
   Widget build(BuildContext context) {
@@ -1716,6 +1718,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
                 ),
               ),
               _NeonSwitch(
+                key: switchKey,
                 value: muted ? false : value,
                 onChanged: enabled ? onChanged : null,
               ),
