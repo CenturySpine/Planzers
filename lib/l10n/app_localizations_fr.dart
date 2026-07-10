@@ -21,7 +21,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get commonDelete => 'Supprimer';
 
   @override
-  String get aboutTitle => 'À propos de l\'équipe';
+  String get aboutTitle => 'À propos';
 
   @override
   String get aboutLoadError => 'Impossible de charger la page À propos.';
@@ -64,47 +64,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024';
 
   @override
-  String get aboutMemberBrunoNameAndAge => 'Bruno Chappe, 48 ans';
-
-  @override
-  String get aboutMemberBrunoRole =>
-      'Créateur · Concepteur · Éditeur · Directeur de la publication · Conception d\'écrans · Design';
-
-  @override
-  String get aboutMemberFlorentName => 'Florent Parpillon';
-
-  @override
-  String get aboutMemberFlorentRole =>
-      'Testeur · Incubateur d\'idées · Mise en page d\'écrans';
-
-  @override
-  String get aboutComingSoon => 'à venir';
-
-  @override
-  String get aboutPhotoComingSoon => 'photo — à venir';
-
-  @override
-  String get aboutBuyMeACoffee => 'Buy me a coffee';
-
-  @override
-  String get aboutMemberPrevious => 'Membre précédent';
-
-  @override
-  String get aboutMemberNext => 'Membre suivant';
-
-  @override
-  String get aboutPhotoPrevious => 'Photo précédente';
-
-  @override
-  String get aboutPhotoNext => 'Photo suivante';
-
-  @override
-  String get aboutQuote1 =>
-      '\"Tout le malheur des hommes vient d\'une seule chose, qui est de ne pas savoir demeurer en repos dans une chambre\" (Pascal)';
-
-  @override
-  String get aboutQuote2 =>
-      '\"L\'apparence n\'est rien ; c\'est au fond du cœur qu\'est la plaie\" (Euripide)';
+  String get aboutFullNameAndAge => 'Bruno Chappe, 48 ans';
 
   @override
   String get aboutIntroText =>
@@ -3500,7 +3460,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get commonDelete => 'Supprimer';
 
   @override
-  String get aboutTitle => 'À propos de l\'équipe';
+  String get aboutTitle => 'À propos';
 
   @override
   String get aboutLoadError => 'Impossible de charger la page À propos.';
@@ -3543,47 +3503,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024';
 
   @override
-  String get aboutMemberBrunoNameAndAge => 'Bruno Chappe, 48 ans';
-
-  @override
-  String get aboutMemberBrunoRole =>
-      'Créateur · Concepteur · Éditeur · Directeur de la publication · Conception d\'écrans · Design';
-
-  @override
-  String get aboutMemberFlorentName => 'Florent Parpillon';
-
-  @override
-  String get aboutMemberFlorentRole =>
-      'Testeur · Incubateur d\'idées · Mise en page d\'écrans';
-
-  @override
-  String get aboutComingSoon => 'à venir';
-
-  @override
-  String get aboutPhotoComingSoon => 'photo — à venir';
-
-  @override
-  String get aboutBuyMeACoffee => 'Buy me a coffee';
-
-  @override
-  String get aboutMemberPrevious => 'Membre précédent';
-
-  @override
-  String get aboutMemberNext => 'Membre suivant';
-
-  @override
-  String get aboutPhotoPrevious => 'Photo précédente';
-
-  @override
-  String get aboutPhotoNext => 'Photo suivante';
-
-  @override
-  String get aboutQuote1 =>
-      '\"Tout le malheur des hommes vient d\'une seule chose, qui est de ne pas savoir demeurer en repos dans une chambre\" (Pascal)';
-
-  @override
-  String get aboutQuote2 =>
-      '\"L\'apparence n\'est rien ; c\'est au fond du cœur qu\'est la plaie\" (Euripide)';
+  String get aboutFullNameAndAge => 'Bruno Chappe, 48 ans';
 
   @override
   String get aboutIntroText =>

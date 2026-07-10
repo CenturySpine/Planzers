@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutTitle.
   ///
   /// In fr, this message translates to:
-  /// **'À propos de l\'équipe'**
+  /// **'À propos'**
   String get aboutTitle;
 
   /// No description provided for @aboutLoadError.
@@ -196,83 +196,11 @@ abstract class AppLocalizations {
   /// **'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024'**
   String get aboutCarouselCaption8;
 
-  /// No description provided for @aboutMemberBrunoNameAndAge.
+  /// No description provided for @aboutFullNameAndAge.
   ///
   /// In fr, this message translates to:
   /// **'Bruno Chappe, 48 ans'**
-  String get aboutMemberBrunoNameAndAge;
-
-  /// No description provided for @aboutMemberBrunoRole.
-  ///
-  /// In fr, this message translates to:
-  /// **'Créateur · Concepteur · Éditeur · Directeur de la publication · Conception d\'écrans · Design'**
-  String get aboutMemberBrunoRole;
-
-  /// No description provided for @aboutMemberFlorentName.
-  ///
-  /// In fr, this message translates to:
-  /// **'Florent Parpillon'**
-  String get aboutMemberFlorentName;
-
-  /// No description provided for @aboutMemberFlorentRole.
-  ///
-  /// In fr, this message translates to:
-  /// **'Testeur · Incubateur d\'idées · Mise en page d\'écrans'**
-  String get aboutMemberFlorentRole;
-
-  /// No description provided for @aboutComingSoon.
-  ///
-  /// In fr, this message translates to:
-  /// **'à venir'**
-  String get aboutComingSoon;
-
-  /// No description provided for @aboutPhotoComingSoon.
-  ///
-  /// In fr, this message translates to:
-  /// **'photo — à venir'**
-  String get aboutPhotoComingSoon;
-
-  /// No description provided for @aboutBuyMeACoffee.
-  ///
-  /// In fr, this message translates to:
-  /// **'Buy me a coffee'**
-  String get aboutBuyMeACoffee;
-
-  /// No description provided for @aboutMemberPrevious.
-  ///
-  /// In fr, this message translates to:
-  /// **'Membre précédent'**
-  String get aboutMemberPrevious;
-
-  /// No description provided for @aboutMemberNext.
-  ///
-  /// In fr, this message translates to:
-  /// **'Membre suivant'**
-  String get aboutMemberNext;
-
-  /// No description provided for @aboutPhotoPrevious.
-  ///
-  /// In fr, this message translates to:
-  /// **'Photo précédente'**
-  String get aboutPhotoPrevious;
-
-  /// No description provided for @aboutPhotoNext.
-  ///
-  /// In fr, this message translates to:
-  /// **'Photo suivante'**
-  String get aboutPhotoNext;
-
-  /// No description provided for @aboutQuote1.
-  ///
-  /// In fr, this message translates to:
-  /// **'\"Tout le malheur des hommes vient d\'une seule chose, qui est de ne pas savoir demeurer en repos dans une chambre\" (Pascal)'**
-  String get aboutQuote1;
-
-  /// No description provided for @aboutQuote2.
-  ///
-  /// In fr, this message translates to:
-  /// **'\"L\'apparence n\'est rien ; c\'est au fond du cœur qu\'est la plaie\" (Euripide)'**
-  String get aboutQuote2;
+  String get aboutFullNameAndAge;
 
   /// No description provided for @aboutIntroText.
   ///
