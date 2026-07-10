@@ -36,43 +36,32 @@ void main() {
     await tester.pump();
 
     final formScrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(
-      find.byKey(roomsModuleSwitchKey),
-      500,
-      scrollable: formScrollable,
-    );
+    await _dragForm(tester, formScrollable, -700);
     await tester.tap(find.byKey(roomsModuleSwitchKey));
     await tester.pumpAndSettle();
     expect(_roomsModuleSwitchToggled(tester), isTrue);
 
-    await tester.scrollUntilVisible(
-      find.byKey(dayTripSwitchKey),
-      -500,
-      scrollable: formScrollable,
-    );
+    await _dragForm(tester, formScrollable, 700);
     await tester.tap(find.byKey(dayTripSwitchKey));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(roomsModuleSwitchKey),
-      500,
-      scrollable: formScrollable,
-    );
+    await _dragForm(tester, formScrollable, -700);
     expect(_roomsModuleSwitchToggled(tester), isFalse);
 
-    await tester.scrollUntilVisible(
-      find.byKey(dayTripSwitchKey),
-      -500,
-      scrollable: formScrollable,
-    );
+    await _dragForm(tester, formScrollable, 700);
     await tester.tap(find.byKey(dayTripSwitchKey));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(roomsModuleSwitchKey),
-      500,
-      scrollable: formScrollable,
-    );
+    await _dragForm(tester, formScrollable, -700);
     expect(_roomsModuleSwitchToggled(tester), isTrue);
   });
+}
+
+Future<void> _dragForm(
+  WidgetTester tester,
+  Finder formScrollable,
+  double verticalOffset,
+) async {
+  await tester.drag(formScrollable, Offset(0, verticalOffset));
+  await tester.pumpAndSettle();
 }
 
 bool _roomsModuleSwitchToggled(WidgetTester tester) {
