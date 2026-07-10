@@ -232,6 +232,9 @@ class TripsRepository {
     String description = '',
     String photosStorageUrl = '',
     bool cupidonModeEnabled = false,
+    bool carpoolModuleEnabled = false,
+    bool roomsModuleEnabled = false,
+    bool gamesModuleEnabled = false,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -252,6 +255,9 @@ class TripsRepository {
       if (trimmedDescription.isNotEmpty) 'description': trimmedDescription,
       'photosStorageUrl': photosStorageUrl.trim(),
       'cupidonModeEnabled': cupidonModeEnabled,
+      'carpoolModuleEnabled': carpoolModuleEnabled,
+      'roomsModuleEnabled': isDayTrip ? false : roomsModuleEnabled,
+      'gamesModuleEnabled': gamesModuleEnabled,
       'ownerId': user.uid,
       'memberUserIds': <String>[user.uid],
       'permissions': _defaultPermissionsFirestoreMap(),
@@ -296,6 +302,9 @@ class TripsRepository {
         linkUrl: linkUrl.trim(),
         photosStorageUrl: photosStorageUrl.trim(),
         cupidonModeEnabled: cupidonModeEnabled,
+        carpoolModuleEnabled: carpoolModuleEnabled,
+        roomsModuleEnabled: isDayTrip ? false : roomsModuleEnabled,
+        gamesModuleEnabled: gamesModuleEnabled,
         ownerId: user.uid,
         memberUserIds: [user.uid],
         createdAt: DateTime.now(),
@@ -358,6 +367,9 @@ class TripsRepository {
     String description = '',
     String photosStorageUrl = '',
     bool? cupidonModeEnabled,
+    bool? carpoolModuleEnabled,
+    bool? roomsModuleEnabled,
+    bool? gamesModuleEnabled,
     DateTime? startDate,
     DateTime? endDate,
     TripDayPart? tripStartDayPart,
@@ -405,6 +417,11 @@ class TripsRepository {
         'description': FieldValue.delete(),
       'photosStorageUrl': photosStorageUrl.trim(),
       if (cupidonModeEnabled != null) 'cupidonModeEnabled': cupidonModeEnabled,
+      if (carpoolModuleEnabled != null)
+        'carpoolModuleEnabled': carpoolModuleEnabled,
+      if (roomsModuleEnabled != null)
+        'roomsModuleEnabled': savingAsDayTrip ? false : roomsModuleEnabled,
+      if (gamesModuleEnabled != null) 'gamesModuleEnabled': gamesModuleEnabled,
     };
 
     if (isDayTrip != null) {

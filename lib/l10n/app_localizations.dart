@@ -1054,6 +1054,72 @@ abstract class AppLocalizations {
   /// **'Active la fonctionnalité « Aimer » entre participants du voyage.'**
   String get tripCreateCupidonModeSubtitle;
 
+  /// No description provided for @tripCreateModulesHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis les cartes visibles dans l\'aperçu du voyage.'**
+  String get tripCreateModulesHint;
+
+  /// No description provided for @tripCreateModulePlanningTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planning & activités'**
+  String get tripCreateModulePlanningTitle;
+
+  /// No description provided for @tripCreateModulePlanningSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toujours inclus dans le voyage.'**
+  String get tripCreateModulePlanningSubtitle;
+
+  /// No description provided for @tripCreateModuleIncluded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Inclus'**
+  String get tripCreateModuleIncluded;
+
+  /// No description provided for @tripCreateModuleCarpoolSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Organise les trajets et les places dispo.'**
+  String get tripCreateModuleCarpoolSubtitle;
+
+  /// No description provided for @tripCreateModuleRoomsSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Répartis qui dort où sur place.'**
+  String get tripCreateModuleRoomsSubtitle;
+
+  /// No description provided for @tripCreateModuleRoomsDayTripUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indisponible pour une sortie à la journée.'**
+  String get tripCreateModuleRoomsDayTripUnavailable;
+
+  /// No description provided for @tripCreateModuleGamesSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Propose des jeux et défis pour le groupe.'**
+  String get tripCreateModuleGamesSubtitle;
+
+  /// No description provided for @tripCreateModulePhotosSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute un lien de stockage pour activer la carte.'**
+  String get tripCreateModulePhotosSubtitle;
+
+  /// No description provided for @tripCreateModulePhotosPlaceholder.
+  ///
+  /// In fr, this message translates to:
+  /// **'Colle le lien du dossier partagé'**
+  String get tripCreateModulePhotosPlaceholder;
+
+  /// No description provided for @tripCreateModulesNote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ces options sont modifiables à tout moment après la création.'**
+  String get tripCreateModulesNote;
+
   /// No description provided for @tripCreateLinkPlaceholder.
   ///
   /// In fr, this message translates to:
@@ -1221,6 +1287,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Fermer'**
   String get commonClose;
+
+  /// No description provided for @commonComingSoon.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bientôt disponible'**
+  String get commonComingSoon;
 
   /// No description provided for @commonErrorWithDetails.
   ///
@@ -3185,6 +3257,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Trajets'**
   String get activitiesFilterTrajets;
+
+  /// No description provided for @activitiesFilterPresences.
+  ///
+  /// In fr, this message translates to:
+  /// **'Présences'**
+  String get activitiesFilterPresences;
+
+  /// No description provided for @activitiesSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher'**
+  String get activitiesSearchHint;
+
+  /// No description provided for @activitiesSearchEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun résultat.'**
+  String get activitiesSearchEmpty;
 
   /// No description provided for @activitiesVote.
   ///

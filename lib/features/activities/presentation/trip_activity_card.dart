@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Compact vote control for activity suggestions (Firestore-backed via stream refresh).
 class TripActivityVoteButton extends ConsumerStatefulWidget {
@@ -56,47 +58,51 @@ class _TripActivityVoteButtonState extends ConsumerState<TripActivityVoteButton>
     final hasVoted =
         widget.myUid.isNotEmpty && widget.votes.contains(widget.myUid);
     final count = widget.votes.length;
-    final scheme = Theme.of(context).colorScheme;
-    final color = hasVoted ? scheme.primary : scheme.onSurfaceVariant;
+    final color =
+        hasVoted ? NeonPalette.primary : NeonPalette.onSurfaceVariant;
     final l10n = AppLocalizations.of(context)!;
 
     return Tooltip(
       message: hasVoted ? l10n.activitiesUnvote : l10n.activitiesVote,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: _loading ? null : _toggle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          child: _loading
-              ? SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    color: color,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
-                      size: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: _loading ? null : _toggle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            child: _loading
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
                       color: color,
                     ),
-                    if (count > 0) ...[
-                      const SizedBox(width: 3),
-                      Text(
-                        '$count',
-                        style:
-                            Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: color,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                        size: 18,
+                        color: color,
                       ),
+                      if (count > 0) ...[
+                        const SizedBox(width: 4),
+                        Text(
+                          '$count',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+          ),
         ),
       ),
     );
@@ -124,135 +130,114 @@ class TripActivityCard extends StatelessWidget {
     context.push('/trips/$tripId/activities/${activity.id}');
   }
 
+  Future<void> _openLink(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final url = activity.linkUrl.trim();
+    final parsed = Uri.tryParse(url);
+    if (parsed == null || !parsed.isAbsolute) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkInvalid)),
+      );
+      return;
+    }
+    final didLaunch = await launchUrl(
+      parsed,
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+    if (!didLaunch && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.linkOpenImpossible)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final label = activity.label.trim().isEmpty
-        ? AppLocalizations.of(context)!.activitiesUntitled
+        ? l10n.activitiesUntitled
         : activity.label.trim();
+    final filterGroup = activity.category.filterGroup;
+    final categoryColor = filterGroup.filterColor;
+    final categoryLightBg = filterGroup.filterLightBgColor;
+    final preview = activity.linkPreview;
+    final imageUrl = ((preview['imageUrl'] as String?) ?? '').trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final hasLink = activity.linkUrl.trim().isNotEmpty;
 
-    final categoryColor = activity.category.filterGroup.filterColor;
-    final surface = Theme.of(context).colorScheme.surface;
-    final cardBg = activity.done
-        ? context.planerzColors.successContainer
-        : Color.lerp(surface, categoryColor, 0.08)!;
+    final timeLabel = activity.plannedAt == null
+        ? null
+        : DateFormat.Hm(Localizations.localeOf(context).toString())
+            .format(activity.plannedAt!.toLocal());
+
+    final card = TripPlanningListCardShell(
+      categoryColor: categoryColor,
+      categoryLightBg: categoryLightBg,
+      leadingIcon: activity.category.categoryIcon,
+      subtitle: l10n.activitiesProposedBy(
+        creatorLabelForActivity(
+          activity,
+          tripMemberPublicLabels,
+          unknownLabel: l10n.roleParticipant,
+        ),
+      ),
+      subtitleItalic: true,
+      onTap: () => _openDetail(context),
+      titleRow: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          if (timeLabel != null) ...[
+            Text(
+              timeLabel,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: categoryColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: NeonPalette.deep,
+              ),
+            ),
+          ),
+        ],
+      ),
+      trailing: hasImage
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinkPreviewThumbnail(preview: preview, size: 44),
+            )
+          : hasLink
+              ? TripPlanningLinkTrailingButton(
+                  onTap: () => _openLink(context),
+                )
+              : null,
+    );
+
+    if (!showVoteButton) return card;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            surfaceTintColor: Colors.transparent,
-            color: cardBg,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => _openDetail(context),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(width: 4, color: categoryColor),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              activity.category.categoryIcon,
-                              size: 20,
-                              color: categoryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.baseline,
-                                    textBaseline: TextBaseline.alphabetic,
-                                    children: [
-                                      if (activity.plannedAt != null) ...[
-                                        Text(
-                                          DateFormat.Hm(
-                                            Localizations.localeOf(context)
-                                                .toString(),
-                                          ).format(
-                                              activity.plannedAt!.toLocal()),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: categoryColor,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                      ],
-                                      Expanded(
-                                        child: Text(
-                                          label,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.activitiesProposedBy(
-                                      creatorLabelForActivity(
-                                        activity,
-                                        tripMemberPublicLabels,
-                                        unknownLabel: AppLocalizations.of(
-                                                context)!
-                                            .roleParticipant,
-                                      ),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          fontStyle: FontStyle.italic,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            LinkPreviewThumbnail(
-                                preview: activity.linkPreview, size: 36),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        Expanded(child: card),
+        TripActivityVoteButton(
+          tripId: tripId,
+          activityId: activity.id,
+          votes: activity.votes,
+          myUid: myUid ?? '',
         ),
-        if (showVoteButton) ...[
-          const SizedBox(width: 4),
-          TripActivityVoteButton(
-            tripId: tripId,
-            activityId: activity.id,
-            votes: activity.votes,
-            myUid: myUid ?? '',
-          ),
-        ],
       ],
     );
   }

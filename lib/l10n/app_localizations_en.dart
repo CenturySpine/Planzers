@@ -528,6 +528,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enables the \"Like\" feature between trip participants.';
 
   @override
+  String get tripCreateModulesHint =>
+      'Choose which cards appear on the trip overview.';
+
+  @override
+  String get tripCreateModulePlanningTitle => 'Planning & activities';
+
+  @override
+  String get tripCreateModulePlanningSubtitle => 'Always included in the trip.';
+
+  @override
+  String get tripCreateModuleIncluded => 'Included';
+
+  @override
+  String get tripCreateModuleCarpoolSubtitle =>
+      'Organize rides and available seats.';
+
+  @override
+  String get tripCreateModuleRoomsSubtitle => 'Assign who sleeps where.';
+
+  @override
+  String get tripCreateModuleRoomsDayTripUnavailable =>
+      'Unavailable for a day trip.';
+
+  @override
+  String get tripCreateModuleGamesSubtitle =>
+      'Suggest games and challenges for the group.';
+
+  @override
+  String get tripCreateModulePhotosSubtitle =>
+      'Add a storage link to enable the card.';
+
+  @override
+  String get tripCreateModulePhotosPlaceholder =>
+      'Paste the shared folder link';
+
+  @override
+  String get tripCreateModulesNote =>
+      'These options can be changed at any time after creation.';
+
+  @override
   String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
 
   @override
@@ -619,6 +659,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonClose => 'Close';
+
+  @override
+  String get commonComingSoon => 'Coming soon';
 
   @override
   String commonErrorWithDetails(Object error) {
@@ -1733,6 +1776,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activitiesFilterTrajets => 'Transport';
+
+  @override
+  String get activitiesFilterPresences => 'Attendance';
+
+  @override
+  String get activitiesSearchHint => 'Search';
+
+  @override
+  String get activitiesSearchEmpty => 'No results.';
 
   @override
   String get activitiesVote => 'Vote';
@@ -3884,6 +3936,46 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Enables the \"Like\" feature between trip participants.';
 
   @override
+  String get tripCreateModulesHint =>
+      'Choose which cards appear on the trip overview.';
+
+  @override
+  String get tripCreateModulePlanningTitle => 'Planning & activities';
+
+  @override
+  String get tripCreateModulePlanningSubtitle => 'Always included in the trip.';
+
+  @override
+  String get tripCreateModuleIncluded => 'Included';
+
+  @override
+  String get tripCreateModuleCarpoolSubtitle =>
+      'Organize rides and available seats.';
+
+  @override
+  String get tripCreateModuleRoomsSubtitle => 'Assign who sleeps where.';
+
+  @override
+  String get tripCreateModuleRoomsDayTripUnavailable =>
+      'Unavailable for a day trip.';
+
+  @override
+  String get tripCreateModuleGamesSubtitle =>
+      'Suggest games and challenges for the group.';
+
+  @override
+  String get tripCreateModulePhotosSubtitle =>
+      'Add a storage link to enable the card.';
+
+  @override
+  String get tripCreateModulePhotosPlaceholder =>
+      'Paste the shared folder link';
+
+  @override
+  String get tripCreateModulesNote =>
+      'These options can be changed at any time after creation.';
+
+  @override
   String get tripCreateLinkPlaceholder => 'Paste an Airbnb link, etc.';
 
   @override
@@ -3975,6 +4067,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get commonClose => 'Close';
+
+  @override
+  String get commonComingSoon => 'Coming soon';
 
   @override
   String commonErrorWithDetails(Object error) {
@@ -5018,6 +5113,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activitiesFilterTrajets => 'Transport';
+
+  @override
+  String get activitiesFilterPresences => 'Attendance';
+
+  @override
+  String get activitiesSearchHint => 'Search';
+
+  @override
+  String get activitiesSearchEmpty => 'No results.';
 
   @override
   String get activitiesVote => 'Vote';
