@@ -10,6 +10,9 @@ void main() {
   testWidgets('day trip toggle preserves the previous rooms module choice', (
     tester,
   ) async {
+    const dayTripSwitchKey = ValueKey('trip-create-day-trip-switch');
+    const roomsModuleSwitchKey = ValueKey('trip-create-rooms-module-switch');
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -27,37 +30,37 @@ void main() {
 
     final formScrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
-      find.text('Chambres'),
+      find.byKey(roomsModuleSwitchKey),
       500,
       scrollable: formScrollable,
     );
-    await tester.tap(find.text('Chambres'));
+    await tester.tap(find.byKey(roomsModuleSwitchKey));
     await tester.pumpAndSettle();
     expect(_roomsModuleSwitchToggled(tester), isTrue);
 
     await tester.scrollUntilVisible(
-      find.text('À la journée'),
+      find.byKey(dayTripSwitchKey),
       -500,
       scrollable: formScrollable,
     );
-    await tester.tap(find.text('À la journée'));
+    await tester.tap(find.byKey(dayTripSwitchKey));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('trip-create-rooms-module-switch')),
+      find.byKey(roomsModuleSwitchKey),
       500,
       scrollable: formScrollable,
     );
     expect(_roomsModuleSwitchToggled(tester), isFalse);
 
     await tester.scrollUntilVisible(
-      find.text('À la journée'),
+      find.byKey(dayTripSwitchKey),
       -500,
       scrollable: formScrollable,
     );
-    await tester.tap(find.text('À la journée'));
+    await tester.tap(find.byKey(dayTripSwitchKey));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('trip-create-rooms-module-switch')),
+      find.byKey(roomsModuleSwitchKey),
       500,
       scrollable: formScrollable,
     );

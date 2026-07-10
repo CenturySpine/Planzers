@@ -1242,6 +1242,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onChanged,
+    this.switchKey,
   });
 
   final bool value;
@@ -1250,6 +1251,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final ValueChanged<bool> onChanged;
+  final Key? switchKey;
 
   @override
   Widget build(BuildContext context) {
@@ -1318,6 +1320,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
                 ),
               ),
               _NeonSwitch(
+                key: switchKey,
                 value: value,
                 onChanged: enabled ? onChanged : null,
               ),
@@ -1350,6 +1353,7 @@ class _DayTripToggleCard extends StatelessWidget {
       title: l10n.tripDayTripLabel,
       subtitle: l10n.tripCreateDayTripSubtitle,
       onChanged: onChanged,
+      switchKey: const ValueKey('trip-create-day-trip-switch'),
     );
   }
 }
