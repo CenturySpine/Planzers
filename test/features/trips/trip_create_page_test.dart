@@ -13,6 +13,13 @@ void main() {
     const dayTripSwitchKey = ValueKey('trip-create-day-trip-switch');
     const roomsModuleSwitchKey = ValueKey('trip-create-rooms-module-switch');
 
+    tester.view.physicalSize = const Size(900, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
