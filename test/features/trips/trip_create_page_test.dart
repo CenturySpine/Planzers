@@ -25,18 +25,41 @@ void main() {
     );
     await tester.pump();
 
-    await tester.ensureVisible(find.text('Chambres'));
+    await tester.scrollUntilVisible(
+      find.text('Chambres'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
     await tester.tap(find.text('Chambres'));
     await tester.pumpAndSettle();
     expect(_roomsModuleSwitchToggled(tester), isTrue);
 
-    await tester.ensureVisible(find.text('À la journée'));
+    await tester.scrollUntilVisible(
+      find.text('À la journée'),
+      -500,
+      scrollable: find.byType(Scrollable),
+    );
     await tester.tap(find.text('À la journée'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('trip-create-rooms-module-switch')),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
     expect(_roomsModuleSwitchToggled(tester), isFalse);
 
+    await tester.scrollUntilVisible(
+      find.text('À la journée'),
+      -500,
+      scrollable: find.byType(Scrollable),
+    );
     await tester.tap(find.text('À la journée'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('trip-create-rooms-module-switch')),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
     expect(_roomsModuleSwitchToggled(tester), isTrue);
   });
 }
