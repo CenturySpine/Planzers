@@ -1356,6 +1356,7 @@ class _DayTripToggleCard extends StatelessWidget {
 
 class _NeonSwitch extends StatelessWidget {
   const _NeonSwitch({
+    super.key,
     required this.value,
     required this.onChanged,
   });

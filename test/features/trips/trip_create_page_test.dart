@@ -61,6 +61,7 @@ class _FakeAccountRepository implements AccountRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+// ignore: subtype_of_sealed_class
 class _FakeUserSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
   @override
   Map<String, dynamic>? data() {
