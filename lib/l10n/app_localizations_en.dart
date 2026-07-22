@@ -223,6 +223,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInAuthBetaPill => 'BETA';
 
   @override
+  String get signInOrDividerLabel => 'or';
+
+  @override
+  String get signInPasswordFieldLabel => 'Password';
+
+  @override
+  String get signInPasswordShowTooltip => 'Show password';
+
+  @override
+  String get signInPasswordHideTooltip => 'Hide password';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Sign in';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Create an account';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp => 'No account? Create one';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Already have an account? Sign in';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'An account already exists with this email address.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Password is too weak.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'Incorrect email or password.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Unable to sign in. Please try again.';
+
+  @override
   String get accountTitle => 'My account';
 
   @override
@@ -3577,6 +3628,57 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'or';
+
+  @override
+  String get signInPasswordFieldLabel => 'Password';
+
+  @override
+  String get signInPasswordShowTooltip => 'Show password';
+
+  @override
+  String get signInPasswordHideTooltip => 'Hide password';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Sign in';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Create an account';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp => 'No account? Create one';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Already have an account? Sign in';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'An account already exists with this email address.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Password is too weak.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'Incorrect email or password.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Unable to sign in. Please try again.';
 
   @override
   String get accountTitle => 'My account';

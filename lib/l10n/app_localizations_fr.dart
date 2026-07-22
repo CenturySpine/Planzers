@@ -224,6 +224,58 @@ class AppLocalizationsFr extends AppLocalizations {
   String get signInAuthBetaPill => 'BETA';
 
   @override
+  String get signInOrDividerLabel => 'ou';
+
+  @override
+  String get signInPasswordFieldLabel => 'Mot de passe';
+
+  @override
+  String get signInPasswordShowTooltip => 'Afficher le mot de passe';
+
+  @override
+  String get signInPasswordHideTooltip => 'Masquer le mot de passe';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Se connecter';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp =>
+      'Pas de compte ? Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Déjà un compte ? Se connecter';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Le mot de passe doit contenir au moins 6 caractères.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'Un compte existe déjà avec cette adresse e-mail.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Mot de passe trop faible.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'E-mail ou mot de passe incorrect.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Trop de tentatives. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Impossible de se connecter. Réessaie.';
+
+  @override
   String get accountTitle => 'Mon compte';
 
   @override
@@ -3608,6 +3660,58 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'ou';
+
+  @override
+  String get signInPasswordFieldLabel => 'Mot de passe';
+
+  @override
+  String get signInPasswordShowTooltip => 'Afficher le mot de passe';
+
+  @override
+  String get signInPasswordHideTooltip => 'Masquer le mot de passe';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Se connecter';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp =>
+      'Pas de compte ? Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Déjà un compte ? Se connecter';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Le mot de passe doit contenir au moins 6 caractères.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'Un compte existe déjà avec cette adresse e-mail.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Mot de passe trop faible.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'E-mail ou mot de passe incorrect.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Trop de tentatives. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Impossible de se connecter. Réessaie.';
 
   @override
   String get accountTitle => 'Mon compte';

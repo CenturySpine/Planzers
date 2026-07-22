@@ -502,6 +502,96 @@ abstract class AppLocalizations {
   /// **'BETA'**
   String get signInAuthBetaPill;
 
+  /// No description provided for @signInOrDividerLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'ou'**
+  String get signInOrDividerLabel;
+
+  /// No description provided for @signInPasswordFieldLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe'**
+  String get signInPasswordFieldLabel;
+
+  /// No description provided for @signInPasswordShowTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher le mot de passe'**
+  String get signInPasswordShowTooltip;
+
+  /// No description provided for @signInPasswordHideTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Masquer le mot de passe'**
+  String get signInPasswordHideTooltip;
+
+  /// No description provided for @signInEmailPasswordSignInCta.
+  ///
+  /// In fr, this message translates to:
+  /// **'Se connecter'**
+  String get signInEmailPasswordSignInCta;
+
+  /// No description provided for @signInEmailPasswordSignUpCta.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer un compte'**
+  String get signInEmailPasswordSignUpCta;
+
+  /// No description provided for @signInEmailPasswordToggleToSignUp.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de compte ? Créer un compte'**
+  String get signInEmailPasswordToggleToSignUp;
+
+  /// No description provided for @signInEmailPasswordToggleToSignIn.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà un compte ? Se connecter'**
+  String get signInEmailPasswordToggleToSignIn;
+
+  /// No description provided for @signInEmailPasswordInvalidEmail.
+  ///
+  /// In fr, this message translates to:
+  /// **'Adresse e-mail invalide.'**
+  String get signInEmailPasswordInvalidEmail;
+
+  /// No description provided for @signInEmailPasswordTooShortPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le mot de passe doit contenir au moins 6 caractères.'**
+  String get signInEmailPasswordTooShortPassword;
+
+  /// No description provided for @signInEmailPasswordEmailInUse.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un compte existe déjà avec cette adresse e-mail.'**
+  String get signInEmailPasswordEmailInUse;
+
+  /// No description provided for @signInEmailPasswordWeakPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe trop faible.'**
+  String get signInEmailPasswordWeakPassword;
+
+  /// No description provided for @signInEmailPasswordInvalidCredentials.
+  ///
+  /// In fr, this message translates to:
+  /// **'E-mail ou mot de passe incorrect.'**
+  String get signInEmailPasswordInvalidCredentials;
+
+  /// No description provided for @signInEmailPasswordTooManyRequests.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trop de tentatives. Patiente quelques minutes puis réessaie.'**
+  String get signInEmailPasswordTooManyRequests;
+
+  /// No description provided for @signInEmailPasswordFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de se connecter. Réessaie.'**
+  String get signInEmailPasswordFailed;
+
   /// No description provided for @accountTitle.
   ///
   /// In fr, this message translates to:
