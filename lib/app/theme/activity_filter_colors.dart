@@ -36,6 +36,13 @@ extension ActivityFilterGroupColors on ActivityFilterGroup {
         ActivityFilterGroup.trajets => const Color(0xFFC9DEFF),
       };
 
+  Color get filterInkColor => switch (this) {
+        ActivityFilterGroup.repas => const Color(0xFF9A6400),
+        ActivityFilterGroup.nuits => const Color(0xFF5B36C9),
+        ActivityFilterGroup.loisirs => const Color(0xFF067A55),
+        ActivityFilterGroup.trajets => const Color(0xFF1D5FD6),
+      };
+
   IconData get filterIcon => switch (this) {
         ActivityFilterGroup.repas => Icons.restaurant_outlined,
         ActivityFilterGroup.nuits => Icons.hotel_outlined,

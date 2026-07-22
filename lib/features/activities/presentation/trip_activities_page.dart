@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/static_colors.dart';
+import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_creators_provider.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
@@ -287,37 +288,22 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Row(
-                    children: [
-                      for (final group in ActivityFilterGroup.values) ...[
-                        Expanded(
-                          child: _ActivityFilterChip(
-                            label: filterLabels[group]!,
-                            icon: group.filterIcon,
-                            color: group.filterColor,
-                            selected: _activeFilters.contains(group),
-                            onToggle: () => setState(() {
-                              if (_activeFilters.contains(group)) {
-                                _activeFilters.remove(group);
-                              } else {
-                                _activeFilters.add(group);
-                              }
-                            }),
-                          ),
-                        ),
-                        if (group != ActivityFilterGroup.values.last)
-                          const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
+                TripActivitiesFilterChips(
+                  activeFilters: _activeFilters,
+                  filterLabels: filterLabels,
+                  onToggle: (group) => setState(() {
+                    if (_activeFilters.contains(group)) {
+                      _activeFilters.remove(group);
+                    } else {
+                      _activeFilters.add(group);
+                    }
+                  }),
                 ),
-                TabBar(
-                  tabs: [
-                    Tab(text: l10n.activitiesTabSuggestions),
-                    Tab(text: l10n.activitiesTabPlanned),
-                    Tab(text: l10n.activitiesTabAgenda),
+                TripActivitiesSegmentedTabBar(
+                  labels: [
+                    l10n.activitiesTabSuggestions,
+                    l10n.activitiesTabPlanned,
+                    l10n.activitiesTabAgenda,
                   ],
                 ),
                 Expanded(
@@ -349,6 +335,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         centerDay: _agendaCenterDay,
                         selectedDay: _agendaSelectedDay,
                         plannedDays: plannedDays,
+                        tripStartDate: trip.startDate,
+                        tripEndDate: trip.endDate,
                         agendaEntries: agendaEntries,
                         tripId: trip.id,
                         tripMemberPublicLabels: memberLabels,
@@ -382,14 +370,18 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       userId: myUid,
     );
 
-    return Scaffold(
-      body: body,
-      floatingActionButton: canSuggestActivity
-          ? _ActivitiesExpandableFab(
-              tripId: trip.id,
-              canCreateMeal: canCreateMeal,
-            )
-          : null,
+    return Theme(
+      data: NeonPalette.overlayOn(Theme.of(context)),
+      child: Scaffold(
+        backgroundColor: NeonPalette.scaffoldBackground,
+        body: body,
+        floatingActionButton: canSuggestActivity
+            ? _ActivitiesExpandableFab(
+                tripId: trip.id,
+                canCreateMeal: canCreateMeal,
+              )
+            : null,
+      ),
     );
   }
 }
@@ -399,6 +391,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.centerDay,
     required this.selectedDay,
     required this.plannedDays,
+    required this.tripStartDate,
+    required this.tripEndDate,
     required this.agendaEntries,
     required this.tripId,
     required this.tripMemberPublicLabels,
@@ -412,6 +406,8 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final DateTime centerDay;
   final DateTime selectedDay;
   final Set<DateTime> plannedDays;
+  final DateTime? tripStartDate;
+  final DateTime? tripEndDate;
   final List<TripActivitiesListEntry> agendaEntries;
   final String tripId;
   final Map<String, String> tripMemberPublicLabels;
@@ -429,23 +425,17 @@ class _ActivitiesAgendaTab extends StatelessWidget {
       7,
       (index) => weekStart.add(Duration(days: index)),
     );
-    final monthSpans = _agendaMonthSpans(
-      weekDays,
-      localeTag: Localizations.localeOf(context).toString(),
-    );
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-          child: _AgendaWeekGrid(
-            weekDays: weekDays,
-            monthSpans: monthSpans,
-            selectedDay: selectedDay,
-            plannedDays: plannedDays,
-            onSelectDay: onSelectDay,
-            onMoveBackward: onMoveBackward,
-            onMoveForward: onMoveForward,
-          ),
+        TripActivitiesAgendaWeekStrip(
+          weekDays: weekDays,
+          selectedDay: selectedDay,
+          plannedDays: plannedDays,
+          tripStartDate: tripStartDate,
+          tripEndDate: tripEndDate,
+          onSelectDay: onSelectDay,
+          onMoveBackward: onMoveBackward,
+          onMoveForward: onMoveForward,
         ),
         Expanded(
           child: agendaEntries.isEmpty
@@ -455,17 +445,18 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                     child: Text(
                       AppLocalizations.of(context)!.activitiesNoPlannedThisDay,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: NeonPalette.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
                   itemCount: agendaEntries.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: tripActivitiesCardGap),
                   itemBuilder: (context, index) {
                     final entry = agendaEntries[index];
                     final activity = entry.activity;
@@ -491,247 +482,6 @@ class _ActivitiesAgendaTab extends StatelessWidget {
       ],
     );
   }
-}
-
-class _AgendaDayCell extends StatelessWidget {
-  const _AgendaDayCell({
-    required this.day,
-    required this.isSelected,
-    required this.hasPlannedActivities,
-    required this.onTap,
-  });
-
-  final DateTime day;
-  final bool isSelected;
-  final bool hasPlannedActivities;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isToday =
-        tripActivitiesSameDay(day, tripActivityDateOnly(DateTime.now()));
-    final textColor = isSelected ? scheme.onPrimary : scheme.onSurface;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: isSelected ? scheme.primary : scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isToday ? scheme.primary : Colors.transparent,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                DateFormat(
-                  'E',
-                  Localizations.localeOf(context).toString(),
-                ).format(day),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                DateFormat('d').format(day),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              SizedBox(
-                height: 8,
-                child: hasPlannedActivities
-                    ? DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? scheme.secondaryContainer
-                              : scheme.secondary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const SizedBox(width: 8, height: 8),
-                      )
-                    : const SizedBox(width: 8),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AgendaWeekGrid extends StatelessWidget {
-  const _AgendaWeekGrid({
-    required this.weekDays,
-    required this.monthSpans,
-    required this.selectedDay,
-    required this.plannedDays,
-    required this.onSelectDay,
-    required this.onMoveBackward,
-    required this.onMoveForward,
-  });
-
-  final List<DateTime> weekDays;
-  final List<_AgendaMonthSpan> monthSpans;
-  final DateTime selectedDay;
-  final Set<DateTime> plannedDays;
-  final ValueChanged<DateTime> onSelectDay;
-  final VoidCallback onMoveBackward;
-  final VoidCallback onMoveForward;
-  static const _chevronSlotWidth = 36.0;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: scheme.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-        );
-    return Column(
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: _chevronSlotWidth),
-            Expanded(
-              child: SizedBox(
-                height: 16,
-                child: Row(
-                  children: [
-                    for (var i = 0; i < monthSpans.length; i++)
-                      Expanded(
-                        flex: monthSpans[i].dayCount,
-                        child: Container(
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            border: i < monthSpans.length - 1
-                                ? Border(
-                                    right: BorderSide(
-                                      color: scheme.outlineVariant,
-                                      width: 1,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          child: Text(
-                            monthSpans[i].monthLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textStyle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: _chevronSlotWidth),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            SizedBox(
-              width: _chevronSlotWidth,
-              child: Center(
-                child: IconButton(
-                  onPressed: onMoveBackward,
-                  icon: const Icon(Icons.chevron_left),
-                  tooltip: AppLocalizations.of(context)!.activitiesPreviousWeek,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: _chevronSlotWidth,
-                    height: _chevronSlotWidth,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Row(
-                children: [
-                  for (final day in weekDays)
-                    Expanded(
-                      child: _AgendaDayCell(
-                        day: day,
-                        isSelected: tripActivitiesSameDay(day, selectedDay),
-                        hasPlannedActivities: plannedDays.contains(day),
-                        onTap: () => onSelectDay(day),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: _chevronSlotWidth,
-              child: Center(
-                child: IconButton(
-                  onPressed: onMoveForward,
-                  icon: const Icon(Icons.chevron_right),
-                  tooltip: AppLocalizations.of(context)!.activitiesNextWeek,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: _chevronSlotWidth,
-                    height: _chevronSlotWidth,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _AgendaMonthSpan {
-  const _AgendaMonthSpan({required this.monthLabel, required this.dayCount});
-
-  final String monthLabel;
-  final int dayCount;
-}
-
-List<_AgendaMonthSpan> _agendaMonthSpans(
-  List<DateTime> weekDays, {
-  required String localeTag,
-}) {
-  final spans = <_AgendaMonthSpan>[];
-  for (final day in weekDays) {
-    if (spans.isEmpty ||
-        spans.last.monthLabel != _agendaMonthLabel(day, localeTag)) {
-      spans.add(
-        _AgendaMonthSpan(
-          monthLabel: _agendaMonthLabel(day, localeTag),
-          dayCount: 1,
-        ),
-      );
-    } else {
-      final previous = spans.removeLast();
-      spans.add(
-        _AgendaMonthSpan(
-          monthLabel: previous.monthLabel,
-          dayCount: previous.dayCount + 1,
-        ),
-      );
-    }
-  }
-  return spans;
-}
-
-String _agendaMonthLabel(DateTime day, String localeTag) {
-  return DateFormat('MMMM', localeTag).format(day);
 }
 
 class _ActivitiesExpandableFab extends StatefulWidget {
@@ -830,6 +580,11 @@ class _ActivitiesExpandableFabState extends State<_ActivitiesExpandableFab> {
         FloatingActionButton(
           heroTag: 'trip_activities_add',
           onPressed: _toggle,
+          backgroundColor: NeonPalette.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: AnimatedRotation(
             turns: _isOpen ? 0.125 : 0,
             duration: const Duration(milliseconds: 200),
@@ -890,67 +645,3 @@ class _FabMenuItem extends StatelessWidget {
   }
 }
 
-class _ActivityFilterChip extends StatelessWidget {
-  const _ActivityFilterChip({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.selected,
-    required this.onToggle,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool selected;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = selected ? color : StaticColors.cardBackground;
-    final iconColor = selected ? Colors.white : color;
-    final labelColor = selected
-        ? Colors.white
-        : Theme.of(context).colorScheme.onSurface;
-    return GestureDetector(
-      onTap: onToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : StaticColors.cardBorder,
-          ),
-          boxShadow: selected
-              ? null
-              : [
-                  BoxShadow(
-                    color: StaticColors.cardShadowColor,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 24, color: iconColor),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: labelColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

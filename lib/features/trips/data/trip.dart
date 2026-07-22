@@ -13,6 +13,9 @@ class Trip {
     this.shoppingMeetupLinkUrl = '',
     required this.photosStorageUrl,
     required this.cupidonModeEnabled,
+    this.carpoolModuleEnabled = true,
+    this.roomsModuleEnabled = true,
+    this.gamesModuleEnabled = true,
     required this.ownerId,
     required this.memberUserIds,
     required this.createdAt,
@@ -45,6 +48,9 @@ class Trip {
   final String shoppingMeetupLinkUrl;
   final String photosStorageUrl;
   final bool cupidonModeEnabled;
+  final bool carpoolModuleEnabled;
+  final bool roomsModuleEnabled;
+  final bool gamesModuleEnabled;
   final String ownerId;
 
   /// Firebase UIDs of all members. Managed server-side for Firestore rules.
@@ -134,6 +140,9 @@ class Trip {
               : ((data['carpoolShoppingMeetupLinkUrl'] as String?) ?? ''),
       photosStorageUrl: (data['photosStorageUrl'] as String?) ?? '',
       cupidonModeEnabled: data['cupidonModeEnabled'] != false,
+      carpoolModuleEnabled: data['carpoolModuleEnabled'] ?? true,
+      roomsModuleEnabled: data['roomsModuleEnabled'] ?? true,
+      gamesModuleEnabled: data['gamesModuleEnabled'] ?? true,
       ownerId: (data['ownerId'] as String?) ?? '',
       memberUserIds: ((data['memberUserIds'] as List<dynamic>?) ?? const [])
           .map((e) => e.toString())
@@ -192,6 +201,9 @@ class Trip {
         'shoppingMeetupLinkPreview': shoppingMeetupLinkPreview,
       'photosStorageUrl': photosStorageUrl,
       'cupidonModeEnabled': cupidonModeEnabled,
+      'carpoolModuleEnabled': carpoolModuleEnabled,
+      'roomsModuleEnabled': roomsModuleEnabled,
+      'gamesModuleEnabled': gamesModuleEnabled,
       'ownerId': ownerId,
       'memberUserIds': memberUserIds,
       'createdAt': createdAt.toIso8601String(),

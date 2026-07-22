@@ -836,7 +836,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               '/trips/${_trip.id}/activities?agendaDay=${_agendaDayParam(_resolvedAgendaDay(today))}',
                             ),
                           ),
-                          if (!_trip.isDayTrip) ...[
+                          if (_trip.roomsModuleEnabled && !_trip.isDayTrip) ...[
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileRooms,
@@ -855,39 +855,43 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   context.go('/trips/${_trip.id}/rooms'),
                             ),
                           ],
-                          const SizedBox(height: 10),
-                          TripOverviewModuleCard(
-                            label: l10n.tripOverviewTileCarpool,
-                            icon: Icons.directions_car_outlined,
-                            count: carpools.length,
-                            tileColor: NeonPalette.overviewModuleCarpoolTile,
-                            inkColor: NeonPalette.overviewModuleCarpoolInk,
-                            statusText: _moduleStatusText(
-                              detailLines: myCarpoolDetailLines,
-                              emptyStateMessage:
-                                  l10n.tripCarpoolTileNoAssignment,
+                          if (_trip.carpoolModuleEnabled) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripOverviewTileCarpool,
+                              icon: Icons.directions_car_outlined,
+                              count: carpools.length,
+                              tileColor: NeonPalette.overviewModuleCarpoolTile,
+                              inkColor: NeonPalette.overviewModuleCarpoolInk,
+                              statusText: _moduleStatusText(
+                                detailLines: myCarpoolDetailLines,
+                                emptyStateMessage:
+                                    l10n.tripCarpoolTileNoAssignment,
+                              ),
+                              onTap: () =>
+                                  context.go('/trips/${_trip.id}/carpool'),
                             ),
-                            onTap: () =>
-                                context.go('/trips/${_trip.id}/carpool'),
-                          ),
-                          const SizedBox(height: 10),
-                          TripOverviewModuleCard(
-                            label: l10n.tripOverviewTileGames,
-                            icon: Icons.sports_esports_outlined,
-                            count: boardGamesCount,
-                            tileColor: NeonPalette.overviewModuleGamesTile,
-                            inkColor: NeonPalette.overviewModuleGamesInk,
-                            statusText: _moduleStatusText(
-                              detailLines: boardGamesDetailLines,
-                              emptyStateMessage:
-                                  l10n.tripOverviewTileNoBoardGames,
-                              moreDetailsLabelBuilder: (extraCount) =>
-                                  l10n.tripOverviewTileGamesAndMore(
-                                      extraCount),
+                          ],
+                          if (_trip.gamesModuleEnabled) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripOverviewTileGames,
+                              icon: Icons.sports_esports_outlined,
+                              count: boardGamesCount,
+                              tileColor: NeonPalette.overviewModuleGamesTile,
+                              inkColor: NeonPalette.overviewModuleGamesInk,
+                              statusText: _moduleStatusText(
+                                detailLines: boardGamesDetailLines,
+                                emptyStateMessage:
+                                    l10n.tripOverviewTileNoBoardGames,
+                                moreDetailsLabelBuilder: (extraCount) =>
+                                    l10n.tripOverviewTileGamesAndMore(
+                                        extraCount),
+                              ),
+                              onTap: () =>
+                                  context.push('/trips/${_trip.id}/games'),
                             ),
-                            onTap: () =>
-                                context.push('/trips/${_trip.id}/games'),
-                          ),
+                          ],
                           if (photosStorageUrl.isNotEmpty) ...[
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
