@@ -423,7 +423,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       children: [
                         SizedBox(
                           height:
-                              (constraints.maxHeight * 0.17).clamp(40.0, 190.0),
+                              (constraints.maxHeight * 0.06).clamp(16.0, 80.0),
                         ),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 360),
