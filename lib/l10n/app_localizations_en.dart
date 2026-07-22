@@ -1557,6 +1557,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Trip ID copy error: $error';
+  }
+
+  @override
   String get cupidonEnabled => 'Cupidon mode enabled';
 
   @override
@@ -4942,6 +4953,17 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Invite code copy error: $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Trip ID copy error: $error';
   }
 
   @override

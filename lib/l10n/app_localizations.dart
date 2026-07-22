@@ -2856,6 +2856,24 @@ abstract class AppLocalizations {
   /// **'Erreur copie du code : {error}'**
   String tripOverviewInviteCodeCopyError(Object error);
 
+  /// No description provided for @tripOverviewCopyTripId.
+  ///
+  /// In fr, this message translates to:
+  /// **'Copier l\'identifiant du voyage'**
+  String get tripOverviewCopyTripId;
+
+  /// No description provided for @tripOverviewTripIdCopied.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identifiant du voyage copié dans le presse-papiers'**
+  String get tripOverviewTripIdCopied;
+
+  /// No description provided for @tripOverviewTripIdCopyError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur copie de l\'identifiant : {error}'**
+  String tripOverviewTripIdCopyError(Object error);
+
   /// No description provided for @cupidonEnabled.
   ///
   /// In fr, this message translates to:

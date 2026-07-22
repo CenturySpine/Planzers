@@ -1575,6 +1575,18 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewTripIdCopied =>
+      'Identifiant du voyage copié dans le presse-papiers';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Erreur copie de l\'identifiant : $error';
+  }
+
+  @override
   String get cupidonEnabled => 'Mode Cupidon activé';
 
   @override
@@ -4991,6 +5003,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Erreur copie du code : $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewTripIdCopied =>
+      'Identifiant du voyage copié dans le presse-papiers';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Erreur copie de l\'identifiant : $error';
   }
 
   @override

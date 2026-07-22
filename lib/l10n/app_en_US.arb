@@ -613,6 +613,12 @@
   "@tripOverviewInviteCodeCopyError": {
     "placeholders": {"error": {}}
   },
+  "tripOverviewCopyTripId": "Copy trip ID",
+  "tripOverviewTripIdCopied": "Trip ID copied to clipboard",
+  "tripOverviewTripIdCopyError": "Trip ID copy error: {error}",
+  "@tripOverviewTripIdCopyError": {
+    "placeholders": {"error": {}}
+  },
   "cupidonEnabled": "Cupidon mode enabled",
   "cupidonDisabled": "Cupidon mode disabled",
   "cupidonModeTitle": "Cupidon mode",

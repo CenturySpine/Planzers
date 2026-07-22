@@ -76,6 +76,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     context.push(TripCreatePage.editRoutePath(_trip.id));
   }
 
+  Future<void> _copyTripId() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await Clipboard.setData(ClipboardData(text: _trip.id));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripOverviewTripIdCopied)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.tripOverviewTripIdCopyError(e.toString())),
+        ),
+      );
+    }
+  }
+
   Future<void> _shareInviteCode() async {
     final l10n = AppLocalizations.of(context)!;
     if (_inviteCodeBusy) return;
@@ -468,6 +486,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           icon: Icons.settings_outlined,
           label: l10n.tripSettingsTitle,
           onTap: () => context.go('/trips/${_trip.id}/settings'),
+        ),
+      );
+    }
+    if (isTripMember) {
+      rows.add(
+        TripOverviewSettingsRowData(
+          icon: Icons.copy_outlined,
+          label: l10n.tripOverviewCopyTripId,
+          onTap: _copyTripId,
         ),
       );
     }
