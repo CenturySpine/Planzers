@@ -164,7 +164,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                       const [],
                                   emptyMessage: l10n.tripsEmptyPast,
                                   onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                      context.go('/trips/$tripId/overview'),
                                 ),
                                 _TripsTimelineList(
                                   category: _TripTimelineCategory.ongoing,
@@ -173,7 +173,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                           const [],
                                   emptyMessage: l10n.tripsEmptyOngoing,
                                   onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                      context.go('/trips/$tripId/overview'),
                                 ),
                                 _TripsTimelineList(
                                   category: _TripTimelineCategory.upcoming,
@@ -182,7 +182,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                                           const [],
                                   emptyMessage: l10n.tripsEmptyUpcoming,
                                   onOpenTrip: (tripId) =>
-                                      context.push('/trips/$tripId/overview'),
+                                      context.go('/trips/$tripId/overview'),
                                 ),
                               ],
                             ),
@@ -233,7 +233,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       ),
                       _FooterSeparator(color: legalLinkColor),
                       TextButton(
-                        onPressed: () => context.push(AboutPage.routePath),
+                        onPressed: () => context.go(AboutPage.routePath),
                         style: TextButton.styleFrom(
                           foregroundColor: legalLinkColor,
                           textStyle: const TextStyle(

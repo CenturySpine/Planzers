@@ -103,7 +103,7 @@ class HelpSupportPage extends ConsumerWidget {
                   _ContactTile(
                     icon: Icons.person_outline,
                     label: l10n.helpSupportAboutLinkLabel,
-                    onTap: () => context.push(AboutPage.routePath),
+                    onTap: () => context.go(AboutPage.routePath),
                   ),
                 ],
               ),

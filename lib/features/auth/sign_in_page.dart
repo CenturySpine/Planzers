@@ -777,7 +777,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () => context.push(AboutPage.routePath),
+                      onPressed: () => context.go(AboutPage.routePath),
                       style: TextButton.styleFrom(
                         foregroundColor: legalLinkColor,
                         textStyle: const TextStyle(

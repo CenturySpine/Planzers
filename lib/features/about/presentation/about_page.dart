@@ -1,6 +1,7 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -131,6 +132,11 @@ class _AboutPageState extends State<AboutPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.aboutTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
