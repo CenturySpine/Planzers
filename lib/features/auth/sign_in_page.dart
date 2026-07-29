@@ -8,7 +8,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
-import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -18,6 +17,7 @@ import 'package:planerz/features/legal/presentation/legal_information_page.dart'
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
 const Color _googleSignInText = Color(0xFF3C4043);
@@ -994,7 +994,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () => context.go(AboutPage.routePath),
+                      onPressed: () => launchUrl(
+                        Uri.parse('https://centuryspine.org'),
+                        mode: LaunchMode.externalApplication,
+                      ),
                       style: TextButton.styleFrom(
                         foregroundColor: legalLinkColor,
                         textStyle: const TextStyle(

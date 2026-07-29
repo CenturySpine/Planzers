@@ -8,7 +8,6 @@ import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
-import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/account/presentation/account_menu_button.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
@@ -20,6 +19,7 @@ import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dar
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
@@ -233,7 +233,10 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       ),
                       _FooterSeparator(color: legalLinkColor),
                       TextButton(
-                        onPressed: () => context.go(AboutPage.routePath),
+                        onPressed: () => launchUrl(
+                          Uri.parse('https://centuryspine.org'),
+                          mode: LaunchMode.externalApplication,
+                        ),
                         style: TextButton.styleFrom(
                           foregroundColor: legalLinkColor,
                           textStyle: const TextStyle(
