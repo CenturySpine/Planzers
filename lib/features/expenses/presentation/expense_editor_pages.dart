@@ -5,6 +5,7 @@ import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
+import 'package:planerz/features/expenses/presentation/expense_edit_selection.dart';
 import 'package:planerz/features/expenses/presentation/expense_format.dart';
 import 'package:planerz/features/expenses/presentation/expense_icon_picker_sheet.dart';
 import 'package:planerz/features/trips/data/participant_group.dart';
@@ -353,14 +354,14 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
     );
     _currency = widget.expense.currency;
     _iconKey = widget.expense.icon;
-    final paid = widget.expense.paidBy.trim();
-    _paidBy = scope.contains(paid) ? paid : null;
-    _participantIds = widget.expense.participantIds
-        .where((id) => scope.contains(id.trim()))
-        .map((id) => id.trim())
-        .toSet();
-    if (_participantIds.isEmpty && scope.isNotEmpty) _participantIds = {...scope};
-    if (_paidBy == null && scope.isNotEmpty) _paidBy = scope.first;
+    _paidBy = initialExpenseEditPaidBy(
+      storedPaidBy: widget.expense.paidBy,
+      fallbackScopeIds: scope,
+    );
+    _participantIds = initialExpenseEditParticipantIds(
+      storedParticipantIds: widget.expense.participantIds,
+      fallbackScopeIds: scope,
+    );
     _expenseDate = DateTime(
       widget.expense.expenseDate.year,
       widget.expense.expenseDate.month,
@@ -554,10 +555,11 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final members = widget.participantScopeMemberIds
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toList();
+    final members = editableExpenseMemberIds(
+      scopeIds: widget.participantScopeMemberIds,
+      participantIds: _participantIds,
+      paidBy: _paidBy,
+    );
     final groups =
         ref.watch(tripParticipantGroupsStreamProvider(widget.tripId)).asData?.value ??
             const <ParticipantGroup>[];

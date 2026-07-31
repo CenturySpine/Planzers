@@ -19,6 +19,12 @@ const {
   enqueueTripNotification,
   claimAndDeleteNotificationQueueDoc,
 } = require('./notification_queue');
+const {
+  assertTripInviteToken,
+  completeJoinTripWithInvite,
+  inviteTokenLookupValues,
+  inviteTokensMatch,
+} = require('./invite_join');
 
 admin.initializeApp();
 setGlobalOptions({ region: 'europe-west9' });
@@ -60,24 +66,6 @@ function emailLocalPart(email) {
   if (!e) return '';
   const at = e.indexOf('@');
   return at > 0 ? e.slice(0, at).trim() : e;
-}
-
-const PARTICIPANT_NAME_MIN_LEN = 2;
-const PARTICIPANT_NAME_MAX_LEN = 50;
-
-/** Required when joining without claiming a pre-planned participant slot. */
-function assertParticipantNameForNewJoin(rawName) {
-  const name = normalizeString(rawName);
-  if (
-    name.length < PARTICIPANT_NAME_MIN_LEN ||
-    name.length > PARTICIPANT_NAME_MAX_LEN
-  ) {
-    throw new HttpsError(
-      'invalid-argument',
-      'Indique ton prénom ou pseudo pour rejoindre ce voyage (2 à 50 caractères).'
-    );
-  }
-  return name;
 }
 
 async function fetchHtml(url) {
@@ -465,17 +453,6 @@ async function assertTripParticipantPermission({
     throw new HttpsError('permission-denied', deniedMessage);
   }
 }
-
-function assertTripInviteToken(data, token) {
-  const expectedToken = normalizeString(data.inviteToken);
-  if (!expectedToken || expectedToken !== token) {
-    throw new HttpsError(
-      'permission-denied',
-      'Lien d invitation invalide ou expire'
-    );
-  }
-}
-
 
 /**
  * @param {unknown} raw
@@ -2377,105 +2354,6 @@ exports.generateTripBoardGameLinkPreviewOnCreate = onDocumentCreated(
   }
 );
 
-/**
- * Adds [uid] to trip members if [token] matches the trip inviteToken.
- * When the trip still has placeholder members, [placeholderMemberId] must name
- * the placeholder row to claim (replaced by [uid]), unless
- * [bypassPlaceholderChoice] is true.
- * @param {FirebaseFirestore.DocumentReference} tripRef
- * @param {string} uid
- * @param {string} token
- * @param {string} placeholderMemberId
- * @param {boolean} bypassPlaceholderChoice
- */
-async function completeJoinTripWithInvite(
-  tripRef,
-  uid,
-  token,
-  participantSlotId,
-  bypassParticipantChoice,
-  newParticipantName,
-  useProfileNameForJoin
-) {
-  const slotArg = normalizeString(participantSlotId);
-  const bypass = bypassParticipantChoice === true;
-  const db = admin.firestore();
-
-  // Validate token and check membership outside the transaction first.
-  const [tripSnap, participantsSnap] = await Promise.all([
-    tripRef.get(),
-    tripRef.collection('participants').get(),
-  ]);
-  if (!tripSnap.exists) {
-    throw new HttpsError('not-found', 'Voyage introuvable');
-  }
-  const data = tripSnap.data() || {};
-  assertTripInviteToken(data, token);
-
-  const memberUserIds = Array.isArray(data.memberUserIds)
-    ? data.memberUserIds.map((v) => String(v))
-    : [];
-  if (memberUserIds.includes(uid)) {
-    return;
-  }
-
-  const unclaimedSlots = participantsSnap.docs.filter((d) => {
-    const userId = normalizeString(d.data().userId);
-    const isChild = d.data().isChild === true;
-    return !userId && !isChild;
-  });
-
-  let claimedParticipantRef = null;
-
-  if (unclaimedSlots.length > 0 && !bypass) {
-    if (!slotArg) {
-      throw new HttpsError(
-        'invalid-argument',
-        'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
-      );
-    }
-    const slotDoc = participantsSnap.docs.find((d) => d.id === slotArg);
-    if (!slotDoc || normalizeString(slotDoc.data().userId)) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce voyageur a déjà été choisi ou est introuvable.'
-      );
-    }
-    if (slotDoc.data().isChild === true) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
-      );
-    }
-    claimedParticipantRef = slotDoc.ref;
-  }
-
-  // Claim an existing slot or create a new participant document.
-  if (claimedParticipantRef) {
-    await claimedParticipantRef.update({ userId: uid });
-  } else {
-    const participantName = assertParticipantNameForNewJoin(newParticipantName);
-    const defaultStay = defaultStayForTrip(data);
-    const newParticipantDoc = {
-      participantName,
-      userId: uid,
-      ...defaultStay,
-      cupidonEnabled: false,
-      phoneVisibility: 'nobody',
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    if (useProfileNameForJoin === true) {
-      newParticipantDoc.useProfileName = true;
-    }
-    await tripRef.collection('participants').add(newParticipantDoc);
-  }
-
-  await tripRef.update({
-    memberUserIds: FieldValue.arrayUnion(uid),
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-}
-
 exports.getInviteJoinContext = onCall(
   {
   },
@@ -2497,20 +2375,24 @@ exports.getInviteJoinContext = onCall(
     if (tripIdIn) {
       tripRef = db.collection('trips').doc(tripIdIn);
     } else {
+      const lookupValues = inviteTokenLookupValues(token);
       const q = await db
         .collection('trips')
-        .where('inviteToken', '==', token)
+        .where('inviteToken', 'in', lookupValues)
         .limit(2)
         .get();
 
-      if (q.empty) {
+      const matchingDocs = q.docs.filter((doc) =>
+        inviteTokensMatch((doc.data() || {}).inviteToken, token)
+      );
+      if (matchingDocs.length === 0) {
         throw new HttpsError('not-found', 'Code d invitation inconnu');
       }
-      if (q.size > 1) {
+      if (matchingDocs.length > 1) {
         console.error('getInviteJoinContext duplicate token', token);
         throw new HttpsError('internal', 'Erreur serveur');
       }
-      tripRef = q.docs[0].ref;
+      tripRef = matchingDocs[0].ref;
     }
 
     const snap = await tripRef.get();
@@ -2744,15 +2626,16 @@ exports.joinTripWithInvite = onCall(
     const useProfileName = request.data?.useProfileName === true;
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
-    await completeJoinTripWithInvite(
+    await completeJoinTripWithInvite({
       tripRef,
       uid,
       token,
-      participantId,
+      participantSlotId: participantId,
       bypassParticipantChoice,
-      participantName,
-      useProfileName
-    );
+      newParticipantName: participantName,
+      useProfileNameForJoin: useProfileName,
+      defaultStayForTrip,
+    });
 
     return { ok: true };
   }
