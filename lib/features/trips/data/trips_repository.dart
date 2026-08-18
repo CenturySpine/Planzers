@@ -51,6 +51,39 @@ class ApplicationOwnerShowNonMemberTripsNotifier extends Notifier<bool> {
   }
 }
 
+/// In-memory only (not persisted). Includes archived trips in the trip list.
+final showArchivedTripsProvider =
+    NotifierProvider<ShowArchivedTripsNotifier, bool>(
+  ShowArchivedTripsNotifier.new,
+);
+
+class ShowArchivedTripsNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setShowArchivedTrips(bool value) {
+    state = value;
+  }
+}
+
+/// In-memory only (not persisted across app restarts). Remembers which
+/// timeline tab (past / ongoing / upcoming) was last shown on the trip list
+/// screen, so returning to that screen restores it instead of re-applying
+/// the startup default. Null means no tab has been shown yet this session.
+final tripsListLastTimelineIndexProvider =
+    NotifierProvider<TripsListLastTimelineIndexNotifier, int?>(
+  TripsListLastTimelineIndexNotifier.new,
+);
+
+class TripsListLastTimelineIndexNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void setIndex(int value) {
+    state = value;
+  }
+}
+
 final tripsStreamProvider = StreamProvider<List<Trip>>((ref) {
   final repo = ref.watch(tripsRepositoryProvider);
   final isApplicationOwner =

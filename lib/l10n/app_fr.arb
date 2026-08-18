@@ -223,6 +223,35 @@
       "error": {}
     }
   },
+  "tripsArchiveDialogTitle": "Archiver ce voyage ?",
+  "tripsArchiveDialogBody": "Il sera masqué de la liste des voyages. Vous pourrez le désarchiver à tout moment.\n\nVoyage : {tripTitle}",
+  "@tripsArchiveDialogBody": {
+    "placeholders": {
+      "tripTitle": {}
+    }
+  },
+  "tripsUnarchiveDialogTitle": "Désarchiver ce voyage ?",
+  "tripsUnarchiveDialogBody": "Il réapparaîtra dans la liste des voyages.\n\nVoyage : {tripTitle}",
+  "@tripsUnarchiveDialogBody": {
+    "placeholders": {
+      "tripTitle": {}
+    }
+  },
+  "tripsArchived": "Voyage archivé",
+  "tripsUnarchived": "Voyage désarchivé",
+  "tripsArchiveError": "Erreur archivage : {error}",
+  "@tripsArchiveError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsUnarchiveError": "Erreur désarchivage : {error}",
+  "@tripsUnarchiveError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsShowArchivedTrips": "Afficher les voyages archivés",
   "tripsFirestoreError": "Erreur Firestore : {error}",
   "@tripsFirestoreError": {
     "placeholders": {
@@ -624,6 +653,8 @@
     "placeholders": {"error": {}}
   },
   "tripOverviewCopyTripId": "Copier l'identifiant du voyage",
+  "tripOverviewArchiveTrip": "Archiver",
+  "tripOverviewUnarchiveTrip": "Désarchiver",
   "tripOverviewTripIdCopied": "Identifiant du voyage copié dans le presse-papiers",
   "tripOverviewTripIdCopyError": "Erreur copie de l'identifiant : {error}",
   "@tripOverviewTripIdCopyError": {

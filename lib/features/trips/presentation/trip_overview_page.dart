@@ -22,6 +22,7 @@ import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -354,6 +355,73 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
+  Future<void> _confirmAndToggleArchiveTrip() async {
+    final l10n = AppLocalizations.of(context)!;
+    final tripId = _trip.id;
+    final tripTitle = _trip.title;
+    final archiving = !ref.read(isTripArchivedForMeProvider(tripId));
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            archiving
+                ? l10n.tripsArchiveDialogTitle
+                : l10n.tripsUnarchiveDialogTitle,
+          ),
+          content: Text(
+            archiving
+                ? l10n.tripsArchiveDialogBody(tripTitle)
+                : l10n.tripsUnarchiveDialogBody(tripTitle),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                archiving
+                    ? l10n.tripOverviewArchiveTrip
+                    : l10n.tripOverviewUnarchiveTrip,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(tripArchiveRepositoryProvider)
+          .setTripArchivedForMe(tripId: tripId, archived: archiving);
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      if (archiving) {
+        context.go('/trips');
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(archiving ? l10n.tripsArchived : l10n.tripsUnarchived),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            archiving
+                ? l10n.tripsArchiveError(e.toString())
+                : l10n.tripsUnarchiveError(e.toString()),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _confirmAndLeaveTrip() async {
     final l10n = AppLocalizations.of(context)!;
     if (_isLeavingTrip) return;
@@ -460,6 +528,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     required bool canEditGeneralInfo,
     required bool canManageTripSettings,
     required bool canDeleteTrip,
+    required bool isArchivedForMe,
   }) {
     final rows = <TripOverviewSettingsRowData>[];
     if (isTripMember) {
@@ -495,6 +564,19 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           icon: Icons.copy_outlined,
           label: l10n.tripOverviewCopyTripId,
           onTap: _copyTripId,
+        ),
+      );
+    }
+    if (isTripMember) {
+      rows.add(
+        TripOverviewSettingsRowData(
+          icon: isArchivedForMe
+              ? Icons.unarchive_outlined
+              : Icons.archive_outlined,
+          label: isArchivedForMe
+              ? l10n.tripOverviewUnarchiveTrip
+              : l10n.tripOverviewArchiveTrip,
+          onTap: _confirmAndToggleArchiveTrip,
         ),
       );
     }
@@ -631,6 +713,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
+            isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
 
           return StreamBuilder<Map<String, Map<String, dynamic>>>(

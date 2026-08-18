@@ -13,6 +13,7 @@ import 'package:planerz/features/administration/data/maintenance_repository.dart
 import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dart';
@@ -43,6 +44,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
   @override
   void dispose() {
+    _tabController?.removeListener(_onTimelineTabChanged);
     _tabController?.dispose();
     super.dispose();
   }
@@ -57,6 +59,9 @@ class _TripsPageState extends ConsumerState<TripsPage>
         ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
     final showNonMemberTrips =
         ref.watch(applicationOwnerShowNonMemberTripsProvider);
+    final showArchivedTrips = ref.watch(showArchivedTripsProvider);
+    final myArchivedTripIds =
+        ref.watch(myArchivedTripIdsProvider).asData?.value ?? const <String>{};
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -88,6 +93,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: _TripsFilterRow(
+                      icon: Icons.groups_outlined,
                       label: l10n.tripsApplicationOwnerShowNonMemberTrips,
                       value: showNonMemberTrips,
                       onChanged: (value) {
@@ -100,10 +106,29 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       },
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: _TripsFilterRow(
+                    icon: Icons.archive_outlined,
+                    label: l10n.tripsShowArchivedTrips,
+                    value: showArchivedTrips,
+                    onChanged: (value) {
+                      ref
+                          .read(showArchivedTripsProvider.notifier)
+                          .setShowArchivedTrips(value);
+                    },
+                  ),
+                ),
                 Expanded(
                   child: tripsAsync.when(
                     data: (trips) {
-                      final grouped = _groupTripsByTimeline(trips);
+                      final visibleTrips = showArchivedTrips
+                          ? trips
+                          : trips
+                              .where((trip) =>
+                                  !myArchivedTripIds.contains(trip.id))
+                              .toList();
+                      final grouped = _groupTripsByTimeline(visibleTrips);
                       _ensureTimelineTabController(grouped);
                       final tabController = _tabController!;
                       final unreadByTrip = unreadByTripAsync.asData?.value ??
@@ -309,8 +334,32 @@ class _TripsPageState extends ConsumerState<TripsPage>
       Map<_TripTimelineCategory, List<Trip>> grouped) {
     if (_tabController != null) return;
 
-    _tabController =
-        TabController(length: 3, vsync: this, initialIndex: 2);
+    final lastIndex = ref.read(tripsListLastTimelineIndexProvider);
+    final initialIndex = lastIndex ?? _defaultTimelineIndex(grouped);
+
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    )..addListener(_onTimelineTabChanged);
+  }
+
+  /// Startup-only default: ongoing trips take priority over upcoming ones,
+  /// which take priority over past ones. Only used when the trip list has
+  /// no remembered tab from earlier in this app session.
+  int _defaultTimelineIndex(Map<_TripTimelineCategory, List<Trip>> grouped) {
+    if ((grouped[_TripTimelineCategory.ongoing] ?? const []).isNotEmpty) {
+      return 1;
+    }
+    return 2;
+  }
+
+  void _onTimelineTabChanged() {
+    final controller = _tabController;
+    if (controller == null || controller.indexIsChanging) return;
+    ref
+        .read(tripsListLastTimelineIndexProvider.notifier)
+        .setIndex(controller.index);
   }
 
   Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(
@@ -683,11 +732,13 @@ class _TripsPagePill extends StatelessWidget {
 
 class _TripsFilterRow extends StatelessWidget {
   const _TripsFilterRow({
+    required this.icon,
     required this.label,
     required this.value,
     required this.onChanged,
   });
 
+  final IconData icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -703,8 +754,8 @@ class _TripsFilterRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              const Icon(
-                Icons.groups_outlined,
+              Icon(
+                icon,
                 size: 18,
                 color: NeonPalette.onSurfaceVariant,
               ),

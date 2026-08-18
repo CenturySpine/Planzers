@@ -577,6 +577,41 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripsArchiveDialogTitle => 'Archive this trip?';
+
+  @override
+  String tripsArchiveDialogBody(Object tripTitle) {
+    return 'It will be hidden from the trip list. You can unarchive it at any time.\n\nTrip: $tripTitle';
+  }
+
+  @override
+  String get tripsUnarchiveDialogTitle => 'Unarchive this trip?';
+
+  @override
+  String tripsUnarchiveDialogBody(Object tripTitle) {
+    return 'It will reappear in the trip list.\n\nTrip: $tripTitle';
+  }
+
+  @override
+  String get tripsArchived => 'Trip archived';
+
+  @override
+  String get tripsUnarchived => 'Trip unarchived';
+
+  @override
+  String tripsArchiveError(Object error) {
+    return 'Archive error: $error';
+  }
+
+  @override
+  String tripsUnarchiveError(Object error) {
+    return 'Unarchive error: $error';
+  }
+
+  @override
+  String get tripsShowArchivedTrips => 'Show archived trips';
+
+  @override
   String tripsFirestoreError(Object error) {
     return 'Firestore error: $error';
   }
@@ -1465,6 +1500,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewArchiveTrip => 'Archive';
+
+  @override
+  String get tripOverviewUnarchiveTrip => 'Unarchive';
 
   @override
   String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
@@ -3954,6 +3995,41 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   }
 
   @override
+  String get tripsArchiveDialogTitle => 'Archive this trip?';
+
+  @override
+  String tripsArchiveDialogBody(Object tripTitle) {
+    return 'It will be hidden from the trip list. You can unarchive it at any time.\n\nTrip: $tripTitle';
+  }
+
+  @override
+  String get tripsUnarchiveDialogTitle => 'Unarchive this trip?';
+
+  @override
+  String tripsUnarchiveDialogBody(Object tripTitle) {
+    return 'It will reappear in the trip list.\n\nTrip: $tripTitle';
+  }
+
+  @override
+  String get tripsArchived => 'Trip archived';
+
+  @override
+  String get tripsUnarchived => 'Trip unarchived';
+
+  @override
+  String tripsArchiveError(Object error) {
+    return 'Archive error: $error';
+  }
+
+  @override
+  String tripsUnarchiveError(Object error) {
+    return 'Unarchive error: $error';
+  }
+
+  @override
+  String get tripsShowArchivedTrips => 'Show archived trips';
+
+  @override
   String tripsFirestoreError(Object error) {
     return 'Firestore error: $error';
   }
@@ -4771,6 +4847,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewArchiveTrip => 'Archive';
+
+  @override
+  String get tripOverviewUnarchiveTrip => 'Unarchive';
 
   @override
   String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
