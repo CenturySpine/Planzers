@@ -534,6 +534,12 @@ service cloud.firestore {
         allow read, write: if signedIn() && request.auth.uid == userId;
       }
 
+      // Per-user trip archive preference: hides a trip from this user's own
+      // trip list. Independent of trip role/membership; presence-only doc.
+      match /archivedTrips/{tripId} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+
       match /cupidonMatches/{matchId} {
         allow read, delete: if signedIn() && request.auth.uid == userId;
       }

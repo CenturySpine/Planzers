@@ -373,34 +373,6 @@ class TripsRepository {
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
   }
 
-  /// Toggles the [Trip.archived] flag. Same permission as [deleteTrip]: owner only.
-  Future<void> archiveTrip({
-    required String tripId,
-    required bool archived,
-  }) async {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw StateError('Utilisateur non connecte');
-    }
-
-    final cleanTripId = tripId.trim();
-    if (cleanTripId.isEmpty) {
-      throw StateError('Voyage invalide');
-    }
-
-    final docRef = firestore.collection('trips').doc(cleanTripId);
-    final snapshot = await docRef.get();
-    if (!snapshot.exists) {
-      throw StateError('Voyage introuvable');
-    }
-    final trip = Trip.fromMap(snapshot.id, snapshot.data() ?? const {});
-    if (trip.ownerId != user.uid) {
-      throw StateError('Droits insuffisants pour cette action');
-    }
-
-    await docRef.update(<String, dynamic>{'archived': archived});
-  }
-
   Future<void> updateTrip({
     required String tripId,
     required String title,

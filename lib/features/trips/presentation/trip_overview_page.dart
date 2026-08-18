@@ -22,6 +22,7 @@ import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -358,7 +359,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final l10n = AppLocalizations.of(context)!;
     final tripId = _trip.id;
     final tripTitle = _trip.title;
-    final archiving = !_trip.archived;
+    final archiving = !ref.read(isTripArchivedForMeProvider(tripId));
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -395,8 +396,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
 
     try {
       await ref
-          .read(tripsRepositoryProvider)
-          .archiveTrip(tripId: tripId, archived: archiving);
+          .read(tripArchiveRepositoryProvider)
+          .setTripArchivedForMe(tripId: tripId, archived: archiving);
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       if (archiving) {
@@ -527,7 +528,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     required bool canEditGeneralInfo,
     required bool canManageTripSettings,
     required bool canDeleteTrip,
-    required bool canArchiveTrip,
+    required bool isArchivedForMe,
   }) {
     final rows = <TripOverviewSettingsRowData>[];
     if (isTripMember) {
@@ -566,11 +567,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         ),
       );
     }
-    if (canArchiveTrip) {
+    if (isTripMember) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: _trip.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
-          label: _trip.archived
+          icon: isArchivedForMe
+              ? Icons.unarchive_outlined
+              : Icons.archive_outlined,
+          label: isArchivedForMe
               ? l10n.tripOverviewUnarchiveTrip
               : l10n.tripOverviewArchiveTrip,
           onTap: _confirmAndToggleArchiveTrip,
@@ -710,7 +713,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
-            canArchiveTrip: canDeleteTrip,
+            isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
 
           return StreamBuilder<Map<String, Map<String, dynamic>>>(

@@ -13,6 +13,7 @@ import 'package:planerz/features/administration/data/maintenance_repository.dart
 import 'package:planerz/features/administration/presentation/admin_announcements_bell_button.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/data/trip.dart';
+import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dart';
@@ -58,6 +59,8 @@ class _TripsPageState extends ConsumerState<TripsPage>
     final showNonMemberTrips =
         ref.watch(applicationOwnerShowNonMemberTripsProvider);
     final showArchivedTrips = ref.watch(showArchivedTripsProvider);
+    final myArchivedTripIds =
+        ref.watch(myArchivedTripIdsProvider).asData?.value ?? const <String>{};
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -120,7 +123,10 @@ class _TripsPageState extends ConsumerState<TripsPage>
                     data: (trips) {
                       final visibleTrips = showArchivedTrips
                           ? trips
-                          : trips.where((trip) => !trip.archived).toList();
+                          : trips
+                              .where((trip) =>
+                                  !myArchivedTripIds.contains(trip.id))
+                              .toList();
                       final grouped = _groupTripsByTimeline(visibleTrips);
                       _ensureTimelineTabController(grouped);
                       final tabController = _tabController!;
