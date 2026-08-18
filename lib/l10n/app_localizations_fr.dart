@@ -24,98 +24,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aboutTitle => 'À propos';
 
   @override
-  String get aboutLoadError => 'Impossible de charger la page À propos.';
-
-  @override
-  String get aboutCarouselTitle => 'Quelques souvenirs';
-
-  @override
-  String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), mai 2025';
-
-  @override
-  String get aboutCarouselCaption2 =>
-      'Surf à Peniche (Portugal), septembre 2023';
-
-  @override
-  String get aboutCarouselCaption3 =>
-      'Lac de Tavaneuse, Abondance (Haute-Savoie), juillet 2025';
-
-  @override
-  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, avril 2026';
-
-  @override
-  String get aboutCarouselCaption5 =>
-      'Week-end via ferrata en solo, Bourg-d\'Oisans (Isère), juin 2025';
-
-  @override
-  String get aboutCarouselCaption6 =>
-      'Via ferrata du fort l\'Écluse (Ain), septembre 2024';
-
-  @override
-  String get aboutCarouselCaption7 =>
-      'Vélo remis à neuf dans un atelier d\'auto-réparation à Lyon, juillet 2024';
-
-  @override
-  String get aboutCarouselCaption7LinkLabel => 'Voir l\'atelier Etablicyclette';
-
-  @override
-  String get aboutCarouselCaption8 =>
-      'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024';
-
-  @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48 ans';
-
-  @override
-  String get aboutIntroText =>
-      'Développeur, passionné de rando et montagne, j\'ai créé Planerz parce qu\'à chaque organisation de week-end ou voyage entre amis, on jongle entre plusieurs outils (messagerie, suivi des dépenses, tableurs pour chambres, voitures, repas et activités). Mon objectif : centraliser toute l\'organisation dans un seul endroit.';
-
-  @override
-  String get aboutPassionsTitle => 'Passions et occupations';
-
-  @override
-  String get aboutPassionHiking => 'Rando';
-
-  @override
-  String get aboutPassionBachata => 'Bachata';
-
-  @override
-  String get aboutPassionClimbing => 'Escalade';
-
-  @override
-  String get aboutPassionRunning => 'Running';
-
-  @override
-  String get aboutPassionCinema => 'Ciné';
-
-  @override
-  String get aboutPassionSeries => 'Séries';
-
-  @override
-  String get aboutPassionGolf => 'Golf';
-
-  @override
-  String get aboutPassionCooking => 'Cuisine';
-
-  @override
-  String get aboutPassionBikeRepair => 'Réparation vélo';
-
-  @override
-  String get aboutPassionImprov => 'Théâtre d\'impro';
-
-  @override
-  String get aboutPassionBoardGames => 'Jeux de société';
-
-  @override
-  String get aboutNetworksTitle => 'Réseaux';
-
-  @override
-  String get aboutContactTitle => 'Contact';
-
-  @override
-  String get aboutQuotesTitle => 'Citations';
-
-  @override
   String get legalInfoTitle => 'Informations légales';
 
   @override
@@ -222,6 +130,58 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'ou';
+
+  @override
+  String get signInPasswordFieldLabel => 'Mot de passe';
+
+  @override
+  String get signInPasswordShowTooltip => 'Afficher le mot de passe';
+
+  @override
+  String get signInPasswordHideTooltip => 'Masquer le mot de passe';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Se connecter';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp =>
+      'Pas de compte ? Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Déjà un compte ? Se connecter';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Le mot de passe doit contenir au moins 6 caractères.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'Un compte existe déjà avec cette adresse e-mail.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Mot de passe trop faible.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'E-mail ou mot de passe incorrect.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Trop de tentatives. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Impossible de se connecter. Réessaie.';
 
   @override
   String get accountTitle => 'Mon compte';
@@ -1520,6 +1480,18 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Erreur copie du code : $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewTripIdCopied =>
+      'Identifiant du voyage copié dans le presse-papiers';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Erreur copie de l\'identifiant : $error';
   }
 
   @override
@@ -3463,98 +3435,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get aboutTitle => 'À propos';
 
   @override
-  String get aboutLoadError => 'Impossible de charger la page À propos.';
-
-  @override
-  String get aboutCarouselTitle => 'Quelques souvenirs';
-
-  @override
-  String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), mai 2025';
-
-  @override
-  String get aboutCarouselCaption2 =>
-      'Surf à Peniche (Portugal), septembre 2023';
-
-  @override
-  String get aboutCarouselCaption3 =>
-      'Lac de Tavaneuse, Abondance (Haute-Savoie), juillet 2025';
-
-  @override
-  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, avril 2026';
-
-  @override
-  String get aboutCarouselCaption5 =>
-      'Week-end via ferrata en solo, Bourg-d\'Oisans (Isère), juin 2025';
-
-  @override
-  String get aboutCarouselCaption6 =>
-      'Via ferrata du fort l\'Écluse (Ain), septembre 2024';
-
-  @override
-  String get aboutCarouselCaption7 =>
-      'Vélo remis à neuf dans un atelier d\'auto-réparation à Lyon, juillet 2024';
-
-  @override
-  String get aboutCarouselCaption7LinkLabel => 'Voir l\'atelier Etablicyclette';
-
-  @override
-  String get aboutCarouselCaption8 =>
-      'Stage de golf UCPA, Saint-Cyprien (Pyrénées-Orientales), mai 2024';
-
-  @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48 ans';
-
-  @override
-  String get aboutIntroText =>
-      'Développeur, passionné de rando et montagne, j\'ai créé Planerz parce qu\'à chaque organisation de week-end ou voyage entre amis, on jongle entre plusieurs outils (messagerie, suivi des dépenses, tableurs pour chambres, voitures, repas et activités). Mon objectif : centraliser toute l\'organisation dans un seul endroit.';
-
-  @override
-  String get aboutPassionsTitle => 'Passions et occupations';
-
-  @override
-  String get aboutPassionHiking => 'Rando';
-
-  @override
-  String get aboutPassionBachata => 'Bachata';
-
-  @override
-  String get aboutPassionClimbing => 'Escalade';
-
-  @override
-  String get aboutPassionRunning => 'Running';
-
-  @override
-  String get aboutPassionCinema => 'Ciné';
-
-  @override
-  String get aboutPassionSeries => 'Séries';
-
-  @override
-  String get aboutPassionGolf => 'Golf';
-
-  @override
-  String get aboutPassionCooking => 'Cuisine';
-
-  @override
-  String get aboutPassionBikeRepair => 'Réparation vélo';
-
-  @override
-  String get aboutPassionImprov => 'Théâtre d\'impro';
-
-  @override
-  String get aboutPassionBoardGames => 'Jeux de société';
-
-  @override
-  String get aboutNetworksTitle => 'Réseaux';
-
-  @override
-  String get aboutContactTitle => 'Contact';
-
-  @override
-  String get aboutQuotesTitle => 'Citations';
-
-  @override
   String get legalInfoTitle => 'Informations légales';
 
   @override
@@ -3661,6 +3541,58 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'ou';
+
+  @override
+  String get signInPasswordFieldLabel => 'Mot de passe';
+
+  @override
+  String get signInPasswordShowTooltip => 'Afficher le mot de passe';
+
+  @override
+  String get signInPasswordHideTooltip => 'Masquer le mot de passe';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Se connecter';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp =>
+      'Pas de compte ? Créer un compte';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Déjà un compte ? Se connecter';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Adresse e-mail invalide.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Le mot de passe doit contenir au moins 6 caractères.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'Un compte existe déjà avec cette adresse e-mail.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Mot de passe trop faible.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'E-mail ou mot de passe incorrect.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Trop de tentatives. Patiente quelques minutes puis réessaie.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Impossible de se connecter. Réessaie.';
 
   @override
   String get accountTitle => 'Mon compte';
@@ -4887,6 +4819,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Erreur copie du code : $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewTripIdCopied =>
+      'Identifiant du voyage copié dans le presse-papiers';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Erreur copie de l\'identifiant : $error';
   }
 
   @override

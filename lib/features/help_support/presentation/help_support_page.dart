@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:planerz/app/app_version_provider.dart';
-import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -103,7 +101,10 @@ class HelpSupportPage extends ConsumerWidget {
                   _ContactTile(
                     icon: Icons.person_outline,
                     label: l10n.helpSupportAboutLinkLabel,
-                    onTap: () => context.push(AboutPage.routePath),
+                    onTap: () => _openUrl(
+                      context,
+                      Uri.parse('https://centuryspine.org'),
+                    ),
                   ),
                 ],
               ),

@@ -24,99 +24,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutTitle => 'About';
 
   @override
-  String get aboutLoadError => 'Unable to load the About page.';
-
-  @override
-  String get aboutCarouselTitle => 'Some highlights';
-
-  @override
-  String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), May 2025';
-
-  @override
-  String get aboutCarouselCaption2 =>
-      'Surfing in Peniche (Portugal), September 2023';
-
-  @override
-  String get aboutCarouselCaption3 =>
-      'Lac de Tavaneuse, Abondance (Haute-Savoie), July 2025';
-
-  @override
-  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, April 2026';
-
-  @override
-  String get aboutCarouselCaption5 =>
-      'Solo via ferrata weekend, Bourg-d\'Oisans (Isère), June 2025';
-
-  @override
-  String get aboutCarouselCaption6 =>
-      'Fort l\'Écluse via ferrata (Ain), September 2024';
-
-  @override
-  String get aboutCarouselCaption7 =>
-      'Refurbished bike in a self-repair workshop in Lyon, July 2024';
-
-  @override
-  String get aboutCarouselCaption7LinkLabel =>
-      'See the Etablicyclette workshop';
-
-  @override
-  String get aboutCarouselCaption8 =>
-      'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
-
-  @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
-
-  @override
-  String get aboutIntroText =>
-      'Developer, passionate about hiking and mountains, I created Planerz because every time we organize a weekend or trip with friends, we end up juggling multiple tools (messaging, shared expense tracking, spreadsheets for rooms, cars, meals, and activities). My goal: centralize the whole organization in one place.';
-
-  @override
-  String get aboutPassionsTitle => 'Passions and activities';
-
-  @override
-  String get aboutPassionHiking => 'Hiking';
-
-  @override
-  String get aboutPassionBachata => 'Bachata';
-
-  @override
-  String get aboutPassionClimbing => 'Climbing';
-
-  @override
-  String get aboutPassionRunning => 'Running';
-
-  @override
-  String get aboutPassionCinema => 'Cinema';
-
-  @override
-  String get aboutPassionSeries => 'Series';
-
-  @override
-  String get aboutPassionGolf => 'Golf';
-
-  @override
-  String get aboutPassionCooking => 'Cooking';
-
-  @override
-  String get aboutPassionBikeRepair => 'Bike repair';
-
-  @override
-  String get aboutPassionImprov => 'Improv theater';
-
-  @override
-  String get aboutPassionBoardGames => 'Board games';
-
-  @override
-  String get aboutNetworksTitle => 'Networks';
-
-  @override
-  String get aboutContactTitle => 'Contact';
-
-  @override
-  String get aboutQuotesTitle => 'Quotes';
-
-  @override
   String get legalInfoTitle => 'Legal information';
 
   @override
@@ -221,6 +128,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'or';
+
+  @override
+  String get signInPasswordFieldLabel => 'Password';
+
+  @override
+  String get signInPasswordShowTooltip => 'Show password';
+
+  @override
+  String get signInPasswordHideTooltip => 'Hide password';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Sign in';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Create an account';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp => 'No account? Create one';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Already have an account? Sign in';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'An account already exists with this email address.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Password is too weak.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'Incorrect email or password.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Unable to sign in. Please try again.';
 
   @override
   String get accountTitle => 'My account';
@@ -1503,6 +1461,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Invite code copy error: $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Trip ID copy error: $error';
   }
 
   @override
@@ -3432,99 +3401,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get aboutTitle => 'About';
 
   @override
-  String get aboutLoadError => 'Unable to load the About page.';
-
-  @override
-  String get aboutCarouselTitle => 'Some highlights';
-
-  @override
-  String get aboutCarouselCaption1 =>
-      'Saint-Gervais-les-Bains (Haute-Savoie), May 2025';
-
-  @override
-  String get aboutCarouselCaption2 =>
-      'Surfing in Peniche (Portugal), September 2023';
-
-  @override
-  String get aboutCarouselCaption3 =>
-      'Lac de Tavaneuse, Abondance (Haute-Savoie), July 2025';
-
-  @override
-  String get aboutCarouselCaption4 => 'Capo Rosso, Corse-du-Sud, April 2026';
-
-  @override
-  String get aboutCarouselCaption5 =>
-      'Solo via ferrata weekend, Bourg-d\'Oisans (Isère), June 2025';
-
-  @override
-  String get aboutCarouselCaption6 =>
-      'Fort l\'Écluse via ferrata (Ain), September 2024';
-
-  @override
-  String get aboutCarouselCaption7 =>
-      'Refurbished bike in a self-repair workshop in Lyon, July 2024';
-
-  @override
-  String get aboutCarouselCaption7LinkLabel =>
-      'See the Etablicyclette workshop';
-
-  @override
-  String get aboutCarouselCaption8 =>
-      'UCPA golf camp, Saint-Cyprien (Pyrénées-Orientales), May 2024';
-
-  @override
-  String get aboutFullNameAndAge => 'Bruno Chappe, 48';
-
-  @override
-  String get aboutIntroText =>
-      'Developer, passionate about hiking and mountains, I created Planerz because every time we organize a weekend or trip with friends, we end up juggling multiple tools (messaging, shared expense tracking, spreadsheets for rooms, cars, meals, and activities). My goal: centralize the whole organization in one place.';
-
-  @override
-  String get aboutPassionsTitle => 'Passions and activities';
-
-  @override
-  String get aboutPassionHiking => 'Hiking';
-
-  @override
-  String get aboutPassionBachata => 'Bachata';
-
-  @override
-  String get aboutPassionClimbing => 'Climbing';
-
-  @override
-  String get aboutPassionRunning => 'Running';
-
-  @override
-  String get aboutPassionCinema => 'Cinema';
-
-  @override
-  String get aboutPassionSeries => 'Series';
-
-  @override
-  String get aboutPassionGolf => 'Golf';
-
-  @override
-  String get aboutPassionCooking => 'Cooking';
-
-  @override
-  String get aboutPassionBikeRepair => 'Bike repair';
-
-  @override
-  String get aboutPassionImprov => 'Improv theater';
-
-  @override
-  String get aboutPassionBoardGames => 'Board games';
-
-  @override
-  String get aboutNetworksTitle => 'Networks';
-
-  @override
-  String get aboutContactTitle => 'Contact';
-
-  @override
-  String get aboutQuotesTitle => 'Quotes';
-
-  @override
   String get legalInfoTitle => 'Legal information';
 
   @override
@@ -3629,6 +3505,57 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get signInAuthBetaPill => 'BETA';
+
+  @override
+  String get signInOrDividerLabel => 'or';
+
+  @override
+  String get signInPasswordFieldLabel => 'Password';
+
+  @override
+  String get signInPasswordShowTooltip => 'Show password';
+
+  @override
+  String get signInPasswordHideTooltip => 'Hide password';
+
+  @override
+  String get signInEmailPasswordSignInCta => 'Sign in';
+
+  @override
+  String get signInEmailPasswordSignUpCta => 'Create an account';
+
+  @override
+  String get signInEmailPasswordToggleToSignUp => 'No account? Create one';
+
+  @override
+  String get signInEmailPasswordToggleToSignIn =>
+      'Already have an account? Sign in';
+
+  @override
+  String get signInEmailPasswordInvalidEmail => 'Invalid email address.';
+
+  @override
+  String get signInEmailPasswordTooShortPassword =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get signInEmailPasswordEmailInUse =>
+      'An account already exists with this email address.';
+
+  @override
+  String get signInEmailPasswordWeakPassword => 'Password is too weak.';
+
+  @override
+  String get signInEmailPasswordInvalidCredentials =>
+      'Incorrect email or password.';
+
+  @override
+  String get signInEmailPasswordTooManyRequests =>
+      'Too many attempts. Wait a few minutes and try again.';
+
+  @override
+  String get signInEmailPasswordFailed =>
+      'Unable to sign in. Please try again.';
 
   @override
   String get accountTitle => 'My account';
@@ -4840,6 +4767,17 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String tripOverviewInviteCodeCopyError(Object error) {
     return 'Invite code copy error: $error';
+  }
+
+  @override
+  String get tripOverviewCopyTripId => 'Copy trip ID';
+
+  @override
+  String get tripOverviewTripIdCopied => 'Trip ID copied to clipboard';
+
+  @override
+  String tripOverviewTripIdCopyError(Object error) {
+    return 'Trip ID copy error: $error';
   }
 
   @override

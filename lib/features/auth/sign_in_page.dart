@@ -8,7 +8,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
-import 'package:planerz/features/about/presentation/about_page.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/auth/data/auth_repository.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -18,6 +17,7 @@ import 'package:planerz/features/legal/presentation/legal_information_page.dart'
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Color _googleSignInBorder = Color(0xFFDADCE0);
 const Color _googleSignInText = Color(0xFF3C4043);
@@ -47,6 +47,11 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   int _animatedLabelIndex = 0;
   Timer? _subtitleTimer;
 
+  final _emailPasswordEmailController = TextEditingController();
+  final _emailPasswordPasswordController = TextEditingController();
+  bool _isEmailPasswordSignUpMode = false;
+  bool _obscureEmailPassword = true;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +64,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
   @override
   void dispose() {
     _subtitleTimer?.cancel();
+    _emailPasswordEmailController.dispose();
+    _emailPasswordPasswordController.dispose();
     super.dispose();
   }
 
@@ -177,6 +184,92 @@ class _SignInPageState extends ConsumerState<SignInPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _submitEmailPassword() async {
+    final l10n = AppLocalizations.of(context)!;
+    final email = _emailPasswordEmailController.text.trim();
+    final password = _emailPasswordPasswordController.text;
+    if (email.isEmpty || !email.contains('@')) {
+      _showInfoSnackBar(l10n.signInEmailPasswordInvalidEmail);
+      return;
+    }
+    if (password.length < 6) {
+      _showInfoSnackBar(l10n.signInEmailPasswordTooShortPassword);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      final credential = _isEmailPasswordSignUpMode
+          ? await authRepository.createUserWithEmailAndPassword(
+              email: email,
+              password: password,
+            )
+          : await authRepository.signInWithEmailAndPassword(
+              email: email,
+              password: password,
+            );
+      if (credential.user != null) {
+        await ref
+            .read(usersRepositoryProvider)
+            .ensureUserDocument(credential.user!);
+      }
+      if (!mounted) return;
+      final needsName = await _accountNameNeedsSetup();
+      if (needsName && mounted) {
+        final saved = await showDisplayNameSetupDialog(context);
+        if (!mounted) return;
+        if (!saved) {
+          _showInfoSnackBar(
+            AppLocalizations.of(context)!.profileNameRequiredMessage,
+          );
+          await ref.read(authRepositoryProvider).auth.signOut();
+          return;
+        }
+      }
+      if (mounted) _navigateAfterSignIn();
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Email/password sign-in error: ${e.code} - ${e.message}');
+      if (mounted) {
+        _showInfoSnackBar(_emailPasswordErrorMessage(l10n, e));
+      }
+    } catch (e) {
+      debugPrint('Email/password sign-in error: $e');
+      if (mounted) _showInfoSnackBar(l10n.signInEmailPasswordFailed);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _emailPasswordErrorMessage(
+    AppLocalizations l10n,
+    FirebaseAuthException e,
+  ) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return l10n.signInEmailPasswordEmailInUse;
+      case 'weak-password':
+        return l10n.signInEmailPasswordWeakPassword;
+      case 'invalid-email':
+        return l10n.signInEmailPasswordInvalidEmail;
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return l10n.signInEmailPasswordInvalidCredentials;
+      case 'too-many-requests':
+        return l10n.signInEmailPasswordTooManyRequests;
+      default:
+        return l10n.signInEmailPasswordFailed;
     }
   }
 
@@ -330,7 +423,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       children: [
                         SizedBox(
                           height:
-                              (constraints.maxHeight * 0.17).clamp(40.0, 190.0),
+                              (constraints.maxHeight * 0.06).clamp(16.0, 80.0),
                         ),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 360),
@@ -444,6 +537,130 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
+                                            TextField(
+                                              controller:
+                                                  _emailPasswordEmailController,
+                                              enabled: !_isLoading,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              textInputAction:
+                                                  TextInputAction.next,
+                                              decoration: InputDecoration(
+                                                labelText:
+                                                    l10n.signInEmailFieldLabel,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            TextField(
+                                              controller:
+                                                  _emailPasswordPasswordController,
+                                              enabled: !_isLoading,
+                                              obscureText:
+                                                  _obscureEmailPassword,
+                                              textInputAction:
+                                                  TextInputAction.done,
+                                              onSubmitted: (_) =>
+                                                  _submitEmailPassword(),
+                                              decoration: InputDecoration(
+                                                labelText: l10n
+                                                    .signInPasswordFieldLabel,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(
+                                                    _obscureEmailPassword
+                                                        ? Icons
+                                                            .visibility_outlined
+                                                        : Icons
+                                                            .visibility_off_outlined,
+                                                  ),
+                                                  tooltip: _obscureEmailPassword
+                                                      ? l10n
+                                                          .signInPasswordShowTooltip
+                                                      : l10n
+                                                          .signInPasswordHideTooltip,
+                                                  onPressed: () => setState(
+                                                    () => _obscureEmailPassword =
+                                                        !_obscureEmailPassword,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            FilledButton(
+                                              onPressed: _isLoading
+                                                  ? null
+                                                  : _submitEmailPassword,
+                                              style: FilledButton.styleFrom(
+                                                minimumSize:
+                                                    const Size.fromHeight(50),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _isLoading
+                                                    ? l10n.signInLoading
+                                                    : (_isEmailPasswordSignUpMode
+                                                        ? l10n
+                                                            .signInEmailPasswordSignUpCta
+                                                        : l10n
+                                                            .signInEmailPasswordSignInCta),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            TextButton(
+                                              onPressed: _isLoading
+                                                  ? null
+                                                  : () => setState(
+                                                        () =>
+                                                            _isEmailPasswordSignUpMode =
+                                                                !_isEmailPasswordSignUpMode,
+                                                      ),
+                                              child: Text(
+                                                _isEmailPasswordSignUpMode
+                                                    ? l10n
+                                                        .signInEmailPasswordToggleToSignIn
+                                                    : l10n
+                                                        .signInEmailPasswordToggleToSignUp,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                const Expanded(
+                                                    child: Divider()),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets
+                                                          .symmetric(
+                                                    horizontal: 10,
+                                                  ),
+                                                  child: Text(
+                                                    l10n.signInOrDividerLabel,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const Expanded(
+                                                    child: Divider()),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 16),
                                             OutlinedButton(
                                               onPressed: _isLoading
                                                   ? null
@@ -777,7 +994,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () => context.push(AboutPage.routePath),
+                      onPressed: () => launchUrl(
+                        Uri.parse('https://centuryspine.org'),
+                        mode: LaunchMode.externalApplication,
+                      ),
                       style: TextButton.styleFrom(
                         foregroundColor: legalLinkColor,
                         textStyle: const TextStyle(
