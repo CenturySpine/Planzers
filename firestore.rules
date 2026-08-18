@@ -554,6 +554,30 @@ service cloud.firestore {
           && request.auth.uid == userId
           && adminAnnouncementAllowsUserDismiss(announcementId);
       }
+
+      // Third-party apps (e.g. Ridgegear) the user has authorized via the
+      // OAuth consent flow. Visible for the "Applications connectées"
+      // screen; all writes go through Cloud Functions (Admin SDK) so that
+      // revocation also cleans up the matching oauthAccessTokens docs.
+      match /connectedApps/{clientId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
+    // OAuth provider internals: registered third-party clients, single-use
+    // authorization codes, and access tokens. Never read or written by
+    // clients directly — only Cloud Functions (Admin SDK) touch these.
+    match /oauthClients/{clientId} {
+      allow read, write: if false;
+    }
+
+    match /oauthAuthorizationCodes/{code} {
+      allow read, write: if false;
+    }
+
+    match /oauthAccessTokens/{tokenHash} {
+      allow read, write: if false;
     }
 
     match /adminAnnouncements/{announcementId} {

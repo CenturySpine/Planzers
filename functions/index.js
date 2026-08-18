@@ -5101,3 +5101,23 @@ exports.recomputeActivityDrivingRoutesOnTripAddressChange =
   recomputeActivityDrivingRoutesOnTripAddressChange;
 exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
 
+// --- Public API / OAuth (Ridgegear and future third-party clients) ---
+const {
+  getOAuthClientPublicInfo,
+  authorizeOAuthClient,
+  revokeConnectedApp,
+  createOAuthClient,
+  listOAuthClients,
+  deleteOAuthClient,
+} = require('./oauth_authorize');
+
+exports.getOAuthClientPublicInfo = getOAuthClientPublicInfo;
+exports.authorizeOAuthClient = authorizeOAuthClient;
+exports.revokeConnectedApp = revokeConnectedApp;
+exports.createOAuthClient = createOAuthClient;
+exports.listOAuthClients = listOAuthClients;
+exports.deleteOAuthClient = deleteOAuthClient;
+
+const { publicApi } = require('./public_api');
+exports.publicApi = publicApi;
+
