@@ -57,6 +57,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
         ref.watch(isApplicationOwnerProvider).asData?.value ?? false;
     final showNonMemberTrips =
         ref.watch(applicationOwnerShowNonMemberTripsProvider);
+    final showArchivedTrips = ref.watch(showArchivedTripsProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light.copyWith(
@@ -88,6 +89,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                     child: _TripsFilterRow(
+                      icon: Icons.groups_outlined,
                       label: l10n.tripsApplicationOwnerShowNonMemberTrips,
                       value: showNonMemberTrips,
                       onChanged: (value) {
@@ -100,10 +102,26 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       },
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: _TripsFilterRow(
+                    icon: Icons.archive_outlined,
+                    label: l10n.tripsShowArchivedTrips,
+                    value: showArchivedTrips,
+                    onChanged: (value) {
+                      ref
+                          .read(showArchivedTripsProvider.notifier)
+                          .setShowArchivedTrips(value);
+                    },
+                  ),
+                ),
                 Expanded(
                   child: tripsAsync.when(
                     data: (trips) {
-                      final grouped = _groupTripsByTimeline(trips);
+                      final visibleTrips = showArchivedTrips
+                          ? trips
+                          : trips.where((trip) => !trip.archived).toList();
+                      final grouped = _groupTripsByTimeline(visibleTrips);
                       _ensureTimelineTabController(grouped);
                       final tabController = _tabController!;
                       final unreadByTrip = unreadByTripAsync.asData?.value ??
@@ -683,11 +701,13 @@ class _TripsPagePill extends StatelessWidget {
 
 class _TripsFilterRow extends StatelessWidget {
   const _TripsFilterRow({
+    required this.icon,
     required this.label,
     required this.value,
     required this.onChanged,
   });
 
+  final IconData icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -703,8 +723,8 @@ class _TripsFilterRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: [
-              const Icon(
-                Icons.groups_outlined,
+              Icon(
+                icon,
                 size: 18,
                 color: NeonPalette.onSurfaceVariant,
               ),

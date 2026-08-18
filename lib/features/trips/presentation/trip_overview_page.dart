@@ -354,6 +354,73 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     }
   }
 
+  Future<void> _confirmAndToggleArchiveTrip() async {
+    final l10n = AppLocalizations.of(context)!;
+    final tripId = _trip.id;
+    final tripTitle = _trip.title;
+    final archiving = !_trip.archived;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            archiving
+                ? l10n.tripsArchiveDialogTitle
+                : l10n.tripsUnarchiveDialogTitle,
+          ),
+          content: Text(
+            archiving
+                ? l10n.tripsArchiveDialogBody(tripTitle)
+                : l10n.tripsUnarchiveDialogBody(tripTitle),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                archiving
+                    ? l10n.tripOverviewArchiveTrip
+                    : l10n.tripOverviewUnarchiveTrip,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(tripsRepositoryProvider)
+          .archiveTrip(tripId: tripId, archived: archiving);
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      if (archiving) {
+        context.go('/trips');
+      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(archiving ? l10n.tripsArchived : l10n.tripsUnarchived),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            archiving
+                ? l10n.tripsArchiveError(e.toString())
+                : l10n.tripsUnarchiveError(e.toString()),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _confirmAndLeaveTrip() async {
     final l10n = AppLocalizations.of(context)!;
     if (_isLeavingTrip) return;
@@ -460,6 +527,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     required bool canEditGeneralInfo,
     required bool canManageTripSettings,
     required bool canDeleteTrip,
+    required bool canArchiveTrip,
   }) {
     final rows = <TripOverviewSettingsRowData>[];
     if (isTripMember) {
@@ -495,6 +563,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           icon: Icons.copy_outlined,
           label: l10n.tripOverviewCopyTripId,
           onTap: _copyTripId,
+        ),
+      );
+    }
+    if (canArchiveTrip) {
+      rows.add(
+        TripOverviewSettingsRowData(
+          icon: _trip.archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+          label: _trip.archived
+              ? l10n.tripOverviewUnarchiveTrip
+              : l10n.tripOverviewArchiveTrip,
+          onTap: _confirmAndToggleArchiveTrip,
         ),
       );
     }
@@ -631,6 +710,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
+            canArchiveTrip: canDeleteTrip,
           );
 
           return StreamBuilder<Map<String, Map<String, dynamic>>>(

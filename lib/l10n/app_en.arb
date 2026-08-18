@@ -223,6 +223,35 @@
       "error": {}
     }
   },
+  "tripsArchiveDialogTitle": "Archive this trip?",
+  "tripsArchiveDialogBody": "It will be hidden from the trip list. You can unarchive it at any time.\n\nTrip: {tripTitle}",
+  "@tripsArchiveDialogBody": {
+    "placeholders": {
+      "tripTitle": {}
+    }
+  },
+  "tripsUnarchiveDialogTitle": "Unarchive this trip?",
+  "tripsUnarchiveDialogBody": "It will reappear in the trip list.\n\nTrip: {tripTitle}",
+  "@tripsUnarchiveDialogBody": {
+    "placeholders": {
+      "tripTitle": {}
+    }
+  },
+  "tripsArchived": "Trip archived",
+  "tripsUnarchived": "Trip unarchived",
+  "tripsArchiveError": "Archive error: {error}",
+  "@tripsArchiveError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsUnarchiveError": "Unarchive error: {error}",
+  "@tripsUnarchiveError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsShowArchivedTrips": "Show archived trips",
   "tripsFirestoreError": "Firestore error: {error}",
   "@tripsFirestoreError": {
     "placeholders": {
@@ -624,6 +653,8 @@
     "placeholders": {"error": {}}
   },
   "tripOverviewCopyTripId": "Copy trip ID",
+  "tripOverviewArchiveTrip": "Archive",
+  "tripOverviewUnarchiveTrip": "Unarchive",
   "tripOverviewTripIdCopied": "Trip ID copied to clipboard",
   "tripOverviewTripIdCopyError": "Trip ID copy error: {error}",
   "@tripOverviewTripIdCopyError": {

@@ -24,6 +24,7 @@ class Trip {
     this.tripStartDayPart,
     this.tripEndDayPart,
     this.isDayTrip = false,
+    this.archived = false,
     this.bannerImageUrl,
     this.bannerImagePath,
     this.linkPreview = const {},
@@ -82,6 +83,9 @@ class Trip {
 
   /// Single-day outing; hides destination, lodging, and multi-day stay UI.
   final bool isDayTrip;
+
+  /// Hidden from the trip list by default; toggled via the "Archiver" action.
+  final bool archived;
 
   final String? bannerImageUrl;
   final String? bannerImagePath;
@@ -155,6 +159,7 @@ class Trip {
           tripDayPartFromFirestore(data['tripStartDayPart'] as String?),
       tripEndDayPart: tripDayPartFromFirestore(data['tripEndDayPart'] as String?),
       isDayTrip: data['isDayTrip'] == true,
+      archived: data['archived'] == true,
       bannerImageUrl: (data['bannerImageUrl'] as String?)?.trim(),
       bannerImagePath: (data['bannerImagePath'] as String?)?.trim(),
       linkPreview:
@@ -214,6 +219,7 @@ class Trip {
       if (tripEndDayPart != null)
         'tripEndDayPart': tripDayPartToFirestore(tripEndDayPart!),
       if (isDayTrip) 'isDayTrip': true,
+      if (archived) 'archived': true,
       if ((bannerImageUrl ?? '').trim().isNotEmpty)
         'bannerImageUrl': bannerImageUrl!.trim(),
       if ((bannerImagePath ?? '').trim().isNotEmpty)

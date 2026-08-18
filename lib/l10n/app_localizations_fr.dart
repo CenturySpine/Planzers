@@ -580,6 +580,41 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripsArchiveDialogTitle => 'Archiver ce voyage ?';
+
+  @override
+  String tripsArchiveDialogBody(Object tripTitle) {
+    return 'Il sera masqué de la liste des voyages. Vous pourrez le désarchiver à tout moment.\n\nVoyage : $tripTitle';
+  }
+
+  @override
+  String get tripsUnarchiveDialogTitle => 'Désarchiver ce voyage ?';
+
+  @override
+  String tripsUnarchiveDialogBody(Object tripTitle) {
+    return 'Il réapparaîtra dans la liste des voyages.\n\nVoyage : $tripTitle';
+  }
+
+  @override
+  String get tripsArchived => 'Voyage archivé';
+
+  @override
+  String get tripsUnarchived => 'Voyage désarchivé';
+
+  @override
+  String tripsArchiveError(Object error) {
+    return 'Erreur archivage : $error';
+  }
+
+  @override
+  String tripsUnarchiveError(Object error) {
+    return 'Erreur désarchivage : $error';
+  }
+
+  @override
+  String get tripsShowArchivedTrips => 'Afficher les voyages archivés';
+
+  @override
   String tripsFirestoreError(Object error) {
     return 'Erreur Firestore : $error';
   }
@@ -1484,6 +1519,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewArchiveTrip => 'Archiver';
+
+  @override
+  String get tripOverviewUnarchiveTrip => 'Désarchiver';
 
   @override
   String get tripOverviewTripIdCopied =>
@@ -3991,6 +4032,41 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
+  String get tripsArchiveDialogTitle => 'Archiver ce voyage ?';
+
+  @override
+  String tripsArchiveDialogBody(Object tripTitle) {
+    return 'Il sera masqué de la liste des voyages. Vous pourrez le désarchiver à tout moment.\n\nVoyage : $tripTitle';
+  }
+
+  @override
+  String get tripsUnarchiveDialogTitle => 'Désarchiver ce voyage ?';
+
+  @override
+  String tripsUnarchiveDialogBody(Object tripTitle) {
+    return 'Il réapparaîtra dans la liste des voyages.\n\nVoyage : $tripTitle';
+  }
+
+  @override
+  String get tripsArchived => 'Voyage archivé';
+
+  @override
+  String get tripsUnarchived => 'Voyage désarchivé';
+
+  @override
+  String tripsArchiveError(Object error) {
+    return 'Erreur archivage : $error';
+  }
+
+  @override
+  String tripsUnarchiveError(Object error) {
+    return 'Erreur désarchivage : $error';
+  }
+
+  @override
+  String get tripsShowArchivedTrips => 'Afficher les voyages archivés';
+
+  @override
   String tripsFirestoreError(Object error) {
     return 'Erreur Firestore : $error';
   }
@@ -4823,6 +4899,12 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewArchiveTrip => 'Archiver';
+
+  @override
+  String get tripOverviewUnarchiveTrip => 'Désarchiver';
 
   @override
   String get tripOverviewTripIdCopied =>

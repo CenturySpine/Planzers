@@ -1132,6 +1132,60 @@ abstract class AppLocalizations {
   /// **'Erreur suppression : {error}'**
   String tripsDeleteError(Object error);
 
+  /// No description provided for @tripsArchiveDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Archiver ce voyage ?'**
+  String get tripsArchiveDialogTitle;
+
+  /// No description provided for @tripsArchiveDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Il sera masqué de la liste des voyages. Vous pourrez le désarchiver à tout moment.\n\nVoyage : {tripTitle}'**
+  String tripsArchiveDialogBody(Object tripTitle);
+
+  /// No description provided for @tripsUnarchiveDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désarchiver ce voyage ?'**
+  String get tripsUnarchiveDialogTitle;
+
+  /// No description provided for @tripsUnarchiveDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Il réapparaîtra dans la liste des voyages.\n\nVoyage : {tripTitle}'**
+  String tripsUnarchiveDialogBody(Object tripTitle);
+
+  /// No description provided for @tripsArchived.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage archivé'**
+  String get tripsArchived;
+
+  /// No description provided for @tripsUnarchived.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voyage désarchivé'**
+  String get tripsUnarchived;
+
+  /// No description provided for @tripsArchiveError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur archivage : {error}'**
+  String tripsArchiveError(Object error);
+
+  /// No description provided for @tripsUnarchiveError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Erreur désarchivage : {error}'**
+  String tripsUnarchiveError(Object error);
+
+  /// No description provided for @tripsShowArchivedTrips.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher les voyages archivés'**
+  String get tripsShowArchivedTrips;
+
   /// No description provided for @tripsFirestoreError.
   ///
   /// In fr, this message translates to:
@@ -2693,6 +2747,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Copier l\'identifiant du voyage'**
   String get tripOverviewCopyTripId;
+
+  /// No description provided for @tripOverviewArchiveTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Archiver'**
+  String get tripOverviewArchiveTrip;
+
+  /// No description provided for @tripOverviewUnarchiveTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Désarchiver'**
+  String get tripOverviewUnarchiveTrip;
 
   /// No description provided for @tripOverviewTripIdCopied.
   ///
