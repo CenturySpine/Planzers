@@ -3420,6 +3420,68 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get androidSunsetUninstallHint =>
       'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Authorize an application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName wants to access your Planerz account';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Access the list of your non-archived trips (read-only).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Allow';
+
+  @override
+  String get oauthAuthorizeDeny => 'Deny';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'This authorization request couldn\'t be loaded. The link may be invalid or expired.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Authorization failed: $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Manage the third-party apps allowed to access your trips.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'No third-party app currently has access to your account.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Last used on $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Never used since authorization';
+
+  @override
+  String get connectedAppsRevokeAction => 'Revoke';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Revoke access?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName will no longer be able to access your trips. You can authorize it again later if needed.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return '$clientName\'s access revoked';
+  }
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -6767,4 +6829,66 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get androidSunsetUninstallHint =>
       'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Authorize an application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName wants to access your Planerz account';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Access the list of your non-archived trips (read-only).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Allow';
+
+  @override
+  String get oauthAuthorizeDeny => 'Deny';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'This authorization request couldn\'t be loaded. The link may be invalid or expired.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Authorization failed: $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Manage the third-party apps allowed to access your trips.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'No third-party app currently has access to your account.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Last used on $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Never used since authorization';
+
+  @override
+  String get connectedAppsRevokeAction => 'Revoke';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Revoke access?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName will no longer be able to access your trips. You can authorize it again later if needed.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return '$clientName\'s access revoked';
+  }
 }

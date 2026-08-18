@@ -6,12 +6,14 @@ import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/auth/sign_in_page.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
+import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
 import 'package:planerz/features/games/presentation/trip_games_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
+import 'package:planerz/features/oauth/presentation/oauth_authorize_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
@@ -41,6 +43,7 @@ import 'package:planerz/features/trips/presentation/trip_member_preferences_page
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/account/presentation/public_profile_page.dart';
+import 'package:planerz/features/account/presentation/connected_apps_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_page.dart';
 
@@ -99,6 +102,18 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: OAuthAuthorizePage.routePath,
+      builder: (context, state) {
+        final params = state.uri.queryParameters;
+        return OAuthAuthorizePage(
+          clientId: params['client_id'] ?? '',
+          redirectUri: params['redirect_uri'] ?? '',
+          scope: params['scope'] ?? '',
+          state: params['state'] ?? '',
+        );
+      },
+    ),
+    GoRoute(
       path: '/trips',
       builder: (context, state) => const TripsPage(),
     ),
@@ -119,6 +134,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/account/cupidon',
       builder: (context, state) => const CupidonSpacePage(),
+    ),
+    GoRoute(
+      path: ConnectedAppsPage.routePath,
+      builder: (context, state) => const ConnectedAppsPage(),
     ),
     GoRoute(
       path: PublicProfilePage.routePath,
@@ -146,6 +165,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminMaintenancePage.routePath,
       builder: (context, state) => const AdminMaintenancePage(),
+    ),
+    GoRoute(
+      path: AdminOAuthClientsPage.routePath,
+      builder: (context, state) => const AdminOAuthClientsPage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,

@@ -6170,6 +6170,102 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.'**
   String get androidSunsetUninstallHint;
+
+  /// No description provided for @oauthAuthorizeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autoriser une application'**
+  String get oauthAuthorizeTitle;
+
+  /// No description provided for @oauthAuthorizeHeadline.
+  ///
+  /// In fr, this message translates to:
+  /// **'{clientName} souhaite accéder à votre compte Planerz'**
+  String oauthAuthorizeHeadline(Object clientName);
+
+  /// No description provided for @oauthScopeTripsRead.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accéder à la liste de vos voyages non archivés (lecture seule).'**
+  String get oauthScopeTripsRead;
+
+  /// No description provided for @oauthAuthorizeAllow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autoriser'**
+  String get oauthAuthorizeAllow;
+
+  /// No description provided for @oauthAuthorizeDeny.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refuser'**
+  String get oauthAuthorizeDeny;
+
+  /// No description provided for @oauthAuthorizeLoadError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.'**
+  String get oauthAuthorizeLoadError;
+
+  /// No description provided for @oauthAuthorizeError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de l\'autorisation : {error}'**
+  String oauthAuthorizeError(Object error);
+
+  /// No description provided for @connectedAppsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Applications connectées'**
+  String get connectedAppsTitle;
+
+  /// No description provided for @accountConnectedAppsSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer les applications tierces autorisées à accéder à vos voyages.'**
+  String get accountConnectedAppsSubtitle;
+
+  /// No description provided for @connectedAppsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune application tierce n\'a accès à votre compte pour le moment.'**
+  String get connectedAppsEmpty;
+
+  /// No description provided for @connectedAppsLastUsed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dernière utilisation le {date}'**
+  String connectedAppsLastUsed(Object date);
+
+  /// No description provided for @connectedAppsNeverUsed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jamais utilisée depuis l\'autorisation'**
+  String get connectedAppsNeverUsed;
+
+  /// No description provided for @connectedAppsRevokeAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Révoquer'**
+  String get connectedAppsRevokeAction;
+
+  /// No description provided for @connectedAppsRevokeDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Révoquer l\'accès ?'**
+  String get connectedAppsRevokeDialogTitle;
+
+  /// No description provided for @connectedAppsRevokeDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'{clientName} ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.'**
+  String connectedAppsRevokeDialogBody(Object clientName);
+
+  /// No description provided for @connectedAppsRevoked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accès de {clientName} révoqué'**
+  String connectedAppsRevoked(Object clientName);
 }
 
 class _AppLocalizationsDelegate

@@ -3454,6 +3454,68 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Autoriser une application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName souhaite accéder à votre compte Planerz';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Accéder à la liste de vos voyages non archivés (lecture seule).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Autoriser';
+
+  @override
+  String get oauthAuthorizeDeny => 'Refuser';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Échec de l\'autorisation : $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Applications connectées';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Gérer les applications tierces autorisées à accéder à vos voyages.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'Aucune application tierce n\'a accès à votre compte pour le moment.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Dernière utilisation le $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Jamais utilisée depuis l\'autorisation';
+
+  @override
+  String get connectedAppsRevokeAction => 'Révoquer';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Révoquer l\'accès ?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return 'Accès de $clientName révoqué';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -6834,4 +6896,66 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Autoriser une application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName souhaite accéder à votre compte Planerz';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Accéder à la liste de vos voyages non archivés (lecture seule).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Autoriser';
+
+  @override
+  String get oauthAuthorizeDeny => 'Refuser';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Échec de l\'autorisation : $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Applications connectées';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Gérer les applications tierces autorisées à accéder à vos voyages.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'Aucune application tierce n\'a accès à votre compte pour le moment.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Dernière utilisation le $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Jamais utilisée depuis l\'autorisation';
+
+  @override
+  String get connectedAppsRevokeAction => 'Révoquer';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Révoquer l\'accès ?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return 'Accès de $clientName révoqué';
+  }
 }

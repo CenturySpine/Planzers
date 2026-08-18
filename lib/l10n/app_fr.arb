@@ -1365,5 +1365,46 @@
   "androidSunsetTitle": "L'application Android n'est plus disponible",
   "androidSunsetBody": "L'application Android n'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.",
   "androidSunsetPwaHint": "Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu.",
-  "androidSunsetUninstallHint": "Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l'espace sur ton appareil."
+  "androidSunsetUninstallHint": "Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l'espace sur ton appareil.",
+  "oauthAuthorizeTitle": "Autoriser une application",
+  "oauthAuthorizeHeadline": "{clientName} souhaite accéder à votre compte Planerz",
+  "@oauthAuthorizeHeadline": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "oauthScopeTripsRead": "Accéder à la liste de vos voyages non archivés (lecture seule).",
+  "oauthAuthorizeAllow": "Autoriser",
+  "oauthAuthorizeDeny": "Refuser",
+  "oauthAuthorizeLoadError": "Impossible de charger cette demande d'autorisation. Le lien est peut-être invalide ou expiré.",
+  "oauthAuthorizeError": "Échec de l'autorisation : {error}",
+  "@oauthAuthorizeError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "connectedAppsTitle": "Applications connectées",
+  "accountConnectedAppsSubtitle": "Gérer les applications tierces autorisées à accéder à vos voyages.",
+  "connectedAppsEmpty": "Aucune application tierce n'a accès à votre compte pour le moment.",
+  "connectedAppsLastUsed": "Dernière utilisation le {date}",
+  "@connectedAppsLastUsed": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "connectedAppsNeverUsed": "Jamais utilisée depuis l'autorisation",
+  "connectedAppsRevokeAction": "Révoquer",
+  "connectedAppsRevokeDialogTitle": "Révoquer l'accès ?",
+  "connectedAppsRevokeDialogBody": "{clientName} ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l'autoriser plus tard si besoin.",
+  "@connectedAppsRevokeDialogBody": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "connectedAppsRevoked": "Accès de {clientName} révoqué",
+  "@connectedAppsRevoked": {
+    "placeholders": {
+      "clientName": {}
+    }
+  }
 }
