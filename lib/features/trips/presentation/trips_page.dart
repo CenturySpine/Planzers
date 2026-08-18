@@ -44,6 +44,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
 
   @override
   void dispose() {
+    _tabController?.removeListener(_onTimelineTabChanged);
     _tabController?.dispose();
     super.dispose();
   }
@@ -333,8 +334,32 @@ class _TripsPageState extends ConsumerState<TripsPage>
       Map<_TripTimelineCategory, List<Trip>> grouped) {
     if (_tabController != null) return;
 
-    _tabController =
-        TabController(length: 3, vsync: this, initialIndex: 2);
+    final lastIndex = ref.read(tripsListLastTimelineIndexProvider);
+    final initialIndex = lastIndex ?? _defaultTimelineIndex(grouped);
+
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    )..addListener(_onTimelineTabChanged);
+  }
+
+  /// Startup-only default: ongoing trips take priority over upcoming ones,
+  /// which take priority over past ones. Only used when the trip list has
+  /// no remembered tab from earlier in this app session.
+  int _defaultTimelineIndex(Map<_TripTimelineCategory, List<Trip>> grouped) {
+    if ((grouped[_TripTimelineCategory.ongoing] ?? const []).isNotEmpty) {
+      return 1;
+    }
+    return 2;
+  }
+
+  void _onTimelineTabChanged() {
+    final controller = _tabController;
+    if (controller == null || controller.indexIsChanging) return;
+    ref
+        .read(tripsListLastTimelineIndexProvider.notifier)
+        .setIndex(controller.index);
   }
 
   Map<_TripTimelineCategory, List<Trip>> _groupTripsByTimeline(
