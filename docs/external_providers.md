@@ -30,6 +30,21 @@ Note aussi, depuis sa documentation :
 - l'URL d'échange de jeton (`tokenUrl`)
 - la ou les portées (`scope`) à demander (ex. `gear.read`)
 
+### Trouver `tokenUrl` quand le fournisseur est lui-même en Cloud Functions v2
+
+Si le fournisseur expose son endpoint `/oauth/token` via une Cloud Function
+Gen2 (cas de Ridgegear, qui réutilise le même sous-module
+`oauth-provider-core` que Planerz), l'URL n'est pas prévisible à l'avance :
+Cloud Functions v2 génère une URL Cloud Run avec un hash aléatoire,
+déterminé seulement après le déploiement. Récupère-la avec :
+
+```bash
+gcloud functions describe publicApi --region=europe-west9 --project=<project-id-du-fournisseur> --gen2 --format="value(serviceConfig.uri)"
+```
+
+(remplacer `publicApi` par le nom réel de la fonction côté fournisseur si
+différent). `tokenUrl` = cette URL + `/oauth/token`.
+
 ## Étape 2 — Enregistrer le fournisseur dans Planerz
 
 Administration → "Fournisseurs externes (OAuth)" → icône "+".
