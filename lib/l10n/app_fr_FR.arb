@@ -1138,6 +1138,27 @@
   "tripOverviewPhotosAction": "Photos",
   "tripOverviewPhotosOpenAlbum": "Ouvrir l'album partagé",
   "tripOverviewAddModule": "Ajouter un module",
+  "tripOverviewTileRidgegear": "Ridgegear",
+  "tripOverviewTileWallet": "Mes documents",
+  "tripOverviewRidgegearPackWeight": "Poids du sac : {weight} kg",
+  "@tripOverviewRidgegearPackWeight": {
+    "placeholders": {
+      "weight": {}
+    }
+  },
+  "tripOverviewWalletDocumentCount": "{count} document(s)",
+  "@tripOverviewWalletDocumentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripTravelerModulesSectionTitle": "Mes modules personnels",
+  "tripTravelerModulesRidgegearLabel": "Ridgegear",
+  "tripTravelerModulesWalletLabel": "Documents personnels",
+  "tripWalletPageTitle": "Mes documents",
+  "tripWalletAddDocument": "Ajouter un document",
   "tripOverviewBannerEmpty": "Aucune photo",
   "tripOverviewBannerAddPhoto": "Ajouter une photo de couverture",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",

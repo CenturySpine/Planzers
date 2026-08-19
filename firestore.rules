@@ -1066,6 +1066,27 @@ service cloud.firestore {
           && request.resource.data.channels is map;
       }
 
+      /// Personal, per-traveler module toggles (e.g. Ridgegear, Wallet) —
+      /// activated by any participant for themselves, independent of the
+      /// trip-wide module config, and visible only to that participant
+      /// (unlike /members/{memberId} below, which any trip member can read).
+      match /travelerModules/{uid} {
+        allow read: if isTripMember(tripId) && uid == request.auth.uid;
+        // Writes merge one field at a time (toggling a single module), so
+        // both booleans aren't necessarily present together — only their
+        // type is checked when present.
+        allow create, update: if isTripMember(tripId)
+          && uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(
+            ['ridgegearEnabled', 'walletEnabled', 'updatedAt']
+          )
+          && (!('ridgegearEnabled' in request.resource.data)
+            || request.resource.data.ridgegearEnabled is bool)
+          && (!('walletEnabled' in request.resource.data)
+            || request.resource.data.walletEnabled is bool);
+        allow delete: if false;
+      }
+
       /// Per-member trip data (presence bounds, etc.).
       match /members/{memberId} {
         allow read: if isTripMember(tripId);

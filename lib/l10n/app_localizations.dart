@@ -5436,6 +5436,60 @@ abstract class AppLocalizations {
   /// **'Ajouter un module'**
   String get tripOverviewAddModule;
 
+  /// No description provided for @tripOverviewTileRidgegear.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ridgegear'**
+  String get tripOverviewTileRidgegear;
+
+  /// No description provided for @tripOverviewTileWallet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes documents'**
+  String get tripOverviewTileWallet;
+
+  /// No description provided for @tripOverviewRidgegearPackWeight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids du sac : {weight} kg'**
+  String tripOverviewRidgegearPackWeight(Object weight);
+
+  /// No description provided for @tripOverviewWalletDocumentCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} document(s)'**
+  String tripOverviewWalletDocumentCount(int count);
+
+  /// No description provided for @tripTravelerModulesSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes modules personnels'**
+  String get tripTravelerModulesSectionTitle;
+
+  /// No description provided for @tripTravelerModulesRidgegearLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ridgegear'**
+  String get tripTravelerModulesRidgegearLabel;
+
+  /// No description provided for @tripTravelerModulesWalletLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Documents personnels'**
+  String get tripTravelerModulesWalletLabel;
+
+  /// No description provided for @tripWalletPageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes documents'**
+  String get tripWalletPageTitle;
+
+  /// No description provided for @tripWalletAddDocument.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un document'**
+  String get tripWalletAddDocument;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:

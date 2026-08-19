@@ -1138,6 +1138,27 @@
   "tripOverviewPhotosAction": "Photos",
   "tripOverviewPhotosOpenAlbum": "Open shared album",
   "tripOverviewAddModule": "Add a module",
+  "tripOverviewTileRidgegear": "Ridgegear",
+  "tripOverviewTileWallet": "My documents",
+  "tripOverviewRidgegearPackWeight": "Pack weight: {weight} kg",
+  "@tripOverviewRidgegearPackWeight": {
+    "placeholders": {
+      "weight": {}
+    }
+  },
+  "tripOverviewWalletDocumentCount": "{count} document(s)",
+  "@tripOverviewWalletDocumentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripTravelerModulesSectionTitle": "My personal modules",
+  "tripTravelerModulesRidgegearLabel": "Ridgegear",
+  "tripTravelerModulesWalletLabel": "Personal documents",
+  "tripWalletPageTitle": "My documents",
+  "tripWalletAddDocument": "Add a document",
   "tripOverviewBannerEmpty": "No photo",
   "tripOverviewBannerAddPhoto": "Add a cover photo",
   "tripAnnouncementsPageTitle": "Organizers announcements",

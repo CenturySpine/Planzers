@@ -3005,6 +3005,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewAddModule => 'Add a module';
 
   @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'My documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Pack weight: $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'My personal modules';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get tripWalletPageTitle => 'My documents';
+
+  @override
+  String get tripWalletAddDocument => 'Add a document';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -6464,6 +6495,37 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripOverviewAddModule => 'Add a module';
+
+  @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'My documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Pack weight: $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'My personal modules';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get tripWalletPageTitle => 'My documents';
+
+  @override
+  String get tripWalletAddDocument => 'Add a document';
 
   @override
   String get tripOverviewBannerEmpty => 'No photo';

@@ -39,6 +39,7 @@ import 'package:planerz/features/trips/presentation/trip_meals_permissions_page.
 import 'package:planerz/features/trips/presentation/trip_shopping_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_carpool_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_page.dart';
+import 'package:planerz/features/trips/presentation/trip_wallet_page.dart';
 import 'package:planerz/features/trips/presentation/trip_settings_permissions_page.dart';
 import 'package:planerz/features/trips/presentation/trip_shell_page.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_page.dart';
@@ -320,6 +321,12 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'games',
           builder: (context, state) => TripGamesPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'wallet',
+          builder: (context, state) => TripWalletPage(
             tripId: state.pathParameters['tripId']!,
           ),
         ),
