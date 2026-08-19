@@ -228,6 +228,13 @@ exports.beginExternalConnection = onCall(async (request) => {
  * Completes a connection once the provider has redirected the browser back
  * to Planerz: validates the pending state, exchanges the code for a token
  * server-to-server, and stores it.
+ *
+ * `providerId` is optional here: the provider's redirect only carries back
+ * `code` and `state` (standard OAuth2), never a Planerz-specific
+ * `providerId`. The single-use `state` already unambiguously identifies the
+ * pending connection (and therefore its providerId) via
+ * `pendingExternalConnections`. When the caller does pass `providerId`
+ * (e.g. the test script), it's checked as an extra safety net.
  */
 exports.completeExternalConnection = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -235,10 +242,10 @@ exports.completeExternalConnection = onCall(async (request) => {
     throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
   }
 
-  const providerId = normalizeString(request.data?.providerId);
+  const requestedProviderId = normalizeString(request.data?.providerId);
   const code = normalizeString(request.data?.code);
   const state = normalizeString(request.data?.state);
-  if (!providerId || !code || !state) {
+  if (!code || !state) {
     throw new HttpsError('invalid-argument', "Paramètres de retour d'autorisation invalides");
   }
 
@@ -252,7 +259,7 @@ exports.completeExternalConnection = onCall(async (request) => {
   if (
     pending.used ||
     pending.uid !== uid ||
-    pending.providerId !== providerId ||
+    (requestedProviderId && pending.providerId !== requestedProviderId) ||
     pending.expiresAt.toMillis() < Date.now()
   ) {
     throw new HttpsError('failed-precondition', 'Requête de connexion invalide ou expirée');
@@ -261,6 +268,7 @@ exports.completeExternalConnection = onCall(async (request) => {
   // exchange below fails.
   await pendingRef.set({ used: true }, { merge: true });
 
+  const providerId = pending.providerId;
   const providerSnap = await db.collection('externalProviders').doc(providerId).get();
   if (!providerSnap.exists) {
     throw new HttpsError('not-found', 'Fournisseur inconnu');

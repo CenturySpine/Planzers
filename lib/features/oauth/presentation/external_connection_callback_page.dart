@@ -14,7 +14,6 @@ import 'package:planerz/l10n/app_localizations.dart';
 class ExternalConnectionCallbackPage extends ConsumerStatefulWidget {
   const ExternalConnectionCallbackPage({
     super.key,
-    required this.providerId,
     required this.code,
     required this.state,
     required this.error,
@@ -22,7 +21,6 @@ class ExternalConnectionCallbackPage extends ConsumerStatefulWidget {
 
   static const String routePath = '/external/callback';
 
-  final String providerId;
   final String code;
   final String state;
   final String error;
@@ -50,14 +48,16 @@ class _ExternalConnectionCallbackPageState
       setState(() => _status = _CallbackStatus.error);
       return;
     }
-    if (widget.providerId.isEmpty || widget.code.isEmpty || widget.state.isEmpty) {
+    if (widget.code.isEmpty || widget.state.isEmpty) {
       setState(() => _status = _CallbackStatus.error);
       return;
     }
 
     try {
+      // No providerId here: the provider's redirect only ever carries back
+      // `code` and `state` (standard OAuth2) — `state` alone already
+      // identifies the pending connection server-side.
       await ref.read(externalConnectionRepositoryProvider).completeConnection(
-            providerId: widget.providerId,
             code: widget.code,
             state: widget.state,
           );

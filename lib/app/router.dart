@@ -121,7 +121,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final params = state.uri.queryParameters;
         return ExternalConnectionCallbackPage(
-          providerId: params['providerId'] ?? '',
           code: params['code'] ?? '',
           state: params['state'] ?? '',
           error: params['error'] ?? '',

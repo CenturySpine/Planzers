@@ -61,14 +61,15 @@ class ExternalConnectionRepository {
     return (data['authorizeUrl'] as String?) ?? '';
   }
 
+  /// No `providerId` here: the provider's redirect only ever carries back
+  /// `code` and `state` (standard OAuth2) — `state` alone already
+  /// identifies the pending connection server-side.
   Future<void> completeConnection({
-    required String providerId,
     required String code,
     required String state,
   }) async {
     final callable = _functions.httpsCallable('completeExternalConnection');
     await callable.call(<String, dynamic>{
-      'providerId': providerId,
       'code': code,
       'state': state,
     });
