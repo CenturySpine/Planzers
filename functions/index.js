@@ -5121,3 +5121,24 @@ exports.deleteOAuthClient = deleteOAuthClient;
 const { publicApi } = require('./public_api');
 exports.publicApi = publicApi;
 
+// --- External ecosystem providers (Planerz as OAuth client) ---
+const {
+  listExternalProviders,
+  beginExternalConnection,
+  completeExternalConnection,
+  revokeExternalConnection,
+  createExternalProvider,
+  updateExternalProviderSecret,
+  listExternalProvidersAdmin,
+  deleteExternalProvider,
+} = require('./external_providers');
+
+exports.listExternalProviders = listExternalProviders;
+exports.beginExternalConnection = beginExternalConnection;
+exports.completeExternalConnection = completeExternalConnection;
+exports.revokeExternalConnection = revokeExternalConnection;
+exports.createExternalProvider = createExternalProvider;
+exports.updateExternalProviderSecret = updateExternalProviderSecret;
+exports.listExternalProvidersAdmin = listExternalProvidersAdmin;
+exports.deleteExternalProvider = deleteExternalProvider;
+

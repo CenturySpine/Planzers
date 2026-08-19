@@ -7,6 +7,7 @@ import 'package:planerz/features/auth/sign_in_page.dart';
 import 'package:planerz/features/administration/presentation/admin_announcements_manage_page.dart';
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
+import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
@@ -14,6 +15,7 @@ import 'package:planerz/features/games/presentation/trip_games_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/oauth/presentation/oauth_authorize_page.dart';
+import 'package:planerz/features/oauth/presentation/external_connection_callback_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
@@ -44,6 +46,7 @@ import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trips_page.dart';
 import 'package:planerz/features/account/presentation/public_profile_page.dart';
 import 'package:planerz/features/account/presentation/connected_apps_page.dart';
+import 'package:planerz/features/account/presentation/connected_external_providers_page.dart';
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_page.dart';
 
@@ -114,6 +117,18 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: ExternalConnectionCallbackPage.routePath,
+      builder: (context, state) {
+        final params = state.uri.queryParameters;
+        return ExternalConnectionCallbackPage(
+          providerId: params['providerId'] ?? '',
+          code: params['code'] ?? '',
+          state: params['state'] ?? '',
+          error: params['error'] ?? '',
+        );
+      },
+    ),
+    GoRoute(
       path: '/trips',
       builder: (context, state) => const TripsPage(),
     ),
@@ -138,6 +153,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: ConnectedAppsPage.routePath,
       builder: (context, state) => const ConnectedAppsPage(),
+    ),
+    GoRoute(
+      path: ConnectedExternalProvidersPage.routePath,
+      builder: (context, state) => const ConnectedExternalProvidersPage(),
     ),
     GoRoute(
       path: PublicProfilePage.routePath,
@@ -169,6 +188,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminOAuthClientsPage.routePath,
       builder: (context, state) => const AdminOAuthClientsPage(),
+    ),
+    GoRoute(
+      path: AdminExternalProvidersPage.routePath,
+      builder: (context, state) => const AdminExternalProvidersPage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,

@@ -13,6 +13,7 @@ import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/account/presentation/account_allergens_page.dart';
 import 'package:planerz/features/account/presentation/connected_apps_page.dart';
+import 'package:planerz/features/account/presentation/connected_external_providers_page.dart';
 import 'package:planerz/features/account/presentation/account_page_ui.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -890,6 +891,14 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                         title: l10n.connectedAppsTitle,
                         subtitle: l10n.accountConnectedAppsSubtitle,
                         onTap: () => context.push(ConnectedAppsPage.routePath),
+                      ),
+                      const AccountCardDivider(),
+                      AccountPrefTile(
+                        icon: Icons.hub_outlined,
+                        title: l10n.connectedExternalProvidersTitle,
+                        subtitle: l10n.accountConnectedExternalProvidersSubtitle,
+                        onTap: () => context
+                            .push(ConnectedExternalProvidersPage.routePath),
                       ),
                     ],
                   ),

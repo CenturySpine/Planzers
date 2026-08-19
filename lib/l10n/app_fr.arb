@@ -1406,5 +1406,29 @@
     "placeholders": {
       "clientName": {}
     }
-  }
+  },
+  "connectedExternalProvidersTitle": "Comptes externes connectés",
+  "accountConnectedExternalProvidersSubtitle": "Connecter votre compte aux applications de l'écosystème Planerz.",
+  "connectedExternalProvidersEmpty": "Aucune application externe n'est disponible pour le moment.",
+  "externalConnectionConnect": "Connecter",
+  "externalConnectionDisconnect": "Déconnecter",
+  "externalConnectionNotConnected": "Non connecté",
+  "externalConnectionRevokeDialogTitle": "Déconnecter ce compte ?",
+  "externalConnectionRevokeDialogBody": "Planerz ne pourra plus accéder à vos données chez {providerName}. Vous pourrez vous reconnecter plus tard si besoin.",
+  "@externalConnectionRevokeDialogBody": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionRevoked": "Compte {providerName} déconnecté",
+  "@externalConnectionRevoked": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionCallbackTitle": "Connexion en cours",
+  "externalConnectionCallbackSuccess": "Compte connecté avec succès.",
+  "externalConnectionCallbackError": "La connexion n'a pas pu être finalisée. Réessaie depuis l'écran \"Comptes externes connectés\".",
+  "externalConnectionCallbackDenied": "La connexion a été refusée ou annulée.",
+  "externalConnectionCallbackBackToList": "Retour aux comptes connectés"
 }

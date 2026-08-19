@@ -6266,6 +6266,90 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Accès de {clientName} révoqué'**
   String connectedAppsRevoked(Object clientName);
+
+  /// No description provided for @connectedExternalProvidersTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Comptes externes connectés'**
+  String get connectedExternalProvidersTitle;
+
+  /// No description provided for @accountConnectedExternalProvidersSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connecter votre compte aux applications de l\'écosystème Planerz.'**
+  String get accountConnectedExternalProvidersSubtitle;
+
+  /// No description provided for @connectedExternalProvidersEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune application externe n\'est disponible pour le moment.'**
+  String get connectedExternalProvidersEmpty;
+
+  /// No description provided for @externalConnectionConnect.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connecter'**
+  String get externalConnectionConnect;
+
+  /// No description provided for @externalConnectionDisconnect.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déconnecter'**
+  String get externalConnectionDisconnect;
+
+  /// No description provided for @externalConnectionNotConnected.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non connecté'**
+  String get externalConnectionNotConnected;
+
+  /// No description provided for @externalConnectionRevokeDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déconnecter ce compte ?'**
+  String get externalConnectionRevokeDialogTitle;
+
+  /// No description provided for @externalConnectionRevokeDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planerz ne pourra plus accéder à vos données chez {providerName}. Vous pourrez vous reconnecter plus tard si besoin.'**
+  String externalConnectionRevokeDialogBody(Object providerName);
+
+  /// No description provided for @externalConnectionRevoked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte {providerName} déconnecté'**
+  String externalConnectionRevoked(Object providerName);
+
+  /// No description provided for @externalConnectionCallbackTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion en cours'**
+  String get externalConnectionCallbackTitle;
+
+  /// No description provided for @externalConnectionCallbackSuccess.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte connecté avec succès.'**
+  String get externalConnectionCallbackSuccess;
+
+  /// No description provided for @externalConnectionCallbackError.
+  ///
+  /// In fr, this message translates to:
+  /// **'La connexion n\'a pas pu être finalisée. Réessaie depuis l\'écran \"Comptes externes connectés\".'**
+  String get externalConnectionCallbackError;
+
+  /// No description provided for @externalConnectionCallbackDenied.
+  ///
+  /// In fr, this message translates to:
+  /// **'La connexion a été refusée ou annulée.'**
+  String get externalConnectionCallbackDenied;
+
+  /// No description provided for @externalConnectionCallbackBackToList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour aux comptes connectés'**
+  String get externalConnectionCallbackBackToList;
 }
 
 class _AppLocalizationsDelegate

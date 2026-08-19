@@ -3482,6 +3482,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String connectedAppsRevoked(Object clientName) {
     return '$clientName\'s access revoked';
   }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Connected external accounts';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connect your account to Planerz ecosystem apps.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'No external app is available yet.';
+
+  @override
+  String get externalConnectionConnect => 'Connect';
+
+  @override
+  String get externalConnectionDisconnect => 'Disconnect';
+
+  @override
+  String get externalConnectionNotConnected => 'Not connected';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Disconnect this account?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz will no longer be able to access your data on $providerName. You can reconnect later if needed.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return '$providerName account disconnected';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connecting';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Account connected successfully.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'The connection could not be completed. Try again from the \"Connected external accounts\" screen.';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'The connection was denied or cancelled.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Back to connected accounts';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -6891,4 +6943,56 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String connectedAppsRevoked(Object clientName) {
     return '$clientName\'s access revoked';
   }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Connected external accounts';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connect your account to Planerz ecosystem apps.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'No external app is available yet.';
+
+  @override
+  String get externalConnectionConnect => 'Connect';
+
+  @override
+  String get externalConnectionDisconnect => 'Disconnect';
+
+  @override
+  String get externalConnectionNotConnected => 'Not connected';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Disconnect this account?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz will no longer be able to access your data on $providerName. You can reconnect later if needed.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return '$providerName account disconnected';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connecting';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Account connected successfully.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'The connection could not be completed. Try again from the \"Connected external accounts\" screen.';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'The connection was denied or cancelled.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Back to connected accounts';
 }

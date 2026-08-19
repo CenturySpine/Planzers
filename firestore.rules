@@ -563,6 +563,16 @@ service cloud.firestore {
         allow read: if signedIn() && request.auth.uid == userId;
         allow write: if false;
       }
+
+      // External ecosystem providers (e.g. Ridgegear) this user has
+      // connected their account to — Planerz acting as an OAuth *client*
+      // this time (mirror image of connectedApps above). Visible for the
+      // "Comptes externes connectés" screen; all writes go through Cloud
+      // Functions (Admin SDK).
+      match /connectedExternalProviders/{providerId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
     }
 
     // OAuth provider internals: registered third-party clients, single-use
@@ -577,6 +587,22 @@ service cloud.firestore {
     }
 
     match /oauthAccessTokens/{tokenHash} {
+      allow read, write: if false;
+    }
+
+    // External ecosystem providers: Planerz acting as an OAuth *client* of
+    // other apps (Ridgegear, Killer, ...). Mirror image of the block above
+    // — registry of providers, single-use anti-CSRF state, and the tokens
+    // Planerz holds for each. Never read or written by clients directly.
+    match /externalProviders/{providerId} {
+      allow read, write: if false;
+    }
+
+    match /pendingExternalConnections/{state} {
+      allow read, write: if false;
+    }
+
+    match /externalProviderTokens/{tokenId} {
       allow read, write: if false;
     }
 

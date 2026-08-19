@@ -1368,5 +1368,29 @@
     "placeholders": {
       "clientName": {}
     }
-  }
+  },
+  "connectedExternalProvidersTitle": "Connected external accounts",
+  "accountConnectedExternalProvidersSubtitle": "Connect your account to Planerz ecosystem apps.",
+  "connectedExternalProvidersEmpty": "No external app is available yet.",
+  "externalConnectionConnect": "Connect",
+  "externalConnectionDisconnect": "Disconnect",
+  "externalConnectionNotConnected": "Not connected",
+  "externalConnectionRevokeDialogTitle": "Disconnect this account?",
+  "externalConnectionRevokeDialogBody": "Planerz will no longer be able to access your data on {providerName}. You can reconnect later if needed.",
+  "@externalConnectionRevokeDialogBody": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionRevoked": "{providerName} account disconnected",
+  "@externalConnectionRevoked": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionCallbackTitle": "Connecting",
+  "externalConnectionCallbackSuccess": "Account connected successfully.",
+  "externalConnectionCallbackError": "The connection could not be completed. Try again from the \"Connected external accounts\" screen.",
+  "externalConnectionCallbackDenied": "The connection was denied or cancelled.",
+  "externalConnectionCallbackBackToList": "Back to connected accounts"
 }
