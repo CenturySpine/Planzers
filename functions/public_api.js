@@ -3,9 +3,11 @@
 // Two HTTP entry points served by a single Cloud Function (Gen2, region
 // europe-west9, set via setGlobalOptions in index.js):
 //   POST /oauth/token   — server-to-server code exchange (RFC 6749,
-//                          authorization_code grant), handled by
-//                          @node-oauth/oauth2-server.
-//   GET  /v1/trips       — returns the caller's non-archived trips.
+//                          authorization_code grant), delegated to the
+//                          shared OAuth provider core (see
+//                          functions/vendor/oauth-provider-core).
+//   GET  /v1/trips       — returns the caller's non-archived trips
+//                          (Planerz-specific business logic, stays here).
 //
 // Both are onRequest (plain HTTP), not onCall: this API is meant to be
 // consumed by third-party backends (e.g. Ridgegear), not the Firebase
@@ -14,40 +16,9 @@
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 const { onRequest } = require('firebase-functions/v2/https');
-const OAuth2Server = require('@node-oauth/oauth2-server');
-const { Request: OAuthRequest, Response: OAuthResponse } = OAuth2Server;
-const model = require('./oauth/model');
+const { model, createTokenHandler } = require('./vendor/oauth-provider-core');
 
-const oauth = new OAuth2Server({
-  model,
-  accessTokenLifetime: model.ACCESS_TOKEN_LIFETIME_SECONDS,
-  authorizationCodeLifetime: model.AUTHORIZATION_CODE_LIFETIME_SECONDS,
-  allowBearerTokensInQueryString: false,
-});
-
-function setCors(res) {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
-}
-
-async function handleToken(req, res) {
-  const oauthRequest = new OAuthRequest(req);
-  const oauthResponse = new OAuthResponse(res);
-  try {
-    // oauthResponse.body is already RFC 6749 §5.1-compliant (access_token,
-    // token_type, expires_in, and scope rejoined into a space-separated
-    // string) — no need to rebuild it ourselves.
-    await oauth.token(oauthRequest, oauthResponse);
-    res.status(oauthResponse.status).json(oauthResponse.body);
-  } catch (error) {
-    const status = error.code || 500;
-    res.status(status).json({
-      error: error.name || 'server_error',
-      error_description: error.message,
-    });
-  }
-}
+const { handleToken, setCors } = createTokenHandler(model);
 
 /** `location` favors `destination`; falls back to `address` (day trips). */
 function tripLocation(trip) {
