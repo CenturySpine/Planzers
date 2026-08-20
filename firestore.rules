@@ -554,6 +554,56 @@ service cloud.firestore {
           && request.auth.uid == userId
           && adminAnnouncementAllowsUserDismiss(announcementId);
       }
+
+      // Third-party apps (e.g. Ridgegear) the user has authorized via the
+      // OAuth consent flow. Visible for the "Applications connectées"
+      // screen; all writes go through Cloud Functions (Admin SDK) so that
+      // revocation also cleans up the matching oauthAccessTokens docs.
+      match /connectedApps/{clientId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
+
+      // External ecosystem providers (e.g. Ridgegear) this user has
+      // connected their account to — Planerz acting as an OAuth *client*
+      // this time (mirror image of connectedApps above). Visible for the
+      // "Comptes externes connectés" screen; all writes go through Cloud
+      // Functions (Admin SDK).
+      match /connectedExternalProviders/{providerId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
+    // OAuth provider internals: registered third-party clients, single-use
+    // authorization codes, and access tokens. Never read or written by
+    // clients directly — only Cloud Functions (Admin SDK) touch these.
+    match /oauthClients/{clientId} {
+      allow read, write: if false;
+    }
+
+    match /oauthAuthorizationCodes/{code} {
+      allow read, write: if false;
+    }
+
+    match /oauthAccessTokens/{tokenHash} {
+      allow read, write: if false;
+    }
+
+    // External ecosystem providers: Planerz acting as an OAuth *client* of
+    // other apps (Ridgegear, Killer, ...). Mirror image of the block above
+    // — registry of providers, single-use anti-CSRF state, and the tokens
+    // Planerz holds for each. Never read or written by clients directly.
+    match /externalProviders/{providerId} {
+      allow read, write: if false;
+    }
+
+    match /pendingExternalConnections/{state} {
+      allow read, write: if false;
+    }
+
+    match /externalProviderTokens/{tokenId} {
+      allow read, write: if false;
     }
 
     match /adminAnnouncements/{announcementId} {
@@ -1014,6 +1064,24 @@ service cloud.firestore {
           && userId == request.auth.uid
           && request.resource.data.keys().hasOnly(['channels', 'updatedAt'])
           && request.resource.data.channels is map;
+      }
+
+      /// Personal, per-traveler module toggles (e.g. Ridgegear, Wallet) —
+      /// activated by any participant for themselves, independent of the
+      /// trip-wide module config, and visible only to that participant
+      /// (unlike /members/{memberId} below, which any trip member can read).
+      // Each module owns its own sub-object (own key, own shape) instead of
+      // flat sibling fields — a future module only ever adds a new
+      // top-level key here, never new flat fields to coordinate.
+      // No schema/keys check here on purpose: the actual security boundary
+      // is ownership (uid == request.auth.uid), not document shape — a
+      // strict keys().hasOnly(...) check breaks the moment a doc carries
+      // any leftover field from a prior schema (e.g. mid-migration), which
+      // isn't worth the complexity to guard against for owner-only data.
+      match /travelerModules/{uid} {
+        allow read: if isTripMember(tripId) && uid == request.auth.uid;
+        allow create, update: if isTripMember(tripId) && uid == request.auth.uid;
+        allow delete: if false;
       }
 
       /// Per-member trip data (presence bounds, etc.).

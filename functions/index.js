@@ -5101,3 +5101,48 @@ exports.recomputeActivityDrivingRoutesOnTripAddressChange =
   recomputeActivityDrivingRoutesOnTripAddressChange;
 exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
 
+// --- Public API / OAuth (Ridgegear and future third-party clients) ---
+const {
+  getOAuthClientPublicInfo,
+  authorizeOAuthClient,
+  revokeConnectedApp,
+  createOAuthClient,
+  listOAuthClients,
+  deleteOAuthClient,
+} = require('./oauth_authorize');
+
+exports.getOAuthClientPublicInfo = getOAuthClientPublicInfo;
+exports.authorizeOAuthClient = authorizeOAuthClient;
+exports.revokeConnectedApp = revokeConnectedApp;
+exports.createOAuthClient = createOAuthClient;
+exports.listOAuthClients = listOAuthClients;
+exports.deleteOAuthClient = deleteOAuthClient;
+
+const { publicApi } = require('./public_api');
+exports.publicApi = publicApi;
+
+// --- External ecosystem providers (Planerz as OAuth client) ---
+const {
+  listExternalProviders,
+  beginExternalConnection,
+  completeExternalConnection,
+  revokeExternalConnection,
+  callExternalProviderApi,
+  createExternalProvider,
+  updateExternalProviderSecret,
+  updateExternalProviderConfig,
+  listExternalProvidersAdmin,
+  deleteExternalProvider,
+} = require('./external_providers');
+
+exports.listExternalProviders = listExternalProviders;
+exports.beginExternalConnection = beginExternalConnection;
+exports.completeExternalConnection = completeExternalConnection;
+exports.revokeExternalConnection = revokeExternalConnection;
+exports.callExternalProviderApi = callExternalProviderApi;
+exports.createExternalProvider = createExternalProvider;
+exports.updateExternalProviderSecret = updateExternalProviderSecret;
+exports.updateExternalProviderConfig = updateExternalProviderConfig;
+exports.listExternalProvidersAdmin = listExternalProvidersAdmin;
+exports.deleteExternalProvider = deleteExternalProvider;
+

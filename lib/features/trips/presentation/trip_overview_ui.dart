@@ -705,6 +705,7 @@ class TripOverviewModuleCard extends StatelessWidget {
     required this.onTap,
     this.statusText,
     this.showCount = true,
+    this.trailingIcon = Icons.chevron_right,
   });
 
   final String label;
@@ -715,6 +716,7 @@ class TripOverviewModuleCard extends StatelessWidget {
   final VoidCallback onTap;
   final String? statusText;
   final bool showCount;
+  final IconData trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -773,8 +775,8 @@ class TripOverviewModuleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
+              Icon(
+                trailingIcon,
                 size: 20,
                 color: NeonPalette.outline,
               ),

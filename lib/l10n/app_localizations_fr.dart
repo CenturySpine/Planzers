@@ -3031,6 +3031,56 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripOverviewAddModule => 'Ajouter un module';
 
   @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'Mes documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Poids du sac : $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'Mes modules personnels';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Documents personnels';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'Aucun projet Ridgegear trouvé.';
+
+  @override
+  String get ridgegearChangeProject => 'Changer';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choisir un projet';
+
+  @override
+  String get ridgegearConnectPrompt =>
+      'Connectez-vous et sélectionnez votre projet';
+
+  @override
+  String get ridgegearLoadingWeight => 'Chargement...';
+
+  @override
+  String get tripWalletPageTitle => 'Mes documents';
+
+  @override
+  String get tripWalletAddDocument => 'Ajouter un document';
+
+  @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
 
   @override
@@ -3454,6 +3504,120 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Autoriser une application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName souhaite accéder à votre compte Planerz';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Accéder à la liste de vos voyages non archivés (lecture seule).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Autoriser';
+
+  @override
+  String get oauthAuthorizeDeny => 'Refuser';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Échec de l\'autorisation : $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Applications connectées';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Gérer les applications tierces autorisées à accéder à vos voyages.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'Aucune application tierce n\'a accès à votre compte pour le moment.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Dernière utilisation le $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Jamais utilisée depuis l\'autorisation';
+
+  @override
+  String get connectedAppsRevokeAction => 'Révoquer';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Révoquer l\'accès ?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return 'Accès de $clientName révoqué';
+  }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Comptes externes connectés';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connecter votre compte aux applications de l\'écosystème Planerz.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'Aucune application externe n\'est disponible pour le moment.';
+
+  @override
+  String get externalConnectionConnect => 'Connecter';
+
+  @override
+  String get externalConnectionDisconnect => 'Déconnecter';
+
+  @override
+  String get externalConnectionNotConnected => 'Non connecté';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Déconnecter ce compte ?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz ne pourra plus accéder à vos données chez $providerName. Vous pourrez vous reconnecter plus tard si besoin.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return 'Compte $providerName déconnecté';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connexion en cours';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Compte connecté avec succès.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'La connexion n\'a pas pu être finalisée. Réessaie depuis l\'écran \"Comptes externes connectés\".';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'La connexion a été refusée ou annulée.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Retour aux comptes connectés';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -6411,6 +6575,56 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripOverviewAddModule => 'Ajouter un module';
 
   @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'Mes documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Poids du sac : $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'Mes modules personnels';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Documents personnels';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'Aucun projet Ridgegear trouvé.';
+
+  @override
+  String get ridgegearChangeProject => 'Changer';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choisir un projet';
+
+  @override
+  String get ridgegearConnectPrompt =>
+      'Connectez-vous et sélectionnez votre projet';
+
+  @override
+  String get ridgegearLoadingWeight => 'Chargement...';
+
+  @override
+  String get tripWalletPageTitle => 'Mes documents';
+
+  @override
+  String get tripWalletAddDocument => 'Ajouter un document';
+
+  @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
 
   @override
@@ -6834,4 +7048,118 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get androidSunsetUninstallHint =>
       'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Autoriser une application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName souhaite accéder à votre compte Planerz';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Accéder à la liste de vos voyages non archivés (lecture seule).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Autoriser';
+
+  @override
+  String get oauthAuthorizeDeny => 'Refuser';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Échec de l\'autorisation : $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Applications connectées';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Gérer les applications tierces autorisées à accéder à vos voyages.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'Aucune application tierce n\'a accès à votre compte pour le moment.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Dernière utilisation le $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Jamais utilisée depuis l\'autorisation';
+
+  @override
+  String get connectedAppsRevokeAction => 'Révoquer';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Révoquer l\'accès ?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return 'Accès de $clientName révoqué';
+  }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Comptes externes connectés';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connecter votre compte aux applications de l\'écosystème Planerz.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'Aucune application externe n\'est disponible pour le moment.';
+
+  @override
+  String get externalConnectionConnect => 'Connecter';
+
+  @override
+  String get externalConnectionDisconnect => 'Déconnecter';
+
+  @override
+  String get externalConnectionNotConnected => 'Non connecté';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Déconnecter ce compte ?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz ne pourra plus accéder à vos données chez $providerName. Vous pourrez vous reconnecter plus tard si besoin.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return 'Compte $providerName déconnecté';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connexion en cours';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Compte connecté avec succès.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'La connexion n\'a pas pu être finalisée. Réessaie depuis l\'écran \"Comptes externes connectés\".';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'La connexion a été refusée ou annulée.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Retour aux comptes connectés';
 }

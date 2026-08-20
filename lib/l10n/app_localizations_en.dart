@@ -3005,6 +3005,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripOverviewAddModule => 'Add a module';
 
   @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'My documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Pack weight: $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'My personal modules';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'No Ridgegear project found.';
+
+  @override
+  String get ridgegearChangeProject => 'Change';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choose a project';
+
+  @override
+  String get ridgegearConnectPrompt => 'Connect and select your project';
+
+  @override
+  String get ridgegearLoadingWeight => 'Loading...';
+
+  @override
+  String get tripWalletPageTitle => 'My documents';
+
+  @override
+  String get tripWalletAddDocument => 'Add a document';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -3420,6 +3469,120 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get androidSunsetUninstallHint =>
       'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Authorize an application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName wants to access your Planerz account';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Access the list of your non-archived trips (read-only).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Allow';
+
+  @override
+  String get oauthAuthorizeDeny => 'Deny';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'This authorization request couldn\'t be loaded. The link may be invalid or expired.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Authorization failed: $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Manage the third-party apps allowed to access your trips.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'No third-party app currently has access to your account.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Last used on $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Never used since authorization';
+
+  @override
+  String get connectedAppsRevokeAction => 'Revoke';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Revoke access?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName will no longer be able to access your trips. You can authorize it again later if needed.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return '$clientName\'s access revoked';
+  }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Connected external accounts';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connect your account to Planerz ecosystem apps.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'No external app is available yet.';
+
+  @override
+  String get externalConnectionConnect => 'Connect';
+
+  @override
+  String get externalConnectionDisconnect => 'Disconnect';
+
+  @override
+  String get externalConnectionNotConnected => 'Not connected';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Disconnect this account?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz will no longer be able to access your data on $providerName. You can reconnect later if needed.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return '$providerName account disconnected';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connecting';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Account connected successfully.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'The connection could not be completed. Try again from the \"Connected external accounts\" screen.';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'The connection was denied or cancelled.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Back to connected accounts';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -6352,6 +6515,55 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripOverviewAddModule => 'Add a module';
 
   @override
+  String get tripOverviewTileRidgegear => 'Ridgegear';
+
+  @override
+  String get tripOverviewTileWallet => 'My documents';
+
+  @override
+  String tripOverviewRidgegearPackWeight(Object weight) {
+    return 'Pack weight: $weight kg';
+  }
+
+  @override
+  String tripOverviewWalletDocumentCount(int count) {
+    return '$count document(s)';
+  }
+
+  @override
+  String get tripTravelerModulesSectionTitle => 'My personal modules';
+
+  @override
+  String get tripTravelerModulesRidgegearLabel => 'Ridgegear';
+
+  @override
+  String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'No Ridgegear project found.';
+
+  @override
+  String get ridgegearChangeProject => 'Change';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choose a project';
+
+  @override
+  String get ridgegearConnectPrompt => 'Connect and select your project';
+
+  @override
+  String get ridgegearLoadingWeight => 'Loading...';
+
+  @override
+  String get tripWalletPageTitle => 'My documents';
+
+  @override
+  String get tripWalletAddDocument => 'Add a document';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -6767,4 +6979,118 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get androidSunsetUninstallHint =>
       'This app will no longer receive updates. Uninstall it to free up space on your device.';
+
+  @override
+  String get oauthAuthorizeTitle => 'Authorize an application';
+
+  @override
+  String oauthAuthorizeHeadline(Object clientName) {
+    return '$clientName wants to access your Planerz account';
+  }
+
+  @override
+  String get oauthScopeTripsRead =>
+      'Access the list of your non-archived trips (read-only).';
+
+  @override
+  String get oauthAuthorizeAllow => 'Allow';
+
+  @override
+  String get oauthAuthorizeDeny => 'Deny';
+
+  @override
+  String get oauthAuthorizeLoadError =>
+      'This authorization request couldn\'t be loaded. The link may be invalid or expired.';
+
+  @override
+  String oauthAuthorizeError(Object error) {
+    return 'Authorization failed: $error';
+  }
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get accountConnectedAppsSubtitle =>
+      'Manage the third-party apps allowed to access your trips.';
+
+  @override
+  String get connectedAppsEmpty =>
+      'No third-party app currently has access to your account.';
+
+  @override
+  String connectedAppsLastUsed(Object date) {
+    return 'Last used on $date';
+  }
+
+  @override
+  String get connectedAppsNeverUsed => 'Never used since authorization';
+
+  @override
+  String get connectedAppsRevokeAction => 'Revoke';
+
+  @override
+  String get connectedAppsRevokeDialogTitle => 'Revoke access?';
+
+  @override
+  String connectedAppsRevokeDialogBody(Object clientName) {
+    return '$clientName will no longer be able to access your trips. You can authorize it again later if needed.';
+  }
+
+  @override
+  String connectedAppsRevoked(Object clientName) {
+    return '$clientName\'s access revoked';
+  }
+
+  @override
+  String get connectedExternalProvidersTitle => 'Connected external accounts';
+
+  @override
+  String get accountConnectedExternalProvidersSubtitle =>
+      'Connect your account to Planerz ecosystem apps.';
+
+  @override
+  String get connectedExternalProvidersEmpty =>
+      'No external app is available yet.';
+
+  @override
+  String get externalConnectionConnect => 'Connect';
+
+  @override
+  String get externalConnectionDisconnect => 'Disconnect';
+
+  @override
+  String get externalConnectionNotConnected => 'Not connected';
+
+  @override
+  String get externalConnectionRevokeDialogTitle => 'Disconnect this account?';
+
+  @override
+  String externalConnectionRevokeDialogBody(Object providerName) {
+    return 'Planerz will no longer be able to access your data on $providerName. You can reconnect later if needed.';
+  }
+
+  @override
+  String externalConnectionRevoked(Object providerName) {
+    return '$providerName account disconnected';
+  }
+
+  @override
+  String get externalConnectionCallbackTitle => 'Connecting';
+
+  @override
+  String get externalConnectionCallbackSuccess =>
+      'Account connected successfully.';
+
+  @override
+  String get externalConnectionCallbackError =>
+      'The connection could not be completed. Try again from the \"Connected external accounts\" screen.';
+
+  @override
+  String get externalConnectionCallbackDenied =>
+      'The connection was denied or cancelled.';
+
+  @override
+  String get externalConnectionCallbackBackToList =>
+      'Back to connected accounts';
 }

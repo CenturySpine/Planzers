@@ -1,0 +1,3 @@
+[submodule "functions/vendor/oauth-provider-core"]
+	path = functions/vendor/oauth-provider-core
+	url = https://github.com/CenturySpine/oauth-provider-core.git

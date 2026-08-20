@@ -14,6 +14,7 @@ import 'package:planerz/features/trips/presentation/invite_join_widgets.dart';
 import 'package:planerz/features/trips/presentation/trip_create_creator_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_member_preferences_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_member_stay_options_editor.dart';
+import 'package:planerz/features/trips/presentation/traveler_modules_toggle_list.dart';
 import 'package:planerz/features/trips/presentation/trip_participant_name_dialog.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -441,6 +442,16 @@ class _TripMemberPreferencesPageState
                       }),
                       cupidonTitle: l10n.cupidonModeTitle,
                       phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
+                    ),
+                    TripNeonSectionHeader(
+                      icon: Icons.widgets_outlined,
+                      label: l10n.tripTravelerModulesSectionTitle,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: TravelerModulesToggleList(
+                        tripId: widget.tripId,
+                      ),
                     ),
                     if (!isTripOwner) ...[
                       Padding(

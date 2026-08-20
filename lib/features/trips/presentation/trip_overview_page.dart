@@ -15,6 +15,7 @@ import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
@@ -25,8 +26,12 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
+import 'package:planerz/features/trips/presentation/traveler_modules_toggle_list.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
@@ -49,6 +54,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   String? _usersDataStreamKey;
 
   Trip get _trip => TripScope.of(context);
+
+  bool _autoOpenedRidgegearPicker = false;
+
+  /// Reopens the Ridgegear project picker automatically when landing back
+  /// here right after finishing the OAuth connect dance triggered from this
+  /// same trip (see `resumeContext` in the OAuth callback flow).
+  void _maybeAutoOpenRidgegearPicker() {
+    if (_autoOpenedRidgegearPicker) return;
+    final openModulePicker =
+        GoRouterState.of(context).uri.queryParameters['openModulePicker'];
+    if (openModulePicker != kRidgegearProviderId) return;
+    _autoOpenedRidgegearPicker = true;
+    final tripId = _trip.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showRidgegearProjectPicker(context, tripId: tripId);
+    });
+  }
 
   void _scheduleInviteCodeLoadIfMember(bool isTripMember) {
     if (!isTripMember || _inviteCodeLoadStarted || _inviteCode != null) return;
@@ -605,6 +628,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _maybeAutoOpenRidgegearPicker();
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
     final rooms = roomsAsync.asData?.value ?? const [];
@@ -621,6 +645,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         .toList()
       ..shuffle();
     final roomsCount = rooms.length;
+    final myTravelerModules =
+        ref.watch(myTravelerModulesStreamProvider(_trip.id)).asData?.value ??
+            const TravelerModules();
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final participants =
         ref.watch(tripParticipantsStreamProvider(_trip.id)).asData?.value ?? [];
@@ -935,8 +962,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             label: l10n.tripOverviewTileActivities,
                             icon: Icons.event_available_outlined,
                             count: plannedActivitiesCount,
-                            tileColor: NeonPalette.overviewModulePlanningTile,
-                            inkColor: NeonPalette.overviewModulePlanningInk,
+                            tileColor:
+                                ActivityFilterGroup.repas.filterLightBgColor,
+                            inkColor: ActivityFilterGroup.repas.filterInkColor,
                             statusText: _moduleStatusText(
                               detailLines: activitiesTodayLabels,
                               emptyStateMessage:
@@ -952,8 +980,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripOverviewTileRooms,
                               icon: Icons.king_bed_outlined,
                               count: roomsCount,
-                              tileColor: NeonPalette.overviewModuleRoomsTile,
-                              inkColor: NeonPalette.overviewModuleRoomsInk,
+                              tileColor:
+                                  ActivityFilterGroup.nuits.filterLightBgColor,
+                              inkColor: ActivityFilterGroup.nuits.filterInkColor,
                               statusText: _moduleStatusText(
                                 detailLines: roomsDetailLines.length > 1
                                     ? [roomsDetailLines.last]
@@ -971,8 +1000,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripOverviewTileCarpool,
                               icon: Icons.directions_car_outlined,
                               count: carpools.length,
-                              tileColor: NeonPalette.overviewModuleCarpoolTile,
-                              inkColor: NeonPalette.overviewModuleCarpoolInk,
+                              tileColor:
+                                  ActivityFilterGroup.trajets.filterLightBgColor,
+                              inkColor:
+                                  ActivityFilterGroup.trajets.filterInkColor,
                               statusText: _moduleStatusText(
                                 detailLines: myCarpoolDetailLines,
                                 emptyStateMessage:
@@ -988,8 +1019,10 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripOverviewTileGames,
                               icon: Icons.sports_esports_outlined,
                               count: boardGamesCount,
-                              tileColor: NeonPalette.overviewModuleGamesTile,
-                              inkColor: NeonPalette.overviewModuleGamesInk,
+                              tileColor:
+                                  ActivityFilterGroup.loisirs.filterLightBgColor,
+                              inkColor:
+                                  ActivityFilterGroup.loisirs.filterInkColor,
                               statusText: _moduleStatusText(
                                 detailLines: boardGamesDetailLines,
                                 emptyStateMessage:
@@ -1009,25 +1042,79 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               icon: Icons.photo_library_outlined,
                               count: 0,
                               showCount: false,
-                              tileColor: NeonPalette.overviewModulePhotosTile,
-                              inkColor: NeonPalette.overviewModulePhotosInk,
+                              tileColor:
+                                  ActivityFilterGroup.loisirs.filterLightBgColor,
+                              inkColor:
+                                  ActivityFilterGroup.loisirs.filterInkColor,
                               statusText: l10n.tripOverviewPhotosOpenAlbum,
                               onTap: () => _openLinkUrl(photosStorageUrl),
                             ),
                           ],
-                          if (canManageTripSettings) ...[
+                          if (myTravelerModules.ridgegear.enabled) ...[
+                            const SizedBox(height: 10),
+                            RidgegearModuleCard(
+                              tripId: _trip.id,
+                              ridgegear: myTravelerModules.ridgegear,
+                            ),
+                          ],
+                          if (myTravelerModules.walletEnabled) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripOverviewTileWallet,
+                              icon: Icons.folder_special_outlined,
+                              count: 3,
+                              tileColor:
+                                  ActivityFilterGroup.trajets.filterLightBgColor,
+                              inkColor:
+                                  ActivityFilterGroup.trajets.filterInkColor,
+                              statusText:
+                                  l10n.tripOverviewWalletDocumentCount(3),
+                              onTap: () =>
+                                  context.push('/trips/${_trip.id}/wallet'),
+                            ),
+                          ],
+                          if (isTripMember) ...[
                             const SizedBox(height: 10),
                             TripOverviewModuleAddCard(
                               label: l10n.tripOverviewAddModule,
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      l10n.tripOverviewTileComingSoon,
+                              onTap: () => showModalBottomSheet<void>(
+                                context: context,
+                                backgroundColor: NeonPalette.surface,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(24),
+                                  ),
+                                ),
+                                builder: (sheetContext) => SafeArea(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      20,
+                                      20,
+                                      28,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Text(
+                                          l10n.tripTravelerModulesSectionTitle,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: NeonPalette.deep,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        TravelerModulesToggleList(
+                                          tripId: _trip.id,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             ),
                           ],
                         ],

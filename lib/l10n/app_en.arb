@@ -1176,6 +1176,33 @@
   "tripOverviewPhotosAction": "Photos",
   "tripOverviewPhotosOpenAlbum": "Open shared album",
   "tripOverviewAddModule": "Add a module",
+  "tripOverviewTileRidgegear": "Ridgegear",
+  "tripOverviewTileWallet": "My documents",
+  "tripOverviewRidgegearPackWeight": "Pack weight: {weight} kg",
+  "@tripOverviewRidgegearPackWeight": {
+    "placeholders": {
+      "weight": {}
+    }
+  },
+  "tripOverviewWalletDocumentCount": "{count} document(s)",
+  "@tripOverviewWalletDocumentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripTravelerModulesSectionTitle": "My personal modules",
+  "tripTravelerModulesRidgegearLabel": "Ridgegear",
+  "tripTravelerModulesWalletLabel": "Personal documents",
+  "ridgegearProjectPickerTitle": "Choose a Ridgegear project",
+  "ridgegearProjectPickerEmpty": "No Ridgegear project found.",
+  "ridgegearChangeProject": "Change",
+  "ridgegearNoProjectSelected": "Choose a project",
+  "ridgegearConnectPrompt": "Connect and select your project",
+  "ridgegearLoadingWeight": "Loading...",
+  "tripWalletPageTitle": "My documents",
+  "tripWalletAddDocument": "Add a document",
   "tripOverviewBannerEmpty": "No photo",
   "tripOverviewBannerAddPhoto": "Add a cover photo",
   "tripAnnouncementsPageTitle": "Organizers announcements",
@@ -1365,5 +1392,70 @@
   "androidSunsetTitle": "The Android app is no longer available",
   "androidSunsetBody": "The Android app is no longer maintained during development. Use Planerz from your browser to continue with all the same features.",
   "androidSunsetPwaHint": "To get an app-like experience, open the link below in your browser then select \"Add to Home Screen\" from the browser menu.",
-  "androidSunsetUninstallHint": "This app will no longer receive updates. Uninstall it to free up space on your device."
+  "androidSunsetUninstallHint": "This app will no longer receive updates. Uninstall it to free up space on your device.",
+  "oauthAuthorizeTitle": "Authorize an application",
+  "oauthAuthorizeHeadline": "{clientName} wants to access your Planerz account",
+  "@oauthAuthorizeHeadline": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "oauthScopeTripsRead": "Access the list of your non-archived trips (read-only).",
+  "oauthAuthorizeAllow": "Allow",
+  "oauthAuthorizeDeny": "Deny",
+  "oauthAuthorizeLoadError": "This authorization request couldn't be loaded. The link may be invalid or expired.",
+  "oauthAuthorizeError": "Authorization failed: {error}",
+  "@oauthAuthorizeError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "connectedAppsTitle": "Connected apps",
+  "accountConnectedAppsSubtitle": "Manage the third-party apps allowed to access your trips.",
+  "connectedAppsEmpty": "No third-party app currently has access to your account.",
+  "connectedAppsLastUsed": "Last used on {date}",
+  "@connectedAppsLastUsed": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "connectedAppsNeverUsed": "Never used since authorization",
+  "connectedAppsRevokeAction": "Revoke",
+  "connectedAppsRevokeDialogTitle": "Revoke access?",
+  "connectedAppsRevokeDialogBody": "{clientName} will no longer be able to access your trips. You can authorize it again later if needed.",
+  "@connectedAppsRevokeDialogBody": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "connectedAppsRevoked": "{clientName}'s access revoked",
+  "@connectedAppsRevoked": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "connectedExternalProvidersTitle": "Connected external accounts",
+  "accountConnectedExternalProvidersSubtitle": "Connect your account to Planerz ecosystem apps.",
+  "connectedExternalProvidersEmpty": "No external app is available yet.",
+  "externalConnectionConnect": "Connect",
+  "externalConnectionDisconnect": "Disconnect",
+  "externalConnectionNotConnected": "Not connected",
+  "externalConnectionRevokeDialogTitle": "Disconnect this account?",
+  "externalConnectionRevokeDialogBody": "Planerz will no longer be able to access your data on {providerName}. You can reconnect later if needed.",
+  "@externalConnectionRevokeDialogBody": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionRevoked": "{providerName} account disconnected",
+  "@externalConnectionRevoked": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionCallbackTitle": "Connecting",
+  "externalConnectionCallbackSuccess": "Account connected successfully.",
+  "externalConnectionCallbackError": "The connection could not be completed. Try again from the \"Connected external accounts\" screen.",
+  "externalConnectionCallbackDenied": "The connection was denied or cancelled.",
+  "externalConnectionCallbackBackToList": "Back to connected accounts"
 }

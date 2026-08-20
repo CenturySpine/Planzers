@@ -1138,6 +1138,33 @@
   "tripOverviewPhotosAction": "Photos",
   "tripOverviewPhotosOpenAlbum": "Ouvrir l'album partagé",
   "tripOverviewAddModule": "Ajouter un module",
+  "tripOverviewTileRidgegear": "Ridgegear",
+  "tripOverviewTileWallet": "Mes documents",
+  "tripOverviewRidgegearPackWeight": "Poids du sac : {weight} kg",
+  "@tripOverviewRidgegearPackWeight": {
+    "placeholders": {
+      "weight": {}
+    }
+  },
+  "tripOverviewWalletDocumentCount": "{count} document(s)",
+  "@tripOverviewWalletDocumentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripTravelerModulesSectionTitle": "Mes modules personnels",
+  "tripTravelerModulesRidgegearLabel": "Ridgegear",
+  "tripTravelerModulesWalletLabel": "Documents personnels",
+  "ridgegearProjectPickerTitle": "Choisir un projet Ridgegear",
+  "ridgegearProjectPickerEmpty": "Aucun projet Ridgegear trouvé.",
+  "ridgegearChangeProject": "Changer",
+  "ridgegearNoProjectSelected": "Choisir un projet",
+  "ridgegearConnectPrompt": "Connectez-vous et sélectionnez votre projet",
+  "ridgegearLoadingWeight": "Chargement...",
+  "tripWalletPageTitle": "Mes documents",
+  "tripWalletAddDocument": "Ajouter un document",
   "tripOverviewBannerEmpty": "Aucune photo",
   "tripOverviewBannerAddPhoto": "Ajouter une photo de couverture",
   "tripAnnouncementsPageTitle": "Annonces des organisateurs",
@@ -1327,5 +1354,70 @@
   "androidSunsetTitle": "L'application Android n'est plus disponible",
   "androidSunsetBody": "L'application Android n'est plus maintenue pendant le développement. Utilise Planerz depuis le navigateur pour continuer avec les mêmes fonctionnalités.",
   "androidSunsetPwaHint": "Pour retrouver une expérience app, ouvre le lien ci-dessous dans ton navigateur puis sélectionne « Ajouter à l'écran d'accueil » dans son menu.",
-  "androidSunsetUninstallHint": "Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l'espace sur ton appareil."
+  "androidSunsetUninstallHint": "Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l'espace sur ton appareil.",
+  "oauthAuthorizeTitle": "Autoriser une application",
+  "oauthAuthorizeHeadline": "{clientName} souhaite accéder à votre compte Planerz",
+  "@oauthAuthorizeHeadline": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "oauthScopeTripsRead": "Accéder à la liste de vos voyages non archivés (lecture seule).",
+  "oauthAuthorizeAllow": "Autoriser",
+  "oauthAuthorizeDeny": "Refuser",
+  "oauthAuthorizeLoadError": "Impossible de charger cette demande d'autorisation. Le lien est peut-être invalide ou expiré.",
+  "oauthAuthorizeError": "Échec de l'autorisation : {error}",
+  "@oauthAuthorizeError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "connectedAppsTitle": "Applications connectées",
+  "accountConnectedAppsSubtitle": "Gérer les applications tierces autorisées à accéder à vos voyages.",
+  "connectedAppsEmpty": "Aucune application tierce n'a accès à votre compte pour le moment.",
+  "connectedAppsLastUsed": "Dernière utilisation le {date}",
+  "@connectedAppsLastUsed": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "connectedAppsNeverUsed": "Jamais utilisée depuis l'autorisation",
+  "connectedAppsRevokeAction": "Révoquer",
+  "connectedAppsRevokeDialogTitle": "Révoquer l'accès ?",
+  "connectedAppsRevokeDialogBody": "{clientName} ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l'autoriser plus tard si besoin.",
+  "@connectedAppsRevokeDialogBody": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "connectedAppsRevoked": "Accès de {clientName} révoqué",
+  "@connectedAppsRevoked": {
+    "placeholders": {
+      "clientName": {}
+    }
+  },
+  "connectedExternalProvidersTitle": "Comptes externes connectés",
+  "accountConnectedExternalProvidersSubtitle": "Connecter votre compte aux applications de l'écosystème Planerz.",
+  "connectedExternalProvidersEmpty": "Aucune application externe n'est disponible pour le moment.",
+  "externalConnectionConnect": "Connecter",
+  "externalConnectionDisconnect": "Déconnecter",
+  "externalConnectionNotConnected": "Non connecté",
+  "externalConnectionRevokeDialogTitle": "Déconnecter ce compte ?",
+  "externalConnectionRevokeDialogBody": "Planerz ne pourra plus accéder à vos données chez {providerName}. Vous pourrez vous reconnecter plus tard si besoin.",
+  "@externalConnectionRevokeDialogBody": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionRevoked": "Compte {providerName} déconnecté",
+  "@externalConnectionRevoked": {
+    "placeholders": {
+      "providerName": {}
+    }
+  },
+  "externalConnectionCallbackTitle": "Connexion en cours",
+  "externalConnectionCallbackSuccess": "Compte connecté avec succès.",
+  "externalConnectionCallbackError": "La connexion n'a pas pu être finalisée. Réessaie depuis l'écran \"Comptes externes connectés\".",
+  "externalConnectionCallbackDenied": "La connexion a été refusée ou annulée.",
+  "externalConnectionCallbackBackToList": "Retour aux comptes connectés"
 }

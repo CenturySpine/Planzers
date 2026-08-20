@@ -5436,6 +5436,96 @@ abstract class AppLocalizations {
   /// **'Ajouter un module'**
   String get tripOverviewAddModule;
 
+  /// No description provided for @tripOverviewTileRidgegear.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ridgegear'**
+  String get tripOverviewTileRidgegear;
+
+  /// No description provided for @tripOverviewTileWallet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes documents'**
+  String get tripOverviewTileWallet;
+
+  /// No description provided for @tripOverviewRidgegearPackWeight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids du sac : {weight} kg'**
+  String tripOverviewRidgegearPackWeight(Object weight);
+
+  /// No description provided for @tripOverviewWalletDocumentCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} document(s)'**
+  String tripOverviewWalletDocumentCount(int count);
+
+  /// No description provided for @tripTravelerModulesSectionTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes modules personnels'**
+  String get tripTravelerModulesSectionTitle;
+
+  /// No description provided for @tripTravelerModulesRidgegearLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ridgegear'**
+  String get tripTravelerModulesRidgegearLabel;
+
+  /// No description provided for @tripTravelerModulesWalletLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Documents personnels'**
+  String get tripTravelerModulesWalletLabel;
+
+  /// No description provided for @ridgegearProjectPickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un projet Ridgegear'**
+  String get ridgegearProjectPickerTitle;
+
+  /// No description provided for @ridgegearProjectPickerEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun projet Ridgegear trouvé.'**
+  String get ridgegearProjectPickerEmpty;
+
+  /// No description provided for @ridgegearChangeProject.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get ridgegearChangeProject;
+
+  /// No description provided for @ridgegearNoProjectSelected.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un projet'**
+  String get ridgegearNoProjectSelected;
+
+  /// No description provided for @ridgegearConnectPrompt.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connectez-vous et sélectionnez votre projet'**
+  String get ridgegearConnectPrompt;
+
+  /// No description provided for @ridgegearLoadingWeight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chargement...'**
+  String get ridgegearLoadingWeight;
+
+  /// No description provided for @tripWalletPageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes documents'**
+  String get tripWalletPageTitle;
+
+  /// No description provided for @tripWalletAddDocument.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un document'**
+  String get tripWalletAddDocument;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:
@@ -6170,6 +6260,186 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Cette application ne recevra plus de mises à jour. Désinstalle-la pour libérer de l\'espace sur ton appareil.'**
   String get androidSunsetUninstallHint;
+
+  /// No description provided for @oauthAuthorizeTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autoriser une application'**
+  String get oauthAuthorizeTitle;
+
+  /// No description provided for @oauthAuthorizeHeadline.
+  ///
+  /// In fr, this message translates to:
+  /// **'{clientName} souhaite accéder à votre compte Planerz'**
+  String oauthAuthorizeHeadline(Object clientName);
+
+  /// No description provided for @oauthScopeTripsRead.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accéder à la liste de vos voyages non archivés (lecture seule).'**
+  String get oauthScopeTripsRead;
+
+  /// No description provided for @oauthAuthorizeAllow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autoriser'**
+  String get oauthAuthorizeAllow;
+
+  /// No description provided for @oauthAuthorizeDeny.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refuser'**
+  String get oauthAuthorizeDeny;
+
+  /// No description provided for @oauthAuthorizeLoadError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de charger cette demande d\'autorisation. Le lien est peut-être invalide ou expiré.'**
+  String get oauthAuthorizeLoadError;
+
+  /// No description provided for @oauthAuthorizeError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de l\'autorisation : {error}'**
+  String oauthAuthorizeError(Object error);
+
+  /// No description provided for @connectedAppsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Applications connectées'**
+  String get connectedAppsTitle;
+
+  /// No description provided for @accountConnectedAppsSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer les applications tierces autorisées à accéder à vos voyages.'**
+  String get accountConnectedAppsSubtitle;
+
+  /// No description provided for @connectedAppsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune application tierce n\'a accès à votre compte pour le moment.'**
+  String get connectedAppsEmpty;
+
+  /// No description provided for @connectedAppsLastUsed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dernière utilisation le {date}'**
+  String connectedAppsLastUsed(Object date);
+
+  /// No description provided for @connectedAppsNeverUsed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jamais utilisée depuis l\'autorisation'**
+  String get connectedAppsNeverUsed;
+
+  /// No description provided for @connectedAppsRevokeAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Révoquer'**
+  String get connectedAppsRevokeAction;
+
+  /// No description provided for @connectedAppsRevokeDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Révoquer l\'accès ?'**
+  String get connectedAppsRevokeDialogTitle;
+
+  /// No description provided for @connectedAppsRevokeDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'{clientName} ne pourra plus accéder à vos voyages. Vous pourrez de nouveau l\'autoriser plus tard si besoin.'**
+  String connectedAppsRevokeDialogBody(Object clientName);
+
+  /// No description provided for @connectedAppsRevoked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accès de {clientName} révoqué'**
+  String connectedAppsRevoked(Object clientName);
+
+  /// No description provided for @connectedExternalProvidersTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Comptes externes connectés'**
+  String get connectedExternalProvidersTitle;
+
+  /// No description provided for @accountConnectedExternalProvidersSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connecter votre compte aux applications de l\'écosystème Planerz.'**
+  String get accountConnectedExternalProvidersSubtitle;
+
+  /// No description provided for @connectedExternalProvidersEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune application externe n\'est disponible pour le moment.'**
+  String get connectedExternalProvidersEmpty;
+
+  /// No description provided for @externalConnectionConnect.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connecter'**
+  String get externalConnectionConnect;
+
+  /// No description provided for @externalConnectionDisconnect.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déconnecter'**
+  String get externalConnectionDisconnect;
+
+  /// No description provided for @externalConnectionNotConnected.
+  ///
+  /// In fr, this message translates to:
+  /// **'Non connecté'**
+  String get externalConnectionNotConnected;
+
+  /// No description provided for @externalConnectionRevokeDialogTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déconnecter ce compte ?'**
+  String get externalConnectionRevokeDialogTitle;
+
+  /// No description provided for @externalConnectionRevokeDialogBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Planerz ne pourra plus accéder à vos données chez {providerName}. Vous pourrez vous reconnecter plus tard si besoin.'**
+  String externalConnectionRevokeDialogBody(Object providerName);
+
+  /// No description provided for @externalConnectionRevoked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte {providerName} déconnecté'**
+  String externalConnectionRevoked(Object providerName);
+
+  /// No description provided for @externalConnectionCallbackTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion en cours'**
+  String get externalConnectionCallbackTitle;
+
+  /// No description provided for @externalConnectionCallbackSuccess.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte connecté avec succès.'**
+  String get externalConnectionCallbackSuccess;
+
+  /// No description provided for @externalConnectionCallbackError.
+  ///
+  /// In fr, this message translates to:
+  /// **'La connexion n\'a pas pu être finalisée. Réessaie depuis l\'écran \"Comptes externes connectés\".'**
+  String get externalConnectionCallbackError;
+
+  /// No description provided for @externalConnectionCallbackDenied.
+  ///
+  /// In fr, this message translates to:
+  /// **'La connexion a été refusée ou annulée.'**
+  String get externalConnectionCallbackDenied;
+
+  /// No description provided for @externalConnectionCallbackBackToList.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour aux comptes connectés'**
+  String get externalConnectionCallbackBackToList;
 }
 
 class _AppLocalizationsDelegate
