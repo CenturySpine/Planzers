@@ -68,6 +68,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
     final iconUrlController = TextEditingController();
     final authorizeUrlController = TextEditingController();
     final tokenUrlController = TextEditingController();
+    final apiBaseUrlController = TextEditingController();
     final scopeController = TextEditingController();
     final clientIdController = TextEditingController();
     final clientSecretController = TextEditingController();
@@ -157,6 +158,20 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
+                            controller: apiBaseUrlController,
+                            decoration: _neonFieldDecoration(
+                              label: "URL de base de l'API métier (optionnel)",
+                              hint: 'https://ridgegear.example.com',
+                              helper:
+                                  "Nécessaire uniquement si Planerz doit appeler l'API du "
+                                  "fournisseur au nom de l'utilisateur (ex. lister ses "
+                                  "projets Ridgegear).",
+                              helperMaxLines: 3,
+                            ),
+                            style: const TextStyle(color: NeonPalette.deep),
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
                             controller: scopeController,
                             decoration: _neonFieldDecoration(
                               label: 'Portée demandée (ex. "gear.read")',
@@ -238,6 +253,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
             iconUrl: iconUrlController.text.trim(),
             authorizeUrl: authorizeUrlController.text.trim(),
             tokenUrl: tokenUrlController.text.trim(),
+            apiBaseUrl: apiBaseUrlController.text.trim(),
             scope: scopeController.text.trim(),
             clientId: clientIdController.text.trim(),
             clientSecret: clientSecretController.text.trim(),
@@ -251,6 +267,101 @@ class AdminExternalProvidersPage extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Échec de la création : $e')),
+      );
+    }
+  }
+
+  Future<void> _openEditApiBaseUrlDialog(
+    BuildContext context,
+    WidgetRef ref,
+    ExternalProviderAdminSummary provider,
+  ) async {
+    final apiBaseUrlController =
+        TextEditingController(text: provider.apiBaseUrl);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.40),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: NeonPalette.surface,
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  "URL de l'API — ${provider.displayName}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: NeonPalette.deep,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                TextFormField(
+                  controller: apiBaseUrlController,
+                  decoration: _neonFieldDecoration(
+                    label: "URL de base de l'API métier",
+                    hint: 'https://ridgegear.example.com',
+                  ),
+                  style: const TextStyle(color: NeonPalette.deep),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text(
+                        'Annuler',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.text700,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: NeonPalette.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(_externalProvidersRepositoryProvider).updateApiBaseUrl(
+            providerId: provider.providerId,
+            apiBaseUrl: apiBaseUrlController.text.trim(),
+          );
+      if (!context.mounted) return;
+      ref.invalidate(_externalProvidersAdminProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URL API mise à jour')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Échec de la mise à jour : $e')),
       );
     }
   }
@@ -350,14 +461,26 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                     subtitle: Text(
                       'providerId : ${provider.providerId}\n'
                       'client_id : ${provider.clientId}\n'
-                      'Portée : ${provider.scope}',
+                      'Portée : ${provider.scope}\n'
+                      "URL API : ${provider.apiBaseUrl.isEmpty ? 'non configurée' : provider.apiBaseUrl}",
                       style: const TextStyle(color: NeonPalette.onSurfaceVariant),
                     ),
                     isThreeLine: true,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: NeonPalette.accent),
-                      tooltip: 'Supprimer',
-                      onPressed: () => _confirmAndDelete(context, ref, provider),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.link, color: NeonPalette.primary),
+                          tooltip: "Modifier l'URL API",
+                          onPressed: () =>
+                              _openEditApiBaseUrlDialog(context, ref, provider),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: NeonPalette.accent),
+                          tooltip: 'Supprimer',
+                          onPressed: () => _confirmAndDelete(context, ref, provider),
+                        ),
+                      ],
                     ),
                   ),
                 );

@@ -29,6 +29,8 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
 import 'package:planerz/features/trips/presentation/traveler_modules_toggle_list.dart';
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
@@ -52,6 +54,24 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   String? _usersDataStreamKey;
 
   Trip get _trip => TripScope.of(context);
+
+  bool _autoOpenedRidgegearPicker = false;
+
+  /// Reopens the Ridgegear project picker automatically when landing back
+  /// here right after finishing the OAuth connect dance triggered from this
+  /// same trip (see `resumeContext` in the OAuth callback flow).
+  void _maybeAutoOpenRidgegearPicker() {
+    if (_autoOpenedRidgegearPicker) return;
+    final openModulePicker =
+        GoRouterState.of(context).uri.queryParameters['openModulePicker'];
+    if (openModulePicker != kRidgegearProviderId) return;
+    _autoOpenedRidgegearPicker = true;
+    final tripId = _trip.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showRidgegearProjectPicker(context, tripId: tripId);
+    });
+  }
 
   void _scheduleInviteCodeLoadIfMember(bool isTripMember) {
     if (!isTripMember || _inviteCodeLoadStarted || _inviteCode != null) return;
@@ -608,6 +628,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    _maybeAutoOpenRidgegearPicker();
     final roomsAsync = ref.watch(tripRoomsStreamProvider(_trip.id));
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(_trip.id));
     final rooms = roomsAsync.asData?.value ?? const [];
@@ -1029,23 +1050,11 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               onTap: () => _openLinkUrl(photosStorageUrl),
                             ),
                           ],
-                          if (myTravelerModules.ridgegearEnabled) ...[
+                          if (myTravelerModules.ridgegear.enabled) ...[
                             const SizedBox(height: 10),
-                            TripOverviewModuleCard(
-                              label: l10n.tripOverviewTileRidgegear,
-                              icon: Icons.backpack_outlined,
-                              count: 0,
-                              showCount: false,
-                              tileColor:
-                                  ActivityFilterGroup.loisirs.filterLightBgColor,
-                              inkColor:
-                                  ActivityFilterGroup.loisirs.filterInkColor,
-                              statusText:
-                                  l10n.tripOverviewRidgegearPackWeight('12,4'),
-                              onTap: () => launchUrl(
-                                Uri.parse('https://ridgegear.centuryspine.org'),
-                                mode: LaunchMode.platformDefault,
-                              ),
+                            RidgegearModuleCard(
+                              tripId: _trip.id,
+                              ridgegear: myTravelerModules.ridgegear,
                             ),
                           ],
                           if (myTravelerModules.walletEnabled) ...[

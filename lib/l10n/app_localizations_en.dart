@@ -3030,6 +3030,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripTravelerModulesWalletLabel => 'Personal documents';
 
   @override
+  String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'No Ridgegear project found.';
+
+  @override
+  String get ridgegearChangeProject => 'Change';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choose a project';
+
+  @override
+  String get ridgegearLoadingWeight => 'Loading...';
+
+  @override
   String get tripWalletPageTitle => 'My documents';
 
   @override
@@ -6520,6 +6535,21 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'No Ridgegear project found.';
+
+  @override
+  String get ridgegearChangeProject => 'Change';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choose a project';
+
+  @override
+  String get ridgegearLoadingWeight => 'Loading...';
 
   @override
   String get tripWalletPageTitle => 'My documents';

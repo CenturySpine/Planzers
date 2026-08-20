@@ -3056,6 +3056,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTravelerModulesWalletLabel => 'Documents personnels';
 
   @override
+  String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'Aucun projet Ridgegear trouvé.';
+
+  @override
+  String get ridgegearChangeProject => 'Changer';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choisir un projet';
+
+  @override
+  String get ridgegearLoadingWeight => 'Chargement...';
+
+  @override
   String get tripWalletPageTitle => 'Mes documents';
 
   @override
@@ -6579,6 +6594,21 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripTravelerModulesWalletLabel => 'Documents personnels';
+
+  @override
+  String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
+
+  @override
+  String get ridgegearProjectPickerEmpty => 'Aucun projet Ridgegear trouvé.';
+
+  @override
+  String get ridgegearChangeProject => 'Changer';
+
+  @override
+  String get ridgegearNoProjectSelected => 'Choisir un projet';
+
+  @override
+  String get ridgegearLoadingWeight => 'Chargement...';
 
   @override
   String get tripWalletPageTitle => 'Mes documents';

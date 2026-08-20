@@ -183,6 +183,13 @@ exports.listExternalProviders = onCall(async (request) => {
  * Starts a connection to an external provider: creates a short-lived,
  * single-use anti-CSRF `state` and returns the full authorize URL to
  * navigate the browser to.
+ *
+ * `resumeContext` is an optional, free-form map (e.g. `{ tripId, module }`)
+ * the caller can attach so that, once the connection completes, it can pick
+ * back up exactly where it left off (e.g. reopen a trip's module picker)
+ * instead of always landing on the generic "connected apps" screen. It's
+ * stashed on the pending-connection doc itself — no new storage needed,
+ * since that doc already survives the OAuth redirect round-trip by design.
  */
 exports.beginExternalConnection = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -195,6 +202,10 @@ exports.beginExternalConnection = onCall(async (request) => {
   if (!providerId || !redirectUri) {
     throw new HttpsError('invalid-argument', 'Paramètres de connexion invalides');
   }
+  const resumeContext =
+    request.data?.resumeContext && typeof request.data.resumeContext === 'object'
+      ? request.data.resumeContext
+      : null;
 
   const providerSnap = await admin.firestore().collection('externalProviders').doc(providerId).get();
   if (!providerSnap.exists) {
@@ -209,6 +220,7 @@ exports.beginExternalConnection = onCall(async (request) => {
     providerId,
     uid,
     redirectUri,
+    resumeContext,
     expiresAt: Timestamp.fromMillis(Date.now() + PENDING_CONNECTION_LIFETIME_MS),
     used: false,
     createdAt: FieldValue.serverTimestamp(),
@@ -356,7 +368,7 @@ exports.completeExternalConnection = onCall(async (request) => {
   );
   await batch.commit();
 
-  return { connected: true };
+  return { connected: true, resumeContext: pending.resumeContext || null };
 });
 
 /**
@@ -385,6 +397,81 @@ exports.revokeExternalConnection = onCall(async (request) => {
   return { revoked: true, providerRevokeSupported: false };
 });
 
+const PROVIDER_API_PATH_PATTERN = /^\/v1\/[a-zA-Z0-9/_-]+$/;
+
+/**
+ * Generic authenticated passthrough to a connected provider's own business
+ * API (e.g. Ridgegear's `/v1/projects`) using the caller's stored access
+ * token. Provider-agnostic on purpose — this is the one piece any future
+ * ecosystem provider's data can reuse as-is; only the *interpretation* of
+ * the returned JSON (parsing project names, weight fields, etc.) is
+ * provider-specific, and lives in the Flutter app, not here.
+ */
+exports.callExternalProviderApi = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+
+  const providerId = normalizeString(request.data?.providerId);
+  const path = normalizeString(request.data?.path);
+  if (!providerId || !PROVIDER_API_PATH_PATTERN.test(path)) {
+    throw new HttpsError('invalid-argument', 'Paramètres invalides');
+  }
+
+  const db = admin.firestore();
+  const tokenId = hashSecret(`${providerId}:${uid}`);
+  const tokenSnap = await db.collection('externalProviderTokens').doc(tokenId).get();
+  if (!tokenSnap.exists) {
+    throw new HttpsError('failed-precondition', 'not_connected');
+  }
+  const tokenData = tokenSnap.data();
+  if (
+    tokenData.accessTokenExpiresAt &&
+    tokenData.accessTokenExpiresAt.toMillis() < Date.now()
+  ) {
+    throw new HttpsError('failed-precondition', 'token_expired');
+  }
+
+  const providerSnap = await db.collection('externalProviders').doc(providerId).get();
+  if (!providerSnap.exists) {
+    throw new HttpsError('not-found', 'Fournisseur inconnu');
+  }
+  const provider = providerSnap.data();
+  if (!provider.apiBaseUrl) {
+    throw new HttpsError('failed-precondition', 'Ce fournisseur ne fournit pas d\'API de données');
+  }
+  const apiBaseUrl = assertSafeProviderUrl(provider.apiBaseUrl, "L'URL de l'API du fournisseur");
+
+  let json;
+  try {
+    const res = await fetch(new URL(path, apiBaseUrl).toString(), {
+      headers: { Authorization: `Bearer ${tokenData.accessToken}` },
+    });
+    json = await res.json();
+    if (!res.ok) {
+      throw new Error(json?.error_description || json?.error || `HTTP ${res.status}`);
+    }
+  } catch (error) {
+    await insertApplicationLog(db, {
+      level: 'error',
+      source: 'external_providers',
+      message: `Appel API échoué pour ${providerId} (${path})`,
+      details: { providerId, uid, path, error: error.message },
+    });
+    throw new HttpsError('internal', 'Échec de l\'appel au fournisseur');
+  }
+
+  db.collection('externalProviderTokens').doc(tokenId).set(
+    { lastUsedAt: FieldValue.serverTimestamp() },
+    { merge: true },
+  ).catch(() => {
+    // Best-effort bookkeeping; never block the response on it.
+  });
+
+  return { data: json };
+});
+
 // --- Administration-only: provider registry -----------------------------
 
 /**
@@ -400,6 +487,7 @@ exports.createExternalProvider = onCall(async (request) => {
   const iconUrl = normalizeString(request.data?.iconUrl);
   const authorizeUrlRaw = normalizeString(request.data?.authorizeUrl);
   const tokenUrlRaw = normalizeString(request.data?.tokenUrl);
+  const apiBaseUrlRaw = normalizeString(request.data?.apiBaseUrl);
   const scope = normalizeString(request.data?.scope);
   const clientId = normalizeString(request.data?.clientId);
   const clientSecret = normalizeString(request.data?.clientSecret);
@@ -418,6 +506,9 @@ exports.createExternalProvider = onCall(async (request) => {
   }
   assertSafeProviderUrl(authorizeUrlRaw, "L'URL d'autorisation");
   assertSafeProviderUrl(tokenUrlRaw, "L'URL de jeton");
+  if (apiBaseUrlRaw) {
+    assertSafeProviderUrl(apiBaseUrlRaw, "L'URL de l'API");
+  }
 
   const db = admin.firestore();
   const providerRef = db.collection('externalProviders').doc(providerId);
@@ -431,6 +522,7 @@ exports.createExternalProvider = onCall(async (request) => {
     iconUrl,
     authorizeUrl: authorizeUrlRaw,
     tokenUrl: tokenUrlRaw,
+    apiBaseUrl: apiBaseUrlRaw,
     scope,
     clientId,
     clientSecretName: secretId,
@@ -462,6 +554,60 @@ exports.updateExternalProviderSecret = onCall(async (request) => {
   return { updated: true };
 });
 
+/**
+ * Administration-only: edit a registered provider's non-secret fields
+ * (everything except the client secret, which only `updateExternalProviderSecret`
+ * touches) — lets an already-registered provider gain a new field (e.g.
+ * `apiBaseUrl`) without deleting and recreating it, which would also throw
+ * away its already-consumed, one-time-shown client secret.
+ */
+exports.updateExternalProviderConfig = onCall(async (request) => {
+  await requireApplicationOwner(request.auth?.uid);
+
+  const providerId = normalizeString(request.data?.providerId);
+  if (!providerId) {
+    throw new HttpsError('invalid-argument', 'providerId manquant');
+  }
+  const providerRef = admin.firestore().collection('externalProviders').doc(providerId);
+  const providerSnap = await providerRef.get();
+  if (!providerSnap.exists) {
+    throw new HttpsError('not-found', 'Fournisseur inconnu');
+  }
+
+  const update = {};
+  if (request.data?.displayName !== undefined) {
+    update.displayName = normalizeString(request.data.displayName);
+  }
+  if (request.data?.iconUrl !== undefined) {
+    update.iconUrl = normalizeString(request.data.iconUrl);
+  }
+  if (request.data?.scope !== undefined) {
+    update.scope = normalizeString(request.data.scope);
+  }
+  if (request.data?.authorizeUrl !== undefined) {
+    const v = normalizeString(request.data.authorizeUrl);
+    if (v) assertSafeProviderUrl(v, "L'URL d'autorisation");
+    update.authorizeUrl = v;
+  }
+  if (request.data?.tokenUrl !== undefined) {
+    const v = normalizeString(request.data.tokenUrl);
+    if (v) assertSafeProviderUrl(v, "L'URL de jeton");
+    update.tokenUrl = v;
+  }
+  if (request.data?.apiBaseUrl !== undefined) {
+    const v = normalizeString(request.data.apiBaseUrl);
+    if (v) assertSafeProviderUrl(v, "L'URL de l'API");
+    update.apiBaseUrl = v;
+  }
+
+  if (Object.keys(update).length === 0) {
+    throw new HttpsError('invalid-argument', 'Aucun champ à mettre à jour');
+  }
+  await providerRef.set(update, { merge: true });
+
+  return { updated: true };
+});
+
 /** Administration-only: list registered external providers (no secrets). */
 exports.listExternalProvidersAdmin = onCall(async (request) => {
   await requireApplicationOwner(request.auth?.uid);
@@ -476,6 +622,7 @@ exports.listExternalProvidersAdmin = onCall(async (request) => {
         iconUrl: data.iconUrl || '',
         authorizeUrl: data.authorizeUrl || '',
         tokenUrl: data.tokenUrl || '',
+        apiBaseUrl: data.apiBaseUrl || '',
         scope: data.scope || '',
         clientId: data.clientId || '',
       };

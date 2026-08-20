@@ -8,6 +8,7 @@ class ExternalProviderAdminSummary {
     required this.iconUrl,
     required this.authorizeUrl,
     required this.tokenUrl,
+    required this.apiBaseUrl,
     required this.scope,
     required this.clientId,
   });
@@ -17,6 +18,7 @@ class ExternalProviderAdminSummary {
   final String iconUrl;
   final String authorizeUrl;
   final String tokenUrl;
+  final String apiBaseUrl;
   final String scope;
   final String clientId;
 
@@ -27,6 +29,7 @@ class ExternalProviderAdminSummary {
       iconUrl: (map['iconUrl'] as String?) ?? '',
       authorizeUrl: (map['authorizeUrl'] as String?) ?? '',
       tokenUrl: (map['tokenUrl'] as String?) ?? '',
+      apiBaseUrl: (map['apiBaseUrl'] as String?) ?? '',
       scope: (map['scope'] as String?) ?? '',
       clientId: (map['clientId'] as String?) ?? '',
     );
@@ -57,6 +60,7 @@ class ExternalProvidersRepository {
     required String iconUrl,
     required String authorizeUrl,
     required String tokenUrl,
+    required String apiBaseUrl,
     required String scope,
     required String clientId,
     required String clientSecret,
@@ -67,6 +71,7 @@ class ExternalProvidersRepository {
       'iconUrl': iconUrl,
       'authorizeUrl': authorizeUrl,
       'tokenUrl': tokenUrl,
+      'apiBaseUrl': apiBaseUrl,
       'scope': scope,
       'clientId': clientId,
       'clientSecret': clientSecret,
@@ -80,6 +85,18 @@ class ExternalProvidersRepository {
     await _functions.httpsCallable('updateExternalProviderSecret').call({
       'providerId': providerId,
       'clientSecret': clientSecret,
+    });
+  }
+
+  /// Edits non-secret fields (here: just `apiBaseUrl`) without touching the
+  /// secret or recreating the provider.
+  Future<void> updateApiBaseUrl({
+    required String providerId,
+    required String apiBaseUrl,
+  }) async {
+    await _functions.httpsCallable('updateExternalProviderConfig').call({
+      'providerId': providerId,
+      'apiBaseUrl': apiBaseUrl,
     });
   }
 

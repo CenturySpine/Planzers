@@ -5127,8 +5127,10 @@ const {
   beginExternalConnection,
   completeExternalConnection,
   revokeExternalConnection,
+  callExternalProviderApi,
   createExternalProvider,
   updateExternalProviderSecret,
+  updateExternalProviderConfig,
   listExternalProvidersAdmin,
   deleteExternalProvider,
 } = require('./external_providers');
@@ -5137,8 +5139,10 @@ exports.listExternalProviders = listExternalProviders;
 exports.beginExternalConnection = beginExternalConnection;
 exports.completeExternalConnection = completeExternalConnection;
 exports.revokeExternalConnection = revokeExternalConnection;
+exports.callExternalProviderApi = callExternalProviderApi;
 exports.createExternalProvider = createExternalProvider;
 exports.updateExternalProviderSecret = updateExternalProviderSecret;
+exports.updateExternalProviderConfig = updateExternalProviderConfig;
 exports.listExternalProvidersAdmin = listExternalProvidersAdmin;
 exports.deleteExternalProvider = deleteExternalProvider;
 

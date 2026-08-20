@@ -57,11 +57,20 @@ class _ExternalConnectionCallbackPageState
       // No providerId here: the provider's redirect only ever carries back
       // `code` and `state` (standard OAuth2) — `state` alone already
       // identifies the pending connection server-side.
-      await ref.read(externalConnectionRepositoryProvider).completeConnection(
-            code: widget.code,
-            state: widget.state,
-          );
+      final resumeContext =
+          await ref.read(externalConnectionRepositoryProvider).completeConnection(
+                code: widget.code,
+                state: widget.state,
+              );
       if (!mounted) return;
+
+      final tripId = (resumeContext?['tripId'] as String?)?.trim();
+      final module = (resumeContext?['module'] as String?)?.trim();
+      if (tripId != null && tripId.isNotEmpty) {
+        context.go('/trips/$tripId/overview?openModulePicker=${module ?? ''}');
+        return;
+      }
+
       setState(() => _status = _CallbackStatus.success);
     } catch (e) {
       if (!mounted) return;

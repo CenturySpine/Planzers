@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/account/data/connected_external_providers_repository.dart';
+import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -14,6 +18,53 @@ class TravelerModulesToggleList extends ConsumerWidget {
   const TravelerModulesToggleList({super.key, required this.tripId});
 
   final String tripId;
+
+  Future<void> _handleRidgegearToggle(
+    BuildContext context,
+    WidgetRef ref,
+    bool value,
+  ) async {
+    final repository = ref.read(travelerModulesRepositoryProvider);
+    if (!value) {
+      await repository.disableRidgegear(tripId);
+      return;
+    }
+
+    // A cached provider value (myConnectedExternalProvidersStreamProvider)
+    // can still be empty right after this sheet opens, before its first
+    // snapshot arrives — race the toggle against a fresh one-shot read
+    // instead of trusting whatever's cached at this exact moment.
+    final connected = await ref
+        .read(connectedExternalProvidersRepositoryProvider)
+        .watchMyConnectedProviders()
+        .first;
+    final isConnected =
+        connected.any((c) => c.providerId == kRidgegearProviderId);
+
+    if (isConnected) {
+      if (context.mounted) {
+        await showRidgegearProjectPicker(context, tripId: tripId);
+      }
+      return;
+    }
+
+    // Not connected yet: trigger the OAuth handshake inline, tagged with a
+    // resumeContext so the callback lands straight back on this trip's
+    // project picker instead of the generic connected-apps screen.
+    final redirectUri = '${Uri.base.origin}/external/callback';
+    final authorizeUrl =
+        await ref.read(externalConnectionRepositoryProvider).beginConnection(
+              providerId: kRidgegearProviderId,
+              redirectUri: redirectUri,
+              resumeContext: {'tripId': tripId, 'module': kRidgegearProviderId},
+            );
+    if (authorizeUrl.isEmpty) return;
+    await launchUrl(
+      Uri.parse(authorizeUrl),
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_self',
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,11 +82,15 @@ class TravelerModulesToggleList extends ConsumerWidget {
           iconColor: ActivityFilterGroup.loisirs.filterInkColor,
           iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
           label: l10n.tripTravelerModulesRidgegearLabel,
-          value: modules.ridgegearEnabled,
-          onChanged: (value) => repository.setModuleEnabled(
-            tripId: tripId,
-            ridgegearEnabled: value,
-          ),
+          subtitle: modules.ridgegear.enabled
+              ? modules.ridgegear.projectName
+              : null,
+          value: modules.ridgegear.enabled,
+          onChanged: (value) => _handleRidgegearToggle(context, ref, value),
+          onSubtitleTap: modules.ridgegear.enabled
+              ? () => showRidgegearProjectPicker(context, tripId: tripId)
+              : null,
+          subtitleActionLabel: l10n.ridgegearChangeProject,
         ),
         const SizedBox(height: 10),
         _TravelerModuleToggleRow(
@@ -44,9 +99,9 @@ class TravelerModulesToggleList extends ConsumerWidget {
           iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
           label: l10n.tripTravelerModulesWalletLabel,
           value: modules.walletEnabled,
-          onChanged: (value) => repository.setModuleEnabled(
+          onChanged: (value) => repository.setWalletEnabled(
             tripId: tripId,
-            walletEnabled: value,
+            enabled: value,
           ),
         ),
       ],
@@ -62,6 +117,9 @@ class _TravelerModuleToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.subtitle,
+    this.onSubtitleTap,
+    this.subtitleActionLabel,
   });
 
   final IconData icon;
@@ -70,6 +128,9 @@ class _TravelerModuleToggleRow extends StatelessWidget {
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final String? subtitle;
+  final VoidCallback? onSubtitleTap;
+  final String? subtitleActionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -94,13 +155,33 @@ class _TravelerModuleToggleRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: NeonPalette.deep,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: NeonPalette.deep,
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.isNotEmpty)
+                    GestureDetector(
+                      onTap: onSubtitleTap,
+                      child: Text(
+                        onSubtitleTap != null
+                            ? '${subtitle!} · ${subtitleActionLabel ?? ''}'
+                            : subtitle!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: onSubtitleTap != null
+                              ? NeonPalette.primary
+                              : NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(width: 12),

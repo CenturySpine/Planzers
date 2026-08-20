@@ -1070,20 +1070,17 @@ service cloud.firestore {
       /// activated by any participant for themselves, independent of the
       /// trip-wide module config, and visible only to that participant
       /// (unlike /members/{memberId} below, which any trip member can read).
+      // Each module owns its own sub-object (own key, own shape) instead of
+      // flat sibling fields — a future module only ever adds a new
+      // top-level key here, never new flat fields to coordinate.
+      // No schema/keys check here on purpose: the actual security boundary
+      // is ownership (uid == request.auth.uid), not document shape — a
+      // strict keys().hasOnly(...) check breaks the moment a doc carries
+      // any leftover field from a prior schema (e.g. mid-migration), which
+      // isn't worth the complexity to guard against for owner-only data.
       match /travelerModules/{uid} {
         allow read: if isTripMember(tripId) && uid == request.auth.uid;
-        // Writes merge one field at a time (toggling a single module), so
-        // both booleans aren't necessarily present together — only their
-        // type is checked when present.
-        allow create, update: if isTripMember(tripId)
-          && uid == request.auth.uid
-          && request.resource.data.keys().hasOnly(
-            ['ridgegearEnabled', 'walletEnabled', 'updatedAt']
-          )
-          && (!('ridgegearEnabled' in request.resource.data)
-            || request.resource.data.ridgegearEnabled is bool)
-          && (!('walletEnabled' in request.resource.data)
-            || request.resource.data.walletEnabled is bool);
+        allow create, update: if isTripMember(tripId) && uid == request.auth.uid;
         allow delete: if false;
       }
 

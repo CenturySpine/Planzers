@@ -20,21 +20,50 @@ final myTravelerModulesStreamProvider =
 /// "Traveler modules" (e.g. Ridgegear, Wallet) — personal modules any
 /// participant can enable/disable for themselves, independent of the
 /// trip-wide module configuration set by the trip admin, and visible only
-/// to that participant.
+/// to that participant. Each module owns its own sub-object in the
+/// Firestore doc (own key, own shape) so adding a future module never
+/// means adding new flat sibling fields here.
+class RidgegearModuleConfig {
+  const RidgegearModuleConfig({
+    this.enabled = false,
+    this.projectId,
+    this.projectName,
+  });
+
+  final bool enabled;
+  final String? projectId;
+  final String? projectName;
+
+  factory RidgegearModuleConfig.fromMap(Map<String, dynamic>? map) {
+    if (map == null) return const RidgegearModuleConfig();
+    return RidgegearModuleConfig(
+      enabled: map['enabled'] == true,
+      projectId: (map['projectId'] as String?)?.trim().isNotEmpty == true
+          ? (map['projectId'] as String).trim()
+          : null,
+      projectName: (map['projectName'] as String?)?.trim().isNotEmpty == true
+          ? (map['projectName'] as String).trim()
+          : null,
+    );
+  }
+}
+
 class TravelerModules {
   const TravelerModules({
-    this.ridgegearEnabled = false,
+    this.ridgegear = const RidgegearModuleConfig(),
     this.walletEnabled = false,
   });
 
-  final bool ridgegearEnabled;
+  final RidgegearModuleConfig ridgegear;
   final bool walletEnabled;
 
   factory TravelerModules.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const TravelerModules();
     return TravelerModules(
-      ridgegearEnabled: map['ridgegearEnabled'] == true,
-      walletEnabled: map['walletEnabled'] == true,
+      ridgegear: RidgegearModuleConfig.fromMap(
+        map['ridgegear'] as Map<String, dynamic>?,
+      ),
+      walletEnabled: (map['wallet'] as Map<String, dynamic>?)?['enabled'] == true,
     );
   }
 }
@@ -48,42 +77,62 @@ class TravelerModulesRepository {
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
 
-  Stream<TravelerModules> watchMyTravelerModules(String tripId) {
+  DocumentReference<Map<String, dynamic>>? _myDocRef(String tripId) {
     final uid = auth.currentUser?.uid.trim() ?? '';
     final cleanTripId = tripId.trim();
-    if (uid.isEmpty || cleanTripId.isEmpty) {
-      return Stream.value(const TravelerModules());
-    }
+    if (uid.isEmpty || cleanTripId.isEmpty) return null;
     return firestore
         .collection('trips')
         .doc(cleanTripId)
         .collection('travelerModules')
-        .doc(uid)
-        .snapshots()
-        .map((snap) => TravelerModules.fromMap(snap.data()));
+        .doc(uid);
   }
 
-  Future<void> setModuleEnabled({
+  Stream<TravelerModules> watchMyTravelerModules(String tripId) {
+    final docRef = _myDocRef(tripId);
+    if (docRef == null) return Stream.value(const TravelerModules());
+    return docRef.snapshots().map((snap) => TravelerModules.fromMap(snap.data()));
+  }
+
+  Future<void> setWalletEnabled({
     required String tripId,
-    bool? ridgegearEnabled,
-    bool? walletEnabled,
+    required bool enabled,
   }) async {
-    final uid = auth.currentUser?.uid.trim() ?? '';
-    final cleanTripId = tripId.trim();
-    if (uid.isEmpty) throw StateError('Utilisateur non connecté');
-    if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
-
-    final update = <String, dynamic>{
+    final docRef = _myDocRef(tripId);
+    if (docRef == null) throw StateError('Utilisateur ou voyage invalide');
+    await docRef.set({
+      'wallet': {'enabled': enabled},
       'updatedAt': FieldValue.serverTimestamp(),
-    };
-    if (ridgegearEnabled != null) update['ridgegearEnabled'] = ridgegearEnabled;
-    if (walletEnabled != null) update['walletEnabled'] = walletEnabled;
+    }, SetOptions(merge: true));
+  }
 
-    await firestore
-        .collection('trips')
-        .doc(cleanTripId)
-        .collection('travelerModules')
-        .doc(uid)
-        .set(update, SetOptions(merge: true));
+  Future<void> setRidgegearProject({
+    required String tripId,
+    required String projectId,
+    required String projectName,
+  }) async {
+    final docRef = _myDocRef(tripId);
+    if (docRef == null) throw StateError('Utilisateur ou voyage invalide');
+    await docRef.set({
+      'ridgegear': {
+        'enabled': true,
+        'projectId': projectId,
+        'projectName': projectName,
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> disableRidgegear(String tripId) async {
+    final docRef = _myDocRef(tripId);
+    if (docRef == null) throw StateError('Utilisateur ou voyage invalide');
+    await docRef.set({
+      'ridgegear': {
+        'enabled': false,
+        'projectId': null,
+        'projectName': null,
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

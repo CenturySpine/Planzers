@@ -5478,6 +5478,36 @@ abstract class AppLocalizations {
   /// **'Documents personnels'**
   String get tripTravelerModulesWalletLabel;
 
+  /// No description provided for @ridgegearProjectPickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un projet Ridgegear'**
+  String get ridgegearProjectPickerTitle;
+
+  /// No description provided for @ridgegearProjectPickerEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun projet Ridgegear trouvé.'**
+  String get ridgegearProjectPickerEmpty;
+
+  /// No description provided for @ridgegearChangeProject.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get ridgegearChangeProject;
+
+  /// No description provided for @ridgegearNoProjectSelected.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un projet'**
+  String get ridgegearNoProjectSelected;
+
+  /// No description provided for @ridgegearLoadingWeight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chargement...'**
+  String get ridgegearLoadingWeight;
+
   /// No description provided for @tripWalletPageTitle.
   ///
   /// In fr, this message translates to:
