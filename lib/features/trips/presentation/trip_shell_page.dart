@@ -8,8 +8,10 @@ import 'package:planerz/features/account/presentation/account_app_bar_actions.da
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
+import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -80,6 +82,28 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
   String? _lastPrecachingBannerUrl;
   void _goToOverview() {
     widget.navigationShell.goBranch(0);
+  }
+
+  @override
+  void didUpdateWidget(covariant TripShellPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Branch pages stay mounted (StatefulShellRoute.indexedStack) — switching
+    // back to Aperçu never triggers a fresh build, so the Ridgegear weight
+    // provider would keep serving its cached value forever. The provider
+    // can't be pushed to by the external API, so re-fetch it by hand every
+    // time the traveler lands back on the overview tab.
+    final justArrivedOnOverview = oldWidget.navigationShell.currentIndex != 0 &&
+        widget.navigationShell.currentIndex == 0;
+    if (!justArrivedOnOverview) return;
+    final projectId = ref
+        .read(myTravelerModulesStreamProvider(widget.tripId))
+        .asData
+        ?.value
+        .ridgegear
+        .projectId;
+    if (projectId != null && projectId.isNotEmpty) {
+      ref.invalidate(ridgegearProjectWeightProvider(projectId));
+    }
   }
 
   void _precacheTripBannerIfNeeded(String? rawUrl) {
