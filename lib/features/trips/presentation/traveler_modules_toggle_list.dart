@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
-import 'package:planerz/features/account/data/connected_external_providers_repository.dart';
-import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
@@ -30,40 +27,10 @@ class TravelerModulesToggleList extends ConsumerWidget {
       return;
     }
 
-    // A cached provider value (myConnectedExternalProvidersStreamProvider)
-    // can still be empty right after this sheet opens, before its first
-    // snapshot arrives — race the toggle against a fresh one-shot read
-    // instead of trusting whatever's cached at this exact moment.
-    final connected = await ref
-        .read(connectedExternalProvidersRepositoryProvider)
-        .watchMyConnectedProviders()
-        .first;
-    final isConnected =
-        connected.any((c) => c.providerId == kRidgegearProviderId);
-
-    if (isConnected) {
-      if (context.mounted) {
-        await showRidgegearProjectPicker(context, tripId: tripId);
-      }
-      return;
-    }
-
-    // Not connected yet: trigger the OAuth handshake inline, tagged with a
-    // resumeContext so the callback lands straight back on this trip's
-    // project picker instead of the generic connected-apps screen.
-    final redirectUri = '${Uri.base.origin}/external/callback';
-    final authorizeUrl =
-        await ref.read(externalConnectionRepositoryProvider).beginConnection(
-              providerId: kRidgegearProviderId,
-              redirectUri: redirectUri,
-              resumeContext: {'tripId': tripId, 'module': kRidgegearProviderId},
-            );
-    if (authorizeUrl.isEmpty) return;
-    await launchUrl(
-      Uri.parse(authorizeUrl),
-      mode: LaunchMode.platformDefault,
-      webOnlyWindowName: '_self',
-    );
+    // Adding the module just enables it in the trip — connecting to
+    // Ridgegear and picking a project happens later, on demand, when the
+    // traveler taps the module cartouche on the trip overview.
+    await repository.setRidgegearEnabled(tripId: tripId, enabled: true);
   }
 
   @override

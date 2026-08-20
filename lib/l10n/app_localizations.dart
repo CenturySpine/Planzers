@@ -5502,6 +5502,12 @@ abstract class AppLocalizations {
   /// **'Choisir un projet'**
   String get ridgegearNoProjectSelected;
 
+  /// No description provided for @ridgegearConnectPrompt.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connectez-vous et sélectionnez votre projet'**
+  String get ridgegearConnectPrompt;
+
   /// No description provided for @ridgegearLoadingWeight.
   ///
   /// In fr, this message translates to:

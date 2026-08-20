@@ -1161,6 +1161,7 @@
   "ridgegearProjectPickerEmpty": "No Ridgegear project found.",
   "ridgegearChangeProject": "Change",
   "ridgegearNoProjectSelected": "Choose a project",
+  "ridgegearConnectPrompt": "Connect and select your project",
   "ridgegearLoadingWeight": "Loading...",
   "tripWalletPageTitle": "My documents",
   "tripWalletAddDocument": "Add a document",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
+import 'package:planerz/features/account/data/connected_external_providers_repository.dart';
 import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
@@ -37,6 +38,42 @@ class RidgegearModuleCard extends ConsumerWidget {
   final String tripId;
   final RidgegearModuleConfig ridgegear;
 
+  /// Not connected yet: tapping the cartouche triggers the OAuth handshake
+  /// (if needed) then the project picker — the module itself was already
+  /// added to the trip without either of these happening.
+  Future<void> _handleConnectAndPick(BuildContext context, WidgetRef ref) async {
+    final connected = await ref
+        .read(connectedExternalProvidersRepositoryProvider)
+        .watchMyConnectedProviders()
+        .first;
+    final isConnected =
+        connected.any((c) => c.providerId == kRidgegearProviderId);
+
+    if (isConnected) {
+      if (context.mounted) {
+        await showRidgegearProjectPicker(context, tripId: tripId);
+      }
+      return;
+    }
+
+    // Not connected yet: trigger the OAuth handshake inline, tagged with a
+    // resumeContext so the callback lands straight back on this trip's
+    // project picker instead of the generic connected-apps screen.
+    final redirectUri = '${Uri.base.origin}/external/callback';
+    final authorizeUrl =
+        await ref.read(externalConnectionRepositoryProvider).beginConnection(
+              providerId: kRidgegearProviderId,
+              redirectUri: redirectUri,
+              resumeContext: {'tripId': tripId, 'module': kRidgegearProviderId},
+            );
+    if (authorizeUrl.isEmpty) return;
+    await launchUrl(
+      Uri.parse(authorizeUrl),
+      mode: LaunchMode.platformDefault,
+      webOnlyWindowName: '_self',
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -50,8 +87,9 @@ class RidgegearModuleCard extends ConsumerWidget {
         showCount: false,
         tileColor: ActivityFilterGroup.loisirs.filterLightBgColor,
         inkColor: ActivityFilterGroup.loisirs.filterInkColor,
-        statusText: l10n.ridgegearNoProjectSelected,
-        onTap: () => showRidgegearProjectPicker(context, tripId: tripId),
+        statusText: l10n.ridgegearConnectPrompt,
+        trailingIcon: Icons.link,
+        onTap: () => _handleConnectAndPick(context, ref),
       );
     }
 

@@ -3042,6 +3042,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ridgegearNoProjectSelected => 'Choose a project';
 
   @override
+  String get ridgegearConnectPrompt => 'Connect and select your project';
+
+  @override
   String get ridgegearLoadingWeight => 'Loading...';
 
   @override
@@ -6547,6 +6550,9 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get ridgegearNoProjectSelected => 'Choose a project';
+
+  @override
+  String get ridgegearConnectPrompt => 'Connect and select your project';
 
   @override
   String get ridgegearLoadingWeight => 'Loading...';

@@ -106,6 +106,22 @@ class TravelerModulesRepository {
     }, SetOptions(merge: true));
   }
 
+  /// Turns the module on/off in the trip without touching the connected
+  /// project — used when the traveler adds/removes the module from their
+  /// list. Connecting to Ridgegear and picking a project happens later,
+  /// on demand, when they tap the module cartouche.
+  Future<void> setRidgegearEnabled({
+    required String tripId,
+    required bool enabled,
+  }) async {
+    final docRef = _myDocRef(tripId);
+    if (docRef == null) throw StateError('Utilisateur ou voyage invalide');
+    await docRef.set({
+      'ridgegear': {'enabled': enabled},
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> setRidgegearProject({
     required String tripId,
     required String projectId,
