@@ -24,6 +24,7 @@ class InviteJoinContext {
     required this.participants,
     required this.requiresParticipantChoice,
     required this.cupidonModeEnabled,
+    this.alreadyMember = false,
     this.tripStartDate,
     this.tripEndDate,
     this.tripStartDayPart,
@@ -36,6 +37,7 @@ class InviteJoinContext {
   final List<InviteJoinParticipantOption> participants;
   final bool requiresParticipantChoice;
   final bool cupidonModeEnabled;
+  final bool alreadyMember;
 
   /// From Cloud Function [getInviteJoinContext] (ISO), for stay bounds UI.
   final DateTime? tripStartDate;

@@ -62,4 +62,25 @@ void main() {
     expect(fallback.startDateKey, calendar.startDateKey);
     expect(fallback.endDateKey, calendar.endDateKey);
   });
+
+  test('invite context tracks already-member responses', () {
+    const freshContext = InviteJoinContext(
+      tripId: 'trip-1',
+      tripTitle: 'Test',
+      participants: [],
+      requiresParticipantChoice: false,
+      cupidonModeEnabled: true,
+    );
+    const alreadyMemberContext = InviteJoinContext(
+      tripId: 'trip-1',
+      tripTitle: 'Test',
+      participants: [],
+      requiresParticipantChoice: false,
+      cupidonModeEnabled: true,
+      alreadyMember: true,
+    );
+
+    expect(freshContext.alreadyMember, isFalse);
+    expect(alreadyMemberContext.alreadyMember, isTrue);
+  });
 }

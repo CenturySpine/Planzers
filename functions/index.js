@@ -360,10 +360,7 @@ function defaultTripPermissions() {
       deleteTrip: 'owner',
     },
     participants: {
-      createParticipant: 'owner',
-      editPlaceholderParticipant: 'owner',
-      deletePlaceholderParticipant: 'owner',
-      deleteRegisteredParticipant: 'owner',
+      manageParticipants: 'owner',
       toggleAdminRole: 'owner',
     },
     expenses: {
@@ -2072,9 +2069,76 @@ function participantStayFieldsForTrip(tripData) {
   return defaultStayForTrip(tripData);
 }
 
+function participantStaySnapshot(participantData) {
+  const stayStartDateKey = normalizeString(participantData.stayStartDateKey);
+  const stayStartDayPart = normalizeString(participantData.stayStartDayPart);
+  const stayEndDateKey = normalizeString(participantData.stayEndDateKey);
+  const stayEndDayPart = normalizeString(participantData.stayEndDayPart);
+  if (
+    !stayStartDateKey ||
+    !stayStartDayPart ||
+    !stayEndDateKey ||
+    !stayEndDayPart
+  ) {
+    return null;
+  }
+  return {
+    stayStartDateKey,
+    stayStartDayPart,
+    stayEndDateKey,
+    stayEndDayPart,
+  };
+}
+
+function stayFieldsEqual(a, b) {
+  return (
+    a &&
+    b &&
+    a.stayStartDateKey === b.stayStartDateKey &&
+    a.stayStartDayPart === b.stayStartDayPart &&
+    a.stayEndDateKey === b.stayEndDateKey &&
+    a.stayEndDayPart === b.stayEndDayPart
+  );
+}
+
+function participantStayWithinTripBounds(stay, tripData) {
+  const tripStartDateKey = tripCalendarDateKey(tripData.startDate);
+  const tripEndDateKey = tripCalendarDateKey(tripData.endDate);
+  if (!tripStartDateKey && !tripEndDateKey) {
+    return true;
+  }
+  if (!stay) {
+    return false;
+  }
+  if (tripStartDateKey && stay.stayStartDateKey < tripStartDateKey) {
+    return false;
+  }
+  if (tripEndDateKey && stay.stayEndDateKey > tripEndDateKey) {
+    return false;
+  }
+  return true;
+}
+
+function shouldResetParticipantStayOnCalendarChange(participantData, beforeTrip, afterTrip) {
+  if (afterTrip.isDayTrip === true) {
+    return true;
+  }
+  const currentStay = participantStaySnapshot(participantData);
+  if (!currentStay) {
+    return true;
+  }
+  if (!participantStayWithinTripBounds(currentStay, afterTrip)) {
+    return true;
+  }
+  if (beforeTrip.isDayTrip === true) {
+    return false;
+  }
+  return stayFieldsEqual(currentStay, defaultStayForTrip(beforeTrip));
+}
+
 /**
- * When an organizer changes trip dates or day-trip vs stay mode, reset every
- * participant stay to the new trip defaults (custom stays are invalid anyway).
+ * When the trip calendar changes, keep valid custom participant stays and only
+ * refresh stays that still mirror the old trip default or became invalid.
  */
 exports.syncParticipantStaysOnTripCalendarChange = onDocumentUpdated(
   {
@@ -2102,6 +2166,15 @@ exports.syncParticipantStaysOnTripCalendarChange = onDocumentUpdated(
     let batch = db.batch();
     let writeCount = 0;
     for (const participantDoc of participantsSnap.docs) {
+      if (
+        !shouldResetParticipantStayOnCalendarChange(
+          participantDoc.data() || {},
+          before,
+          after
+        )
+      ) {
+        continue;
+      }
       batch.update(participantDoc.ref, stayUpdate);
       writeCount++;
       if (writeCount >= 450) {
@@ -2401,78 +2474,79 @@ async function completeJoinTripWithInvite(
   const bypass = bypassParticipantChoice === true;
   const db = admin.firestore();
 
-  // Validate token and check membership outside the transaction first.
-  const [tripSnap, participantsSnap] = await Promise.all([
-    tripRef.get(),
-    tripRef.collection('participants').get(),
-  ]);
-  if (!tripSnap.exists) {
-    throw new HttpsError('not-found', 'Voyage introuvable');
-  }
-  const data = tripSnap.data() || {};
-  assertTripInviteToken(data, token);
-
-  const memberUserIds = Array.isArray(data.memberUserIds)
-    ? data.memberUserIds.map((v) => String(v))
-    : [];
-  if (memberUserIds.includes(uid)) {
-    return;
-  }
-
-  const unclaimedSlots = participantsSnap.docs.filter((d) => {
-    const userId = normalizeString(d.data().userId);
-    const isChild = d.data().isChild === true;
-    return !userId && !isChild;
-  });
-
-  let claimedParticipantRef = null;
-
-  if (unclaimedSlots.length > 0 && !bypass) {
-    if (!slotArg) {
-      throw new HttpsError(
-        'invalid-argument',
-        'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
-      );
+  return db.runTransaction(async (tx) => {
+    const [tripSnap, participantsSnap] = await Promise.all([
+      tx.get(tripRef),
+      tx.get(tripRef.collection('participants')),
+    ]);
+    if (!tripSnap.exists) {
+      throw new HttpsError('not-found', 'Voyage introuvable');
     }
-    const slotDoc = participantsSnap.docs.find((d) => d.id === slotArg);
-    if (!slotDoc || normalizeString(slotDoc.data().userId)) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce voyageur a déjà été choisi ou est introuvable.'
-      );
-    }
-    if (slotDoc.data().isChild === true) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
-      );
-    }
-    claimedParticipantRef = slotDoc.ref;
-  }
+    const data = tripSnap.data() || {};
+    assertTripInviteToken(data, token);
 
-  // Claim an existing slot or create a new participant document.
-  if (claimedParticipantRef) {
-    await claimedParticipantRef.update({ userId: uid });
-  } else {
-    const participantName = assertParticipantNameForNewJoin(newParticipantName);
-    const defaultStay = defaultStayForTrip(data);
-    const newParticipantDoc = {
-      participantName,
-      userId: uid,
-      ...defaultStay,
-      cupidonEnabled: false,
-      phoneVisibility: 'nobody',
-      createdAt: FieldValue.serverTimestamp(),
-    };
-    if (useProfileNameForJoin === true) {
-      newParticipantDoc.useProfileName = true;
+    const memberUserIds = Array.isArray(data.memberUserIds)
+      ? data.memberUserIds.map((v) => String(v))
+      : [];
+    if (memberUserIds.includes(uid)) {
+      return { alreadyMember: true };
     }
-    await tripRef.collection('participants').add(newParticipantDoc);
-  }
 
-  await tripRef.update({
-    memberUserIds: FieldValue.arrayUnion(uid),
-    updatedAt: FieldValue.serverTimestamp(),
+    const unclaimedSlots = participantsSnap.docs.filter((d) => {
+      const userId = normalizeString(d.data().userId);
+      const isChild = d.data().isChild === true;
+      return !userId && !isChild;
+    });
+
+    let claimedParticipantRef = null;
+
+    if (unclaimedSlots.length > 0 && !bypass) {
+      if (!slotArg) {
+        throw new HttpsError(
+          'invalid-argument',
+          'Choisis un voyageur prévu sur la liste pour rejoindre ce voyage.'
+        );
+      }
+      const slotDoc = participantsSnap.docs.find((d) => d.id === slotArg);
+      if (!slotDoc || normalizeString(slotDoc.data().userId)) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce voyageur a déjà été choisi ou est introuvable.'
+        );
+      }
+      if (slotDoc.data().isChild === true) {
+        throw new HttpsError(
+          'failed-precondition',
+          'Ce voyageur prévu est un enfant et ne peut pas être associé à un compte.'
+        );
+      }
+      claimedParticipantRef = slotDoc.ref;
+    }
+
+    if (claimedParticipantRef) {
+      tx.update(claimedParticipantRef, { userId: uid });
+    } else {
+      const participantName = assertParticipantNameForNewJoin(newParticipantName);
+      const defaultStay = defaultStayForTrip(data);
+      const newParticipantDoc = {
+        participantName,
+        userId: uid,
+        ...defaultStay,
+        cupidonEnabled: false,
+        phoneVisibility: 'nobody',
+        createdAt: FieldValue.serverTimestamp(),
+      };
+      if (useProfileNameForJoin === true) {
+        newParticipantDoc.useProfileName = true;
+      }
+      tx.set(tripRef.collection('participants').doc(), newParticipantDoc);
+    }
+
+    tx.update(tripRef, {
+      memberUserIds: FieldValue.arrayUnion(uid),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return { alreadyMember: false };
   });
 }
 
@@ -2524,7 +2598,11 @@ exports.getInviteJoinContext = onCall(
       ? data.memberUserIds.map((v) => String(v))
       : [];
     if (memberUserIds.includes(uid)) {
-      return { tripId: tripRef.id, alreadyMember: true };
+      return {
+        tripId: tripRef.id,
+        tripTitle: normalizeString(data.title) || 'Voyage',
+        alreadyMember: true,
+      };
     }
 
     const participantsSnap = await tripRef.collection('participants').get();
@@ -2744,7 +2822,7 @@ exports.joinTripWithInvite = onCall(
     const useProfileName = request.data?.useProfileName === true;
 
     const tripRef = admin.firestore().collection('trips').doc(tripId);
-    await completeJoinTripWithInvite(
+    const result = await completeJoinTripWithInvite(
       tripRef,
       uid,
       token,
@@ -2754,7 +2832,7 @@ exports.joinTripWithInvite = onCall(
       useProfileName
     );
 
-    return { ok: true };
+    return { ok: true, alreadyMember: result?.alreadyMember === true };
   }
 );
 
