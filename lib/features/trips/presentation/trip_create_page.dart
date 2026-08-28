@@ -281,7 +281,6 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
       _isDayTrip = enabled;
       _errorMessage = null;
       if (enabled) {
-        _roomsModuleEnabled = false;
         final day = _singleDayDate ??
             TripMemberStay.parseDateKey(_stay.startDateKey) ??
             DateUtils.dateOnly(DateTime.now());
@@ -1243,6 +1242,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onChanged,
+    this.switchKey,
   });
 
   final bool value;
@@ -1251,6 +1251,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final ValueChanged<bool> onChanged;
+  final Key? switchKey;
 
   @override
   Widget build(BuildContext context) {
@@ -1319,6 +1320,7 @@ class _NeonFeatureToggleCard extends StatelessWidget {
                 ),
               ),
               _NeonSwitch(
+                key: switchKey,
                 value: value,
                 onChanged: enabled ? onChanged : null,
               ),
@@ -1351,12 +1353,14 @@ class _DayTripToggleCard extends StatelessWidget {
       title: l10n.tripDayTripLabel,
       subtitle: l10n.tripCreateDayTripSubtitle,
       onChanged: onChanged,
+      switchKey: const ValueKey('trip-create-day-trip-switch'),
     );
   }
 }
 
 class _NeonSwitch extends StatelessWidget {
   const _NeonSwitch({
+    super.key,
     required this.value,
     required this.onChanged,
   });
@@ -1483,6 +1487,7 @@ class _TripCreateModulesSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _TripCreateModuleToggleRow(
+          switchKey: const ValueKey('trip-create-rooms-module-switch'),
           value: roomsEnabled,
           enabled: roomsToggleEnabled,
           muted: isDayTrip,
@@ -1647,6 +1652,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onChanged,
+    this.switchKey,
     this.muted = false,
   });
 
@@ -1657,6 +1663,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
   final String title;
   final String subtitle;
   final ValueChanged<bool> onChanged;
+  final Key? switchKey;
 
   @override
   Widget build(BuildContext context) {
@@ -1716,6 +1723,7 @@ class _TripCreateModuleToggleRow extends StatelessWidget {
                 ),
               ),
               _NeonSwitch(
+                key: switchKey,
                 value: muted ? false : value,
                 onChanged: enabled ? onChanged : null,
               ),
