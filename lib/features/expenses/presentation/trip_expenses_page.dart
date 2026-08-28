@@ -259,6 +259,16 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
     if (!context.mounted) return;
     final participantGroupsList =
         ref.read(tripParticipantGroupsStreamProvider(tripId)).asData?.value ?? [];
+    String? currentUserBillingUnitId;
+    if (currentUserMemberId != null) {
+      currentUserBillingUnitId = currentUserMemberId;
+      for (final participantGroup in participantGroupsList) {
+        if (participantGroup.memberIds.contains(currentUserMemberId)) {
+          currentUserBillingUnitId = participantGroup.id;
+          break;
+        }
+      }
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => AddExpensePage(
@@ -268,6 +278,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
               participantScopeUnitIdsForGroup(group, participants, participantGroupsList),
           memberLabels: memberLabels,
           currentUserMemberId: currentUserMemberId,
+          currentUserBillingUnitId: currentUserBillingUnitId,
         ),
       ),
     );

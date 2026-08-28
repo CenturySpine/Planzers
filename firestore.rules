@@ -175,6 +175,32 @@ service cloud.firestore {
         && tripCallerRoleRank(tripId) >= roleRank(tripExpenseDeletePostMinRole(tripId));
     }
 
+    function expenseGroupLocked(tripId, groupId) {
+      let statePath = /databases/$(database)/documents/trips/$(tripId)/expenseGroups/$(groupId)/state/current;
+      return exists(statePath) && get(statePath).data.expensesLocked == true;
+    }
+
+    function expenseCreateTargetsUnlockedPost(tripId) {
+      return request.resource.data.groupId is string
+        && request.resource.data.groupId.size() > 0
+        && !expenseGroupLocked(tripId, request.resource.data.groupId);
+    }
+
+    function expenseUpdateTargetsUnlockedPosts(tripId) {
+      return resource.data.groupId is string
+        && resource.data.groupId.size() > 0
+        && request.resource.data.groupId is string
+        && request.resource.data.groupId.size() > 0
+        && !expenseGroupLocked(tripId, resource.data.groupId)
+        && !expenseGroupLocked(tripId, request.resource.data.groupId);
+    }
+
+    function expenseDeleteTargetsUnlockedPost(tripId) {
+      return resource.data.groupId is string
+        && resource.data.groupId.size() > 0
+        && !expenseGroupLocked(tripId, resource.data.groupId);
+    }
+
     function tripSuggestActivityMinRole(tripId) {
       return (
           tripDoc(tripId).data.permissions is map
@@ -769,12 +795,15 @@ service cloud.firestore {
       match /expenses/{expenseId} {
         allow read: if isTripMember(tripId);
         allow create: if isTripMember(tripId)
-          && request.resource.data.get('operationType', 'expense') != 'settlement';
+          && request.resource.data.get('operationType', 'expense') != 'settlement'
+          && expenseCreateTargetsUnlockedPost(tripId);
         allow update: if isTripMember(tripId)
           && resource.data.get('operationType', 'expense') != 'settlement'
-          && request.resource.data.get('operationType', 'expense') != 'settlement';
+          && request.resource.data.get('operationType', 'expense') != 'settlement'
+          && expenseUpdateTargetsUnlockedPosts(tripId);
         allow delete: if isTripMember(tripId)
-          && resource.data.get('operationType', 'expense') != 'settlement';
+          && resource.data.get('operationType', 'expense') != 'settlement'
+          && expenseDeleteTargetsUnlockedPost(tripId);
       }
 
       match /rooms/{roomId} {
