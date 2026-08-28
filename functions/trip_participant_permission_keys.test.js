@@ -27,3 +27,16 @@ test('participant add and remove callables use manageParticipants permission', (
   assert.equal(participantPermissionKey('removeTripParticipant'), 'manageParticipants');
   assert.equal(participantPermissionKey('removeTripRegisteredMember'), 'manageParticipants');
 });
+
+test('invite join claims participant slot and membership in one transaction', () => {
+  const start = source.indexOf('async function completeJoinTripWithInvite');
+  assert.notEqual(start, -1, 'completeJoinTripWithInvite helper not found');
+  const end = source.indexOf('\nexports.getInviteJoinContext', start);
+  const block = source.slice(start, end);
+  const transactionIndex = block.indexOf('await db.runTransaction');
+  assert.notEqual(transactionIndex, -1, 'join helper must use a transaction');
+
+  const transactionBlock = block.slice(transactionIndex);
+  assert.match(transactionBlock, /tx\.update\(claimedParticipantRef,\s*\{\s*userId: uid\s*\}\)/);
+  assert.match(transactionBlock, /tx\.update\(tripRef,\s*\{[\s\S]*memberUserIds: FieldValue\.arrayUnion\(uid\)/);
+});

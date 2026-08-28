@@ -739,8 +739,9 @@ service cloud.firestore {
         allow update: if canEditExpensePost(tripId)
           && resource.data.visibleToMemberIds is list
           && request.resource.data.visibleToMemberIds is list;
-        allow delete: if canDeleteExpensePost(tripId)
-          && resource.data.visibleToMemberIds is list;
+        // Deletion must go through the callable so related expenses, balances,
+        // suggestions, and summaries are removed together.
+        allow delete: if false;
 
         match /balances/{balanceId} {
           allow read: if isTripMember(tripId);
@@ -768,13 +769,9 @@ service cloud.firestore {
 
       match /expenses/{expenseId} {
         allow read: if isTripMember(tripId);
-        allow create: if isTripMember(tripId)
-          && request.resource.data.get('operationType', 'expense') != 'settlement';
-        allow update: if isTripMember(tripId)
-          && resource.data.get('operationType', 'expense') != 'settlement'
-          && request.resource.data.get('operationType', 'expense') != 'settlement';
-        allow delete: if isTripMember(tripId)
-          && resource.data.get('operationType', 'expense') != 'settlement';
+        // Expense line mutations must go through callables so permissions,
+        // post visibility, and per-post locks are enforced consistently.
+        allow create, update, delete: if false;
       }
 
       match /rooms/{roomId} {

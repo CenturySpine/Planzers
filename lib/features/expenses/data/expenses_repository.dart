@@ -23,76 +23,86 @@ final expensesRepositoryProvider = Provider<ExpensesRepository>((ref) {
 });
 
 /// Live expense posts for a trip, newest first.
-final tripExpenseGroupsStreamProvider =
-    StreamProvider.autoDispose.family<List<TripExpenseGroup>, String>(
-        (ref, tripId) {
-  return ref.watch(expensesRepositoryProvider).watchTripExpenseGroups(tripId);
-});
+final tripExpenseGroupsStreamProvider = StreamProvider.autoDispose
+    .family<List<TripExpenseGroup>, String>((ref, tripId) {
+      return ref
+          .watch(expensesRepositoryProvider)
+          .watchTripExpenseGroups(tripId);
+    });
 
 /// Live list of expenses for a trip, newest first.
-final tripExpensesStreamProvider =
-    StreamProvider.autoDispose.family<List<TripExpense>, String>((ref, tripId) {
-  return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
-});
+final tripExpensesStreamProvider = StreamProvider.autoDispose
+    .family<List<TripExpense>, String>((ref, tripId) {
+      return ref.watch(expensesRepositoryProvider).watchTripExpenses(tripId);
+    });
 
 typedef ExpenseGroupScope = ({String tripId, String groupId});
 
 final expenseGroupBalancesStreamProvider = StreamProvider.autoDispose
     .family<List<GroupBalance>, ExpenseGroupScope>((ref, scope) {
-  return ref
-      .watch(expensesRepositoryProvider)
-      .watchGroupBalances(scope.tripId, scope.groupId);
-});
+      return ref
+          .watch(expensesRepositoryProvider)
+          .watchGroupBalances(scope.tripId, scope.groupId);
+    });
 
-final expenseGroupSuggestedReimbursementsStreamProvider =
-    StreamProvider.autoDispose
-        .family<List<SuggestedReimbursement>, ExpenseGroupScope>((ref, scope) {
-  return ref.watch(expensesRepositoryProvider).watchGroupSuggestedReimbursements(
-        scope.tripId,
-        scope.groupId,
-      );
-});
+final expenseGroupSuggestedReimbursementsStreamProvider = StreamProvider
+    .autoDispose
+    .family<List<SuggestedReimbursement>, ExpenseGroupScope>((ref, scope) {
+      return ref
+          .watch(expensesRepositoryProvider)
+          .watchGroupSuggestedReimbursements(scope.tripId, scope.groupId);
+    });
 
 final expenseGroupSummaryStreamProvider = StreamProvider.autoDispose
     .family<ExpenseGroupSummary?, ExpenseGroupScope>((ref, scope) {
-  return ref
-      .watch(expensesRepositoryProvider)
-      .watchGroupExpenseSummary(scope.tripId, scope.groupId);
-});
+      return ref
+          .watch(expensesRepositoryProvider)
+          .watchGroupExpenseSummary(scope.tripId, scope.groupId);
+    });
 
 /// Live trip-wide expense settings (notifications) for a trip.
-final tripExpensesStatesStreamProvider =
-    StreamProvider.autoDispose.family<TripExpensesStates, String>((ref, tripId) {
-  return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
-});
+final tripExpensesStatesStreamProvider = StreamProvider.autoDispose
+    .family<TripExpensesStates, String>((ref, tripId) {
+      return ref.watch(expensesRepositoryProvider).watchExpensesStates(tripId);
+    });
 
 /// Live lock state for a single expense post.
 final expenseGroupStateStreamProvider = StreamProvider.autoDispose
     .family<TripExpenseGroupState, ExpenseGroupScope>((ref, scope) {
-  return ref.watch(expensesRepositoryProvider).watchExpenseGroupState(
-        scope.tripId,
-        scope.groupId,
-      );
-});
+      return ref
+          .watch(expensesRepositoryProvider)
+          .watchExpenseGroupState(scope.tripId, scope.groupId);
+    });
 
 class ExpensesRepository {
   ExpensesRepository({
     required this.firestore,
     required this.auth,
     FirebaseFunctions? functions,
-  }) : _functions = functions ??
-            FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion);
+  }) : _functions =
+           functions ??
+           FirebaseFunctions.instanceFor(region: kFirebaseFunctionsRegion);
 
   final FirebaseFirestore firestore;
   final FirebaseAuth auth;
   final FirebaseFunctions _functions;
 
   CollectionReference<Map<String, dynamic>> _expenseGroupsCol(String tripId) {
-    return firestore.collection('trips').doc(tripId).collection('expenseGroups');
+    return firestore
+        .collection('trips')
+        .doc(tripId)
+        .collection('expenseGroups');
   }
 
   CollectionReference<Map<String, dynamic>> _expensesCol(String tripId) {
     return firestore.collection('trips').doc(tripId).collection('expenses');
+  }
+
+  String _expenseDateKey(DateTime expenseDate) {
+    final date = DateTime(expenseDate.year, expenseDate.month, expenseDate.day);
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   DocumentReference<Map<String, dynamic>> _expensesStatesDoc(String tripId) {
@@ -107,10 +117,9 @@ class ExpensesRepository {
     String tripId,
     String groupId,
   ) {
-    return _expenseGroupsCol(tripId)
-        .doc(groupId.trim())
-        .collection('state')
-        .doc(kExpenseGroupStateDocId);
+    return _expenseGroupsCol(
+      tripId,
+    ).doc(groupId.trim()).collection('state').doc(kExpenseGroupStateDocId);
   }
 
   Stream<TripExpensesStates> watchExpensesStates(String tripId) {
@@ -133,7 +142,9 @@ class ExpensesRepository {
     if (cleanTripId.isEmpty || cleanGroupId.isEmpty) {
       return Stream.value(TripExpenseGroupState.defaults);
     }
-    return _expenseGroupStateDoc(cleanTripId, cleanGroupId).snapshots().map((snap) {
+    return _expenseGroupStateDoc(cleanTripId, cleanGroupId).snapshots().map((
+      snap,
+    ) {
       if (!snap.exists) return TripExpenseGroupState.defaults;
       return TripExpenseGroupState.fromMap(snap.data() ?? const {});
     });
@@ -152,14 +163,14 @@ class ExpensesRepository {
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
     if (cleanGroupId.isEmpty) throw StateError('Poste invalide');
 
-    await _expenseGroupStateDoc(cleanTripId, cleanGroupId).set(
-      <String, dynamic>{
-        'expensesLocked': locked,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'updatedBy': user.uid,
-      },
-      SetOptions(merge: true),
-    );
+    await _expenseGroupStateDoc(
+      cleanTripId,
+      cleanGroupId,
+    ).set(<String, dynamic>{
+      'expensesLocked': locked,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    }, SetOptions(merge: true));
   }
 
   Future<void> setExpensesNotificationsEnabled({
@@ -172,14 +183,11 @@ class ExpensesRepository {
     final cleanTripId = tripId.trim();
     if (cleanTripId.isEmpty) throw StateError('Voyage invalide');
 
-    await _expensesStatesDoc(cleanTripId).set(
-      <String, dynamic>{
-        'expensesNotificationsEnabled': enabled,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'updatedBy': user.uid,
-      },
-      SetOptions(merge: true),
-    );
+    await _expensesStatesDoc(cleanTripId).set(<String, dynamic>{
+      'expensesNotificationsEnabled': enabled,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user.uid,
+    }, SetOptions(merge: true));
   }
 
   Future<Trip> _requireTrip(String tripId) async {
@@ -213,10 +221,7 @@ class ExpensesRepository {
     required String userId,
     required TripPermissionRole minRole,
   }) {
-    final callerRole = resolveTripPermissionRole(
-      trip: trip,
-      userId: userId,
-    );
+    final callerRole = resolveTripPermissionRole(trip: trip, userId: userId);
     final isMember = trip.memberUserIds.contains(userId);
     if (!isMember ||
         !isTripRoleAllowed(currentRole: callerRole, minRole: minRole)) {
@@ -280,9 +285,9 @@ class ExpensesRepository {
         .doc('current')
         .snapshots()
         .map((snap) {
-      if (!snap.exists) return null;
-      return ExpenseGroupSummary.fromDoc(snap);
-    });
+          if (!snap.exists) return null;
+          return ExpenseGroupSummary.fromDoc(snap);
+        });
   }
 
   Stream<List<TripExpense>> watchTripExpenses(String tripId) {
@@ -333,7 +338,9 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.createExpensePostMinRole,
     );
 
-    final cleanIcon = icon.trim().isEmpty ? kDefaultExpensePostIconKey : icon.trim();
+    final cleanIcon = icon.trim().isEmpty
+        ? kDefaultExpensePostIconKey
+        : icon.trim();
 
     await _expenseGroupsCol(cleanTripId).add({
       'title': cleanTitle,
@@ -376,12 +383,17 @@ class ExpensesRepository {
     }
 
     final trip = await _requireTrip(cleanTripId);
-    final groupSnap = await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).get();
+    final groupSnap = await _expenseGroupsCol(
+      cleanTripId,
+    ).doc(cleanGroupId).get();
     if (!groupSnap.exists) {
       throw StateError('Poste introuvable');
     }
     final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
-    final memberDocId = await _resolveCurrentUserMemberId(cleanTripId, user.uid);
+    final memberDocId = await _resolveCurrentUserMemberId(
+      cleanTripId,
+      user.uid,
+    );
     if (!existingGroup.isVisibleTo(memberDocId)) {
       throw StateError('Poste introuvable ou non visible');
     }
@@ -391,7 +403,9 @@ class ExpensesRepository {
       minRole: trip.expensesPermissions.editExpensePostMinRole,
     );
 
-    final cleanIcon = icon.trim().isEmpty ? kDefaultExpensePostIconKey : icon.trim();
+    final cleanIcon = icon.trim().isEmpty
+        ? kDefaultExpensePostIconKey
+        : icon.trim();
 
     await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).update({
       'title': cleanTitle,
@@ -418,12 +432,17 @@ class ExpensesRepository {
     }
 
     final trip = await _requireTrip(cleanTripId);
-    final groupSnap = await _expenseGroupsCol(cleanTripId).doc(cleanGroupId).get();
+    final groupSnap = await _expenseGroupsCol(
+      cleanTripId,
+    ).doc(cleanGroupId).get();
     if (!groupSnap.exists) {
       throw StateError('Poste introuvable');
     }
     final existingGroup = TripExpenseGroup.fromDoc(groupSnap);
-    final memberDocId = await _resolveCurrentUserMemberId(cleanTripId, user.uid);
+    final memberDocId = await _resolveCurrentUserMemberId(
+      cleanTripId,
+      user.uid,
+    );
     if (!existingGroup.isVisibleTo(memberDocId)) {
       throw StateError('Poste introuvable ou non visible');
     }
@@ -481,8 +500,7 @@ class ExpensesRepository {
     required String tripId,
     required String groupId,
   }) async {
-    final callable =
-        _functions.httpsCallable('refreshExpenseGroupSettlement');
+    final callable = _functions.httpsCallable('refreshExpenseGroupSettlement');
     await callable.call<Map<String, dynamic>>({
       'tripId': tripId.trim(),
       'groupId': groupId.trim(),
@@ -543,7 +561,9 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
-    final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
+    final cleanIcon = icon.trim().isEmpty
+        ? kDefaultExpenseIconKey
+        : icon.trim();
     Map<String, double>? customShares;
     if (splitMode == ExpenseSplitMode.customAmounts) {
       customShares = <String, double>{};
@@ -561,33 +581,22 @@ class ExpensesRepository {
       }
     }
 
-    final draft = TripExpense(
-      id: '',
-      groupId: cleanGroupId,
-      title: cleanTitle,
-      amount: amount,
-      currency: cleanCurrency,
-      paidBy: cleanPaidBy,
-      participantIds: participants,
-      icon: cleanIcon,
-      createdAt: DateTime.now(),
-      expenseDate: DateTime(
-        expenseDate.year,
-        expenseDate.month,
-        expenseDate.day,
-      ),
-      createdBy: user.uid,
-      splitMode: splitMode,
-      participantShares: customShares ?? const {},
-    );
-
-    await _expensesCol(cleanTripId).add(
-      draft.toCreateMap(
-        paidBy: cleanPaidBy,
-        createdBy: user.uid,
-        groupId: cleanGroupId,
-      ),
-    );
+    final callable = _functions.httpsCallable('createTripExpense');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': cleanTripId,
+      'groupId': cleanGroupId,
+      'title': cleanTitle,
+      'amount': amount,
+      'currency': cleanCurrency,
+      'paidBy': cleanPaidBy,
+      'participantIds': participants,
+      'icon': cleanIcon,
+      'expenseDate': _expenseDateKey(expenseDate),
+      'splitMode': splitMode == ExpenseSplitMode.customAmounts
+          ? 'custom'
+          : 'equal',
+      if (customShares != null) 'participantShares': customShares,
+    });
   }
 
   Future<void> updateExpense({
@@ -640,20 +649,20 @@ class ExpensesRepository {
       throw StateError('Au moins un participant');
     }
 
-    final cleanIcon = icon.trim().isEmpty ? kDefaultExpenseIconKey : icon.trim();
+    final cleanIcon = icon.trim().isEmpty
+        ? kDefaultExpenseIconKey
+        : icon.trim();
 
     final update = <String, dynamic>{
+      'tripId': cleanTripId,
+      'expenseId': cleanExpenseId,
       'title': cleanTitle,
       'amount': amount,
       'currency': cleanCurrency,
       'paidBy': cleanPaidBy,
       'participantIds': participants,
       'icon': cleanIcon,
-      'expenseDate': Timestamp.fromDate(
-        DateTime(expenseDate.year, expenseDate.month, expenseDate.day),
-      ),
-      'updatedAt': FieldValue.serverTimestamp(),
-      'updatedBy': user.uid,
+      'expenseDate': _expenseDateKey(expenseDate),
     };
 
     if (splitMode == ExpenseSplitMode.customAmounts) {
@@ -664,10 +673,10 @@ class ExpensesRepository {
       };
     } else {
       update['splitMode'] = 'equal';
-      update['participantShares'] = FieldValue.delete();
     }
 
-    await _expensesCol(cleanTripId).doc(cleanExpenseId).update(update);
+    final callable = _functions.httpsCallable('updateTripExpense');
+    await callable.call<Map<String, dynamic>>(update);
   }
 
   Future<void> deleteExpense({
@@ -685,7 +694,10 @@ class ExpensesRepository {
       throw StateError('Parametres invalides');
     }
 
-    await _expensesCol(cleanTripId).doc(cleanExpenseId).delete();
+    final callable = _functions.httpsCallable('deleteTripExpense');
+    await callable.call<Map<String, dynamic>>({
+      'tripId': cleanTripId,
+      'expenseId': cleanExpenseId,
+    });
   }
-
 }
