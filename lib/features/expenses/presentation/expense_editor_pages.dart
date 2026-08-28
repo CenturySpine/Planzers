@@ -103,7 +103,10 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
   double _parsedTotal() =>
       double.tryParse(_amountController.text.trim().replaceAll(',', '.')) ?? 0;
 
-  void _onSplitModeChanged(ExpenseSplitMode mode) {
+  void _onSplitModeChanged(
+    ExpenseSplitMode mode,
+    Map<String, double> groupParts,
+  ) {
     setState(() {
       _splitMode = mode;
       if (mode == ExpenseSplitMode.equal) {
@@ -114,11 +117,17 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
       } else {
         final total = _parsedTotal();
         final ids = _participantIds.toList();
-        final each = ids.isEmpty ? 0.0 : total / ids.length;
+        final shares = weightedExpenseShareDrafts(
+          amount: total,
+          participantIds: ids,
+          groupParts: groupParts,
+        );
         for (final id in ids) {
           _shareControllers.putIfAbsent(
             id,
-            () => TextEditingController(text: each.toStringAsFixed(2)),
+            () => TextEditingController(
+              text: (shares[id] ?? 0.0).toStringAsFixed(2),
+            ),
           );
         }
       }
@@ -260,17 +269,20 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
                   onCurrencyChanged: (v) => setState(() => _currency = v),
                   onPaidByChanged: (v) => setState(() => _paidBy = v),
                   onPickDate: _pickDate,
-                  onSplitModeChanged: _onSplitModeChanged,
+                  onSplitModeChanged: (mode) =>
+                      _onSplitModeChanged(mode, groupParts),
                   onParticipantToggled: (id, on) {
                     setState(() {
                       if (on) {
                         _participantIds.add(id);
                         if (_splitMode == ExpenseSplitMode.customAmounts) {
-                          final total = _parsedTotal();
-                          final each =
-                              _participantIds.isEmpty ? 0.0 : total / _participantIds.length;
+                          final shares = weightedExpenseShareDrafts(
+                            amount: _parsedTotal(),
+                            participantIds: _participantIds,
+                            groupParts: groupParts,
+                          );
                           _shareControllers[id] = TextEditingController(
-                            text: each.toStringAsFixed(2),
+                            text: (shares[id] ?? 0.0).toStringAsFixed(2),
                           );
                         }
                       } else {
@@ -400,7 +412,10 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
       double.tryParse(_amountController.text.trim().replaceAll(',', '.')) ??
       widget.expense.amount;
 
-  void _onSplitModeChanged(ExpenseSplitMode mode) {
+  void _onSplitModeChanged(
+    ExpenseSplitMode mode,
+    Map<String, double> groupParts,
+  ) {
     setState(() {
       _splitMode = mode;
       if (mode == ExpenseSplitMode.equal) {
@@ -411,11 +426,17 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
       } else {
         final total = _parsedTotal();
         final ids = _participantIds.toList();
-        final each = ids.isEmpty ? 0.0 : total / ids.length;
+        final shares = weightedExpenseShareDrafts(
+          amount: total,
+          participantIds: ids,
+          groupParts: groupParts,
+        );
         for (final id in ids) {
           _shareControllers.putIfAbsent(
             id,
-            () => TextEditingController(text: each.toStringAsFixed(2)),
+            () => TextEditingController(
+              text: (shares[id] ?? 0.0).toStringAsFixed(2),
+            ),
           );
         }
       }
@@ -639,19 +660,22 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
                       _editing ? (v) => setState(() => _currency = v) : null,
                   onPaidByChanged: _editing ? (v) => setState(() => _paidBy = v) : null,
                   onPickDate: _editing ? _pickDate : null,
-                  onSplitModeChanged: _editing ? _onSplitModeChanged : null,
+                  onSplitModeChanged: _editing
+                      ? (mode) => _onSplitModeChanged(mode, groupParts)
+                      : null,
                   onParticipantToggled: _editing
                       ? (id, on) {
                           setState(() {
                             if (on) {
                               _participantIds.add(id);
                               if (_splitMode == ExpenseSplitMode.customAmounts) {
-                                final total = _parsedTotal();
-                                final each = _participantIds.isEmpty
-                                    ? 0.0
-                                    : total / _participantIds.length;
+                                final shares = weightedExpenseShareDrafts(
+                                  amount: _parsedTotal(),
+                                  participantIds: _participantIds,
+                                  groupParts: groupParts,
+                                );
                                 _shareControllers[id] = TextEditingController(
-                                  text: each.toStringAsFixed(2),
+                                  text: (shares[id] ?? 0.0).toStringAsFixed(2),
                                 );
                               }
                             } else {
