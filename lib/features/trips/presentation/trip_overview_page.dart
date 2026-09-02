@@ -1099,7 +1099,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
-                                          l10n.tripTravelerModulesSectionTitle,
+                                          l10n.tripOverviewAddModule,
                                           style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w700,
@@ -1109,6 +1109,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                         const SizedBox(height: 16),
                                         TravelerModulesToggleList(
                                           tripId: _trip.id,
+                                          showGenericModules: true,
+                                          canManageGenericModules:
+                                              canEditGeneralInfo,
                                         ),
                                       ],
                                     ),

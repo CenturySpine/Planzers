@@ -5478,6 +5478,18 @@ abstract class AppLocalizations {
   /// **'Documents personnels'**
   String get tripTravelerModulesWalletLabel;
 
+  /// No description provided for @tripTravelerModulesPersonalGroupLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modules perso'**
+  String get tripTravelerModulesPersonalGroupLabel;
+
+  /// No description provided for @tripTravelerModulesGenericGroupLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modules génériques'**
+  String get tripTravelerModulesGenericGroupLabel;
+
   /// No description provided for @ridgegearProjectPickerTitle.
   ///
   /// In fr, this message translates to:

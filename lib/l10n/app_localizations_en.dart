@@ -3030,6 +3030,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripTravelerModulesWalletLabel => 'Personal documents';
 
   @override
+  String get tripTravelerModulesPersonalGroupLabel => 'Personal modules';
+
+  @override
+  String get tripTravelerModulesGenericGroupLabel => 'Generic modules';
+
+  @override
   String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
 
   @override
@@ -6538,6 +6544,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripTravelerModulesWalletLabel => 'Personal documents';
+
+  @override
+  String get tripTravelerModulesPersonalGroupLabel => 'Personal modules';
+
+  @override
+  String get tripTravelerModulesGenericGroupLabel => 'Generic modules';
 
   @override
   String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';

@@ -102,6 +102,19 @@ final tripStreamProvider =
   return ref.watch(tripsRepositoryProvider).watchTrip(tripId);
 });
 
+/// Trip-wide "generic" modules an organiser can switch on/off inline from
+/// the trip overview "add module" sheet, without going through the full
+/// trip edit form.
+enum TripGenericModule {
+  carpool('carpoolModuleEnabled'),
+  rooms('roomsModuleEnabled'),
+  games('gamesModuleEnabled');
+
+  const TripGenericModule(this.firestoreField);
+
+  final String firestoreField;
+}
+
 class TripsRepository {
   TripsRepository({
     required this.firestore,
@@ -505,6 +518,45 @@ class TripsRepository {
     }
 
     await docRef.update(update);
+  }
+
+  /// Turns a single trip-wide "generic" module on/off without touching any
+  /// other trip field. Used by the trip overview "add module" sheet so an
+  /// organiser can enable a module inline. Requires the same permission as
+  /// editing the trip's general information.
+  Future<void> setTripModuleEnabled({
+    required String tripId,
+    required TripGenericModule module,
+    required bool enabled,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final docRef = firestore.collection('trips').doc(tripId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) {
+      throw StateError('Voyage introuvable');
+    }
+
+    final trip = Trip.fromMap(
+      snapshot.id,
+      snapshot.data() ?? const <String, dynamic>{},
+    );
+    _ensureTripGeneralPermissionForAction(
+      trip: trip,
+      userId: user.uid,
+      requiredRole: trip.generalPermissions.editGeneralInfoMinRole,
+    );
+
+    if (enabled && module == TripGenericModule.rooms && trip.isDayTrip) {
+      throw StateError(
+        'Le module chambres est indisponible pour un voyage à la journée',
+      );
+    }
+
+    await docRef.update(<String, dynamic>{module.firestoreField: enabled});
   }
 
   /// Invite secret shared with guests (same value as the `token` query param
