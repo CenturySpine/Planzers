@@ -3,18 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
 import 'package:planerz/features/trips/presentation/trip_stay_form_widgets.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Shared "add/remove my personal modules" list, used both from the trip
-/// overview "+" bottom sheet and from the trip preferences screen. Any
-/// participant can toggle these for themselves, independent of the
-/// trip-wide module configuration set by the trip admin.
+/// Shared "add/remove modules" list, used both from the trip overview "+"
+/// bottom sheet and from the trip preferences screen.
+///
+/// The "personal" modules (Ridgegear, personal documents) can be toggled by
+/// any participant for themselves, independent of the trip-wide module
+/// configuration. When [showGenericModules] and [canManageGenericModules]
+/// are both true, the list also exposes the trip-wide "generic" modules
+/// (carpool, rooms, games) so an organiser can switch them on/off inline.
 class TravelerModulesToggleList extends ConsumerWidget {
-  const TravelerModulesToggleList({super.key, required this.tripId});
+  const TravelerModulesToggleList({
+    super.key,
+    required this.tripId,
+    this.showGenericModules = false,
+    this.canManageGenericModules = false,
+  });
 
   final String tripId;
+  final bool showGenericModules;
+  final bool canManageGenericModules;
 
   Future<void> _handleRidgegearToggle(
     BuildContext context,
@@ -40,10 +52,23 @@ class TravelerModulesToggleList extends ConsumerWidget {
         ref.watch(myTravelerModulesStreamProvider(tripId)).asData?.value ??
             const TravelerModules();
     final repository = ref.read(travelerModulesRepositoryProvider);
+    final tripsRepository = ref.read(tripsRepositoryProvider);
+    final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
+
+    final showGenericSection =
+        showGenericModules && canManageGenericModules && trip != null;
+    final showGroupHeaders = showGenericSection;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (showGroupHeaders) ...[
+          _ModuleGroupHeader(
+            label: l10n.tripTravelerModulesPersonalGroupLabel,
+          ),
+          const SizedBox(height: 10),
+        ],
         _TravelerModuleToggleRow(
           icon: Icons.backpack_outlined,
           iconColor: ActivityFilterGroup.loisirs.filterInkColor,
@@ -71,7 +96,73 @@ class TravelerModulesToggleList extends ConsumerWidget {
             enabled: value,
           ),
         ),
+        if (showGenericSection) ...[
+          const SizedBox(height: 18),
+          _ModuleGroupHeader(
+            label: l10n.tripTravelerModulesGenericGroupLabel,
+          ),
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: Icons.directions_car_outlined,
+            iconColor: ActivityFilterGroup.trajets.filterInkColor,
+            iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
+            label: l10n.tripOverviewTileCarpool,
+            value: trip.carpoolModuleEnabled,
+            onChanged: (value) => tripsRepository.setTripModuleEnabled(
+              tripId: tripId,
+              module: TripGenericModule.carpool,
+              enabled: value,
+            ),
+          ),
+          if (!trip.isDayTrip) ...[
+            const SizedBox(height: 10),
+            _TravelerModuleToggleRow(
+              icon: Icons.king_bed_outlined,
+              iconColor: ActivityFilterGroup.nuits.filterInkColor,
+              iconBackground: ActivityFilterGroup.nuits.filterLightBgColor,
+              label: l10n.tripOverviewTileRooms,
+              value: trip.roomsModuleEnabled,
+              onChanged: (value) => tripsRepository.setTripModuleEnabled(
+                tripId: tripId,
+                module: TripGenericModule.rooms,
+                enabled: value,
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: Icons.casino_outlined,
+            iconColor: ActivityFilterGroup.loisirs.filterInkColor,
+            iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
+            label: l10n.tripOverviewTileGames,
+            value: trip.gamesModuleEnabled,
+            onChanged: (value) => tripsRepository.setTripModuleEnabled(
+              tripId: tripId,
+              module: TripGenericModule.games,
+              enabled: value,
+            ),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _ModuleGroupHeader extends StatelessWidget {
+  const _ModuleGroupHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: NeonPalette.text700,
+        letterSpacing: 0.2,
+      ),
     );
   }
 }

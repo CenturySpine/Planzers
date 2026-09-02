@@ -659,6 +659,9 @@ service cloud.firestore {
             'tripStartDayPart',
             'tripEndDayPart',
             'isDayTrip',
+            'carpoolModuleEnabled',
+            'roomsModuleEnabled',
+            'gamesModuleEnabled',
           ])
         ) ||
         (

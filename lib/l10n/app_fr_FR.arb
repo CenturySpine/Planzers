@@ -1157,6 +1157,8 @@
   "tripTravelerModulesSectionTitle": "Mes modules personnels",
   "tripTravelerModulesRidgegearLabel": "Ridgegear",
   "tripTravelerModulesWalletLabel": "Documents personnels",
+  "tripTravelerModulesPersonalGroupLabel": "Modules perso",
+  "tripTravelerModulesGenericGroupLabel": "Modules génériques",
   "ridgegearProjectPickerTitle": "Choisir un projet Ridgegear",
   "ridgegearProjectPickerEmpty": "Aucun projet Ridgegear trouvé.",
   "ridgegearChangeProject": "Changer",
