@@ -1048,6 +1048,8 @@
   "expensesInvalidAmount": "Invalid amount",
   "expensesCustomAmountValidation": "For \"Amounts\", each share must be valid and the sum must match the total.",
   "expensesExpenseUpdated": "Expense updated",
+  "expensesDuplicateExpenseAction": "Duplicate",
+  "expensesDuplicatedTitlePrefix": "Copy - ",
   "expensesExpenseDetailTitle": "Expense details",
   "expensesNoAllowedTravelerInPostHint": "No traveler is allowed in this section: edit the section or trip to adjust sharing.",
   "expensesAmountLabel": "Amount",

@@ -489,7 +489,8 @@ class ExpensesRepository {
     });
   }
 
-  Future<void> addExpense({
+  /// Creates an expense and returns the id of the new document.
+  Future<String> addExpense({
     required String tripId,
     required String groupId,
     required String title,
@@ -581,13 +582,14 @@ class ExpensesRepository {
       participantShares: customShares ?? const {},
     );
 
-    await _expensesCol(cleanTripId).add(
+    final docRef = await _expensesCol(cleanTripId).add(
       draft.toCreateMap(
         paidBy: cleanPaidBy,
         createdBy: user.uid,
         groupId: cleanGroupId,
       ),
     );
+    return docRef.id;
   }
 
   Future<void> updateExpense({

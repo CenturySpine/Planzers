@@ -2740,6 +2740,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expensesExpenseUpdated => 'Expense updated';
 
   @override
+  String get expensesDuplicateExpenseAction => 'Duplicate';
+
+  @override
+  String get expensesDuplicatedTitlePrefix => 'Copy - ';
+
+  @override
   String get expensesExpenseDetailTitle => 'Expense details';
 
   @override
@@ -6254,6 +6260,12 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get expensesExpenseUpdated => 'Expense updated';
+
+  @override
+  String get expensesDuplicateExpenseAction => 'Duplicate';
+
+  @override
+  String get expensesDuplicatedTitlePrefix => 'Copy - ';
 
   @override
   String get expensesExpenseDetailTitle => 'Expense details';

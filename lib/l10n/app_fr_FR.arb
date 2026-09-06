@@ -1048,6 +1048,8 @@
   "expensesInvalidAmount": "Montant invalide",
   "expensesCustomAmountValidation": "Pour « Montants », chaque part doit être valide et la somme doit égaler le total.",
   "expensesExpenseUpdated": "Dépense mise à jour",
+  "expensesDuplicateExpenseAction": "Dupliquer",
+  "expensesDuplicatedTitlePrefix": "Copie - ",
   "expensesExpenseDetailTitle": "Détail de la dépense",
   "expensesNoAllowedTravelerInPostHint": "Aucun voyageur n'est autorisé dans ce poste : modifie le poste ou le voyage pour pouvoir ajuster le partage.",
   "expensesAmountLabel": "Montant",
