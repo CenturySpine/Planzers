@@ -852,10 +852,18 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
       currentUserMemberId: widget.currentUserMemberId,
       expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
     );
+    final canCreateExpense = canCreateExpenseForTrip(
+      trip: widget.trip,
+      userId: viewerUserId,
+      currentUserMemberId: widget.currentUserMemberId,
+      expensePostVisibleToMemberIds: widget.group.visibleToMemberIds,
+    );
     final effectiveCanEditPost = canEditPost;
     final effectiveCanDeletePost = canDeletePost;
     final effectiveCanEditExpense = canEditExpense && !lockRestrictsEditing;
     final effectiveCanDeleteExpense = canDeleteExpense && !lockRestrictsEditing;
+    final effectiveCanDuplicateExpense =
+        canCreateExpense && !lockRestrictsEditing;
     final canLockPost = widget.isAdminOrAbove;
     final showPostMenu = canLockPost ||
         effectiveCanEditPost ||
@@ -1091,6 +1099,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   currentUserMemberId: widget.currentUserMemberId,
                   canEditExpense: effectiveCanEditExpense,
                   canDeleteExpense: effectiveCanDeleteExpense,
+                  canDuplicateExpense: effectiveCanDuplicateExpense,
                 ),
             ],
           ),
@@ -2272,6 +2281,7 @@ List<Widget> _buildExpensesGroupedByDate(
   required String? currentUserMemberId,
   required bool canEditExpense,
   required bool canDeleteExpense,
+  required bool canDuplicateExpense,
 }) {
   if (expenses.isEmpty) return const [];
 
@@ -2323,6 +2333,7 @@ List<Widget> _buildExpensesGroupedByDate(
             currentUserMemberId: currentUserMemberId,
             canEditExpense: canEditExpense,
             canDeleteExpense: canDeleteExpense,
+            canDuplicateExpense: canDuplicateExpense,
           ),
         ),
       );
@@ -2343,6 +2354,7 @@ class _ExpenseCard extends StatelessWidget {
     required this.currentUserMemberId,
     required this.canEditExpense,
     required this.canDeleteExpense,
+    required this.canDuplicateExpense,
   });
 
   final String tripId;
@@ -2354,6 +2366,7 @@ class _ExpenseCard extends StatelessWidget {
   final String? currentUserMemberId;
   final bool canEditExpense;
   final bool canDeleteExpense;
+  final bool canDuplicateExpense;
 
   Future<void> _openDetails(BuildContext context) async {
     if (expense.operationType == ExpenseOperationType.settlement) return;
@@ -2367,6 +2380,7 @@ class _ExpenseCard extends StatelessWidget {
           currentUserMemberId: currentUserMemberId,
           canEditExpense: canEditExpense,
           canDeleteExpense: canDeleteExpense,
+          canDuplicateExpense: canDuplicateExpense,
         ),
       ),
     );

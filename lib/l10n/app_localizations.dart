@@ -4956,6 +4956,18 @@ abstract class AppLocalizations {
   /// **'Dépense mise à jour'**
   String get expensesExpenseUpdated;
 
+  /// No description provided for @expensesDuplicateExpenseAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dupliquer'**
+  String get expensesDuplicateExpenseAction;
+
+  /// No description provided for @expensesDuplicatedTitlePrefix.
+  ///
+  /// In fr, this message translates to:
+  /// **'Copie - '**
+  String get expensesDuplicatedTitlePrefix;
+
   /// No description provided for @expensesExpenseDetailTitle.
   ///
   /// In fr, this message translates to:

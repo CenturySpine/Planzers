@@ -299,7 +299,7 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
 
 // --- Edit expense ---
 
-enum _ExpenseDetailsMenuAction { edit, delete }
+enum _ExpenseDetailsMenuAction { edit, duplicate, delete }
 
 class ExpenseDetailsPage extends ConsumerStatefulWidget {
   const ExpenseDetailsPage({
@@ -311,6 +311,8 @@ class ExpenseDetailsPage extends ConsumerStatefulWidget {
     required this.currentUserMemberId,
     required this.canEditExpense,
     required this.canDeleteExpense,
+    this.canDuplicateExpense = false,
+    this.startInEditMode = false,
   });
 
   final String tripId;
@@ -320,6 +322,10 @@ class ExpenseDetailsPage extends ConsumerStatefulWidget {
   final String? currentUserMemberId;
   final bool canEditExpense;
   final bool canDeleteExpense;
+  final bool canDuplicateExpense;
+
+  /// When true the page opens directly in edit mode (used after duplication).
+  final bool startInEditMode;
 
   @override
   ConsumerState<ExpenseDetailsPage> createState() => _ExpenseDetailsPageState();
@@ -336,13 +342,15 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
   late DateTime _expenseDate;
   late ExpenseSplitMode _splitMode;
   final Map<String, TextEditingController> _shareControllers = {};
-  bool _editing = false;
+  late bool _editing;
   bool _saving = false;
   bool _deleting = false;
+  bool _duplicating = false;
 
   @override
   void initState() {
     super.initState();
+    _editing = widget.startInEditMode;
     final scope = widget.participantScopeMemberIds
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
@@ -551,6 +559,69 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
     }
   }
 
+  Future<void> _duplicate() async {
+    if (_saving || _deleting || _duplicating) return;
+    final l10n = AppLocalizations.of(context)!;
+    final source = widget.expense;
+    final newTitle = '${l10n.expensesDuplicatedTitlePrefix}${source.title}';
+    setState(() => _duplicating = true);
+    try {
+      final newId = await ref.read(expensesRepositoryProvider).addExpense(
+            tripId: widget.tripId,
+            groupId: source.groupId,
+            title: newTitle,
+            amount: source.amount,
+            currency: source.currency,
+            paidBy: source.paidBy,
+            participantIds: source.participantIds,
+            expenseDate: source.expenseDate,
+            icon: source.icon,
+            splitMode: source.splitMode,
+            participantShares: source.splitMode == ExpenseSplitMode.customAmounts
+                ? source.participantShares
+                : null,
+          );
+      if (!mounted) return;
+      final duplicated = TripExpense(
+        id: newId,
+        groupId: source.groupId,
+        title: newTitle,
+        amount: source.amount,
+        currency: source.currency,
+        paidBy: source.paidBy,
+        participantIds: source.participantIds,
+        createdAt: DateTime.now(),
+        expenseDate: source.expenseDate,
+        icon: source.icon,
+        createdBy: source.createdBy,
+        splitMode: source.splitMode,
+        participantShares: source.participantShares,
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => ExpenseDetailsPage(
+            tripId: widget.tripId,
+            expense: duplicated,
+            participantScopeMemberIds: widget.participantScopeMemberIds,
+            memberLabels: widget.memberLabels,
+            currentUserMemberId: widget.currentUserMemberId,
+            canEditExpense: widget.canEditExpense,
+            canDeleteExpense: widget.canDeleteExpense,
+            canDuplicateExpense: widget.canDuplicateExpense,
+            startInEditMode: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _duplicating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -563,7 +634,9 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
             const <ParticipantGroup>[];
     final groupParts = {for (final g in groups) g.id: g.parts};
     final locale = Localizations.localeOf(context).toString();
-    final canShowMenu = widget.canEditExpense || widget.canDeleteExpense;
+    final canShowMenu = widget.canEditExpense ||
+        widget.canDeleteExpense ||
+        widget.canDuplicateExpense;
 
     return Scaffold(
       backgroundColor: NeonPalette.scaffoldBackground,
@@ -579,10 +652,12 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
             ),
           if (canShowMenu && !_editing)
             PopupMenuButton<_ExpenseDetailsMenuAction>(
-              enabled: !_saving && !_deleting,
+              enabled: !_saving && !_deleting && !_duplicating,
               onSelected: (action) async {
                 if (action == _ExpenseDetailsMenuAction.edit) {
                   if (widget.canEditExpense) setState(() => _editing = true);
+                } else if (action == _ExpenseDetailsMenuAction.duplicate) {
+                  if (widget.canDuplicateExpense) await _duplicate();
                 } else if (widget.canDeleteExpense) {
                   await _confirmDelete();
                 }
@@ -592,6 +667,11 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
                   PopupMenuItem(
                     value: _ExpenseDetailsMenuAction.edit,
                     child: Text(l10n.commonEdit),
+                  ),
+                if (widget.canDuplicateExpense)
+                  PopupMenuItem(
+                    value: _ExpenseDetailsMenuAction.duplicate,
+                    child: Text(l10n.expensesDuplicateExpenseAction),
                   ),
                 if (widget.canDeleteExpense)
                   PopupMenuItem(
