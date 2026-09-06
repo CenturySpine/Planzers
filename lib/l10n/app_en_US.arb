@@ -1161,6 +1161,9 @@
   "tripTravelerModulesWalletLabel": "Personal documents",
   "tripTravelerModulesPersonalGroupLabel": "Personal modules",
   "tripTravelerModulesGenericGroupLabel": "Generic modules",
+  "tripTravelerModulesRidgegearSubtitle": "Shows your pack weight from Ridgegear.",
+  "tripTravelerModulesWalletSubtitle": "Keeps your tickets, QR codes and bookings together.",
+  "tripTravelerModulesPackingSubtitle": "Tick off the things you need to pack.",
   "ridgegearProjectPickerTitle": "Choose a Ridgegear project",
   "ridgegearProjectPickerEmpty": "No Ridgegear project found.",
   "ridgegearChangeProject": "Change",
@@ -1423,5 +1426,45 @@
   "externalConnectionCallbackSuccess": "Account connected successfully.",
   "externalConnectionCallbackError": "The connection could not be completed. Try again from the \"Connected external accounts\" screen.",
   "externalConnectionCallbackDenied": "The connection was denied or cancelled.",
-  "externalConnectionCallbackBackToList": "Back to connected accounts"
+  "externalConnectionCallbackBackToList": "Back to connected accounts",
+  "tripPackingPageTitle": "Packing list",
+  "tripPackingModuleLabel": "Packing list",
+  "tripTravelerModulesPackingLabel": "Packing list",
+  "tripPackingRemainingCount": "{count} to pack",
+  "@tripPackingRemainingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripPackingItemHint": "Add an item…",
+  "tripPackingAddItem": "Add",
+  "tripPackingRenameItem": "Rename",
+  "tripPackingEmptyState": "Your list is empty. Add what you need to pack.",
+  "tripPackingNotTraveler": "You are not a traveler on this trip yet.",
+  "tripPackingRenameTitle": "Rename item",
+  "tripPackingDeleteTitle": "Delete item",
+  "tripPackingDeleteBody": "Remove \"{label}\" from your list?",
+  "@tripPackingDeleteBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "tripPackingOrganiserItemTooltip": "Added by the organiser · read-only",
+  "tripPackingPushAction": "Push to travelers",
+  "tripPackingPushTitle": "Push the list",
+  "tripPackingPushBody": "Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.",
+  "tripPackingPushConfirm": "Push",
+  "tripPackingPushSuccess": "List sent to {count} traveler(s)",
+  "@tripPackingPushSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripPackingPushEmpty": "Add at least one item before pushing your list."
 }

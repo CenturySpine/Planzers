@@ -5121,6 +5121,10 @@ exports.deleteOAuthClient = deleteOAuthClient;
 const { publicApi } = require('./public_api');
 exports.publicApi = publicApi;
 
+// --- "À emporter" personal packing list ---
+const { pushPackingList } = require('./packing_list_push');
+exports.pushPackingList = pushPackingList;
+
 // --- External ecosystem providers (Planerz as OAuth client) ---
 const {
   listExternalProviders,

@@ -3042,6 +3042,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripTravelerModulesGenericGroupLabel => 'Generic modules';
 
   @override
+  String get tripTravelerModulesRidgegearSubtitle =>
+      'Shows your pack weight from Ridgegear.';
+
+  @override
+  String get tripTravelerModulesWalletSubtitle =>
+      'Keeps your tickets, QR codes and bookings together.';
+
+  @override
+  String get tripTravelerModulesPackingSubtitle =>
+      'Tick off the things you need to pack.';
+
+  @override
   String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
 
   @override
@@ -3595,6 +3607,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get externalConnectionCallbackBackToList =>
       'Back to connected accounts';
+
+  @override
+  String get tripPackingPageTitle => 'Packing list';
+
+  @override
+  String get tripPackingModuleLabel => 'Packing list';
+
+  @override
+  String get tripTravelerModulesPackingLabel => 'Packing list';
+
+  @override
+  String tripPackingRemainingCount(int count) {
+    return '$count to pack';
+  }
+
+  @override
+  String get tripPackingItemHint => 'Add an item…';
+
+  @override
+  String get tripPackingAddItem => 'Add';
+
+  @override
+  String get tripPackingRenameItem => 'Rename';
+
+  @override
+  String get tripPackingEmptyState =>
+      'Your list is empty. Add what you need to pack.';
+
+  @override
+  String get tripPackingNotTraveler =>
+      'You are not a traveler on this trip yet.';
+
+  @override
+  String get tripPackingRenameTitle => 'Rename item';
+
+  @override
+  String get tripPackingDeleteTitle => 'Delete item';
+
+  @override
+  String tripPackingDeleteBody(String label) {
+    return 'Remove \"$label\" from your list?';
+  }
+
+  @override
+  String get tripPackingOrganiserItemTooltip =>
+      'Added by the organiser · read-only';
+
+  @override
+  String get tripPackingPushAction => 'Push to travelers';
+
+  @override
+  String get tripPackingPushTitle => 'Push the list';
+
+  @override
+  String get tripPackingPushBody =>
+      'Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+
+  @override
+  String get tripPackingPushConfirm => 'Push';
+
+  @override
+  String tripPackingPushSuccess(int count) {
+    return 'List sent to $count traveler(s)';
+  }
+
+  @override
+  String get tripPackingPushEmpty =>
+      'Add at least one item before pushing your list.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -6564,6 +6644,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripTravelerModulesGenericGroupLabel => 'Generic modules';
 
   @override
+  String get tripTravelerModulesRidgegearSubtitle =>
+      'Shows your pack weight from Ridgegear.';
+
+  @override
+  String get tripTravelerModulesWalletSubtitle =>
+      'Keeps your tickets, QR codes and bookings together.';
+
+  @override
+  String get tripTravelerModulesPackingSubtitle =>
+      'Tick off the things you need to pack.';
+
+  @override
   String get ridgegearProjectPickerTitle => 'Choose a Ridgegear project';
 
   @override
@@ -7117,4 +7209,72 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get externalConnectionCallbackBackToList =>
       'Back to connected accounts';
+
+  @override
+  String get tripPackingPageTitle => 'Packing list';
+
+  @override
+  String get tripPackingModuleLabel => 'Packing list';
+
+  @override
+  String get tripTravelerModulesPackingLabel => 'Packing list';
+
+  @override
+  String tripPackingRemainingCount(int count) {
+    return '$count to pack';
+  }
+
+  @override
+  String get tripPackingItemHint => 'Add an item…';
+
+  @override
+  String get tripPackingAddItem => 'Add';
+
+  @override
+  String get tripPackingRenameItem => 'Rename';
+
+  @override
+  String get tripPackingEmptyState =>
+      'Your list is empty. Add what you need to pack.';
+
+  @override
+  String get tripPackingNotTraveler =>
+      'You are not a traveler on this trip yet.';
+
+  @override
+  String get tripPackingRenameTitle => 'Rename item';
+
+  @override
+  String get tripPackingDeleteTitle => 'Delete item';
+
+  @override
+  String tripPackingDeleteBody(String label) {
+    return 'Remove \"$label\" from your list?';
+  }
+
+  @override
+  String get tripPackingOrganiserItemTooltip =>
+      'Added by the organiser · read-only';
+
+  @override
+  String get tripPackingPushAction => 'Push to travelers';
+
+  @override
+  String get tripPackingPushTitle => 'Push the list';
+
+  @override
+  String get tripPackingPushBody =>
+      'Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+
+  @override
+  String get tripPackingPushConfirm => 'Push';
+
+  @override
+  String tripPackingPushSuccess(int count) {
+    return 'List sent to $count traveler(s)';
+  }
+
+  @override
+  String get tripPackingPushEmpty =>
+      'Add at least one item before pushing your list.';
 }

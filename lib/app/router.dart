@@ -25,6 +25,7 @@ import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_details_page.dart';
 import 'package:planerz/features/meals/presentation/trip_meals_page.dart';
+import 'package:planerz/features/packing/presentation/trip_packing_page.dart';
 import 'package:planerz/features/rooms/presentation/trip_rooms_page.dart';
 import 'package:planerz/features/shopping/presentation/trip_shopping_page.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_page.dart';
@@ -327,6 +328,12 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'wallet',
           builder: (context, state) => TripWalletPage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'packing',
+          builder: (context, state) => TripPackingPage(
             tripId: state.pathParameters['tripId']!,
           ),
         ),

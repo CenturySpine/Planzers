@@ -3068,6 +3068,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripTravelerModulesGenericGroupLabel => 'Modules génériques';
 
   @override
+  String get tripTravelerModulesRidgegearSubtitle =>
+      'Affiche le poids de ton sac depuis Ridgegear.';
+
+  @override
+  String get tripTravelerModulesWalletSubtitle =>
+      'Regroupe tes billets, QR codes et réservations.';
+
+  @override
+  String get tripTravelerModulesPackingSubtitle =>
+      'Coche ta liste d\'affaires à préparer.';
+
+  @override
   String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
 
   @override
@@ -3630,6 +3642,74 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get externalConnectionCallbackBackToList =>
       'Retour aux comptes connectés';
+
+  @override
+  String get tripPackingPageTitle => 'À emporter';
+
+  @override
+  String get tripPackingModuleLabel => 'À emporter';
+
+  @override
+  String get tripTravelerModulesPackingLabel => 'À emporter';
+
+  @override
+  String tripPackingRemainingCount(int count) {
+    return '$count à préparer';
+  }
+
+  @override
+  String get tripPackingItemHint => 'Ajouter un article…';
+
+  @override
+  String get tripPackingAddItem => 'Ajouter';
+
+  @override
+  String get tripPackingRenameItem => 'Renommer';
+
+  @override
+  String get tripPackingEmptyState =>
+      'Ta liste est vide. Ajoute ce que tu dois emporter.';
+
+  @override
+  String get tripPackingNotTraveler =>
+      'Tu n\'es pas encore inscrit comme voyageur sur ce voyage.';
+
+  @override
+  String get tripPackingRenameTitle => 'Renommer l\'article';
+
+  @override
+  String get tripPackingDeleteTitle => 'Supprimer l\'article';
+
+  @override
+  String tripPackingDeleteBody(String label) {
+    return 'Supprimer « $label » de ta liste ?';
+  }
+
+  @override
+  String get tripPackingOrganiserItemTooltip =>
+      'Ajouté par l\'organisateur · non modifiable';
+
+  @override
+  String get tripPackingPushAction => 'Pousser aux participants';
+
+  @override
+  String get tripPackingPushTitle => 'Pousser la liste';
+
+  @override
+  String get tripPackingPushBody =>
+      'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
+
+  @override
+  String get tripPackingPushConfirm => 'Pousser';
+
+  @override
+  String tripPackingPushSuccess(int count) {
+    return 'Liste envoyée à $count participant(s)';
+  }
+
+  @override
+  String get tripPackingPushEmpty =>
+      'Ajoute au moins un article avant de pousser ta liste.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -6624,6 +6704,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripTravelerModulesGenericGroupLabel => 'Modules génériques';
 
   @override
+  String get tripTravelerModulesRidgegearSubtitle =>
+      'Affiche le poids de ton sac depuis Ridgegear.';
+
+  @override
+  String get tripTravelerModulesWalletSubtitle =>
+      'Regroupe tes billets, QR codes et réservations.';
+
+  @override
+  String get tripTravelerModulesPackingSubtitle =>
+      'Coche ta liste d\'affaires à préparer.';
+
+  @override
   String get ridgegearProjectPickerTitle => 'Choisir un projet Ridgegear';
 
   @override
@@ -7186,4 +7278,72 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get externalConnectionCallbackBackToList =>
       'Retour aux comptes connectés';
+
+  @override
+  String get tripPackingPageTitle => 'À emporter';
+
+  @override
+  String get tripPackingModuleLabel => 'À emporter';
+
+  @override
+  String get tripTravelerModulesPackingLabel => 'À emporter';
+
+  @override
+  String tripPackingRemainingCount(int count) {
+    return '$count à préparer';
+  }
+
+  @override
+  String get tripPackingItemHint => 'Ajouter un article…';
+
+  @override
+  String get tripPackingAddItem => 'Ajouter';
+
+  @override
+  String get tripPackingRenameItem => 'Renommer';
+
+  @override
+  String get tripPackingEmptyState =>
+      'Ta liste est vide. Ajoute ce que tu dois emporter.';
+
+  @override
+  String get tripPackingNotTraveler =>
+      'Tu n\'es pas encore inscrit comme voyageur sur ce voyage.';
+
+  @override
+  String get tripPackingRenameTitle => 'Renommer l\'article';
+
+  @override
+  String get tripPackingDeleteTitle => 'Supprimer l\'article';
+
+  @override
+  String tripPackingDeleteBody(String label) {
+    return 'Supprimer « $label » de ta liste ?';
+  }
+
+  @override
+  String get tripPackingOrganiserItemTooltip =>
+      'Ajouté par l\'organisateur · non modifiable';
+
+  @override
+  String get tripPackingPushAction => 'Pousser aux participants';
+
+  @override
+  String get tripPackingPushTitle => 'Pousser la liste';
+
+  @override
+  String get tripPackingPushBody =>
+      'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
+
+  @override
+  String get tripPackingPushConfirm => 'Pousser';
+
+  @override
+  String tripPackingPushSuccess(int count) {
+    return 'Liste envoyée à $count participant(s)';
+  }
+
+  @override
+  String get tripPackingPushEmpty =>
+      'Ajoute au moins un article avant de pousser ta liste.';
 }

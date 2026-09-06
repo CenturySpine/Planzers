@@ -1087,6 +1087,25 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      /// Personal "À emporter" checklist, keyed by the participant SLOT id
+      /// (trips/{tripId}/participants/{participantId}) so an organiser can
+      /// push a list into a slot before its user has claimed it. Only the
+      /// user who owns the slot can read or write it from the client; the
+      /// cross-traveler push runs server-side with the Admin SDK.
+      match /packingLists/{participantId} {
+        function ownsPackingSlot() {
+          return isTripMember(tripId)
+            && get(/databases/$(database)/documents/trips/$(tripId)/participants/$(participantId))
+                .data.get('userId', '') == request.auth.uid;
+        }
+        allow read, create, update: if ownsPackingSlot();
+        allow delete: if false;
+
+        match /items/{itemId} {
+          allow read, create, update, delete: if ownsPackingSlot();
+        }
+      }
+
       /// Per-member trip data (presence bounds, etc.).
       match /members/{memberId} {
         allow read: if isTripMember(tripId);
