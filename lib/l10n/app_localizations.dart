@@ -5502,6 +5502,24 @@ abstract class AppLocalizations {
   /// **'Modules génériques'**
   String get tripTravelerModulesGenericGroupLabel;
 
+  /// No description provided for @tripTravelerModulesRidgegearSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Affiche le poids de ton sac depuis Ridgegear.'**
+  String get tripTravelerModulesRidgegearSubtitle;
+
+  /// No description provided for @tripTravelerModulesWalletSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Regroupe tes billets, QR codes et réservations.'**
+  String get tripTravelerModulesWalletSubtitle;
+
+  /// No description provided for @tripTravelerModulesPackingSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Coche ta liste d\'affaires à préparer.'**
+  String get tripTravelerModulesPackingSubtitle;
+
   /// No description provided for @ridgegearProjectPickerTitle.
   ///
   /// In fr, this message translates to:
@@ -6464,6 +6482,120 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Retour aux comptes connectés'**
   String get externalConnectionCallbackBackToList;
+
+  /// No description provided for @tripPackingPageTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'À emporter'**
+  String get tripPackingPageTitle;
+
+  /// No description provided for @tripPackingModuleLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'À emporter'**
+  String get tripPackingModuleLabel;
+
+  /// No description provided for @tripTravelerModulesPackingLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'À emporter'**
+  String get tripTravelerModulesPackingLabel;
+
+  /// No description provided for @tripPackingRemainingCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} à préparer'**
+  String tripPackingRemainingCount(int count);
+
+  /// No description provided for @tripPackingItemHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un article…'**
+  String get tripPackingItemHint;
+
+  /// No description provided for @tripPackingAddItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter'**
+  String get tripPackingAddItem;
+
+  /// No description provided for @tripPackingRenameItem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renommer'**
+  String get tripPackingRenameItem;
+
+  /// No description provided for @tripPackingEmptyState.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta liste est vide. Ajoute ce que tu dois emporter.'**
+  String get tripPackingEmptyState;
+
+  /// No description provided for @tripPackingNotTraveler.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tu n\'es pas encore inscrit comme voyageur sur ce voyage.'**
+  String get tripPackingNotTraveler;
+
+  /// No description provided for @tripPackingRenameTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renommer l\'article'**
+  String get tripPackingRenameTitle;
+
+  /// No description provided for @tripPackingDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer l\'article'**
+  String get tripPackingDeleteTitle;
+
+  /// No description provided for @tripPackingDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer « {label} » de ta liste ?'**
+  String tripPackingDeleteBody(String label);
+
+  /// No description provided for @tripPackingOrganiserItemTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouté par l\'organisateur · non modifiable'**
+  String get tripPackingOrganiserItemTooltip;
+
+  /// No description provided for @tripPackingPushAction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pousser aux participants'**
+  String get tripPackingPushAction;
+
+  /// No description provided for @tripPackingPushTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pousser la liste'**
+  String get tripPackingPushTitle;
+
+  /// No description provided for @tripPackingPushBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.'**
+  String get tripPackingPushBody;
+
+  /// No description provided for @tripPackingPushConfirm.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pousser'**
+  String get tripPackingPushConfirm;
+
+  /// No description provided for @tripPackingPushSuccess.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste envoyée à {count} participant(s)'**
+  String tripPackingPushSuccess(int count);
+
+  /// No description provided for @tripPackingPushEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute au moins un article avant de pousser ta liste.'**
+  String get tripPackingPushEmpty;
 }
 
 class _AppLocalizationsDelegate

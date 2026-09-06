@@ -26,6 +26,8 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/packing/data/packing_item.dart';
+import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/open_route_in_map_apps.dart';
@@ -648,6 +650,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final myTravelerModules =
         ref.watch(myTravelerModulesStreamProvider(_trip.id)).asData?.value ??
             const TravelerModules();
+    final myPackingConfig =
+        ref.watch(myPackingListConfigStreamProvider(_trip.id)).asData?.value;
+    final myPackingItems =
+        ref.watch(myPackingItemsStreamProvider(_trip.id)).asData?.value ??
+            const <PackingItem>[];
+    final myPackingUncheckedCount =
+        myPackingItems.where((item) => !item.checked).length;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
     final participants =
         ref.watch(tripParticipantsStreamProvider(_trip.id)).asData?.value ?? [];
@@ -1073,6 +1082,23 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                   context.push('/trips/${_trip.id}/wallet'),
                             ),
                           ],
+                          if (myPackingConfig?.isVisible ?? false) ...[
+                            const SizedBox(height: 10),
+                            TripOverviewModuleCard(
+                              label: l10n.tripPackingModuleLabel,
+                              icon: Icons.luggage_outlined,
+                              count: myPackingUncheckedCount,
+                              tileColor:
+                                  ActivityFilterGroup.nuits.filterLightBgColor,
+                              inkColor:
+                                  ActivityFilterGroup.nuits.filterInkColor,
+                              statusText: l10n.tripPackingRemainingCount(
+                                myPackingUncheckedCount,
+                              ),
+                              onTap: () =>
+                                  context.push('/trips/${_trip.id}/packing'),
+                            ),
+                          ],
                           if (isTripMember) ...[
                             const SizedBox(height: 10),
                             TripOverviewModuleAddCard(
@@ -1080,13 +1106,22 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               onTap: () => showModalBottomSheet<void>(
                                 context: context,
                                 backgroundColor: NeonPalette.surface,
+                                isScrollControlled: true,
                                 shape: const RoundedRectangleBorder(
                                   borderRadius: BorderRadius.vertical(
                                     top: Radius.circular(24),
                                   ),
                                 ),
                                 builder: (sheetContext) => SafeArea(
-                                  child: Padding(
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: MediaQuery.of(sheetContext)
+                                              .size
+                                              .height *
+                                          0.85,
+                                    ),
+                                    child: SingleChildScrollView(
+                                      child: Padding(
                                     padding: const EdgeInsets.fromLTRB(
                                       20,
                                       20,
@@ -1114,6 +1149,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                               canEditGeneralInfo,
                                         ),
                                       ],
+                                    ),
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -1199,6 +1199,9 @@
   "tripTravelerModulesWalletLabel": "Documents personnels",
   "tripTravelerModulesPersonalGroupLabel": "Modules perso",
   "tripTravelerModulesGenericGroupLabel": "Modules génériques",
+  "tripTravelerModulesRidgegearSubtitle": "Affiche le poids de ton sac depuis Ridgegear.",
+  "tripTravelerModulesWalletSubtitle": "Regroupe tes billets, QR codes et réservations.",
+  "tripTravelerModulesPackingSubtitle": "Coche ta liste d'affaires à préparer.",
   "ridgegearProjectPickerTitle": "Choisir un projet Ridgegear",
   "ridgegearProjectPickerEmpty": "Aucun projet Ridgegear trouvé.",
   "ridgegearChangeProject": "Changer",
@@ -1461,5 +1464,45 @@
   "externalConnectionCallbackSuccess": "Compte connecté avec succès.",
   "externalConnectionCallbackError": "La connexion n'a pas pu être finalisée. Réessaie depuis l'écran \"Comptes externes connectés\".",
   "externalConnectionCallbackDenied": "La connexion a été refusée ou annulée.",
-  "externalConnectionCallbackBackToList": "Retour aux comptes connectés"
+  "externalConnectionCallbackBackToList": "Retour aux comptes connectés",
+  "tripPackingPageTitle": "À emporter",
+  "tripPackingModuleLabel": "À emporter",
+  "tripTravelerModulesPackingLabel": "À emporter",
+  "tripPackingRemainingCount": "{count} à préparer",
+  "@tripPackingRemainingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripPackingItemHint": "Ajouter un article…",
+  "tripPackingAddItem": "Ajouter",
+  "tripPackingRenameItem": "Renommer",
+  "tripPackingEmptyState": "Ta liste est vide. Ajoute ce que tu dois emporter.",
+  "tripPackingNotTraveler": "Tu n'es pas encore inscrit comme voyageur sur ce voyage.",
+  "tripPackingRenameTitle": "Renommer l'article",
+  "tripPackingDeleteTitle": "Supprimer l'article",
+  "tripPackingDeleteBody": "Supprimer « {label} » de ta liste ?",
+  "@tripPackingDeleteBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "tripPackingOrganiserItemTooltip": "Ajouté par l'organisateur · non modifiable",
+  "tripPackingPushAction": "Pousser aux participants",
+  "tripPackingPushTitle": "Pousser la liste",
+  "tripPackingPushBody": "Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.",
+  "tripPackingPushConfirm": "Pousser",
+  "tripPackingPushSuccess": "Liste envoyée à {count} participant(s)",
+  "@tripPackingPushSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripPackingPushEmpty": "Ajoute au moins un article avant de pousser ta liste."
 }

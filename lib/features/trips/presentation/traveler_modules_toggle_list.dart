@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_project_picker.dart';
@@ -51,6 +52,14 @@ class TravelerModulesToggleList extends ConsumerWidget {
     final modules =
         ref.watch(myTravelerModulesStreamProvider(tripId)).asData?.value ??
             const TravelerModules();
+    final packingParticipantId =
+        ref.watch(myPackingParticipantIdProvider(tripId));
+    final packingVisible = ref
+            .watch(myPackingListConfigStreamProvider(tripId))
+            .asData
+            ?.value
+            .isVisible ??
+        false;
     final repository = ref.read(travelerModulesRepositoryProvider);
     final tripsRepository = ref.read(tripsRepositoryProvider);
     final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
@@ -74,6 +83,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
           iconColor: ActivityFilterGroup.loisirs.filterInkColor,
           iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
           label: l10n.tripTravelerModulesRidgegearLabel,
+          description: l10n.tripTravelerModulesRidgegearSubtitle,
           subtitle: modules.ridgegear.enabled
               ? modules.ridgegear.projectName
               : null,
@@ -90,12 +100,31 @@ class TravelerModulesToggleList extends ConsumerWidget {
           iconColor: ActivityFilterGroup.trajets.filterInkColor,
           iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
           label: l10n.tripTravelerModulesWalletLabel,
+          description: l10n.tripTravelerModulesWalletSubtitle,
           value: modules.walletEnabled,
           onChanged: (value) => repository.setWalletEnabled(
             tripId: tripId,
             enabled: value,
           ),
         ),
+        if (packingParticipantId != null) ...[
+          const SizedBox(height: 10),
+          _TravelerModuleToggleRow(
+            icon: Icons.luggage_outlined,
+            iconColor: ActivityFilterGroup.nuits.filterInkColor,
+            iconBackground: ActivityFilterGroup.nuits.filterLightBgColor,
+            label: l10n.tripTravelerModulesPackingLabel,
+            description: l10n.tripTravelerModulesPackingSubtitle,
+            value: packingVisible,
+            onChanged: (value) => ref
+                .read(packingRepositoryProvider)
+                .setEnabled(
+                  tripId: tripId,
+                  participantId: packingParticipantId,
+                  enabled: value,
+                ),
+          ),
+        ],
         if (showGenericSection) ...[
           const SizedBox(height: 18),
           _ModuleGroupHeader(
@@ -107,6 +136,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
             iconColor: ActivityFilterGroup.trajets.filterInkColor,
             iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
             label: l10n.tripOverviewTileCarpool,
+            description: l10n.tripCreateModuleCarpoolSubtitle,
             value: trip.carpoolModuleEnabled,
             onChanged: (value) => tripsRepository.setTripModuleEnabled(
               tripId: tripId,
@@ -121,6 +151,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
               iconColor: ActivityFilterGroup.nuits.filterInkColor,
               iconBackground: ActivityFilterGroup.nuits.filterLightBgColor,
               label: l10n.tripOverviewTileRooms,
+              description: l10n.tripCreateModuleRoomsSubtitle,
               value: trip.roomsModuleEnabled,
               onChanged: (value) => tripsRepository.setTripModuleEnabled(
                 tripId: tripId,
@@ -135,6 +166,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
             iconColor: ActivityFilterGroup.loisirs.filterInkColor,
             iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
             label: l10n.tripOverviewTileGames,
+            description: l10n.tripCreateModuleGamesSubtitle,
             value: trip.gamesModuleEnabled,
             onChanged: (value) => tripsRepository.setTripModuleEnabled(
               tripId: tripId,
@@ -175,6 +207,7 @@ class _TravelerModuleToggleRow extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.description,
     this.subtitle,
     this.onSubtitleTap,
     this.subtitleActionLabel,
@@ -186,6 +219,10 @@ class _TravelerModuleToggleRow extends StatelessWidget {
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
+
+  /// Short static explanation of what the module does, shown under the
+  /// label — mirrors the module list on the trip create/edit screen.
+  final String? description;
   final String? subtitle;
   final VoidCallback? onSubtitleTap;
   final String? subtitleActionLabel;
@@ -224,6 +261,18 @@ class _TravelerModuleToggleRow extends StatelessWidget {
                       color: NeonPalette.deep,
                     ),
                   ),
+                  if (description != null && description!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        description!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.3,
+                          color: NeonPalette.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                   if (subtitle != null && subtitle!.isNotEmpty)
                     GestureDetector(
                       onTap: onSubtitleTap,
