@@ -30,6 +30,7 @@ class PackingItem {
     required this.label,
     required this.checked,
     required this.scope,
+    required this.shared,
     this.createdAt,
   });
 
@@ -37,6 +38,13 @@ class PackingItem {
   final String label;
   final bool checked;
   final PackingItemScope scope;
+
+  /// True when the trip owner flagged this personal item as a "group" item:
+  /// only those are copied to the other travelers on push. Personal items
+  /// (the default) stay in the owner's own list. Meaningless on organiser
+  /// items received from a push.
+  final bool shared;
+
   final DateTime? createdAt;
 
   /// True when the item comes from a pushed organiser list and cannot be
@@ -51,6 +59,7 @@ class PackingItem {
       label: (data['label'] as String?)?.trim() ?? '',
       checked: data['checked'] == true,
       scope: PackingItemScope.fromValue(data['scope']),
+      shared: data['shared'] == true,
       createdAt: rawCreatedAt is Timestamp ? rawCreatedAt.toDate() : null,
     );
   }

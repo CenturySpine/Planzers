@@ -3655,6 +3655,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Added by the organiser · read-only';
 
   @override
+  String get tripPackingItemPersonalTooltip =>
+      'Personal · not pushed to travelers';
+
+  @override
+  String get tripPackingItemGroupTooltip => 'Group · pushed to travelers';
+
+  @override
   String get tripPackingPushAction => 'Push to travelers';
 
   @override
@@ -3662,7 +3669,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPackingPushBody =>
-      'Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+      'Only items flagged as "Group" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
 
   @override
   String get tripPackingPushConfirm => 'Push';
@@ -3674,7 +3681,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPackingPushEmpty =>
-      'Add at least one item before pushing your list.';
+      'Flag at least one item as "Group" before pushing your list.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -7257,6 +7264,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Added by the organiser · read-only';
 
   @override
+  String get tripPackingItemPersonalTooltip =>
+      'Personal · not pushed to travelers';
+
+  @override
+  String get tripPackingItemGroupTooltip => 'Group · pushed to travelers';
+
+  @override
   String get tripPackingPushAction => 'Push to travelers';
 
   @override
@@ -7264,7 +7278,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPackingPushBody =>
-      'Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+      'Only items flagged as "Group" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
 
   @override
   String get tripPackingPushConfirm => 'Push';
@@ -7276,5 +7290,5 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPackingPushEmpty =>
-      'Add at least one item before pushing your list.';
+      'Flag at least one item as "Group" before pushing your list.';
 }

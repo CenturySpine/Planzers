@@ -1492,9 +1492,11 @@
     }
   },
   "tripPackingOrganiserItemTooltip": "Ajouté par l'organisateur · non modifiable",
+  "tripPackingItemPersonalTooltip": "Perso · non poussé aux participants",
+  "tripPackingItemGroupTooltip": "Groupe · poussé aux participants",
   "tripPackingPushAction": "Pousser aux participants",
   "tripPackingPushTitle": "Pousser la liste",
-  "tripPackingPushBody": "Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.",
+  "tripPackingPushBody": "Seuls les articles marqués « Groupe » seront copiés chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.",
   "tripPackingPushConfirm": "Pousser",
   "tripPackingPushSuccess": "Liste envoyée à {count} participant(s)",
   "@tripPackingPushSuccess": {
@@ -1504,5 +1506,5 @@
       }
     }
   },
-  "tripPackingPushEmpty": "Ajoute au moins un article avant de pousser ta liste."
+  "tripPackingPushEmpty": "Marque au moins un article « Groupe » avant de pousser ta liste."
 }

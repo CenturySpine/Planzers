@@ -139,7 +139,22 @@ class PackingRepository {
       'label': cleanLabel,
       'checked': false,
       'scope': PackingItemScope.self.value,
+      'shared': false,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Flags a personal item as "group" (pushed to the other travelers) or
+  /// back to "personal". Organiser items must not be passed here.
+  Future<void> setShared({
+    required String tripId,
+    required String participantId,
+    required String itemId,
+    required bool shared,
+  }) async {
+    await _itemsRef(tripId, participantId).doc(itemId).update(<String, dynamic>{
+      'shared': shared,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -179,9 +194,9 @@ class PackingRepository {
     await _itemsRef(tripId, participantId).doc(itemId).delete();
   }
 
-  /// Pushes the caller's own list to every other (non-child) traveler slot of
-  /// the trip. Handled server-side because a traveler can only write their own
-  /// slot. See the `pushPackingList` Cloud Function.
+  /// Pushes the caller's "group" items to every other (non-child) traveler
+  /// slot of the trip. Handled server-side because a traveler can only write
+  /// their own slot. See the `pushPackingList` Cloud Function.
   Future<PackingListPushResult> pushListToParticipants({
     required String tripId,
   }) async {
