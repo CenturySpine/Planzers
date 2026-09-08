@@ -6561,6 +6561,18 @@ abstract class AppLocalizations {
   /// **'Ajouté par l\'organisateur · non modifiable'**
   String get tripPackingOrganiserItemTooltip;
 
+  /// No description provided for @tripPackingItemPersonalTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Perso · non poussé aux participants'**
+  String get tripPackingItemPersonalTooltip;
+
+  /// No description provided for @tripPackingItemGroupTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupe · poussé aux participants'**
+  String get tripPackingItemGroupTooltip;
+
   /// No description provided for @tripPackingPushAction.
   ///
   /// In fr, this message translates to:
@@ -6576,7 +6588,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripPackingPushBody.
   ///
   /// In fr, this message translates to:
-  /// **'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.'**
+  /// **'Seuls les articles marqués « Groupe » seront copiés chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.'**
   String get tripPackingPushBody;
 
   /// No description provided for @tripPackingPushConfirm.
@@ -6594,7 +6606,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripPackingPushEmpty.
   ///
   /// In fr, this message translates to:
-  /// **'Ajoute au moins un article avant de pousser ta liste.'**
+  /// **'Marque au moins un article « Groupe » avant de pousser ta liste.'**
   String get tripPackingPushEmpty;
 }
 

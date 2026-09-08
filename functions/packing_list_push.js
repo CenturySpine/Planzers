@@ -1,12 +1,14 @@
-// "À emporter" — pushing a trip organiser's personal packing list to every
+// "À emporter" — pushing the trip owner's "group" packing items to every
 // other traveler slot of the trip.
 //
 // A traveler can only write their own packing list (Firestore rules), so the
-// fan-out write has to happen here with the Admin SDK. The organiser's own
-// list is the source of truth; each push reconciles the "organiser" section
-// of every traveler's list item by item (add / rename / remove) while never
-// touching the items travelers added themselves, and never re-enabling the
-// module for a traveler who explicitly hid it.
+// fan-out write has to happen here with the Admin SDK. The owner's own list
+// is the source of truth, restricted to the personal items they flagged as
+// "group" (`shared: true`); their other items stay private. Each push
+// reconciles the "organiser" section of every traveler's list item by item
+// (add / rename / remove) while never touching the items travelers added
+// themselves, and never re-enabling the module for a traveler who explicitly
+// hid it.
 
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
@@ -19,14 +21,9 @@ function normalizeString(v) {
   return (typeof v === 'string' ? v : '').trim();
 }
 
-function isTripOrganiser(tripData, uid) {
+function isTripOwner(tripData, uid) {
   const u = normalizeString(uid);
-  if (!u) return false;
-  if (normalizeString(tripData.ownerId) === u) return true;
-  const admins = Array.isArray(tripData.adminMemberIds)
-    ? tripData.adminMemberIds.map((v) => String(v))
-    : [];
-  return admins.includes(u);
+  return u.length > 0 && normalizeString(tripData.ownerId) === u;
 }
 
 async function userIsApplicationOwner(db, uid) {
@@ -54,11 +51,11 @@ exports.pushPackingList = onCall({}, async (request) => {
   const tripData = tripSnap.data() || {};
 
   const allowed =
-    isTripOrganiser(tripData, uid) || (await userIsApplicationOwner(db, uid));
+    isTripOwner(tripData, uid) || (await userIsApplicationOwner(db, uid));
   if (!allowed) {
     throw new HttpsError(
       'permission-denied',
-      'Seuls les organisateurs peuvent pousser une liste.'
+      'Seul le créateur du voyage peut pousser une liste.'
     );
   }
 
@@ -76,14 +73,18 @@ exports.pushPackingList = onCall({}, async (request) => {
   }
   const mySlotId = mySlotSnap.docs[0].id;
 
-  // Source = the caller's current list (personal + any items already pushed
-  // to them by another organiser).
+  // Source = the caller's own items flagged as "group". Items the caller
+  // received from a push (organiser scope) are never re-pushed.
   const sourceSnap = await tripRef
     .collection('packingLists')
     .doc(mySlotId)
     .collection('items')
     .get();
   const sourceItems = sourceSnap.docs
+    .filter((doc) => {
+      const data = doc.data() || {};
+      return data.shared === true && data.scope !== ADMIN_SCOPE;
+    })
     .map((doc) => ({ id: doc.id, label: normalizeString(doc.data().label) }))
     .filter((it) => it.label.length > 0);
   const sourceIds = new Set(sourceItems.map((it) => it.id));

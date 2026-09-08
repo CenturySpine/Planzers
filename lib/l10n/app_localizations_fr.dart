@@ -3690,6 +3690,13 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ajouté par l\'organisateur · non modifiable';
 
   @override
+  String get tripPackingItemPersonalTooltip =>
+      'Perso · non poussé aux participants';
+
+  @override
+  String get tripPackingItemGroupTooltip => 'Groupe · poussé aux participants';
+
+  @override
   String get tripPackingPushAction => 'Pousser aux participants';
 
   @override
@@ -3697,7 +3704,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPackingPushBody =>
-      'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
+      'Seuls les articles marqués « Groupe » seront copiés chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
 
   @override
   String get tripPackingPushConfirm => 'Pousser';
@@ -3709,7 +3716,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripPackingPushEmpty =>
-      'Ajoute au moins un article avant de pousser ta liste.';
+      'Marque au moins un article « Groupe » avant de pousser ta liste.';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7326,6 +7333,13 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Ajouté par l\'organisateur · non modifiable';
 
   @override
+  String get tripPackingItemPersonalTooltip =>
+      'Perso · non poussé aux participants';
+
+  @override
+  String get tripPackingItemGroupTooltip => 'Groupe · poussé aux participants';
+
+  @override
   String get tripPackingPushAction => 'Pousser aux participants';
 
   @override
@@ -7333,7 +7347,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPackingPushBody =>
-      'Ta liste sera copiée chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
+      'Seuls les articles marqués « Groupe » seront copiés chez tous les participants. Les articles déjà poussés sont mis à jour, ceux ajoutés par chacun ne sont pas touchés.';
 
   @override
   String get tripPackingPushConfirm => 'Pousser';
@@ -7345,5 +7359,5 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripPackingPushEmpty =>
-      'Ajoute au moins un article avant de pousser ta liste.';
+      'Marque au moins un article « Groupe » avant de pousser ta liste.';
 }
