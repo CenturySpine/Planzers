@@ -31,6 +31,72 @@ String formatExpenseDateForm(DateTime date) {
   return DateFormat('dd/MM/yyyy').format(date);
 }
 
+Map<String, double> weightedExpenseShareDrafts({
+  required double amount,
+  required Iterable<String> participantIds,
+  required Map<String, double> groupParts,
+}) {
+  final ids = participantIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList(growable: false);
+  if (ids.isEmpty) return const {};
+
+  final totalCents = (amount * 100).round();
+  if (totalCents <= 0) {
+    return {for (final id in ids) id: 0.0};
+  }
+
+  final partsById = {
+    for (final id in ids)
+      id: switch (groupParts[id]) {
+        final parts? when parts > 0 => parts,
+        _ => 1.0,
+      },
+  };
+  final totalParts = partsById.values.fold<double>(0, (sum, parts) => sum + parts);
+
+  final rows = [
+    for (var index = 0; index < ids.length; index++)
+      _WeightedExpenseShareDraft(
+        id: ids[index],
+        index: index,
+        rawCents: totalCents * partsById[ids[index]]! / totalParts,
+      ),
+  ];
+
+  final centsById = {for (final row in rows) row.id: row.rawCents.floor()};
+  var remainingCents =
+      totalCents - centsById.values.fold<int>(0, (sum, cents) => sum + cents);
+  final byRemainder = [...rows]
+    ..sort((a, b) {
+      final fractionCompare = b.fraction.compareTo(a.fraction);
+      if (fractionCompare != 0) return fractionCompare;
+      return a.index.compareTo(b.index);
+    });
+  for (final row in byRemainder) {
+    if (remainingCents <= 0) break;
+    centsById[row.id] = centsById[row.id]! + 1;
+    remainingCents--;
+  }
+
+  return {for (final id in ids) id: centsById[id]! / 100};
+}
+
+class _WeightedExpenseShareDraft {
+  const _WeightedExpenseShareDraft({
+    required this.id,
+    required this.index,
+    required this.rawCents,
+  });
+
+  final String id;
+  final int index;
+  final double rawCents;
+
+  double get fraction => rawCents - rawCents.floor();
+}
+
 double expenseShareForUnit({
   required double amount,
   required String unitId,
