@@ -10,9 +10,10 @@ import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// "À emporter" — a personal, per-traveler checklist of things to pack /
-/// bring. Items are free text (no suggestions). A trip organiser can push
-/// their own list to every traveler; pushed items show a lock and can only
-/// be checked, never edited, by the traveler.
+/// bring. Items are free text (no suggestions). The trip owner flags each of
+/// their own items as "personal" or "group" and can push the group ones to
+/// every traveler; pushed items show a lock and can only be checked, never
+/// edited, by the traveler.
 class TripPackingPage extends ConsumerStatefulWidget {
   const TripPackingPage({super.key, required this.tripId});
 
@@ -97,6 +98,19 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     }
   }
 
+  Future<void> _toggleShared(String participantId, PackingItem item) async {
+    try {
+      await _repo.setShared(
+        tripId: widget.tripId,
+        participantId: participantId,
+        itemId: item.id,
+        shared: !item.shared,
+      );
+    } catch (e) {
+      _showError(e);
+    }
+  }
+
   Future<void> _confirmDelete(String participantId, PackingItem item) async {
     final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
@@ -131,9 +145,9 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     }
   }
 
-  Future<void> _confirmPush(int itemCount) async {
+  Future<void> _confirmPush(int sharedItemCount) async {
     final l10n = AppLocalizations.of(context)!;
-    if (itemCount == 0) {
+    if (sharedItemCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripPackingPushEmpty)),
       );
@@ -200,13 +214,18 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
     final myUid = FirebaseAuth.instance.currentUser?.uid;
 
+    // Only the trip owner sorts their items into personal / group and pushes
+    // the group ones to the other travelers.
     final canPush = trip != null &&
         isTripRoleAllowed(
           currentRole: resolveTripPermissionRole(trip: trip, userId: myUid),
-          minRole: TripPermissionRole.admin,
+          minRole: TripPermissionRole.owner,
         );
 
     final items = itemsAsync.asData?.value ?? const <PackingItem>[];
+    final sharedItemCount = items
+        .where((item) => item.shared && !item.isFromOrganiser)
+        .length;
 
     return Theme(
       data: NeonPalette.overlayOn(Theme.of(context)),
@@ -230,7 +249,7 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
                   : IconButton(
                       icon: const Icon(Icons.ios_share),
                       tooltip: l10n.tripPackingPushAction,
-                      onPressed: () => _confirmPush(items.length),
+                      onPressed: () => _confirmPush(sharedItemCount),
                     ),
           ],
         ),
@@ -269,6 +288,11 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
                                   ? null
                                   : () =>
                                       _confirmDelete(participantId, item),
+                              onToggleShared:
+                                  canPush && !item.isFromOrganiser
+                                      ? () =>
+                                          _toggleShared(participantId, item)
+                                      : null,
                               organiserBadgeTooltip:
                                   l10n.tripPackingOrganiserItemTooltip,
                             );
@@ -304,6 +328,7 @@ class _PackingRow extends StatelessWidget {
     required this.onToggle,
     required this.onRename,
     required this.onDelete,
+    required this.onToggleShared,
     required this.organiserBadgeTooltip,
   });
 
@@ -311,6 +336,11 @@ class _PackingRow extends StatelessWidget {
   final ValueChanged<bool> onToggle;
   final VoidCallback? onRename;
   final VoidCallback? onDelete;
+
+  /// Non-null only for the trip owner's own items: flips the item between
+  /// "personal" and "group".
+  final VoidCallback? onToggleShared;
+
   final String organiserBadgeTooltip;
 
   @override
@@ -356,6 +386,14 @@ class _PackingRow extends StatelessWidget {
                 ),
               ),
             ),
+            if (onToggleShared != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: _PackingShareToggle(
+                  shared: item.shared,
+                  onPressed: onToggleShared!,
+                ),
+              ),
             if (item.isFromOrganiser)
               Padding(
                 padding: const EdgeInsets.only(right: 10, left: 4),
@@ -391,6 +429,57 @@ class _PackingRow extends StatelessWidget {
                 ],
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Personal / group switch shown to the trip owner on each of their items.
+/// Styled as an explicit button (outlined when personal, filled when group)
+/// so the state reads at a glance and the tap target is obvious.
+class _PackingShareToggle extends StatelessWidget {
+  const _PackingShareToggle({
+    required this.shared,
+    required this.onPressed,
+  });
+
+  final bool shared;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final radius = BorderRadius.circular(10);
+
+    return Tooltip(
+      message: shared
+          ? l10n.tripPackingItemGroupTooltip
+          : l10n.tripPackingItemPersonalTooltip,
+      child: Semantics(
+        button: true,
+        toggled: shared,
+        child: Material(
+          color: shared ? NeonPalette.primary : NeonPalette.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: shared
+                ? BorderSide.none
+                : const BorderSide(color: NeonPalette.divider),
+          ),
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onPressed,
+            child: SizedBox(
+              width: 36,
+              height: 36,
+              child: Icon(
+                shared ? Icons.groups_rounded : Icons.person_outline_rounded,
+                size: 20,
+                color: shared ? Colors.white : NeonPalette.primary,
+              ),
+            ),
+          ),
         ),
       ),
     );

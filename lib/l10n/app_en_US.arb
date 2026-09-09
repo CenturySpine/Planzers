@@ -1454,9 +1454,11 @@
     }
   },
   "tripPackingOrganiserItemTooltip": "Added by the organiser · read-only",
+  "tripPackingItemPersonalTooltip": "Personal · not pushed to travelers",
+  "tripPackingItemGroupTooltip": "Group · pushed to travelers",
   "tripPackingPushAction": "Push to travelers",
   "tripPackingPushTitle": "Push the list",
-  "tripPackingPushBody": "Your list will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.",
+  "tripPackingPushBody": "Only items flagged as \"Group\" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.",
   "tripPackingPushConfirm": "Push",
   "tripPackingPushSuccess": "List sent to {count} traveler(s)",
   "@tripPackingPushSuccess": {
@@ -1466,5 +1468,5 @@
       }
     }
   },
-  "tripPackingPushEmpty": "Add at least one item before pushing your list."
+  "tripPackingPushEmpty": "Flag at least one item as \"Group\" before pushing your list."
 }
