@@ -30,6 +30,24 @@ Future<DateTime?> _pickExpenseDate(
   return result?.start;
 }
 
+String? defaultExpensePayerId({
+  required Iterable<String> participantScopeMemberIds,
+  String? currentUserBillingUnitId,
+  String? currentUserMemberId,
+}) {
+  final members = participantScopeMemberIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toList();
+  for (final id in [currentUserBillingUnitId, currentUserMemberId]) {
+    final cleanId = id?.trim();
+    if (cleanId != null && cleanId.isNotEmpty && members.contains(cleanId)) {
+      return cleanId;
+    }
+  }
+  return members.isNotEmpty ? members.first : null;
+}
+
 // --- Add expense ---
 
 class AddExpensePage extends ConsumerStatefulWidget {
@@ -40,6 +58,7 @@ class AddExpensePage extends ConsumerStatefulWidget {
     required this.participantScopeMemberIds,
     required this.memberLabels,
     required this.currentUserMemberId,
+    required this.currentUserBillingUnitId,
   });
 
   final String tripId;
@@ -47,6 +66,7 @@ class AddExpensePage extends ConsumerStatefulWidget {
   final List<String> participantScopeMemberIds;
   final Map<String, String> memberLabels;
   final String? currentUserMemberId;
+  final String? currentUserBillingUnitId;
 
   @override
   ConsumerState<AddExpensePage> createState() => _AddExpensePageState();
@@ -73,12 +93,12 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
   @override
   void initState() {
     super.initState();
-    final members = _scopeMemberIds;
-    final myId = widget.currentUserMemberId;
-    _paidBy = (myId != null && members.contains(myId))
-        ? myId
-        : (members.isNotEmpty ? members.first : null);
-    _participantIds.addAll(members);
+    _paidBy = defaultExpensePayerId(
+      participantScopeMemberIds: _scopeMemberIds,
+      currentUserBillingUnitId: widget.currentUserBillingUnitId,
+      currentUserMemberId: widget.currentUserMemberId,
+    );
+    _participantIds.addAll(_scopeMemberIds);
     _amountController.addListener(() => setState(() {}));
   }
 
@@ -94,7 +114,8 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
 
   String _label(String id, AppLocalizations l10n) {
     final base = widget.memberLabels[id] ?? l10n.tripParticipantsTraveler;
-    if (widget.currentUserMemberId == id) {
+    if (widget.currentUserBillingUnitId == id ||
+        widget.currentUserMemberId == id) {
       return '$base · ${l10n.commonMe.toLowerCase()}';
     }
     return base;
