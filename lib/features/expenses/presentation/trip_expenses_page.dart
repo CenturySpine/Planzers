@@ -34,7 +34,7 @@ import 'package:planerz/l10n/app_localizations.dart';
 /// Billing unit IDs (ungrouped member IDs + applicable group IDs) for an expense post.
 ///
 /// Ungrouped members: allowed by [group.visibleToMemberIds] and not in any group.
-/// Groups: those whose every member is within the allowed set.
+/// Groups: billing groups with at least one member in the allowed set.
 List<String> participantScopeUnitIdsForGroup(
   TripExpenseGroup group,
   List<TripMember> participants,
@@ -51,7 +51,7 @@ List<String> participantScopeUnitIdsForGroup(
       .map((m) => m.id)
       .toList();
   final scopeGroups = participantGroups
-      .where((g) => g.memberIds.isNotEmpty && g.memberIds.every(allowed.contains))
+      .where((g) => g.memberIds.any(allowed.contains))
       .map((g) => g.id)
       .toList();
   return [...ungrouped, ...scopeGroups]..sort();
