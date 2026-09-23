@@ -4,6 +4,7 @@ const {
   buildNotificationQueueDocId,
   enqueueTripNotification,
   claimAndDeleteNotificationQueueDoc,
+  deliverNotificationBatch,
 } = require('./notification_queue');
 
 test('buildNotificationQueueDocId for trip_message', () => {
@@ -162,4 +163,88 @@ test('claimAndDeleteNotificationQueueDoc deletes and returns data when doc prese
 
   assert.deepEqual(result, { type: 'trip_message', tripId: 't' });
   assert.equal(deletedRef, ref);
+});
+
+test('deliverNotificationBatch does not increment unread counters when FCM throws', async () => {
+  let incrementCalled = false;
+  let cleanupCalled = false;
+
+  await assert.rejects(
+    deliverNotificationBatch({
+      db: {},
+      tokenEntries: [{ token: 'token-1' }],
+      messages: [{ token: 'token-1' }],
+      tripId: 'trip-1',
+      recipients: ['user-1'],
+      channel: 'messages',
+      async sendEach() {
+        throw new Error('FCM unavailable');
+      },
+      async incrementTripUnreadCounters() {
+        incrementCalled = true;
+      },
+      async cleanupInvalidFcmTokens() {
+        cleanupCalled = true;
+      },
+    }),
+    /FCM unavailable/,
+  );
+
+  assert.equal(incrementCalled, false);
+  assert.equal(cleanupCalled, false);
+});
+
+test('deliverNotificationBatch increments unread counters after FCM accepts messages', async () => {
+  const calls = [];
+
+  await deliverNotificationBatch({
+    db: {},
+    tokenEntries: [{ token: 'token-1' }],
+    messages: [{ token: 'token-1' }],
+    tripId: 'trip-1',
+    recipients: ['user-1'],
+    channel: 'messages',
+    async sendEach(messages) {
+      calls.push(['sendEach', messages.length]);
+      return { responses: [{ success: true }] };
+    },
+    async incrementTripUnreadCounters(args) {
+      calls.push(['increment', args.tripId, args.recipients, args.channel]);
+    },
+    async cleanupInvalidFcmTokens(_db, result, tokenEntries) {
+      calls.push(['cleanup', result.responses.length, tokenEntries.length]);
+    },
+  });
+
+  assert.deepEqual(calls, [
+    ['sendEach', 1],
+    ['increment', 'trip-1', ['user-1'], 'messages'],
+    ['cleanup', 1, 1],
+  ]);
+});
+
+test('deliverNotificationBatch still increments unread counters when recipients have no tokens', async () => {
+  const calls = [];
+
+  await deliverNotificationBatch({
+    db: {},
+    tokenEntries: [],
+    messages: [],
+    tripId: 'trip-1',
+    recipients: ['user-1'],
+    channel: 'messages',
+    async sendEach() {
+      calls.push('sendEach');
+    },
+    async incrementTripUnreadCounters(args) {
+      calls.push(['increment', args.tripId, args.recipients, args.channel]);
+    },
+    async cleanupInvalidFcmTokens() {
+      calls.push('cleanup');
+    },
+  });
+
+  assert.deepEqual(calls, [
+    ['increment', 'trip-1', ['user-1'], 'messages'],
+  ]);
 });
