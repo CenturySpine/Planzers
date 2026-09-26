@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 BoxShadow _elev1Shadow() => BoxShadow(
@@ -28,7 +28,7 @@ class TripChildCareIcon extends StatelessWidget {
     final icon = Icon(
       Icons.child_care,
       size: iconSize,
-      color: boxed ? NeonPalette.accent : NeonPalette.outline,
+      color: boxed ? AppTokens.error : AppTokens.outline,
     );
     if (!boxed) {
       return icon;
@@ -37,7 +37,7 @@ class TripChildCareIcon extends StatelessWidget {
       width: boxSize,
       height: boxSize,
       decoration: BoxDecoration(
-        color: Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.13),
+        color: Color.lerp(AppTokens.surface, AppTokens.error, 0.13),
         borderRadius: BorderRadius.circular(10),
       ),
       alignment: Alignment.center,
@@ -62,10 +62,10 @@ class TripParticipantsTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.scaffoldBackground,
+      color: AppTokens.scaffoldBackground,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: NeonPalette.divider)),
+          border: Border(bottom: BorderSide(color: AppTokens.divider)),
         ),
         child: ListenableBuilder(
           listenable: controller,
@@ -118,7 +118,7 @@ class _TabButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? NeonPalette.primary : NeonPalette.onSurfaceVariant,
+                  color: selected ? AppTokens.primary : AppTokens.onSurfaceVariant,
                   letterSpacing: 0.1,
                 ),
               ),
@@ -131,7 +131,7 @@ class _TabButton extends StatelessWidget {
                 child: Container(
                   height: 3,
                   decoration: BoxDecoration(
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(3),
                     ),
@@ -167,7 +167,7 @@ class TripParticipantsFab extends StatelessWidget {
         onPressed: onPressed,
         elevation: 3,
         highlightElevation: 4,
-        backgroundColor: NeonPalette.primary,
+        backgroundColor: AppTokens.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -189,14 +189,14 @@ class TripParticipantsPrimaryCallout extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: NeonPalette.participantsCalloutBg,
+        color: AppTokens.participantsCalloutBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeonPalette.participantsCalloutBorder),
+        border: Border.all(color: AppTokens.participantsCalloutBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, size: 18, color: NeonPalette.primary),
+          const Icon(Icons.info_outline, size: 18, color: AppTokens.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -204,7 +204,7 @@ class TripParticipantsPrimaryCallout extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.45,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -234,28 +234,31 @@ class TripParticipantsSearchField extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: NeonPalette.surface,
+          color: AppTokens.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeonPalette.divider, width: 1.5),
+          border: Border.all(color: AppTokens.divider, width: 1.5),
           boxShadow: [_elev1Shadow()],
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, size: 20, color: NeonPalette.onSurfaceVariant),
+            const Icon(Icons.search, size: 20, color: AppTokens.onSurfaceVariant),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
                 textInputAction: TextInputAction.search,
-                style: const TextStyle(fontSize: 14, color: NeonPalette.deep),
+                style: const TextStyle(fontSize: 14, color: AppTokens.deep),
                 decoration: InputDecoration(
                   hintText: l10n.nameSearchHint,
                   hintStyle: const TextStyle(
                     fontSize: 14,
-                    color: NeonPalette.outline,
+                    color: AppTokens.outline,
                   ),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -305,18 +308,18 @@ class TripParticipantRoleChip extends StatelessWidget {
       TripParticipantRoleChipKind.you => l10n.tripParticipantsRoleChipYou,
     };
     final bg = switch (kind) {
-      TripParticipantRoleChipKind.owner => NeonPalette.participantsChipOwnerBg,
-      TripParticipantRoleChipKind.admin => NeonPalette.participantsChipAdminBg,
-      TripParticipantRoleChipKind.childPlanned => NeonPalette.participantsChipChildBg,
-      TripParticipantRoleChipKind.planned => NeonPalette.participantsChipNeutralBg,
-      TripParticipantRoleChipKind.you => NeonPalette.participantsChipNeutralBg,
+      TripParticipantRoleChipKind.owner => AppTokens.participantsChipOwnerBg,
+      TripParticipantRoleChipKind.admin => AppTokens.participantsChipAdminBg,
+      TripParticipantRoleChipKind.childPlanned => AppTokens.participantsChipChildBg,
+      TripParticipantRoleChipKind.planned => AppTokens.participantsChipNeutralBg,
+      TripParticipantRoleChipKind.you => AppTokens.participantsChipNeutralBg,
     };
     final fg = switch (kind) {
-      TripParticipantRoleChipKind.owner => NeonPalette.participantsChipOwnerFg,
-      TripParticipantRoleChipKind.admin => NeonPalette.participantsChipAdminFg,
-      TripParticipantRoleChipKind.childPlanned => NeonPalette.participantsChipChildFg,
-      TripParticipantRoleChipKind.planned => NeonPalette.participantsChipNeutralFg,
-      TripParticipantRoleChipKind.you => NeonPalette.participantsChipNeutralFg,
+      TripParticipantRoleChipKind.owner => AppTokens.participantsChipOwnerFg,
+      TripParticipantRoleChipKind.admin => AppTokens.participantsChipAdminFg,
+      TripParticipantRoleChipKind.childPlanned => AppTokens.participantsChipChildFg,
+      TripParticipantRoleChipKind.planned => AppTokens.participantsChipNeutralFg,
+      TripParticipantRoleChipKind.you => AppTokens.participantsChipNeutralFg,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -399,7 +402,7 @@ class TripParticipantNameAndChips extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
         ),
         if (chips.isNotEmpty)
@@ -430,14 +433,14 @@ Widget _buildNeonParticipantProfileBadge({
     height: size,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: NeonPalette.participantsAvatarBg,
+      color: AppTokens.participantsAvatarBg,
       shape: BoxShape.circle,
     ),
     child: Text(
       initial,
       textAlign: TextAlign.center,
       style: TextStyle(
-        color: NeonPalette.primary,
+        color: AppTokens.primary,
         fontSize: size * 0.42,
         fontWeight: FontWeight.w700,
         height: 1.0,
@@ -494,7 +497,7 @@ class TripParticipantAvatar extends StatelessWidget {
         height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: NeonPalette.participantsAvatarBg,
+          color: AppTokens.participantsAvatarBg,
           shape: BoxShape.circle,
         ),
         child: TripChildCareIcon(
@@ -514,13 +517,13 @@ class TripParticipantAvatar extends StatelessWidget {
         height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: NeonPalette.participantsAvatarBg,
+          color: AppTokens.participantsAvatarBg,
           shape: BoxShape.circle,
         ),
         child: Icon(
           Icons.person_outline,
           size: size * 0.55,
-          color: NeonPalette.outline,
+          color: AppTokens.outline,
         ),
       );
     }
@@ -529,16 +532,16 @@ class TripParticipantAvatar extends StatelessWidget {
     if (isOwnerRow) {
       roleBadge = _RoleMicroBadge(
         size: badgeSize,
-        background: NeonPalette.primary,
+        background: AppTokens.primary,
         icon: Icons.star_rounded,
-        borderColor: NeonPalette.surface,
+        borderColor: AppTokens.surface,
       );
     } else if (isAdmin && isClaimed) {
       roleBadge = _RoleMicroBadge(
         size: badgeSize,
-        background: NeonPalette.participantsAdminBadgeBg,
+        background: AppTokens.participantsAdminBadgeBg,
         icon: Icons.shield_rounded,
-        borderColor: NeonPalette.surface,
+        borderColor: AppTokens.surface,
       );
     }
 
@@ -613,19 +616,19 @@ class TripParticipantRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        splashColor: NeonPalette.primary.withValues(alpha: 0.08),
-        highlightColor: NeonPalette.primary.withValues(alpha: 0.05),
+        splashColor: AppTokens.primary.withValues(alpha: 0.08),
+        highlightColor: AppTokens.primary.withValues(alpha: 0.05),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 11, 4, 11),
           child: Row(
@@ -652,7 +655,7 @@ class TripParticipantRowCard extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: NeonPalette.outline,
+                color: AppTokens.outline,
               ),
             ],
           ),
@@ -709,7 +712,7 @@ Future<void> showTripParticipantActionSheet({
           children: [
             const Spacer(),
             Material(
-              color: NeonPalette.surface,
+              color: AppTokens.surface,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
               elevation: 16,
               shadowColor: Colors.black.withValues(alpha: 0.18),
@@ -721,7 +724,7 @@ Future<void> showTripParticipantActionSheet({
                     width: 32,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: NeonPalette.divider,
+                      color: AppTokens.divider,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -750,14 +753,14 @@ Future<void> showTripParticipantActionSheet({
                             nameStyle: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: NeonPalette.deep,
+                              color: AppTokens.deep,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: NeonPalette.divider),
+                  Divider(height: 1, color: AppTokens.divider),
                   if (actions.isNotEmpty)
                     for (var index = 0; index < actions.length; index++)
                       _SheetActionTile(
@@ -787,12 +790,12 @@ class _SheetActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iconColor = action.iconColor ??
-        (action.danger ? NeonPalette.accent : NeonPalette.onSurfaceVariant);
-    final labelColor = action.danger ? NeonPalette.accent : NeonPalette.deep;
+        (action.danger ? AppTokens.error : AppTokens.onSurfaceVariant);
+    final labelColor = action.danger ? AppTokens.error : AppTokens.deep;
 
     return Column(
       children: [
-        if (showDivider) Divider(height: 1, color: NeonPalette.divider),
+        if (showDivider) Divider(height: 1, color: AppTokens.divider),
         InkWell(
           onTap: action.onTap,
           child: Padding(
@@ -826,7 +829,7 @@ class _SheetActionTile extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 12,
                             height: 1.35,
-                            color: NeonPalette.onSurfaceVariant,
+                            color: AppTokens.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -837,7 +840,7 @@ class _SheetActionTile extends StatelessWidget {
                   const Icon(
                     Icons.chevron_right,
                     size: 18,
-                    color: NeonPalette.outline,
+                    color: AppTokens.outline,
                   ),
               ],
             ),
@@ -869,13 +872,13 @@ class TripParticipantGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -888,14 +891,14 @@ class TripParticipantGroupCard extends StatelessWidget {
                 height: 42,
                 margin: const EdgeInsets.only(top: 2),
                 decoration: BoxDecoration(
-                  color: NeonPalette.participantsGroupIconBg,
+                  color: AppTokens.participantsGroupIconBg,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   Icons.group_rounded,
                   size: 24,
-                  color: NeonPalette.participantsGroupIconFg,
+                  color: AppTokens.participantsGroupIconFg,
                 ),
               ),
               const SizedBox(width: 12),
@@ -908,7 +911,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -916,7 +919,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                       metaLine,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: NeonPalette.onSurfaceVariant,
+                        color: AppTokens.onSurfaceVariant,
                       ),
                     ),
                     if (memberNamesLine.isNotEmpty) ...[
@@ -927,7 +930,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -944,7 +947,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                         icon: const Icon(
                           Icons.edit_outlined,
                           size: 20,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                         style: IconButton.styleFrom(
                           minimumSize: const Size(36, 36),
@@ -966,7 +969,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                             : const Icon(
                                 Icons.delete_outline,
                                 size: 20,
-                                color: NeonPalette.accent,
+                                color: AppTokens.error,
                               ),
                         style: IconButton.styleFrom(
                           minimumSize: const Size(36, 36),
@@ -998,7 +1001,7 @@ class TripParticipantsGroupsEmpty extends StatelessWidget {
             const Icon(
               Icons.groups_outlined,
               size: 52,
-              color: NeonPalette.divider,
+              color: AppTokens.divider,
             ),
             const SizedBox(height: 14),
             Text(
@@ -1007,7 +1010,7 @@ class TripParticipantsGroupsEmpty extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.55,
-                color: NeonPalette.onSurfaceVariant,
+                color: AppTokens.onSurfaceVariant,
               ),
             ),
           ],
@@ -1054,10 +1057,10 @@ class _TripParticipantsInputShellState extends State<TripParticipantsInputShell>
       height: widget.height,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: focused ? NeonPalette.primary : NeonPalette.divider,
+          color: focused ? AppTokens.primary : AppTokens.divider,
           width: focused ? 2 : 1.5,
         ),
       ),
@@ -1067,7 +1070,7 @@ class _TripParticipantsInputShellState extends State<TripParticipantsInputShell>
             Icon(
               widget.icon,
               size: 18,
-              color: focused ? NeonPalette.primary : NeonPalette.onSurfaceVariant,
+              color: focused ? AppTokens.primary : AppTokens.onSurfaceVariant,
             ),
             const SizedBox(width: 10),
           ],
@@ -1098,7 +1101,7 @@ class TripParticipantsDialogShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: NeonPalette.surface,
+      backgroundColor: AppTokens.surface,
       elevation: 8,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -1117,7 +1120,7 @@ class TripParticipantsDialogShell extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     height: 1.2,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -1144,10 +1147,10 @@ TextButton tripParticipantsDialogButton({
   bool danger = false,
 }) {
   final color = danger
-      ? NeonPalette.accent
+      ? AppTokens.error
       : primary
-          ? NeonPalette.primary
-          : NeonPalette.onSurfaceVariant;
+          ? AppTokens.primary
+          : AppTokens.onSurfaceVariant;
   return TextButton(
     onPressed: onPressed,
     style: TextButton.styleFrom(
@@ -1184,9 +1187,9 @@ class TripParticipantRemoveDialogHeader extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: NeonPalette.participantsDangerBg,
+        color: AppTokens.participantsDangerBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeonPalette.participantsDangerBorder),
+        border: Border.all(color: AppTokens.participantsDangerBorder),
       ),
       child: Row(
         children: [
@@ -1210,7 +1213,7 @@ class TripParticipantRemoveDialogHeader extends StatelessWidget {
               nameStyle: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -1251,10 +1254,13 @@ class TripParticipantsPartsField extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: NeonPalette.deep,
+              color: AppTokens.deep,
             ),
             decoration: const InputDecoration(
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
               isDense: true,
               contentPadding: EdgeInsets.zero,
             ),
@@ -1267,7 +1273,7 @@ class TripParticipantsPartsField extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               height: 1.4,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
           ),
         ],

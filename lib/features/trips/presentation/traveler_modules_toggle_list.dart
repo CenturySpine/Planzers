@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -192,7 +192,7 @@ class _ModuleGroupHeader extends StatelessWidget {
       style: const TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: NeonPalette.text700,
+        color: AppTokens.text700,
         letterSpacing: 0.2,
       ),
     );
@@ -231,9 +231,9 @@ class _TravelerModuleToggleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NeonPalette.divider),
+        border: Border.all(color: AppTokens.divider),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -258,7 +258,7 @@ class _TravelerModuleToggleRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                   ),
                   if (description != null && description!.isNotEmpty)
@@ -269,7 +269,7 @@ class _TravelerModuleToggleRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           height: 1.3,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -283,8 +283,8 @@ class _TravelerModuleToggleRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: onSubtitleTap != null
-                              ? NeonPalette.primary
-                              : NeonPalette.onSurfaceVariant,
+                              ? AppTokens.primary
+                              : AppTokens.onSurfaceVariant,
                         ),
                       ),
                     ),

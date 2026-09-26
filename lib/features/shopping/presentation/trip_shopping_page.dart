@@ -84,7 +84,6 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
   bool _consolidatedOnlyClaimedByMe = false;
   String? _pendingAutofocusItemId;
   bool _isConsolidating = false;
-  bool _isFabMenuOpen = false;
   bool _suppressRemoteConsolidatedSync = false;
   bool _isSavingConsolidated = false;
   String? _appliedRemoteConsolidatedFingerprint;
@@ -417,6 +416,78 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
 
     final languageCode = Localizations.localeOf(context).languageCode;
 
+    final showDeleteCheckedAction = showShoppingFab && canDeleteCheckedItems;
+    final showConsolidateAction = showShoppingFab && canConsolidateWithAi;
+    Widget buildListActionsMenu({bool showClearConsolidated = false}) =>
+        PopupMenuButton<String>(
+          tooltip: l10n.commonMoreActions,
+          icon: const Icon(Icons.more_vert_rounded),
+          onSelected: (value) {
+            switch (value) {
+              case 'help':
+                _showFilterHelp(context);
+              case 'consolidate':
+                _showConsolidateOptionsDialog(context, isApplicationOwner);
+              case 'delete_checked':
+                _confirmAndDeleteChecked(context);
+              case 'clear_consolidated':
+                _confirmAndClearConsolidated(context);
+            }
+          },
+          itemBuilder: (context) {
+            final errorColor = Theme.of(context).colorScheme.error;
+            return [
+              PopupMenuItem<String>(
+                value: 'help',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.help_outline_rounded),
+                  title: Text(l10n.shoppingFilterHelpTooltip),
+                ),
+              ),
+              if (showConsolidateAction)
+                PopupMenuItem<String>(
+                  value: 'consolidate',
+                  enabled: !_isConsolidating && ownerFlagReady,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.auto_awesome_rounded),
+                    title: Text(l10n.shoppingActionConsolidateAi),
+                  ),
+                ),
+              if (showClearConsolidated)
+                PopupMenuItem<String>(
+                  value: 'clear_consolidated',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.layers_clear_outlined),
+                    title: Text(l10n.shoppingConsolidatedClear),
+                  ),
+                ),
+              if (showDeleteCheckedAction)
+                PopupMenuItem<String>(
+                  value: 'delete_checked',
+                  enabled: checkedCount > 0,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading:
+                        Icon(Icons.delete_outline_rounded, color: errorColor),
+                    title: Text(
+                      l10n.shoppingActionDeleteChecked,
+                      style: TextStyle(color: errorColor),
+                    ),
+                  ),
+                ),
+            ];
+          },
+        );
+    final Widget listActionsMenu = buildListActionsMenu();
+    final Widget consolidatedActionsMenu = buildListActionsMenu(
+      showClearConsolidated: isAdminOrAbove &&
+          !locks.consolidatedListLocked &&
+          _consolidatedItems.isNotEmpty,
+    );
+
     return StreamBuilder<Map<String, Map<String, dynamic>>>(
       stream: usersDataStream,
       builder: (context, usersSnap) {
@@ -529,14 +600,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                             child: NameListSearchTextField(
                               controller: _searchController,
                               onChanged: (_) => setState(() {}),
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
                             child: ShoppingListFilterBar(
                               selectedStatus: _manualListStatusFilter,
                               onlyClaimedByMe: _manualOnlyClaimedByMe,
@@ -544,9 +615,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                   setState(() => _manualListStatusFilter = f),
                               onOnlyClaimedByMeChanged: (v) =>
                                   setState(() => _manualOnlyClaimedByMe = v),
-                              onHelpPressed: () => _showFilterHelp(context),
+                              trailing: [listActionsMenu],
                             ),
                           ),
+                          if (widget.items.isNotEmpty)
+                            _ShoppingProgress(
+                              checked: checkedCount,
+                              total: widget.items.length,
+                            ),
                           Expanded(
                             child: widget.items.isEmpty
                                 ? Center(
@@ -597,23 +673,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                         ),
                                       )
                                     : ListView.separated(
-                                        padding: const EdgeInsets.only(
-                                          left: 4,
-                                          right: 4,
-                                          top: 4,
-                                          bottom: 88,
-                                        ),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            12, 4, 12, 88),
                                         itemCount: filteredItems.length,
-                                        separatorBuilder: (_, __) => Divider(
-                                          height: 1,
-                                          thickness: 1,
-                                          color: Theme.of(context)
-                                              .dividerColor
-                                              .withValues(alpha: 0.35),
-                                        ),
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox.shrink(),
                                         itemBuilder: (context, index) {
                                           final item = filteredItems[index];
-                                          return ShoppingItemRow(
+                                          return _ShoppingCardSlice(
+                                            isFirst: index == 0,
+                                            isLast: index ==
+                                                filteredItems.length - 1,
+                                            child: ShoppingItemRow(
                                             key: ValueKey(item.id),
                                             tripId: widget.tripId,
                                             item: item,
@@ -627,6 +698,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                               if (_pendingAutofocusItemId != item.id) return;
                                               setState(() => _pendingAutofocusItemId = null);
                                             },
+                                          ),
                                           );
                                         },
                                       ),
@@ -647,7 +719,6 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                             setState(() => _consolidatedListStatusFilter = f),
                         onOnlyClaimedByMeChanged: (v) =>
                             setState(() => _consolidatedOnlyClaimedByMe = v),
-                        onFilterHelp: () => _showFilterHelp(context),
                         pendingAutofocusItemId: _pendingAutofocusItemId,
                         onAutofocusItemHandled: (itemId) {
                           if (!mounted) return;
@@ -658,13 +729,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                             consolidatedLockRestrictsEditing,
                         showConsolidatedSaveButton: isAdminOrAbove &&
                             _consolidatedItems.isNotEmpty,
-                        showConsolidatedClearButton: isAdminOrAbove &&
-                            !locks.consolidatedListLocked &&
-                            _consolidatedItems.isNotEmpty,
                         isSavingConsolidated: _isSavingConsolidated,
                         consolidatedRemoteAsync: consolidatedRemoteAsync,
                         suppressRemoteConsolidatedSync:
                             _suppressRemoteConsolidatedSync,
+                        listActionsMenu: consolidatedActionsMenu,
                       ),
                     ],
                   ),
@@ -682,83 +751,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               Positioned(
                 right: 16,
                 bottom: 16,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (_isFabMenuOpen) ...[
-                      if (canDeleteCheckedItems) ...[
-                        FloatingActionButton.extended(
-                          heroTag: 'shopping_delete_checked_submenu',
-                          tooltip: l10n.shoppingActionDeleteChecked,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.error,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onError,
-                          onPressed: checkedCount == 0
-                              ? null
-                              : () {
-                                  setState(() => _isFabMenuOpen = false);
-                                  _confirmAndDeleteChecked(context);
-                                },
-                          icon: const Icon(Icons.delete_outline),
-                          label: Text(l10n.shoppingActionDeleteChecked),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      if (canConsolidateWithAi) ...[
-                        FloatingActionButton.extended(
-                          heroTag: 'shopping_consolidate_ai_submenu',
-                          tooltip: l10n.shoppingConsolidateAiTooltip,
-                          onPressed: _isConsolidating || !ownerFlagReady
-                              ? null
-                              : () {
-                                  setState(() => _isFabMenuOpen = false);
-                                  _showConsolidateOptionsDialog(
-                                    context,
-                                    isApplicationOwner,
-                                  );
-                                },
-                          icon: _isConsolidating
-                              ? const SizedBox.square(
-                                  dimension: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.auto_awesome),
-                          label: Text(l10n.shoppingActionConsolidateAi),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      FloatingActionButton.extended(
-                        heroTag: 'shopping_add_item_submenu',
-                        tooltip: l10n.shoppingActionAddItem,
-                        onPressed: () {
-                          setState(() => _isFabMenuOpen = false);
-                          unawaited(
-                            _addFromFabAddItem(
-                              context,
-                              consolidatedLockRestrictsEditing:
-                                  consolidatedLockRestrictsEditing,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add),
-                        label: Text(l10n.shoppingActionAddItem),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    FloatingActionButton(
-                      heroTag: 'shopping_list_main_fab',
-                      tooltip: l10n.shoppingFabTooltip,
-                      onPressed: () {
-                        setState(() => _isFabMenuOpen = !_isFabMenuOpen);
-                      },
-                      child: Icon(
-                        _isFabMenuOpen ? Icons.close : Icons.shopping_bag_outlined,
-                      ),
+                child: FloatingActionButton.extended(
+                  heroTag: 'shopping_add_item_fab',
+                  tooltip: l10n.shoppingActionAddItem,
+                  onPressed: () => unawaited(
+                    _addFromFabAddItem(
+                      context,
+                      consolidatedLockRestrictsEditing:
+                          consolidatedLockRestrictsEditing,
                     ),
-                  ],
+                  ),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(l10n.shoppingActionAddItem),
                 ),
               ),
           ],
@@ -990,15 +994,14 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     required String currentUid,
     required ValueChanged<ShoppingListStatusFilter> onStatusFilterChanged,
     required ValueChanged<bool> onOnlyClaimedByMeChanged,
-    required VoidCallback onFilterHelp,
     required String? pendingAutofocusItemId,
     required void Function(String itemId) onAutofocusItemHandled,
     required bool consolidatedStructureLocked,
     required bool showConsolidatedSaveButton,
-    required bool showConsolidatedClearButton,
     required bool isSavingConsolidated,
     required AsyncValue<ConsolidatedListFirestorePayload> consolidatedRemoteAsync,
     required bool suppressRemoteConsolidatedSync,
+    required Widget listActionsMenu,
   }) {
     if (!suppressRemoteConsolidatedSync) {
       if (consolidatedRemoteAsync.isLoading && _consolidatedItems.isEmpty) {
@@ -1056,33 +1059,20 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.center,
-                    child: ShoppingListFilterBar(
-                      selectedStatus: activeStatusFilter,
-                      onlyClaimedByMe: onlyClaimedByMe,
-                      onStatusChanged: onStatusFilterChanged,
-                      onOnlyClaimedByMeChanged: onOnlyClaimedByMeChanged,
-                      onHelpPressed: onFilterHelp,
-                    ),
-                  ),
-                ),
-              ),
+          padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
+          child: ShoppingListFilterBar(
+            selectedStatus: activeStatusFilter,
+            onlyClaimedByMe: onlyClaimedByMe,
+            onStatusChanged: onStatusFilterChanged,
+            onOnlyClaimedByMeChanged: onOnlyClaimedByMeChanged,
+            trailing: [
               if (showConsolidatedSaveButton)
                 IconButton(
                   tooltip: l10n.shoppingConsolidatedSave,
                   icon: isSavingConsolidated
                       ? const SizedBox(
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save_outlined),
@@ -1090,14 +1080,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       ? null
                       : () => _saveConsolidatedList(context),
                 ),
-              if (showConsolidatedClearButton)
-                IconButton(
-                  tooltip: l10n.shoppingConsolidatedClear,
-                  icon: const Icon(Icons.close),
-                  onPressed: () => _confirmAndClearConsolidated(context),
-                ),
+              listActionsMenu,
             ],
           ),
+        ),
+        _ShoppingProgress(
+          checked: _consolidatedItems.where((e) => e.item.checked).length,
+          total: _consolidatedItems.length,
         ),
         Expanded(
           child: visibleGroups.isEmpty
@@ -1116,7 +1105,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 88),
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
                   itemCount: visibleGroups.length,
                   itemBuilder: (context, index) {
                     final entry = visibleGroups[index];
@@ -1434,17 +1423,33 @@ class _ConsolidatedCategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
+    final checked = items.where((item) => item.checked).length;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        child: ExpansionTile(
       initiallyExpanded: true,
-      title: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
+          ),
+          Text(
+            '$checked/${items.length}',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+          ),
+        ],
       ),
-      tilePadding: const EdgeInsets.symmetric(horizontal: 12),
-      childrenPadding: EdgeInsets.zero,
+      tilePadding: const EdgeInsets.only(left: 14, right: 8),
+      childrenPadding: const EdgeInsets.only(left: 6, right: 6, bottom: 4),
       children: [
         for (int i = 0; i < items.length; i++) ...[
           ShoppingItemRow(
@@ -1500,16 +1505,11 @@ class _ConsolidatedCategorySection extends StatelessWidget {
               onItemDeleted(items[i].id);
             },
           ),
-          if (i < items.length - 1)
-            Divider(
-              height: 1,
-              thickness: 1,
-              indent: 12,
-              endIndent: 12,
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
-            ),
+          if (i < items.length - 1) const Divider(indent: 38),
         ],
       ],
+        ),
+      ),
     );
   }
 }
@@ -1791,3 +1791,81 @@ class _ChangeConsolidatedCategoryDialogState
   }
 }
 
+
+/// "checked / total" progress for a shopping list.
+class _ShoppingProgress extends StatelessWidget {
+  const _ShoppingProgress({required this.checked, required this.total});
+
+  final int checked;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    if (total == 0) return const SizedBox(height: 4);
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: LinearProgressIndicator(value: checked / total),
+          ),
+          const SizedBox(width: 10),
+          Icon(
+            Icons.check_circle_rounded,
+            size: 16,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$checked/$total',
+            style: textTheme.labelMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders consecutive list rows as one rounded white card.
+class _ShoppingCardSlice extends StatelessWidget {
+  const _ShoppingCardSlice({
+    required this.isFirst,
+    required this.isLast,
+    required this.child,
+  });
+
+  final bool isFirst;
+  final bool isLast;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const r = Radius.circular(14);
+    final border = BorderSide(color: Theme.of(context).dividerColor);
+    return Container(
+      padding: EdgeInsets.fromLTRB(4, isFirst ? 4 : 0, 0, isLast ? 4 : 0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.vertical(
+          top: isFirst ? r : Radius.zero,
+          bottom: isLast ? r : Radius.zero,
+        ),
+        border: Border(
+          left: border,
+          right: border,
+          top: isFirst ? border : BorderSide.none,
+          bottom: isLast ? border : BorderSide.none,
+        ),
+      ),
+      child: isLast
+          ? child
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [child, const Divider(indent: 40)],
+            ),
+    );
+  }
+}

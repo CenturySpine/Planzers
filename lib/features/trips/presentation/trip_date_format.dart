@@ -40,3 +40,25 @@ bool isEndBeforeStart(DateTime? start, DateTime? end) {
   final e = DateUtils.dateOnly(end);
   return e.isBefore(s);
 }
+
+/// Compact range for headers, e.g. "25 – 29 sept. 2026" or
+/// "30 sept. – 2 oct. 2026". Falls back to [formatTripDateRange] for open ranges.
+String formatTripDateRangeCompact(
+  BuildContext context,
+  DateTime? start,
+  DateTime? end,
+) {
+  if (start == null || end == null) {
+    return formatTripDateRange(context, start, end);
+  }
+  final locale = Localizations.localeOf(context).toString();
+  final full = DateFormat.yMMMd(locale);
+  if (DateUtils.isSameDay(start, end)) return full.format(start);
+  if (start.year == end.year && start.month == end.month) {
+    return '${DateFormat.d(locale).format(start)} – ${full.format(end)}';
+  }
+  if (start.year == end.year) {
+    return '${DateFormat.MMMd(locale).format(start)} – ${full.format(end)}';
+  }
+  return '${full.format(start)} – ${full.format(end)}';
+}

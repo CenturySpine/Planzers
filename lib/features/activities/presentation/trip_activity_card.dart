@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
@@ -59,49 +59,63 @@ class _TripActivityVoteButtonState extends ConsumerState<TripActivityVoteButton>
         widget.myUid.isNotEmpty && widget.votes.contains(widget.myUid);
     final count = widget.votes.length;
     final color =
-        hasVoted ? NeonPalette.primary : NeonPalette.onSurfaceVariant;
+        hasVoted ? AppTokens.primaryDark : AppTokens.onSurfaceVariant;
     final l10n = AppLocalizations.of(context)!;
 
     return Tooltip(
       message: hasVoted ? l10n.activitiesUnvote : l10n.activitiesVote,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: _loading ? null : _toggle,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            child: _loading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: color,
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
-                        size: 18,
-                        color: color,
-                      ),
-                      if (count > 0) ...[
-                        const SizedBox(width: 4),
-                        Text(
-                          '$count',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 6),
+        child: Material(
+          color: hasVoted ? AppTokens.primaryTint : AppTokens.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            side: BorderSide(
+              color: hasVoted ? AppTokens.primary : AppTokens.divider,
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            onTap: _loading ? null : _toggle,
+            child: SizedBox(
+              width: 44,
+              height: 54,
+              child: Center(
+                child: _loading
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: color,
                         ),
-                      ],
-                    ],
-                  ),
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasVoted
+                                ? Icons.thumb_up_rounded
+                                : Icons.thumb_up_outlined,
+                            size: 18,
+                            color: color,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: color,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
           ),
         ),
       ),
@@ -118,6 +132,7 @@ class TripActivityCard extends StatelessWidget {
     required this.tripMemberPublicLabels,
     this.showVoteButton = false,
     this.myUid,
+    this.showTime = true,
   });
 
   final String tripId;
@@ -125,6 +140,9 @@ class TripActivityCard extends StatelessWidget {
   final Map<String, String> tripMemberPublicLabels;
   final bool showVoteButton;
   final String? myUid;
+
+  /// False when the time is already shown outside the card (agenda gutter).
+  final bool showTime;
 
   void _openDetail(BuildContext context) {
     context.push('/trips/$tripId/activities/${activity.id}');
@@ -166,7 +184,7 @@ class TripActivityCard extends StatelessWidget {
     final hasImage = imageUrl.isNotEmpty;
     final hasLink = activity.linkUrl.trim().isNotEmpty;
 
-    final timeLabel = activity.plannedAt == null
+    final timeLabel = activity.plannedAt == null || !showTime
         ? null
         : DateFormat.Hm(Localizations.localeOf(context).toString())
             .format(activity.plannedAt!.toLocal());
@@ -191,11 +209,10 @@ class TripActivityCard extends StatelessWidget {
           if (timeLabel != null) ...[
             Text(
               timeLabel,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: categoryColor,
-                fontFeatures: const [FontFeature.tabularFigures()],
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppTokens.deep,
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
             const SizedBox(width: 8),
@@ -206,9 +223,8 @@ class TripActivityCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),

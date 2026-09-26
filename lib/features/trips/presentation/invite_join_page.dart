@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/trips/data/invite_join_context.dart';
@@ -522,7 +522,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     }
 
     return AppBar(
-      backgroundColor: NeonPalette.scaffoldBackground,
+      backgroundColor: AppTokens.scaffoldBackground,
       elevation: 0,
       scrolledUnderElevation: 0,
       toolbarHeight: 52,
@@ -531,7 +531,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
           ? null
           : IconButton(
               icon: const Icon(Icons.arrow_back),
-              color: NeonPalette.deep,
+              color: AppTokens.deep,
               onPressed: onBack,
             ),
       title: Text(
@@ -539,7 +539,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
         style: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w500,
-          color: NeonPalette.deep,
+          color: AppTokens.deep,
         ),
       ),
     );
@@ -576,7 +576,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
                       height: 1.45,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -588,7 +588,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                   ),
                 ),
@@ -607,7 +607,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 15,
-                              color: NeonPalette.onSurfaceVariant,
+                              color: AppTokens.onSurfaceVariant,
                             ),
                           ),
                         )
@@ -629,7 +629,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                           fontSize: 12.5,
                           fontStyle: FontStyle.italic,
                           height: 1.5,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -637,7 +637,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                         onPressed:
                             _joining ? null : _continueWithCurrentProfile,
                         style: TextButton.styleFrom(
-                          foregroundColor: NeonPalette.primary,
+                          foregroundColor: AppTokens.primary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 8,
@@ -661,7 +661,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     child: Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: NeonPalette.error),
+                      style: const TextStyle(color: AppTokens.error),
                     ),
                   ),
               ],
@@ -743,7 +743,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   child: Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: NeonPalette.error),
+                    style: const TextStyle(color: AppTokens.error),
                   ),
                 ),
             ],
@@ -770,12 +770,12 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
     if (hasInvalidParams) {
       return Theme(
         data: Theme.of(context).copyWith(
-          scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
+          scaffoldBackgroundColor: AppTokens.scaffoldBackground,
         ),
         child: Scaffold(
-          backgroundColor: NeonPalette.scaffoldBackground,
+          backgroundColor: AppTokens.scaffoldBackground,
           appBar: AppBar(
-            backgroundColor: NeonPalette.scaffoldBackground,
+            backgroundColor: AppTokens.scaffoldBackground,
             elevation: 0,
             scrolledUnderElevation: 0,
             toolbarHeight: 52,
@@ -784,7 +784,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -797,7 +797,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   Text(
                     l10n.inviteInvalidLink,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: NeonPalette.text700),
+                    style: const TextStyle(color: AppTokens.text700),
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton(
@@ -866,7 +866,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -876,7 +876,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.35,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                   if (_error != null) ...[
@@ -884,7 +884,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: NeonPalette.error),
+                      style: const TextStyle(color: AppTokens.error),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -901,7 +901,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                   Icon(
                     Icons.group_add_outlined,
                     size: 52,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -910,7 +910,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -920,7 +920,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.35,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                   if (_error != null) ...[
@@ -928,7 +928,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: NeonPalette.error),
+                      style: const TextStyle(color: AppTokens.error),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -951,10 +951,10 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
 
     return Theme(
       data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: NeonPalette.scaffoldBackground,
+        scaffoldBackgroundColor: AppTokens.scaffoldBackground,
       ),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: _buildAppBar(),
         body: SafeArea(child: bodyChild),
       ),

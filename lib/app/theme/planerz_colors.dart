@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 
 /// Extra semantic colors (not fully covered by [ColorScheme]) for widgets.
 @immutable
@@ -20,12 +21,12 @@ class PlanerzColors extends ThemeExtension<PlanerzColors> {
   final Color warningContainer;
 
   static const PlanerzColors fallback = PlanerzColors(
-    info: Color(0xFF2D7A94),
-    infoContainer: Color(0xFFCFEFF4),
-    success: Color(0xFF4DC75E),
-    successContainer: Color(0xFFE8F8EA),
-    warning: Color(0xFFAE8F56),
-    warningContainer: Color(0xFFF7EDDC),
+    info: AppTokens.info,
+    infoContainer: AppTokens.infoContainer,
+    success: AppTokens.success,
+    successContainer: AppTokens.successContainer,
+    warning: AppTokens.warning,
+    warningContainer: AppTokens.warningContainer,
   );
 
   @override

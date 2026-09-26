@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/packing/data/packing_item.dart';
 import 'package:planerz/features/packing/data/packing_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -59,7 +59,7 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     final next = await showDialog<String>(
       context: context,
       builder: (dialogContext) => Theme(
-        data: NeonPalette.overlayOn(Theme.of(dialogContext)),
+        data: AppTokens.overlayOn(Theme.of(dialogContext)),
         child: AlertDialog(
           title: Text(l10n.tripPackingRenameTitle),
           content: TextField(
@@ -116,7 +116,7 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => Theme(
-        data: NeonPalette.overlayOn(Theme.of(dialogContext)),
+        data: AppTokens.overlayOn(Theme.of(dialogContext)),
         child: AlertDialog(
           title: Text(l10n.tripPackingDeleteTitle),
           content: Text(l10n.tripPackingDeleteBody(item.label)),
@@ -156,7 +156,7 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => Theme(
-        data: NeonPalette.overlayOn(Theme.of(dialogContext)),
+        data: AppTokens.overlayOn(Theme.of(dialogContext)),
         child: AlertDialog(
           title: Text(l10n.tripPackingPushTitle),
           content: Text(l10n.tripPackingPushBody),
@@ -228,9 +228,9 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
         .length;
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(
           title: Text(l10n.tripPackingPageTitle),
           actions: [
@@ -350,9 +350,9 @@ class _PackingRow extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NeonPalette.divider),
+        border: Border.all(color: AppTokens.divider),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(6, 2, 4, 2),
@@ -376,8 +376,8 @@ class _PackingRow extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                       height: 1.2,
                       color: checked
-                          ? NeonPalette.onSurfaceVariant
-                          : NeonPalette.deep,
+                          ? AppTokens.onSurfaceVariant
+                          : AppTokens.deep,
                       decoration: checked
                           ? TextDecoration.lineThrough
                           : TextDecoration.none,
@@ -402,7 +402,7 @@ class _PackingRow extends StatelessWidget {
                   child: const Icon(
                     Icons.lock_outline,
                     size: 16,
-                    color: NeonPalette.outline,
+                    color: AppTokens.outline,
                   ),
                 ),
               )
@@ -411,7 +411,7 @@ class _PackingRow extends StatelessWidget {
                 icon: const Icon(
                   Icons.more_vert,
                   size: 18,
-                  color: NeonPalette.outline,
+                  color: AppTokens.outline,
                 ),
                 onSelected: (value) {
                   if (value == 'rename') onRename?.call();
@@ -460,12 +460,12 @@ class _PackingShareToggle extends StatelessWidget {
         button: true,
         toggled: shared,
         child: Material(
-          color: shared ? NeonPalette.primary : NeonPalette.surface,
+          color: shared ? AppTokens.primary : AppTokens.surface,
           shape: RoundedRectangleBorder(
             borderRadius: radius,
             side: shared
                 ? BorderSide.none
-                : const BorderSide(color: NeonPalette.divider),
+                : const BorderSide(color: AppTokens.divider),
           ),
           child: InkWell(
             borderRadius: radius,
@@ -476,7 +476,7 @@ class _PackingShareToggle extends StatelessWidget {
               child: Icon(
                 shared ? Icons.groups_rounded : Icons.person_outline_rounded,
                 size: 20,
-                color: shared ? Colors.white : NeonPalette.primary,
+                color: shared ? Colors.white : AppTokens.primary,
               ),
             ),
           ),
@@ -508,8 +508,8 @@ class _PackingAddField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 12, 12),
         decoration: const BoxDecoration(
-          color: NeonPalette.surface,
-          border: Border(top: BorderSide(color: NeonPalette.divider)),
+          color: AppTokens.surface,
+          border: Border(top: BorderSide(color: AppTokens.divider)),
         ),
         child: Row(
           children: [
@@ -557,7 +557,7 @@ class _PackingEmptyState extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 14,
-            color: NeonPalette.onSurfaceVariant,
+            color: AppTokens.onSurfaceVariant,
           ),
         ),
       ),

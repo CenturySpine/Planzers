@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// "Mes documents" — a personal, per-traveler document wallet (tickets, QR
@@ -35,9 +35,9 @@ class TripWalletPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(
           title: Text(l10n.tripWalletPageTitle),
           actions: [

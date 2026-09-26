@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/account/presentation/connected_external_providers_page.dart';
 import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -86,9 +86,9 @@ class _ExternalConnectionCallbackPageState
     final l10n = AppLocalizations.of(context)!;
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(title: Text(l10n.externalConnectionCallbackTitle)),
         body: Center(
           child: ConstrainedBox(

@@ -21,7 +21,7 @@ import 'package:planerz/features/carpool/data/trip_carpool.dart';
 import 'package:planerz/features/carpool/data/trip_carpools_repository.dart';
 import 'package:planerz/features/games/data/trip_games_repository.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_archive_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -709,7 +709,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
         .snapshots();
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         stream: tripDocStream,
         builder: (context, snapshot) {
@@ -877,7 +877,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   !_trip.isDayTrip && (isMapsLink || hasAddress);
 
               return ColoredBox(
-                color: NeonPalette.scaffoldBackground,
+                color: AppTokens.scaffoldBackground,
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 16),
                   children: [
@@ -914,7 +914,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               ? IconButton(
                                   tooltip: l10n.tripOverviewOpenLocation,
                                   icon: const Icon(Icons.directions_outlined),
-                                  color: NeonPalette.secondary,
+                                  color: AppTokens.secondary,
                                   onPressed: () {
                                     final destination =
                                         _trip.address.trim().isNotEmpty
@@ -1105,7 +1105,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripOverviewAddModule,
                               onTap: () => showModalBottomSheet<void>(
                                 context: context,
-                                backgroundColor: NeonPalette.surface,
+                                backgroundColor: AppTokens.surface,
                                 isScrollControlled: true,
                                 shape: const RoundedRectangleBorder(
                                   borderRadius: BorderRadius.vertical(
@@ -1138,7 +1138,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                                           style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w700,
-                                            color: NeonPalette.deep,
+                                            color: AppTokens.deep,
                                           ),
                                         ),
                                         const SizedBox(height: 16),

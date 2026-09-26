@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
@@ -17,11 +17,15 @@ class TripMealCard extends ConsumerWidget {
     required this.tripId,
     required this.meal,
     required this.memberLabels,
+    this.showTime = true,
   });
 
   final String tripId;
   final TripMeal meal;
   final Map<String, String> memberLabels;
+
+  /// False when the time is already shown outside the card (agenda gutter).
+  final bool showTime;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,25 +63,25 @@ class TripMealCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text(
-            meal.mealTimeHHMM,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: repasColor,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          if (showTime) ...[
+            Text(
+              meal.mealTimeHHMM,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppTokens.deep,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
+          ],
           Expanded(
             child: Text(
               dayPartLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -108,7 +112,7 @@ class TripMealCard extends ConsumerWidget {
                       height: 12,
                       padding: const EdgeInsets.all(1),
                       decoration: const BoxDecoration(
-                        color: NeonPalette.surface,
+                        color: AppTokens.surface,
                         shape: BoxShape.circle,
                       ),
                       child: SvgPicture.asset(

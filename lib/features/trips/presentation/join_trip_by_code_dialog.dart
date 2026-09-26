@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/invite_code_input.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -18,7 +18,7 @@ Future<void> showJoinTripByCodeDialog({
 }) {
   return showDialog<void>(
     context: parentContext,
-    barrierColor: NeonPalette.deep.withValues(alpha: 0.42),
+    barrierColor: AppTokens.deep.withValues(alpha: 0.42),
     builder: (dialogRouteContext) => _JoinTripByCodeDialog(
       parentContext: parentContext,
       navigatorContext: dialogRouteContext,
@@ -192,9 +192,9 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
     final baseTheme = Theme.of(context);
 
     return Theme(
-      data: NeonPalette.overlayOn(baseTheme),
+      data: AppTokens.overlayOn(baseTheme),
       child: Dialog(
-        backgroundColor: NeonPalette.surface,
+        backgroundColor: AppTokens.surface,
         elevation: 0,
         clipBehavior: Clip.antiAlias,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
@@ -203,17 +203,17 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
           constraints: const BoxConstraints(maxWidth: 384),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: NeonPalette.surface,
+              color: AppTokens.surface,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: NeonPalette.deep.withValues(alpha: 0.42),
+                  color: AppTokens.deep.withValues(alpha: 0.42),
                   blurRadius: 56,
                   spreadRadius: -16,
                   offset: const Offset(0, 28),
                 ),
                 BoxShadow(
-                  color: NeonPalette.deep.withValues(alpha: 0.30),
+                  color: AppTokens.deep.withValues(alpha: 0.30),
                   blurRadius: 22,
                   spreadRadius: -12,
                   offset: const Offset(0, 10),
@@ -230,7 +230,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                     children: [
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          color: NeonPalette.primarySoft,
+                          color: AppTokens.primarySoft,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const SizedBox(
@@ -238,7 +238,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                           height: 44,
                           child: Icon(
                             Icons.confirmation_number_rounded,
-                            color: NeonPalette.primary,
+                            color: AppTokens.primary,
                             size: 24,
                           ),
                         ),
@@ -251,7 +251,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                             fontSize: 22,
                             height: 27 / 22,
                             fontWeight: FontWeight.w600,
-                            color: NeonPalette.deep,
+                            color: AppTokens.deep,
                           ),
                         ),
                       ),
@@ -263,7 +263,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 20 / 14,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 22),
@@ -284,7 +284,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                         const Icon(
                           Icons.error_outline,
                           size: 18,
-                          color: NeonPalette.error,
+                          color: AppTokens.error,
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -293,7 +293,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                             style: const TextStyle(
                               fontSize: 13,
                               height: 16 / 13,
-                              color: NeonPalette.error,
+                              color: AppTokens.error,
                             ),
                           ),
                         ),
@@ -306,7 +306,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                       child: TextButton.icon(
                         onPressed: _pasteCode,
                         style: TextButton.styleFrom(
-                          foregroundColor: NeonPalette.primary,
+                          foregroundColor: AppTokens.primary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 6,
@@ -336,7 +336,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                             ? null
                             : () => Navigator.of(widget.navigatorContext).pop(),
                         style: TextButton.styleFrom(
-                          foregroundColor: NeonPalette.primary,
+                          foregroundColor: AppTokens.primary,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 11,
@@ -450,6 +450,9 @@ class _JoinCodeSegmentedInput extends StatelessWidget {
                       style: const TextStyle(fontSize: 24, height: 1),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
                         isCollapsed: true,
                         contentPadding: EdgeInsets.zero,
                       ),
@@ -476,7 +479,7 @@ class _JoinCodeGroupDivider extends StatelessWidget {
       child: Center(
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Color.lerp(NeonPalette.outline, NeonPalette.deep, 0.25),
+            color: Color.lerp(AppTokens.outline, AppTokens.deep, 0.25),
             borderRadius: BorderRadius.all(Radius.circular(2)),
           ),
           child: SizedBox(width: 12, height: 2),
@@ -507,10 +510,10 @@ class _JoinCodeCell extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: NeonPalette.surface,
+              color: AppTokens.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: NeonPalette.divider,
+                color: AppTokens.divider,
                 width: 1.5,
               ),
             ),
@@ -521,7 +524,7 @@ class _JoinCodeCell extends StatelessWidget {
                   fontFamily: 'monospace',
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                   height: 1,
                 ),
               ),
@@ -538,12 +541,12 @@ class _JoinCodeCell extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: NeonPalette.primary.withValues(alpha: 0.12),
+                        color: AppTokens.primary.withValues(alpha: 0.12),
                         spreadRadius: 4,
                       ),
                     ],
@@ -562,7 +565,7 @@ class _JoinCodeCell extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: NeonPalette.error,
+                      color: AppTokens.error,
                       width: 2,
                     ),
                   ),
@@ -597,7 +600,7 @@ class _JoinCodeSubmitButton extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Material(
-            color: NeonPalette.primary,
+            color: AppTokens.primary,
             borderRadius: BorderRadius.circular(999),
             child: InkWell(
               onTap: enabled && !isLoading ? onPressed : null,

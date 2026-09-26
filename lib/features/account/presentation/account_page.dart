@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/intl/app_language.dart';
 import 'package:planerz/core/intl/app_locale_provider.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
@@ -52,6 +52,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     border: InputBorder.none,
     enabledBorder: InputBorder.none,
     focusedBorder: InputBorder.none,
+    filled: false,
     errorBorder: InputBorder.none,
     focusedErrorBorder: InputBorder.none,
     contentPadding: EdgeInsets.zero,
@@ -396,7 +397,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       onChanged: (_) => setState(() {}),
                       style: const TextStyle(
                         fontSize: 15,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                       decoration: _inlineFieldDecoration,
                       validator: (value) {
@@ -432,7 +433,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   emailError,
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFFBA1A1A),
+                    color: AppTokens.error,
                   ),
                 ),
               ),
@@ -481,12 +482,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                           null,
                       style: const TextStyle(
                         fontSize: 15,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                       decoration: _inlineFieldDecoration.copyWith(
                         hintText: l10n.accountNameHint,
                         hintStyle: const TextStyle(
-                          color: NeonPalette.outline,
+                          color: AppTokens.outline,
                         ),
                       ),
                       validator: (value) {
@@ -519,7 +520,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   '${_accountNameController.text.length}/$kDisplayNameMaxLength',
                   style: const TextStyle(
                     fontSize: 11,
-                    color: NeonPalette.onSurfaceVariant,
+                    color: AppTokens.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -562,12 +563,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       keyboardType: TextInputType.phone,
                       style: const TextStyle(
                         fontSize: 15,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                       decoration: _inlineFieldDecoration.copyWith(
                         hintText: l10n.accountPhoneCountryCodeHint,
                         hintStyle: const TextStyle(
-                          color: NeonPalette.outline,
+                          color: AppTokens.outline,
                         ),
                       ),
                       validator: (_) {
@@ -606,12 +607,12 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       keyboardType: TextInputType.phone,
                       style: const TextStyle(
                         fontSize: 15,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                       decoration: _inlineFieldDecoration.copyWith(
                         hintText: l10n.accountPhoneNumberHint,
                         hintStyle: const TextStyle(
-                          color: NeonPalette.outline,
+                          color: AppTokens.outline,
                         ),
                       ),
                       validator: (_) {
@@ -756,15 +757,15 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(
           title: Text(l10n.accountTitle),
           titleTextStyle: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w500,
-            color: NeonPalette.deep,
+            color: AppTokens.deep,
             height: 28 / 20,
           ),
         ),

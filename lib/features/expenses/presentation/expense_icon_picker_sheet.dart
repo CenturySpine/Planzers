@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -49,7 +49,7 @@ class _ExpenseIconPickerSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: NeonPalette.divider,
+                  color: AppTokens.divider,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -64,7 +64,7 @@ class _ExpenseIconPickerSheet extends StatelessWidget {
                           title,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: NeonPalette.deep,
+                                color: AppTokens.deep,
                               ),
                         ),
                       ),
@@ -88,7 +88,7 @@ class _ExpenseIconPickerSheet extends StatelessWidget {
                         child: Text(
                           group.labelFr,
                           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: NeonPalette.onSurfaceVariant,
+                                color: AppTokens.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
@@ -135,7 +135,7 @@ class _IconTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? NeonPalette.accent : NeonPalette.segmentTrack,
+      color: selected ? AppTokens.primary : AppTokens.segmentTrack,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -144,7 +144,7 @@ class _IconTile extends StatelessWidget {
           child: Icon(
             expenseIconDataForKey(iconKey, fallbackKey: kDefaultExpenseIconKey),
             size: 26,
-            color: selected ? Colors.white : NeonPalette.deep,
+            color: selected ? Colors.white : AppTokens.deep,
           ),
         ),
       ),

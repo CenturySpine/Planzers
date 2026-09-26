@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 
 class TripOverviewParticipantPreviewEntry {
@@ -26,7 +26,7 @@ class TripOverviewSectionHeader extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: NeonPalette.onSurfaceVariant,
+          color: AppTokens.onSurfaceVariant,
           letterSpacing: 0.5,
         ),
       ),
@@ -69,13 +69,13 @@ class TripOverviewBanner extends StatelessWidget {
       child: Container(
         height: _height,
         decoration: BoxDecoration(
-          boxShadow: NeonPalette.elev1,
+          boxShadow: AppTokens.elev1,
           gradient: hasImage
               ? null
               : LinearGradient(
                   begin: const Alignment(-0.5, -1),
                   end: const Alignment(1, 1),
-                  colors: NeonPalette.overviewBannerGradient,
+                  colors: AppTokens.overviewBannerGradient,
                   stops: const [0, 0.6, 1],
                 ),
         ),
@@ -96,7 +96,7 @@ class TripOverviewBanner extends StatelessWidget {
                           gradient: LinearGradient(
                             begin: const Alignment(-0.5, -1),
                             end: const Alignment(1, 1),
-                            colors: NeonPalette.overviewBannerGradient,
+                            colors: AppTokens.overviewBannerGradient,
                             stops: const [0, 0.6, 1],
                           ),
                         ),
@@ -136,8 +136,8 @@ class TripOverviewBanner extends StatelessWidget {
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        NeonPalette.deep.withValues(alpha: 0.86),
-                        NeonPalette.deep.withValues(alpha: 0.42),
+                        AppTokens.deep.withValues(alpha: 0.86),
+                        AppTokens.deep.withValues(alpha: 0.42),
                         Colors.transparent,
                       ],
                     ),
@@ -278,52 +278,13 @@ class TripOverviewAnnouncementsAppBarAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 6),
-      child: Tooltip(
-        message: tooltip,
-        child: Material(
-          color: NeonPalette.nameEditPillBackground,
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: 34,
-              height: 34,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.campaign_outlined,
-                      size: 20,
-                      color: NeonPalette.primary,
-                    ),
-                  ),
-                  if (hasUnread)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: NeonPalette.error,
-                          border: Border.all(
-                            color: NeonPalette.scaffoldBackground,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      icon: Badge(
+        isLabelVisible: hasUnread,
+        smallSize: 8,
+        child: const Icon(Icons.campaign_outlined),
       ),
     );
   }
@@ -349,13 +310,13 @@ class TripOverviewLinkCard extends StatelessWidget {
     final primaryText = previewTitle.isNotEmpty ? previewTitle : url;
 
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -375,11 +336,11 @@ class TripOverviewLinkCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: NeonPalette.accent,
+                        color: AppTokens.primary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         decoration: TextDecoration.underline,
-                        decorationColor: NeonPalette.accent,
+                        decorationColor: AppTokens.primary,
                       ),
                     ),
                     if (previewTitle.isNotEmpty) ...[
@@ -389,7 +350,7 @@ class TripOverviewLinkCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -404,7 +365,7 @@ class TripOverviewLinkCard extends StatelessWidget {
                 const Icon(
                   Icons.open_in_new,
                   size: 20,
-                  color: NeonPalette.outline,
+                  color: AppTokens.outline,
                 ),
             ],
           ),
@@ -446,13 +407,13 @@ class TripOverviewParticipantsCard extends StatelessWidget {
         inviteCodeLabel != null && onShareCodeTap != null;
 
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -474,7 +435,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w700,
-                              color: NeonPalette.deep,
+                              color: AppTokens.deep,
                               height: 1,
                             ),
                           ),
@@ -487,12 +448,12 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: NeonPalette.deep,
+                                color: AppTokens.deep,
                               ),
                             ),
                           ),
                           Material(
-                            color: NeonPalette.nameEditPillBackground,
+                            color: AppTokens.nameEditPillBackground,
                             shape: const CircleBorder(),
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
@@ -504,7 +465,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                                 child: Icon(
                                   Icons.assignment_ind_outlined,
                                   size: 20,
-                                  color: NeonPalette.primary,
+                                  color: AppTokens.primary,
                                 ),
                               ),
                             ),
@@ -519,7 +480,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
               ),
             ),
             if (showInviteRow) ...[
-              const Divider(height: 1, color: NeonPalette.divider),
+              const Divider(height: 1, color: AppTokens.divider),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 13, 14, 16),
                 child: Row(
@@ -527,14 +488,14 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                     const Icon(
                       Icons.vpn_key_outlined,
                       size: 18,
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                     ),
                     const SizedBox(width: 9),
                     Text(
                       inviteCodeLabel!,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: NeonPalette.text700,
+                        color: AppTokens.text700,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -546,7 +507,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.primary,
+                          color: AppTokens.primary,
                           letterSpacing: 1,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
@@ -563,7 +524,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                           : const Icon(Icons.ios_share, size: 16),
                       label: Text(shareCodeLabel ?? ''),
                       style: TextButton.styleFrom(
-                        foregroundColor: NeonPalette.primary,
+                        foregroundColor: AppTokens.primary,
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -626,9 +587,9 @@ class TripOverviewParticipantAvatars extends StatelessWidget {
                   width: _size,
                   height: _size,
                   decoration: BoxDecoration(
-                    color: NeonPalette.surfaceHighest,
+                    color: AppTokens.surfaceHighest,
                     shape: BoxShape.circle,
-                    border: Border.all(color: NeonPalette.surface, width: 2),
+                    border: Border.all(color: AppTokens.surface, width: 2),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -636,7 +597,7 @@ class TripOverviewParticipantAvatars extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -656,12 +617,12 @@ class _AvatarBubble extends StatelessWidget {
   static const TextStyle _initialStyle = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    color: NeonPalette.primary,
+    color: AppTokens.primary,
   );
 
   Widget _initialFallback() {
     return ColoredBox(
-      color: NeonPalette.participantsAvatarBg,
+      color: AppTokens.participantsAvatarBg,
       child: Center(
         child: Text(entry.initial, style: _initialStyle),
       ),
@@ -677,7 +638,7 @@ class _AvatarBubble extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: NeonPalette.surface, width: 2),
+        border: Border.all(color: AppTokens.surface, width: 2),
       ),
       child: ClipOval(
         child: entry.photoUrl.isEmpty
@@ -721,13 +682,13 @@ class TripOverviewModuleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -755,7 +716,7 @@ class TripOverviewModuleCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                         height: 1.2,
                       ),
                     ),
@@ -768,7 +729,7 @@ class TripOverviewModuleCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 12.5,
                           height: 1.35,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -778,7 +739,7 @@ class TripOverviewModuleCard extends StatelessWidget {
               Icon(
                 trailingIcon,
                 size: 20,
-                color: NeonPalette.outline,
+                color: AppTokens.outline,
               ),
             ],
           ),
@@ -832,7 +793,7 @@ class _TripOverviewModuleIconBadge extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: inkColor,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: NeonPalette.surface, width: 2),
+                  border: Border.all(color: AppTokens.surface, width: 2),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -867,7 +828,7 @@ class TripOverviewModuleAddCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: _TripOverviewDashedCardBorderPainter(
-        color: NeonPalette.overviewModuleAddBorder,
+        color: AppTokens.overviewModuleAddBorder,
       ),
       child: Material(
         color: Colors.transparent,
@@ -879,14 +840,14 @@ class TripOverviewModuleAddCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.add, size: 20, color: NeonPalette.primary),
+                const Icon(Icons.add, size: 20, color: AppTokens.primary),
                 const SizedBox(width: 8),
                 Text(
                   label,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                 ),
               ],
@@ -938,13 +899,13 @@ class TripOverviewSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 1,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -986,13 +947,13 @@ class _TripOverviewSettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = data.danger ? NeonPalette.error : NeonPalette.text700;
-    final labelColor = data.danger ? NeonPalette.error : NeonPalette.deep;
+    final color = data.danger ? AppTokens.error : AppTokens.text700;
+    final labelColor = data.danger ? AppTokens.error : AppTokens.deep;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showDivider) const Divider(height: 1, color: NeonPalette.divider),
+        if (showDivider) const Divider(height: 1, color: AppTokens.divider),
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -1020,7 +981,7 @@ class _TripOverviewSettingsRow extends StatelessWidget {
                     const Icon(
                       Icons.chevron_right,
                       size: 20,
-                      color: NeonPalette.outline,
+                      color: AppTokens.outline,
                     ),
                 ],
               ),

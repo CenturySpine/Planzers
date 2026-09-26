@@ -17,7 +17,7 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/name_list_search.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -84,9 +84,9 @@ class _TripParticipantsPageState extends ConsumerState<TripParticipantsPage>
         );
 
         return Theme(
-          data: NeonPalette.overlayOn(Theme.of(context)),
+          data: AppTokens.overlayOn(Theme.of(context)),
           child: Scaffold(
-            backgroundColor: NeonPalette.scaffoldBackground,
+            backgroundColor: AppTokens.scaffoldBackground,
             appBar: AppBar(
               title: Text(l10n.tripParticipantsTitle),
               bottom: PreferredSize(
@@ -249,7 +249,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: NeonPalette.onSurfaceVariant,
+                    color: AppTokens.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -259,18 +259,21 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                     controller: controller,
                     autofocus: true,
                     textInputAction: TextInputAction.done,
-                    style: const TextStyle(fontSize: 15, color: NeonPalette.deep),
+                    style: const TextStyle(fontSize: 15, color: AppTokens.deep),
                     decoration: InputDecoration(
                       hintText: l10n.commonName,
-                      hintStyle: const TextStyle(color: NeonPalette.outline),
+                      hintStyle: const TextStyle(color: AppTokens.outline),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
-                const Divider(height: 1, color: NeonPalette.divider),
+                const Divider(height: 1, color: AppTokens.divider),
                 const SizedBox(height: 2),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,7 +371,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     required bool isOwnParticipantRow,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    final secondaryTone = NeonPalette.participantsChipAdminFg;
+    final secondaryTone = AppTokens.participantsChipAdminFg;
     final actions = <TripParticipantSheetAction>[];
 
     void closeSheetThen(VoidCallback action) {
@@ -432,7 +435,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
           label: row.likedByMe
               ? l10n.tripParticipantsUnlike
               : l10n.tripParticipantsLike,
-          iconColor: NeonPalette.accent,
+          iconColor: AppTokens.error,
           onTap: () => closeSheetThen(
             () => _toggleCupidonLike(
               targetMemberId: row.userId!,
@@ -538,7 +541,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   height: 1.2,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
               const SizedBox(height: 6),
@@ -547,7 +550,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 style: const TextStyle(
                   fontSize: 14,
                   height: 1.55,
-                  color: NeonPalette.onSurfaceVariant,
+                  color: AppTokens.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 6),
@@ -556,7 +559,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.accent,
+                  color: AppTokens.error,
                 ),
               ),
             ],
@@ -628,7 +631,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   height: 1.2,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
               const SizedBox(height: 6),
@@ -637,7 +640,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 style: const TextStyle(
                   fontSize: 14,
                   height: 1.55,
-                  color: NeonPalette.onSurfaceVariant,
+                  color: AppTokens.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 6),
@@ -646,7 +649,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.accent,
+                  color: AppTokens.error,
                 ),
               ),
             ],
@@ -828,7 +831,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                                     .textTheme
                                     .bodyLarge
                                     ?.copyWith(
-                                      color: NeonPalette
+                                      color: AppTokens
                                           .onSurfaceVariant,
                                     ),
                               ),
@@ -1285,7 +1288,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
         : l10n.participantGroupsEditTitle;
 
     return Dialog(
-      backgroundColor: NeonPalette.surface,
+      backgroundColor: AppTokens.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
@@ -1301,7 +1304,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
               const SizedBox(height: 18),
@@ -1315,7 +1318,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -1325,11 +1328,14 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                           controller: _labelController,
                           autofocus: true,
                           textInputAction: TextInputAction.next,
-                          style: const TextStyle(fontSize: 14, color: NeonPalette.deep),
+                          style: const TextStyle(fontSize: 14, color: AppTokens.deep),
                           decoration: InputDecoration(
                             hintText: l10n.participantGroupsLabelField,
-                            hintStyle: const TextStyle(color: NeonPalette.outline),
+                            hintStyle: const TextStyle(color: AppTokens.outline),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -1341,7 +1347,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1396,8 +1402,8 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: alreadyInOtherGroup
-                                                ? NeonPalette.onSurfaceVariant
-                                                : NeonPalette.deep,
+                                                ? AppTokens.onSurfaceVariant
+                                                : AppTokens.deep,
                                           ),
                                         ),
                                         if (alreadyInOtherGroup)
@@ -1408,7 +1414,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                                             ),
                                             style: const TextStyle(
                                               fontSize: 11,
-                                              color: NeonPalette.accent,
+                                              color: AppTokens.error,
                                             ),
                                           ),
                                       ],
@@ -1425,7 +1431,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 6),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/account/data/connected_external_providers_repository.dart';
 import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -116,9 +116,9 @@ class _ConnectedExternalProvidersPageState
     final dateFormat = DateFormat('dd/MM/yyyy à HH:mm');
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(title: Text(l10n.connectedExternalProvidersTitle)),
         body: providersAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),

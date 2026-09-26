@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -18,10 +18,10 @@ class TripGamesTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.scaffoldBackground,
+      color: AppTokens.scaffoldBackground,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: NeonPalette.divider)),
+          border: Border(bottom: BorderSide(color: AppTokens.divider)),
         ),
         child: InkWell(
           onTap: () {},
@@ -37,8 +37,8 @@ class TripGamesTabBar extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: selected
-                        ? NeonPalette.primary
-                        : NeonPalette.onSurfaceVariant,
+                        ? AppTokens.primary
+                        : AppTokens.onSurfaceVariant,
                     letterSpacing: 0.1,
                   ),
                 ),
@@ -51,7 +51,7 @@ class TripGamesTabBar extends StatelessWidget {
                   child: Container(
                     height: 3,
                     decoration: BoxDecoration(
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(3),
                       ),
@@ -77,9 +77,9 @@ class TripGamesIntroCallout extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: NeonPalette.gamesCalloutBg,
+        color: AppTokens.gamesCalloutBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeonPalette.gamesCalloutBorder),
+        border: Border.all(color: AppTokens.gamesCalloutBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +87,7 @@ class TripGamesIntroCallout extends StatelessWidget {
           const Icon(
             Icons.sports_esports_outlined,
             size: 18,
-            color: NeonPalette.success,
+            color: AppTokens.success,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -96,7 +96,7 @@ class TripGamesIntroCallout extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 height: 1.45,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -134,17 +134,17 @@ class TripGamesSearchField extends StatelessWidget {
             height: 52,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: NeonPalette.surface,
+              color: AppTokens.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeonPalette.divider, width: 1.5),
-              boxShadow: NeonPalette.elev1,
+              border: Border.all(color: AppTokens.divider, width: 1.5),
+              boxShadow: AppTokens.elev1,
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.search,
                   size: 20,
-                  color: NeonPalette.onSurfaceVariant,
+                  color: AppTokens.onSurfaceVariant,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -154,15 +154,18 @@ class TripGamesSearchField extends StatelessWidget {
                     textInputAction: TextInputAction.search,
                     style: const TextStyle(
                       fontSize: 16,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                     decoration: InputDecoration(
                       hintText: hint,
                       hintStyle: const TextStyle(
                         fontSize: 16,
-                        color: NeonPalette.outline,
+                        color: AppTokens.outline,
                       ),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
                       isDense: true,
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -206,12 +209,12 @@ class TripBoardGameCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       elevation: 0,
       shadowColor: Colors.black.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: NeonPalette.divider),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -232,7 +235,7 @@ class TripBoardGameCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     height: 1.3,
                     letterSpacing: 0.1,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
               ),
@@ -244,12 +247,12 @@ class TripBoardGameCard extends StatelessWidget {
                   height: 64,
                   child: preview.isEmpty
                       ? const ColoredBox(
-                          color: NeonPalette.surfaceHighest,
+                          color: AppTokens.surfaceHighest,
                           child: Center(
                             child: Icon(
                               Icons.image_outlined,
                               size: 26,
-                              color: NeonPalette.outline,
+                              color: AppTokens.outline,
                             ),
                           ),
                         )
@@ -282,7 +285,7 @@ class TripGamesEmptyState extends StatelessWidget {
           Icon(
             Icons.sports_esports_outlined,
             size: 40,
-            color: NeonPalette.onSurfaceVariant.withValues(alpha: 0.7),
+            color: AppTokens.onSurfaceVariant.withValues(alpha: 0.7),
           ),
           const SizedBox(height: 12),
           Text(
@@ -291,7 +294,7 @@ class TripGamesEmptyState extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
           ),
         ],
@@ -320,7 +323,7 @@ class TripGamesFab extends StatelessWidget {
         onPressed: onPressed,
         elevation: 2,
         highlightElevation: 3,
-        backgroundColor: NeonPalette.primary,
+        backgroundColor: AppTokens.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -462,15 +465,15 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
             fontSize: 12,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.5,
-            color: NeonPalette.onSurfaceVariant,
+            color: AppTokens.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: NeonPalette.surface,
-            border: Border.all(color: NeonPalette.divider, width: 1.5),
+            color: AppTokens.surface,
+            border: Border.all(color: AppTokens.divider, width: 1.5),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -483,7 +486,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
               ),
@@ -515,7 +518,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
     final hasLink = _urlController.text.trim().isNotEmpty;
 
     return Dialog(
-      backgroundColor: NeonPalette.surface,
+      backgroundColor: AppTokens.surface,
       elevation: 8,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -534,14 +537,14 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: NeonPalette.gamesIconTileBg,
+                        color: AppTokens.gamesIconTileBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
                       child: const Icon(
                         Icons.sports_esports_rounded,
                         size: 24,
-                        color: NeonPalette.success,
+                        color: AppTokens.success,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -552,7 +555,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                           fontSize: 22,
                           fontWeight: FontWeight.w600,
                           height: 1.2,
-                          color: NeonPalette.deep,
+                          color: AppTokens.deep,
                         ),
                       ),
                     ),
@@ -565,7 +568,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                     fontSize: 22,
                     fontWeight: FontWeight.w400,
                     height: 1.27,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
               const SizedBox(height: 20),
@@ -587,7 +590,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                               onPressed: _openLink,
                               icon: const Icon(Icons.open_in_new, size: 20),
                               visualDensity: VisualDensity.compact,
-                              color: NeonPalette.primary,
+                              color: AppTokens.primary,
                             )
                           : null,
                     ),
@@ -606,10 +609,13 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                           controller: _nameController,
                           style: const TextStyle(
                             fontSize: 16,
-                            color: NeonPalette.deep,
+                            color: AppTokens.deep,
                           ),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -629,13 +635,16 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                           controller: _urlController,
                           style: const TextStyle(
                             fontSize: 16,
-                            color: NeonPalette.deep,
+                            color: AppTokens.deep,
                           ),
                           keyboardType: TextInputType.url,
                           decoration: const InputDecoration(
                             hintText: 'https://…',
-                            hintStyle: TextStyle(color: NeonPalette.outline),
+                            hintStyle: TextStyle(color: AppTokens.outline),
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            filled: false,
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -654,14 +663,14 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                       tooltip: l10n.commonDelete,
                       onPressed: _confirmDelete,
                       icon: const Icon(Icons.delete_outline),
-                      color: NeonPalette.accent,
+                      color: AppTokens.error,
                     ),
                   if (isReadOnly && canEnterEditMode)
                     IconButton(
                       tooltip: l10n.commonEdit,
                       onPressed: _enterEditMode,
                       icon: const Icon(Icons.edit_outlined),
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                     ),
                   tripParticipantsDialogButton(
                     context: context,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -257,16 +257,16 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
               vertical: 14,
             ),
             decoration: BoxDecoration(
-              color: NeonPalette.participantsAvatarBg,
+              color: AppTokens.participantsAvatarBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeonPalette.divider),
+              border: Border.all(color: AppTokens.divider),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.badge_outlined,
                   size: 22,
-                  color: NeonPalette.primary,
+                  color: AppTokens.primary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -275,7 +275,7 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: NeonPalette.deep,
+                      color: AppTokens.deep,
                     ),
                   ),
                 ),
@@ -327,7 +327,7 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
             const SizedBox(height: 16),
@@ -361,13 +361,13 @@ class _ParticipantNameSourceOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveOnTap = enabled ? onTap : null;
-    final borderColor = selected ? NeonPalette.primary : NeonPalette.divider;
+    final borderColor = selected ? AppTokens.primary : AppTokens.divider;
     final foreground = enabled
-        ? NeonPalette.deep
-        : NeonPalette.deep.withValues(alpha: 0.38);
+        ? AppTokens.deep
+        : AppTokens.deep.withValues(alpha: 0.38);
 
     return Material(
-      color: selected ? NeonPalette.nameOptionActiveBackground : NeonPalette.surface,
+      color: selected ? AppTokens.nameOptionActiveBackground : AppTokens.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -386,7 +386,7 @@ class _ParticipantNameSourceOption extends StatelessWidget {
               Icon(
                 icon,
                 size: 22,
-                color: enabled ? NeonPalette.primary : NeonPalette.outline,
+                color: enabled ? AppTokens.primary : AppTokens.outline,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -408,8 +408,8 @@ class _ParticipantNameSourceOption extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: enabled
-                              ? NeonPalette.onSurfaceVariant
-                              : NeonPalette.onSurfaceVariant.withValues(alpha: 0.5),
+                              ? AppTokens.onSurfaceVariant
+                              : AppTokens.onSurfaceVariant.withValues(alpha: 0.5),
                         ),
                       ),
                     ],

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
 import 'package:planerz/features/cupidon/data/cupidon_repository.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -289,9 +289,9 @@ class _TripMemberPreferencesPageState
     Widget? bottomBar,
   }) {
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: _buildAppBar(l10n),
         body: body,
         bottomNavigationBar: bottomBar,
@@ -458,9 +458,9 @@ class _TripMemberPreferencesPageState
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: NeonPalette.accent,
+                            foregroundColor: AppTokens.error,
                             side: BorderSide(
-                              color: NeonPalette.participantsDangerBorder,
+                              color: AppTokens.participantsDangerBorder,
                             ),
                             minimumSize: const Size.fromHeight(48),
                             shape: RoundedRectangleBorder(

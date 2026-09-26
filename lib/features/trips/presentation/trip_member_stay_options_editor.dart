@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/presentation/trip_date_range_picker_sheet.dart';
@@ -355,7 +355,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
     final cupidonDescription = cupidonSectionEnabled
         ? (widget.cupidonSubtitle ?? l10n.cupidonModeExplanation)
         : l10n.cupidonModeDisabledByAdmin;
-    final disabledTextColor = NeonPalette.outline;
+    final disabledTextColor = AppTokens.outline;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,7 +370,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: cupidonSectionEnabled
-                      ? NeonPalette.deep
+                      ? AppTokens.deep
                       : disabledTextColor,
                 ),
               ),
@@ -381,7 +381,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                   fontSize: 12.5,
                   height: 1.45,
                   color: cupidonSectionEnabled
-                      ? NeonPalette.onSurfaceVariant
+                      ? AppTokens.onSurfaceVariant
                       : disabledTextColor,
                 ),
               ),
@@ -403,7 +403,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
     final l10n = AppLocalizations.of(context)!;
     final hasPhoneNumber = _phoneVisibility != null;
     final phoneDisabled = !hasPhoneNumber;
-    final disabledTextColor = NeonPalette.outline;
+    final disabledTextColor = AppTokens.outline;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,7 +414,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
             fontSize: 15,
             fontWeight: FontWeight.w600,
             height: 1.35,
-            color: phoneDisabled ? disabledTextColor : NeonPalette.deep,
+            color: phoneDisabled ? disabledTextColor : AppTokens.deep,
           ),
         ),
         const SizedBox(height: 10),
@@ -446,8 +446,8 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                             fontWeight:
                                 selected ? FontWeight.w600 : FontWeight.w500,
                             color: selected
-                                ? NeonPalette.primary
-                                : NeonPalette.deep,
+                                ? AppTokens.primary
+                                : AppTokens.deep,
                           ),
                         ),
                       ),
@@ -455,7 +455,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                         const Icon(
                           Icons.check,
                           size: 20,
-                          color: NeonPalette.primary,
+                          color: AppTokens.primary,
                         ),
                     ],
                   ),
@@ -558,7 +558,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                     ),
                   ),
                 ],
@@ -658,7 +658,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.primary,
+                color: AppTokens.primary,
               ),
             ),
           ),
@@ -753,14 +753,14 @@ class _NeonSelectShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = enabled ? NeonPalette.deep : NeonPalette.outline;
+    final textColor = enabled ? AppTokens.deep : AppTokens.outline;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: enabled
-            ? NeonPalette.surface
-            : Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.08),
+            ? AppTokens.surface
+            : Color.lerp(AppTokens.surface, AppTokens.outline, 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeonPalette.divider, width: 1.5),
+        border: Border.all(color: AppTokens.divider, width: 1.5),
       ),
       child: SizedBox(
         height: 48,
@@ -782,8 +782,8 @@ class _NeonSelectShell extends StatelessWidget {
                 Icons.expand_more,
                 size: 22,
                 color: enabled
-                    ? NeonPalette.onSurfaceVariant
-                    : NeonPalette.outline,
+                    ? AppTokens.onSurfaceVariant
+                    : AppTokens.outline,
               ),
             ],
           ),

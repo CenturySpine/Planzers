@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/administration/data/external_providers_repository.dart';
 
 final _externalProvidersRepositoryProvider =
@@ -24,30 +24,30 @@ InputDecoration _neonFieldDecoration({
     helperText: helper,
     helperMaxLines: helperMaxLines,
     filled: true,
-    fillColor: NeonPalette.surface,
-    labelStyle: const TextStyle(color: NeonPalette.onSurfaceVariant),
-    hintStyle: const TextStyle(color: NeonPalette.outline),
-    helperStyle: const TextStyle(color: NeonPalette.onSurfaceVariant, fontSize: 12),
+    fillColor: AppTokens.surface,
+    labelStyle: const TextStyle(color: AppTokens.onSurfaceVariant),
+    hintStyle: const TextStyle(color: AppTokens.outline),
+    helperStyle: const TextStyle(color: AppTokens.onSurfaceVariant, fontSize: 12),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: NeonPalette.divider, width: 1.5),
+      borderSide: BorderSide(color: AppTokens.divider, width: 1.5),
     ),
     enabledBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: NeonPalette.divider, width: 1.5),
+      borderSide: BorderSide(color: AppTokens.divider, width: 1.5),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: NeonPalette.primary, width: 2),
+      borderSide: BorderSide(color: AppTokens.primary, width: 2),
     ),
     errorBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: NeonPalette.accent, width: 1.5),
+      borderSide: BorderSide(color: AppTokens.error, width: 1.5),
     ),
     focusedErrorBorder: const OutlineInputBorder(
       borderRadius: radius,
-      borderSide: BorderSide(color: NeonPalette.accent, width: 2),
+      borderSide: BorderSide(color: AppTokens.error, width: 2),
     ),
   );
 }
@@ -78,7 +78,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.40),
       builder: (dialogContext) => Dialog(
-        backgroundColor: NeonPalette.surface,
+        backgroundColor: AppTokens.surface,
         elevation: 8,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -96,7 +96,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -112,7 +112,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                             decoration: _neonFieldDecoration(
                               label: 'providerId (minuscules et tirets, ex. "ridgegear")',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
                           ),
@@ -122,7 +122,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                             decoration: _neonFieldDecoration(
                               label: 'Nom affiché (ex. "Ridgegear")',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
                           ),
@@ -132,7 +132,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                             decoration: _neonFieldDecoration(
                               label: "URL de l'icône",
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -141,7 +141,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                               label: "URL d'autorisation du fournisseur",
                               hint: 'https://ridgegear.example.com/oauth/authorize',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
                           ),
@@ -152,7 +152,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                               label: 'URL de jeton du fournisseur',
                               hint: 'https://ridgegear.example.com/oauth/token',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
                           ),
@@ -168,7 +168,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                                   "projets Ridgegear).",
                               helperMaxLines: 3,
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -176,7 +176,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                             decoration: _neonFieldDecoration(
                               label: 'Portée demandée (ex. "gear.read")',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -184,7 +184,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                             decoration: _neonFieldDecoration(
                               label: 'client_id délivré par le fournisseur',
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
                           ),
@@ -198,7 +198,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                                   'Il ne sera plus jamais affiché après création.',
                               helperMaxLines: 3,
                             ),
-                            style: const TextStyle(color: NeonPalette.deep),
+                            style: const TextStyle(color: AppTokens.deep),
                             obscureText: true,
                             validator: (v) =>
                                 (v ?? '').trim().isEmpty ? 'Requis' : null,
@@ -218,7 +218,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                         'Annuler',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.text700,
+                          color: AppTokens.text700,
                         ),
                       ),
                     ),
@@ -231,7 +231,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                         'Créer',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.primary,
+                          color: AppTokens.primary,
                         ),
                       ),
                     ),
@@ -283,7 +283,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.40),
       builder: (dialogContext) => Dialog(
-        backgroundColor: NeonPalette.surface,
+        backgroundColor: AppTokens.surface,
         elevation: 8,
         shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -301,7 +301,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -311,7 +311,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                     label: "URL de base de l'API métier",
                     hint: 'https://ridgegear.example.com',
                   ),
-                  style: const TextStyle(color: NeonPalette.deep),
+                  style: const TextStyle(color: AppTokens.deep),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -323,7 +323,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                         'Annuler',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.text700,
+                          color: AppTokens.text700,
                         ),
                       ),
                     ),
@@ -333,7 +333,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                         'Enregistrer',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.primary,
+                          color: AppTokens.primary,
                         ),
                       ),
                     ),
@@ -412,9 +412,9 @@ class AdminExternalProvidersPage extends ConsumerWidget {
     final providersAsync = ref.watch(_externalProvidersAdminProvider);
 
     return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
+      data: AppTokens.overlayOn(Theme.of(context)),
       child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
+        backgroundColor: AppTokens.scaffoldBackground,
         appBar: AppBar(
           title: const Text('Fournisseurs externes (OAuth)'),
           actions: [
@@ -443,19 +443,19 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                 return Card(
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: NeonPalette.nameIconBackground,
+                      backgroundColor: AppTokens.nameIconBackground,
                       backgroundImage: provider.iconUrl.isNotEmpty
                           ? NetworkImage(provider.iconUrl)
                           : null,
                       child: provider.iconUrl.isEmpty
-                          ? const Icon(Icons.hub_outlined, color: NeonPalette.primary)
+                          ? const Icon(Icons.hub_outlined, color: AppTokens.primary)
                           : null,
                     ),
                     title: Text(
                       provider.displayName,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                       ),
                     ),
                     subtitle: Text(
@@ -463,20 +463,20 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                       'client_id : ${provider.clientId}\n'
                       'Portée : ${provider.scope}\n'
                       "URL API : ${provider.apiBaseUrl.isEmpty ? 'non configurée' : provider.apiBaseUrl}",
-                      style: const TextStyle(color: NeonPalette.onSurfaceVariant),
+                      style: const TextStyle(color: AppTokens.onSurfaceVariant),
                     ),
                     isThreeLine: true,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.link, color: NeonPalette.primary),
+                          icon: const Icon(Icons.link, color: AppTokens.primary),
                           tooltip: "Modifier l'URL API",
                           onPressed: () =>
                               _openEditApiBaseUrlDialog(context, ref, provider),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: NeonPalette.accent),
+                          icon: const Icon(Icons.delete_outline, color: AppTokens.error),
                           tooltip: 'Supprimer',
                           onPressed: () => _confirmAndDelete(context, ref, provider),
                         ),

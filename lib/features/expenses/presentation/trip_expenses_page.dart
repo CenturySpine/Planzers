@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
@@ -180,7 +180,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       floatingActionButton: showExpensesFab && canCreateExpense && !activeGroupLocked
           ? FloatingActionButton(
               heroTag: 'trip_expenses_add',
-              backgroundColor: NeonPalette.accent,
+              backgroundColor: AppTokens.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
               tooltip: l10n.expensesAddExpenseTooltip,
@@ -469,25 +469,25 @@ class _PostTab extends StatelessWidget {
         ? Icons.add
         : expenseIconForPost(iconKey, isDefault: isDefault);
     final borderColor = dashed
-        ? NeonPalette.divider
+        ? AppTokens.divider
         : selected
-            ? Color.lerp(NeonPalette.divider, NeonPalette.accent, 0.45)!
-            : NeonPalette.divider;
+            ? Color.lerp(AppTokens.divider, AppTokens.primary, 0.45)!
+            : AppTokens.divider;
     final backgroundColor = selected
         ? Color.alphaBlend(
-            NeonPalette.accent.withValues(alpha: 0.09),
-            NeonPalette.surface,
+            AppTokens.primary.withValues(alpha: 0.09),
+            AppTokens.surface,
           )
-        : NeonPalette.surface;
+        : AppTokens.surface;
     final labelColor = dashed
-        ? NeonPalette.onSurfaceVariant
+        ? AppTokens.onSurfaceVariant
         : selected
-            ? NeonPalette.accent
-            : NeonPalette.text700;
+            ? AppTokens.primary
+            : AppTokens.text700;
     final iconBoxColor = selected
-        ? NeonPalette.accent
-        : Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.14)!;
-    final iconColor = selected ? Colors.white : NeonPalette.accent;
+        ? AppTokens.primary
+        : Color.lerp(AppTokens.surface, AppTokens.primary, 0.14)!;
+    final iconColor = selected ? Colors.white : AppTokens.primary;
 
     final tabContent = SizedBox(
       height: 38,
@@ -497,7 +497,7 @@ class _PostTab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (dashed)
-              Icon(icon, size: 16, color: NeonPalette.onSurfaceVariant)
+              Icon(icon, size: 16, color: AppTokens.onSurfaceVariant)
             else
               Container(
                 width: 24,
@@ -1018,7 +1018,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                       child: Text(
                         l10n.expensesOperationsFilterHint,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: NeonPalette.onSurfaceVariant,
+                              color: AppTokens.onSurfaceVariant,
                               height: 1.35,
                             ),
                       ),
@@ -1124,13 +1124,13 @@ Widget _buildTousMoiFilterSegment(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: selected ? NeonPalette.accentSoft : null,
+        color: selected ? AppTokens.primaryTint : null,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: selected ? NeonPalette.accent : NeonPalette.onSurfaceVariant,
+              color: selected ? AppTokens.primary : AppTokens.onSurfaceVariant,
               fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
       ),
@@ -1213,12 +1213,12 @@ class _ExpenseViewSegmented extends StatelessWidget {
               curve: Curves.easeOut,
               height: 40,
               decoration: BoxDecoration(
-                color: on ? NeonPalette.accent : Colors.transparent,
+                color: on ? AppTokens.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
                 boxShadow: on
                     ? [
                         BoxShadow(
-                          color: NeonPalette.accent.withValues(alpha: 0.3),
+                          color: AppTokens.primary.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1231,7 +1231,7 @@ class _ExpenseViewSegmented extends StatelessWidget {
                   Icon(
                     icon,
                     size: 18,
-                    color: on ? Colors.white : NeonPalette.onSurfaceVariant,
+                    color: on ? Colors.white : AppTokens.onSurfaceVariant,
                   ),
                   const SizedBox(width: 7),
                   Text(
@@ -1239,7 +1239,7 @@ class _ExpenseViewSegmented extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13.5,
-                      color: on ? Colors.white : NeonPalette.onSurfaceVariant,
+                      color: on ? Colors.white : AppTokens.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -1253,9 +1253,9 @@ class _ExpenseViewSegmented extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: NeonPalette.divider, width: 1.5),
+        border: Border.all(color: AppTokens.divider, width: 1.5),
       ),
       child: Row(
         children: [
@@ -1302,8 +1302,8 @@ class _ExpenseHeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         gradient: LinearGradient(
           colors: [
-            NeonPalette.accent,
-            Color.lerp(NeonPalette.accent, NeonPalette.primary, 0.55)!,
+            AppTokens.primary,
+            AppTokens.primaryDark,
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -1696,7 +1696,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                   child: Text(
                     l10n.expensesLockPostBar,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: NeonPalette.deep,
+                          color: AppTokens.deep,
                           height: 1.4,
                           fontSize: 12,
                         ),
@@ -1948,7 +1948,7 @@ class _SettlementBalanceCard extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                         fontSize: 13,
                       ),
                 ),
@@ -1997,7 +1997,7 @@ class _SettlementBalanceRow extends StatelessWidget {
     final amountColor = isCreditor
         ? pz.success
         : isDebtor
-            ? NeonPalette.accent
+            ? AppTokens.primary
             : cs.onSurfaceVariant;
 
     return Container(
@@ -2018,7 +2018,7 @@ class _SettlementBalanceRow extends StatelessWidget {
                           text: name,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: NeonPalette.deep,
+                                color: AppTokens.deep,
                               ),
                         ),
                         TextSpan(
@@ -2039,7 +2039,7 @@ class _SettlementBalanceRow extends StatelessWidget {
                     name,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: NeonPalette.deep,
+                          color: AppTokens.deep,
                         ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -2106,10 +2106,10 @@ class _SettlementReimburseCard extends StatelessWidget {
       buttonLabel = l10n.expensesPaidButton;
     } else if (lockedSuggested) {
       buttonBg = Color.alphaBlend(
-        NeonPalette.outline.withValues(alpha: 0.16),
-        NeonPalette.surface,
+        AppTokens.outline.withValues(alpha: 0.16),
+        AppTokens.surface,
       );
-      buttonFg = NeonPalette.onSurfaceVariant;
+      buttonFg = AppTokens.onSurfaceVariant;
       buttonIcon = Icons.lock;
       buttonBorder = null;
       buttonLabel = l10n.expensesPaidButton;
@@ -2147,7 +2147,7 @@ class _SettlementReimburseCard extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: NeonPalette.deep,
+                              color: AppTokens.deep,
                               fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                       ),
@@ -2312,7 +2312,7 @@ List<Widget> _buildExpensesGroupedByDate(
         child: Text(
           DateFormat.yMMMEd(locale).format(day),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: NeonPalette.onSurfaceVariant,
+                color: AppTokens.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
         ),
@@ -2421,7 +2421,7 @@ class _ExpenseCard extends StatelessWidget {
           );
 
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -2430,7 +2430,7 @@ class _ExpenseCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeonPalette.divider),
+            border: Border.all(color: AppTokens.divider),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2440,17 +2440,17 @@ class _ExpenseCard extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: NeonPalette.accentSoft,
+                    color: AppTokens.primaryTint,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     expenseIconForExpense(e.icon),
-                    color: NeonPalette.accent,
+                    color: AppTokens.primary,
                     size: 22,
                   ),
                 )
               else
-                Icon(Icons.sync_alt, color: NeonPalette.secondary, size: 28),
+                Icon(Icons.sync_alt, color: AppTokens.secondary, size: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -2481,11 +2481,11 @@ class _ExpenseCard extends StatelessWidget {
                                   : l10n.expensesSettlementType)
                               : l10n.expensesPaidByWithLabel(paidByLabel),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: NeonPalette.onSurfaceVariant,
+                                color: AppTokens.onSurfaceVariant,
                               ),
                         ),
                         if (!isSettlement) ...[
-                          const Text('·', style: TextStyle(color: NeonPalette.outline)),
+                          const Text('·', style: TextStyle(color: AppTokens.outline)),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -2494,7 +2494,7 @@ class _ExpenseCard extends StatelessWidget {
                                     ? Icons.tune
                                     : Icons.safety_divider,
                                 size: 13,
-                                color: NeonPalette.onSurfaceVariant,
+                                color: AppTokens.onSurfaceVariant,
                               ),
                               const SizedBox(width: 3),
                               Text(
@@ -2502,7 +2502,7 @@ class _ExpenseCard extends StatelessWidget {
                                     ? l10n.expensesSplitCustomAmounts
                                     : l10n.expensesSplitModeEqualShort,
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: NeonPalette.onSurfaceVariant,
+                                      color: AppTokens.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -2533,7 +2533,7 @@ class _ExpenseCard extends StatelessWidget {
                               formatExpenseMoney(e.currency, -delta, locale: locale),
                             ),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: delta > 0 ? NeonPalette.success : NeonPalette.accent,
+                            color: delta > 0 ? AppTokens.success : AppTokens.primary,
                             fontWeight: FontWeight.w600,
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),

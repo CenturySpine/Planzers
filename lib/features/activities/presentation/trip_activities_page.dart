@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/notifications/notification_channel.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -274,6 +274,21 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
             activities: items,
             meals: meals,
           );
+          final dayGroups = <DateTime, Set<ActivityFilterGroup>>{};
+          for (final activity in items) {
+            final plannedAt = activity.plannedAt;
+            if (plannedAt == null) continue;
+            dayGroups
+                .putIfAbsent(tripActivityDateOnly(plannedAt), () => {})
+                .add(activity.category.filterGroup);
+          }
+          for (final meal in meals) {
+            final day = DateTime.tryParse(meal.mealDateKey);
+            if (day == null) continue;
+            dayGroups
+                .putIfAbsent(tripActivityDateOnly(day), () => {})
+                .add(ActivityFilterGroup.repas);
+          }
 
           final filterLabels = {
             ActivityFilterGroup.repas: l10n.activitiesFilterRepas,
@@ -284,10 +299,16 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
 
           return DefaultTabController(
             length: 3,
-            initialIndex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                TripActivitiesSegmentedTabBar(
+                  labels: [
+                    l10n.activitiesTabAgenda,
+                    l10n.activitiesTabPlanned,
+                    l10n.activitiesTabSuggestions,
+                  ],
+                ),
                 TripActivitiesFilterChips(
                   activeFilters: _activeFilters,
                   filterLabels: filterLabels,
@@ -299,42 +320,14 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                     }
                   }),
                 ),
-                TripActivitiesSegmentedTabBar(
-                  labels: [
-                    l10n.activitiesTabSuggestions,
-                    l10n.activitiesTabPlanned,
-                    l10n.activitiesTabAgenda,
-                  ],
-                ),
                 Expanded(
                   child: TabBarView(
                     children: [
-                      TripActivitiesSearchableTabList(
-                        searchController: _suggestionsSearchController,
-                        onSearchChanged: (_) => setState(() {}),
-                        entries: suggestionsEntries,
-                        tripId: trip.id,
-                        tripMemberPublicLabels: memberLabels,
-                        usersDataById: creatorsDataById,
-                        currentUserId: myUid,
-                        emptyMessage: l10n.activitiesNoSuggestion,
-                        showVoteButton: true,
-                        myUid: myUid,
-                      ),
-                      TripActivitiesSearchableTabList(
-                        searchController: _plannedSearchController,
-                        onSearchChanged: (_) => setState(() {}),
-                        entries: plannedEntries,
-                        tripId: trip.id,
-                        tripMemberPublicLabels: memberLabels,
-                        usersDataById: creatorsDataById,
-                        currentUserId: myUid,
-                        emptyMessage: l10n.activitiesNoPlanned,
-                      ),
                       _ActivitiesAgendaTab(
                         centerDay: _agendaCenterDay,
                         selectedDay: _agendaSelectedDay,
                         plannedDays: plannedDays,
+                        dayGroups: dayGroups,
                         tripStartDate: trip.startDate,
                         tripEndDate: trip.endDate,
                         agendaEntries: agendaEntries,
@@ -356,6 +349,28 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                           () => _agendaSelectedDay = day,
                         ),
                       ),
+                      TripActivitiesSearchableTabList(
+                        searchController: _plannedSearchController,
+                        onSearchChanged: (_) => setState(() {}),
+                        entries: plannedEntries,
+                        tripId: trip.id,
+                        tripMemberPublicLabels: memberLabels,
+                        usersDataById: creatorsDataById,
+                        currentUserId: myUid,
+                        emptyMessage: l10n.activitiesNoPlanned,
+                      ),
+                      TripActivitiesSearchableTabList(
+                        searchController: _suggestionsSearchController,
+                        onSearchChanged: (_) => setState(() {}),
+                        entries: suggestionsEntries,
+                        tripId: trip.id,
+                        tripMemberPublicLabels: memberLabels,
+                        usersDataById: creatorsDataById,
+                        currentUserId: myUid,
+                        emptyMessage: l10n.activitiesNoSuggestion,
+                        showVoteButton: true,
+                        myUid: myUid,
+                      ),
                     ],
                   ),
                 ),
@@ -370,18 +385,14 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       userId: myUid,
     );
 
-    return Theme(
-      data: NeonPalette.overlayOn(Theme.of(context)),
-      child: Scaffold(
-        backgroundColor: NeonPalette.scaffoldBackground,
-        body: body,
-        floatingActionButton: canSuggestActivity
-            ? _ActivitiesExpandableFab(
-                tripId: trip.id,
-                canCreateMeal: canCreateMeal,
-              )
-            : null,
-      ),
+    return Scaffold(
+      body: body,
+      floatingActionButton: canSuggestActivity
+          ? _ActivitiesExpandableFab(
+              tripId: trip.id,
+              canCreateMeal: canCreateMeal,
+            )
+          : null,
     );
   }
 }
@@ -391,6 +402,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.centerDay,
     required this.selectedDay,
     required this.plannedDays,
+    required this.dayGroups,
     required this.tripStartDate,
     required this.tripEndDate,
     required this.agendaEntries,
@@ -406,6 +418,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final DateTime centerDay;
   final DateTime selectedDay;
   final Set<DateTime> plannedDays;
+  final Map<DateTime, Set<ActivityFilterGroup>> dayGroups;
   final DateTime? tripStartDate;
   final DateTime? tripEndDate;
   final List<TripActivitiesListEntry> agendaEntries;
@@ -420,71 +433,109 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context);
+    final localeTag = locale.toString();
     final weekStart = startOfAtomicWeekForLocale(centerDay, locale);
     final weekDays = List<DateTime>.generate(
       7,
       (index) => weekStart.add(Duration(days: index)),
     );
+    final dayTitle = DateFormat('EEEE d MMMM', localeTag).format(selectedDay);
+    final visibleEntries = agendaEntries
+        .where((e) => e.activity != null || e.meal != null)
+        .toList(growable: false);
+
     return Column(
       children: [
         TripActivitiesAgendaWeekStrip(
           weekDays: weekDays,
           selectedDay: selectedDay,
           plannedDays: plannedDays,
+          dayGroups: dayGroups,
           tripStartDate: tripStartDate,
           tripEndDate: tripEndDate,
           onSelectDay: onSelectDay,
           onMoveBackward: onMoveBackward,
           onMoveForward: onMoveForward,
         ),
+        const Divider(height: 1),
         Expanded(
-          child: agendaEntries.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      AppLocalizations.of(context)!.activitiesNoPlannedThisDay,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: NeonPalette.onSurfaceVariant,
-                      ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(12, 0, 16, 88),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                child: TripActivityDaySeparatorRail(label: dayTitle),
+              ),
+              if (visibleEntries.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Text(
+                    AppLocalizations.of(context)!.activitiesNoPlannedThisDay,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-                  itemCount: agendaEntries.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: tripActivitiesCardGap),
-                  itemBuilder: (context, index) {
-                    final entry = agendaEntries[index];
-                    final activity = entry.activity;
-                    if (activity != null) {
-                      return TripActivityCard(
-                        tripId: tripId,
-                        activity: activity,
-                        tripMemberPublicLabels: tripMemberPublicLabels,
-                      );
-                    }
-                    final meal = entry.meal;
-                    if (meal == null) {
-                      return const SizedBox.shrink();
-                    }
-                    return TripMealCard(
-                      tripId: tripId,
-                      meal: meal,
-                      memberLabels: tripMemberPublicLabels,
-                    );
-                  },
                 ),
+              for (var index = 0; index < visibleEntries.length; index++)
+                _buildTimelineRow(
+                  context,
+                  visibleEntries[index],
+                  isFirst: index == 0,
+                  isLast: index == visibleEntries.length - 1,
+                ),
+            ],
+          ),
         ),
       ],
     );
   }
+
+  Widget _buildTimelineRow(
+    BuildContext context,
+    TripActivitiesListEntry entry, {
+    required bool isFirst,
+    required bool isLast,
+  }) {
+    final activity = entry.activity;
+    if (activity != null) {
+      final plannedAt = activity.plannedAt;
+      return TripAgendaTimelineRow(
+        timeLabel: plannedAt == null
+            ? ''
+            : DateFormat.Hm(Localizations.localeOf(context).toString())
+                .format(plannedAt.toLocal()),
+        color: activity.category.filterGroup.filterColor,
+        isFirst: isFirst,
+        isLast: isLast,
+        child: TripActivityCard(
+          tripId: tripId,
+          activity: activity,
+          tripMemberPublicLabels: tripMemberPublicLabels,
+          showTime: false,
+        ),
+      );
+    }
+    final meal = entry.meal!;
+    return TripAgendaTimelineRow(
+      timeLabel: meal.mealTimeHHMM,
+      color: ActivityFilterGroup.repas.filterColor,
+      isFirst: isFirst,
+      isLast: isLast,
+      child: TripMealCard(
+        tripId: tripId,
+        meal: meal,
+        memberLabels: tripMemberPublicLabels,
+        showTime: false,
+      ),
+    );
+  }
 }
 
-class _ActivitiesExpandableFab extends StatefulWidget {
+/// Planning "+" button: opens a standard bottom sheet listing what can be
+/// added (one row per category, in its hue).
+class _ActivitiesExpandableFab extends StatelessWidget {
   const _ActivitiesExpandableFab({
     required this.tripId,
     required this.canCreateMeal,
@@ -493,155 +544,94 @@ class _ActivitiesExpandableFab extends StatefulWidget {
   final String tripId;
   final bool canCreateMeal;
 
-  @override
-  State<_ActivitiesExpandableFab> createState() =>
-      _ActivitiesExpandableFabState();
-}
-
-class _ActivitiesExpandableFabState extends State<_ActivitiesExpandableFab> {
-  bool _isOpen = false;
-
-  void _toggle() => setState(() => _isOpen = !_isOpen);
-
-  void _openActivityCreate(List<TripActivityCategory> categories) {
-    setState(() => _isOpen = false);
+  void _openActivityCreate(
+    BuildContext context,
+    List<TripActivityCategory> categories,
+  ) {
     final param = categories.map((c) => c.firestoreValue).join(',');
-    context.push(
-        '/trips/${widget.tripId}/activities/new?initialCategory=$param');
+    context.push('/trips/$tripId/activities/new?initialCategory=$param');
   }
 
-  void _openMealCreate() {
-    setState(() => _isOpen = false);
-    context.push('/trips/${widget.tripId}/meals/new');
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Future<void> _openSheet(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-
     final loisirCategories = TripActivityCategory.values
         .where((c) =>
             c != TripActivityCategory.accommodation &&
             c != TripActivityCategory.transport)
         .toList();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: _isOpen
-                ? [
-                    _FabMenuItem(
-                      heroSuffix: 'nuits',
-                      icon: ActivityFilterGroup.nuits.filterIcon,
-                      color: ActivityFilterGroup.nuits.filterColor,
-                      label: l10n.activitiesFilterNuits,
-                      onTap: () => _openActivityCreate(
-                          [TripActivityCategory.accommodation]),
-                    ),
-                    const SizedBox(height: 8),
-                    _FabMenuItem(
-                      heroSuffix: 'trajets',
-                      icon: ActivityFilterGroup.trajets.filterIcon,
-                      color: ActivityFilterGroup.trajets.filterColor,
-                      label: l10n.activitiesFilterTrajets,
-                      onTap: () => _openActivityCreate(
-                          [TripActivityCategory.transport]),
-                    ),
-                    const SizedBox(height: 8),
-                    if (widget.canCreateMeal) ...[
-                      _FabMenuItem(
-                        heroSuffix: 'repas',
-                        icon: ActivityFilterGroup.repas.filterIcon,
-                        color: ActivityFilterGroup.repas.filterColor,
-                        label: l10n.activitiesFilterRepas,
-                        onTap: _openMealCreate,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    _FabMenuItem(
-                      heroSuffix: 'loisirs',
-                      icon: ActivityFilterGroup.loisirs.filterIcon,
-                      color: ActivityFilterGroup.loisirs.filterColor,
-                      label: l10n.activitiesFilterLoisirs,
-                      onTap: () => _openActivityCreate(loisirCategories),
-                    ),
-                    const SizedBox(height: 8),
-                  ]
-                : [],
+    final choice = await showModalBottomSheet<VoidCallback>(
+      context: context,
+      builder: (sheetContext) {
+        Widget option(ActivityFilterGroup group, String label,
+                VoidCallback action) =>
+            ListTile(
+              leading: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: group.filterLightBgColor,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                ),
+                child: Icon(group.filterIcon,
+                    size: 20, color: group.filterColor),
+              ),
+              title: Text(label),
+              trailing: const Icon(Icons.add_rounded),
+              onTap: () => Navigator.of(sheetContext).pop(action),
+            );
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: Text(
+                    l10n.commonAdd,
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                ),
+                option(
+                  ActivityFilterGroup.loisirs,
+                  l10n.activitiesFilterLoisirs,
+                  () => _openActivityCreate(context, loisirCategories),
+                ),
+                if (canCreateMeal)
+                  option(
+                    ActivityFilterGroup.repas,
+                    l10n.activitiesFilterRepas,
+                    () => context.push('/trips/$tripId/meals/new'),
+                  ),
+                option(
+                  ActivityFilterGroup.nuits,
+                  l10n.activitiesFilterNuits,
+                  () => _openActivityCreate(
+                      context, [TripActivityCategory.accommodation]),
+                ),
+                option(
+                  ActivityFilterGroup.trajets,
+                  l10n.activitiesFilterTrajets,
+                  () => _openActivityCreate(
+                      context, [TripActivityCategory.transport]),
+                ),
+              ],
+            ),
           ),
-        ),
-        FloatingActionButton(
-          heroTag: 'trip_activities_add',
-          onPressed: _toggle,
-          backgroundColor: NeonPalette.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: AnimatedRotation(
-            turns: _isOpen ? 0.125 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: const Icon(Icons.add),
-          ),
-        ),
-      ],
+        );
+      },
     );
+    choice?.call();
   }
-}
-
-class _FabMenuItem extends StatelessWidget {
-  const _FabMenuItem({
-    required this.heroSuffix,
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  final String heroSuffix;
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Material(
-          borderRadius: BorderRadius.circular(8),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          elevation: 2,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        FloatingActionButton.small(
-          heroTag: 'fab_item_$heroSuffix',
-          onPressed: onTap,
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          child: Icon(icon, size: 20),
-        ),
-      ],
+    return FloatingActionButton(
+      heroTag: 'trip_activities_add',
+      tooltip: AppLocalizations.of(context)!.commonAdd,
+      onPressed: () => _openSheet(context),
+      child: const Icon(Icons.add_rounded, size: 28),
     );
   }
 }
-

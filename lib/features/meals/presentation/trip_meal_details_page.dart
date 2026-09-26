@@ -493,84 +493,50 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     required ColorScheme colorScheme,
     required bool canEditMealMode,
   }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: colorScheme.outlineVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SegmentedButton<_MealDetailsView>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment<_MealDetailsView>(
-                      value: _MealDetailsView.cooked,
-                      icon: SvgPicture.asset(
-                        'assets/images/chef_hat.svg',
-                        width: 18,
-                        height: 18,
-                      ),
-                      tooltip: l10n.mealModeCooked,
-                    ),
-                    ButtonSegment<_MealDetailsView>(
-                      value: _MealDetailsView.restaurant,
-                      icon: SvgPicture.asset(
-                        'assets/images/hand_meal.svg',
-                        width: 18,
-                        height: 18,
-                      ),
-                      tooltip: l10n.mealModeRestaurant,
-                    ),
-                    ButtonSegment<_MealDetailsView>(
-                      value: _MealDetailsView.potluck,
-                      icon: SvgPicture.asset(
-                        'assets/images/tapas.svg',
-                        width: 18,
-                        height: 18,
-                      ),
-                      tooltip: l10n.mealModePotluck,
-                    ),
-                  ],
-                  selected: {_activeMealView},
-                  onSelectionChanged: _isSavingMealMode
-                      ? null
-                      : (selection) async {
-                          if (selection.isEmpty || !canEditMealMode) {
-                            return;
-                          }
-                          if (_activeMealView == selection.first) {
-                            return;
-                          }
-                          final previousMealView = _activeMealView;
-                          setState(() {
-                            _activeMealView = selection.first;
-                          });
-                          await _saveMealMode(
-                            previousMealView: previousMealView,
-                          );
-                        },
-                ),
-              ],
+    Future<void> select(_MealDetailsView view) async {
+      if (!canEditMealMode || _activeMealView == view) return;
+      final previousMealView = _activeMealView;
+      setState(() {
+        _activeMealView = view;
+      });
+      await _saveMealMode(previousMealView: previousMealView);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MealChoiceTiles<_MealDetailsView>(
+          selected: _activeMealView,
+          enabled: !_isSavingMealMode,
+          onSelected: select,
+          options: [
+            _MealChoiceOption(
+              value: _MealDetailsView.cooked,
+              label: l10n.mealModeCooked,
+              icon: SvgPicture.asset('assets/images/chef_hat.svg',
+                  width: 20, height: 20),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _mealModeDisplayLabel(l10n),
-            textAlign: TextAlign.center,
-            style: textTheme.bodyMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: colorScheme.onSurfaceVariant,
+            _MealChoiceOption(
+              value: _MealDetailsView.restaurant,
+              label: l10n.mealModeRestaurant,
+              icon: SvgPicture.asset('assets/images/hand_meal.svg',
+                  width: 20, height: 20),
             ),
-          ),
-        ],
-      ),
+            _MealChoiceOption(
+              value: _MealDetailsView.potluck,
+              label: l10n.mealModePotluck,
+              icon: SvgPicture.asset('assets/images/tapas.svg',
+                  width: 20, height: 20),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _mealModeDisplayLabel(l10n),
+          textAlign: TextAlign.center,
+          style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic),
+        ),
+      ],
     );
   }
 
@@ -1621,57 +1587,34 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Wrap(
-                                  spacing: 8,
-                                  children: [
-                                    for (final part in TripDayPart.values)
-                                      ChoiceChip(
-                                        showCheckmark: false,
-                                        label: SvgPicture.asset(
-                                          _dayPartIconAsset(part),
-                                          width: 16,
-                                          height: 16,
-                                        ),
-                                        tooltip: _dayPartLabel(context, part),
-                                        selected: _mealDayPart == part,
-                                        onSelected: (_isSavingMealDayPart ||
-                                                !canEditMealCore)
-                                            ? null
-                                            : (_) async {
-                                                if (_mealDayPart == part) {
-                                                  return;
-                                                }
-                                                final previousDayPart =
-                                                    _mealDayPart;
-                                                setState(() {
-                                                  _mealDayPart = part;
-                                                  if (widget.isCreate) {
-                                                    _mealTime =
-                                                        _defaultTimeForDayPart(
-                                                            part);
-                                                  }
-                                                });
-                                                await _saveMealDayPart(
-                                                  previousDayPart:
-                                                      previousDayPart,
-                                                );
-                                              },
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _dayPartLabel(context, _mealDayPart),
-                                    style: textTheme.bodyLarge?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
+                            _MealChoiceTiles<TripDayPart>(
+                              selected: _mealDayPart,
+                              enabled:
+                                  !_isSavingMealDayPart && canEditMealCore,
+                              onSelected: (part) async {
+                                if (_mealDayPart == part) return;
+                                final previousDayPart = _mealDayPart;
+                                setState(() {
+                                  _mealDayPart = part;
+                                  if (widget.isCreate) {
+                                    _mealTime = _defaultTimeForDayPart(part);
+                                  }
+                                });
+                                await _saveMealDayPart(
+                                  previousDayPart: previousDayPart,
+                                );
+                              },
+                              options: [
+                                for (final part in TripDayPart.values)
+                                  _MealChoiceOption(
+                                    value: part,
+                                    label: _dayPartLabel(context, part),
+                                    icon: SvgPicture.asset(
+                                      _dayPartIconAsset(part),
+                                      width: 18,
+                                      height: 18,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -2667,6 +2610,97 @@ class _PotluckItemDraft {
       category: category ?? this.category,
       label: label ?? this.label,
       quantityUnits: quantityUnits ?? this.quantityUnits,
+    );
+  }
+}
+
+class _MealChoiceOption<T> {
+  const _MealChoiceOption({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
+
+  final T value;
+  final String label;
+  final Widget icon;
+}
+
+/// Exclusive choice as equal-width tiles (icon above label) — the standard
+/// "big segmented" control for meal forms.
+class _MealChoiceTiles<T> extends StatelessWidget {
+  const _MealChoiceTiles({
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+    this.enabled = true,
+  });
+
+  final List<_MealChoiceOption<T>> options;
+  final T selected;
+  final ValueChanged<T> onSelected;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: Builder(builder: (context) {
+              final option = options[i];
+              final isSelected = option.value == selected;
+              return Semantics(
+                button: true,
+                selected: isSelected,
+                child: Material(
+                  color: isSelected
+                      ? colorScheme.primaryContainer.withValues(alpha: 0.55)
+                      : colorScheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.outlineVariant,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: enabled ? () => onSelected(option.value) : null,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 8),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          option.icon,
+                          const SizedBox(height: 4),
+                          Text(
+                            option.label,
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelMedium?.copyWith(
+                              color: isSelected
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
     );
   }
 }

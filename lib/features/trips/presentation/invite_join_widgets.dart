@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 
 class InviteJoinHead extends StatelessWidget {
   const InviteJoinHead({
@@ -26,7 +26,7 @@ class InviteJoinHead extends StatelessWidget {
               fontSize: 26,
               fontWeight: FontWeight.w700,
               height: 1.15,
-              color: NeonPalette.deep,
+              color: AppTokens.deep,
             ),
           ),
           if (tripName != null && tripName!.trim().isNotEmpty) ...[
@@ -37,7 +37,7 @@ class InviteJoinHead extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.text700,
+                color: AppTokens.text700,
               ),
             ),
           ],
@@ -49,7 +49,7 @@ class InviteJoinHead extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.onSurfaceVariant,
+                color: AppTokens.onSurfaceVariant,
               ),
             ),
           ],
@@ -66,10 +66,10 @@ class InviteJoinInfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = Color.lerp(NeonPalette.surface, NeonPalette.success, 0.14)!;
-    final border = Color.lerp(NeonPalette.surface, NeonPalette.success, 0.28)!;
-    final iconColor = Color.lerp(NeonPalette.deep, NeonPalette.success, 0.80)!;
-    final textColor = Color.lerp(NeonPalette.deep, NeonPalette.success, 0.72)!;
+    final bg = Color.lerp(AppTokens.surface, AppTokens.success, 0.14)!;
+    final border = Color.lerp(AppTokens.surface, AppTokens.success, 0.28)!;
+    final iconColor = Color.lerp(AppTokens.deep, AppTokens.success, 0.80)!;
+    final textColor = Color.lerp(AppTokens.deep, AppTokens.success, 0.72)!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
@@ -126,12 +126,12 @@ class InviteJoinParticipantTile extends StatelessWidget {
 
     return Material(
       color: selected
-          ? NeonPalette.nameOptionActiveBackground
-          : NeonPalette.surface,
+          ? AppTokens.nameOptionActiveBackground
+          : AppTokens.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: selected ? NeonPalette.primary : NeonPalette.divider,
+          color: selected ? AppTokens.primary : AppTokens.divider,
           width: selected ? 2 : 1.5,
         ),
       ),
@@ -145,7 +145,7 @@ class InviteJoinParticipantTile extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: NeonPalette.secondaryTint,
+                  color: AppTokens.secondaryTint,
                 ),
                 child: SizedBox(
                   width: 38,
@@ -157,8 +157,8 @@ class InviteJoinParticipantTile extends StatelessWidget {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: Color.lerp(
-                          NeonPalette.deep,
-                          NeonPalette.secondary,
+                          AppTokens.deep,
+                          AppTokens.secondary,
                           0.65,
                         ),
                       ),
@@ -173,7 +173,7 @@ class InviteJoinParticipantTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
               ),
@@ -199,9 +199,9 @@ class _InviteJoinRadio extends StatelessWidget {
       height: 22,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: selected ? NeonPalette.primary : Colors.transparent,
+        color: selected ? AppTokens.primary : Colors.transparent,
         border: Border.all(
-          color: selected ? NeonPalette.primary : NeonPalette.outline,
+          color: selected ? AppTokens.primary : AppTokens.outline,
           width: 2,
         ),
       ),
@@ -262,10 +262,10 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: NeonPalette.surface,
+          color: AppTokens.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: focused ? NeonPalette.primary : NeonPalette.divider,
+            color: focused ? AppTokens.primary : AppTokens.divider,
             width: focused ? 2 : 1.5,
           ),
         ),
@@ -274,7 +274,7 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
             const Icon(
               Icons.search,
               size: 22,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -283,12 +283,15 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
                 focusNode: _focusNode,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
                 decoration: InputDecoration(
                   hintText: widget.hintText,
-                  hintStyle: const TextStyle(color: NeonPalette.outline),
+                  hintStyle: const TextStyle(color: AppTokens.outline),
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
                   isDense: true,
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -299,7 +302,7 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
             if (widget.controller.text.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.clear, size: 20),
-                color: NeonPalette.onSurfaceVariant,
+                color: AppTokens.onSurfaceVariant,
                 onPressed: () {
                   widget.controller.clear();
                   widget.onChanged('');
@@ -338,7 +341,7 @@ class InviteJoinNameRow extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ),
@@ -346,7 +349,7 @@ class InviteJoinNameRow extends StatelessWidget {
             TextButton.icon(
               onPressed: onEdit,
               style: TextButton.styleFrom(
-                foregroundColor: NeonPalette.primary,
+                foregroundColor: AppTokens.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               ),
               icon: const Icon(Icons.edit_outlined, size: 16),
@@ -390,8 +393,8 @@ class InviteJoinDualCtaBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: NeonPalette.scaffoldBackground,
-        border: Border(top: BorderSide(color: NeonPalette.divider)),
+        color: AppTokens.scaffoldBackground,
+        border: Border(top: BorderSide(color: AppTokens.divider)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
@@ -403,8 +406,8 @@ class InviteJoinDualCtaBar extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: secondaryEnabled ? onSecondary : null,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: NeonPalette.primary,
-                    side: const BorderSide(color: NeonPalette.outline, width: 1.5),
+                    foregroundColor: AppTokens.primary,
+                    side: const BorderSide(color: AppTokens.outline, width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -426,15 +429,15 @@ class InviteJoinDualCtaBar extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    boxShadow: primaryEnabled && !busy ? [NeonPalette.ctaShadow] : null,
+                    boxShadow: primaryEnabled && !busy ? [AppTokens.ctaShadow] : null,
                   ),
                   child: FilledButton.icon(
                     onPressed: primaryEnabled && !busy ? onPrimary : null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: NeonPalette.primary,
+                      backgroundColor: AppTokens.primary,
                       disabledBackgroundColor:
-                          Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.18),
-                      disabledForegroundColor: NeonPalette.outline,
+                          Color.lerp(AppTokens.surface, AppTokens.outline, 0.18),
+                      disabledForegroundColor: AppTokens.outline,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -487,7 +490,7 @@ class InviteJoinLoadingStatus extends StatelessWidget {
               height: 46,
               child: CircularProgressIndicator(
                 strokeWidth: 3,
-                color: NeonPalette.primary,
+                color: AppTokens.primary,
               ),
             ),
             const SizedBox(height: 16),
@@ -496,7 +499,7 @@ class InviteJoinLoadingStatus extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 15,
-                color: NeonPalette.text700,
+                color: AppTokens.text700,
               ),
             ),
           ],
@@ -535,7 +538,7 @@ class InviteJoinSuccessStatus extends StatelessWidget {
             DecoratedBox(
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: NeonPalette.success,
+                color: AppTokens.success,
               ),
               child: const SizedBox(
                 width: 76,
@@ -550,7 +553,7 @@ class InviteJoinSuccessStatus extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
             const SizedBox(height: 10),
@@ -560,7 +563,7 @@ class InviteJoinSuccessStatus extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.5,
-                color: NeonPalette.text700,
+                color: AppTokens.text700,
               ),
             ),
             const SizedBox(height: 18),
@@ -570,12 +573,12 @@ class InviteJoinSuccessStatus extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [NeonPalette.ctaShadow],
+                  boxShadow: [AppTokens.ctaShadow],
                 ),
                 child: FilledButton(
                   onPressed: onPrimary,
                   style: FilledButton.styleFrom(
-                    backgroundColor: NeonPalette.primary,
+                    backgroundColor: AppTokens.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -600,7 +603,7 @@ class InviteJoinSuccessStatus extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.primary,
+                  color: AppTokens.primary,
                 ),
               ),
             ),

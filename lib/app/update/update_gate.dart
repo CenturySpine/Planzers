@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/app_version_provider.dart';
 import 'package:planerz/app/update/android_apk_update_installer.dart';
@@ -315,9 +316,9 @@ class _UpdateAutomaticWarningBanner extends StatelessWidget {
   final String introMessage;
   final Uri webAppUri;
 
-  static const Color _backgroundColor = Color(0xFFFFF9E6);
-  static const Color _borderColor = Color(0xFFE6C200);
-  static const Color _iconColor = Color(0xFFB8860B);
+  static const Color _backgroundColor = AppTokens.warningContainer;
+  static const Color _borderColor = AppTokens.accent;
+  static const Color _iconColor = AppTokens.warning;
 
   Future<void> _openWebVersion(BuildContext context) async {
     final launched = await launchUrl(

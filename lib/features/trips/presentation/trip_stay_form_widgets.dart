@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/presentation/trip_date_range_picker_sheet.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -13,15 +13,15 @@ String formatTripStayShortDate(BuildContext context, DateTime date) {
 
 TripDateRangePickerStyle neonTripDateRangePickerStyle() {
   return TripDateRangePickerStyle(
-    primary: NeonPalette.primary,
-    primarySoft: NeonPalette.primarySoft,
-    primaryTint: NeonPalette.primaryTint,
-    deep: NeonPalette.deep,
-    onSurfaceVariant: NeonPalette.onSurfaceVariant,
-    divider: NeonPalette.divider,
-    outline: NeonPalette.outline,
-    surface: NeonPalette.surface,
-    textSecondary: NeonPalette.text700,
+    primary: AppTokens.primary,
+    primarySoft: AppTokens.primarySoft,
+    primaryTint: AppTokens.primaryTint,
+    deep: AppTokens.deep,
+    onSurfaceVariant: AppTokens.onSurfaceVariant,
+    divider: AppTokens.divider,
+    outline: AppTokens.outline,
+    surface: AppTokens.surface,
+    textSecondary: AppTokens.text700,
   );
 }
 
@@ -36,10 +36,10 @@ class TripNeonPrefGroup extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: NeonPalette.surface,
+          color: AppTokens.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: NeonPalette.divider),
-          boxShadow: NeonPalette.elev1,
+          border: Border.all(color: AppTokens.divider),
+          boxShadow: AppTokens.elev1,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -47,7 +47,7 @@ class TripNeonPrefGroup extends StatelessWidget {
           children: [
             for (var i = 0; i < children.length; i++) ...[
               if (i > 0)
-                const Divider(height: 1, thickness: 1, color: NeonPalette.divider),
+                const Divider(height: 1, thickness: 1, color: AppTokens.divider),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                 child: children[i],
@@ -76,7 +76,7 @@ class TripNeonSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: NeonPalette.primary),
+          Icon(icon, size: 18, color: AppTokens.primary),
           const SizedBox(width: 8),
           Text(
             label.toUpperCase(),
@@ -84,7 +84,7 @@ class TripNeonSectionHeader extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
           ),
         ],
@@ -112,11 +112,11 @@ class TripStayDateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: NeonPalette.dateBorderSet,
+          color: AppTokens.dateBorderSet,
           width: 1.5,
         ),
       ),
@@ -130,7 +130,7 @@ class TripStayDateCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(kickerIcon, size: 14, color: NeonPalette.primary),
+                  Icon(kickerIcon, size: 14, color: AppTokens.primary),
                   const SizedBox(width: 5),
                   Text(
                     kicker,
@@ -138,7 +138,7 @@ class TripStayDateCard extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -149,7 +149,7 @@ class TripStayDateCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
             ],
@@ -209,7 +209,7 @@ class TripMealBoundCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(dayIcon, size: 16, color: NeonPalette.primary),
+            Icon(dayIcon, size: 16, color: AppTokens.primary),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -217,7 +217,7 @@ class TripMealBoundCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
             ),
@@ -229,13 +229,13 @@ class TripMealBoundCard extends StatelessWidget {
             question,
             style: const TextStyle(
               fontSize: 12,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
           ),
         ),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: NeonPalette.segmentTrack,
+            color: AppTokens.segmentTrack,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Padding(
@@ -269,10 +269,10 @@ class TripMealBoundCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeonPalette.divider, width: 1.5),
-        boxShadow: NeonPalette.elev1,
+        border: Border.all(color: AppTokens.divider, width: 1.5),
+        boxShadow: AppTokens.elev1,
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -302,7 +302,7 @@ class _MealSegmentOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? NeonPalette.surface : Colors.transparent,
+      color: selected ? AppTokens.surface : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -317,8 +317,8 @@ class _MealSegmentOption extends StatelessWidget {
                 selected ? filledIcon : outlinedIcon,
                 size: 18,
                 color: selected
-                    ? NeonPalette.primary
-                    : NeonPalette.onSurfaceVariant,
+                    ? AppTokens.primary
+                    : AppTokens.onSurfaceVariant,
               ),
               const SizedBox(height: 4),
               Text(
@@ -329,8 +329,8 @@ class _MealSegmentOption extends StatelessWidget {
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: 0.1,
                   color: selected
-                      ? NeonPalette.primary
-                      : NeonPalette.onSurfaceVariant,
+                      ? AppTokens.primary
+                      : AppTokens.onSurfaceVariant,
                 ),
               ),
             ],
@@ -366,8 +366,8 @@ class TripNeonSwitch extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             color: onChanged == null
-                ? Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.22)
-                : (value ? NeonPalette.primary : NeonPalette.divider),
+                ? Color.lerp(AppTokens.surface, AppTokens.outline, 0.22)
+                : (value ? AppTokens.primary : AppTokens.divider),
           ),
           child: AnimatedAlign(
             duration: const Duration(milliseconds: 150),
@@ -378,7 +378,7 @@ class TripNeonSwitch extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: onChanged == null
-                    ? Color.lerp(Colors.white, NeonPalette.outline, 0.30)
+                    ? Color.lerp(Colors.white, AppTokens.outline, 0.30)
                     : Colors.white,
                 boxShadow: onChanged == null
                     ? null
@@ -415,11 +415,11 @@ class TripNeonOptCard extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: disabled
-              ? Color.lerp(NeonPalette.surface, NeonPalette.outline, 0.06)
-              : NeonPalette.surface,
+              ? Color.lerp(AppTokens.surface, AppTokens.outline, 0.06)
+              : AppTokens.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeonPalette.divider),
-          boxShadow: disabled ? null : NeonPalette.elev1,
+          border: Border.all(color: AppTokens.divider),
+          boxShadow: disabled ? null : AppTokens.elev1,
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),

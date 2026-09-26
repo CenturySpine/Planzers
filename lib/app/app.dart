@@ -6,7 +6,7 @@ import 'package:planerz/app/router.dart';
 import 'package:planerz/app/theme/app_palette_provider.dart';
 import 'package:planerz/app/theme/app_theme.dart';
 import 'package:planerz/app/theme/brand_palette.dart';
-import 'package:planerz/app/theme/static_colors.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/app/android_sunset_gate.dart';
 import 'package:planerz/app/update/update_gate.dart';
 import 'package:planerz/core/firebase/bootstrap.dart';
@@ -42,7 +42,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
     final localeAsync = ref.watch(appLocalePreferenceProvider);
     final AppPaletteId paletteId = switch (paletteAsync) {
       AsyncData(:final value) => value,
-      _ => AppPaletteId.oligarch,
+      _ => AppPaletteId.riviera,
     };
 
     return MaterialApp.router(
@@ -66,7 +66,7 @@ class _PlanerzThemedApp extends ConsumerWidget {
               child: AndroidSunsetGate(
                 child: UpdateGate(
                   child: ColoredBox(
-                    color: StaticColors.background,
+                    color: AppTokens.scaffoldBackground,
                     child: child ?? const SizedBox.shrink(),
                   ),
                 ),

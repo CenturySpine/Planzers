@@ -284,6 +284,9 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                   decoration: InputDecoration(
                     hintText: widget.hintText,
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     isDense: true,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
@@ -518,65 +521,86 @@ class _QuantityControls extends StatelessWidget {
     };
     final qtyBtnStyle = IconButton.styleFrom(
       padding: const EdgeInsets.all(2),
-      minimumSize: const Size(24, 24),
+      minimumSize: const Size(22, 22),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          style: qtyBtnStyle,
-          icon: const Icon(Icons.remove),
-          iconSize: 16,
-          onPressed: onDecrement,
-        ),
-        SizedBox(
-          width: 36,
-          child: TextField(
-            controller: quantityController,
-            focusNode: quantityFocusNode,
-            textAlign: TextAlign.center,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
-            ],
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-            ),
-            style: Theme.of(context).textTheme.bodyMedium,
-            onSubmitted: (_) => onSave(),
-            onEditingComplete: onSave,
-            onChanged: (_) => onSave(),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      height: 30,
+      margin: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsets.only(right: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            style: qtyBtnStyle,
+            icon: const Icon(Icons.remove_rounded),
+            iconSize: 16,
+            color: colorScheme.onSurfaceVariant,
+            onPressed: onDecrement,
           ),
-        ),
-        IconButton(
-          style: qtyBtnStyle,
-          icon: const Icon(Icons.add),
-          iconSize: 16,
-          onPressed: onIncrement,
-        ),
-        DropdownButton<ShoppingUnit>(
-          value: selectedUnit,
-          underline: const SizedBox.shrink(),
-          isDense: true,
-          padding: EdgeInsets.zero,
-          alignment: AlignmentDirectional.centerStart,
-          items: unitOptions
-              .map(
-                (u) => DropdownMenuItem(
-                  value: u,
-                  child: Text(u.label,
-                      style: Theme.of(context).textTheme.bodySmall),
-                ),
-              )
-              .toList(),
-          onChanged: (unit) {
-            if (unit != null) onUnitChanged(unit);
-          },
-        ),
-      ],
+          SizedBox(
+            width: 30,
+            child: TextField(
+              controller: quantityController,
+              focusNode: quantityFocusNode,
+              textAlign: TextAlign.center,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))
+              ],
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+              ),
+              style: textTheme.labelLarge?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+              onSubmitted: (_) => onSave(),
+              onEditingComplete: onSave,
+              onChanged: (_) => onSave(),
+            ),
+          ),
+          IconButton(
+            style: qtyBtnStyle,
+            icon: const Icon(Icons.add_rounded),
+            iconSize: 16,
+            color: colorScheme.onSurfaceVariant,
+            onPressed: onIncrement,
+          ),
+          DropdownButton<ShoppingUnit>(
+            value: selectedUnit,
+            underline: const SizedBox.shrink(),
+            isDense: true,
+            padding: EdgeInsets.zero,
+            iconSize: 16,
+            borderRadius: BorderRadius.circular(10),
+            alignment: AlignmentDirectional.centerStart,
+            items: unitOptions
+                .map(
+                  (u) => DropdownMenuItem(
+                    value: u,
+                    child: Text(u.label, style: textTheme.labelMedium),
+                  ),
+                )
+                .toList(),
+            onChanged: (unit) {
+              if (unit != null) onUnitChanged(unit);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

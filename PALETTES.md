@@ -1,58 +1,77 @@
-# Palettes de couleurs — Planerz
+# Palette de couleurs — Planerz « Riviera »
 
-Définies dans `lib/app/theme/brand_palette.dart` · mappées dans `lib/app/theme/app_theme.dart` · palette active via `appPaletteProvider` (SharedPreferences `app_palette_id`).
+Définie dans `lib/app/theme/app_tokens.dart` (`AppTokens`, source unique) · exposée via `BrandPaletteData.riviera` (`lib/app/theme/brand_palette.dart`) · mappée dans `lib/app/theme/app_theme.dart`. Couleurs métier : `lib/app/theme/activity_filter_colors.dart`.
 
-**Règle de synchronisation :** toute modification de couleur ou ajout de champ dans `BrandPaletteData` / `PlanerzColors` doit être répercutée dans ce fichier.
+**Règle de synchronisation :** toute modification de couleur ou ajout de champ dans `BrandPaletteData` / `PlanerzColors` / `AppTokens` doit être répercutée dans ce fichier.
 
-> Les carrés de couleur sont rendus en HTML — ils s'affichent dans VS Code Markdown Preview et GitHub.
+## Règle d’usage (palette contenue)
 
-| Champ `BrandPaletteData` | Accesseur Flutter | Cupidon | Oligarch |
+- **Chrome = Lagon uniquement** : boutons, focus, sélection, liens, onglets, navigation.
+- **Soleil** = surlignage joyeux et rare : logo, badges de non-lus, repère « aujourd’hui ». Jamais comme couleur de texte sur fond clair (contraste insuffisant) ; sa déclinaison lisible est `colorScheme.tertiary` `#B36B00`.
+- **4 teintes métier** (+ Présence) : n’apparaissent **que** pour coder une catégorie (icône, point, puce de filtre).
+- Tout le reste = encre + neutres. Erreur/danger = `error` (jamais une teinte de marque).
+
+## Palette de marque (`BrandPaletteData.riviera`)
+
+| Champ `BrandPaletteData` | Accesseur Flutter | Riviera | Rôle |
 |---|---|---|---|
-| `primary` | `colorScheme.primary` | <span style="display:inline-block;width:16px;height:16px;background:#97264E;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#97264E` | <span style="display:inline-block;width:16px;height:16px;background:#3F46F7;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#3F46F7` |
-| `primaryLight` | `colorScheme.primaryContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E798DC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E798DC` | <span style="display:inline-block;width:16px;height:16px;background:#BDE2F9;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#BDE2F9` |
-| `primarySoft` | `colorScheme.tertiaryContainer` · `colorScheme.inversePrimary` | <span style="display:inline-block;width:16px;height:16px;background:#F3CDEE;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F3CDEE` | <span style="display:inline-block;width:16px;height:16px;background:#E5F2FD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E5F2FD` |
-| `accent` | `colorScheme.tertiary` | <span style="display:inline-block;width:16px;height:16px;background:#CF30B8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CF30B8` | <span style="display:inline-block;width:16px;height:16px;background:#D44D00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#D44D00` |
-| `secondary` | `colorScheme.secondary` | <span style="display:inline-block;width:16px;height:16px;background:#7ECFDD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#7ECFDD` | <span style="display:inline-block;width:16px;height:16px;background:#70CDC5;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#70CDC5` |
-| `secondaryContainer` | `colorScheme.secondaryContainer` | <span style="display:inline-block;width:16px;height:16px;background:#CFEFF4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFEFF4` | <span style="display:inline-block;width:16px;height:16px;background:#CFF5F0;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFF5F0` |
-| `info` | `context.planerzColors.info` | <span style="display:inline-block;width:16px;height:16px;background:#2D7A94;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2D7A94` | <span style="display:inline-block;width:16px;height:16px;background:#3F46F7;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#3F46F7` |
-| `infoContainer` | `context.planerzColors.infoContainer` | <span style="display:inline-block;width:16px;height:16px;background:#CFEFF4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CFEFF4` | <span style="display:inline-block;width:16px;height:16px;background:#E5F2FD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E5F2FD` |
-| `success` | `context.planerzColors.success` | <span style="display:inline-block;width:16px;height:16px;background:#4DC75E;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#4DC75E` | <span style="display:inline-block;width:16px;height:16px;background:#2EB37F;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2EB37F` |
-| `successContainer` | `context.planerzColors.successContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E8F8EA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E8F8EA` | <span style="display:inline-block;width:16px;height:16px;background:#CCF5E4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#CCF5E4` |
-| `warning` | `context.planerzColors.warning` | <span style="display:inline-block;width:16px;height:16px;background:#AE8F56;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#AE8F56` | <span style="display:inline-block;width:16px;height:16px;background:#C49A00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#C49A00` |
-| `warningContainer` | `context.planerzColors.warningContainer` | <span style="display:inline-block;width:16px;height:16px;background:#F7EDDC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F7EDDC` | <span style="display:inline-block;width:16px;height:16px;background:#FFF3CC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFF3CC` |
-| `deep` | `colorScheme.onSurface` | <span style="display:inline-block;width:16px;height:16px;background:#2E0B29;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2E0B29` | <span style="display:inline-block;width:16px;height:16px;background:#2E206D;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2E206D` |
-| `surface` | `colorScheme.surface` | <span style="display:inline-block;width:16px;height:16px;background:#FFFBFE;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFFBFE` | <span style="display:inline-block;width:16px;height:16px;background:#FFFBFF;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFFBFF` |
-| `surfaceContainerHighest` | `colorScheme.surfaceContainerHighest` | <span style="display:inline-block;width:16px;height:16px;background:#E8D7E2;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E8D7E2` | <span style="display:inline-block;width:16px;height:16px;background:#DCE3FA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#DCE3FA` |
-| `scaffoldBackground` | `Theme.of(ctx).scaffoldBackgroundColor` | <span style="display:inline-block;width:16px;height:16px;background:#F6EDF3;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F6EDF3` | <span style="display:inline-block;width:16px;height:16px;background:#F2F4FD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F2F4FD` |
-| `appBarBackground` | `Theme.of(ctx).appBarTheme.backgroundColor` | <span style="display:inline-block;width:16px;height:16px;background:#E3D0DD;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E3D0DD` | <span style="display:inline-block;width:16px;height:16px;background:#D2DAF8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#D2DAF8` |
-| `onSurfaceVariant` | `colorScheme.onSurfaceVariant` | <span style="display:inline-block;width:16px;height:16px;background:#5C4B56;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#5C4B56` | <span style="display:inline-block;width:16px;height:16px;background:#483D6B;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#483D6B` |
-| `outline` | `colorScheme.outline` | <span style="display:inline-block;width:16px;height:16px;background:#8A7582;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#8A7582` | <span style="display:inline-block;width:16px;height:16px;background:#6E6A8A;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#6E6A8A` |
-| `outlineVariant` | `colorScheme.outlineVariant` | <span style="display:inline-block;width:16px;height:16px;background:#DCC8D4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#DCC8D4` | <span style="display:inline-block;width:16px;height:16px;background:#C0BCDC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#C0BCDC` |
-| `inverseSurface` | `colorScheme.inverseSurface` | <span style="display:inline-block;width:16px;height:16px;background:#382D35;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#382D35` | <span style="display:inline-block;width:16px;height:16px;background:#2E206D;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#2E206D` |
-| `onInverseSurface` | `colorScheme.onInverseSurface` | <span style="display:inline-block;width:16px;height:16px;background:#FDEEF8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FDEEF8` | <span style="display:inline-block;width:16px;height:16px;background:#EFF0FA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#EFF0FA` |
+| `primary` | `colorScheme.primary` | <span style="display:inline-block;width:16px;height:16px;background:#0B8579;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#0B8579` | Lagon — seule couleur de « chrome » (CTA, focus, sélection, liens, navigation) |
+| `primaryLight` | `colorScheme.primaryContainer` | <span style="display:inline-block;width:16px;height:16px;background:#D5EFEB;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#D5EFEB` | Conteneur primaire (tuiles sélectionnées) |
+| `primarySoft` | `—  (AppTokens.primaryTint)` | <span style="display:inline-block;width:16px;height:16px;background:#EAF6F4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#EAF6F4` | Teinte très douce (fonds sélectionnés, pastilles) |
+| `accent` | `AppTokens.accent · badges` | <span style="display:inline-block;width:16px;height:16px;background:#FFB938;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFB938` | Soleil — surlignage parcimonieux (logo, badges, « aujourd’hui »), jamais en texte |
+| `secondary` | `colorScheme.secondary` | <span style="display:inline-block;width:16px;height:16px;background:#5FC7BA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#5FC7BA` | Teinte décorative dérivée de Lagon |
+| `secondaryContainer` | `colorScheme.secondaryContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E6F6F3;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E6F6F3` | Conteneur secondaire |
+| `info` | `context.planerzColors.info` | <span style="display:inline-block;width:16px;height:16px;background:#1F84D6;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#1F84D6` | Information |
+| `infoContainer` | `context.planerzColors.infoContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E4F1FC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E4F1FC` | Fond information |
+| `success` | `context.planerzColors.success` | <span style="display:inline-block;width:16px;height:16px;background:#178A55;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#178A55` | Succès |
+| `successContainer` | `context.planerzColors.successContainer` | <span style="display:inline-block;width:16px;height:16px;background:#E0F4EA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E0F4EA` | Fond succès |
+| `warning` | `context.planerzColors.warning` | <span style="display:inline-block;width:16px;height:16px;background:#B77B00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#B77B00` | Avertissement |
+| `warningContainer` | `context.planerzColors.warningContainer` | <span style="display:inline-block;width:16px;height:16px;background:#FFF4D6;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFF4D6` | Fond avertissement |
+| `deep` | `colorScheme.onSurface` | <span style="display:inline-block;width:16px;height:16px;background:#17213A;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#17213A` | Encre — texte principal et titres |
+| `surface` | `colorScheme.surface` | <span style="display:inline-block;width:16px;height:16px;background:#FFFFFF;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFFFFF` | Cartes, barres, feuilles |
+| `surfaceContainerHighest` | `colorScheme.surfaceContainerHighest` | <span style="display:inline-block;width:16px;height:16px;background:#EEF0F3;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#EEF0F3` | Surfaces neutres (capsules, pistes) |
+| `scaffoldBackground` | `scaffoldBackgroundColor` | <span style="display:inline-block;width:16px;height:16px;background:#F5F6F8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F5F6F8` | Fond d’écran |
+| `appBarBackground` | `appBarTheme.backgroundColor` | <span style="display:inline-block;width:16px;height:16px;background:#FFFFFF;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFFFFF` | En-têtes (filet bas #E2E5EA) |
+| `onSurfaceVariant` | `colorScheme.onSurfaceVariant` | <span style="display:inline-block;width:16px;height:16px;background:#566074;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#566074` | Texte secondaire |
+| `outline` | `colorScheme.outline` | <span style="display:inline-block;width:16px;height:16px;background:#8891A1;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#8891A1` | Texte tertiaire, icônes inactives |
+| `outlineVariant` | `colorScheme.outlineVariant` | <span style="display:inline-block;width:16px;height:16px;background:#E2E5EA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E2E5EA` | Bordures et séparateurs |
+| `inverseSurface` | `colorScheme.inverseSurface` | <span style="display:inline-block;width:16px;height:16px;background:#1E2840;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#1E2840` | SnackBars, tooltips |
+| `onInverseSurface` | `colorScheme.onInverseSurface` | <span style="display:inline-block;width:16px;height:16px;background:#F2F4F8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F2F4F8` | Texte sur surface inverse |
 
----
+## Sémantiques hors palette
+
+| Token | Valeur | Rôle |
+|---|---|---|
+| `AppTokens.error` / `colorScheme.error` | <span style="display:inline-block;width:16px;height:16px;background:#D0334A;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#D0334A` | Erreurs, actions destructrices |
+| `AppTokens.errorContainer` | <span style="display:inline-block;width:16px;height:16px;background:#FDE7EA;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FDE7EA` | Fond erreur |
+| `colorScheme.tertiary` | <span style="display:inline-block;width:16px;height:16px;background:#B36B00;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#B36B00` | Déclinaison lisible de Soleil (icônes/texte) |
+
+## Couleurs métier (`ActivityFilterGroup`)
+
+| Catégorie | `filterColor` | `filterLightBgColor` | `filterInkColor` | Icône |
+|---|---|---|---|---|
+| Repas | <span style="display:inline-block;width:16px;height:16px;background:#F2891F;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#F2891F` | <span style="display:inline-block;width:16px;height:16px;background:#FFF1E2;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FFF1E2` | <span style="display:inline-block;width:16px;height:16px;background:#A35200;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#A35200` | `restaurant_rounded` |
+| Nuits | <span style="display:inline-block;width:16px;height:16px;background:#5B5BD6;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#5B5BD6` | <span style="display:inline-block;width:16px;height:16px;background:#ECECFB;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#ECECFB` | <span style="display:inline-block;width:16px;height:16px;background:#4343B8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#4343B8` | `bedtime_rounded` |
+| Loisirs | <span style="display:inline-block;width:16px;height:16px;background:#DB3F76;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#DB3F76` | <span style="display:inline-block;width:16px;height:16px;background:#FCE8EF;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#FCE8EF` | <span style="display:inline-block;width:16px;height:16px;background:#B42A5C;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#B42A5C` | `local_activity_rounded` |
+| Trajets | <span style="display:inline-block;width:16px;height:16px;background:#1F84D6;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#1F84D6` | <span style="display:inline-block;width:16px;height:16px;background:#E4F1FC;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#E4F1FC` | <span style="display:inline-block;width:16px;height:16px;background:#1667A8;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#1667A8` | `commute_rounded` |
+| Présence (`PresenceCategoryColors`) | <span style="display:inline-block;width:16px;height:16px;background:#0B8579;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#0B8579` | <span style="display:inline-block;width:16px;height:16px;background:#EAF6F4;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#EAF6F4` | <span style="display:inline-block;width:16px;height:16px;background:#086B61;border-radius:3px;vertical-align:middle;border:1px solid #0002"></span> `#086B61` | `groups_rounded` |
+
+> Les carrés de couleur sont rendus en HTML — ils s’affichent dans VS Code Markdown Preview et GitHub.
 
 ## Accès dans le code
 
 ```dart
+// Tokens bruts (couleurs, rayons, densité)
+AppTokens.primary; AppTokens.deep; AppTokens.radiusMd;
+
 // ColorScheme standard
 final cs = Theme.of(context).colorScheme;
-cs.primary           // couleur principale
-cs.tertiary          // accent
-cs.secondaryContainer
-cs.tertiaryContainer // = primarySoft
-cs.surfaceContainerHighest
+cs.primary; cs.primaryContainer; cs.surfaceContainerHighest; cs.error;
 
-// Extension PlanerzColors (lib/app/theme/planerz_colors.dart)
+// Extension PlanerzColors
 final pz = context.planerzColors;
-pz.info
-pz.infoContainer
-pz.success
-pz.successContainer
-pz.warning
-pz.warningContainer
+pz.info; pz.success; pz.warning;
 
-// Données brutes (pour construire le thème uniquement)
-// AppPaletteId.cupidon.data  →  BrandPaletteData
+// Couleurs métier
+ActivityFilterGroup.repas.filterColor;
 ```

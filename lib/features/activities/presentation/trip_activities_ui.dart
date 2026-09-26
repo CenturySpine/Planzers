@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Compact list density (handoff default).
-const double tripActivitiesCardGap = 10;
-const double tripActivitiesCardPaddingY = 11;
+/// Compact list density.
+const double tripActivitiesCardGap = 8;
+const double tripActivitiesCardPaddingY = 10;
 
-const _presencesColor = Color(0xFFEC4899);
-
-/// Category filter chips — Repas / Nuits / Loisirs / Trajets + Présences (disabled).
+/// Category filter chips — Repas / Nuits / Loisirs / Trajets + Présences
+/// (disabled), as a single compact scrollable row.
 class TripActivitiesFilterChips extends StatelessWidget {
   const TripActivitiesFilterChips({
     super.key,
@@ -29,32 +28,34 @@ class TripActivitiesFilterChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
+    return SizedBox(
+      height: 46,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
         children: [
-          for (var i = 0; i < _chipGroups.length; i++) ...[
-            Expanded(
-              child: _ActivityFilterChip(
-                label: filterLabels[_chipGroups[i]]!,
-                icon: _chipGroups[i].filterIcon,
-                color: _chipGroups[i].filterColor,
-                selected: activeFilters.contains(_chipGroups[i]),
-                onToggle: () => onToggle(_chipGroups[i]),
-              ),
+          for (final group in _chipGroups) ...[
+            TripCategoryFilterChip(
+              label: filterLabels[group]!,
+              icon: group.filterIcon,
+              color: group.filterColor,
+              lightBg: group.filterLightBgColor,
+              ink: group.filterInkColor,
+              selected: activeFilters.contains(group),
+              onToggle: () => onToggle(group),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
           ],
-          Expanded(
-            child: _ActivityFilterChip(
-              label: l10n.activitiesFilterPresences,
-              icon: Icons.groups_outlined,
-              color: _presencesColor,
-              selected: false,
-              disabled: true,
-              disabledTooltip: l10n.commonComingSoon,
-              onToggle: () {},
-            ),
+          TripCategoryFilterChip(
+            label: l10n.activitiesFilterPresences,
+            icon: PresenceCategoryColors.icon,
+            color: PresenceCategoryColors.color,
+            lightBg: PresenceCategoryColors.lightBg,
+            ink: PresenceCategoryColors.ink,
+            selected: false,
+            disabled: true,
+            disabledTooltip: l10n.commonComingSoon,
+            onToggle: () {},
           ),
         ],
       ),
@@ -62,11 +63,16 @@ class TripActivitiesFilterChips extends StatelessWidget {
   }
 }
 
-class _ActivityFilterChip extends StatelessWidget {
-  const _ActivityFilterChip({
+/// Standard category chip: icon in the category hue + label. Selected state
+/// fills the chip with the category tint and border.
+class TripCategoryFilterChip extends StatelessWidget {
+  const TripCategoryFilterChip({
+    super.key,
     required this.label,
     required this.icon,
     required this.color,
+    required this.lightBg,
+    required this.ink,
     required this.selected,
     required this.onToggle,
     this.disabled = false,
@@ -76,6 +82,8 @@ class _ActivityFilterChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final Color lightBg;
+  final Color ink;
   final bool selected;
   final VoidCallback onToggle;
   final bool disabled;
@@ -83,35 +91,31 @@ class _ActivityFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? color : NeonPalette.surface;
-    final iconColor = selected ? Colors.white : color;
-    final labelColor = selected ? Colors.white : NeonPalette.deep;
-
     Widget chip = AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
+      duration: const Duration(milliseconds: 150),
       curve: Curves.easeOut,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: selected
-            ? null
-            : Border.all(color: NeonPalette.divider),
-        boxShadow: selected ? null : NeonPalette.elev1,
+        color: selected ? lightBg : AppTokens.surface,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        border: Border.all(
+          color: selected ? color : AppTokens.divider,
+          width: selected ? 1.4 : 1,
+        ),
       ),
-      child: Column(
+      alignment: Alignment.center,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 23, color: iconColor),
-          const SizedBox(height: 5),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 5),
           Text(
             label,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: labelColor,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: selected ? ink : AppTokens.deep,
             ),
           ),
         ],
@@ -119,20 +123,27 @@ class _ActivityFilterChip extends StatelessWidget {
     );
 
     if (disabled) {
-      chip = Opacity(opacity: 0.4, child: chip);
+      chip = Opacity(opacity: 0.45, child: chip);
     }
 
     return Tooltip(
       message: disabled ? (disabledTooltip ?? '') : '',
-      child: GestureDetector(
-        onTap: disabled ? null : onToggle,
-        child: chip,
+      child: Semantics(
+        button: true,
+        selected: selected,
+        enabled: !disabled,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+          onTap: disabled ? null : onToggle,
+          child: chip,
+        ),
       ),
     );
   }
 }
 
-/// Segmented control for Suggestions / Planifiées / Agenda tabs.
+/// Planning view switcher — the standard app [TabBar] (same look as every
+/// other tabbed screen).
 class TripActivitiesSegmentedTabBar extends StatelessWidget {
   const TripActivitiesSegmentedTabBar({
     super.key,
@@ -143,87 +154,17 @@ class TripActivitiesSegmentedTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = DefaultTabController.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: NeonPalette.surfaceHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) {
-              return Row(
-                children: [
-                  for (var index = 0; index < labels.length; index++)
-                    Expanded(
-                      child: _SegmentTab(
-                        label: labels[index],
-                        selected: controller.index == index,
-                        onTap: () => controller.animateTo(index),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
+    return ColoredBox(
+      color: AppTokens.surface,
+      child: TabBar(
+        tabs: [for (final label in labels) Tab(height: 42, text: label)],
       ),
     );
   }
 }
 
-class _SegmentTab extends StatelessWidget {
-  const _SegmentTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? NeonPalette.surface : Colors.transparent,
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(9),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(9),
-        onTap: onTap,
-        child: Container(
-          decoration: selected
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(9),
-                  boxShadow: NeonPalette.elev1,
-                )
-              : null,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: selected ? NeonPalette.deep : NeonPalette.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Agenda day selector — Alt 1 grouped card with month row + underline days.
+/// Agenda day selector: one week of day pills, with one colored dot per
+/// category planned on that day.
 class TripActivitiesAgendaWeekStrip extends StatelessWidget {
   const TripActivitiesAgendaWeekStrip({
     super.key,
@@ -235,6 +176,7 @@ class TripActivitiesAgendaWeekStrip extends StatelessWidget {
     required this.onSelectDay,
     required this.onMoveBackward,
     required this.onMoveForward,
+    this.dayGroups = const {},
   });
 
   final List<DateTime> weekDays;
@@ -246,214 +188,167 @@ class TripActivitiesAgendaWeekStrip extends StatelessWidget {
   final VoidCallback onMoveBackward;
   final VoidCallback onMoveForward;
 
-  static const _chevronSlotWidth = 30.0;
+  /// Categories planned per day (date-only keys), used for the colored dots.
+  final Map<DateTime, Set<ActivityFilterGroup>> dayGroups;
+
+  static const _chevronSlotWidth = 32.0;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final localeTag = Localizations.localeOf(context).toString();
-    final monthSpans = _agendaMonthSpans(weekDays, localeTag: localeTag);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: NeonPalette.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: NeonPalette.divider),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  const SizedBox(width: _chevronSlotWidth),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        for (var i = 0; i < monthSpans.length; i++)
-                          Expanded(
-                            flex: monthSpans[i].dayCount,
-                            child: Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                border: i < monthSpans.length - 1
-                                    ? const Border(
-                                        right: BorderSide(
-                                          color: NeonPalette.divider,
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                              child: Text(
-                                monthSpans[i].monthLabel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: NeonPalette.deep,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: _chevronSlotWidth),
-                ],
+    final today = tripActivityDateOnly(DateTime.now());
+    return Container(
+      color: AppTokens.surface,
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: _chevronSlotWidth,
+            child: IconButton(
+              onPressed: onMoveBackward,
+              icon: const Icon(Icons.chevron_left_rounded, size: 22),
+              tooltip: l10n.activitiesPreviousWeek,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: _chevronSlotWidth,
+                height: 48,
               ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  SizedBox(
-                    width: _chevronSlotWidth,
-                    child: IconButton(
-                      onPressed: onMoveBackward,
-                      icon: const Icon(Icons.chevron_left, size: 19),
-                      tooltip:
-                          AppLocalizations.of(context)!.activitiesPreviousWeek,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: _chevronSlotWidth,
-                        height: _chevronSlotWidth,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      color: NeonPalette.onSurfaceVariant,
-                    ),
-                  ),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        for (final day in weekDays)
-                          Expanded(
-                            child: _AgendaUnderlineDayCell(
-                              day: day,
-                              isSelected:
-                                  tripActivitiesSameDay(day, selectedDay),
-                              isToday: tripActivitiesSameDay(
-                                day,
-                                tripActivityDateOnly(DateTime.now()),
-                              ),
-                              isOutsideTrip: _isDayOutsideTrip(
-                                day,
-                                tripStartDate,
-                                tripEndDate,
-                              ),
-                              hasPlannedActivities: plannedDays.contains(day),
-                              onTap: () => onSelectDay(day),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: _chevronSlotWidth,
-                    child: IconButton(
-                      onPressed: onMoveForward,
-                      icon: const Icon(Icons.chevron_right, size: 19),
-                      tooltip:
-                          AppLocalizations.of(context)!.activitiesNextWeek,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: _chevronSlotWidth,
-                        height: _chevronSlotWidth,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      color: NeonPalette.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              color: AppTokens.onSurfaceVariant,
+            ),
           ),
-        ),
+          Expanded(
+            child: Row(
+              children: [
+                for (final day in weekDays)
+                  Expanded(
+                    child: _AgendaDayPill(
+                      weekdayLabel: DateFormat('EEE', localeTag)
+                          .format(day)
+                          .replaceAll('.', '')
+                          .toUpperCase(),
+                      dayNumber: DateFormat('d').format(day),
+                      isSelected: tripActivitiesSameDay(day, selectedDay),
+                      isToday: tripActivitiesSameDay(day, today),
+                      isOutsideTrip:
+                          _isDayOutsideTrip(day, tripStartDate, tripEndDate),
+                      groups: dayGroups[day] ??
+                          (plannedDays.contains(day)
+                              ? const {ActivityFilterGroup.loisirs}
+                              : const {}),
+                      onTap: () => onSelectDay(day),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SizedBox(
+            width: _chevronSlotWidth,
+            child: IconButton(
+              onPressed: onMoveForward,
+              icon: const Icon(Icons.chevron_right_rounded, size: 22),
+              tooltip: l10n.activitiesNextWeek,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints.tightFor(
+                width: _chevronSlotWidth,
+                height: 48,
+              ),
+              color: AppTokens.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _AgendaUnderlineDayCell extends StatelessWidget {
-  const _AgendaUnderlineDayCell({
-    required this.day,
+class _AgendaDayPill extends StatelessWidget {
+  const _AgendaDayPill({
+    required this.weekdayLabel,
+    required this.dayNumber,
     required this.isSelected,
     required this.isToday,
     required this.isOutsideTrip,
-    required this.hasPlannedActivities,
+    required this.groups,
     required this.onTap,
   });
 
-  final DateTime day;
+  final String weekdayLabel;
+  final String dayNumber;
   final bool isSelected;
   final bool isToday;
   final bool isOutsideTrip;
-  final bool hasPlannedActivities;
+  final Set<ActivityFilterGroup> groups;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final localeTag = Localizations.localeOf(context).toString();
-    final weekdayLabel =
-        DateFormat('EEE', localeTag).format(day).toUpperCase();
-    final borderColor = isSelected
-        ? NeonPalette.primary
-        : isToday
-            ? NeonPalette.outline
-            : NeonPalette.divider;
-    final textColor = isSelected ? NeonPalette.primary : NeonPalette.deep;
-    final weekdayColor =
-        isSelected ? NeonPalette.primary : NeonPalette.onSurfaceVariant;
-    final dotColor = isSelected
-        ? NeonPalette.primary
-        : hasPlannedActivities
-            ? NeonPalette.secondary
-            : Colors.transparent;
+    final fg = isSelected ? Colors.white : AppTokens.deep;
+    final muted =
+        isSelected ? Colors.white.withValues(alpha: 0.85) : AppTokens.outline;
+    final orderedGroups = ActivityFilterGroup.values
+        .where(groups.contains)
+        .toList(growable: false);
 
     return Opacity(
-      opacity: isOutsideTrip ? 0.4 : 1,
-      child: GestureDetector(
-        onTap: isOutsideTrip ? null : onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 6),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: borderColor, width: 2),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+      opacity: isOutsideTrip ? 0.35 : 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Material(
+          color: isSelected ? AppTokens.primary : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            side: isToday && !isSelected
+                ? const BorderSide(color: AppTokens.accent, width: 2)
+                : BorderSide.none,
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            onTap: isOutsideTrip ? null : onTap,
+            child: SizedBox(
+              height: 58,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     weekdayLabel,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: TextOverflow.clip,
                     style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                      color: weekdayColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                      color: muted,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 2),
                   Text(
-                    DateFormat('d').format(day),
+                    dayNumber,
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                      color: fg,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
-                  const SizedBox(height: 5),
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 5,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final g in orderedGroups)
+                          Container(
+                            width: 5,
+                            height: 5,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : g.filterColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
@@ -464,41 +359,6 @@ class _AgendaUnderlineDayCell extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AgendaMonthSpan {
-  const _AgendaMonthSpan({required this.monthLabel, required this.dayCount});
-
-  final String monthLabel;
-  final int dayCount;
-}
-
-List<_AgendaMonthSpan> _agendaMonthSpans(
-  List<DateTime> weekDays, {
-  required String localeTag,
-}) {
-  final spans = <_AgendaMonthSpan>[];
-  for (final day in weekDays) {
-    final label = _agendaMonthLabel(day, localeTag);
-    if (spans.isEmpty || spans.last.monthLabel != label) {
-      spans.add(_AgendaMonthSpan(monthLabel: label, dayCount: 1));
-    } else {
-      final previous = spans.removeLast();
-      spans.add(
-        _AgendaMonthSpan(
-          monthLabel: previous.monthLabel,
-          dayCount: previous.dayCount + 1,
-        ),
-      );
-    }
-  }
-  return spans;
-}
-
-String _agendaMonthLabel(DateTime day, String localeTag) {
-  final raw = DateFormat('MMMM', localeTag).format(day);
-  if (raw.isEmpty) return raw;
-  return '${raw[0].toUpperCase()}${raw.substring(1)}';
 }
 
 bool _isDayOutsideTrip(
@@ -515,36 +375,135 @@ bool _isDayOutsideTrip(
   return false;
 }
 
-/// Day separator rail for the Planifiées tab.
+/// Day header for the agenda (selected day) and the planned list.
 class TripActivityDaySeparatorRail extends StatelessWidget {
-  const TripActivityDaySeparatorRail({super.key, required this.label});
+  const TripActivityDaySeparatorRail({
+    super.key,
+    required this.label,
+    this.trailing,
+  });
 
   final String label;
+  final String? trailing;
 
   @override
   Widget build(BuildContext context) {
+    final text = label.isEmpty
+        ? label
+        : '${label[0].toUpperCase()}${label.substring(1)}';
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 8),
+      padding: const EdgeInsets.fromLTRB(2, 12, 2, 2),
       child: Row(
         children: [
-          Text(
-            label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              color: NeonPalette.onSurfaceVariant,
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppTokens.deep,
+              ),
             ),
           ),
-          const SizedBox(width: 10),
-          const Expanded(child: Divider(color: NeonPalette.divider, height: 1)),
+          if (trailing != null)
+            Text(
+              trailing!,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTokens.onSurfaceVariant,
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// Shared Direction A card shell for planning list items.
+/// Timeline row for the agenda: time gutter, a node in the category hue on a
+/// vertical rail, then the card.
+class TripAgendaTimelineRow extends StatelessWidget {
+  const TripAgendaTimelineRow({
+    super.key,
+    required this.timeLabel,
+    required this.color,
+    required this.child,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  final String timeLabel;
+  final Color color;
+  final Widget child;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 42,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Text(
+                timeLabel,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppTokens.deep,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 22,
+            child: Stack(
+              alignment: Alignment.topCenter,
+              children: [
+                Positioned(
+                  top: isFirst ? 18 : 0,
+                  bottom: isLast ? null : 0,
+                  height: isLast ? 18 : null,
+                  child: Container(width: 2, color: AppTokens.divider),
+                ),
+                Positioned(
+                  top: 13,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTokens.scaffoldBackground,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: tripActivitiesCardGap),
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shared card shell for planning list items (activities and meals).
 class TripPlanningListCardShell extends StatelessWidget {
   const TripPlanningListCardShell({
     super.key,
@@ -567,75 +526,70 @@ class TripPlanningListCardShell extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback onTap;
   final bool subtitleItalic;
+
+  /// Kept for API compatibility; the Riviera card encodes the category with
+  /// the icon tile only.
   final bool showCategoryBand;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
+      color: AppTokens.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeonPalette.divider),
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg - 2),
+        side: const BorderSide(color: AppTokens.divider),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          decoration: showCategoryBand
-              ? BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: categoryColor, width: 4),
-                  ),
-                )
-              : const BoxDecoration(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, tripActivitiesCardPaddingY,
-                14, tripActivitiesCardPaddingY),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: categoryLightBg,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(leadingIcon, size: 22, color: categoryColor),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              10, tripActivitiesCardPaddingY, 10, tripActivitiesCardPaddingY),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: categoryLightBg,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      titleRow,
-                      if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontStyle: subtitleItalic
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                            color: NeonPalette.onSurfaceVariant,
-                          ),
+                alignment: Alignment.center,
+                child: Icon(leadingIcon, size: 19, color: categoryColor),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DefaultTextStyle.merge(
+                      style: const TextStyle(fontSize: 14),
+                      child: titleRow,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontStyle: subtitleItalic
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                          color: AppTokens.onSurfaceVariant,
                         ),
-                      ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 6),
-                  trailing!,
-                ],
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing!,
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -659,7 +613,8 @@ class TripPlanningParticipantCountPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 5, 10, 5),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: categoryLightBg,
         borderRadius: BorderRadius.circular(999),
@@ -667,13 +622,13 @@ class TripPlanningParticipantCountPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.groups_outlined, size: 16, color: categoryInk),
-          const SizedBox(width: 5),
+          Icon(Icons.person_rounded, size: 14, color: categoryInk),
+          const SizedBox(width: 3),
           Text(
             '$count',
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
               color: categoryInk,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
@@ -684,7 +639,7 @@ class TripPlanningParticipantCountPill extends StatelessWidget {
   }
 }
 
-/// Search field for Suggestions / Planifiées tabs (handoff `.pl-search`).
+/// Search field for list tabs — the standard themed text field.
 class TripActivitiesSearchField extends StatelessWidget {
   const TripActivitiesSearchField({
     super.key,
@@ -698,67 +653,30 @@ class TripActivitiesSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Semantics(
-      textField: true,
-      label: l10n.activitiesSearchHint,
-      child: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          return Container(
-            height: 46,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: NeonPalette.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: NeonPalette.divider),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.search,
-                  size: 20,
-                  color: NeonPalette.onSurfaceVariant,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    onChanged: onChanged,
-                    textInputAction: TextInputAction.search,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: NeonPalette.deep,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: l10n.activitiesSearchHint,
-                      hintStyle: const TextStyle(
-                        fontSize: 15,
-                        color: NeonPalette.onSurfaceVariant,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-                if (controller.text.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        return TextField(
+          controller: controller,
+          onChanged: onChanged,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: l10n.activitiesSearchHint,
+            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            suffixIcon: controller.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 18),
                     tooltip: l10n.nameSearchClear,
                     onPressed: () {
                       controller.clear();
                       onChanged('');
                     },
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 36, minHeight: 36),
-                    color: NeonPalette.onSurfaceVariant,
                   ),
-              ],
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -772,18 +690,18 @@ class TripPlanningLinkTrailingButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surfaceHighest,
-      borderRadius: BorderRadius.circular(12),
+      color: AppTokens.surfaceMuted,
+      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         onTap: onTap,
         child: const SizedBox(
-          width: 40,
-          height: 40,
+          width: 34,
+          height: 34,
           child: Icon(
-            Icons.link,
-            size: 20,
-            color: NeonPalette.onSurfaceVariant,
+            Icons.link_rounded,
+            size: 18,
+            color: AppTokens.onSurfaceVariant,
           ),
         ),
       ),

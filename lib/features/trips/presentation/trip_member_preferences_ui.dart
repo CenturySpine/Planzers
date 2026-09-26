@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripNeonPrefsScreenHead extends StatelessWidget {
@@ -27,7 +27,7 @@ class TripNeonPrefsScreenHead extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 15, color: NeonPalette.primary),
+              Icon(icon, size: 15, color: AppTokens.primary),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -37,7 +37,7 @@ class TripNeonPrefsScreenHead extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                 ),
               ),
@@ -52,7 +52,7 @@ class TripNeonPrefsScreenHead extends StatelessWidget {
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
                 height: 1.15,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
           ],
@@ -63,7 +63,7 @@ class TripNeonPrefsScreenHead extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               height: 1.45,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
             ),
           ),
         ],
@@ -119,7 +119,7 @@ class TripNeonPrefsNameRow extends StatelessWidget {
                 leadLabel,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: NeonPalette.text700,
+                  color: AppTokens.text700,
                 ),
               ),
               const SizedBox(height: 2),
@@ -128,7 +128,7 @@ class TripNeonPrefsNameRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                 ),
               ),
             ],
@@ -137,7 +137,7 @@ class TripNeonPrefsNameRow extends StatelessWidget {
         TextButton.icon(
           onPressed: onEdit,
           style: TextButton.styleFrom(
-            foregroundColor: NeonPalette.primary,
+            foregroundColor: AppTokens.primary,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           ),
           icon: const Icon(Icons.edit_outlined, size: 16),

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/planerz_brand_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +16,7 @@ import 'package:planerz/features/auth/display_name_setup_dialog.dart';
 import 'package:planerz/features/auth/phone_sign_in_page.dart';
 import 'package:planerz/features/legal/presentation/legal_information_page.dart';
 import 'package:planerz/app/app_version_provider.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -347,12 +348,10 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     ];
     // Handoff Login D6: footer sits on the dark ridge line, so it uses light
     // text with a subtle shadow for legibility.
-    const legalLinkColor = Colors.white;
-    final footerTextColor = Colors.white.withValues(alpha: 0.85);
-    final footerSeparatorColor = Colors.white.withValues(alpha: 0.5);
-    const footerShadows = [
-      Shadow(color: Color(0x59000000), blurRadius: 3, offset: Offset(0, 1)),
-    ];
+    const legalLinkColor = AppTokens.onSurfaceVariant;
+    const footerTextColor = AppTokens.onSurfaceVariant;
+    const footerSeparatorColor = AppTokens.outline;
+    const footerShadows = <Shadow>[];
     final subtitleStyle = TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.w600,
@@ -363,10 +362,8 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     // Handoff Login D6: animated word in brand purple, static "entre amis" in
     // darkened turquoise (secondary mixed 72% with deep).
     final animatedLabelStyle =
-        subtitleStyle.copyWith(color: NeonPalette.primary);
-    final staticLabelStyle = subtitleStyle.copyWith(
-      color: Color.lerp(NeonPalette.deep, NeonPalette.secondary, 0.72),
-    );
+        subtitleStyle.copyWith(color: AppTokens.primary);
+    final staticLabelStyle = subtitleStyle.copyWith(color: AppTokens.deep);
     final animatedLabelLineHeight =
         (subtitleStyle.fontSize ?? 18) * (subtitleStyle.height ?? 1.0);
     final currentAnimatedLabel = animatedLabels[_animatedLabelIndex];
@@ -382,25 +379,35 @@ class _SignInPageState extends ConsumerState<SignInPage> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/app_background.png',
-              fit: BoxFit.cover,
-            ),
-          ),
-          const Positioned.fill(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 300,
             child: DecoratedBox(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x1AFFFFFF),
-                    Color(0x00FFFFFF),
-                    Color(0x0008282E),
-                    Color(0x5708282E),
-                  ],
-                  stops: [0.0, 0.24, 0.60, 1.0],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF12A493), AppTokens.primaryDark],
+                ),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(32)),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      child: const PlanerzBrandMark(size: 64),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -422,8 +429,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
-                          height:
-                              (constraints.maxHeight * 0.06).clamp(16.0, 80.0),
+                          height: 104,
                         ),
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 360),
@@ -432,24 +438,16 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                             alignment: Alignment.topCenter,
                             children: [
                               Container(
-                                margin: const EdgeInsets.only(top: 46),
+                                margin: const EdgeInsets.only(top: 58),
                                 padding:
-                                    const EdgeInsets.fromLTRB(22, 56, 22, 30),
+                                    const EdgeInsets.fromLTRB(20, 24, 20, 22),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x59000000),
-                                      blurRadius: 60,
-                                      offset: Offset(0, 20),
-                                    ),
-                                    BoxShadow(
-                                      color: Color(0x38000000),
-                                      blurRadius: 14,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
+                                  borderRadius: BorderRadius.circular(
+                                      AppTokens.radiusXl),
+                                  border:
+                                      Border.all(color: AppTokens.divider),
+                                  boxShadow: AppTokens.elev2,
                                 ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
@@ -548,10 +546,6 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                               decoration: InputDecoration(
                                                 labelText:
                                                     l10n.signInEmailFieldLabel,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 10),
@@ -568,10 +562,6 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                               decoration: InputDecoration(
                                                 labelText: l10n
                                                     .signInPasswordFieldLabel,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                ),
                                                 suffixIcon: IconButton(
                                                   icon: Icon(
                                                     _obscureEmailPassword
@@ -599,7 +589,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                                   : _submitEmailPassword,
                                               style: FilledButton.styleFrom(
                                                 minimumSize:
-                                                    const Size.fromHeight(50),
+                                                    const Size.fromHeight(46),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(10),
@@ -684,7 +674,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                                   vertical: 14,
                                                 ),
                                                 minimumSize:
-                                                    const Size.fromHeight(50),
+                                                    const Size.fromHeight(46),
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(10),
@@ -806,7 +796,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                                     ),
                                                     minimumSize:
                                                         const Size.fromHeight(
-                                                            50),
+                                                            46),
                                                     shape:
                                                         RoundedRectangleBorder(
                                                       borderRadius:
@@ -922,11 +912,13 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                   ],
                                 ),
                               ),
-                              Image.asset(
-                                'assets/images/app_icon.png',
-                                width: 84,
-                                height: 84,
-                                fit: BoxFit.contain,
+                              const Padding(
+                                padding: EdgeInsets.only(top: 6),
+                                child: PlanerzBrandLockup(
+                                  showMark: false,
+                                  fontSize: 30,
+                                  color: Colors.white,
+                                ),
                               ),
                             ],
                           ),
@@ -950,7 +942,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w400,
-                      color: Color(0x9E12343C),
+                      color: Color(0xCCFFFFFF),
                     ),
                   ),
                 ),

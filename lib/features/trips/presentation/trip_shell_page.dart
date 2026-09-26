@@ -10,9 +10,10 @@ import 'package:planerz/features/messaging/data/trip_messages_repository.dart';
 import 'package:planerz/features/trips/data/trip_announcements_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/ridgegear_module_card.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
+import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -258,7 +259,30 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                   title: GestureDetector(
                     onTap: isOnTripOverview ? null : _goToOverview,
                     behavior: HitTestBehavior.opaque,
-                    child: Text(titleForAppBar),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          titleForAppBar,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        if (trip.startDate != null || trip.endDate != null)
+                          Text(
+                            trip.isDayTrip
+                                ? formatTripSingleDayDate(
+                                    context, trip.startDate)
+                                : formatTripDateRangeCompact(
+                                    context, trip.startDate, trip.endDate),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
+                    ),
                   ),
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -375,7 +399,9 @@ class _TripNavDestination {
   final IconData selectedIcon;
 }
 
-/// Néon bottom navigation: five destinations with a raised Planning FAB.
+/// Bottom navigation: four standard tabs around a Planning "capsule" that is
+/// always tinted (and filled when selected) so the core feature stands out
+/// without leaving the bar's standard layout.
 class _TripMobileScrollableNavBar extends StatelessWidget {
   const _TripMobileScrollableNavBar({
     required this.selectedIndex,
@@ -393,98 +419,59 @@ class _TripMobileScrollableNavBar extends StatelessWidget {
 
   static const int _planningIdx = 2;
   static const Curve _tabCurve = Cubic(0.2, 0, 0, 1);
-  static const Curve _fabCurve = Cubic(0.2, 0, 0, 1);
-  static const Duration _tabDuration = Duration(milliseconds: 150);
-  static const Duration _fabDuration = Duration(milliseconds: 250);
+  static const Duration _tabDuration = Duration(milliseconds: 180);
 
   @override
   Widget build(BuildContext context) {
     final disableAnimations = MediaQuery.disableAnimationsOf(context);
     final tabDuration = disableAnimations ? Duration.zero : _tabDuration;
-    final fabDuration = disableAnimations ? Duration.zero : _fabDuration;
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    final planningOverflow = NeonPalette.bottomNavFabOverflow + bottomInset;
-    final planningSelected = selectedIndex == _planningIdx;
-    final planningDest = destinations[_planningIdx];
-    final planningUnread = unreadByTabLabel['Planning'] ?? 0;
 
     return Material(
-      type: MaterialType.transparency,
-      child: SizedBox(
-      height: NeonPalette.bottomNavBarHeight + planningOverflow,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomCenter,
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: NeonPalette.surface,
-                boxShadow: NeonPalette.bottomNavElevation,
-              ),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  height: NeonPalette.bottomNavBarHeight,
-                  child: Row(
-                    children: [
-                      for (var index = 0;
-                          index < destinations.length;
-                          index++)
-                        if (index == _planningIdx)
-                          Expanded(
-                            flex: 11,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              alignment: Alignment.topCenter,
-                              children: [
-                                Positioned(
-                                  top: -NeonPalette.bottomNavFabOverflow,
-                                  child: _TripPlanningFab(
-                                    selected: planningSelected,
-                                    icon: planningSelected
-                                        ? planningDest.selectedIcon
-                                        : planningDest.icon,
-                                    unreadCount: planningUnread,
-                                    onTap: () =>
-                                        onDestinationSelected(_planningIdx),
-                                    fabDuration: fabDuration,
-                                  ),
-                                ),
-                              ],
-                            ),
+      color: AppTokens.surface,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppTokens.divider)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: AppTokens.bottomNavBarHeight,
+            child: Row(
+              children: [
+                for (var index = 0; index < destinations.length; index++)
+                  Expanded(
+                    flex: index == _planningIdx ? 15 : 10,
+                    child: index == _planningIdx
+                        ? _TripPlanningCapsule(
+                            selected: selectedIndex == index,
+                            icon: selectedIndex == index
+                                ? destinations[index].selectedIcon
+                                : destinations[index].icon,
+                            label: localizedLabel(destinations[index].label),
+                            unreadCount:
+                                unreadByTabLabel[destinations[index].label] ??
+                                    0,
+                            onTap: () => onDestinationSelected(index),
+                            duration: tabDuration,
                           )
-                        else
-                          Expanded(
-                            flex: 10,
-                            child: _TripBottomNavTab(
-                              destination: destinations[index],
-                              selected: selectedIndex == index,
-                              label:
-                                  localizedLabel(destinations[index].label),
-                              unreadCount: unreadByTabLabel[
-                                      destinations[index].label] ??
-                                  0,
-                              showBadge: destinations[index].label ==
-                                      'Messagerie' ||
-                                  destinations[index].label == 'Dépenses',
-                              expensesAccent:
-                                  destinations[index].label == 'Dépenses',
-                              onTap: () => onDestinationSelected(index),
-                              tabDuration: tabDuration,
-                            ),
+                        : _TripBottomNavTab(
+                            destination: destinations[index],
+                            selected: selectedIndex == index,
+                            label: localizedLabel(destinations[index].label),
+                            unreadCount:
+                                unreadByTabLabel[destinations[index].label] ??
+                                    0,
+                            showBadge:
+                                destinations[index].label == 'Messagerie' ||
+                                    destinations[index].label == 'Dépenses',
+                            onTap: () => onDestinationSelected(index),
+                            tabDuration: tabDuration,
                           ),
-                    ],
                   ),
-                ),
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -497,7 +484,6 @@ class _TripBottomNavTab extends StatelessWidget {
     required this.label,
     required this.unreadCount,
     required this.showBadge,
-    required this.expensesAccent,
     required this.onTap,
     required this.tabDuration,
   });
@@ -507,131 +493,125 @@ class _TripBottomNavTab extends StatelessWidget {
   final String label;
   final int unreadCount;
   final bool showBadge;
-  final bool expensesAccent;
   final VoidCallback onTap;
   final Duration tabDuration;
-
-  Color get _activeColor =>
-      expensesAccent ? NeonPalette.accent : NeonPalette.primary;
 
   @override
   Widget build(BuildContext context) {
     final color =
-        selected ? _activeColor : NeonPalette.onSurfaceVariant;
+        selected ? AppTokens.primaryDark : AppTokens.onSurfaceVariant;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (selected)
-            Positioned(
-              top: NeonPalette.bottomNavIndicatorTop,
-              child: AnimatedContainer(
-                duration: tabDuration,
-                curve: _TripMobileScrollableNavBar._tabCurve,
-                width: NeonPalette.bottomNavIndicatorWidth,
-                height: NeonPalette.bottomNavIndicatorHeight,
-                decoration: BoxDecoration(
-                  color: _activeColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 36,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: tabDuration,
+              curve: _TripMobileScrollableNavBar._tabCurve,
+              width: 52,
+              height: 28,
+              decoration: BoxDecoration(
+                color: selected ? AppTokens.primaryTint : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
               ),
-            ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildNavIcon(
+              alignment: Alignment.center,
+              child: _buildNavIcon(
                 icon: selected ? destination.selectedIcon : destination.icon,
                 unreadCount: unreadCount,
                 showBadge: showBadge,
                 color: color,
-                size: NeonPalette.bottomNavTabIconSize,
+                size: AppTokens.bottomNavTabIconSize,
               ),
-              const SizedBox(height: 3),
-              AnimatedDefaultTextStyle(
-                duration: tabDuration,
-                curve: _TripMobileScrollableNavBar._tabCurve,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
-                  height: 1,
-                  color: color,
-                ),
-                child: Text(label),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                height: 1.1,
+                color: color,
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _TripPlanningFab extends StatelessWidget {
-  const _TripPlanningFab({
+class _TripPlanningCapsule extends StatelessWidget {
+  const _TripPlanningCapsule({
     required this.selected,
     required this.icon,
+    required this.label,
     required this.unreadCount,
     required this.onTap,
-    required this.fabDuration,
+    required this.duration,
   });
 
   final bool selected;
   final IconData icon;
+  final String label;
   final int unreadCount;
   final VoidCallback onTap;
-  final Duration fabDuration;
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: fabDuration,
-        curve: _TripMobileScrollableNavBar._fabCurve,
-        width: NeonPalette.bottomNavFabSize,
-        height: NeonPalette.bottomNavFabSize,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: NeonPalette.bottomNavFabGradient,
-          border: Border.all(
-            color: NeonPalette.surface,
-            width: NeonPalette.bottomNavFabBorderWidth,
-          ),
-          boxShadow: selected
-              ? NeonPalette.bottomNavFabShadowSelected
-              : NeonPalette.bottomNavFabShadow,
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: NeonPalette.bottomNavFabIconSize,
+    final fg = selected ? Colors.white : AppTokens.primaryDark;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: Center(
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: duration,
+            curve: _TripMobileScrollableNavBar._tabCurve,
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppTokens.primary : AppTokens.primarySoft,
+              borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+              boxShadow: selected ? [AppTokens.ctaShadow] : null,
             ),
-            if (unreadCount > 0)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: NeonPalette.accent,
-                    border: Border.all(
-                      color: NeonPalette.surface,
-                      width: 1.5,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Badge(
+                  isLabelVisible: unreadCount > 0,
+                  smallSize: 8,
+                  child: Icon(icon, size: 22, color: fg),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: fg,
                     ),
                   ),
                 ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

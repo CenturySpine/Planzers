@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/expenses/data/expense_group.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
@@ -154,7 +154,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
         _titleController.text.trim().isEmpty ? l10n.activitiesUntitled : _titleController.text;
 
     return Scaffold(
-      backgroundColor: NeonPalette.scaffoldBackground,
+      backgroundColor: AppTokens.scaffoldBackground,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -175,14 +175,14 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: NeonPalette.surface,
+                        color: AppTokens.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: NeonPalette.divider),
+                        border: Border.all(color: AppTokens.divider),
                       ),
                       child: Row(
                         children: [
                           Material(
-                            color: NeonPalette.accentSoft,
+                            color: AppTokens.primaryTint,
                             borderRadius: BorderRadius.circular(14),
                             child: InkWell(
                               onTap: _pickIcon,
@@ -192,7 +192,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                                 height: 56,
                                 child: Icon(
                                   expenseIconForPost(_iconKey),
-                                  color: NeonPalette.accent,
+                                  color: AppTokens.primary,
                                   size: 28,
                                 ),
                               ),
@@ -206,7 +206,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                                 Text(
                                   l10n.expensesPostPreviewLabel,
                                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: NeonPalette.onSurfaceVariant,
+                                        color: AppTokens.onSurfaceVariant,
                                       ),
                                 ),
                                 Text(
@@ -240,7 +240,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                         hintText: l10n.expenseGroupNameHint,
                         prefixIcon: const Icon(Icons.sell_outlined),
                         filled: true,
-                        fillColor: NeonPalette.surface,
+                        fillColor: AppTokens.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -259,7 +259,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                     Text(
                       l10n.expensesGroupWhoSeesHint,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: NeonPalette.onSurfaceVariant,
+                            color: AppTokens.onSurfaceVariant,
                             height: 1.35,
                           ),
                     ),
@@ -297,7 +297,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                 onPressed:
                     _saving || members.isEmpty || _visibleToIds.isEmpty ? null : _save,
                 style: FilledButton.styleFrom(
-                  backgroundColor: NeonPalette.accent,
+                  backgroundColor: AppTokens.primary,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(
@@ -342,25 +342,25 @@ class _VisibilityRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeonPalette.divider),
+            border: Border.all(color: AppTokens.divider),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: NeonPalette.primarySoft,
+                backgroundColor: AppTokens.primarySoft,
                 child: Text(
                   label.characters.first.toUpperCase(),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                 ),
               ),
@@ -375,7 +375,7 @@ class _VisibilityRow extends StatelessWidget {
               Switch(
                 value: value,
                 activeThumbColor: Colors.white,
-                activeTrackColor: NeonPalette.accent,
+                activeTrackColor: AppTokens.primary,
                 onChanged: onChanged,
               ),
             ],

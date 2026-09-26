@@ -155,7 +155,7 @@ class _ShoppingItemRowState extends ConsumerState<ShoppingItemRow> {
       return AppLocalizations.of(context)!.shoppingTravelerFallback;
     }();
     final claimedByPhotoUrl = _photoUrlFromUserData(claimedByUserData);
-    final labelStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+    final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
           decoration: isChecked ? TextDecoration.lineThrough : TextDecoration.none,
           color: isChecked ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
         );
@@ -292,7 +292,7 @@ class _ClaimButton extends StatelessWidget {
       style: compactStyle,
       tooltip: l10n.shoppingClaimTake,
       onPressed: () => onTap(),
-      icon: const Icon(Icons.accessibility_new_outlined, size: 17),
+      icon: const Icon(Icons.back_hand_outlined, size: 17),
     );
   }
 }

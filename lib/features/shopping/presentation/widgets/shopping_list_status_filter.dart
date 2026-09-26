@@ -27,7 +27,8 @@ bool shoppingItemMatchesShoppingListFilters(
   return claimedBy.isNotEmpty && claimedBy == currentUid;
 }
 
-/// Status segments (exclusive) + optional « claimed by me » filter + help.
+/// Status chips (exclusive) + optional « claimed by me » chip, in a
+/// single compact scrollable row.
 class ShoppingListFilterBar extends StatelessWidget {
   const ShoppingListFilterBar({
     super.key,
@@ -35,60 +36,59 @@ class ShoppingListFilterBar extends StatelessWidget {
     required this.onlyClaimedByMe,
     required this.onStatusChanged,
     required this.onOnlyClaimedByMeChanged,
-    required this.onHelpPressed,
+    this.trailing = const [],
   });
 
   final ShoppingListStatusFilter selectedStatus;
   final bool onlyClaimedByMe;
   final ValueChanged<ShoppingListStatusFilter> onStatusChanged;
   final ValueChanged<bool> onOnlyClaimedByMeChanged;
-  final VoidCallback onHelpPressed;
+
+  /// Extra actions shown at the end of the row (e.g. list overflow menu).
+  final List<Widget> trailing;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    Widget status(ShoppingListStatusFilter value, String label, String tip) =>
+        Padding(
+          padding: const EdgeInsets.only(right: 6),
+          child: Tooltip(
+            message: tip,
+            child: ChoiceChip(
+              label: Text(label),
+              selected: selectedStatus == value,
+              onSelected: (_) => onStatusChanged(value),
+            ),
+          ),
+        );
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
       children: [
-        SegmentedButton<ShoppingListStatusFilter>(
-          showSelectedIcon: false,
-          segments: [
-            ButtonSegment<ShoppingListStatusFilter>(
-              value: ShoppingListStatusFilter.all,
-              icon: const Icon(Icons.apps_outlined),
-              tooltip: l10n.shoppingFilterAll,
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                status(ShoppingListStatusFilter.all, l10n.commonAll,
+                    l10n.shoppingFilterAll),
+                status(ShoppingListStatusFilter.todo, l10n.shoppingFilterTodo,
+                    l10n.shoppingFilterTodo),
+                status(ShoppingListStatusFilter.done, l10n.shoppingFilterDone,
+                    l10n.shoppingFilterDone),
+                Tooltip(
+                  message: l10n.shoppingFilterClaimedByMe,
+                  child: FilterChip(
+                    avatar: const Icon(Icons.person_rounded),
+                    label: Text(l10n.commonMe),
+                    selected: onlyClaimedByMe,
+                    onSelected: onOnlyClaimedByMeChanged,
+                  ),
+                ),
+              ],
             ),
-            ButtonSegment<ShoppingListStatusFilter>(
-              value: ShoppingListStatusFilter.todo,
-              icon: const Icon(Icons.radio_button_unchecked),
-              tooltip: l10n.shoppingFilterTodo,
-            ),
-            ButtonSegment<ShoppingListStatusFilter>(
-              value: ShoppingListStatusFilter.done,
-              icon: const Icon(Icons.check_circle_outline),
-              tooltip: l10n.shoppingFilterDone,
-            ),
-          ],
-          selected: {selectedStatus},
-          onSelectionChanged: (selection) {
-            if (selection.isEmpty) return;
-            onStatusChanged(selection.first);
-          },
+          ),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          tooltip: l10n.shoppingFilterClaimedByMe,
-          isSelected: onlyClaimedByMe,
-          onPressed: () => onOnlyClaimedByMeChanged(!onlyClaimedByMe),
-          icon: const Icon(Icons.person_pin_circle_outlined),
-        ),
-        const SizedBox(width: 4),
-        IconButton(
-          tooltip: l10n.shoppingFilterHelpTooltip,
-          icon: const Icon(Icons.help_outline),
-          onPressed: onHelpPressed,
-        ),
+        ...trailing,
       ],
     );
   }

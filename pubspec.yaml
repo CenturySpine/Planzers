@@ -59,8 +59,8 @@ flutter:
   uses-material-design: true
   assets:
     - liste_courses_compilee.json
-    - assets/images/app_background.png
     - assets/images/app_icon.png
+    - assets/images/planerz_mark.svg
     - assets/images/google_g.svg
     - assets/images/flag_fr.svg
     - assets/images/flag_us.svg
@@ -81,65 +81,33 @@ flutter:
     - legal/mentions_legales_en.txt
     - legal/vie_privee_rgpd_en.txt
   fonts:
-    - family: Geist
+    - family: Figtree
       fonts:
-        - asset: assets/fonts/geist/Geist-Thin.ttf
-          weight: 100
-        - asset: assets/fonts/geist/Geist-ExtraLight.ttf
-          weight: 200
-        - asset: assets/fonts/geist/Geist-Light.ttf
-          weight: 300
-        - asset: assets/fonts/geist/Geist-Regular.ttf
+        - asset: assets/fonts/figtree/Figtree_400Regular.ttf
           weight: 400
-        - asset: assets/fonts/geist/Geist-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/geist/Geist-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/geist/Geist-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/geist/Geist-ExtraBold.ttf
-          weight: 800
-        - asset: assets/fonts/geist/Geist-Black.ttf
-          weight: 900
-        - asset: assets/fonts/geist/Geist-ThinItalic.ttf
-          weight: 100
-          style: italic
-        - asset: assets/fonts/geist/Geist-ExtraLightItalic.ttf
-          weight: 200
-          style: italic
-        - asset: assets/fonts/geist/Geist-LightItalic.ttf
-          weight: 300
-          style: italic
-        - asset: assets/fonts/geist/Geist-Italic.ttf
+        - asset: assets/fonts/figtree/Figtree_400Regular_Italic.ttf
           weight: 400
           style: italic
-        - asset: assets/fonts/geist/Geist-MediumItalic.ttf
+        - asset: assets/fonts/figtree/Figtree_500Medium.ttf
           weight: 500
-          style: italic
-        - asset: assets/fonts/geist/Geist-SemiBoldItalic.ttf
+        - asset: assets/fonts/figtree/Figtree_600SemiBold.ttf
           weight: 600
-          style: italic
-        - asset: assets/fonts/geist/Geist-BoldItalic.ttf
+        - asset: assets/fonts/figtree/Figtree_700Bold.ttf
           weight: 700
-          style: italic
-        - asset: assets/fonts/geist/Geist-ExtraBoldItalic.ttf
+        - asset: assets/fonts/figtree/Figtree_800ExtraBold.ttf
           weight: 800
-          style: italic
-        - asset: assets/fonts/geist/Geist-BlackItalic.ttf
-          weight: 900
-          style: italic
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/images/app_icon.png
   remove_alpha_ios: true
-  background_color_ios: "#FF6B6B"
+  background_color_ios: "#0B8579"
   web:
     generate: true
     image_path: assets/images/app_icon.png
-    background_color: "#2d1b4e"
-    theme_color: "#6b4e9e"
+    background_color: "#F5F6F8"
+    theme_color: "#0B8579"
   macos:
     generate: true
     image_path: assets/images/app_icon.png

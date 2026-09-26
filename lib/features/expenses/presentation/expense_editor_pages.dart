@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/expenses/data/expense.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
 import 'package:planerz/features/expenses/data/expenses_repository.dart';
@@ -218,7 +218,7 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
     final locale = Localizations.localeOf(context).toString();
 
     return Scaffold(
-      backgroundColor: NeonPalette.scaffoldBackground,
+      backgroundColor: AppTokens.scaffoldBackground,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -639,7 +639,7 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
         widget.canDuplicateExpense;
 
     return Scaffold(
-      backgroundColor: NeonPalette.scaffoldBackground,
+      backgroundColor: AppTokens.scaffoldBackground,
       appBar: AppBar(
         title: Text(
           _editing ? l10n.expensesEditExpenseTitle : l10n.expensesExpenseDetailTitle,
@@ -870,9 +870,9 @@ class _ExpenseFormBody extends StatelessWidget {
         Container(
           padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
           decoration: BoxDecoration(
-            color: NeonPalette.surface,
+            color: AppTokens.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeonPalette.divider),
+            border: Border.all(color: AppTokens.divider),
           ),
           child: Row(
             children: [
@@ -891,6 +891,9 @@ class _ExpenseFormBody extends StatelessWidget {
                       ),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
                     hintText: '0,00',
                   ),
                   onChanged: editing ? (_) => onShareChanged() : null,
@@ -919,7 +922,7 @@ class _ExpenseFormBody extends StatelessWidget {
                   value: paidBy != null ? memberLabel(paidBy!) : '—',
                   leading: CircleAvatar(
                     radius: 14,
-                    backgroundColor: NeonPalette.primarySoft,
+                    backgroundColor: AppTokens.primarySoft,
                     child: Text(
                       (paidBy != null ? memberLabel(paidBy!) : '?')
                           .characters
@@ -928,7 +931,7 @@ class _ExpenseFormBody extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: NeonPalette.primary,
+                        color: AppTokens.primary,
                       ),
                     ),
                   ),
@@ -969,7 +972,7 @@ class _ExpenseFormBody extends StatelessWidget {
                     ? l10n.expensesSplitEqual
                     : l10n.expensesSplitCustomAmounts,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: NeonPalette.onSurfaceVariant,
+                      color: AppTokens.onSurfaceVariant,
                     ),
               ),
           ],
@@ -1068,7 +1071,7 @@ class _IconPickButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Material(
-      color: NeonPalette.accentSoft,
+      color: AppTokens.primaryTint,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -1082,13 +1085,13 @@ class _IconPickButton extends StatelessWidget {
               Icon(
                 expenseIconForExpense(iconKey),
                 size: 28,
-                color: NeonPalette.accent,
+                color: AppTokens.primary,
               ),
               const SizedBox(height: 4),
               Text(
                 l10n.expensesChooseIcon,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: NeonPalette.accent,
+                      color: AppTokens.primary,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -1114,13 +1117,13 @@ class _FieldLabel extends StatelessWidget {
           text: text,
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
           children: [
             if (required)
               const TextSpan(
                 text: ' *',
-                style: TextStyle(color: NeonPalette.accent),
+                style: TextStyle(color: AppTokens.primary),
               ),
           ],
         ),
@@ -1132,15 +1135,15 @@ class _FieldLabel extends StatelessWidget {
 InputDecoration _inputDecoration({String? hint}) => InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: NeonPalette.surface,
+      fillColor: AppTokens.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: NeonPalette.divider),
+        borderSide: const BorderSide(color: AppTokens.divider),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: NeonPalette.divider),
+        borderSide: const BorderSide(color: AppTokens.divider),
       ),
     );
 
@@ -1161,7 +1164,7 @@ class _CurrencyToggle extends StatelessWidget {
     Widget chip(String code, String label) {
       final on = currency == code;
       return Material(
-        color: on ? NeonPalette.accent : NeonPalette.segmentTrack,
+        color: on ? AppTokens.primary : AppTokens.segmentTrack,
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: enabled && onChanged != null ? () => onChanged!(code) : null,
@@ -1171,7 +1174,7 @@ class _CurrencyToggle extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: on ? Colors.white : NeonPalette.deep,
+                color: on ? Colors.white : AppTokens.deep,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
@@ -1210,7 +1213,7 @@ class _PickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: NeonPalette.surface,
+      color: AppTokens.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -1219,7 +1222,7 @@ class _PickerTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeonPalette.divider, width: 1.5),
+            border: Border.all(color: AppTokens.divider, width: 1.5),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1240,7 +1243,7 @@ class _PickerTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: NeonPalette.onSurfaceVariant,
+                            color: AppTokens.onSurfaceVariant,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.2,
@@ -1254,14 +1257,14 @@ class _PickerTile extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             fontSize: 14.5,
-                            color: NeonPalette.deep,
+                            color: AppTokens.deep,
                           ),
                     ),
                   ],
                 ),
               ),
               if (enabled)
-                const Icon(Icons.expand_more, color: NeonPalette.onSurfaceVariant),
+                const Icon(Icons.expand_more, color: AppTokens.onSurfaceVariant),
             ],
           ),
         ),
@@ -1283,7 +1286,7 @@ class _SplitToggle extends StatelessWidget {
       final on = splitMode == mode;
       return Expanded(
         child: Material(
-          color: on ? NeonPalette.accent : Colors.transparent,
+          color: on ? AppTokens.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           child: InkWell(
             onTap: () => onChanged(mode),
@@ -1293,7 +1296,7 @@ class _SplitToggle extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 15, color: on ? Colors.white : NeonPalette.deep),
+                  Icon(icon, size: 15, color: on ? Colors.white : AppTokens.deep),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
@@ -1302,7 +1305,7 @@ class _SplitToggle extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: on ? Colors.white : NeonPalette.deep,
+                        color: on ? Colors.white : AppTokens.deep,
                       ),
                     ),
                   ),
@@ -1318,7 +1321,7 @@ class _SplitToggle extends StatelessWidget {
       width: 220,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: NeonPalette.segmentTrack,
+        color: AppTokens.segmentTrack,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1361,7 +1364,7 @@ class _ParticipantRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
-        color: selected ? NeonPalette.surface : NeonPalette.segmentTrack.withValues(alpha: 0.5),
+        color: selected ? AppTokens.surface : AppTokens.segmentTrack.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: editing ? onToggle : null,
@@ -1374,13 +1377,13 @@ class _ParticipantRow extends StatelessWidget {
                 const SizedBox(width: 10),
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: NeonPalette.primarySoft,
+                  backgroundColor: AppTokens.primarySoft,
                   child: Text(
                     label.characters.first.toUpperCase(),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                     ),
                   ),
                 ),
@@ -1391,7 +1394,7 @@ class _ParticipantRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: selected ? NeonPalette.deep : NeonPalette.onSurfaceVariant,
+                      color: selected ? AppTokens.deep : AppTokens.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -1446,10 +1449,10 @@ class _CheckDot extends StatelessWidget {
       width: 22,
       height: 22,
       decoration: BoxDecoration(
-        color: checked ? NeonPalette.accent : Colors.transparent,
+        color: checked ? AppTokens.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: checked ? NeonPalette.accent : NeonPalette.outline,
+          color: checked ? AppTokens.primary : AppTokens.outline,
           width: 1.5,
         ),
       ),
@@ -1477,15 +1480,15 @@ class _RemainBanner extends StatelessWidget {
     final ok = remain.abs() < 0.005;
     final over = remain < -0.005;
     final bg = ok
-        ? Color.lerp(NeonPalette.surface, NeonPalette.success, 0.12)!
+        ? Color.lerp(AppTokens.surface, AppTokens.success, 0.12)!
         : over
-            ? Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.12)!
-            : NeonPalette.segmentTrack;
+            ? Color.lerp(AppTokens.surface, AppTokens.primary, 0.12)!
+            : AppTokens.segmentTrack;
     final fg = ok
-        ? NeonPalette.success
+        ? AppTokens.success
         : over
-            ? NeonPalette.accent
-            : NeonPalette.onSurfaceVariant;
+            ? AppTokens.primary
+            : AppTokens.onSurfaceVariant;
     final icon = ok
         ? Icons.check_circle_outline
         : over
@@ -1537,19 +1540,19 @@ class _EqualSummaryBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: NeonPalette.primaryTint,
+        color: AppTokens.primaryTint,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NeonPalette.dateBorderSet),
+        border: Border.all(color: AppTokens.dateBorderSet),
       ),
       child: Row(
         children: [
-          const Icon(Icons.groups_outlined, size: 18, color: NeonPalette.primary),
+          const Icon(Icons.groups_outlined, size: 18, color: AppTokens.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               l10n.expensesEqualSplitSummary(count, amount),
               style: const TextStyle(
-                color: NeonPalette.primary,
+                color: AppTokens.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1584,7 +1587,7 @@ class _ExpenseFormCta extends StatelessWidget {
         child: FilledButton.icon(
           onPressed: enabled && !loading ? onPressed : null,
           style: FilledButton.styleFrom(
-            backgroundColor: NeonPalette.accent,
+            backgroundColor: AppTokens.primary,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(52),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

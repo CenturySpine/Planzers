@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/core/presentation/planerz_brand_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/firebase/app_public_hosts.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
@@ -70,12 +72,7 @@ class _AndroidSunsetScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/images/app_icon.png',
-                      width: 96,
-                      height: 96,
-                      fit: BoxFit.contain,
-                    ),
+                    const PlanerzBrandMark(size: 96),
                     const SizedBox(height: 24),
                     Text(
                       l10n.androidSunsetTitle,
@@ -130,9 +127,9 @@ class _PwaHintBox extends StatelessWidget {
 
   final String hint;
 
-  static const Color _backgroundColor = Color(0xFFEEF4FF);
-  static const Color _borderColor = Color(0xFF90B0FF);
-  static const Color _iconColor = Color(0xFF4060CC);
+  static const Color _backgroundColor = AppTokens.infoContainer;
+  static const Color _borderColor = Color(0xFFB7D8F4);
+  static const Color _iconColor = AppTokens.info;
 
   @override
   Widget build(BuildContext context) {

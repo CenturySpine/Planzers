@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/intl/app_language.dart';
 
-const Color _kSemanticError = Color(0xFFBA1A1A);
-const Color _kSemanticWarning = Color(0xFFC49A00);
+const Color _kSemanticError = AppTokens.error;
+const Color _kSemanticWarning = AppTokens.warning;
 
 List<BoxShadow> get _accountCardShadow => [
       BoxShadow(
@@ -34,7 +34,7 @@ class AccountSectionHeader extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: NeonPalette.onSurfaceVariant,
+          color: AppTokens.onSurfaceVariant,
           letterSpacing: 0.5,
           height: 1.2,
         ),
@@ -54,7 +54,7 @@ class AccountCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: _accountCardShadow,
       ),
@@ -73,7 +73,7 @@ class AccountCardDivider extends StatelessWidget {
     return Container(
       height: 1,
       margin: const EdgeInsets.only(left: 64),
-      color: NeonPalette.divider,
+      color: AppTokens.divider,
     );
   }
 }
@@ -97,16 +97,16 @@ class AccountIconPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final (background, foreground) = switch (tint) {
       AccountIconTint.primary => (
-          NeonPalette.nameIconBackground,
-          NeonPalette.primary,
+          AppTokens.nameIconBackground,
+          AppTokens.primary,
         ),
       AccountIconTint.warning => (
-          Color.lerp(NeonPalette.surface, _kSemanticWarning, 0.16)!,
+          Color.lerp(AppTokens.surface, _kSemanticWarning, 0.16)!,
           _kSemanticWarning,
         ),
       AccountIconTint.accent => (
-          Color.lerp(NeonPalette.surface, NeonPalette.accent, 0.14)!,
-          NeonPalette.accent,
+          Color.lerp(AppTokens.surface, AppTokens.accent, 0.14)!,
+          AppTokens.accent,
         ),
     };
 
@@ -166,7 +166,7 @@ class AccountInfoRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: NeonPalette.onSurfaceVariant,
+                    color: AppTokens.onSurfaceVariant,
                     letterSpacing: 0.3,
                     height: 1.2,
                   ),
@@ -179,7 +179,7 @@ class AccountInfoRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: isEmpty ? FontWeight.w400 : FontWeight.w500,
-                    color: isEmpty ? NeonPalette.outline : NeonPalette.deep,
+                    color: isEmpty ? AppTokens.outline : AppTokens.deep,
                     height: 1.25,
                   ),
                 ),
@@ -208,7 +208,7 @@ class AccountEditButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: NeonPalette.primaryTint,
+        color: AppTokens.primaryTint,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -219,7 +219,7 @@ class AccountEditButton extends StatelessWidget {
             child: Icon(
               Icons.edit_outlined,
               size: 17,
-              color: NeonPalette.primary,
+              color: AppTokens.primary,
             ),
           ),
         ),
@@ -239,7 +239,7 @@ class AccountEditWrap extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      color: Color.lerp(NeonPalette.surface, NeonPalette.primary, 0.04),
+      color: Color.lerp(AppTokens.surface, AppTokens.primary, 0.04),
       child: child,
     );
   }
@@ -270,8 +270,8 @@ class _AccountInputShellState extends State<AccountInputShell> {
     final borderColor = widget.hasError
         ? _kSemanticError
         : _focused
-            ? NeonPalette.primary
-            : NeonPalette.divider;
+            ? AppTokens.primary
+            : AppTokens.divider;
     final borderWidth = (_focused || widget.hasError) ? 2.0 : 1.5;
 
     return Focus(
@@ -282,7 +282,7 @@ class _AccountInputShellState extends State<AccountInputShell> {
         height: 52,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: NeonPalette.surface,
+          color: AppTokens.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor, width: borderWidth),
         ),
@@ -291,7 +291,7 @@ class _AccountInputShellState extends State<AccountInputShell> {
             Icon(
               widget.icon,
               size: 18,
-              color: _focused ? NeonPalette.primary : NeonPalette.onSurfaceVariant,
+              color: _focused ? AppTokens.primary : AppTokens.onSurfaceVariant,
             ),
             const SizedBox(width: 10),
             Expanded(child: widget.child),
@@ -327,7 +327,7 @@ class AccountEditActions extends StatelessWidget {
         Tooltip(
           message: saveTooltip,
           child: Material(
-            color: NeonPalette.primary,
+            color: AppTokens.primary,
             shape: const CircleBorder(),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
@@ -361,7 +361,7 @@ class AccountEditActions extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             shape: CircleBorder(
-              side: BorderSide(color: NeonPalette.outline, width: 1.5),
+              side: BorderSide(color: AppTokens.outline, width: 1.5),
             ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
@@ -372,7 +372,7 @@ class AccountEditActions extends StatelessWidget {
                 child: Icon(
                   Icons.close_rounded,
                   size: 20,
-                  color: NeonPalette.text700,
+                  color: AppTokens.text700,
                 ),
               ),
             ),
@@ -425,7 +425,7 @@ class AccountPrefTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: NeonPalette.deep,
+                        color: AppTokens.deep,
                         height: 1.25,
                       ),
                     ),
@@ -435,7 +435,7 @@ class AccountPrefTile extends StatelessWidget {
                         subtitle!,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: NeonPalette.onSurfaceVariant,
+                          color: AppTokens.onSurfaceVariant,
                           height: 1.35,
                         ),
                       ),
@@ -447,7 +447,7 @@ class AccountPrefTile extends StatelessWidget {
                   const Icon(
                     Icons.chevron_right,
                     size: 22,
-                    color: NeonPalette.divider,
+                    color: AppTokens.divider,
                   ),
             ],
           ),
@@ -519,11 +519,11 @@ class _FlagPill extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: selected ? NeonPalette.nameEditPillBackground : Colors.transparent,
+        color: selected ? AppTokens.nameEditPillBackground : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: BorderSide(
-            color: selected ? NeonPalette.primary : NeonPalette.divider,
+            color: selected ? AppTokens.primary : AppTokens.divider,
             width: 1.5,
           ),
         ),
@@ -557,7 +557,7 @@ class AccountHelpText extends StatelessWidget {
         text,
         style: const TextStyle(
           fontSize: 12,
-          color: NeonPalette.onSurfaceVariant,
+          color: AppTokens.onSurfaceVariant,
           height: 1.5,
         ),
       ),
@@ -586,7 +586,7 @@ class AccountNotificationsButton extends StatelessWidget {
         color: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: NeonPalette.outline, width: 1.5),
+          side: const BorderSide(color: AppTokens.outline, width: 1.5),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -607,7 +607,7 @@ class AccountNotificationsButton extends StatelessWidget {
                   const Icon(
                     Icons.notifications_active_outlined,
                     size: 20,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                 const SizedBox(width: 10),
                 Text(
@@ -615,7 +615,7 @@ class AccountNotificationsButton extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: NeonPalette.primary,
+                    color: AppTokens.primary,
                   ),
                 ),
               ],
@@ -673,10 +673,10 @@ class AccountProfileHeader extends StatelessWidget {
                   child: Tooltip(
                     message: cameraTooltip,
                     child: Material(
-                      color: NeonPalette.primary,
+                      color: AppTokens.primary,
                       shape: CircleBorder(
                         side: BorderSide(
-                          color: NeonPalette.scaffoldBackground,
+                          color: AppTokens.scaffoldBackground,
                           width: 2.5,
                         ),
                       ),
@@ -719,7 +719,7 @@ class AccountProfileHeader extends StatelessWidget {
             style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w700,
-              color: NeonPalette.deep,
+              color: AppTokens.deep,
               letterSpacing: -0.2,
               height: 1.25,
             ),
@@ -730,7 +730,7 @@ class AccountProfileHeader extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
-              color: NeonPalette.onSurfaceVariant,
+              color: AppTokens.onSurfaceVariant,
               height: 1.3,
             ),
           ),
@@ -745,7 +745,7 @@ class AccountProfileHeader extends StatelessWidget {
         width: 88,
         height: 88,
         decoration: BoxDecoration(
-          color: NeonPalette.primarySoft,
+          color: AppTokens.primarySoft,
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
@@ -754,7 +754,7 @@ class AccountProfileHeader extends StatelessWidget {
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: NeonPalette.primary,
+            color: AppTokens.primary,
             height: 1,
           ),
         ),
@@ -769,14 +769,14 @@ class AccountProfileHeader extends StatelessWidget {
           photoUrl,
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Container(
-            color: NeonPalette.primarySoft,
+            color: AppTokens.primarySoft,
             alignment: Alignment.center,
             child: Text(
               initial,
               style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
-                color: NeonPalette.primary,
+                color: AppTokens.primary,
               ),
             ),
           ),
@@ -813,7 +813,7 @@ class AccountPhotoBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NeonPalette.surface,
+        color: AppTokens.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
           BoxShadow(
@@ -833,7 +833,7 @@ class AccountPhotoBottomSheet extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: NeonPalette.divider,
+                color: AppTokens.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -846,7 +846,7 @@ class AccountPhotoBottomSheet extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: NeonPalette.deep,
+                    color: AppTokens.deep,
                   ),
                 ),
               ),
@@ -891,7 +891,7 @@ class _SheetAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? _kSemanticError : NeonPalette.text700;
+    final color = destructive ? _kSemanticError : AppTokens.text700;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -900,7 +900,7 @@ class _SheetAction extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: NeonPalette.divider)),
+            border: Border(top: BorderSide(color: AppTokens.divider)),
           ),
           child: Row(
             children: [
@@ -910,7 +910,7 @@ class _SheetAction extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 15,
-                  color: destructive ? _kSemanticError : NeonPalette.deep,
+                  color: destructive ? _kSemanticError : AppTokens.deep,
                 ),
               ),
             ],
@@ -947,7 +947,7 @@ class AccountRemovePhotoDialog extends StatelessWidget {
         : '?';
 
     return Dialog(
-      backgroundColor: NeonPalette.surface,
+      backgroundColor: AppTokens.surface,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
@@ -965,7 +965,7 @@ class AccountRemovePhotoDialog extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: NeonPalette.deep,
+                  color: AppTokens.deep,
                   height: 1.2,
                 ),
               ),
@@ -975,7 +975,7 @@ class AccountRemovePhotoDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: NeonPalette.onSurfaceVariant,
+                  color: AppTokens.onSurfaceVariant,
                   height: 1.55,
                 ),
               ),
@@ -998,7 +998,7 @@ class AccountRemovePhotoDialog extends StatelessWidget {
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(false),
                     style: FilledButton.styleFrom(
-                      backgroundColor: NeonPalette.primary,
+                      backgroundColor: AppTokens.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 22,
@@ -1033,13 +1033,13 @@ class _DialogAvatar extends StatelessWidget {
     if (photoUrl.isEmpty) {
       return CircleAvatar(
         radius: 32,
-        backgroundColor: NeonPalette.primarySoft,
+        backgroundColor: AppTokens.primarySoft,
         child: Text(
           initial,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: NeonPalette.primary,
+            color: AppTokens.primary,
           ),
         ),
       );
@@ -1054,13 +1054,13 @@ class _DialogAvatar extends StatelessWidget {
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => CircleAvatar(
             radius: 32,
-            backgroundColor: NeonPalette.primarySoft,
+            backgroundColor: AppTokens.primarySoft,
             child: Text(
               initial,
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: NeonPalette.primary,
+                color: AppTokens.primary,
               ),
             ),
           ),

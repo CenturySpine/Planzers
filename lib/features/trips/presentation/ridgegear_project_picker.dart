@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/oauth/data/external_connection_repository.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -16,7 +16,7 @@ Future<void> showRidgegearProjectPicker(
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: NeonPalette.surface,
+    backgroundColor: AppTokens.surface,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -115,7 +115,7 @@ class _RidgegearProjectPickerSheetState
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: NeonPalette.deep,
+                color: AppTokens.deep,
               ),
             ),
             const SizedBox(height: 16),
@@ -133,7 +133,7 @@ class _RidgegearProjectPickerSheetState
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
                       l10n.commonErrorWithDetails(snapshot.error.toString()),
-                      style: const TextStyle(color: NeonPalette.accent),
+                      style: const TextStyle(color: AppTokens.error),
                     ),
                   );
                 }
@@ -143,7 +143,7 @@ class _RidgegearProjectPickerSheetState
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Text(
                       l10n.ridgegearProjectPickerEmpty,
-                      style: const TextStyle(color: NeonPalette.onSurfaceVariant),
+                      style: const TextStyle(color: AppTokens.onSurfaceVariant),
                     ),
                   );
                 }
@@ -152,10 +152,10 @@ class _RidgegearProjectPickerSheetState
                   children: [
                     for (final project in projects) ...[
                       Material(
-                        color: NeonPalette.surface,
+                        color: AppTokens.surface,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: NeonPalette.divider),
+                          side: const BorderSide(color: AppTokens.divider),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
@@ -169,7 +169,7 @@ class _RidgegearProjectPickerSheetState
                               children: [
                                 const Icon(
                                   Icons.backpack_outlined,
-                                  color: NeonPalette.primary,
+                                  color: AppTokens.primary,
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -180,7 +180,7 @@ class _RidgegearProjectPickerSheetState
                                     style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: NeonPalette.deep,
+                                      color: AppTokens.deep,
                                     ),
                                   ),
                                 ),

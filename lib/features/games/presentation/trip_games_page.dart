@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:planerz/app/theme/neon_palette.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/games/data/trip_board_game.dart';
@@ -52,7 +52,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
     final action = await showDialog<TripBoardGameDialogResult>(
       context: context,
       builder: (context) => Theme(
-        data: NeonPalette.overlayOn(Theme.of(context)),
+        data: AppTokens.overlayOn(Theme.of(context)),
         child: TripBoardGameDialog(
           gameName: game?.name,
           gameUrl: game?.linkUrl,
@@ -161,9 +161,9 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                     const <String, Map<String, dynamic>>{};
 
             return Theme(
-              data: NeonPalette.overlayOn(Theme.of(context)),
+              data: AppTokens.overlayOn(Theme.of(context)),
               child: Scaffold(
-                backgroundColor: NeonPalette.scaffoldBackground,
+                backgroundColor: AppTokens.scaffoldBackground,
                 appBar: AppBar(
                   title: Text(l10n.tripGamesTitle),
                   bottom: PreferredSize(

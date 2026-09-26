@@ -318,6 +318,9 @@ class PlanerzWhatsAppSearchViewState extends SearchViewState {
                       focusNode: focusNode,
                       decoration: InputDecoration(
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
                         hintText: widget.config.searchViewConfig.hintText,
                         hintStyle: TextStyle(
                           color: hintColor,

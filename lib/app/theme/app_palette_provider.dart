@@ -8,5 +8,5 @@ final appPaletteProvider =
 
 class AppPaletteNotifier extends AsyncNotifier<AppPaletteId> {
   @override
-  Future<AppPaletteId> build() async => AppPaletteId.oligarch;
+  Future<AppPaletteId> build() async => AppPaletteId.riviera;
 }
