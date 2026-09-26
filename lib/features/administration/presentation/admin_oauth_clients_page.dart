@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -194,7 +195,7 @@ class AdminOAuthClientsPage extends ConsumerWidget {
         title: const Text('Applications tierces (OAuth)'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(PhosphorIconsRegular.plus),
             tooltip: 'Enregistrer une application',
             onPressed: () => _openCreateDialog(context, ref),
           ),
@@ -225,7 +226,7 @@ class AdminOAuthClientsPage extends ConsumerWidget {
                   ),
                   isThreeLine: true,
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(PhosphorIconsRegular.trash),
                     tooltip: 'Supprimer',
                     onPressed: () => _confirmAndDelete(context, ref, client),
                   ),

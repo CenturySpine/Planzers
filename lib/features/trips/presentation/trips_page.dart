@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,7 +85,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 12, 0),
                     child: _TripsFilterRow(
-                      icon: Icons.groups_outlined,
+                      icon: PhosphorIconsRegular.usersThree,
                       label: l10n.tripsApplicationOwnerShowNonMemberTrips,
                       value: showNonMemberTrips,
                       onChanged: (value) {
@@ -100,7 +101,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 12, 4),
                   child: _TripsFilterRow(
-                    icon: Icons.archive_outlined,
+                    icon: PhosphorIconsRegular.archive,
                     label: l10n.tripsShowArchivedTrips,
                     value: showArchivedTrips,
                     onChanged: (value) {
@@ -295,13 +296,13 @@ class _TripsPageState extends ConsumerState<TripsPage>
                       backgroundColor: AppTokens.surface,
                       foregroundColor: AppTokens.primaryDark,
                       onPressed: () => _openJoinByInviteCodeDialog(context),
-                      child: const Icon(Icons.vpn_key_outlined, size: 20),
+                      child: const Icon(PhosphorIconsRegular.key, size: 20),
                     ),
                     const SizedBox(height: 10),
                     FloatingActionButton.extended(
                       heroTag: 'trips_create_fab',
                       onPressed: () => context.push(TripCreatePage.routePath),
-                      icon: const Icon(Icons.add_rounded),
+                      icon: const Icon(PhosphorIconsRegular.plus),
                       label: Text(l10n.tripsNewTripTooltip),
                     ),
                   ],
@@ -512,7 +513,7 @@ class _TripsBrandHeader extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isPreview) ...[
-                            const Icon(Icons.science_outlined,
+                            const Icon(PhosphorIconsRegular.flask,
                                 size: 12, color: previewInk),
                             const SizedBox(width: 3),
                           ],
@@ -744,11 +745,11 @@ class _TripCard extends ConsumerWidget {
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       if (dateLine.isNotEmpty)
-                        meta(Icons.calendar_today_rounded, dateLine),
+                        meta(PhosphorIconsRegular.calendarBlank, dateLine),
                       if (trip.destination.trim().isNotEmpty)
-                        meta(Icons.place_outlined, trip.destination),
+                        meta(PhosphorIconsRegular.mapPin, trip.destination),
                       meta(
-                        Icons.group_outlined,
+                        PhosphorIconsRegular.users,
                         l10n.tripsMemberCount(
                           trip.participantCount ?? trip.memberUserIds.length,
                         ),
@@ -760,7 +761,7 @@ class _TripCard extends ConsumerWidget {
                   Badge.count(count: unreadCount)
                 else
                   const Icon(
-                    Icons.chevron_right_rounded,
+                    PhosphorIconsRegular.caretRight,
                     color: AppTokens.outline,
                   ),
               ],
@@ -803,14 +804,14 @@ class _TripCardLeadingImage extends StatelessWidget {
                 height: 60,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
-                    Icons.landscape_outlined,
+                    PhosphorIconsRegular.mountains,
                     color: Colors.white,
                     size: 26,
                   );
                 },
               )
             : const Icon(
-                Icons.landscape_outlined,
+                PhosphorIconsRegular.mountains,
                 color: Colors.white,
                 size: 26,
               ),

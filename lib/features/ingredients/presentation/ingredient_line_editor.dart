@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -344,7 +345,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                   tooltip: l10n.commonMoreActions,
                   constraints:
                       const BoxConstraints(minWidth: 36, minHeight: 40),
-                  icon: Icon(Icons.more_vert,
+                  icon: Icon(PhosphorIconsRegular.dotsThreeVertical,
                       size: 20, color: colorScheme.onSurfaceVariant),
                   onSelected: (value) {
                     if (value == 'delete') {
@@ -361,7 +362,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                         child: Row(
                           children: [
                             Icon(
-                              entry.icon ?? Icons.category_outlined,
+                              entry.icon ?? PhosphorIconsRegular.shapes,
                               size: 20,
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -374,7 +375,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
+                          Icon(PhosphorIconsRegular.trash,
                               size: 20, color: colorScheme.error),
                           const SizedBox(width: 10),
                           Text(l10n.commonDelete,
@@ -435,7 +436,7 @@ class _IngredientLineEditorState extends ConsumerState<IngredientLineEditor> {
               padding: const EdgeInsets.only(left: 4, right: 8, bottom: 4),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: colorScheme.error),
+                  Icon(PhosphorIconsRegular.info, size: 16, color: colorScheme.error),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -539,7 +540,7 @@ class _QuantityControls extends StatelessWidget {
         children: [
           IconButton(
             style: qtyBtnStyle,
-            icon: const Icon(Icons.remove_rounded),
+            icon: const Icon(PhosphorIconsRegular.minus),
             iconSize: 16,
             color: colorScheme.onSurfaceVariant,
             onPressed: onDecrement,
@@ -574,7 +575,7 @@ class _QuantityControls extends StatelessWidget {
           ),
           IconButton(
             style: qtyBtnStyle,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(PhosphorIconsRegular.plus),
             iconSize: 16,
             color: colorScheme.onSurfaceVariant,
             onPressed: onIncrement,

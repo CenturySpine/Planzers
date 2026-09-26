@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -360,13 +361,13 @@ class _TripThreadMessagingPageState
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.photo_library_outlined),
+                  leading: const Icon(PhosphorIconsRegular.images),
                   title: Text(l10n.accountChooseFromGallery),
                   onTap: () =>
                       Navigator.pop(ctx, ImageSource.gallery),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_camera_outlined),
+                  leading: const Icon(PhosphorIconsRegular.camera),
                   title: Text(l10n.accountTakePhoto),
                   onTap: () => Navigator.pop(ctx, ImageSource.camera),
                 ),
@@ -788,7 +789,7 @@ class _TripThreadMessagingPageState
           minLines: 1,
           textCapitalization: TextCapitalization.sentences,
           attachmentEnabled: true,
-          attachmentIcon: const Icon(Icons.image_outlined),
+          attachmentIcon: const Icon(PhosphorIconsRegular.image),
           topWidget: replyTarget != null
               ? ReplyComposerBanner(
                   authorId: replyTarget.authorId,
@@ -971,7 +972,7 @@ class _TripMessagingThreadTabs extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.forum_outlined),
+                  const Icon(PhosphorIconsRegular.chatsCircle),
                   const SizedBox(width: 8),
                   Text(l10n.tripMessagingChannelMain),
                 ],
@@ -982,7 +983,7 @@ class _TripMessagingThreadTabs extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.admin_panel_settings_outlined),
+                  const Icon(PhosphorIconsRegular.shieldCheck),
                   const SizedBox(width: 8),
                   Text(l10n.tripMessagingChannelAdmin),
                 ],

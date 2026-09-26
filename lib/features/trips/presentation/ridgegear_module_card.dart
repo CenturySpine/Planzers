@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -82,13 +83,13 @@ class RidgegearModuleCard extends ConsumerWidget {
     if (projectId == null || projectId.isEmpty) {
       return TripOverviewModuleCard(
         label: l10n.tripOverviewTileRidgegear,
-        icon: Icons.backpack_outlined,
+        icon: PhosphorIconsRegular.backpack,
         count: 0,
         showCount: false,
         tileColor: ActivityFilterGroup.loisirs.filterLightBgColor,
         inkColor: ActivityFilterGroup.loisirs.filterInkColor,
         statusText: l10n.ridgegearConnectPrompt,
-        trailingIcon: Icons.link,
+        trailingIcon: PhosphorIconsRegular.link,
         onTap: () => _handleConnectAndPick(context, ref),
       );
     }
@@ -97,7 +98,7 @@ class RidgegearModuleCard extends ConsumerWidget {
 
     return TripOverviewModuleCard(
       label: l10n.tripOverviewTileRidgegear,
-      icon: Icons.backpack_outlined,
+      icon: PhosphorIconsRegular.backpack,
       count: 0,
       showCount: false,
       tileColor: ActivityFilterGroup.loisirs.filterLightBgColor,

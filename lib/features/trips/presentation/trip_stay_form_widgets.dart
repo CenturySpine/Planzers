@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -187,20 +188,20 @@ class TripMealBoundCard extends StatelessWidget {
       (
         TripDayPart.morning,
         l10n.tripCreateMealBreakfast,
-        Icons.bakery_dining_outlined,
-        Icons.bakery_dining,
+        PhosphorIconsRegular.bread,
+        PhosphorIconsFill.bread,
       ),
       (
         TripDayPart.midday,
         l10n.tripCreateMealLunch,
-        Icons.lunch_dining_outlined,
-        Icons.lunch_dining,
+        PhosphorIconsRegular.hamburger,
+        PhosphorIconsFill.hamburger,
       ),
       (
         TripDayPart.evening,
         l10n.tripCreateMealDinner,
-        Icons.dinner_dining_outlined,
-        Icons.dinner_dining,
+        PhosphorIconsRegular.bowlSteam,
+        PhosphorIconsFill.bowlSteam,
       ),
     ];
 

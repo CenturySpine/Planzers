@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -212,7 +213,7 @@ class _TripActivitiesPermissionsPageState
             title: Text(l10n.tripSectionActivities),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -245,7 +246,7 @@ class _TripActivitiesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesSuggest,
                         minRole: trip.activitiesPermissions.suggestActivityMinRole,
-                        icon: Icons.lightbulb_outline,
+                        icon: PhosphorIconsRegular.lightbulb,
                         busy: _isSavingSuggestPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updateSuggestPermission(minRole: role),
@@ -253,7 +254,7 @@ class _TripActivitiesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesPlan,
                         minRole: trip.activitiesPermissions.planActivityMinRole,
-                        icon: Icons.event_available_outlined,
+                        icon: PhosphorIconsRegular.calendarCheck,
                         busy: _isSavingPlanPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePlanPermission(minRole: role),
@@ -261,7 +262,7 @@ class _TripActivitiesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesEdit,
                         minRole: trip.activitiesPermissions.editActivityMinRole,
-                        icon: Icons.edit_outlined,
+                        icon: PhosphorIconsRegular.pencilSimple,
                         busy: _isSavingEditPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updateEditPermission(minRole: role),
@@ -269,7 +270,7 @@ class _TripActivitiesPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionActivitiesDelete,
                         minRole: trip.activitiesPermissions.deleteActivityMinRole,
-                        icon: Icons.delete_outline,
+                        icon: PhosphorIconsRegular.trash,
                         iconColor: Theme.of(context).colorScheme.error,
                         busy: _isSavingDeletePermission,
                         enabled: !_isResettingDefaults,
@@ -293,7 +294,7 @@ class _TripActivitiesPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
@@ -79,7 +80,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
           const SizedBox(height: 10),
         ],
         _TravelerModuleToggleRow(
-          icon: Icons.backpack_outlined,
+          icon: PhosphorIconsRegular.backpack,
           iconColor: ActivityFilterGroup.loisirs.filterInkColor,
           iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
           label: l10n.tripTravelerModulesRidgegearLabel,
@@ -96,7 +97,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
         ),
         const SizedBox(height: 10),
         _TravelerModuleToggleRow(
-          icon: Icons.folder_special_outlined,
+          icon: PhosphorIconsRegular.folderStar,
           iconColor: ActivityFilterGroup.trajets.filterInkColor,
           iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
           label: l10n.tripTravelerModulesWalletLabel,
@@ -110,7 +111,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
         if (packingParticipantId != null) ...[
           const SizedBox(height: 10),
           _TravelerModuleToggleRow(
-            icon: Icons.luggage_outlined,
+            icon: PhosphorIconsRegular.suitcaseRolling,
             iconColor: ActivityFilterGroup.nuits.filterInkColor,
             iconBackground: ActivityFilterGroup.nuits.filterLightBgColor,
             label: l10n.tripTravelerModulesPackingLabel,
@@ -132,7 +133,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           _TravelerModuleToggleRow(
-            icon: Icons.directions_car_outlined,
+            icon: PhosphorIconsRegular.car,
             iconColor: ActivityFilterGroup.trajets.filterInkColor,
             iconBackground: ActivityFilterGroup.trajets.filterLightBgColor,
             label: l10n.tripOverviewTileCarpool,
@@ -147,7 +148,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
           if (!trip.isDayTrip) ...[
             const SizedBox(height: 10),
             _TravelerModuleToggleRow(
-              icon: Icons.king_bed_outlined,
+              icon: PhosphorIconsRegular.bed,
               iconColor: ActivityFilterGroup.nuits.filterInkColor,
               iconBackground: ActivityFilterGroup.nuits.filterLightBgColor,
               label: l10n.tripOverviewTileRooms,
@@ -162,7 +163,7 @@ class TravelerModulesToggleList extends ConsumerWidget {
           ],
           const SizedBox(height: 10),
           _TravelerModuleToggleRow(
-            icon: Icons.casino_outlined,
+            icon: PhosphorIconsRegular.diceFive,
             iconColor: ActivityFilterGroup.loisirs.filterInkColor,
             iconBackground: ActivityFilterGroup.loisirs.filterLightBgColor,
             label: l10n.tripOverviewTileGames,

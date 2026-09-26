@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/data/trip.dart';
@@ -453,7 +454,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                       ),
                       if (selected)
                         const Icon(
-                          Icons.check,
+                          PhosphorIconsRegular.check,
                           size: 20,
                           color: AppTokens.primary,
                         ),
@@ -489,7 +490,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TripNeonSectionHeader(
-          icon: Icons.tune,
+          icon: PhosphorIconsRegular.slidersHorizontal,
           label: l10n.tripMemberStayOptionsTab,
         ),
         TripNeonOptCard(
@@ -522,7 +523,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
       children: [
         if (_showStayDates) ...[
           TripNeonSectionHeader(
-            icon: Icons.event_available,
+            icon: PhosphorIconsFill.calendarCheck,
             label: stayLabel,
           ),
           TripNeonPrefGroup(
@@ -535,7 +536,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                       Expanded(
                         child: TripStayDateCard(
                           kicker: l10n.tripStayFromLabel,
-                          kickerIcon: Icons.flight_takeoff,
+                          kickerIcon: PhosphorIconsRegular.airplaneTakeoff,
                           value: formatTripStayShortDate(context, startDate),
                           onTap: _openStayDatePicker,
                         ),
@@ -544,7 +545,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                       Expanded(
                         child: TripStayDateCard(
                           kicker: l10n.tripStayToLabel,
-                          kickerIcon: Icons.flight_land,
+                          kickerIcon: PhosphorIconsRegular.airplaneLanding,
                           value: formatTripStayShortDate(context, endDate),
                           onTap: _openStayDatePicker,
                         ),
@@ -568,7 +569,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                 dayLabel: l10n.tripCreateArrivalMealDay(
                   formatTripStayShortDate(context, startDate),
                 ),
-                dayIcon: Icons.flight_takeoff,
+                dayIcon: PhosphorIconsRegular.airplaneTakeoff,
                 question: l10n.tripCreateFirstMealQuestion,
                 selected: _stay.startDayPart,
                 onSelected: (part) {
@@ -581,7 +582,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                 dayLabel: l10n.tripCreateDepartureMealDay(
                   formatTripStayShortDate(context, endDate),
                 ),
-                dayIcon: Icons.flight_land,
+                dayIcon: PhosphorIconsRegular.airplaneLanding,
                 question: l10n.tripCreateLastMealQuestion,
                 selected: _stay.endDayPart,
                 onSelected: (part) {
@@ -594,7 +595,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
         ],
         if (widget.showOptionsSection) ...[
           TripNeonSectionHeader(
-            icon: Icons.tune,
+            icon: PhosphorIconsRegular.slidersHorizontal,
             label: optionsLabel,
           ),
           TripNeonPrefGroup(
@@ -623,7 +624,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
       children: [
         if (_showStayDates) ...[
           TripNeonSectionHeader(
-            icon: Icons.event_available,
+            icon: PhosphorIconsFill.calendarCheck,
             label: l10n.tripStayPresenceDatesTitle,
           ),
           Padding(
@@ -633,7 +634,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                 Expanded(
                   child: TripStayDateCard(
                     kicker: l10n.tripCreateDateStartLabel,
-                    kickerIcon: Icons.flight_takeoff,
+                    kickerIcon: PhosphorIconsRegular.airplaneTakeoff,
                     value: formatTripStayShortDate(context, startDate),
                     onTap: _openStayDatePicker,
                   ),
@@ -642,7 +643,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
                 Expanded(
                   child: TripStayDateCard(
                     kicker: l10n.tripCreateDateEndLabel,
-                    kickerIcon: Icons.flight_land,
+                    kickerIcon: PhosphorIconsRegular.airplaneLanding,
                     value: formatTripStayShortDate(context, endDate),
                     onTap: _openStayDatePicker,
                   ),
@@ -668,7 +669,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
               dayLabel: l10n.tripCreateArrivalMealDay(
                 formatTripStayShortDate(context, startDate),
               ),
-              dayIcon: Icons.flight_takeoff,
+              dayIcon: PhosphorIconsRegular.airplaneTakeoff,
               question: l10n.tripCreateFirstMealQuestion,
               selected: _stay.startDayPart,
               onSelected: (part) {
@@ -683,7 +684,7 @@ class _TripMemberStayOptionsEditorState extends State<TripMemberStayOptionsEdito
               dayLabel: l10n.tripCreateDepartureMealDay(
                 formatTripStayShortDate(context, endDate),
               ),
-              dayIcon: Icons.flight_land,
+              dayIcon: PhosphorIconsRegular.airplaneLanding,
               question: l10n.tripCreateLastMealQuestion,
               selected: _stay.endDayPart,
               onSelected: (part) {
@@ -779,7 +780,7 @@ class _NeonSelectShell extends StatelessWidget {
                 ),
               ),
               Icon(
-                Icons.expand_more,
+                PhosphorIconsRegular.caretDown,
                 size: 22,
                 color: enabled
                     ? AppTokens.onSurfaceVariant

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -576,7 +577,7 @@ class _ActivitiesExpandableFab extends StatelessWidget {
                     size: 20, color: group.filterColor),
               ),
               title: Text(label),
-              trailing: const Icon(Icons.add_rounded),
+              trailing: const Icon(PhosphorIconsRegular.plus),
               onTap: () => Navigator.of(sheetContext).pop(action),
             );
         return SafeArea(
@@ -631,7 +632,7 @@ class _ActivitiesExpandableFab extends StatelessWidget {
       heroTag: 'trip_activities_add',
       tooltip: AppLocalizations.of(context)!.commonAdd,
       onPressed: () => _openSheet(context),
-      child: const Icon(Icons.add_rounded, size: 28),
+      child: const Icon(PhosphorIconsRegular.plus, size: 28),
     );
   }
 }

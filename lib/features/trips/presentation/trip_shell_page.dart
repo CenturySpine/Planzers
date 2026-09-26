@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -46,32 +47,32 @@ class TripShellPage extends ConsumerStatefulWidget {
     _TripNavDestination(
       branchIndex: 0,
       label: 'Aperçu',
-      icon: Icons.dashboard_outlined,
-      selectedIcon: Icons.dashboard,
+      icon: PhosphorIconsRegular.squaresFour,
+      selectedIcon: PhosphorIconsFill.squaresFour,
     ),
     _TripNavDestination(
       branchIndex: 1,
       label: 'Messagerie',
-      icon: Icons.chat_bubble_outline,
-      selectedIcon: Icons.chat_bubble,
+      icon: PhosphorIconsRegular.chatCircleDots,
+      selectedIcon: PhosphorIconsFill.chatCircleDots,
     ),
     _TripNavDestination(
       branchIndex: 6,
       label: 'Planning',
-      icon: Icons.event_available_outlined,
-      selectedIcon: Icons.event_available,
+      icon: PhosphorIconsRegular.calendarCheck,
+      selectedIcon: PhosphorIconsFill.calendarCheck,
     ),
     _TripNavDestination(
       branchIndex: 2,
       label: 'Dépenses',
-      icon: Icons.payments_outlined,
-      selectedIcon: Icons.payments,
+      icon: PhosphorIconsRegular.wallet,
+      selectedIcon: PhosphorIconsFill.wallet,
     ),
     _TripNavDestination(
       branchIndex: 7,
       label: 'Courses',
-      icon: Icons.shopping_cart_outlined,
-      selectedIcon: Icons.shopping_cart,
+      icon: PhosphorIconsRegular.shoppingCartSimple,
+      selectedIcon: PhosphorIconsFill.shoppingCartSimple,
     ),
   ];
 
@@ -285,7 +286,7 @@ class _TripShellPageState extends ConsumerState<TripShellPage> {
                     ),
                   ),
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back),
+                    icon: const Icon(PhosphorIconsRegular.arrowLeft),
                     onPressed: () => isOnTripOverview
                         ? context.go('/trips')
                         : context.go('/trips/$tripId/overview'),
@@ -626,7 +627,7 @@ class TripCarsPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
       title: l10n.tripCarsTitle,
-      icon: Icons.directions_car_outlined,
+      icon: PhosphorIconsRegular.car,
       message: l10n.tripCarsComingSoon,
     );
   }
@@ -640,7 +641,7 @@ class TripMealsPlaceholderPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return _TripSectionPlaceholder(
       title: l10n.tripTabMeals,
-      icon: Icons.restaurant_outlined,
+      icon: PhosphorIconsRegular.forkKnife,
       message: l10n.tripMealsComingSoon,
     );
   }

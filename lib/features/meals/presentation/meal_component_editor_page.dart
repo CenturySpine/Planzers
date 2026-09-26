@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -324,12 +325,12 @@ class _MealComponentEditorPageState
             IconButton(
               tooltip: l10n.mealComponentLockedByMe,
               onPressed: null,
-              icon: const Icon(Icons.lock_outline),
+              icon: const Icon(PhosphorIconsRegular.lock),
             ),
           IconButton(
             tooltip: l10n.commonDone,
             onPressed: () => Navigator.of(context).pop(_component),
-            icon: const Icon(Icons.check),
+            icon: const Icon(PhosphorIconsRegular.check),
           ),
         ],
       ),
@@ -380,14 +381,14 @@ class _MealComponentEditorPageState
                 for (final id in _risk.containsAllergenIds)
                   Chip(
                     label: Text(l10n.mealContainsAllergen(allergenLabelById[id] ?? id)),
-                    avatar: const Icon(Icons.warning_amber_rounded, size: 16),
+                    avatar: const Icon(PhosphorIconsRegular.warning, size: 16),
                   ),
                 for (final id in _risk.mayContainAllergenIds)
                   Chip(
                     label: Text(
                       l10n.mealMayContainAllergen(allergenLabelById[id] ?? id),
                     ),
-                    avatar: const Icon(Icons.info_outline, size: 16),
+                    avatar: const Icon(PhosphorIconsRegular.info, size: 16),
                   ),
               ],
             ),
@@ -405,7 +406,7 @@ class _MealComponentEditorPageState
               if (_component.ingredients.isNotEmpty)
                 IconButton(
                   tooltip: l10n.mealIngredientsRemoveAllTooltip,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(PhosphorIconsRegular.trash),
                   onPressed: _confirmAndClearAllIngredients,
                 ),
             ],
@@ -425,7 +426,7 @@ class _MealComponentEditorPageState
             ),
           TextButton.icon(
             onPressed: _addIngredient,
-            icon: const Icon(Icons.add),
+            icon: const Icon(PhosphorIconsRegular.plus),
             label: Text(l10n.mealAddIngredient),
           ),
           if (_component.recipeInstructions.trim().isNotEmpty) ...[
@@ -441,7 +442,7 @@ class _MealComponentEditorPageState
                 ),
                 IconButton(
                   tooltip: l10n.mealRecipeStepsRemoveTooltip,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(PhosphorIconsRegular.trash),
                   onPressed: _clearRecipeInstructions,
                 ),
               ],
@@ -472,7 +473,7 @@ class _MealComponentEditorPageState
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.auto_awesome),
+                  : const Icon(PhosphorIconsFill.sparkle),
             )
           : null,
     );
@@ -494,7 +495,7 @@ class _AiQuantityWarningBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.warning_amber_rounded,
+            PhosphorIconsRegular.warning,
             size: 20,
             color: planerzColors.warning,
           ),

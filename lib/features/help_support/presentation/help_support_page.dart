@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/app_version_provider.dart';
@@ -82,7 +83,7 @@ class HelpSupportPage extends ConsumerWidget {
                   Text(l10n.helpSupportContactIntro, style: sectionTitleStyle),
                   const SizedBox(height: 12),
                   _ContactTile(
-                    icon: Icons.bug_report_outlined,
+                    icon: PhosphorIconsRegular.bug,
                     label: l10n.helpSupportGithubLabel,
                     onTap: () => _openUrl(
                       context,
@@ -90,7 +91,7 @@ class HelpSupportPage extends ConsumerWidget {
                     ),
                   ),
                   _ContactTile(
-                    icon: Icons.email_outlined,
+                    icon: PhosphorIconsRegular.envelopeSimple,
                     label: l10n.helpSupportEmailLabel,
                     sublabel: 'century.spine@gmail.com',
                     onTap: () => _openUrl(
@@ -99,7 +100,7 @@ class HelpSupportPage extends ConsumerWidget {
                     ),
                   ),
                   _ContactTile(
-                    icon: Icons.person_outline,
+                    icon: PhosphorIconsRegular.user,
                     label: l10n.helpSupportAboutLinkLabel,
                     onTap: () => _openUrl(
                       context,
@@ -162,7 +163,7 @@ class _ContactTile extends StatelessWidget {
               ),
             ),
             Icon(
-              Icons.chevron_right,
+              PhosphorIconsRegular.caretRight,
               size: 18,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),

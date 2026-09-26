@@ -1,5 +1,6 @@
 ﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -164,7 +165,7 @@ class AccountMenuButton extends ConsumerWidget {
           value: 'account',
           child: Row(
             children: [
-              const Icon(Icons.manage_accounts_outlined, size: 20),
+              const Icon(PhosphorIconsRegular.userGear, size: 20),
               const SizedBox(width: 12),
               Text(l10n.accountTitle),
             ],
@@ -175,7 +176,7 @@ class AccountMenuButton extends ConsumerWidget {
             value: 'administration',
             child: Row(
               children: [
-                const Icon(Icons.admin_panel_settings_outlined, size: 20),
+                const Icon(PhosphorIconsRegular.shieldCheck, size: 20),
                 const SizedBox(width: 12),
                 Text(l10n.accountAdministration),
               ],
@@ -185,7 +186,7 @@ class AccountMenuButton extends ConsumerWidget {
           value: 'help_support',
           child: Row(
             children: [
-              const Icon(Icons.help_outline, size: 20),
+              const Icon(PhosphorIconsRegular.question, size: 20),
               const SizedBox(width: 12),
               Text(l10n.accountHelpSupport),
             ],
@@ -195,7 +196,7 @@ class AccountMenuButton extends ConsumerWidget {
           value: 'logout',
           child: Row(
             children: [
-              const Icon(Icons.logout, size: 20),
+              const Icon(PhosphorIconsRegular.signOut, size: 20),
               const SizedBox(width: 12),
               Text(l10n.accountSignOut),
             ],
@@ -223,7 +224,7 @@ class _CupidonHeartBadge extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        const Icon(Icons.favorite, color: Colors.pink, size: 16),
+        const Icon(PhosphorIconsFill.heart, color: Colors.pink, size: 16),
         Padding(
           padding: const EdgeInsets.only(bottom: 1),
           child: Text(

@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 
@@ -84,7 +85,7 @@ class InviteJoinInfoBanner extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, size: 22, color: iconColor),
+              Icon(PhosphorIconsRegular.info, size: 22, color: iconColor),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -206,7 +207,7 @@ class _InviteJoinRadio extends StatelessWidget {
         ),
       ),
       child: selected
-          ? const Icon(Icons.circle, size: 10, color: Colors.white)
+          ? const Icon(PhosphorIconsFill.circle, size: 10, color: Colors.white)
           : null,
     );
   }
@@ -272,7 +273,7 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
         child: Row(
           children: [
             const Icon(
-              Icons.search,
+              PhosphorIconsRegular.magnifyingGlass,
               size: 22,
               color: AppTokens.onSurfaceVariant,
             ),
@@ -301,7 +302,7 @@ class _InviteJoinSearchFieldState extends State<InviteJoinSearchField> {
             ),
             if (widget.controller.text.isNotEmpty)
               IconButton(
-                icon: const Icon(Icons.clear, size: 20),
+                icon: const Icon(PhosphorIconsRegular.x, size: 20),
                 color: AppTokens.onSurfaceVariant,
                 onPressed: () {
                   widget.controller.clear();
@@ -352,7 +353,7 @@ class InviteJoinNameRow extends StatelessWidget {
                 foregroundColor: AppTokens.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               ),
-              icon: const Icon(Icons.edit_outlined, size: 16),
+              icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
               label: Text(
                 editLabel!,
                 style: const TextStyle(
@@ -376,7 +377,7 @@ class InviteJoinDualCtaBar extends StatelessWidget {
     required this.onPrimary,
     this.secondaryEnabled = true,
     this.primaryEnabled = true,
-    this.primaryIcon = Icons.check,
+    this.primaryIcon = PhosphorIconsRegular.check,
     this.busy = false,
   });
 
@@ -543,7 +544,7 @@ class InviteJoinSuccessStatus extends StatelessWidget {
               child: const SizedBox(
                 width: 76,
                 height: 76,
-                child: Icon(Icons.check, size: 44, color: Colors.white),
+                child: Icon(PhosphorIconsRegular.check, size: 44, color: Colors.white),
               ),
             ),
             const SizedBox(height: 18),

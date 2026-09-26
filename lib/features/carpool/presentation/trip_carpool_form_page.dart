@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/carpool/data/trip_carpool.dart';
@@ -313,7 +314,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
             IconButton(
               tooltip: l10n.commonEdit,
               onPressed: () => setState(() => _isReadOnly = false),
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(PhosphorIconsRegular.pencilSimple),
             ),
           if (canUseEditControls)
             IconButton(
@@ -325,7 +326,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.check),
+                  : const Icon(PhosphorIconsRegular.check),
             ),
         ],
       ),
@@ -412,8 +413,8 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                         const SizedBox(height: 4),
                         Icon(
                           _goesShopping
-                              ? Icons.shopping_cart_outlined
-                              : Icons.remove,
+                              ? PhosphorIconsRegular.shoppingCartSimple
+                              : PhosphorIconsRegular.minus,
                           size: 20,
                           color: _goesShopping
                               ? colorScheme.primary
@@ -437,8 +438,8 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                                 dense: true,
                                 leading: Icon(
                                   memberId == _driverParticipantId?.trim()
-                                      ? Icons.drive_eta_outlined
-                                      : Icons.person_outline,
+                                      ? PhosphorIconsRegular.car
+                                      : PhosphorIconsRegular.user,
                                   size: 20,
                                 ),
                                 title: Text(
@@ -621,7 +622,7 @@ class _TripCarpoolFormPageState extends ConsumerState<TripCarpoolFormPage> {
                         alignment: AlignmentDirectional.centerEnd,
                         child: OutlinedButton.icon(
                           onPressed: _saving ? null : () => _deleteCarpool(trip.id),
-                          icon: const Icon(Icons.delete_outline),
+                          icon: const Icon(PhosphorIconsRegular.trash),
                           label: Text(l10n.commonDelete),
                         ),
                       ),

@@ -1,29 +1,30 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 extension TripActivityCategoryPresentation on TripActivityCategory {
   IconData get categoryIcon => switch (this) {
-        TripActivityCategory.sport => Icons.sports_soccer_outlined,
-        TripActivityCategory.hiking => Icons.hiking_outlined,
-        TripActivityCategory.shopping => Icons.shopping_bag_outlined,
-        TripActivityCategory.visit => Icons.explore_outlined,
-        TripActivityCategory.restaurant => Icons.restaurant_outlined,
-        TripActivityCategory.cafe => Icons.local_cafe_outlined,
-        TripActivityCategory.museum => Icons.museum_outlined,
-        TripActivityCategory.show => Icons.theater_comedy_outlined,
-        TripActivityCategory.nightlife => Icons.nightlife,
-        TripActivityCategory.karaoke => Icons.mic_outlined,
-        TripActivityCategory.games => Icons.sports_esports_outlined,
-        TripActivityCategory.beach => Icons.beach_access,
-        TripActivityCategory.park => Icons.park_outlined,
-        TripActivityCategory.transport => Icons.directions_bus_outlined,
-        TripActivityCategory.accommodation => Icons.hotel_outlined,
-        TripActivityCategory.wellness => Icons.spa_outlined,
-        TripActivityCategory.cooking => Icons.outdoor_grill,
-        TripActivityCategory.workshop => Icons.palette_outlined,
-        TripActivityCategory.market => Icons.storefront_outlined,
-        TripActivityCategory.meeting => Icons.business_center_outlined,
+        TripActivityCategory.sport => PhosphorIconsRegular.soccerBall,
+        TripActivityCategory.hiking => PhosphorIconsRegular.personSimpleHike,
+        TripActivityCategory.shopping => PhosphorIconsRegular.shoppingBag,
+        TripActivityCategory.visit => PhosphorIconsRegular.compass,
+        TripActivityCategory.restaurant => PhosphorIconsRegular.forkKnife,
+        TripActivityCategory.cafe => PhosphorIconsRegular.coffee,
+        TripActivityCategory.museum => PhosphorIconsRegular.bank,
+        TripActivityCategory.show => PhosphorIconsRegular.maskHappy,
+        TripActivityCategory.nightlife => PhosphorIconsRegular.martini,
+        TripActivityCategory.karaoke => PhosphorIconsRegular.microphone,
+        TripActivityCategory.games => PhosphorIconsRegular.gameController,
+        TripActivityCategory.beach => PhosphorIconsFill.umbrella,
+        TripActivityCategory.park => PhosphorIconsRegular.tree,
+        TripActivityCategory.transport => PhosphorIconsRegular.bus,
+        TripActivityCategory.accommodation => PhosphorIconsRegular.bed,
+        TripActivityCategory.wellness => PhosphorIconsRegular.flowerLotus,
+        TripActivityCategory.cooking => PhosphorIconsRegular.cookingPot,
+        TripActivityCategory.workshop => PhosphorIconsRegular.palette,
+        TripActivityCategory.market => PhosphorIconsRegular.storefront,
+        TripActivityCategory.meeting => PhosphorIconsRegular.briefcase,
       };
 
   String get categoryLabelFr => switch (this) {

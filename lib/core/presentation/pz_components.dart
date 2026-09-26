@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 
@@ -266,7 +267,7 @@ class PzProgressBar extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           const Icon(
-            Icons.check_circle_rounded,
+            PhosphorIconsFill.checkCircle,
             size: 16,
             color: AppTokens.primary,
           ),
@@ -387,27 +388,27 @@ class PzCallout extends StatelessWidget {
       PzCalloutTone.info => (
           AppTokens.infoContainer,
           const Color(0xFF1667A8),
-          Icons.info_outline_rounded
+          PhosphorIconsRegular.info
         ),
       PzCalloutTone.warning => (
           AppTokens.warningContainer,
           const Color(0xFF8A5A00),
-          Icons.warning_amber_rounded
+          PhosphorIconsRegular.warning
         ),
       PzCalloutTone.error => (
           AppTokens.errorContainer,
           AppTokens.onErrorContainer,
-          Icons.error_outline_rounded
+          PhosphorIconsRegular.warningCircle
         ),
       PzCalloutTone.success => (
           AppTokens.successContainer,
           const Color(0xFF0F6B41),
-          Icons.check_circle_outline_rounded
+          PhosphorIconsRegular.checkCircle
         ),
       PzCalloutTone.brand => (
           AppTokens.primaryTint,
           AppTokens.primaryDark,
-          Icons.info_outline_rounded
+          PhosphorIconsRegular.info
         ),
     };
     return Container(

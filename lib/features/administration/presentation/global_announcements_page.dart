@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -130,7 +131,7 @@ class _GlobalAnnouncementsPageState
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     )
-                  : const Icon(Icons.visibility_outlined),
+                  : const Icon(PhosphorIconsRegular.eye),
             ),
         ],
       ),
@@ -188,7 +189,7 @@ class _GlobalAnnouncementsPageState
                                 if (announcement.wasEdited) ...[
                                   const SizedBox(width: 4),
                                   Icon(
-                                    Icons.edit_rounded,
+                                    PhosphorIconsRegular.pencilSimple,
                                     size: 10,
                                     color: Theme.of(context)
                                         .colorScheme
@@ -219,7 +220,7 @@ class _GlobalAnnouncementsPageState
                                   ),
                                 )
                               : Icon(
-                                  Icons.close,
+                                  PhosphorIconsRegular.x,
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
                                 ),

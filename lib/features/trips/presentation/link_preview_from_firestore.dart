@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -162,7 +163,7 @@ class LinkPreviewThumbnail extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Icon(
-          Icons.link,
+          PhosphorIconsRegular.link,
           size: size * 0.45,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -185,7 +186,7 @@ class LinkPreviewThumbnail extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
           alignment: Alignment.center,
           child: Icon(
-            Icons.broken_image_outlined,
+            PhosphorIconsRegular.imageBroken,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),

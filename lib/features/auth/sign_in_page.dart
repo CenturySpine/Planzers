@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/planerz_brand_mark.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -812,7 +813,7 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                                                         MainAxisSize.min,
                                                     children: [
                                                       Icon(
-                                                        Icons.phone_outlined,
+                                                        PhosphorIconsRegular.phone,
                                                         size: 20,
                                                         color:
                                                             _googleSignInText,

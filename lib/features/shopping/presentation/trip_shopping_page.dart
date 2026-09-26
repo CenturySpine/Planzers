@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -422,7 +423,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     Widget buildListActionsMenu({bool showClearConsolidated = false}) =>
         PopupMenuButton<String>(
           tooltip: l10n.commonMoreActions,
-          icon: const Icon(Icons.more_vert_rounded),
+          icon: const Icon(PhosphorIconsRegular.dotsThreeVertical),
           onSelected: (value) {
             switch (value) {
               case 'help':
@@ -442,7 +443,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                 value: 'help',
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.help_outline_rounded),
+                  leading: const Icon(PhosphorIconsRegular.question),
                   title: Text(l10n.shoppingFilterHelpTooltip),
                 ),
               ),
@@ -452,7 +453,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   enabled: !_isConsolidating && ownerFlagReady,
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.auto_awesome_rounded),
+                    leading: const Icon(PhosphorIconsRegular.sparkle),
                     title: Text(l10n.shoppingActionConsolidateAi),
                   ),
                 ),
@@ -461,7 +462,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   value: 'clear_consolidated',
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.layers_clear_outlined),
+                    leading: const Icon(PhosphorIconsRegular.stackMinus),
                     title: Text(l10n.shoppingConsolidatedClear),
                   ),
                 ),
@@ -472,7 +473,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading:
-                        Icon(Icons.delete_outline_rounded, color: errorColor),
+                        Icon(PhosphorIconsRegular.trash, color: errorColor),
                     title: Text(
                       l10n.shoppingActionDeleteChecked,
                       style: TextStyle(color: errorColor),
@@ -531,13 +532,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                               ),
                               icon: Icon(
                                 locks.manualListLocked
-                                    ? Icons.lock_outline
-                                    : Icons.lock_open_outlined,
+                                    ? PhosphorIconsRegular.lock
+                                    : PhosphorIconsRegular.lockOpen,
                               ),
                             )
                           else if (locks.manualListLocked)
                             Icon(
-                              Icons.lock_outline,
+                              PhosphorIconsRegular.lock,
                               size: 16,
                               color: Theme.of(context)
                                   .colorScheme
@@ -576,13 +577,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                               ),
                               icon: Icon(
                                 locks.consolidatedListLocked
-                                    ? Icons.lock_outline
-                                    : Icons.lock_open_outlined,
+                                    ? PhosphorIconsRegular.lock
+                                    : PhosphorIconsRegular.lockOpen,
                               ),
                             )
                           else if (locks.consolidatedListLocked)
                             Icon(
-                              Icons.lock_outline,
+                              PhosphorIconsRegular.lock,
                               size: 16,
                               color: Theme.of(context)
                                   .colorScheme
@@ -630,7 +631,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(
-                                          Icons.shopping_cart_outlined,
+                                          PhosphorIconsRegular.shoppingCartSimple,
                                           size: 48,
                                           color: Theme.of(context).colorScheme.primary,
                                         ),
@@ -761,7 +762,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                           consolidatedLockRestrictsEditing,
                     ),
                   ),
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(PhosphorIconsRegular.plus),
                   label: Text(l10n.shoppingActionAddItem),
                 ),
               ),
@@ -1080,7 +1081,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.save_outlined),
+                      : const Icon(PhosphorIconsRegular.floppyDisk),
                   onPressed: isSavingConsolidated
                       ? null
                       : () => _saveConsolidatedList(context),
@@ -1161,22 +1162,22 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
               ),
               const SizedBox(height: 12),
               _FilterLegendRow(
-                icon: Icons.apps_outlined,
+                icon: PhosphorIconsRegular.squaresFour,
                 label: l10n.shoppingFilterAll,
               ),
               const SizedBox(height: 8),
               _FilterLegendRow(
-                icon: Icons.radio_button_unchecked,
+                icon: PhosphorIconsRegular.circle,
                 label: l10n.shoppingFilterTodo,
               ),
               const SizedBox(height: 8),
               _FilterLegendRow(
-                icon: Icons.check_circle_outline,
+                icon: PhosphorIconsRegular.checkCircle,
                 label: l10n.shoppingFilterDone,
               ),
               const SizedBox(height: 8),
               _FilterLegendRow(
-                icon: Icons.person_pin_circle_outlined,
+                icon: PhosphorIconsRegular.userCircle,
                 label: l10n.shoppingFilterClaimedByMe,
               ),
             ],
@@ -1467,7 +1468,7 @@ class _ConsolidatedCategorySection extends StatelessWidget {
                     IngredientLineCustomMenuItem(
                       actionId: _changeCategoryActionId,
                       label: l10n.shoppingChangeCategoryMenu,
-                      icon: Icons.drive_file_move_outline,
+                      icon: PhosphorIconsRegular.folderSimpleUser,
                     ),
                   ],
             onCustomMenuAction: structureLocked
@@ -1613,7 +1614,7 @@ class _ConsolidationOptionsDialogState
                     const SizedBox(height: 8),
                     _OptionTile(
                       title: l10n.shoppingConsolidateOptionManualOnly,
-                      icon: Icons.edit_note,
+                      icon: PhosphorIconsRegular.notePencil,
                       mode: _ConsolidationMode.manualOnly,
                       selected: _selectedMode == _ConsolidationMode.manualOnly,
                       onRowTap: () => setState(
@@ -1630,7 +1631,7 @@ class _ConsolidationOptionsDialogState
                     const SizedBox(height: 8),
                     _OptionTile(
                       title: l10n.shoppingConsolidateOptionFull,
-                      icon: Icons.merge_type,
+                      icon: PhosphorIconsRegular.gitMerge,
                       mode: _ConsolidationMode.full,
                       selected: _selectedMode == _ConsolidationMode.full,
                       onRowTap: () =>

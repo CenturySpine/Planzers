@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
@@ -184,7 +185,7 @@ class _CupidonSpacePageState extends ConsumerState<CupidonSpacePage> {
                                   child:
                                       CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                              : Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     ),

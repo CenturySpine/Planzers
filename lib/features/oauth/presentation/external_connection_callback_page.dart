@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -98,7 +99,7 @@ class _ExternalConnectionCallbackPageState
               child: switch (_status) {
                 _CallbackStatus.loading => const CircularProgressIndicator(),
                 _CallbackStatus.success => _CallbackResult(
-                    icon: Icons.check_circle_outline,
+                    icon: PhosphorIconsRegular.checkCircle,
                     iconColor: Colors.green,
                     message: l10n.externalConnectionCallbackSuccess,
                     onDone: () =>
@@ -106,7 +107,7 @@ class _ExternalConnectionCallbackPageState
                     doneLabel: l10n.externalConnectionCallbackBackToList,
                   ),
                 _CallbackStatus.error => _CallbackResult(
-                    icon: Icons.error_outline,
+                    icon: PhosphorIconsRegular.warningCircle,
                     iconColor: Theme.of(context).colorScheme.error,
                     message: widget.error.isNotEmpty
                         ? l10n.externalConnectionCallbackDenied

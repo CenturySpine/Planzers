@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -94,7 +95,7 @@ class TripOverviewBanner extends StatelessWidget {
                           ),
                         ),
                         child: const Center(
-                          child: Icon(Icons.broken_image_outlined,
+                          child: Icon(PhosphorIconsRegular.imageBroken,
                               size: 42, color: Colors.white70),
                         ),
                       );
@@ -106,7 +107,7 @@ class TripOverviewBanner extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.add_photo_alternate_outlined,
+                          PhosphorIconsRegular.imageSquare,
                           size: 36,
                           color: Colors.white.withValues(alpha: 0.85),
                         ),
@@ -159,7 +160,7 @@ class TripOverviewBanner extends StatelessWidget {
                                   ),
                                 )
                               : const Icon(
-                                  Icons.photo_camera_outlined,
+                                  PhosphorIconsRegular.camera,
                                   size: 20,
                                   color: Colors.white,
                                 ),
@@ -201,7 +202,7 @@ class TripOverviewBanner extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.location_on_outlined,
+                              PhosphorIconsRegular.mapPin,
                               size: 15,
                               color: Colors.white.withValues(alpha: 0.92),
                             ),
@@ -226,7 +227,7 @@ class TripOverviewBanner extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.date_range_outlined,
+                              PhosphorIconsRegular.calendarDots,
                               size: 15,
                               color: Colors.white.withValues(alpha: 0.88),
                             ),
@@ -277,7 +278,7 @@ class TripOverviewAnnouncementsAppBarAction extends StatelessWidget {
       icon: Badge(
         isLabelVisible: hasUnread,
         smallSize: 8,
-        child: const Icon(Icons.campaign_outlined),
+        child: const Icon(PhosphorIconsRegular.megaphone),
       ),
     );
   }
@@ -356,7 +357,7 @@ class TripOverviewLinkCard extends StatelessWidget {
                 trailing!,
               ] else
                 const Icon(
-                  Icons.open_in_new,
+                  PhosphorIconsRegular.arrowSquareOut,
                   size: 20,
                   color: AppTokens.outline,
                 ),
@@ -456,7 +457,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 child: Icon(
-                                  Icons.assignment_ind_outlined,
+                                  PhosphorIconsRegular.identificationCard,
                                   size: 20,
                                   color: AppTokens.primary,
                                 ),
@@ -479,7 +480,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.vpn_key_outlined,
+                      PhosphorIconsRegular.key,
                       size: 18,
                       color: AppTokens.primary,
                     ),
@@ -514,7 +515,7 @@ class TripOverviewParticipantsCard extends StatelessWidget {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.ios_share, size: 16),
+                          : const Icon(PhosphorIconsRegular.export, size: 16),
                       label: Text(shareCodeLabel ?? ''),
                       style: TextButton.styleFrom(
                         foregroundColor: AppTokens.primary,
@@ -659,7 +660,7 @@ class TripOverviewModuleCard extends StatelessWidget {
     required this.onTap,
     this.statusText,
     this.showCount = true,
-    this.trailingIcon = Icons.chevron_right,
+    this.trailingIcon = PhosphorIconsRegular.caretRight,
   });
 
   final String label;
@@ -873,7 +874,7 @@ class TripOverviewModuleAddCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.add, size: 20, color: AppTokens.primary),
+                const Icon(PhosphorIconsRegular.plus, size: 20, color: AppTokens.primary),
                 const SizedBox(width: 8),
                 Text(
                   label,
@@ -1012,7 +1013,7 @@ class _TripOverviewSettingsRow extends StatelessWidget {
                   ),
                   if (!data.danger)
                     const Icon(
-                      Icons.chevron_right,
+                      PhosphorIconsRegular.caretRight,
                       size: 20,
                       color: AppTokens.outline,
                     ),

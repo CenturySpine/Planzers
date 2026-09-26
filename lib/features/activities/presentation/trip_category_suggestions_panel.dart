@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -177,7 +178,7 @@ class _TripCategorySuggestionsPanelState
                   onPressed: () => context.push(
                     '/trips/${widget.trip.id}/activities/new?initialCategory=${widget.categories.map((c) => c.firestoreValue).join(',')}',
                   ),
-                  child: const Icon(Icons.add),
+                  child: const Icon(PhosphorIconsRegular.plus),
                 ),
               ),
           ],

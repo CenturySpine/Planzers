@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -209,7 +210,7 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
             children: [
               _ParticipantNameSourceOption(
                 title: l10n.tripParticipantsEditNameModeCustom,
-                icon: Icons.edit_outlined,
+                icon: PhosphorIconsRegular.pencilSimple,
                 value: false,
                 selected: !_useProfileName,
                 onTap: () {
@@ -220,7 +221,7 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
               const SizedBox(height: 12),
               _ParticipantNameSourceOption(
                 title: l10n.tripParticipantsEditNameModeProfile,
-                icon: Icons.badge_outlined,
+                icon: PhosphorIconsRegular.identificationBadge,
                 value: true,
                 selected: _useProfileName,
                 enabled: _profileOptionEnabled,
@@ -264,7 +265,7 @@ class TripParticipantNameEditorState extends State<TripParticipantNameEditor> {
             child: Row(
               children: [
                 const Icon(
-                  Icons.badge_outlined,
+                  PhosphorIconsRegular.identificationBadge,
                   size: 22,
                   color: AppTokens.primary,
                 ),

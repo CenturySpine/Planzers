@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -162,7 +163,7 @@ class _ConnectedExternalProvidersPageState
                           ? NetworkImage(provider.iconUrl)
                           : null,
                       child: provider.iconUrl.isEmpty
-                          ? const Icon(Icons.apps_rounded)
+                          ? const Icon(PhosphorIconsRegular.squaresFour)
                           : null,
                     ),
                     title: Text(provider.displayName),

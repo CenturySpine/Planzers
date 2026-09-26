@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,7 +132,7 @@ class _TripGeneralPermissionsPageState
             title: Text(l10n.tripSectionTrip),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -164,7 +165,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionEditGeneralInfo,
                         minRole: trip.generalPermissions.editGeneralInfoMinRole,
-                        icon: Icons.edit_outlined,
+                        icon: PhosphorIconsRegular.pencilSimple,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.editGeneralInfo,
                         ),
@@ -177,7 +178,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionManageBanner,
                         minRole: trip.generalPermissions.manageBannerMinRole,
-                        icon: Icons.photo_camera_outlined,
+                        icon: PhosphorIconsRegular.camera,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.manageBanner,
                         ),
@@ -190,7 +191,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionPublishAnnouncements,
                         minRole: trip.generalPermissions.publishAnnouncementsMinRole,
-                        icon: Icons.campaign_outlined,
+                        icon: PhosphorIconsRegular.megaphone,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.publishAnnouncements,
                         ),
@@ -203,7 +204,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionShareAccess,
                         minRole: trip.generalPermissions.shareAccessMinRole,
-                        icon: Icons.share_outlined,
+                        icon: PhosphorIconsRegular.shareNetwork,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.shareAccess,
                         ),
@@ -216,7 +217,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionManageTripSettings,
                         minRole: trip.generalPermissions.manageTripSettingsMinRole,
-                        icon: Icons.settings_outlined,
+                        icon: PhosphorIconsRegular.gearSix,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.manageTripSettings,
                         ),
@@ -229,7 +230,7 @@ class _TripGeneralPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionDeleteTrip,
                         minRole: TripPermissionRole.owner,
-                        icon: Icons.delete_outline,
+                        icon: PhosphorIconsRegular.trash,
                         iconColor: Theme.of(context).colorScheme.error,
                         busy: _savingActions.contains(
                           TripGeneralPermissionAction.deleteTrip,
@@ -257,7 +258,7 @@ class _TripGeneralPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

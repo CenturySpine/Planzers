@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,7 @@ class AdministrationPage extends ConsumerWidget {
         title: const Text('Administration'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(PhosphorIconsRegular.arrowClockwise),
             tooltip: 'Actualiser',
             onPressed: statsAsync.isLoading
                 ? null
@@ -61,7 +62,7 @@ class AdministrationPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () => ref.invalidate(_appUsageStatsProvider),
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(PhosphorIconsRegular.arrowClockwise),
                   label: const Text('Réessayer'),
                 ),
               ],
@@ -114,46 +115,46 @@ class _StatsBody extends StatelessWidget {
       children: [
         Card(
           child: ListTile(
-            leading: const Icon(Icons.campaign_outlined),
+            leading: const Icon(PhosphorIconsRegular.megaphone),
             title: const Text('Annonces globales'),
             subtitle: const Text('Créer, modifier et supprimer les annonces.'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminAnnouncementsManagePage.routePath),
           ),
         ),
         const SizedBox(height: 12),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.build_outlined),
+            leading: const Icon(PhosphorIconsRegular.wrench),
             title: const Text('Maintenance'),
             subtitle: const Text(
               'Gérer l\'état de maintenance de l\'application.',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminMaintenancePage.routePath),
           ),
         ),
         const SizedBox(height: 12),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.link_rounded),
+            leading: const Icon(PhosphorIconsRegular.link),
             title: const Text('Applications tierces (OAuth)'),
             subtitle: const Text(
               'Enregistrer les applications autorisées à lire les voyages des utilisateurs (API publique).',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminOAuthClientsPage.routePath),
           ),
         ),
         const SizedBox(height: 12),
         Card(
           child: ListTile(
-            leading: const Icon(Icons.hub_outlined),
+            leading: const Icon(PhosphorIconsRegular.graph),
             title: const Text('Fournisseurs externes (OAuth)'),
             subtitle: const Text(
               'Enregistrer les applications de l\'écosystème auxquelles Planerz peut se connecter (Ridgegear, ...).',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminExternalProvidersPage.routePath),
           ),
         ),

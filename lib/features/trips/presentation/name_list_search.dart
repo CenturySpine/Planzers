@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -172,10 +173,10 @@ class NameListSearchTextField extends StatelessWidget {
         labelText: l10n.nameSearchLabel,
         hintText: l10n.nameSearchHint,
         border: const OutlineInputBorder(),
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass),
         suffixIcon: controller.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Icon(PhosphorIconsRegular.x),
                 tooltip: l10n.nameSearchClear,
                 onPressed: () {
                   controller.clear();

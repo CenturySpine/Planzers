@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -16,7 +17,7 @@ class TripGamesIntroCallout extends StatelessWidget {
   Widget build(BuildContext context) {
     return PzCallout(
       tone: PzCalloutTone.brand,
-      icon: Icons.casino_outlined,
+      icon: PhosphorIconsRegular.diceFive,
       message: message,
     );
   }
@@ -52,12 +53,12 @@ class TripGamesSearchField extends StatelessWidget {
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: const Icon(Icons.search_rounded, size: 20),
+              prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass, size: 20),
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
               suffixIcon: controller.text.isEmpty
                   ? null
                   : IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18),
+                      icon: const Icon(PhosphorIconsRegular.x, size: 18),
                       tooltip: clearTooltip,
                       onPressed: () {
                         controller.clear();
@@ -107,7 +108,7 @@ class TripBoardGameCard extends StatelessWidget {
                       ? ColoredBox(
                           color: group.filterLightBgColor,
                           child: Icon(
-                            Icons.casino_outlined,
+                            PhosphorIconsRegular.diceFive,
                             size: 22,
                             color: group.filterColor,
                           ),
@@ -149,7 +150,7 @@ class TripBoardGameCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppTokens.outline),
+              const Icon(PhosphorIconsRegular.caretRight, color: AppTokens.outline),
             ],
           ),
         ),
@@ -165,7 +166,7 @@ class TripGamesEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PzEmptyState(icon: Icons.casino_outlined, title: message);
+    return PzEmptyState(icon: PhosphorIconsRegular.diceFive, title: message);
   }
 }
 
@@ -185,7 +186,7 @@ class TripGamesFab extends StatelessWidget {
       heroTag: 'trip_games_fab',
       tooltip: tooltip,
       onPressed: onPressed,
-      child: const Icon(Icons.add_rounded, size: 26),
+      child: const Icon(PhosphorIconsRegular.plus, size: 26),
     );
   }
 }
@@ -398,7 +399,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                       ),
                       alignment: Alignment.center,
                       child: const Icon(
-                        Icons.sports_esports_rounded,
+                        PhosphorIconsRegular.gameController,
                         size: 24,
                         color: AppTokens.success,
                       ),
@@ -444,7 +445,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                           ? IconButton(
                               tooltip: l10n.linkLabel,
                               onPressed: _openLink,
-                              icon: const Icon(Icons.open_in_new, size: 20),
+                              icon: const Icon(PhosphorIconsRegular.arrowSquareOut, size: 20),
                               visualDensity: VisualDensity.compact,
                               color: AppTokens.primary,
                             )
@@ -460,7 +461,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                     children: [
                       TripParticipantsInputShell(
                         height: 52,
-                        icon: Icons.extension_outlined,
+                        icon: PhosphorIconsRegular.puzzlePiece,
                         child: TextFormField(
                           controller: _nameController,
                           style: const TextStyle(
@@ -486,7 +487,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                       const SizedBox(height: 12),
                       TripParticipantsInputShell(
                         height: 52,
-                        icon: Icons.link,
+                        icon: PhosphorIconsRegular.link,
                         child: TextFormField(
                           controller: _urlController,
                           style: const TextStyle(
@@ -518,14 +519,14 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                     IconButton(
                       tooltip: l10n.commonDelete,
                       onPressed: _confirmDelete,
-                      icon: const Icon(Icons.delete_outline),
+                      icon: const Icon(PhosphorIconsRegular.trash),
                       color: AppTokens.error,
                     ),
                   if (isReadOnly && canEnterEditMode)
                     IconButton(
                       tooltip: l10n.commonEdit,
                       onPressed: _enterEditMode,
-                      icon: const Icon(Icons.edit_outlined),
+                      icon: const Icon(PhosphorIconsRegular.pencilSimple),
                       color: AppTokens.primary,
                     ),
                   tripParticipantsDialogButton(
@@ -546,7 +547,7 @@ class _TripBoardGameDialogState extends State<TripBoardGameDialog> {
                       padding: const EdgeInsets.only(left: 6),
                       child: FilledButton.icon(
                         onPressed: _submit,
-                        icon: const Icon(Icons.check, size: 18),
+                        icon: const Icon(PhosphorIconsRegular.check, size: 18),
                         label: Text(l10n.commonSave),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(0, 42),

@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -101,7 +102,7 @@ class ConnectedAppsPage extends ConsumerWidget {
                           ? NetworkImage(app.iconUrl)
                           : null,
                       child: app.iconUrl.isEmpty
-                          ? const Icon(Icons.apps_rounded)
+                          ? const Icon(PhosphorIconsRegular.squaresFour)
                           : null,
                     ),
                     title: Text(app.displayName),

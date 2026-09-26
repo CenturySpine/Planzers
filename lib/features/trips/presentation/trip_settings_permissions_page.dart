@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,7 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
               title: Text(l10n.tripSettingsPermissionsSectionTitle),
               leading: IconButton(
                 onPressed: () => context.go('/trips/$tripId/settings'),
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(PhosphorIconsRegular.arrowLeft),
                 tooltip: l10n.tripBackToTrip,
               ),
             ),
@@ -56,7 +57,7 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
               title: Text(l10n.tripSettingsPermissionsSectionTitle),
               leading: IconButton(
                 onPressed: () => context.go('/trips/$tripId/settings'),
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(PhosphorIconsRegular.arrowLeft),
                 tooltip: l10n.tripBackToTrip,
               ),
             ),
@@ -77,7 +78,7 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
             title: Text(l10n.tripSettingsPermissionsSectionTitle),
             leading: IconButton(
               onPressed: () => context.go('/trips/$tripId/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.tripBackToTrip,
             ),
           ),
@@ -86,49 +87,49 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
             children: [
               _SettingsSectionCard(
                 title: l10n.tripSectionTrip,
-                icon: Icons.luggage_outlined,
+                icon: PhosphorIconsRegular.suitcaseRolling,
                 description: l10n.tripSectionTripDescription,
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions/trip'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionParticipants,
-                icon: Icons.group_outlined,
+                icon: PhosphorIconsRegular.users,
                 description: l10n.tripSectionParticipantsDescription,
                 onTap: () => context
                     .push('/trips/$tripId/settings/permissions/participants'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionExpenses,
-                icon: Icons.payments_outlined,
+                icon: PhosphorIconsRegular.wallet,
                 description: l10n.tripSectionExpensesDescription,
                 onTap: () => context
                     .push('/trips/$tripId/settings/permissions/expenses'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionActivities,
-                icon: Icons.event_available_outlined,
+                icon: PhosphorIconsRegular.calendarCheck,
                 description: l10n.tripSectionActivitiesDescription,
                 onTap: () => context
                     .push('/trips/$tripId/settings/permissions/activities'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionMeals,
-                icon: Icons.restaurant_outlined,
+                icon: PhosphorIconsRegular.forkKnife,
                 description: l10n.tripSectionMealsDescription,
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions/meals'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripOverviewTileCarpool,
-                icon: Icons.directions_car_outlined,
+                icon: PhosphorIconsRegular.car,
                 description: l10n.tripCarpoolCreateAction,
                 onTap: () => context
                     .push('/trips/$tripId/settings/permissions/carpool'),
               ),
               _SettingsSectionCard(
                 title: l10n.tripSectionShopping,
-                icon: Icons.shopping_cart_outlined,
+                icon: PhosphorIconsRegular.shoppingCartSimple,
                 description: l10n.tripSectionShoppingDescription,
                 onTap: () => context
                     .push('/trips/$tripId/settings/permissions/shopping'),
@@ -145,7 +146,7 @@ class TripSettingsPermissionsPage extends ConsumerWidget {
           title: Text(l10n.tripSettingsPermissionsSectionTitle),
           leading: IconButton(
             onPressed: () => context.go('/trips/$tripId/settings'),
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(PhosphorIconsRegular.arrowLeft),
             tooltip: l10n.tripBackToTrip,
           ),
         ),
@@ -183,7 +184,7 @@ class _SettingsSectionCard extends StatelessWidget {
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(description),
-        trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+        trailing: onTap == null ? null : const Icon(PhosphorIconsRegular.caretRight),
         onTap: onTap,
       ),
     );

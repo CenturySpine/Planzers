@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -145,7 +146,7 @@ class _PwaHintBox extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, color: _iconColor, size: 22),
+            const Icon(PhosphorIconsRegular.info, color: _iconColor, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

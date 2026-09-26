@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
@@ -273,7 +274,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                   _markAnnouncementsAsReadIfNeeded(trip.id);
                   if (announcements.isEmpty) {
                     return PzEmptyState(
-                      icon: Icons.campaign_outlined,
+                      icon: PhosphorIconsRegular.megaphone,
                       title: l10n.tripAnnouncementsEmptyState,
                     );
                   }
@@ -317,7 +318,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                             BorderRadius.circular(10),
                                       ),
                                       child: Icon(
-                                        Icons.campaign_rounded,
+                                        PhosphorIconsFill.megaphone,
                                         size: 18,
                                         color: Theme.of(context)
                                             .colorScheme
@@ -347,7 +348,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                               if (announcement.wasEdited) ...[
                                                 const SizedBox(width: 4),
                                                 Icon(
-                                                  Icons.edit_rounded,
+                                                  PhosphorIconsRegular.pencilSimple,
                                                   size: 10,
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -379,7 +380,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                                     strokeWidth: 2,
                                                   ),
                                                 )
-                                              : Icon(Icons.delete_outline,
+                                              : Icon(PhosphorIconsRegular.trash,
                                                   size: 20,
                                                   color: Theme.of(context)
                                                       .colorScheme
@@ -454,7 +455,7 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                   height: 22,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Icon(Icons.send),
+                              : const Icon(PhosphorIconsFill.paperPlaneRight),
                           tooltip: l10n.chatSend,
                         ),
                       ],

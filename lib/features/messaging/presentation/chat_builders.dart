@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,7 +72,7 @@ class InlineMessageQuickReactionBar extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
               onPressed: () => unawaited(onMoreTap()),
-              icon: const Icon(Icons.add),
+              icon: const Icon(PhosphorIconsRegular.plus),
               tooltip: l10n.chatMoreEmojis,
             ),
           ],

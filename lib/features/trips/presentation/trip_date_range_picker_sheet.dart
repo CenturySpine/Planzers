@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -214,7 +215,7 @@ class _TripDateRangePickerSheetState extends State<_TripDateRangePickerSheet> {
                               ),
                             ),
                           ),
-                          Icon(Icons.arrow_forward, size: 18, color: style.outline),
+                          Icon(PhosphorIconsRegular.arrowRight, size: 18, color: style.outline),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -237,7 +238,7 @@ class _TripDateRangePickerSheetState extends State<_TripDateRangePickerSheet> {
                 child: Row(
                   children: [
                     _MonthNavButton(
-                      icon: Icons.chevron_left,
+                      icon: PhosphorIconsRegular.caretLeft,
                       color: style.textSecondary,
                       hoverColor: style.primaryTint,
                       onPressed: () => _shiftMonth(-1),
@@ -254,7 +255,7 @@ class _TripDateRangePickerSheetState extends State<_TripDateRangePickerSheet> {
                       ),
                     ),
                     _MonthNavButton(
-                      icon: Icons.chevron_right,
+                      icon: PhosphorIconsRegular.caretRight,
                       color: style.textSecondary,
                       hoverColor: style.primaryTint,
                       onPressed: () => _shiftMonth(1),

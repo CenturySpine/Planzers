@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
@@ -207,7 +208,7 @@ class TripActivitiesAgendaWeekStrip extends StatelessWidget {
             width: _chevronSlotWidth,
             child: IconButton(
               onPressed: onMoveBackward,
-              icon: const Icon(Icons.chevron_left_rounded, size: 22),
+              icon: const Icon(PhosphorIconsRegular.caretLeft, size: 22),
               tooltip: l10n.activitiesPreviousWeek,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(
@@ -246,7 +247,7 @@ class TripActivitiesAgendaWeekStrip extends StatelessWidget {
             width: _chevronSlotWidth,
             child: IconButton(
               onPressed: onMoveForward,
-              icon: const Icon(Icons.chevron_right_rounded, size: 22),
+              icon: const Icon(PhosphorIconsRegular.caretRight, size: 22),
               tooltip: l10n.activitiesNextWeek,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(
@@ -622,7 +623,7 @@ class TripPlanningParticipantCountPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.person_rounded, size: 14, color: categoryInk),
+          Icon(PhosphorIconsFill.user, size: 14, color: categoryInk),
           const SizedBox(width: 3),
           Text(
             '$count',
@@ -662,12 +663,12 @@ class TripActivitiesSearchField extends StatelessWidget {
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
             hintText: l10n.activitiesSearchHint,
-            prefixIcon: const Icon(Icons.search_rounded, size: 20),
+            prefixIcon: const Icon(PhosphorIconsRegular.magnifyingGlass, size: 20),
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
             suffixIcon: controller.text.isEmpty
                 ? null
                 : IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18),
+                    icon: const Icon(PhosphorIconsRegular.x, size: 18),
                     tooltip: l10n.nameSearchClear,
                     onPressed: () {
                       controller.clear();
@@ -699,7 +700,7 @@ class TripPlanningLinkTrailingButton extends StatelessWidget {
           width: 34,
           height: 34,
           child: Icon(
-            Icons.link_rounded,
+            PhosphorIconsRegular.link,
             size: 18,
             color: AppTokens.onSurfaceVariant,
           ),

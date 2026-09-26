@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -315,13 +316,13 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
+              leading: const Icon(PhosphorIconsRegular.camera),
               title: Text(l10n.tripOverviewChangePhoto),
               onTap: () => Navigator.of(ctx).pop('change'),
             ),
             if (liveBannerImageUrl.isNotEmpty)
               ListTile(
-                leading: Icon(Icons.delete_outline,
+                leading: Icon(PhosphorIconsRegular.trash,
                     color: Theme.of(ctx).colorScheme.error),
                 title: Text(
                   l10n.commonDelete,
@@ -559,7 +560,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     if (isTripMember) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.tune_outlined,
+          icon: PhosphorIconsRegular.slidersHorizontal,
           label: l10n.tripUserPreferencesMenuAction,
           onTap: _openTripUserPreferencesPage,
         ),
@@ -568,7 +569,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     if (canEditGeneralInfo) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.edit_outlined,
+          icon: PhosphorIconsRegular.pencilSimple,
           label: l10n.tripOverviewEditTrip,
           onTap: _openEditTripPage,
         ),
@@ -577,7 +578,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     if (canManageTripSettings) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.settings_outlined,
+          icon: PhosphorIconsRegular.gearSix,
           label: l10n.tripSettingsTitle,
           onTap: () => context.go('/trips/${_trip.id}/settings'),
         ),
@@ -586,7 +587,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     if (isTripMember) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.copy_outlined,
+          icon: PhosphorIconsRegular.copy,
           label: l10n.tripOverviewCopyTripId,
           onTap: _copyTripId,
         ),
@@ -596,8 +597,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
       rows.add(
         TripOverviewSettingsRowData(
           icon: isArchivedForMe
-              ? Icons.unarchive_outlined
-              : Icons.archive_outlined,
+              ? PhosphorIconsRegular.boxArrowUp
+              : PhosphorIconsRegular.archive,
           label: isArchivedForMe
               ? l10n.tripOverviewUnarchiveTrip
               : l10n.tripOverviewArchiveTrip,
@@ -608,7 +609,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     if (canDeleteTrip) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.delete_outline,
+          icon: PhosphorIconsRegular.trash,
           label: l10n.commonDelete,
           onTap: _confirmAndDeleteTrip,
           danger: true,
@@ -617,7 +618,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     } else if (isTripMember) {
       rows.add(
         TripOverviewSettingsRowData(
-          icon: Icons.logout,
+          icon: PhosphorIconsRegular.signOut,
           label: l10n.tripOverviewLeaveTripCardTitle,
           onTap: _confirmAndLeaveTrip,
           danger: true,
@@ -913,7 +914,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                           trailing: showDirections
                               ? IconButton(
                                   tooltip: l10n.tripOverviewOpenLocation,
-                                  icon: const Icon(Icons.directions_outlined),
+                                  icon: const Icon(PhosphorIconsRegular.signpost),
                                   color: AppTokens.secondary,
                                   onPressed: () {
                                     final destination =
@@ -969,7 +970,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         children: [
                           TripOverviewModuleCard(
                             label: l10n.tripOverviewTileActivities,
-                            icon: Icons.event_available_outlined,
+                            icon: PhosphorIconsRegular.calendarCheck,
                             count: plannedActivitiesCount,
                             tileColor: AppTokens.primaryTint,
                             inkColor: AppTokens.primaryDark,
@@ -986,7 +987,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileRooms,
-                              icon: Icons.king_bed_outlined,
+                              icon: PhosphorIconsRegular.bed,
                               count: roomsCount,
                               tileColor:
                                   ActivityFilterGroup.nuits.filterLightBgColor,
@@ -1006,7 +1007,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileCarpool,
-                              icon: Icons.directions_car_outlined,
+                              icon: PhosphorIconsRegular.car,
                               count: carpools.length,
                               tileColor:
                                   ActivityFilterGroup.trajets.filterLightBgColor,
@@ -1025,7 +1026,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileGames,
-                              icon: Icons.casino_outlined,
+                              icon: PhosphorIconsRegular.diceFive,
                               count: boardGamesCount,
                               tileColor:
                                   ActivityFilterGroup.loisirs.filterLightBgColor,
@@ -1047,7 +1048,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewPhotosAction,
-                              icon: Icons.photo_library_outlined,
+                              icon: PhosphorIconsRegular.images,
                               count: 0,
                               showCount: false,
                               tileColor: AppTokens.surfaceMuted,
@@ -1067,7 +1068,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileWallet,
-                              icon: Icons.folder_special_outlined,
+                              icon: PhosphorIconsRegular.folderStar,
                               count: 3,
                               tileColor: AppTokens.surfaceMuted,
                               inkColor: AppTokens.text700,
@@ -1081,7 +1082,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripPackingModuleLabel,
-                              icon: Icons.luggage_outlined,
+                              icon: PhosphorIconsRegular.suitcaseRolling,
                               count: myPackingUncheckedCount,
                               tileColor: AppTokens.surfaceMuted,
                               inkColor: AppTokens.text700,

@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -133,7 +134,7 @@ class ReplyComposerBanner extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(PhosphorIconsRegular.x),
             tooltip: l10n.commonCancel,
             onPressed: onCancel,
             visualDensity: VisualDensity.compact,

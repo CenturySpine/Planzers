@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -193,7 +194,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                 unitLabels,
                 _activeGroupId,
               ),
-              child: const Icon(Icons.add, size: 28),
+              child: const Icon(PhosphorIconsRegular.plus, size: 28),
             )
           : null,
     );
@@ -330,7 +331,7 @@ class _TripExpensesBody extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              Icons.account_balance_wallet_outlined,
+              PhosphorIconsRegular.wallet,
               size: 48,
               color: cs.primary.withValues(alpha: 0.35),
             ),
@@ -467,7 +468,7 @@ class _PostTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = iconKey == 'add'
-        ? Icons.add
+        ? PhosphorIconsRegular.plus
         : expenseIconForPost(iconKey, isDefault: isDefault);
     final borderColor = dashed
         ? AppTokens.outline
@@ -897,7 +898,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
             if (showPostMenu)
               PopupMenuButton<_ExpensePostMenuAction>(
                 tooltip: l10n.tripOverviewActions,
-                icon: const Icon(Icons.more_vert),
+                icon: const Icon(PhosphorIconsRegular.dotsThreeVertical),
                 onSelected: (action) async {
                   if (action == _ExpensePostMenuAction.edit) {
                     await _TripExpensesPageState._openExpenseGroupEditor(
@@ -924,7 +925,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                         value: _ExpensePostMenuAction.edit,
                         child: Row(
                           children: [
-                            const Icon(Icons.edit_outlined, size: 18),
+                            const Icon(PhosphorIconsRegular.pencilSimple, size: 18),
                             const SizedBox(width: 10),
                             Text(l10n.commonEdit),
                           ],
@@ -940,8 +941,8 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                           children: [
                             Icon(
                               expensesLocked
-                                  ? Icons.lock_open_outlined
-                                  : Icons.lock_outline,
+                                  ? PhosphorIconsRegular.lockOpen
+                                  : PhosphorIconsRegular.lock,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -962,7 +963,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.delete_outline,
+                              PhosphorIconsRegular.trash,
                               size: 18,
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -1036,7 +1037,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   child: Column(
                     children: [
                       Icon(
-                        Icons.receipt_long_outlined,
+                        PhosphorIconsRegular.receipt,
                         size: 40,
                         color: Theme.of(context)
                             .colorScheme
@@ -1062,7 +1063,7 @@ class _ExpensePostPanelState extends ConsumerState<_ExpensePostPanel> {
                   child: Column(
                     children: [
                       Icon(
-                        Icons.receipt_long_outlined,
+                        PhosphorIconsRegular.receipt,
                         size: 40,
                         color: Theme.of(context)
                             .colorScheme
@@ -1197,12 +1198,12 @@ class _ExpenseViewSegmented extends StatelessWidget {
       segments: [
         PzSegment(
           value: _ExpensePostView.operations,
-          icon: Icons.receipt_long_outlined,
+          icon: PhosphorIconsRegular.receipt,
           label: l10n.tripSectionExpenses,
         ),
         PzSegment(
           value: _ExpensePostView.settlement,
-          icon: Icons.balance_outlined,
+          icon: PhosphorIconsRegular.scales,
           label: l10n.expensesBalancesTab,
         ),
       ],
@@ -1324,7 +1325,7 @@ class _ExpenseHeroCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    net > 0 ? Icons.trending_up : Icons.trending_down,
+                    net > 0 ? PhosphorIconsRegular.trendUp : PhosphorIconsRegular.trendDown,
                     size: 15,
                     color: Colors.white,
                   ),
@@ -1622,7 +1623,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.lock_open_outlined,
+                  PhosphorIconsRegular.lockOpen,
                   size: 18,
                   color: pz.warning,
                 ),
@@ -1651,8 +1652,8 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                       ? l10n.expensesTooltipDisableExpenseNotifications
                       : l10n.expensesTooltipEnableExpenseNotifications,
                   child: StatePillToggle(
-                    offIcon: Icons.notifications_off_outlined,
-                    onIcon: Icons.notifications_active_outlined,
+                    offIcon: PhosphorIconsRegular.bellSlash,
+                    onIcon: PhosphorIconsRegular.bellRinging,
                     on: tripStates.expensesNotificationsEnabled,
                     onChanged: _setExpensesNotificationsEnabled,
                   ),
@@ -1666,7 +1667,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh),
+                      : const Icon(PhosphorIconsRegular.arrowClockwise),
                 ),
               ],
             ),
@@ -1732,7 +1733,7 @@ class _SettlementSectionState extends ConsumerState<_SettlementSection> {
                     ),
                     const SizedBox(width: 6),
                     Icon(
-                      Icons.info_outline,
+                      PhosphorIconsRegular.info,
                       size: 14,
                       color: cs.onSurfaceVariant,
                     ),
@@ -2034,7 +2035,7 @@ class _SettlementReimburseCard extends StatelessWidget {
     if (isRecorded) {
       buttonBg = Color.alphaBlend(pz.success.withValues(alpha: 0.12), cs.surface);
       buttonFg = pz.success;
-      buttonIcon = Icons.check_circle;
+      buttonIcon = PhosphorIconsFill.checkCircle;
       buttonBorder = Border.all(
         color: Color.lerp(cs.outlineVariant, pz.success, 0.32)!,
       );
@@ -2045,7 +2046,7 @@ class _SettlementReimburseCard extends StatelessWidget {
         AppTokens.surface,
       );
       buttonFg = AppTokens.onSurfaceVariant;
-      buttonIcon = Icons.lock;
+      buttonIcon = PhosphorIconsFill.lock;
       buttonBorder = null;
       buttonLabel = l10n.expensesPaidButton;
     } else {
@@ -2087,7 +2088,7 @@ class _SettlementReimburseCard extends StatelessWidget {
                             ),
                       ),
                       Icon(
-                        Icons.arrow_forward,
+                        PhosphorIconsRegular.arrowRight,
                         size: 16,
                         color: cs.onSurfaceVariant,
                       ),
@@ -2385,7 +2386,7 @@ class _ExpenseCard extends StatelessWidget {
                   ),
                 )
               else
-                Icon(Icons.sync_alt, color: AppTokens.secondary, size: 28),
+                Icon(PhosphorIconsRegular.arrowsLeftRight, color: AppTokens.secondary, size: 28),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -2426,8 +2427,8 @@ class _ExpenseCard extends StatelessWidget {
                             children: [
                               Icon(
                                 e.splitMode == ExpenseSplitMode.customAmounts
-                                    ? Icons.tune
-                                    : Icons.safety_divider,
+                                    ? PhosphorIconsRegular.slidersHorizontal
+                                    : PhosphorIconsRegular.arrowsInLineHorizontal,
                                 size: 13,
                                 color: AppTokens.onSurfaceVariant,
                               ),

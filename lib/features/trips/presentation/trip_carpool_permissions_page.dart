@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -149,7 +150,7 @@ class _TripCarpoolPermissionsPageState
             title: Text(l10n.tripOverviewTileCarpool),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -182,7 +183,7 @@ class _TripCarpoolPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripCarpoolCreateAction,
                         minRole: trip.carpoolPermissions.proposeCarpoolMinRole,
-                        icon: Icons.add_circle_outline,
+                        icon: PhosphorIconsRegular.plusCircle,
                         busy: _isSavingProposePermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePermission(
@@ -193,7 +194,7 @@ class _TripCarpoolPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripCarpoolEditTitle,
                         minRole: trip.carpoolPermissions.editCarpoolsMinRole,
-                        icon: Icons.edit_outlined,
+                        icon: PhosphorIconsRegular.pencilSimple,
                         busy: _isSavingEditPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePermission(
@@ -205,7 +206,7 @@ class _TripCarpoolPermissionsPageState
                         title: l10n.tripCarpoolGlobalMeetupTitle,
                         minRole: trip
                             .carpoolPermissions.updateShoppingMeetupPointMinRole,
-                        icon: Icons.place_outlined,
+                        icon: PhosphorIconsRegular.mapPin,
                         busy: _isSavingMeetupPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) => _updatePermission(
@@ -234,7 +235,7 @@ class _TripCarpoolPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

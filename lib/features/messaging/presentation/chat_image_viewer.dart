@@ -1,4 +1,5 @@
 import 'package:cross_cache/cross_cache.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Maximum width/height for image thumbnails in the trip chat list.
@@ -74,7 +75,7 @@ class _ChatImageViewerPage extends StatelessWidget {
                     },
                     errorBuilder: (context, error, stackTrace) {
                       return const Icon(
-                        Icons.broken_image_outlined,
+                        PhosphorIconsRegular.imageBroken,
                         color: Colors.white54,
                         size: 48,
                       );

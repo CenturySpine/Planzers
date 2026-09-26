@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart'
@@ -292,7 +293,7 @@ class _ClaimButton extends StatelessWidget {
       style: compactStyle,
       tooltip: l10n.shoppingClaimTake,
       onPressed: () => onTap(),
-      icon: const Icon(Icons.back_hand_outlined, size: 17),
+      icon: const Icon(PhosphorIconsRegular.hand, size: 17),
     );
   }
 }

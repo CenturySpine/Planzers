@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/expenses/data/expense_icon_catalog.dart';
@@ -72,7 +73,7 @@ class _ExpenseIconPickerSheet extends StatelessWidget {
                     IconButton(
                       tooltip: AppLocalizations.of(context)!.commonClose,
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(PhosphorIconsRegular.x),
                     ),
                   ],
                 ),

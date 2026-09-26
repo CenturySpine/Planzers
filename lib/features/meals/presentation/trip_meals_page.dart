@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -96,7 +97,7 @@ class _MealsList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.restaurant_outlined,
+                  PhosphorIconsRegular.forkKnife,
                   size: 48,
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -162,7 +163,7 @@ class _MealsList extends StatelessWidget {
               onPressed: () => context.push(
                 '/trips/$tripId/meals/new',
               ),
-              child: const Icon(Icons.add),
+              child: const Icon(PhosphorIconsRegular.plus),
             ),
           ),
       ],
@@ -244,7 +245,7 @@ class _EmptyMealSlot extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.restaurant_rounded,
+            PhosphorIconsRegular.forkKnife,
             size: 16,
             color: colorScheme.outline,
           ),

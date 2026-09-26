@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,7 +203,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
             visualDensity: VisualDensity.compact,
             onPressed: onRemove,
             icon: Icon(
-              Icons.delete_outline,
+              PhosphorIconsRegular.trash,
               color: Theme.of(context).colorScheme.error,
             ),
           ),
@@ -316,7 +317,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                           );
                         });
                       },
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(PhosphorIconsRegular.plus),
                       label: Text(l10n.commonAdd),
                     ),
                   ),
@@ -1571,7 +1572,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(Icons.delete_outline,
+                          : Icon(PhosphorIconsRegular.trash,
                               color: Theme.of(context).colorScheme.error),
                     ),
                 ],
@@ -1637,7 +1638,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                           ),
                                         )
                                       : const Icon(
-                                          Icons.calendar_today_outlined),
+                                          PhosphorIconsRegular.calendarBlank),
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(
@@ -1666,7 +1667,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : const Icon(Icons.access_time_outlined),
+                                      : const Icon(PhosphorIconsRegular.clock),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -1702,7 +1703,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         : () => _autoRecalculateParticipants(
                                             memberIds, participants),
                                     icon: const Icon(
-                                        Icons.auto_fix_high_outlined),
+                                        PhosphorIconsRegular.magicWand),
                                     label: Text(l10n.commonAuto),
                                   ),
                                   TextButton.icon(
@@ -1711,7 +1712,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                         : () =>
                                             _toggleAllParticipants(
                                                 memberIds, participants),
-                                    icon: const Icon(Icons.done_all_outlined),
+                                    icon: const Icon(PhosphorIconsRegular.checks),
                                     label: Text(
                                       areAllParticipantsSelected
                                           ? l10n.commonNone
@@ -1857,7 +1858,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                       onSelected: _isSavingComponents
                                           ? null
                                           : (kind) => _addComponent(kind),
-                                      icon: const Icon(Icons.add),
+                                      icon: const Icon(PhosphorIconsRegular.plus),
                                       itemBuilder: (context) => [
                                         for (final kind
                                             in MealComponentKind.values)
@@ -1951,7 +1952,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: 4,
                                                 ),
-                                                child: Icon(Icons.lock_outline),
+                                                child: Icon(PhosphorIconsRegular.lock),
                                               )
                                             : ReorderableDragStartListener(
                                                 index: index,
@@ -1960,7 +1961,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                     horizontal: 4,
                                                   ),
                                                   child: Icon(
-                                                      Icons.drag_indicator),
+                                                      PhosphorIconsRegular.dotsSixVertical),
                                                 ),
                                               ),
                                         title: Text(
@@ -2047,7 +2048,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                   ),
                                                 ].join('\n'),
                                                 child: const Icon(
-                                                  Icons.warning_amber_rounded,
+                                                  PhosphorIconsRegular.warning,
                                                   color: Colors.orange,
                                                 ),
                                               ),
@@ -2065,12 +2066,12 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                             _confirmDeleteComponent(
                                                               component,
                                                             ),
-                                                icon: Icon(Icons.delete_outline,
+                                                icon: Icon(PhosphorIconsRegular.trash,
                                                     color: Theme.of(context)
                                                         .colorScheme
                                                         .error),
                                               ),
-                                              const Icon(Icons.chevron_right),
+                                              const Icon(PhosphorIconsRegular.caretRight),
                                             ],
                                           ],
                                         ),
@@ -2318,7 +2319,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                                               category,
                                                                         ),
                                                             icon: const Icon(
-                                                              Icons.add,
+                                                              PhosphorIconsRegular.plus,
                                                               size: 18,
                                                             ),
                                                           ),
@@ -2466,7 +2467,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Icon(Icons.save_outlined),
+                              : const Icon(PhosphorIconsRegular.floppyDisk),
                           label: Text(
                             _isSaving ? l10n.commonSaving : l10n.commonSave,
                           ),
@@ -2503,7 +2504,7 @@ class _AiCardWarningBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.warning_amber_rounded,
+            PhosphorIconsRegular.warning,
             size: 16,
             color: planerzColors.warning,
           ),
@@ -2536,7 +2537,7 @@ class _RecipeInstructionsExpansion extends StatelessWidget {
         tilePadding: const EdgeInsets.symmetric(horizontal: 12),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         leading: Icon(
-          Icons.menu_book_outlined,
+          PhosphorIconsRegular.bookOpen,
           color: theme.colorScheme.onSurfaceVariant,
         ),
         title: Text(

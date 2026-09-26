@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -530,7 +531,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
       leading: onBack == null
           ? null
           : IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               color: AppTokens.deep,
               onPressed: onBack,
             ),
@@ -643,7 +644,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                             vertical: 8,
                           ),
                         ),
-                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 20),
+                        icon: const Icon(PhosphorIconsRegular.userPlus, size: 20),
                         label: Text(
                           l10n.inviteJoinWithCurrentProfileAction,
                           style: const TextStyle(
@@ -674,7 +675,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
             primaryEnabled: !_joining && _canProceedFromCurrentStep(),
             onSecondary: _goToTripsList,
             onPrimary: _continueFromNameStep,
-            primaryIcon: Icons.arrow_forward,
+            primaryIcon: PhosphorIconsRegular.arrowRight,
           ),
         ],
       );
@@ -697,7 +698,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
               ),
               if (joinName != null) ...[
                 TripNeonSectionHeader(
-                  icon: Icons.person_outline,
+                  icon: PhosphorIconsRegular.user,
                   label: l10n.inviteJoinNameSectionTitle,
                 ),
                 InviteJoinNameRow(
@@ -895,11 +896,11 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     primaryEnabled: !_joining,
                     onSecondary: _goToTripsList,
                     onPrimary: () => _join(participantId: null),
-                    primaryIcon: Icons.refresh,
+                    primaryIcon: PhosphorIconsRegular.arrowClockwise,
                   ),
                 ] else ...[
                   Icon(
-                    Icons.group_add_outlined,
+                    PhosphorIconsRegular.usersFour,
                     size: 52,
                     color: AppTokens.primary,
                   ),
@@ -939,7 +940,7 @@ class _InviteJoinPageState extends ConsumerState<InviteJoinPage> {
                     primaryEnabled: !_loadingContext,
                     onSecondary: _goToTripsList,
                     onPrimary: _loadContextAndMaybeJoin,
-                    primaryIcon: Icons.refresh,
+                    primaryIcon: PhosphorIconsRegular.arrowClockwise,
                   ),
                 ],
               ],

@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -208,7 +209,7 @@ class _TripParticipantTravelInfoPageState
       title: Text(l10n.tripParticipantTravelInfoTitle),
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(PhosphorIconsRegular.arrowLeft),
       ),
     );
   }
@@ -350,10 +351,10 @@ class _TripParticipantTravelInfoPageState
                       kicker: l10n.tripParticipantTravelInfoHeadKicker,
                       centerTitle: resolvedDisplayName,
                       subtitle: l10n.tripParticipantTravelInfoHeadSubtitle,
-                      icon: Icons.badge_outlined,
+                      icon: PhosphorIconsRegular.identificationBadge,
                     ),
                     TripNeonSectionHeader(
-                      icon: Icons.badge_outlined,
+                      icon: PhosphorIconsRegular.identificationBadge,
                       label: l10n.tripParticipantTravelInfoProfileSection,
                     ),
                     TripNeonPrefGroup(

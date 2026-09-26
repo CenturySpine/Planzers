@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -63,7 +64,7 @@ class TripSettingsPage extends ConsumerWidget {
               title: Text(l10n.tripSettingsTitle),
               leading: IconButton(
                 onPressed: () => context.go('/trips/$tripId/overview'),
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(PhosphorIconsRegular.arrowLeft),
                 tooltip: l10n.tripBackToTrip,
               ),
             ),
@@ -84,7 +85,7 @@ class TripSettingsPage extends ConsumerWidget {
             title: Text(l10n.tripSettingsTitle),
             leading: IconButton(
               onPressed: () => context.go('/trips/$tripId/overview'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.tripBackToTrip,
             ),
           ),
@@ -117,7 +118,7 @@ class TripSettingsPage extends ConsumerWidget {
               const SizedBox(height: 12),
               _SettingsSectionCard(
                 title: l10n.tripSettingsPermissionsSectionTitle,
-                icon: Icons.admin_panel_settings_outlined,
+                icon: PhosphorIconsRegular.shieldCheck,
                 description: l10n.tripSettingsPermissionsSectionDescription,
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions'),
@@ -180,7 +181,7 @@ class _SettingsSectionCard extends StatelessWidget {
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(description),
-        trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+        trailing: onTap == null ? null : const Icon(PhosphorIconsRegular.caretRight),
         onTap: onTap,
       ),
     );

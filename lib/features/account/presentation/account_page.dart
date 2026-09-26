@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -387,7 +388,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               children: [
                 Expanded(
                   child: AccountInputShell(
-                    icon: Icons.alternate_email_rounded,
+                    icon: PhosphorIconsRegular.at,
                     hasError: emailError != null,
                     child: TextFormField(
                       key: _accountEmailFieldKey,
@@ -443,7 +444,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
 
     return AccountInfoRow(
-      icon: Icons.alternate_email_rounded,
+      icon: PhosphorIconsRegular.at,
       label: l10n.accountEmailAddressLabel,
       value: email,
       editTooltip: l10n.commonEdit,
@@ -465,7 +466,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
               children: [
                 Expanded(
                   child: AccountInputShell(
-                    icon: Icons.badge_outlined,
+                    icon: PhosphorIconsRegular.identificationBadge,
                     child: TextFormField(
                       key: _accountNameFieldKey,
                       controller: _accountNameController,
@@ -531,7 +532,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
 
     return AccountInfoRow(
-      icon: Icons.badge_outlined,
+      icon: PhosphorIconsRegular.identificationBadge,
       label: l10n.accountNameLabel,
       value: accountName,
       editTooltip: l10n.commonEdit,
@@ -555,7 +556,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 SizedBox(
                   width: 92,
                   child: AccountInputShell(
-                    icon: Icons.add,
+                    icon: PhosphorIconsRegular.plus,
                     child: TextFormField(
                       key: _phoneCountryCodeFieldKey,
                       controller: _phoneCountryCodeController,
@@ -600,7 +601,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: AccountInputShell(
-                    icon: Icons.phone_outlined,
+                    icon: PhosphorIconsRegular.phone,
                     child: TextFormField(
                       key: _phoneNumberFieldKey,
                       controller: _phoneNumberController,
@@ -665,7 +666,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
 
     return AccountInfoRow(
-      icon: Icons.phone_outlined,
+      icon: PhosphorIconsRegular.phone,
       label: l10n.accountPhoneNumberLabel,
       value: phoneDisplay,
       editTooltip: l10n.commonEdit,
@@ -858,7 +859,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                   child: Column(
                     children: [
                       AccountPrefTile(
-                        icon: Icons.restaurant_outlined,
+                        icon: PhosphorIconsRegular.forkKnife,
                         tint: AccountIconTint.warning,
                         title: l10n.accountFoodAllergens,
                         subtitle: l10n.accountFoodAllergensSubtitle,
@@ -866,7 +867,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       ),
                       const AccountCardDivider(),
                       AccountPrefTile(
-                        icon: Icons.favorite,
+                        icon: PhosphorIconsFill.heart,
                         tint: AccountIconTint.accent,
                         filled: true,
                         title: l10n.accountCupidonSpace,
@@ -875,7 +876,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       ),
                       const AccountCardDivider(),
                       AccountPrefTile(
-                        icon: Icons.language_outlined,
+                        icon: PhosphorIconsRegular.globe,
                         title: l10n.accountLanguageTitle,
                         subtitle: _languageSubtitle(currentLanguage, l10n),
                         trailing: AccountLanguageSelector(
@@ -888,14 +889,14 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                       ),
                       const AccountCardDivider(),
                       AccountPrefTile(
-                        icon: Icons.link_rounded,
+                        icon: PhosphorIconsRegular.link,
                         title: l10n.connectedAppsTitle,
                         subtitle: l10n.accountConnectedAppsSubtitle,
                         onTap: () => context.push(ConnectedAppsPage.routePath),
                       ),
                       const AccountCardDivider(),
                       AccountPrefTile(
-                        icon: Icons.hub_outlined,
+                        icon: PhosphorIconsRegular.graph,
                         title: l10n.connectedExternalProvidersTitle,
                         subtitle: l10n.accountConnectedExternalProvidersSubtitle,
                         onTap: () => context

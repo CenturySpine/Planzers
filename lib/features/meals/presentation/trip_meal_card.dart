@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -139,9 +140,9 @@ class TripMealCard extends ConsumerWidget {
 }
 
 IconData _mealModeIcon(MealMode mealMode) => switch (mealMode) {
-      MealMode.cooked => Icons.restaurant_outlined,
-      MealMode.restaurant => Icons.storefront_outlined,
-      MealMode.potluck => Icons.tapas_outlined,
+      MealMode.cooked => PhosphorIconsRegular.forkKnife,
+      MealMode.restaurant => PhosphorIconsRegular.storefront,
+      MealMode.potluck => PhosphorIconsRegular.bowlFood,
     };
 
 String _mealPreviewLabel(BuildContext context, TripMeal meal) {

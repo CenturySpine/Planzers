@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -254,7 +255,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
                 ),
                 const SizedBox(height: 6),
                 TripParticipantsInputShell(
-                  icon: Icons.badge_outlined,
+                  icon: PhosphorIconsRegular.identificationBadge,
                   child: TextField(
                     controller: controller,
                     autofocus: true,
@@ -382,7 +383,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     if (row.isClaimed && row.userId != null) {
       actions.add(
         TripParticipantSheetAction(
-          icon: Icons.account_circle_outlined,
+          icon: PhosphorIconsRegular.userCircle,
           label: l10n.tripParticipantsSheetViewProfile,
           subtitle: l10n.tripParticipantsSheetViewProfileSubtitle,
           showChevron: true,
@@ -398,7 +399,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     if (isOwnParticipantRow || canManageParticipants) {
       actions.add(
         TripParticipantSheetAction(
-          icon: Icons.luggage_outlined,
+          icon: PhosphorIconsRegular.suitcaseRolling,
           label: l10n.tripParticipantsSheetViewTravelInfo,
           subtitle: l10n.tripParticipantsSheetViewTravelInfoSubtitle,
           showChevron: true,
@@ -415,7 +416,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     if (row.phoneUri != null) {
       actions.add(
         TripParticipantSheetAction(
-          icon: Icons.phone_outlined,
+          icon: PhosphorIconsRegular.phone,
           label: l10n.tripParticipantsSheetCall,
           onTap: () => closeSheetThen(
             () => launchUrl(Uri.parse(row.phoneUri!)),
@@ -430,7 +431,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
         !isOwnParticipantRow) {
       actions.add(
         TripParticipantSheetAction(
-          icon: row.likedByMe ? Icons.favorite : Icons.favorite_border,
+          icon: row.likedByMe ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
           filledIcon: row.likedByMe,
           label: row.likedByMe
               ? l10n.tripParticipantsUnlike
@@ -453,7 +454,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
         row.userId != null) {
       actions.add(
         TripParticipantSheetAction(
-          icon: Icons.shield_rounded,
+          icon: PhosphorIconsRegular.shield,
           filledIcon: row.isAdmin,
           label: row.isAdmin
               ? l10n.tripParticipantsSheetDemoteAdmin
@@ -476,7 +477,7 @@ class _ParticipantsTabState extends ConsumerState<_ParticipantsTab> {
     if (canManageParticipants && !isOwnerRow && !isOwnParticipantRow) {
       actions.add(
         TripParticipantSheetAction(
-          icon: Icons.person_remove_outlined,
+          icon: PhosphorIconsRegular.userMinus,
           label: l10n.tripParticipantsSheetRemoveFromTrip,
           danger: true,
           onTap: () => closeSheetThen(
@@ -1323,7 +1324,7 @@ class _GroupEditorDialogState extends ConsumerState<_GroupEditorDialog> {
                       ),
                       const SizedBox(height: 6),
                       TripParticipantsInputShell(
-                        icon: Icons.label_outline,
+                        icon: PhosphorIconsRegular.tag,
                         child: TextField(
                           controller: _labelController,
                           autofocus: true,

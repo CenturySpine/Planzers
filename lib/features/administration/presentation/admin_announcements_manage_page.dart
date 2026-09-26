@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -327,7 +328,7 @@ class _AdminAnnouncementsManagePageState
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.translate_outlined),
+                          : const Icon(PhosphorIconsRegular.translate),
                       label: const Text('Traduire'),
                     ),
                     SegmentedButton<bool>(
@@ -395,7 +396,7 @@ class _AdminAnnouncementsManagePageState
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Icon(_isEditing ? Icons.save : Icons.send),
+                          : Icon(_isEditing ? PhosphorIconsFill.floppyDisk : PhosphorIconsFill.paperPlaneRight),
                       label: Text(_isEditing ? 'Enregistrer' : 'Publier'),
                     ),
                     if (_isEditing) ...[
@@ -479,7 +480,7 @@ class _AdminAnnouncementsManagePageState
                                     if (announcement.wasEdited) ...[
                                       const SizedBox(width: 6),
                                       Icon(
-                                        Icons.edit,
+                                        PhosphorIconsFill.pencilSimple,
                                         size: 16,
                                         color: headerForegroundColor,
                                       ),
@@ -497,7 +498,7 @@ class _AdminAnnouncementsManagePageState
                                           : () => _startEditingAnnouncement(
                                                 announcement,
                                               ),
-                                      icon: const Icon(Icons.edit_outlined),
+                                      icon: const Icon(PhosphorIconsRegular.pencilSimple),
                                     ),
                                     IconButton(
                                       tooltip: 'Supprimer',
@@ -523,7 +524,7 @@ class _AdminAnnouncementsManagePageState
                                               ),
                                             )
                                           : const Icon(
-                                              Icons.delete_outline,
+                                              PhosphorIconsRegular.trash,
                                               size: 20,
                                             ),
                                     ),

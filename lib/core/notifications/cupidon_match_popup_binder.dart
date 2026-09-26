@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
@@ -103,7 +104,7 @@ class _CupidonMatchPopupBinderState extends State<CupidonMatchPopupBinder> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.favorite, color: Colors.pink),
+            const Icon(PhosphorIconsFill.heart, color: Colors.pink),
             const SizedBox(width: 8),
             Text(l10n.cupidonPopupTitle),
           ],

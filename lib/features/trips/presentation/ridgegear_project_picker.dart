@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -168,7 +169,7 @@ class _RidgegearProjectPickerSheetState
                             child: Row(
                               children: [
                                 const Icon(
-                                  Icons.backpack_outlined,
+                                  PhosphorIconsRegular.backpack,
                                   color: AppTokens.primary,
                                 ),
                                 const SizedBox(width: 12),

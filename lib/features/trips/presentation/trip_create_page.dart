@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -642,7 +643,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                     label: l10n.tripsTitleLabel,
                     required: true,
                     child: _TripCreateInputShell(
-                      icon: Icons.luggage_outlined,
+                      icon: PhosphorIconsRegular.suitcaseRolling,
                       enabled: !_saving,
                       builder: (focusNode) => TextField(
                         controller: _titleController,
@@ -679,7 +680,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                     child: _TripCreateLabel(
                       label: l10n.tripsDestinationLabel,
                       child: _TripCreateInputShell(
-                        icon: Icons.location_on_outlined,
+                        icon: PhosphorIconsRegular.mapPin,
                         enabled: !_saving,
                         builder: (focusNode) => TextField(
                           controller: _destinationController,
@@ -716,7 +717,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                   child: _TripCreateLabel(
                     label: l10n.tripOverviewLinkLabel,
                     child: _TripCreateInputShell(
-                      icon: Icons.link_outlined,
+                      icon: PhosphorIconsRegular.link,
                       enabled: !_saving,
                       builder: (focusNode) => TextField(
                         controller: _linkController,
@@ -756,7 +757,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                         required: true,
                         child: _TripCreateDateCard(
                           kicker: l10n.tripCreateSingleDayFieldLabel,
-                          kickerIcon: Icons.event_outlined,
+                          kickerIcon: PhosphorIconsRegular.calendarDots,
                           value: _singleDayDate != null
                               ? _shortDateLabel(_singleDayDate!)
                               : l10n.commonNotProvided,
@@ -776,7 +777,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                                 Expanded(
                                   child: _TripCreateDateCard(
                                     kicker: l10n.tripCreateDateStartLabel,
-                                    kickerIcon: Icons.flight_takeoff,
+                                    kickerIcon: PhosphorIconsRegular.airplaneTakeoff,
                                     value: _shortDateLabel(
                                       TripMemberStay.parseDateKey(
                                             _stay.startDateKey,
@@ -790,7 +791,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                                 Expanded(
                                   child: _TripCreateDateCard(
                                     kicker: l10n.tripCreateDateEndLabel,
-                                    kickerIcon: Icons.flight_land,
+                                    kickerIcon: PhosphorIconsRegular.airplaneLanding,
                                     value: _shortDateLabel(
                                       TripMemberStay.parseDateKey(
                                             _stay.endDateKey,
@@ -852,7 +853,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                                     DateTime.now(),
                               ),
                             ),
-                            dayIcon: Icons.flight_takeoff,
+                            dayIcon: PhosphorIconsRegular.airplaneTakeoff,
                             question: l10n.tripCreateFirstMealQuestion,
                             selected: _stay.startDayPart,
                             onSelected: (part) {
@@ -869,7 +870,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
                                     DateTime.now(),
                               ),
                             ),
-                            dayIcon: Icons.flight_land,
+                            dayIcon: PhosphorIconsRegular.airplaneLanding,
                             question: l10n.tripCreateLastMealQuestion,
                             selected: _stay.endDayPart,
                             onSelected: (part) {
@@ -993,7 +994,7 @@ class _TripCreatePageState extends ConsumerState<TripCreatePage> {
           scrolledUnderElevation: 0,
           toolbarHeight: 52,
           leading: IconButton(
-            icon: const Icon(Icons.close),
+            icon: const Icon(PhosphorIconsRegular.x),
             color: AppTokens.deep,
             onPressed: _saving ? null : () => context.pop(),
           ),
@@ -1213,7 +1214,7 @@ class _CoverPhotoPicker extends StatelessWidget {
                           width: 46,
                           height: 46,
                           child: Icon(
-                            Icons.add_a_photo_outlined,
+                            PhosphorIconsRegular.camera,
                             color: Colors.white,
                             size: 22,
                           ),
@@ -1359,7 +1360,7 @@ class _DayTripToggleCard extends StatelessWidget {
     return _NeonFeatureToggleCard(
       value: value,
       enabled: enabled,
-      icon: Icons.wb_sunny_outlined,
+      icon: PhosphorIconsRegular.sun,
       title: l10n.tripDayTripLabel,
       subtitle: l10n.tripCreateDayTripSubtitle,
       onChanged: onChanged,
@@ -1488,7 +1489,7 @@ class _TripCreateModulesSection extends StatelessWidget {
         _TripCreateModuleToggleRow(
           value: carpoolEnabled,
           enabled: !saving,
-          icon: Icons.directions_car_outlined,
+          icon: PhosphorIconsRegular.car,
           title: l10n.tripOverviewTileCarpool,
           subtitle: l10n.tripCreateModuleCarpoolSubtitle,
           onChanged: onCarpoolChanged,
@@ -1498,7 +1499,7 @@ class _TripCreateModulesSection extends StatelessWidget {
           value: roomsEnabled,
           enabled: roomsToggleEnabled,
           muted: isDayTrip,
-          icon: Icons.king_bed_outlined,
+          icon: PhosphorIconsRegular.bed,
           title: l10n.tripOverviewTileRooms,
           subtitle: isDayTrip
               ? l10n.tripCreateModuleRoomsDayTripUnavailable
@@ -1509,7 +1510,7 @@ class _TripCreateModulesSection extends StatelessWidget {
         _TripCreateModuleToggleRow(
           value: gamesEnabled,
           enabled: !saving,
-          icon: Icons.casino_outlined,
+          icon: PhosphorIconsRegular.diceFive,
           title: l10n.tripOverviewTileGames,
           subtitle: l10n.tripCreateModuleGamesSubtitle,
           onChanged: onGamesChanged,
@@ -1527,7 +1528,7 @@ class _TripCreateModulesSection extends StatelessWidget {
         _TripCreateModuleToggleRow(
           value: cupidonEnabled,
           enabled: !saving,
-          icon: Icons.favorite_outline,
+          icon: PhosphorIconsRegular.heart,
           title: l10n.tripCreateCupidonModeLabel,
           subtitle: l10n.tripCreateCupidonModeSubtitle,
           onChanged: onCupidonChanged,
@@ -1537,7 +1538,7 @@ class _TripCreateModulesSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(
-              Icons.info_outline,
+              PhosphorIconsRegular.info,
               size: 14,
               color: AppTokens.primary,
             ),
@@ -1586,7 +1587,7 @@ class _TripCreateLockedModuleRow extends StatelessWidget {
         child: Row(
           children: [
             _TripCreateModuleIconBadge(
-              icon: Icons.event_available_outlined,
+              icon: PhosphorIconsRegular.calendarCheck,
               active: true,
               locked: true,
             ),
@@ -1626,7 +1627,7 @@ class _TripCreateLockedModuleRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
-                      Icons.lock_outline,
+                      PhosphorIconsRegular.lock,
                       size: 13,
                       color: AppTokens.primary,
                     ),
@@ -1779,7 +1780,7 @@ class _TripCreatePhotosModuleCard extends StatelessWidget {
             Row(
               children: [
                 _TripCreateModuleIconBadge(
-                  icon: Icons.photo_library_outlined,
+                  icon: PhosphorIconsRegular.images,
                   active: active,
                 ),
                 const SizedBox(width: 12),
@@ -1873,7 +1874,7 @@ class _TripCreatePhotosModuleInputState
       child: Row(
         children: [
           Icon(
-            Icons.link,
+            PhosphorIconsRegular.link,
             size: 18,
             color: focused
                 ? AppTokens.primary
@@ -2043,20 +2044,20 @@ class _MealBoundCard extends StatelessWidget {
       (
         TripDayPart.morning,
         l10n.tripCreateMealBreakfast,
-        Icons.bakery_dining_outlined,
-        Icons.bakery_dining,
+        PhosphorIconsRegular.bread,
+        PhosphorIconsFill.bread,
       ),
       (
         TripDayPart.midday,
         l10n.tripCreateMealLunch,
-        Icons.lunch_dining_outlined,
-        Icons.lunch_dining,
+        PhosphorIconsRegular.hamburger,
+        PhosphorIconsFill.hamburger,
       ),
       (
         TripDayPart.evening,
         l10n.tripCreateMealDinner,
-        Icons.dinner_dining_outlined,
-        Icons.dinner_dining,
+        PhosphorIconsRegular.bowlSteam,
+        PhosphorIconsFill.bowlSteam,
       ),
     ];
 
@@ -2233,7 +2234,7 @@ class _CreateTripCtaBar extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.check, size: 20),
+                  : const Icon(PhosphorIconsRegular.check, size: 20),
               label: Text(
                 actionLabel,
                 style: const TextStyle(

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -290,7 +291,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                     onPressed: _deleting
                         ? null
                         : () => setState(() => _editing = true),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(PhosphorIconsRegular.pencilSimple),
                   ),
                 if (canDelete)
                   IconButton(
@@ -304,14 +305,14 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                        : Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
                   ),
               ],
               if (canEdit && _editing) ...[
                 IconButton(
                   tooltip: l10n.commonCancel,
                   onPressed: _saving ? null : () => _cancelEdit(activity),
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(PhosphorIconsRegular.x),
                 ),
                 IconButton(
                   tooltip: l10n.commonSave,
@@ -322,7 +323,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                           height: 24,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.check),
+                      : const Icon(PhosphorIconsRegular.check),
                 ),
               ],
             ],
@@ -584,7 +585,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                               context,
                               widget.activity.address,
                             ),
-                        icon: const Icon(Icons.location_on_outlined),
+                        icon: const Icon(PhosphorIconsRegular.mapPin),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
                           minWidth: 32,
@@ -600,7 +601,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        Icons.directions_car_outlined,
+                        PhosphorIconsRegular.car,
                         size: 22,
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
@@ -628,7 +629,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                                           height: 16,
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
-                                      : const Icon(Icons.refresh_outlined),
+                                      : const Icon(PhosphorIconsRegular.arrowClockwise),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(
                                     minWidth: 32,
@@ -672,7 +673,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        Icons.my_location_outlined,
+                        PhosphorIconsRegular.crosshair,
                         size: 22,
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
@@ -701,7 +702,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                                           height: 16,
                                           child: CircularProgressIndicator(strokeWidth: 2),
                                         )
-                                      : const Icon(Icons.refresh_outlined),
+                                      : const Icon(PhosphorIconsRegular.arrowClockwise),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(
                                     minWidth: 32,
@@ -809,7 +810,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                             await _setPlannedDate(context, pickedDateTime);
                           }
                         : null,
-                    icon: const Icon(Icons.calendar_month_outlined),
+                    icon: const Icon(PhosphorIconsRegular.calendar),
                     label: Text(
                       widget.activity.plannedAt == null
                           ? AppLocalizations.of(context)!.activitiesPlannedUnset
@@ -1077,7 +1078,7 @@ class _VotersSectionState extends ConsumerState<_VotersSection> {
                           ),
                         )
                       : Icon(
-                          hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                          hasVoted ? PhosphorIconsFill.thumbsUp : PhosphorIconsRegular.thumbsUp,
                           size: 20,
                           color: color,
                         ),

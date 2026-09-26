@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -216,7 +217,7 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.system_update_outlined,
+                  PhosphorIconsRegular.deviceMobile,
                   size: 72,
                   color: theme.colorScheme.primary,
                 ),
@@ -280,7 +281,7 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
                     onPressed: () {
                       unawaited(_runAutoUpdateFlow());
                     },
-                    icon: const Icon(Icons.refresh_outlined),
+                    icon: const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.updateRequiredRetryButton),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
@@ -291,7 +292,7 @@ class _UpdateRequiredScreenState extends State<_UpdateRequiredScreen> {
                     onPressed: () {
                       unawaited(_openDownloadUrlExternally());
                     },
-                    icon: const Icon(Icons.open_in_browser_outlined),
+                    icon: const Icon(PhosphorIconsRegular.browser),
                     label: Text(l10n.updateRequiredOpenLinkButton),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
@@ -361,7 +362,7 @@ class _UpdateAutomaticWarningBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.warning_amber_rounded, color: _iconColor, size: 22),
+            Icon(PhosphorIconsRegular.warning, color: _iconColor, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Column(

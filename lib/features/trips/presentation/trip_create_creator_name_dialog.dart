@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/features/auth/data/display_name_length.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -125,7 +126,7 @@ class _TripCreateCreatorNameDialogState
               const SizedBox(height: 18),
               _NameOptionCard(
                 selected: !_useProfileName,
-                icon: Icons.edit_outlined,
+                icon: PhosphorIconsRegular.pencilSimple,
                 title: l10n.tripParticipantsEditNameModeCustom,
                 onTap: _selectCustom,
               ),
@@ -162,7 +163,7 @@ class _TripCreateCreatorNameDialogState
               const SizedBox(height: 10),
               _NameOptionCard(
                 selected: _useProfileName,
-                icon: Icons.badge_outlined,
+                icon: PhosphorIconsRegular.identificationBadge,
                 title: l10n.tripParticipantsEditNameModeProfile,
                 subtitle: widget.profileName != null
                     ? l10n.tripParticipantsProfileNameDisplay(
@@ -381,7 +382,7 @@ class _DialogInputShellState extends State<_DialogInputShell> {
       child: Row(
         children: [
           Icon(
-            Icons.edit_outlined,
+            PhosphorIconsRegular.pencilSimple,
             size: 18,
             color: focused
                 ? AppTokens.primary
@@ -452,8 +453,8 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                     height: 38,
                     child: Icon(
                       widget.useProfileName
-                          ? Icons.badge_outlined
-                          : Icons.edit_outlined,
+                          ? PhosphorIconsRegular.identificationBadge
+                          : PhosphorIconsRegular.pencilSimple,
                       size: 20,
                       color: AppTokens.primary,
                     ),
@@ -499,7 +500,7 @@ class _TripCreateCreatorNameFieldState extends State<TripCreateCreatorNameField>
                     width: 34,
                     height: 34,
                     child: Icon(
-                      Icons.edit_outlined,
+                      PhosphorIconsRegular.pencilSimple,
                       size: 18,
                       color: AppTokens.primary,
                     ),

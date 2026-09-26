@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -14,17 +15,17 @@ class TripWalletPage extends StatelessWidget {
 
   static const List<_MockWalletDocument> _mockDocuments = [
     _MockWalletDocument(
-      icon: Icons.confirmation_number_outlined,
+      icon: PhosphorIconsRegular.ticket,
       name: 'Billet de train.pdf',
       date: '12/10/2026',
     ),
     _MockWalletDocument(
-      icon: Icons.qr_code_2_outlined,
+      icon: PhosphorIconsRegular.qrCode,
       name: 'QR code hôtel.png',
       date: '15/10/2026',
     ),
     _MockWalletDocument(
-      icon: Icons.image_outlined,
+      icon: PhosphorIconsRegular.image,
       name: "Capture réservation.jpg",
       date: '18/10/2026',
     ),
@@ -42,7 +43,7 @@ class TripWalletPage extends StatelessWidget {
           title: Text(l10n.tripWalletPageTitle),
           actions: [
             IconButton(
-              icon: const Icon(Icons.add),
+              icon: const Icon(PhosphorIconsRegular.plus),
               tooltip: l10n.tripWalletAddDocument,
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(

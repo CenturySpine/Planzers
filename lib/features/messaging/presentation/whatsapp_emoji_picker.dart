@@ -1,4 +1,5 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -57,15 +58,15 @@ Config planerzWhatsAppEmojiPickerConfig(
         );
       },
       categoryIcons: const CategoryIcons(
-        recentIcon: Icons.access_time_outlined,
-        smileyIcon: Icons.emoji_emotions_outlined,
-        animalIcon: Icons.cruelty_free_outlined,
-        foodIcon: Icons.coffee_outlined,
-        activityIcon: Icons.sports_soccer_outlined,
-        travelIcon: Icons.directions_car_filled_outlined,
-        objectIcon: Icons.lightbulb_outline,
-        symbolIcon: Icons.emoji_symbols_outlined,
-        flagIcon: Icons.flag_outlined,
+        recentIcon: PhosphorIconsRegular.clock,
+        smileyIcon: PhosphorIconsRegular.smiley,
+        animalIcon: PhosphorIconsRegular.rabbit,
+        foodIcon: PhosphorIconsRegular.coffee,
+        activityIcon: PhosphorIconsRegular.soccerBall,
+        travelIcon: PhosphorIconsRegular.carProfile,
+        objectIcon: PhosphorIconsRegular.lightbulb,
+        symbolIcon: PhosphorIconsRegular.hash,
+        flagIcon: PhosphorIconsRegular.flag,
       ),
     ),
     bottomActionBarConfig: BottomActionBarConfig(
@@ -310,7 +311,7 @@ class PlanerzWhatsAppSearchViewState extends SearchViewState {
                   IconButton(
                     onPressed: widget.showEmojiView,
                     color: widget.config.searchViewConfig.buttonIconColor,
-                    icon: const Icon(Icons.arrow_back, size: 20),
+                    icon: const Icon(PhosphorIconsRegular.arrowLeft, size: 20),
                   ),
                   Expanded(
                     child: TextField(

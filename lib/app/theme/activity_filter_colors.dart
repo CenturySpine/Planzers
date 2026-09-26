@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
@@ -49,10 +50,10 @@ extension ActivityFilterGroupColors on ActivityFilterGroup {
       };
 
   IconData get filterIcon => switch (this) {
-        ActivityFilterGroup.repas => Icons.restaurant_rounded,
-        ActivityFilterGroup.nuits => Icons.bedtime_rounded,
-        ActivityFilterGroup.loisirs => Icons.local_activity_rounded,
-        ActivityFilterGroup.trajets => Icons.commute_rounded,
+        ActivityFilterGroup.repas => PhosphorIconsRegular.forkKnife,
+        ActivityFilterGroup.nuits => PhosphorIconsRegular.moonStars,
+        ActivityFilterGroup.loisirs => PhosphorIconsRegular.ticket,
+        ActivityFilterGroup.trajets => PhosphorIconsRegular.car,
       };
 }
 
@@ -62,5 +63,5 @@ abstract final class PresenceCategoryColors {
   static const Color color = AppTokens.primary;
   static const Color lightBg = AppTokens.primaryTint;
   static const Color ink = AppTokens.primaryDark;
-  static const IconData icon = Icons.groups_rounded;
+  static const IconData icon = PhosphorIconsRegular.usersThree;
 }

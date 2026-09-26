@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -157,7 +158,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
       backgroundColor: AppTokens.scaffoldBackground,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(PhosphorIconsRegular.x),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(_isEdit ? l10n.expenseGroupEditTitle : l10n.expenseGroupNewTitle),
@@ -220,7 +221,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                           ),
                           TextButton.icon(
                             onPressed: _pickIcon,
-                            icon: const Icon(Icons.palette_outlined, size: 18),
+                            icon: const Icon(PhosphorIconsRegular.palette, size: 18),
                             label: Text(l10n.expensesChooseIcon),
                           ),
                         ],
@@ -238,7 +239,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                       controller: _titleController,
                       decoration: InputDecoration(
                         hintText: l10n.expenseGroupNameHint,
-                        prefixIcon: const Icon(Icons.sell_outlined),
+                        prefixIcon: const Icon(PhosphorIconsRegular.tag),
                         filled: true,
                         fillColor: AppTokens.surface,
                         border: OutlineInputBorder(
@@ -313,7 +314,7 @@ class _ExpenseGroupEditorPageState extends ConsumerState<ExpenseGroupEditorPage>
                           color: Colors.white,
                         ),
                       )
-                    : Icon(_isEdit ? Icons.check : Icons.create_new_folder_outlined),
+                    : Icon(_isEdit ? PhosphorIconsRegular.check : PhosphorIconsRegular.folderPlus),
                 label: Text(
                   _isEdit ? l10n.expenseGroupSaveAction : l10n.expenseGroupCreateAction,
                 ),

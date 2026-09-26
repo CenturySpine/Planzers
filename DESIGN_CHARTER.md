@@ -104,5 +104,5 @@ Chiffres (heures, montants, quantités) : `FontFeature.tabularFigures()`.
 
 ## 6. Iconographie
 
-- Material Symbols **Rounded** pour les nouvelles icônes (`Icons.*_rounded`), 20–22 px ; icônes de catégorie dans une tuile teintée 34 px (rayon 10).
+- Jeu d'icônes **Phosphor** (`phosphor_flutter`) — plus aucune icône Material (`Icons.*`) dans l'app. `PhosphorIconsRegular` par défaut ; `PhosphorIconsFill` pour un état sélectionné / actif (onglet de navigation sélectionné, vote donné, favori…). Taille 20–22 px ; icônes de catégorie dans une tuile teintée 34 px (rayon 10).
 - Logo : repère « épingle + soleil couchant sur la mer » (`assets/images/planerz_mark.svg`, widget `PlanerzBrandMark` / `PlanerzBrandLockup`). Icône d'app : `assets/images/app_icon.png` (1024 px, plein cadre).

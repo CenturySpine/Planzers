@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/features/shopping/data/shopping_item.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -78,7 +79,7 @@ class ShoppingListFilterBar extends StatelessWidget {
                 Tooltip(
                   message: l10n.shoppingFilterClaimedByMe,
                   child: FilterChip(
-                    avatar: const Icon(Icons.person_rounded),
+                    avatar: const Icon(PhosphorIconsFill.user),
                     label: Text(l10n.commonMe),
                     selected: onlyClaimedByMe,
                     onSelected: onOnlyClaimedByMeChanged,

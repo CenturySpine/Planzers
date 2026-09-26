@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -237,7 +238,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                           width: 44,
                           height: 44,
                           child: Icon(
-                            Icons.confirmation_number_rounded,
+                            PhosphorIconsRegular.ticket,
                             color: AppTokens.primary,
                             size: 24,
                           ),
@@ -282,7 +283,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                     Row(
                       children: [
                         const Icon(
-                          Icons.error_outline,
+                          PhosphorIconsRegular.warningCircle,
                           size: 18,
                           color: AppTokens.error,
                         ),
@@ -314,7 +315,7 @@ class _JoinTripByCodeDialogState extends ConsumerState<_JoinTripByCodeDialog> {
                           shape: const StadiumBorder(),
                         ),
                         icon: const Icon(
-                          Icons.content_paste_outlined,
+                          PhosphorIconsRegular.clipboardText,
                           size: 18,
                         ),
                         label: Text(

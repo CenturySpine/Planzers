@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
@@ -121,7 +122,7 @@ class _FcmNotificationLinkBinderState extends State<FcmNotificationLinkBinder> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.favorite, color: Colors.pink),
+            const Icon(PhosphorIconsFill.heart, color: Colors.pink),
             const SizedBox(width: 8),
             Text(l10n.cupidonPopupTitle),
           ],

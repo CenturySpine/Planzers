@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -22,12 +23,12 @@ Future<void> openRouteInMapAppsSelector(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.map_outlined),
+            leading: const Icon(PhosphorIconsRegular.mapTrifold),
             title: Text(AppLocalizations.of(ctx)!.openRouteGoogleMaps),
             onTap: () => Navigator.of(ctx).pop(_RouteMapApp.googleMaps),
           ),
           ListTile(
-            leading: const Icon(Icons.navigation_outlined),
+            leading: const Icon(PhosphorIconsRegular.navigationArrow),
             title: Text(AppLocalizations.of(ctx)!.openRouteWaze),
             onTap: () => Navigator.of(ctx).pop(_RouteMapApp.waze),
           ),

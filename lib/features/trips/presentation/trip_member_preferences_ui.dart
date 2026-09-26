@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -8,7 +9,7 @@ class TripNeonPrefsScreenHead extends StatelessWidget {
     required this.kicker,
     required this.centerTitle,
     required this.subtitle,
-    this.icon = Icons.tune,
+    this.icon = PhosphorIconsRegular.slidersHorizontal,
   });
 
   final String kicker;
@@ -140,7 +141,7 @@ class TripNeonPrefsNameRow extends StatelessWidget {
             foregroundColor: AppTokens.primary,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           ),
-          icon: const Icon(Icons.edit_outlined, size: 16),
+          icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
           label: Text(
             l10n.commonEdit,
             style: const TextStyle(

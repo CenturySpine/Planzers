@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,7 +132,7 @@ class _TripShoppingPermissionsPageState
             title: Text(l10n.tripSectionShopping),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -164,7 +165,7 @@ class _TripShoppingPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.shoppingDeleteCheckedTitle,
                         minRole: trip.shoppingPermissions.deleteCheckedItemsMinRole,
-                        icon: Icons.delete_outline,
+                        icon: PhosphorIconsRegular.trash,
                         busy: _isSavingDeleteCheckedItemsPermission,
                         enabled: !_isResettingDefaults,
                         onChanged: (role) =>
@@ -188,7 +189,7 @@ class _TripShoppingPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

@@ -81,6 +81,12 @@ flutter:
     - legal/mentions_legales_en.txt
     - legal/vie_privee_rgpd_en.txt
   fonts:
+    - family: PhosphorRegular
+      fonts:
+        - asset: assets/fonts/phosphor/Phosphor-Regular.ttf
+    - family: PhosphorFill
+      fonts:
+        - asset: assets/fonts/phosphor/Phosphor-Fill.ttf
     - family: Figtree
       fonts:
         - asset: assets/fonts/figtree/Figtree_400Regular.ttf

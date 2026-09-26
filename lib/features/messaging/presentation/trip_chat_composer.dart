@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -132,8 +133,8 @@ class _TripChatComposerState extends State<TripChatComposer> {
                 IconButton(
                   icon: Icon(
                     _emojiPickerVisible
-                        ? Icons.keyboard_outlined
-                        : Icons.emoji_emotions_outlined,
+                        ? PhosphorIconsRegular.keyboard
+                        : PhosphorIconsRegular.smiley,
                   ),
                   color: iconMuted,
                   tooltip: l10n.chatInsertEmoji,
@@ -184,7 +185,7 @@ class _TripChatComposerState extends State<TripChatComposer> {
                   valueListenable: _hasTextNotifier,
                   builder: (context, hasText, child) {
                     return IconButton(
-                      icon: const Icon(Icons.send),
+                      icon: const Icon(PhosphorIconsFill.paperPlaneRight),
                       color: hasText ? iconMuted : iconMuted.withValues(alpha: 0.35),
                       tooltip: l10n.chatSend,
                       onPressed: hasText

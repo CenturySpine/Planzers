@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -217,7 +218,7 @@ class AccountEditButton extends StatelessWidget {
             width: 34,
             height: 34,
             child: Icon(
-              Icons.edit_outlined,
+              PhosphorIconsRegular.pencilSimple,
               size: 17,
               color: AppTokens.primary,
             ),
@@ -346,7 +347,7 @@ class AccountEditActions extends StatelessWidget {
                           ),
                         )
                       : const Icon(
-                          Icons.check_rounded,
+                          PhosphorIconsRegular.check,
                           size: 20,
                           color: Colors.white,
                         ),
@@ -370,7 +371,7 @@ class AccountEditActions extends StatelessWidget {
                 width: 40,
                 height: 40,
                 child: Icon(
-                  Icons.close_rounded,
+                  PhosphorIconsRegular.x,
                   size: 20,
                   color: AppTokens.text700,
                 ),
@@ -445,7 +446,7 @@ class AccountPrefTile extends StatelessWidget {
               ),
               trailing ??
                   const Icon(
-                    Icons.chevron_right,
+                    PhosphorIconsRegular.caretRight,
                     size: 22,
                     color: AppTokens.divider,
                   ),
@@ -605,7 +606,7 @@ class AccountNotificationsButton extends StatelessWidget {
                   )
                 else
                   const Icon(
-                    Icons.notifications_active_outlined,
+                    PhosphorIconsRegular.bellRinging,
                     size: 20,
                     color: AppTokens.primary,
                   ),
@@ -699,7 +700,7 @@ class AccountProfileHeader extends StatelessWidget {
                                     ),
                                   )
                                 : const Icon(
-                                    Icons.photo_camera_outlined,
+                                    PhosphorIconsRegular.camera,
                                     size: 15,
                                     color: Colors.white,
                                   ),
@@ -852,18 +853,18 @@ class AccountPhotoBottomSheet extends StatelessWidget {
               ),
             ),
             _SheetAction(
-              icon: Icons.photo_library_outlined,
+              icon: PhosphorIconsRegular.images,
               label: galleryLabel,
               onTap: onGallery,
             ),
             _SheetAction(
-              icon: Icons.photo_camera_outlined,
+              icon: PhosphorIconsRegular.camera,
               label: cameraLabel,
               onTap: onCamera,
             ),
             if (showDelete)
               _SheetAction(
-                icon: Icons.delete_outline,
+                icon: PhosphorIconsRegular.trash,
                 label: deleteLabel,
                 onTap: onDelete,
                 destructive: true,

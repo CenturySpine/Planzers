@@ -1,5 +1,6 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
@@ -311,7 +312,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                       if (showSelfUnassignedCard) ...[
                         PzCallout(
                           tone: PzCalloutTone.warning,
-                          icon: Icons.directions_car_outlined,
+                          icon: PhosphorIconsRegular.car,
                           title: l10n.tripCarpoolSelfUnassignedTitle,
                           message: l10n.tripCarpoolSelfUnassignedBody,
                         ),
@@ -350,7 +351,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                                 .shoppingMeetupLinkUrl;
                                       });
                                     },
-                                    icon: const Icon(Icons.edit_outlined),
+                                    icon: const Icon(PhosphorIconsRegular.pencilSimple),
                                   ),
                               ],
                             ),
@@ -385,7 +386,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                                     strokeWidth: 2,
                                                   ),
                                                 )
-                                              : const Icon(Icons.check),
+                                              : const Icon(PhosphorIconsRegular.check),
                                         )
                                       : null,
                                 ),
@@ -554,7 +555,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                 _openCarpoolForm();
               },
               tooltip: l10n.tripCarpoolCreateAction,
-              child: const Icon(Icons.add),
+              child: const Icon(PhosphorIconsRegular.plus),
             )
           : null,
     );
@@ -705,7 +706,7 @@ class _TripCarpoolCard extends StatelessWidget {
                             if (carpool.goesShopping) ...[
                               const SizedBox(width: 6),
                               Icon(
-                                Icons.shopping_cart_outlined,
+                                PhosphorIconsRegular.shoppingCartSimple,
                                 size: 16,
                                 color: colorScheme.primary,
                               ),
@@ -715,7 +716,7 @@ class _TripCarpoolCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.place_outlined,
+                            Icon(PhosphorIconsRegular.mapPin,
                                 size: 15, color: colorScheme.outline),
                             const SizedBox(width: 4),
                             Flexible(
@@ -739,7 +740,7 @@ class _TripCarpoolCard extends StatelessWidget {
                                   child: Padding(
                                     padding: const EdgeInsets.all(4),
                                     child: Icon(
-                                      Icons.navigation_rounded,
+                                      PhosphorIconsFill.navigationArrow,
                                       size: 16,
                                       color: colorScheme.primary,
                                     ),
@@ -751,7 +752,7 @@ class _TripCarpoolCard extends StatelessWidget {
                         if (carpool.nearestTransitStop.trim().isNotEmpty)
                           Row(
                             children: [
-                              Icon(Icons.directions_transit_outlined,
+                              Icon(PhosphorIconsRegular.train,
                                   size: 15, color: colorScheme.outline),
                               const SizedBox(width: 4),
                               Flexible(
@@ -804,7 +805,7 @@ class _TripCarpoolCard extends StatelessWidget {
                           width: 1.4,
                         ),
                       ),
-                      child: Icon(Icons.event_seat_outlined,
+                      child: Icon(PhosphorIconsRegular.armchair,
                           size: 14, color: colorScheme.outline),
                     ),
                   const SizedBox(width: 4),

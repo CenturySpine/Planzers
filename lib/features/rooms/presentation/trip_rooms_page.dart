@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
@@ -40,7 +41,7 @@ class TripRoomsPage extends ConsumerWidget {
         heroTag: 'trip_rooms_add',
         tooltip: l10n.roomsCreate,
         onPressed: () => _openCreateRoomSheet(context, ref, tripId: trip.id),
-        child: const Icon(Icons.add_rounded),
+        child: const Icon(PhosphorIconsRegular.plus),
       ),
     );
   }
@@ -119,7 +120,7 @@ class _OccupancyPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bed_rounded, size: 14, color: group.filterInkColor),
+          Icon(PhosphorIconsRegular.bed, size: 14, color: group.filterInkColor),
           const SizedBox(width: 4),
           Text(
             '$assigned/$capacity',
@@ -187,7 +188,7 @@ class _RoomCard extends StatelessWidget {
                     assigned: room.assignedMemberIds.length,
                     capacity: room.capacity,
                   ),
-                  const Icon(Icons.chevron_right_rounded,
+                  const Icon(PhosphorIconsRegular.caretRight,
                       color: Color(0xFF8891A1)),
                 ],
               ),
@@ -200,8 +201,8 @@ class _RoomCard extends StatelessWidget {
                     children: [
                       Icon(
                         bed.type == TripBedType.double
-                            ? Icons.king_bed_outlined
-                            : Icons.single_bed_outlined,
+                            ? PhosphorIconsRegular.bed
+                            : PhosphorIconsRegular.bed,
                         size: 17,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -500,7 +501,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                             _editing = false;
                             _setupEditorState(room, rooms);
                           }),
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(PhosphorIconsRegular.x),
                 ),
                 IconButton(
                   onPressed: _saving ? null : () => _save(room),
@@ -510,16 +511,16 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.check),
+                      : const Icon(PhosphorIconsRegular.check),
                 ),
               ] else ...[
                 IconButton(
                   onPressed: () => setState(() => _editing = true),
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(PhosphorIconsRegular.pencilSimple),
                 ),
                 IconButton(
                   onPressed: () => _delete(room),
-                  icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                  icon: Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
                 ),
               ],
             ],
@@ -569,12 +570,12 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                               children: [
                                 if (_beds.length > 1)
                                   IconButton(
-                                    icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                                    icon: Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
                                     onPressed: () => setState(() {
                                       _beds = [..._beds]..removeAt(i);
                                     }),
                                   ),
-                                const Icon(Icons.expand_more),
+                                const Icon(PhosphorIconsRegular.caretDown),
                               ],
                             ),
                             children: [
@@ -712,7 +713,7 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                             ),
                           ];
                         }),
-                        icon: const Icon(Icons.add),
+                        icon: const Icon(PhosphorIconsRegular.plus),
                         label: Text(l10n.roomsAddBed),
                       ),
                     ],
@@ -887,7 +888,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                           : () => setState(() {
                                 _beds = [..._beds]..removeAt(i);
                               }),
-                      icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                      icon: Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
                     ),
                   ),
                 ),
@@ -898,7 +899,7 @@ class _CreateRoomSheetState extends ConsumerState<_CreateRoomSheet> {
                     _EditableBed(type: TripBedType.single, kind: TripBedKind.regular),
                   ];
                 }),
-                icon: const Icon(Icons.add),
+                icon: const Icon(PhosphorIconsRegular.plus),
                 label: Text(l10n.roomsAddBed),
               ),
               const SizedBox(height: 18),

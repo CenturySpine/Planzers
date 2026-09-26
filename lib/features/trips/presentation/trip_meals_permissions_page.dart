@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -132,7 +133,7 @@ class _TripMealsPermissionsPageState
             title: Text(l10n.tripSectionMeals),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -165,7 +166,7 @@ class _TripMealsPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionMealsCreate,
                         minRole: trip.mealsPermissions.createMealMinRole,
-                        icon: Icons.add_circle_outline,
+                        icon: PhosphorIconsRegular.plusCircle,
                         busy: _savingActions.contains(
                           TripMealsPermissionAction.createMeal,
                         ),
@@ -178,7 +179,7 @@ class _TripMealsPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionMealsDelete,
                         minRole: trip.mealsPermissions.deleteMealMinRole,
-                        icon: Icons.delete_outline,
+                        icon: PhosphorIconsRegular.trash,
                         iconColor: Theme.of(context).colorScheme.error,
                         busy: _savingActions.contains(
                           TripMealsPermissionAction.deleteMeal,
@@ -192,7 +193,7 @@ class _TripMealsPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionMealsEdit,
                         minRole: trip.mealsPermissions.editMealMinRole,
-                        icon: Icons.edit_outlined,
+                        icon: PhosphorIconsRegular.pencilSimple,
                         busy: _savingActions.contains(
                           TripMealsPermissionAction.editMeal,
                         ),
@@ -205,7 +206,7 @@ class _TripMealsPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionMealsAddContribution,
                         minRole: trip.mealsPermissions.addContributionMinRole,
-                        icon: Icons.volunteer_activism_outlined,
+                        icon: PhosphorIconsRegular.handHeart,
                         busy: _savingActions.contains(
                           TripMealsPermissionAction.addContribution,
                         ),
@@ -218,7 +219,7 @@ class _TripMealsPermissionsPageState
                       TripPermissionItemRow(
                         title: l10n.tripPermissionMealsManageRecipe,
                         minRole: trip.mealsPermissions.manageRecipeMinRole,
-                        icon: Icons.menu_book_outlined,
+                        icon: PhosphorIconsRegular.bookOpen,
                         availableRoles: const <TripPermissionRole>[
                           TripPermissionRole.participant,
                           TripPermissionRole.chef,
@@ -251,7 +252,7 @@ class _TripMealsPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

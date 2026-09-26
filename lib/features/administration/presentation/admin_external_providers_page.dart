@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
@@ -419,7 +420,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
           title: const Text('Fournisseurs externes (OAuth)'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.add),
+              icon: const Icon(PhosphorIconsRegular.plus),
               tooltip: 'Enregistrer un fournisseur',
               onPressed: () => _openCreateDialog(context, ref),
             ),
@@ -448,7 +449,7 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                           ? NetworkImage(provider.iconUrl)
                           : null,
                       child: provider.iconUrl.isEmpty
-                          ? const Icon(Icons.hub_outlined, color: AppTokens.primary)
+                          ? const Icon(PhosphorIconsRegular.graph, color: AppTokens.primary)
                           : null,
                     ),
                     title: Text(
@@ -470,13 +471,13 @@ class AdminExternalProvidersPage extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.link, color: AppTokens.primary),
+                          icon: const Icon(PhosphorIconsRegular.link, color: AppTokens.primary),
                           tooltip: "Modifier l'URL API",
                           onPressed: () =>
                               _openEditApiBaseUrlDialog(context, ref, provider),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, color: AppTokens.error),
+                          icon: const Icon(PhosphorIconsRegular.trash, color: AppTokens.error),
                           tooltip: 'Supprimer',
                           onPressed: () => _confirmAndDelete(context, ref, provider),
                         ),

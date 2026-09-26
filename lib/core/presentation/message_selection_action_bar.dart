@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -35,32 +36,32 @@ class MessageSelectionActionBar extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(PhosphorIconsRegular.x),
                 tooltip: l10n.commonClose,
                 onPressed: onClose,
               ),
               if (onReply != null)
                 IconButton(
-                  icon: const Icon(Icons.reply_outlined),
+                  icon: const Icon(PhosphorIconsRegular.arrowBendUpLeft),
                   tooltip: l10n.chatReply,
                   onPressed: onReply,
                 ),
               const Spacer(),
               if (onEdit != null)
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(PhosphorIconsRegular.pencilSimple),
                   tooltip: l10n.commonEdit,
                   onPressed: () => unawaited(onEdit!()),
                 ),
               if (onDelete != null)
                 IconButton(
-                  icon: Icon(Icons.delete_outline, color: scheme.error),
+                  icon: Icon(PhosphorIconsRegular.trash, color: scheme.error),
                   tooltip: l10n.commonDelete,
                   onPressed: () => unawaited(onDelete!()),
                 ),
               if (onCopy != null)
                 IconButton(
-                  icon: const Icon(Icons.copy_outlined),
+                  icon: const Icon(PhosphorIconsRegular.copy),
                   tooltip: l10n.chatCopy,
                   onPressed: onCopy,
                 ),

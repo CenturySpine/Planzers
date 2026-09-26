@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -228,7 +229,7 @@ class _ConsentCard extends StatelessWidget {
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(Icons.sync_alt_rounded),
+                  child: Icon(PhosphorIconsRegular.arrowsLeftRight),
                 ),
                 _AppIconBadge(networkUrl: client.iconUrl),
               ],
@@ -318,7 +319,7 @@ class _FallbackAppIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: const Icon(Icons.apps_rounded),
+      child: const Icon(PhosphorIconsRegular.squaresFour),
     );
   }
 }

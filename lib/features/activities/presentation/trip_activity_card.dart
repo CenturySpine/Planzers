@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -95,8 +96,8 @@ class _TripActivityVoteButtonState extends ConsumerState<TripActivityVoteButton>
                         children: [
                           Icon(
                             hasVoted
-                                ? Icons.thumb_up_rounded
-                                : Icons.thumb_up_outlined,
+                                ? PhosphorIconsFill.thumbsUp
+                                : PhosphorIconsRegular.thumbsUp,
                             size: 18,
                             color: color,
                           ),

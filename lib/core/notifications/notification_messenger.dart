@@ -1,11 +1,12 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/app/router.dart';
 
 IconData iconForNotificationChannel(String? channel) => switch (channel) {
-      'messages' => Icons.chat_bubble,
-      'activities' => Icons.event_note,
-      'announcements' => Icons.campaign,
-      _ => Icons.notifications,
+      'messages' => PhosphorIconsFill.chatCircleDots,
+      'activities' => PhosphorIconsRegular.notepad,
+      'announcements' => PhosphorIconsFill.megaphone,
+      _ => PhosphorIconsFill.bell,
     };
 
 class ForegroundNotificationBanner extends StatelessWidget {

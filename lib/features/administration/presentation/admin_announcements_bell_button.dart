@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,7 +38,7 @@ class AdminAnnouncementsBellButton extends ConsumerWidget {
           clipBehavior: Clip.none,
           children: [
             Icon(
-              Icons.notifications_outlined,
+              PhosphorIconsRegular.bell,
               size: brandedHeader ? 22 : 24,
             ),
             if (showUnreadDot)

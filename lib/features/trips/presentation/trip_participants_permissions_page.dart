@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -126,7 +127,7 @@ class _TripParticipantsPermissionsPageState
             title: Text(l10n.tripSectionParticipants),
             leading: IconButton(
               onPressed: () => context.go('/trips/${widget.tripId}/settings'),
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(PhosphorIconsRegular.arrowLeft),
               tooltip: l10n.commonClose,
             ),
           ),
@@ -160,7 +161,7 @@ class _TripParticipantsPermissionsPageState
                         title: l10n.tripPermissionParticipantsManage,
                         minRole:
                             trip.participantsPermissions.manageParticipantsMinRole,
-                        icon: Icons.group_outlined,
+                        icon: PhosphorIconsRegular.users,
                         busy: _savingActions.contains(
                           TripParticipantsPermissionAction.manageParticipants,
                         ),
@@ -174,7 +175,7 @@ class _TripParticipantsPermissionsPageState
                         title: l10n.tripPermissionParticipantsToggleAdmin,
                         minRole:
                             trip.participantsPermissions.toggleAdminRoleMinRole,
-                        icon: Icons.admin_panel_settings_outlined,
+                        icon: PhosphorIconsRegular.shieldCheck,
                         busy: _savingActions.contains(
                           TripParticipantsPermissionAction.toggleAdminRole,
                         ),
@@ -201,7 +202,7 @@ class _TripParticipantsPermissionsPageState
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.refresh),
+                        : const Icon(PhosphorIconsRegular.arrowClockwise),
                     label: Text(l10n.tripPermissionsResetDefaultsAction),
                   ),
                 ],

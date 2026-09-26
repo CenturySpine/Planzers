@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -221,7 +222,7 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
       backgroundColor: AppTokens.scaffoldBackground,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(PhosphorIconsRegular.x),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(l10n.expensesNewExpenseTitle),
@@ -286,7 +287,7 @@ class _AddExpensePageState extends ConsumerState<AddExpensePage> {
           ),
           _ExpenseFormCta(
             label: l10n.expensesAddExpenseAction,
-            icon: Icons.add,
+            icon: PhosphorIconsRegular.plus,
             enabled: _isValid(l10n) && !_saving && members.isNotEmpty,
             loading: _saving,
             onPressed: _save,
@@ -647,7 +648,7 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
         actions: [
           if (widget.canDeleteExpense && _editing)
             IconButton(
-              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              icon: Icon(PhosphorIconsRegular.trash, color: Theme.of(context).colorScheme.error),
               onPressed: _deleting ? null : _confirmDelete,
             ),
           if (canShowMenu && !_editing)
@@ -749,7 +750,7 @@ class _ExpenseDetailsPageState extends ConsumerState<ExpenseDetailsPage> {
           if (_editing)
             _ExpenseFormCta(
               label: l10n.expensesSaveExpenseChanges,
-              icon: Icons.check,
+              icon: PhosphorIconsRegular.check,
               enabled: _isValid(l10n) && !_saving && members.isNotEmpty,
               loading: _saving,
               onPressed: _save,
@@ -944,7 +945,7 @@ class _ExpenseFormBody extends StatelessWidget {
                   onTap: onPickDate,
                   label: l10n.expensesDateLabel,
                   value: formatExpenseDateShort(expenseDate, locale),
-                  leading: const Icon(Icons.calendar_today_outlined, size: 20),
+                  leading: const Icon(PhosphorIconsRegular.calendarBlank, size: 20),
                 ),
               ),
             ],
@@ -1264,7 +1265,7 @@ class _PickerTile extends StatelessWidget {
                 ),
               ),
               if (enabled)
-                const Icon(Icons.expand_more, color: AppTokens.onSurfaceVariant),
+                const Icon(PhosphorIconsRegular.caretDown, color: AppTokens.onSurfaceVariant),
             ],
           ),
         ),
@@ -1326,8 +1327,8 @@ class _SplitToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          btn(ExpenseSplitMode.equal, Icons.drag_handle, l10n.expensesSplitEqual),
-          btn(ExpenseSplitMode.customAmounts, Icons.tune, l10n.expensesSplitCustomAmounts),
+          btn(ExpenseSplitMode.equal, PhosphorIconsRegular.dotsSix, l10n.expensesSplitEqual),
+          btn(ExpenseSplitMode.customAmounts, PhosphorIconsRegular.slidersHorizontal, l10n.expensesSplitCustomAmounts),
         ],
       ),
     );
@@ -1457,7 +1458,7 @@ class _CheckDot extends StatelessWidget {
         ),
       ),
       child: checked
-          ? const Icon(Icons.check, size: 16, color: Colors.white)
+          ? const Icon(PhosphorIconsRegular.check, size: 16, color: Colors.white)
           : null,
     );
   }
@@ -1490,10 +1491,10 @@ class _RemainBanner extends StatelessWidget {
             ? AppTokens.primary
             : AppTokens.onSurfaceVariant;
     final icon = ok
-        ? Icons.check_circle_outline
+        ? PhosphorIconsRegular.checkCircle
         : over
-            ? Icons.error_outline
-            : Icons.pending_outlined;
+            ? PhosphorIconsRegular.warningCircle
+            : PhosphorIconsRegular.dotsThreeCircle;
     final text = ok
         ? l10n.expensesSplitComplete
         : over
@@ -1546,7 +1547,7 @@ class _EqualSummaryBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.groups_outlined, size: 18, color: AppTokens.primary),
+          const Icon(PhosphorIconsRegular.usersThree, size: 18, color: AppTokens.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

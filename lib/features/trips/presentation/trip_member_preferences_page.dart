@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -277,7 +278,7 @@ class _TripMemberPreferencesPageState
       title: Text(l10n.tripUserPreferencesTitle),
       leading: IconButton(
         onPressed: () => context.go('/trips/${widget.tripId}/overview'),
-        icon: const Icon(Icons.arrow_back),
+        icon: const Icon(PhosphorIconsRegular.arrowLeft),
         tooltip: l10n.tripBackToTrip,
       ),
     );
@@ -405,7 +406,7 @@ class _TripMemberPreferencesPageState
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             TripNeonSectionHeader(
-                              icon: Icons.badge_outlined,
+                              icon: PhosphorIconsRegular.identificationBadge,
                               label: l10n.tripUserPreferencesProfileSection,
                             ),
                             TripNeonPrefGroup(
@@ -444,7 +445,7 @@ class _TripMemberPreferencesPageState
                       phoneVisibilityTitle: l10n.tripPhoneVisibilityTitle,
                     ),
                     TripNeonSectionHeader(
-                      icon: Icons.widgets_outlined,
+                      icon: PhosphorIconsRegular.squaresFour,
                       label: l10n.tripTravelerModulesSectionTitle,
                     ),
                     Padding(

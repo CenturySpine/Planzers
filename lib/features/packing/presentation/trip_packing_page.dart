@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -248,7 +249,7 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
                       ),
                     )
                   : IconButton(
-                      icon: const Icon(Icons.ios_share),
+                      icon: const Icon(PhosphorIconsRegular.export),
                       tooltip: l10n.tripPackingPushAction,
                       onPressed: () => _confirmPush(sharedItemCount),
                     ),
@@ -414,7 +415,7 @@ class _PackingRow extends StatelessWidget {
                 child: Tooltip(
                   message: organiserBadgeTooltip,
                   child: const Icon(
-                    Icons.lock_outline,
+                    PhosphorIconsRegular.lock,
                     size: 16,
                     color: AppTokens.outline,
                   ),
@@ -423,7 +424,7 @@ class _PackingRow extends StatelessWidget {
             else
               PopupMenuButton<String>(
                 icon: const Icon(
-                  Icons.more_vert,
+                  PhosphorIconsRegular.dotsThreeVertical,
                   size: 18,
                   color: AppTokens.outline,
                 ),
@@ -488,7 +489,7 @@ class _PackingShareToggle extends StatelessWidget {
               width: 36,
               height: 36,
               child: Icon(
-                shared ? Icons.groups_rounded : Icons.person_outline_rounded,
+                shared ? PhosphorIconsRegular.usersThree : PhosphorIconsRegular.user,
                 size: 20,
                 color: shared ? Colors.white : AppTokens.primary,
               ),
@@ -547,7 +548,7 @@ class _PackingAddField extends StatelessWidget {
             IconButton.filled(
               tooltip: addTooltip,
               onPressed: onSubmit,
-              icon: const Icon(Icons.add),
+              icon: const Icon(PhosphorIconsRegular.plus),
             ),
           ],
         ),
@@ -563,7 +564,7 @@ class _PackingEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PzEmptyState(icon: Icons.luggage_outlined, title: message);
+    return PzEmptyState(icon: PhosphorIconsRegular.suitcaseRolling, title: message);
   }
 }
 

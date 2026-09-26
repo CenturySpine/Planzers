@@ -1,3 +1,4 @@
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
@@ -10,7 +11,7 @@ BoxShadow _elev1Shadow() => BoxShadow(
       offset: const Offset(0, 1),
     );
 
-/// [Icons.child_care] styled per the participants mockup (boxed toggle or plain).
+/// [PhosphorIconsRegular.baby] styled per the participants mockup (boxed toggle or plain).
 class TripChildCareIcon extends StatelessWidget {
   const TripChildCareIcon({
     super.key,
@@ -26,7 +27,7 @@ class TripChildCareIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final icon = Icon(
-      Icons.child_care,
+      PhosphorIconsRegular.baby,
       size: iconSize,
       color: boxed ? AppTokens.error : AppTokens.outline,
     );
@@ -101,7 +102,7 @@ class TripParticipantsFab extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Icon(Icons.add, size: 26),
+        child: const Icon(PhosphorIconsRegular.plus, size: 26),
       ),
     );
   }
@@ -125,7 +126,7 @@ class TripParticipantsPrimaryCallout extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, size: 18, color: AppTokens.primary),
+          const Icon(PhosphorIconsRegular.info, size: 18, color: AppTokens.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -170,7 +171,7 @@ class TripParticipantsSearchField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, size: 20, color: AppTokens.onSurfaceVariant),
+            const Icon(PhosphorIconsRegular.magnifyingGlass, size: 20, color: AppTokens.onSurfaceVariant),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
@@ -195,7 +196,7 @@ class TripParticipantsSearchField extends StatelessWidget {
             ),
             if (controller.text.isNotEmpty)
               IconButton(
-                icon: const Icon(Icons.clear, size: 20),
+                icon: const Icon(PhosphorIconsRegular.x, size: 20),
                 tooltip: l10n.nameSearchClear,
                 onPressed: () {
                   controller.clear();
@@ -450,7 +451,7 @@ class TripParticipantAvatar extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(
-          Icons.person_outline,
+          PhosphorIconsRegular.user,
           size: size * 0.55,
           color: AppTokens.outline,
         ),
@@ -462,14 +463,14 @@ class TripParticipantAvatar extends StatelessWidget {
       roleBadge = _RoleMicroBadge(
         size: badgeSize,
         background: AppTokens.primary,
-        icon: Icons.star_rounded,
+        icon: PhosphorIconsFill.star,
         borderColor: AppTokens.surface,
       );
     } else if (isAdmin && isClaimed) {
       roleBadge = _RoleMicroBadge(
         size: badgeSize,
         background: AppTokens.participantsAdminBadgeBg,
-        icon: Icons.shield_rounded,
+        icon: PhosphorIconsRegular.shield,
         borderColor: AppTokens.surface,
       );
     }
@@ -582,7 +583,7 @@ class TripParticipantRowCard extends StatelessWidget {
                 ),
               ),
               const Icon(
-                Icons.chevron_right,
+                PhosphorIconsRegular.caretRight,
                 size: 20,
                 color: AppTokens.outline,
               ),
@@ -767,7 +768,7 @@ class _SheetActionTile extends StatelessWidget {
                 ),
                 if (action.showChevron)
                   const Icon(
-                    Icons.chevron_right,
+                    PhosphorIconsRegular.caretRight,
                     size: 18,
                     color: AppTokens.outline,
                   ),
@@ -825,7 +826,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Icon(
-                  Icons.group_rounded,
+                  PhosphorIconsFill.users,
                   size: 24,
                   color: AppTokens.participantsGroupIconFg,
                 ),
@@ -874,7 +875,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                         tooltip: AppLocalizations.of(context)!.commonEdit,
                         onPressed: isDeleting ? null : onEdit,
                         icon: const Icon(
-                          Icons.edit_outlined,
+                          PhosphorIconsRegular.pencilSimple,
                           size: 20,
                           color: AppTokens.onSurfaceVariant,
                         ),
@@ -896,7 +897,7 @@ class TripParticipantGroupCard extends StatelessWidget {
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(
-                                Icons.delete_outline,
+                                PhosphorIconsRegular.trash,
                                 size: 20,
                                 color: AppTokens.error,
                               ),
@@ -928,7 +929,7 @@ class TripParticipantsGroupsEmpty extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              Icons.groups_outlined,
+              PhosphorIconsRegular.usersThree,
               size: 52,
               color: AppTokens.divider,
             ),
@@ -1172,7 +1173,7 @@ class TripParticipantsPartsField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TripParticipantsInputShell(
-          icon: Icons.pie_chart_outline,
+          icon: PhosphorIconsRegular.chartPie,
           child: TextField(
             controller: controller,
             onChanged: (_) => onChanged(),

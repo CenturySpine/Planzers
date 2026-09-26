@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -256,7 +257,7 @@ class _TripActivityCreatePageState extends ConsumerState<TripActivityCreatePage>
                                 if (pickedDateTime == null || !mounted) return;
                                 setState(() => _plannedAt = pickedDateTime);
                               },
-                        icon: const Icon(Icons.calendar_month_outlined),
+                        icon: const Icon(PhosphorIconsRegular.calendar),
                         label: Text(
                           _plannedAt == null
                               ? l10n.activitiesPlannedUnset
