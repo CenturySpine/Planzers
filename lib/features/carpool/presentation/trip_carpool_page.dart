@@ -1,6 +1,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +17,6 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
-import 'package:planerz/app/theme/planerz_colors.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -290,44 +292,30 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                   final passengerSelfAssignmentInteractionLocked =
                       _selfAssignmentBusyCarpoolId != null;
                   return ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                     children: [
-                      Text(
-                        l10n.tripCarpoolListTitle,
-                        style: Theme.of(context).textTheme.headlineSmall,
+                      PzSectionHeader(
+                        title: l10n.tripCarpoolListTitle,
+                        count: carpools.length,
                       ),
-                      const SizedBox(height: 16),
                       if (showUnassignedMembersWarning &&
                           unassignedMembers > 0) ...[
-                        Card(
-                          color: Theme.of(context).colorScheme.errorContainer,
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.warning_amber_rounded,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            title: Text(l10n.tripCarpoolUnassignedWarningTitle),
-                            subtitle: Text(
-                              l10n.tripCarpoolUnassignedWarningBody(
-                                  unassignedMembers),
-                            ),
-                          ),
+                        PzCallout(
+                          tone: PzCalloutTone.error,
+                          title: l10n.tripCarpoolUnassignedWarningTitle,
+                          message: l10n.tripCarpoolUnassignedWarningBody(
+                              unassignedMembers),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                       ],
                       if (showSelfUnassignedCard) ...[
-                        Card(
-                          color: context.planerzColors.warningContainer,
-                          child: ListTile(
-                            leading: Icon(
-                              Icons.directions_car_outlined,
-                              color: context.planerzColors.warning,
-                            ),
-                            title: Text(l10n.tripCarpoolSelfUnassignedTitle),
-                            subtitle: Text(l10n.tripCarpoolSelfUnassignedBody),
-                          ),
+                        PzCallout(
+                          tone: PzCalloutTone.warning,
+                          icon: Icons.directions_car_outlined,
+                          title: l10n.tripCarpoolSelfUnassignedTitle,
+                          message: l10n.tripCarpoolSelfUnassignedBody,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                       ],
                       if (showGlobalShoppingMeetupSection) ...[
                         Column(
@@ -340,7 +328,9 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                     l10n.tripCarpoolGlobalMeetupTitle,
                                     style: Theme.of(context)
                                         .textTheme
-                                        .titleMedium,
+                                        .titleSmall
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w800),
                                   ),
                                 ),
                                 if (canEditGlobalMeetup &&
@@ -376,7 +366,6 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                                 decoration: InputDecoration(
                                   labelText:
                                       l10n.tripCarpoolGlobalMeetupLabel,
-                                  border: const OutlineInputBorder(),
                                   suffixIcon: canEditGlobalMeetup
                                       ? IconButton(
                                           tooltip: l10n.commonSave,
@@ -424,11 +413,7 @@ class _TripCarpoolPageState extends ConsumerState<TripCarpoolPage> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      Text(
-                        l10n.tripCarpoolCarsTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
+                      PzSectionHeader(title: l10n.tripCarpoolCarsTitle),
                       if (carpools.isEmpty)
                         Card(
                           child: Padding(
@@ -614,7 +599,6 @@ class _TripCarpoolCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final planerzPalette = context.planerzColors;
     final departureTime = MaterialLocalizations.of(context).formatTimeOfDay(
       TimeOfDay.fromDateTime(carpool.departureAt),
       alwaysUse24HourFormat: true,
@@ -628,7 +612,6 @@ class _TripCarpoolCard extends StatelessWidget {
     final meetingPointLabel = carpool.meetingPointAddress.trim().isEmpty
         ? l10n.commonNotProvided
         : carpool.meetingPointAddress.trim();
-    final participantsLabel = passengerLabels.join(', ');
     final seatsStatusLabel = remainingSeats > 0
         ? l10n.tripCarpoolRemainingSeats(remainingSeats)
         : l10n.tripCarpoolFull;
@@ -638,57 +621,153 @@ class _TripCarpoolCard extends StatelessWidget {
     final hasMeetingPointAddress =
         carpool.meetingPointAddress.trim().isNotEmpty;
 
+    final group = ActivityFilterGroup.trajets;
+    final freeSeats = remainingSeats > 0 ? remainingSeats : 0;
+
     return Card(
-      clipBehavior: isCurrentUserInCarpool ? Clip.antiAlias : Clip.none,
-      color: isCurrentUserInCarpool ? planerzPalette.successContainer : null,
-      shape: isCurrentUserInCarpool
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: planerzPalette.success, width: 2),
-            )
-          : null,
+      color: isCurrentUserInCarpool ? AppTokens.primaryTint : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+        side: BorderSide(
+          color: isCurrentUserInCarpool
+              ? AppTokens.primary
+              : colorScheme.outlineVariant,
+          width: isCurrentUserInCarpool ? 1.6 : 1,
+        ),
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildProfileBadge(
-                    context: context,
-                    displayLabel: driverLabel,
-                    userData: driverUserData,
-                    size: 28,
-                    isChild: driverIsChild,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                  Container(
+                    width: 54,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: group.filterLightBgColor,
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                    ),
+                    child: Column(
                       children: [
-                        Flexible(
-                          child: Text(
-                            driverLabel,
-                            style: Theme.of(context).textTheme.titleSmall,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        Text(
+                          departureTime,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: group.filterInkColor,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures()
+                            ],
                           ),
                         ),
-                        if (carpool.goesShopping) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 16,
-                            color: colorScheme.primary,
+                        Text(
+                          departureDateLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: group.filterInkColor,
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
-                  if (showJoinPassengerAction) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            buildProfileBadge(
+                              context: context,
+                              displayLabel: driverLabel,
+                              userData: driverUserData,
+                              size: 20,
+                              isChild: driverIsChild,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                driverLabel,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            if (carpool.goesShopping) ...[
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.shopping_cart_outlined,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.place_outlined,
+                                size: 15, color: colorScheme.outline),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                meetingPointLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: meetingLineStyle,
+                              ),
+                            ),
+                            if (hasMeetingPointAddress)
+                              Tooltip(
+                                message:
+                                    l10n.tripCarpoolNavigateToMeetingPoint,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () => openAddressInGoogleMaps(
+                                    context,
+                                    carpool.meetingPointAddress,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Icon(
+                                      Icons.navigation_rounded,
+                                      size: 16,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (carpool.nearestTransitStop.trim().isNotEmpty)
+                          Row(
+                            children: [
+                              Icon(Icons.directions_transit_outlined,
+                                  size: 15, color: colorScheme.outline),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  carpool.nearestTransitStop.trim(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: meetingLineStyle,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (showJoinPassengerAction)
                     _CarpoolSelfAssignmentSvgButton(
                       assetPath: _stepInAsset,
                       tooltip: l10n.tripCarpoolJoinTooltip,
@@ -696,9 +775,7 @@ class _TripCarpoolCard extends StatelessWidget {
                       onPressed: onJoinPassengerPressed,
                       showSpinner: joinPassengerActionSpinner,
                     ),
-                    const SizedBox(width: 2),
-                  ],
-                  if (showLeavePassengerAction) ...[
+                  if (showLeavePassengerAction)
                     _CarpoolSelfAssignmentSvgButton(
                       assetPath: _stepOutAsset,
                       tooltip: l10n.tripCarpoolLeaveTooltip,
@@ -706,114 +783,40 @@ class _TripCarpoolCard extends StatelessWidget {
                       onPressed: onLeavePassengerPressed,
                       showSpinner: leavePassengerActionSpinner,
                     ),
-                    const SizedBox(width: 4),
-                  ],
                 ],
               ),
               const SizedBox(height: 10),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    if (participantsLabel.isNotEmpty)
-                      TextSpan(text: participantsLabel),
-                    TextSpan(text: participantsLabel.isNotEmpty ? ' (' : '('),
-                    TextSpan(
-                      text: seatsStatusLabel,
-                      style: TextStyle(
-                        color: remainingSeats > 0
-                            ? colorScheme.onSurfaceVariant
-                            : colorScheme.error,
-                      ),
-                    ),
-                    const TextSpan(text: ')'),
-                  ],
-                ),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text.rich(
-                TextSpan(
-                  style: meetingLineStyle,
-                  children: [
-                    TextSpan(text: '$departureDateLabel, '),
-                    TextSpan(text: '$departureTime - '),
-                    TextSpan(text: meetingPointLabel),
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.middle,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 6),
-                        child: Tooltip(
-                          message: l10n.tripCarpoolNavigateToMeetingPoint,
-                          child: hasMeetingPointAddress
-                              ? Material(
-                                  color: Colors.transparent,
-                                  type: MaterialType.transparency,
-                                  child: InkWell(
-                                    onTap: () => openAddressInGoogleMaps(
-                                      context,
-                                      carpool.meetingPointAddress,
-                                    ),
-                                    customBorder: const CircleBorder(),
-                                    overlayColor:
-                                        WidgetStateProperty.resolveWith(
-                                      (states) {
-                                        final base =
-                                            colorScheme.onSurfaceVariant;
-                                        if (states
-                                            .contains(WidgetState.pressed)) {
-                                          return base.withValues(alpha: 0.18);
-                                        }
-                                        if (states
-                                            .contains(WidgetState.hovered)) {
-                                          return base.withValues(alpha: 0.10);
-                                        }
-                                        if (states
-                                            .contains(WidgetState.focused)) {
-                                          return base.withValues(alpha: 0.10);
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2),
-                                      child: Icon(
-                                        Icons.navigation,
-                                        size: 18,
-                                        color: colorScheme.tertiary,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black
-                                                .withValues(alpha: 0.14),
-                                            blurRadius: 1.5,
-                                            offset: Offset(0, 0.8),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.navigation_outlined,
-                                  size: 18,
-                                  color: colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.38),
-                                ),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  for (final label in passengerLabels)
+                    PzPersonChip(label: label),
+                  for (var k = 0; k < freeSeats && k < 8; k++)
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.outlineVariant,
+                          width: 1.4,
                         ),
                       ),
+                      child: Icon(Icons.event_seat_outlined,
+                          size: 14, color: colorScheme.outline),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                carpool.nearestTransitStop.trim().isEmpty
-                    ? l10n.commonNotProvided
-                    : carpool.nearestTransitStop.trim(),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  const SizedBox(width: 4),
+                  Text(
+                    seatsStatusLabel,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: remainingSeats > 0
+                              ? colorScheme.onSurfaceVariant
+                              : colorScheme.error,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),

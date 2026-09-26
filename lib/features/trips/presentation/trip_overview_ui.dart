@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 
@@ -20,16 +21,8 @@ class TripOverviewSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppTokens.onSurfaceVariant,
-          letterSpacing: 0.5,
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: PzSectionHeader(title: label),
     );
   }
 }
@@ -681,70 +674,110 @@ class TripOverviewModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppTokens.surface,
-      surfaceTintColor: Colors.transparent,
-      elevation: 1,
-      shadowColor: Colors.black.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTokens.divider),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return Card(
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(13, 12, 12, 12),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _TripOverviewModuleIconBadge(
-                icon: icon,
-                tileColor: tileColor,
-                inkColor: inkColor,
-                count: count,
-                showCount: showCount,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TripOverviewModuleIconBadge(
+                    icon: icon,
+                    tileColor: tileColor,
+                    inkColor: inkColor,
+                    count: count,
+                    showCount: showCount,
+                  ),
+                  const Spacer(),
+                  Icon(trailingIcon, size: 20, color: AppTokens.outline),
+                ],
               ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppTokens.deep,
-                        height: 1.2,
-                      ),
-                    ),
-                    if (statusText != null && statusText!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        statusText!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          height: 1.35,
-                          color: AppTokens.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
+              const SizedBox(height: 10),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: AppTokens.deep,
+                  height: 1.2,
                 ),
               ),
-              Icon(
-                trailingIcon,
-                size: 20,
-                color: AppTokens.outline,
+              const SizedBox(height: 2),
+              SizedBox(
+                height: 33,
+                child: Text(
+                  statusText ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: AppTokens.onSurfaceVariant,
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Lays module cards out two per row; any other child (custom modules,
+/// "add module") takes the full width. Spacer boxes are ignored.
+class TripOverviewModuleGrid extends StatelessWidget {
+  const TripOverviewModuleGrid({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = children.where((w) => w is! SizedBox).toList();
+    final rows = <Widget>[];
+    var pending = <Widget>[];
+    void flush() {
+      if (pending.isEmpty) return;
+      rows.add(
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: pending[0]),
+              const SizedBox(width: 10),
+              Expanded(
+                child: pending.length > 1 ? pending[1] : const SizedBox(),
+              ),
+            ],
+          ),
+        ),
+      );
+      pending = <Widget>[];
+    }
+
+    for (final item in items) {
+      if (item is TripOverviewModuleCard) {
+        pending.add(item);
+        if (pending.length == 2) flush();
+      } else {
+        flush();
+        rows.add(item);
+      }
+    }
+    flush();
+    return Column(
+      children: [
+        for (var k = 0; k < rows.length; k++) ...[
+          if (k > 0) const SizedBox(height: 10),
+          rows[k],
+        ],
+      ],
     );
   }
 }
@@ -767,20 +800,20 @@ class _TripOverviewModuleIconBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 44,
-      height: 44,
+      width: 40,
+      height: 40,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: tileColor,
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, size: 24, color: inkColor),
+            child: Icon(icon, size: 22, color: inkColor),
           ),
           if (showCount)
             Positioned(

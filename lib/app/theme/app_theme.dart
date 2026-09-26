@@ -294,22 +294,26 @@ class AppTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: ink,
+        labelColor: AppTokens.primaryDark,
         unselectedLabelColor: muted,
-        labelStyle: text.labelLarge,
+        labelStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         unselectedLabelStyle: text.labelLarge,
+        // Pill tabs: tinted rounded pill behind the selected tab, matching
+        // chips and the Planning capsule.
+        indicator: const PillTabIndicator(),
+        indicatorSize: TabBarIndicatorSize.tab,
         indicatorColor: p.primary,
-        indicatorSize: TabBarIndicatorSize.label,
-        indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(color: p.primary, width: 3),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-        ),
         dividerColor: p.outlineVariant,
         dividerHeight: 1,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 14),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 12),
         tabAlignment: TabAlignment.fill,
-        overlayColor:
-            WidgetStatePropertyAll(p.primary.withValues(alpha: 0.06)),
+        splashBorderRadius:
+            const BorderRadius.all(Radius.circular(AppTokens.radiusMd)),
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.pressed)
+              ? p.primary.withValues(alpha: 0.08)
+              : Colors.transparent,
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
@@ -521,6 +525,40 @@ class AppTheme {
           warningContainer: p.warningContainer,
         ),
       ],
+    );
+  }
+}
+
+/// Selected-tab indicator: a tinted rounded pill inset inside the tab.
+class PillTabIndicator extends Decoration {
+  const PillTabIndicator({
+    this.color = AppTokens.primaryTint,
+    this.insets = const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+    this.radius = AppTokens.radiusMd,
+  });
+
+  final Color color;
+  final EdgeInsets insets;
+  final double radius;
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _PillTabPainter(this);
+}
+
+class _PillTabPainter extends BoxPainter {
+  _PillTabPainter(this.decoration);
+
+  final PillTabIndicator decoration;
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null) return;
+    final rect = decoration.insets.deflateRect(offset & size);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(decoration.radius)),
+      Paint()..color = decoration.color,
     );
   }
 }

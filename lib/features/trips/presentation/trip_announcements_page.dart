@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -258,21 +260,11 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
               }),
             if (_selectedAnnouncementId == null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    l10n.tripAnnouncementsPageTitle,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onTertiaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: PzSectionHeader(
+                  title: l10n.tripAnnouncementsPageTitle,
+                  count: announcementsAsync.asData?.value.length,
+                  padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
                 ),
               ),
             Expanded(
@@ -280,20 +272,15 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                 data: (announcements) {
                   _markAnnouncementsAsReadIfNeeded(trip.id);
                   if (announcements.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          l10n.tripAnnouncementsEmptyState,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                    return PzEmptyState(
+                      icon: Icons.campaign_outlined,
+                      title: l10n.tripAnnouncementsEmptyState,
                     );
                   }
                   _scrollToBottom();
                   return ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
                     itemCount: announcements.length,
                     itemBuilder: (context, index) {
                       final announcement = announcements[index];
@@ -310,16 +297,33 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                         child: Card(
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           color: isSelected
-                              ? Theme.of(context).colorScheme.secondaryContainer
+                              ? Theme.of(context).colorScheme.primaryContainer
                               : null,
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                            padding: const EdgeInsets.fromLTRB(10, 10, 8, 8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      margin: const EdgeInsets.only(right: 10),
+                                      decoration: BoxDecoration(
+                                        color: AppTokens.accentSoft,
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.campaign_rounded,
+                                        size: 18,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .tertiary,
+                                      ),
+                                    ),
                                     Expanded(
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -376,7 +380,10 @@ class _TripAnnouncementsPageState extends ConsumerState<TripAnnouncementsPage> {
                                                   ),
                                                 )
                                               : Icon(Icons.delete_outline,
-                                                  color: Theme.of(context).colorScheme.error),
+                                                  size: 20,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant),
                                           tooltip: l10n.commonDelete,
                                           visualDensity: VisualDensity.compact,
                                           padding: EdgeInsets.zero,

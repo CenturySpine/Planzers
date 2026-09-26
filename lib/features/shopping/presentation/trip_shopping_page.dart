@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
@@ -607,7 +608,7 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
                             child: ShoppingListFilterBar(
                               selectedStatus: _manualListStatusFilter,
                               onlyClaimedByMe: _manualOnlyClaimedByMe,
@@ -615,14 +616,13 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                                   setState(() => _manualListStatusFilter = f),
                               onOnlyClaimedByMeChanged: (v) =>
                                   setState(() => _manualOnlyClaimedByMe = v),
-                              trailing: [listActionsMenu],
                             ),
                           ),
-                          if (widget.items.isNotEmpty)
-                            _ShoppingProgress(
-                              checked: checkedCount,
-                              total: widget.items.length,
-                            ),
+                          PzProgressBar(
+                            done: checkedCount,
+                            total: widget.items.length,
+                            trailing: [listActionsMenu],
+                          ),
                           Expanded(
                             child: widget.items.isEmpty
                                 ? Center(
@@ -1059,13 +1059,18 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
           child: ShoppingListFilterBar(
             selectedStatus: activeStatusFilter,
             onlyClaimedByMe: onlyClaimedByMe,
             onStatusChanged: onStatusFilterChanged,
             onOnlyClaimedByMeChanged: onOnlyClaimedByMeChanged,
-            trailing: [
+          ),
+        ),
+        PzProgressBar(
+          done: _consolidatedItems.where((e) => e.item.checked).length,
+          total: _consolidatedItems.length,
+          trailing: [
               if (showConsolidatedSaveButton)
                 IconButton(
                   tooltip: l10n.shoppingConsolidatedSave,
@@ -1080,13 +1085,8 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
                       ? null
                       : () => _saveConsolidatedList(context),
                 ),
-              listActionsMenu,
-            ],
-          ),
-        ),
-        _ShoppingProgress(
-          checked: _consolidatedItems.where((e) => e.item.checked).length,
-          total: _consolidatedItems.length,
+            listActionsMenu,
+          ],
         ),
         Expanded(
           child: visibleGroups.isEmpty
@@ -1791,43 +1791,6 @@ class _ChangeConsolidatedCategoryDialogState
   }
 }
 
-
-/// "checked / total" progress for a shopping list.
-class _ShoppingProgress extends StatelessWidget {
-  const _ShoppingProgress({required this.checked, required this.total});
-
-  final int checked;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    if (total == 0) return const SizedBox(height: 4);
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: LinearProgressIndicator(value: checked / total),
-          ),
-          const SizedBox(width: 10),
-          Icon(
-            Icons.check_circle_rounded,
-            size: 16,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '$checked/$total',
-            style: textTheme.labelMedium?.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Renders consecutive list rows as one rounded white card.
 class _ShoppingCardSlice extends StatelessWidget {

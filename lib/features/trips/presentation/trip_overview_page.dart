@@ -965,15 +965,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
+                      child: TripOverviewModuleGrid(
                         children: [
                           TripOverviewModuleCard(
                             label: l10n.tripOverviewTileActivities,
                             icon: Icons.event_available_outlined,
                             count: plannedActivitiesCount,
-                            tileColor:
-                                ActivityFilterGroup.repas.filterLightBgColor,
-                            inkColor: ActivityFilterGroup.repas.filterInkColor,
+                            tileColor: AppTokens.primaryTint,
+                            inkColor: AppTokens.primaryDark,
                             statusText: _moduleStatusText(
                               detailLines: activitiesTodayLabels,
                               emptyStateMessage:
@@ -1026,7 +1025,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             const SizedBox(height: 10),
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileGames,
-                              icon: Icons.sports_esports_outlined,
+                              icon: Icons.casino_outlined,
                               count: boardGamesCount,
                               tileColor:
                                   ActivityFilterGroup.loisirs.filterLightBgColor,
@@ -1051,10 +1050,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               icon: Icons.photo_library_outlined,
                               count: 0,
                               showCount: false,
-                              tileColor:
-                                  ActivityFilterGroup.loisirs.filterLightBgColor,
-                              inkColor:
-                                  ActivityFilterGroup.loisirs.filterInkColor,
+                              tileColor: AppTokens.surfaceMuted,
+                              inkColor: AppTokens.text700,
                               statusText: l10n.tripOverviewPhotosOpenAlbum,
                               onTap: () => _openLinkUrl(photosStorageUrl),
                             ),
@@ -1072,10 +1069,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripOverviewTileWallet,
                               icon: Icons.folder_special_outlined,
                               count: 3,
-                              tileColor:
-                                  ActivityFilterGroup.trajets.filterLightBgColor,
-                              inkColor:
-                                  ActivityFilterGroup.trajets.filterInkColor,
+                              tileColor: AppTokens.surfaceMuted,
+                              inkColor: AppTokens.text700,
                               statusText:
                                   l10n.tripOverviewWalletDocumentCount(3),
                               onTap: () =>
@@ -1088,10 +1083,8 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                               label: l10n.tripPackingModuleLabel,
                               icon: Icons.luggage_outlined,
                               count: myPackingUncheckedCount,
-                              tileColor:
-                                  ActivityFilterGroup.nuits.filterLightBgColor,
-                              inkColor:
-                                  ActivityFilterGroup.nuits.filterInkColor,
+                              tileColor: AppTokens.surfaceMuted,
+                              inkColor: AppTokens.text700,
                               statusText: l10n.tripPackingRemainingCount(
                                 myPackingUncheckedCount,
                               ),

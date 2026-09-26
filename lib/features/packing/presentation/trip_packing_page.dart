@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/packing/data/packing_item.dart';
@@ -265,13 +266,25 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
                             message: l10n.tripPackingEmptyState,
                           );
                         }
-                        return ListView.separated(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                          itemCount: list.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
+                        final doneCount =
+                            list.where((item) => item.checked).length;
+                        return ListView(
+                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                          children: [
+                            PzProgressBar(
+                              done: doneCount,
+                              total: list.length,
+                              padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+                            ),
+                            Card(
+                              child: Column(
+                                children: [
+                                  for (var index = 0;
+                                      index < list.length;
+                                      index++) ...[
+                                    if (index > 0)
+                                      const Divider(indent: 48),
+                                    Builder(builder: (context) {
                             final item = list[index];
                             return _PackingRow(
                               item: item,
@@ -296,7 +309,12 @@ class _TripPackingPageState extends ConsumerState<TripPackingPage> {
                               organiserBadgeTooltip:
                                   l10n.tripPackingOrganiserItemTooltip,
                             );
-                          },
+                                    }),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
                         );
                       },
                       loading: () => const Center(
@@ -349,13 +367,9 @@ class _PackingRow extends StatelessWidget {
     final checked = item.checked;
 
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTokens.divider),
-      ),
+      decoration: const BoxDecoration(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(6, 2, 4, 2),
+        padding: const EdgeInsets.fromLTRB(6, 0, 4, 0),
         child: Row(
           children: [
             Checkbox(
@@ -368,11 +382,11 @@ class _PackingRow extends StatelessWidget {
               child: GestureDetector(
                 onTap: onRename,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 11),
                   child: Text(
                     item.label,
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                       height: 1.2,
                       color: checked
@@ -549,19 +563,7 @@ class _PackingEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppTokens.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
+    return PzEmptyState(icon: Icons.luggage_outlined, title: message);
   }
 }
 

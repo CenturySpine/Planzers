@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -160,28 +161,24 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                         ?.value ??
                     const <String, Map<String, dynamic>>{};
 
-            return Theme(
-              data: AppTokens.overlayOn(Theme.of(context)),
-              child: Scaffold(
-                backgroundColor: AppTokens.scaffoldBackground,
-                appBar: AppBar(
-                  title: Text(l10n.tripGamesTitle),
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(48),
-                    child: TripGamesTabBar(
-                      label: l10n.tripBoardGamesTab,
-                      selected: true,
-                    ),
-                  ),
-                ),
+            return Scaffold(
+                appBar: AppBar(title: Text(l10n.tripGamesTitle)),
                 body: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                  itemCount: filteredGames.length + 2 +
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+                  itemCount: filteredGames.length + 3 +
                       (games.isEmpty || filteredGames.isEmpty ? 1 : 0),
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, index) =>
+                      SizedBox(height: index < 2 ? 10 : 8),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return TripGamesIntroCallout(message: l10n.tripGamesIntro);
+                    }
+                    if (index == 2) {
+                      return PzSectionHeader(
+                        title: l10n.tripBoardGamesTab,
+                        count: games.length,
+                        padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
+                      );
                     }
                     if (index == 1) {
                       return TripGamesSearchField(
@@ -197,7 +194,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                         },
                       );
                     }
-                    if (index == 2 && (games.isEmpty || filteredGames.isEmpty)) {
+                    if (index == 3 && (games.isEmpty || filteredGames.isEmpty)) {
                       return TripGamesEmptyState(
                         message: games.isEmpty
                             ? l10n.tripGamesEmpty
@@ -205,7 +202,7 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                       );
                     }
 
-                    final game = filteredGames[index - 2];
+                    final game = filteredGames[index - 3];
                     final creatorLabel = memberLabels[game.createdBy] ??
                         l10n.tripParticipantsTraveler;
                     final canDelete =
@@ -218,11 +215,12 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                     return TripBoardGameCard(
                       title: title,
                       preview: game.linkPreview,
+                      subtitle: l10n.activitiesProposedBy(creatorLabel),
                       creatorBadge: buildProfileBadge(
                         context: context,
                         displayLabel: creatorLabel,
                         userData: usersById[game.createdBy],
-                        size: 36,
+                        size: 16,
                       ),
                       onTap: () => _openBoardGameDialog(
                         tripId: trip.id,
@@ -241,7 +239,6 @@ class _TripGamesPageState extends ConsumerState<TripGamesPage> {
                     canDelete: false,
                   ),
                 ),
-              ),
             );
           },
           loading: () => Scaffold(

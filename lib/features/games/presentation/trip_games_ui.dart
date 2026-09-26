@@ -1,70 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-class TripGamesTabBar extends StatelessWidget {
-  const TripGamesTabBar({
-    super.key,
-    required this.label,
-    required this.selected,
-  });
-
-  final String label;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppTokens.scaffoldBackground,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppTokens.divider)),
-        ),
-        child: InkWell(
-          onTap: () {},
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 14, 8, 12),
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    color: selected
-                        ? AppTokens.primary
-                        : AppTokens.onSurfaceVariant,
-                    letterSpacing: 0.1,
-                  ),
-                ),
-              ),
-              if (selected)
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 0,
-                  child: Container(
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: AppTokens.primary,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(3),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class TripGamesIntroCallout extends StatelessWidget {
   const TripGamesIntroCallout({super.key, required this.message});
@@ -73,35 +14,10 @@ class TripGamesIntroCallout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTokens.gamesCalloutBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTokens.gamesCalloutBorder),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.sports_esports_outlined,
-            size: 18,
-            color: AppTokens.success,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.45,
-                color: AppTokens.deep,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return PzCallout(
+      tone: PzCalloutTone.brand,
+      icon: Icons.casino_outlined,
+      message: message,
     );
   }
 }
@@ -130,60 +46,24 @@ class TripGamesSearchField extends StatelessWidget {
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
-          return Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: AppTokens.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTokens.divider, width: 1.5),
-              boxShadow: AppTokens.elev1,
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.search,
-                  size: 20,
-                  color: AppTokens.onSurfaceVariant,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    onChanged: onChanged,
-                    textInputAction: TextInputAction.search,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppTokens.deep,
+          return TextField(
+            controller: controller,
+            onChanged: onChanged,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: hint,
+              prefixIcon: const Icon(Icons.search_rounded, size: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              suffixIcon: controller.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      tooltip: clearTooltip,
+                      onPressed: () {
+                        controller.clear();
+                        onChanged('');
+                      },
                     ),
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      hintStyle: const TextStyle(
-                        fontSize: 16,
-                        color: AppTokens.outline,
-                      ),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: false,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ),
-                if (controller.text.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    tooltip: clearTooltip,
-                    onPressed: () {
-                      controller.clear();
-                      onChanged('');
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 40, minHeight: 40),
-                  ),
-              ],
             ),
           );
         },
@@ -199,69 +79,77 @@ class TripBoardGameCard extends StatelessWidget {
     required this.creatorBadge,
     required this.preview,
     required this.onTap,
+    this.subtitle,
   });
 
   final String title;
   final Widget creatorBadge;
   final Map<String, dynamic> preview;
   final VoidCallback onTap;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppTokens.surface,
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppTokens.divider),
-      ),
-      clipBehavior: Clip.antiAlias,
+    final group = ActivityFilterGroup.loisirs;
+    return Card(
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
           child: Row(
             children: [
-              creatorBadge,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                    letterSpacing: 0.1,
-                    color: AppTokens.deep,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
               ClipRRect(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                 child: SizedBox(
-                  width: 64,
-                  height: 64,
+                  width: 44,
+                  height: 44,
                   child: preview.isEmpty
-                      ? const ColoredBox(
-                          color: AppTokens.surfaceHighest,
-                          child: Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 26,
-                              color: AppTokens.outline,
-                            ),
+                      ? ColoredBox(
+                          color: group.filterLightBgColor,
+                          child: Icon(
+                            Icons.casino_outlined,
+                            size: 22,
+                            color: group.filterColor,
                           ),
                         )
-                      : LinkPreviewThumbnail(
-                          preview: preview,
-                          size: 64,
-                        ),
+                      : LinkPreviewThumbnail(preview: preview, size: 44),
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          creatorBadge,
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              subtitle!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppTokens.outline),
             ],
           ),
         ),
@@ -277,29 +165,7 @@ class TripGamesEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.sports_esports_outlined,
-            size: 40,
-            color: AppTokens.onSurfaceVariant.withValues(alpha: 0.7),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: AppTokens.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
+    return PzEmptyState(icon: Icons.casino_outlined, title: message);
   }
 }
 
@@ -315,21 +181,11 @@ class TripGamesFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: FloatingActionButton(
-        heroTag: 'trip_games_fab',
-        tooltip: tooltip,
-        onPressed: onPressed,
-        elevation: 2,
-        highlightElevation: 3,
-        backgroundColor: AppTokens.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.add, size: 26),
-      ),
+    return FloatingActionButton(
+      heroTag: 'trip_games_fab',
+      tooltip: tooltip,
+      onPressed: onPressed,
+      child: const Icon(Icons.add_rounded, size: 26),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -469,28 +470,22 @@ class _PostTab extends StatelessWidget {
         ? Icons.add
         : expenseIconForPost(iconKey, isDefault: isDefault);
     final borderColor = dashed
-        ? AppTokens.divider
+        ? AppTokens.outline
         : selected
-            ? Color.lerp(AppTokens.divider, AppTokens.primary, 0.45)!
+            ? AppTokens.primary
             : AppTokens.divider;
-    final backgroundColor = selected
-        ? Color.alphaBlend(
-            AppTokens.primary.withValues(alpha: 0.09),
-            AppTokens.surface,
-          )
-        : AppTokens.surface;
+    final backgroundColor =
+        selected ? AppTokens.primaryTint : AppTokens.surface;
     final labelColor = dashed
         ? AppTokens.onSurfaceVariant
         : selected
-            ? AppTokens.primary
-            : AppTokens.text700;
-    final iconBoxColor = selected
-        ? AppTokens.primary
-        : Color.lerp(AppTokens.surface, AppTokens.primary, 0.14)!;
-    final iconColor = selected ? Colors.white : AppTokens.primary;
+            ? AppTokens.primaryDark
+            : AppTokens.deep;
+    final iconBoxColor = selected ? AppTokens.primary : AppTokens.primaryTint;
+    final iconColor = selected ? Colors.white : AppTokens.primaryDark;
 
     final tabContent = SizedBox(
-      height: 38,
+      height: 34,
       child: Padding(
         padding: EdgeInsets.fromLTRB(dashed ? 14 : 10, 0, 14, 0),
         child: Row(
@@ -500,13 +495,13 @@ class _PostTab extends StatelessWidget {
               Icon(icon, size: 16, color: AppTokens.onSurfaceVariant)
             else
               Container(
-                width: 24,
-                height: 24,
+                width: 22,
+                height: 22,
                 decoration: BoxDecoration(
                   color: iconBoxColor,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(icon, size: 15, color: iconColor),
+                child: Icon(icon, size: 14, color: iconColor),
               ),
             const SizedBox(width: 7),
             Text(
@@ -527,10 +522,10 @@ class _PostTab extends StatelessWidget {
         painter: _DashedPillBorderPainter(color: borderColor),
         child: Material(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
             child: tabContent,
           ),
         ),
@@ -541,12 +536,12 @@ class _PostTab extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
         child: Ink(
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: borderColor, width: 1.5),
+            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+            border: Border.all(color: borderColor, width: selected ? 1.4 : 1),
           ),
           child: tabContent,
         ),
@@ -564,7 +559,7 @@ class _DashedPillBorderPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = RRect.fromRectAndRadius(
       Rect.fromLTWH(0.75, 0.75, size.width - 1.5, size.height - 1.5),
-      const Radius.circular(999),
+      const Radius.circular(AppTokens.radiusSm),
     );
     final path = Path()..addRRect(rect);
     final paint = Paint()
@@ -1196,81 +1191,21 @@ class _ExpenseViewSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    Widget segment({
-      required _ExpensePostView value,
-      required IconData icon,
-      required String label,
-    }) {
-      final on = activeView == value;
-      return Expanded(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => onChanged(value),
-            borderRadius: BorderRadius.circular(999),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOut,
-              height: 40,
-              decoration: BoxDecoration(
-                color: on ? AppTokens.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: on
-                    ? [
-                        BoxShadow(
-                          color: AppTokens.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
-                    color: on ? Colors.white : AppTokens.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.5,
-                      color: on ? Colors.white : AppTokens.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    return PzSegmentedControl<_ExpensePostView>(
+      selected: activeView,
+      onChanged: onChanged,
+      segments: [
+        PzSegment(
+          value: _ExpensePostView.operations,
+          icon: Icons.receipt_long_outlined,
+          label: l10n.tripSectionExpenses,
         ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppTokens.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppTokens.divider, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          segment(
-            value: _ExpensePostView.operations,
-            icon: Icons.receipt_long_outlined,
-            label: l10n.tripSectionExpenses,
-          ),
-          segment(
-            value: _ExpensePostView.settlement,
-            icon: Icons.balance_outlined,
-            label: l10n.expensesBalancesTab,
-          ),
-        ],
-      ),
+        PzSegment(
+          value: _ExpensePostView.settlement,
+          icon: Icons.balance_outlined,
+          label: l10n.expensesBalancesTab,
+        ),
+      ],
     );
   }
 }

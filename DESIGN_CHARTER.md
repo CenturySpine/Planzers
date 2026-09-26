@@ -48,7 +48,7 @@ Chiffres (heures, montants, quantités) : `FontFeature.tabularFigures()`.
 | Toggle | `Switch` natif : piste Lagon / gris `#D3D8DF`, pouce blanc, sans icône. Jamais de switch maison. |
 | Case à cocher | Rayon 6, remplissage Lagon. |
 | Puces | `ChoiceChip` (exclusif) / `FilterChip` (cumulable) : 8 px de rayon, sélection = fond teinte Lagon + bordure Lagon, sans coche. Puces de catégorie : `TripCategoryFilterChip` (teinte métier). |
-| Onglets | `TabBar` natif : soulignement Lagon 3 px, libellés 14/600, filet bas. Un seul style d'onglets dans l'app. |
+| Onglets | `TabBar` natif, style **pilule** (`PillTabIndicator`) : pastille teintée Lagon derrière l'onglet sélectionné, libellé Lagon foncé 14/700, filet bas. Jamais de fausse barre d'onglets maison. Sélecteur de vue hors `TabBar` : `PzSegmentedControl` (même rendu, sur piste grise). |
 | Sélecteur « gros boutons » | Tuiles égales icône + libellé (ex. moment du repas, mode du repas). |
 | Carte | `Card` blanche, rayon 14, filet, pas d'ombre. |
 | Liste | `ListTile` dense ; séparateurs `Divider` pleine largeur ou indentés sous l'icône. |
@@ -58,6 +58,18 @@ Chiffres (heures, montants, quantités) : `FontFeature.tabularFigures()`.
 | Dialogue | Rayon 20, titre 18/700. |
 | SnackBar | Flottante, fond encre `#1E2840`, action Soleil. |
 | Badge | Fond Soleil, texte encre. |
+
+### Composants partagés (`lib/core/presentation/pz_components.dart`)
+
+| Widget | Usage |
+|---|---|
+| `PzSectionHeader` | Titre de section 14/800 + compteur + action (ex. « Chambres 3 », « Voitures ») |
+| `PzCountPill` | Compteur neutre (ou Soleil pour un non-lu) |
+| `PzSegmentedControl` | Bascule de vue exclusive (Dépenses / Équilibres) |
+| `PzCallout` | Bloc de message teinté : `info`, `warning`, `error`, `success`, `brand` |
+| `PzEmptyState` | État vide : tuile icône teintée + titre (+ message) |
+| `PzProgressBar` | Progression « faits / total » + actions de liste (Courses, À emporter) |
+| `PzInitialAvatar`, `PzPersonChip` | Avatars à initiale et puces personne (chambres, covoiturage) |
 
 ## 4. Navigation
 
@@ -83,6 +95,12 @@ Chiffres (heures, montants, quantités) : `FontFeature.tabularFigures()`.
 ### Repas
 - Liste = **tableau de menus** : chaque jour du voyage affiche Petit-déjeuner / Déjeuner / Dîner ; un créneau vide reste visible (« — ») pour repérer les repas manquants.
 - Détail : moment et mode du repas en tuiles icône + libellé.
+
+### Modules secondaires
+- **Aperçu** : modules en **grille 2 colonnes** (tuile icône + compteur, libellé, statut) ; Planning en Lagon, modules métier dans leur teinte (Chambres = Nuits, Covoiturage = Trajets, Jeux = Loisirs), modules personnels neutres.
+- **Chambres** : carte par chambre (teinte Nuits), occupation « occupés/capacité », une ligne par lit avec les occupants en puces.
+- **Covoiturage** : carte par voiture (teinte Trajets) : heure de départ en tuile, conducteur, lieu, places occupées (puces) et libres (sièges vides) ; voiture où je suis = contour Lagon.
+- **Jeux**, **À emporter**, **Annonces** : liste compacte dans une carte, états vides `PzEmptyState`.
 
 ## 6. Iconographie
 

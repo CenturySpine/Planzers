@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
@@ -2235,8 +2236,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                       vertical: 3,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color: colorScheme
-                                                          .primaryContainer,
+                                                      color: ActivityFilterGroup
+                                                          .repas
+                                                          .filterLightBgColor,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               10),
@@ -2253,8 +2255,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                               : Icons
                                                                   .chevron_right,
                                                           size: 18,
-                                                          color: colorScheme
-                                                              .onPrimaryContainer,
+                                                          color: ActivityFilterGroup
+                                                              .repas
+                                                              .filterInkColor,
                                                         ),
                                                         const SizedBox(
                                                           width: 6,
@@ -2277,8 +2280,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                             style: textTheme
                                                                 .labelLarge
                                                                 ?.copyWith(
-                                                              color: colorScheme
-                                                                  .onPrimaryContainer,
+                                                              color: ActivityFilterGroup
+                                                                  .repas
+                                                                  .filterInkColor,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w700,
@@ -2291,8 +2295,9 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                                                           style: textTheme
                                                               .labelLarge
                                                               ?.copyWith(
-                                                            color: colorScheme
-                                                                .onPrimaryContainer,
+                                                            color: ActivityFilterGroup
+                                                                .repas
+                                                                .filterInkColor,
                                                             fontWeight:
                                                                 FontWeight.w700,
                                                           ),

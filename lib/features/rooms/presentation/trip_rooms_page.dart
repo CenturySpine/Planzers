@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:planerz/app/theme/activity_filter_colors.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/features/rooms/data/trip_room.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
@@ -38,7 +40,7 @@ class TripRoomsPage extends ConsumerWidget {
         heroTag: 'trip_rooms_add',
         tooltip: l10n.roomsCreate,
         onPressed: () => _openCreateRoomSheet(context, ref, tripId: trip.id),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -59,40 +61,192 @@ class _TripRoomsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     if (rooms.isEmpty) {
-      return const SizedBox.shrink();
+      return PzEmptyState(
+        icon: ActivityFilterGroup.nuits.filterIcon,
+        title: l10n.roomsCreateTitle,
+      );
     }
+    final capacity = rooms.fold<int>(0, (sum, r) => sum + r.capacity);
+    final assigned =
+        rooms.fold<int>(0, (sum, r) => sum + r.assignedMemberIds.length);
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: rooms.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final room = rooms[index];
-        final assignedNames = room.assignedMemberIds
-            .map((id) => memberLabels[id] ?? l10n.tripParticipantsTraveler)
-            .join(', ');
-        return Card(
-          child: ListTile(
-            title: Text(
-              room.name.isEmpty ? l10n.roomsUnnamedRoom : room.name,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+      children: [
+        PzSectionHeader(
+          title: l10n.tripOverviewTileRooms,
+          count: rooms.length,
+          trailing: _OccupancyPill(assigned: assigned, capacity: capacity),
+        ),
+        for (final room in rooms)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _RoomCard(
+              room: room,
+              memberLabels: memberLabels,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => _TripRoomDetailPage(
+                      tripId: tripId,
+                      roomId: room.id,
+                    ),
+                  ),
+                );
+              },
             ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(assignedNames.isEmpty ? '-' : assignedNames),
+          ),
+      ],
+    );
+  }
+}
+
+class _OccupancyPill extends StatelessWidget {
+  const _OccupancyPill({required this.assigned, required this.capacity});
+
+  final int assigned;
+  final int capacity;
+
+  @override
+  Widget build(BuildContext context) {
+    final group = ActivityFilterGroup.nuits;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: group.filterLightBgColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.bed_rounded, size: 14, color: group.filterInkColor),
+          const SizedBox(width: 4),
+          Text(
+            '$assigned/$capacity',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: group.filterInkColor,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => _TripRoomDetailPage(
-                    tripId: tripId,
-                    roomId: room.id,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoomCard extends StatelessWidget {
+  const _RoomCard({
+    required this.room,
+    required this.memberLabels,
+    required this.onTap,
+  });
+
+  final TripRoom room;
+  final Map<String, String> memberLabels;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final group = ActivityFilterGroup.nuits;
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: group.filterLightBgColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(group.filterIcon,
+                        size: 19, color: group.filterColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      room.name.isEmpty ? l10n.roomsUnnamedRoom : room.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  _OccupancyPill(
+                    assigned: room.assignedMemberIds.length,
+                    capacity: room.capacity,
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: Color(0xFF8891A1)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              for (final bed in room.beds)
+                Padding(
+                  padding: const EdgeInsets.only(left: 44, top: 4, right: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        bed.type == TripBedType.double
+                            ? Icons.king_bed_outlined
+                            : Icons.single_bed_outlined,
+                        size: 17,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        l10n.roomsBedTypeAndKind(
+                          bed.type == TripBedType.double
+                              ? l10n.roomsBedTypeDouble
+                              : l10n.roomsBedTypeSingle,
+                          bed.kind == TripBedKind.extra
+                              ? l10n.roomsBedKindExtra
+                              : l10n.roomsBedKindRegular,
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          alignment: WrapAlignment.end,
+                          children: bed.assignedMemberIds.isEmpty
+                              ? [
+                                  Text(
+                                    l10n.commonDash,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ]
+                              : [
+                                  for (final id in bed.assignedMemberIds)
+                                    PzPersonChip(
+                                      label: memberLabels[id] ??
+                                          l10n.tripParticipantsTraveler,
+                                    ),
+                                ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

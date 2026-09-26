@@ -61,85 +61,14 @@ class TripParticipantsTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppTokens.scaffoldBackground,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppTokens.divider)),
-        ),
-        child: ListenableBuilder(
-          listenable: controller,
-          builder: (context, _) {
-            return Row(
-              children: [
-                _TabButton(
-                  label: participantsLabel,
-                  selected: controller.index == 0,
-                  onTap: () => controller.animateTo(0),
-                ),
-                _TabButton(
-                  label: groupsLabel,
-                  selected: controller.index == 1,
-                  onTap: () => controller.animateTo(1),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  const _TabButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 14, 8, 12),
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? AppTokens.primary : AppTokens.onSurfaceVariant,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-            if (selected)
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 0,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: AppTokens.primary,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+    return ColoredBox(
+      color: AppTokens.surface,
+      child: TabBar(
+        controller: controller,
+        tabs: [
+          Tab(height: 42, text: participantsLabel),
+          Tab(height: 42, text: groupsLabel),
+        ],
       ),
     );
   }
