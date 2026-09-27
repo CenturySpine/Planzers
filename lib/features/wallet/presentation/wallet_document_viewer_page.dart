@@ -4,6 +4,7 @@ import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_barcode_view.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -65,10 +66,28 @@ class _WalletDocumentContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final barcode = document.barcode;
     if (barcode != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: SelectableText(barcode.payload, textAlign: TextAlign.center),
+      return ColoredBox(
+        color: Colors.white,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: WalletBarcodeView(barcode: barcode),
+                ),
+                const SizedBox(height: 16),
+                SelectableText(
+                  barcode.payload,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  style: const TextStyle(color: Colors.black54, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }

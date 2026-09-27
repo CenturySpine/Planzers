@@ -7,30 +7,42 @@ import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_document_category.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_barcode_view.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Full-screen form to name and categorise a document: either a file just
-/// picked (creation, uploaded on save) or an existing document (edition).
+/// Full-screen form to name and categorise a document: a file just picked
+/// (uploaded on save), a code just scanned, or an existing document.
 class WalletDocumentFormPage extends ConsumerStatefulWidget {
   const WalletDocumentFormPage.create({
     super.key,
     required this.tripId,
     required Uint8List this.fileBytes,
     required String this.fileName,
-  }) : document = null;
+  })  : document = null,
+        barcode = null;
+
+  const WalletDocumentFormPage.createBarcode({
+    super.key,
+    required this.tripId,
+    required WalletBarcode this.barcode,
+  })  : document = null,
+        fileBytes = null,
+        fileName = null;
 
   const WalletDocumentFormPage.edit({
     super.key,
     required this.tripId,
     required WalletDocument this.document,
   })  : fileBytes = null,
-        fileName = null;
+        fileName = null,
+        barcode = null;
 
   final String tripId;
   final WalletDocument? document;
   final Uint8List? fileBytes;
   final String? fileName;
+  final WalletBarcode? barcode;
 
   @override
   ConsumerState<WalletDocumentFormPage> createState() =>
@@ -111,6 +123,17 @@ class _WalletDocumentFormPageState
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.walletDocumentUpdated)),
         );
+      } else if (widget.barcode != null) {
+        await repository.addBarcodeDocument(
+          tripId: widget.tripId,
+          name: _nameController.text,
+          category: _category,
+          eventDate: _eventDate,
+          barcode: widget.barcode!,
+        );
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.walletDocumentAdded)),
+        );
       } else {
         await repository.addFileDocument(
           tripId: widget.tripId,
@@ -145,6 +168,7 @@ class _WalletDocumentFormPageState
     final l10n = AppLocalizations.of(context)!;
     final eventDate = _eventDate;
     final fileName = widget.document?.file?.originalFileName ?? widget.fileName;
+    final barcode = widget.barcode ?? widget.document?.barcode;
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -167,7 +191,7 @@ class _WalletDocumentFormPageState
                   : const Icon(PhosphorIconsRegular.check),
             ),
           ],
-          bottom: _saving && !_isEdit
+          bottom: _saving && !_isEdit && widget.barcode == null
               ? PreferredSize(
                   preferredSize: const Size.fromHeight(4),
                   child: LinearProgressIndicator(value: _uploadProgress),
@@ -188,6 +212,15 @@ class _WalletDocumentFormPageState
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (barcode != null) ...[
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    child: WalletBarcodeView(barcode: barcode),
                   ),
                 ),
                 const SizedBox(height: 16),

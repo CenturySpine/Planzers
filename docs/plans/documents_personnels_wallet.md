@@ -19,10 +19,10 @@ todos:
     status: completed
   - id: barcode-scan
     content: "Lot 5 — Scan caméra d'un QR code / code-barres, stockage du contenu, affichage plein écran régénéré"
-    status: pending
+    status: completed
   - id: barcode-from-image
     content: "Lot 6 — Détection d'un code dans une capture d'écran importée : on ne garde que le code, pas l'image"
-    status: pending
+    status: completed
   - id: offline-app-shell
     content: "Lot 7 — Démarrage de l'app hors-ligne (service worker app shell, cache Firestore web, démarrage tolérant au hors-ligne, purge à la déconnexion)"
     status: completed
@@ -389,6 +389,26 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
 - La règle Storage `users/{uid}/**` est réduite à un seul segment
   (`users/{uid}/{fileName}`, photos de profil) pour ne pas court-circuiter
   les contrôles du wallet.
+
+## 6 ter. Lots 5 et 6 — état livré
+
+- Bouton `+` → « Importer un fichier » / « Scanner un code ».
+- Scan caméra : `mobile_scanner`, forcé sur le moteur ZXing JavaScript
+  **servi par l'app** (`web/vendor/zxing/`, Apache 2.0) au lieu d'un CDN.
+- Import d'une image : détection automatique (même bibliothèque, via
+  `web/vendor/zxing/planerz_barcode.js`) ; si un code est trouvé, choix
+  « Enregistrer le code » (seul le code est gardé) ou « Garder l'image ».
+- Consultation : code redessiné (`barcode_widget`) noir sur blanc, contenu
+  texte affiché dessous.
+- Vérifié dans Chromium : détection de QR, PDF417, Aztec et d'un QR dans une
+  capture pleine taille ; relecture des codes redessinés (QR, Aztec, PDF417,
+  Code 128, DataMatrix). Le PDF417 exigeait des lignes plus hautes que le
+  réglage par défaut (corrigé).
+- **Limite connue** : certains billets encodent des données binaires (ex.
+  certains Aztec SNCF). Le texte relu peut alors ne pas reproduire le code à
+  l'identique : à tester avec de vrais billets ; en cas d'échec, garder
+  l'image pour ce type de billet.
+- Détection dans les PDF : reportée au Lot 8 (rendu des pages).
 
 ## 7. Cloud Functions (région `europe-west9`)
 

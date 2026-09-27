@@ -5718,6 +5718,60 @@ abstract class AppLocalizations {
   /// **'Ouvrir le fichier'**
   String get walletOpenFile;
 
+  /// No description provided for @walletAddImportFile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Importer un fichier'**
+  String get walletAddImportFile;
+
+  /// No description provided for @walletAddScanCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Scanner un code'**
+  String get walletAddScanCode;
+
+  /// No description provided for @walletCodeDetectedTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code détecté'**
+  String get walletCodeDetectedTitle;
+
+  /// No description provided for @walletCodeDetectedBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer uniquement le code, sans l\'image ?'**
+  String get walletCodeDetectedBody;
+
+  /// No description provided for @walletCodeDetectedKeepImage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Garder l\'image'**
+  String get walletCodeDetectedKeepImage;
+
+  /// No description provided for @walletCodeDetectedSaveCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer le code'**
+  String get walletCodeDetectedSaveCode;
+
+  /// No description provided for @walletScanCameraDenied.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accès à la caméra refusé'**
+  String get walletScanCameraDenied;
+
+  /// No description provided for @walletScanCameraError.
+  ///
+  /// In fr, this message translates to:
+  /// **'Caméra indisponible'**
+  String get walletScanCameraError;
+
+  /// No description provided for @walletCodeRenderFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'afficher ce code'**
+  String get walletCodeRenderFailed;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:

@@ -1,11 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/features/wallet/data/wallet_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_barcode_scan_page.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_form_page.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_viewer_page.dart';
@@ -18,21 +22,42 @@ class TripWalletPage extends ConsumerWidget {
 
   final String tripId;
 
+  bool _checkLimit(BuildContext context, int currentCount) {
+    if (currentCount < walletMaxDocumentsPerTrip) return true;
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.walletLimitReached(walletMaxDocumentsPerTrip)),
+      ),
+    );
+    return false;
+  }
+
+  Future<void> _scanCode(BuildContext context, int currentCount) async {
+    if (!_checkLimit(context, currentCount)) return;
+    final navigator = Navigator.of(context);
+    final barcode = await navigator.push<WalletBarcode>(
+      MaterialPageRoute(builder: (_) => const WalletBarcodeScanPage()),
+    );
+    if (barcode == null) return;
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => WalletDocumentFormPage.createBarcode(
+          tripId: tripId,
+          barcode: barcode,
+        ),
+      ),
+    );
+  }
+
   Future<void> _addFile(
     BuildContext context,
     int currentCount,
   ) async {
+    if (!_checkLimit(context, currentCount)) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    if (currentCount >= walletMaxDocumentsPerTrip) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.walletLimitReached(walletMaxDocumentsPerTrip)),
-        ),
-      );
-      return;
-    }
     final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: walletContentTypeByExtension.keys.toList(),
@@ -53,6 +78,28 @@ class TripWalletPage extends ConsumerWidget {
       messenger.showSnackBar(SnackBar(content: Text(l10n.walletFileTooLarge)));
       return;
     }
+    // A screenshot or photo of a ticket: offer to keep only its code, which
+    // is lighter and redrawn sharp for the inspector's reader.
+    final contentType =
+        walletContentTypeByExtension[walletFileExtension(picked.name)]!;
+    if (contentType.startsWith('image/') && context.mounted) {
+      final barcode = await _detectBarcode(context, bytes, contentType, picked.path);
+      if (barcode != null && context.mounted) {
+        final saveCode = await _askSaveCodeOnly(context);
+        if (saveCode == null) return;
+        if (saveCode) {
+          await navigator.push(
+            MaterialPageRoute<void>(
+              builder: (_) => WalletDocumentFormPage.createBarcode(
+                tripId: tripId,
+                barcode: barcode,
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    }
     await navigator.push(
       MaterialPageRoute<void>(
         builder: (_) => WalletDocumentFormPage.create(
@@ -60,6 +107,52 @@ class TripWalletPage extends ConsumerWidget {
           fileBytes: bytes,
           fileName: picked.name,
         ),
+      ),
+    );
+  }
+
+  /// Decoding a large screenshot can take a moment: block the page meanwhile.
+  Future<WalletBarcode?> _detectBarcode(
+    BuildContext context,
+    Uint8List bytes,
+    String contentType,
+    String? filePath,
+  ) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      return await decodeWalletBarcodeFromImage(
+        bytes: bytes,
+        contentType: contentType,
+        filePath: filePath,
+      );
+    } finally {
+      navigator.pop();
+    }
+  }
+
+  /// true: keep only the code; false: keep the image; null: cancelled.
+  Future<bool?> _askSaveCodeOnly(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.walletCodeDetectedTitle),
+        content: Text(l10n.walletCodeDetectedBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.walletCodeDetectedKeepImage),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.walletCodeDetectedSaveCode),
+          ),
+        ],
       ),
     );
   }
@@ -78,10 +171,31 @@ class TripWalletPage extends ConsumerWidget {
           title: Text(l10n.tripWalletPageTitle),
           actions: [
             if (documentsAsync.hasValue)
-              IconButton(
+              PopupMenuButton<_AddAction>(
                 icon: const Icon(PhosphorIconsRegular.plus),
                 tooltip: l10n.tripWalletAddDocument,
-                onPressed: () => _addFile(context, documentCount),
+                onSelected: (action) => switch (action) {
+                  _AddAction.importFile => _addFile(context, documentCount),
+                  _AddAction.scanCode => _scanCode(context, documentCount),
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: _AddAction.importFile,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(PhosphorIconsRegular.folderPlus),
+                      title: Text(l10n.walletAddImportFile),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _AddAction.scanCode,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(PhosphorIconsRegular.qrCode),
+                      title: Text(l10n.walletAddScanCode),
+                    ),
+                  ),
+                ],
               ),
           ],
         ),
@@ -112,6 +226,8 @@ class TripWalletPage extends ConsumerWidget {
     );
   }
 }
+
+enum _AddAction { importFile, scanCode }
 
 class _WalletDocumentCard extends StatelessWidget {
   const _WalletDocumentCard({required this.tripId, required this.document});

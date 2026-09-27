@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_document_category.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_barcode_view.dart';
 
 WalletDocument _doc(String id, {DateTime? eventDate, DateTime? createdAt}) {
   return WalletDocument(
@@ -51,5 +52,14 @@ void main() {
     expect(walletFileExtension('trailing.'), '');
     expect(walletContentTypeByExtension['pdf'], 'application/pdf');
     expect(walletContentTypeByExtension['html'], isNull);
+  });
+
+  test('stored barcode formats are redrawn with the same symbology', () {
+    expect(walletBarcodeSymbology('qrCode').name, 'QR-Code');
+    expect(walletBarcodeSymbology('aztec').name, 'Aztec');
+    expect(walletBarcodeSymbology('pdf417').name, 'PDF417');
+    expect(walletBarcodeSymbology('code128').name, 'CODE 128');
+    // Unknown formats still show the content, as a QR code.
+    expect(walletBarcodeSymbology('unknown').name, 'QR-Code');
   });
 }

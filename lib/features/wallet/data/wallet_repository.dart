@@ -144,6 +144,26 @@ class WalletRepository {
     }
   }
 
+  /// A scanned code is stored as its content only (redrawn when shown).
+  Future<void> addBarcodeDocument({
+    required String tripId,
+    required String name,
+    required WalletDocumentCategory category,
+    required DateTime? eventDate,
+    required WalletBarcode barcode,
+  }) async {
+    final uid = _requireUid();
+    await _documentsRef(tripId, uid).add({
+      'name': name.trim(),
+      'category': category.name,
+      'kind': WalletDocumentKind.barcode.name,
+      if (eventDate != null) 'eventDate': Timestamp.fromDate(eventDate),
+      'barcode': barcode.toMap(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> updateDocumentMetadata({
     required String tripId,
     required String documentId,

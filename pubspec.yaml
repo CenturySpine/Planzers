@@ -48,6 +48,8 @@ dependencies:
   flyer_chat_image_message: ^2.3.0
   cross_cache: ^1.1.0
   file_picker: ^13.1.0
+  mobile_scanner: ^7.4.2
+  barcode_widget: ^2.0.4
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

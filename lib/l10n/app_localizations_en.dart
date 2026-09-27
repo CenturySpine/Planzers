@@ -3156,6 +3156,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletOpenFile => 'Open the file';
 
   @override
+  String get walletAddImportFile => 'Import a file';
+
+  @override
+  String get walletAddScanCode => 'Scan a code';
+
+  @override
+  String get walletCodeDetectedTitle => 'Code detected';
+
+  @override
+  String get walletCodeDetectedBody => 'Save only the code, without the image?';
+
+  @override
+  String get walletCodeDetectedKeepImage => 'Keep the image';
+
+  @override
+  String get walletCodeDetectedSaveCode => 'Save the code';
+
+  @override
+  String get walletScanCameraDenied => 'Camera access denied';
+
+  @override
+  String get walletScanCameraError => 'Camera unavailable';
+
+  @override
+  String get walletCodeRenderFailed => 'Unable to display this code';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -6838,6 +6865,33 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletOpenFile => 'Open the file';
+
+  @override
+  String get walletAddImportFile => 'Import a file';
+
+  @override
+  String get walletAddScanCode => 'Scan a code';
+
+  @override
+  String get walletCodeDetectedTitle => 'Code detected';
+
+  @override
+  String get walletCodeDetectedBody => 'Save only the code, without the image?';
+
+  @override
+  String get walletCodeDetectedKeepImage => 'Keep the image';
+
+  @override
+  String get walletCodeDetectedSaveCode => 'Save the code';
+
+  @override
+  String get walletScanCameraDenied => 'Camera access denied';
+
+  @override
+  String get walletScanCameraError => 'Camera unavailable';
+
+  @override
+  String get walletCodeRenderFailed => 'Unable to display this code';
 
   @override
   String get tripOverviewBannerEmpty => 'No photo';
