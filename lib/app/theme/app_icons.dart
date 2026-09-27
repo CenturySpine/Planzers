@@ -47,6 +47,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData calendarBlank = IconData(0xe10a, fontFamily: 'PhosphorRegular');
   static const IconData calendarCheck = IconData(0xe712, fontFamily: 'PhosphorRegular');
   static const IconData calendarDots = IconData(0xe7b4, fontFamily: 'PhosphorRegular');
+  static const IconData calendarPlus = IconData(0xe714, fontFamily: 'PhosphorRegular');
   static const IconData camera = IconData(0xe10e, fontFamily: 'PhosphorRegular');
   static const IconData car = IconData(0xe112, fontFamily: 'PhosphorRegular');
   static const IconData carProfile = IconData(0xe8cc, fontFamily: 'PhosphorRegular');
@@ -120,6 +121,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData lifebuoy = IconData(0xe63a, fontFamily: 'PhosphorRegular');
   static const IconData lightbulb = IconData(0xe2dc, fontFamily: 'PhosphorRegular');
   static const IconData link = IconData(0xe2e2, fontFamily: 'PhosphorRegular');
+  static const IconData linkBreak = IconData(0xe2e4, fontFamily: 'PhosphorRegular');
   static const IconData lock = IconData(0xe2fa, fontFamily: 'PhosphorRegular');
   static const IconData lockOpen = IconData(0xe306, fontFamily: 'PhosphorRegular');
   static const IconData magicWand = IconData(0xe6b6, fontFamily: 'PhosphorRegular');
@@ -138,6 +140,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData notePencil = IconData(0xe34c, fontFamily: 'PhosphorRegular');
   static const IconData notepad = IconData(0xe63e, fontFamily: 'PhosphorRegular');
   static const IconData palette = IconData(0xe6c8, fontFamily: 'PhosphorRegular');
+  static const IconData paperclip = IconData(0xe39a, fontFamily: 'PhosphorRegular');
   static const IconData pawPrint = IconData(0xe648, fontFamily: 'PhosphorRegular');
   static const IconData pencilSimple = IconData(0xe3b4, fontFamily: 'PhosphorRegular');
   static const IconData personSimpleHike = IconData(0xed54, fontFamily: 'PhosphorRegular');
@@ -175,6 +178,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData tent = IconData(0xe8ba, fontFamily: 'PhosphorRegular');
   static const IconData thumbsUp = IconData(0xe48e, fontFamily: 'PhosphorRegular');
   static const IconData ticket = IconData(0xe490, fontFamily: 'PhosphorRegular');
+  static const IconData timer = IconData(0xe492, fontFamily: 'PhosphorRegular');
   static const IconData train = IconData(0xe496, fontFamily: 'PhosphorRegular');
   static const IconData translate = IconData(0xe4a2, fontFamily: 'PhosphorRegular');
   static const IconData trash = IconData(0xe4a6, fontFamily: 'PhosphorRegular');

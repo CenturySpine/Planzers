@@ -10,13 +10,19 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
+import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
+import 'package:planerz/features/wallet/data/wallet_document.dart';
+import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
+import 'package:planerz/features/wallet/presentation/wallet_document_viewer_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 class TripActivityDetailPage extends ConsumerStatefulWidget {
@@ -532,6 +538,26 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
     }
   }
 
+  Future<void> _setDuration(BuildContext context, int? durationMinutes) async {
+    try {
+      await ref.read(activitiesRepositoryProvider).setActivityDuration(
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
+            durationMinutes: durationMinutes,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
@@ -821,6 +847,13 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
                             ),
                     ),
                   ),
+                  TripActivityDurationButton(
+                    category: widget.activity.category,
+                    durationMinutes: widget.activity.durationMinutes,
+                    onChanged: canPlanActivity
+                        ? (minutes) => _setDuration(context, minutes)
+                        : null,
+                  ),
                   if (widget.activity.plannedAt != null)
                     TextButton(
                       onPressed: canPlanActivity
@@ -836,6 +869,10 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           ),
         ),
         const SizedBox(height: 12),
+        _LinkedWalletDocumentsCard(
+          tripId: widget.tripId,
+          activityId: widget.activity.id,
+        ),
         _VotersSection(
           tripId: widget.tripId,
           activityId: widget.activity.id,
@@ -845,6 +882,74 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           tripMemberPublicLabels: tripMemberPublicLabels,
         ),
       ],
+    );
+  }
+}
+
+/// The current traveler's own documents linked to this activity (personal
+/// wallet, so each traveler sees only theirs). Hidden when there are none.
+class _LinkedWalletDocumentsCard extends ConsumerWidget {
+  const _LinkedWalletDocumentsCard({
+    required this.tripId,
+    required this.activityId,
+  });
+
+  final String tripId;
+  final String activityId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final walletEnabled = ref
+            .watch(myTravelerModulesStreamProvider(tripId))
+            .asData
+            ?.value
+            .walletEnabled ??
+        false;
+    if (!walletEnabled) return const SizedBox.shrink();
+    final documents = (ref
+                .watch(myWalletDocumentsStreamProvider(tripId))
+                .asData
+                ?.value ??
+            const <WalletDocument>[])
+        .where((document) => document.activityId == activityId)
+        .toList(growable: false);
+    if (documents.isEmpty) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Text(
+                  l10n.tripWalletPageTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              for (final document in documents)
+                ListTile(
+                  leading: Icon(document.category.icon),
+                  title: Text(document.name),
+                  subtitle: Text(walletDocumentSubtitle(context, document)),
+                  trailing: const Icon(PhosphorIconsRegular.caretRight),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => WalletDocumentViewerPage(
+                        tripId: tripId,
+                        documentId: document.id,
+                        openedFromActivityId: activityId,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

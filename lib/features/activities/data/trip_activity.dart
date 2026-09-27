@@ -15,6 +15,7 @@ class TripActivity {
     required this.createdAt,
     this.done = false,
     this.plannedAt,
+    this.durationMinutes,
     this.doneAt,
     this.linkPreview = const {},
     this.tripDrivingRoute,
@@ -35,6 +36,9 @@ class TripActivity {
   /// Whether participants consider this outing done.
   final bool done;
   final DateTime? plannedAt;
+
+  /// Custom duration; null means the category default applies.
+  final int? durationMinutes;
   final DateTime? doneAt;
 
   /// Same shape as trip `linkPreview` (filled by Cloud Function).
@@ -45,6 +49,11 @@ class TripActivity {
 
   /// UIDs of members who upvoted this suggestion.
   final List<String> votes;
+
+  Duration get effectiveDuration =>
+      Duration(minutes: durationMinutes ?? category.defaultDurationMinutes);
+
+  DateTime? get plannedEndAt => plannedAt?.add(effectiveDuration);
 
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
@@ -90,6 +99,7 @@ class TripActivity {
       createdAt: createdAt,
       done: done,
       plannedAt: plannedAt,
+      durationMinutes: _durationFromFirestore(data['durationMinutes']),
       doneAt: done ? doneAt : null,
       linkPreview: _previewFromFirestore(data['linkPreview']),
       tripDrivingRoute:
@@ -102,7 +112,16 @@ class TripActivity {
     if (raw is! List) return const [];
     return raw.whereType<String>().toList();
   }
+
+  static int? _durationFromFirestore(dynamic raw) {
+    if (raw is! num) return null;
+    final minutes = raw.toInt();
+    return minutes > 0 ? minutes : null;
+  }
 }
+
+/// Upper bound for a custom duration (must match `firestore.rules`).
+const int tripActivityMaxDurationMinutes = 7 * 24 * 60;
 
 enum TripActivityCategory {
   sport,
@@ -133,6 +152,13 @@ enum TripActivityCategory {
     }
     return TripActivityCategory.visit;
   }
+
+  /// Applies until a custom duration is set: a night for accommodation,
+  /// two hours for anything else.
+  int get defaultDurationMinutes => switch (this) {
+        TripActivityCategory.accommodation => 8 * 60,
+        _ => 2 * 60,
+      };
 
   /// Stored in Firestore.
   String get firestoreValue => switch (this) {

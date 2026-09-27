@@ -15,6 +15,7 @@ import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_creators_provider.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
@@ -502,11 +503,14 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     final activity = entry.activity;
     if (activity != null) {
       final plannedAt = activity.plannedAt;
+      final end = tripActivityEndTime(context, activity);
       return TripAgendaTimelineRow(
         timeLabel: plannedAt == null
             ? ''
             : DateFormat.Hm(Localizations.localeOf(context).toString())
                 .format(plannedAt.toLocal()),
+        endTimeLabel: end?.time,
+        endDayOffset: end?.dayOffset ?? 0,
         color: activity.category.filterGroup.filterColor,
         isFirst: isFirst,
         isLast: isLast,

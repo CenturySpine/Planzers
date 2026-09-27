@@ -6860,6 +6860,114 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Marque au moins un article « Groupe » avant de pousser ta liste.'**
   String get tripPackingPushEmpty;
+
+  /// No description provided for @activitiesDuration.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée'**
+  String get activitiesDuration;
+
+  /// No description provided for @activitiesDurationValue.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée : {duration}'**
+  String activitiesDurationValue(String duration);
+
+  /// No description provided for @activitiesDurationHours.
+  ///
+  /// In fr, this message translates to:
+  /// **'{hours} h'**
+  String activitiesDurationHours(int hours);
+
+  /// No description provided for @activitiesDurationHoursMinutes.
+  ///
+  /// In fr, this message translates to:
+  /// **'{hours} h {minutes}'**
+  String activitiesDurationHoursMinutes(int hours, String minutes);
+
+  /// No description provided for @activitiesDurationMinutes.
+  ///
+  /// In fr, this message translates to:
+  /// **'{minutes} min'**
+  String activitiesDurationMinutes(int minutes);
+
+  /// No description provided for @activitiesDurationHoursField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Heures'**
+  String get activitiesDurationHoursField;
+
+  /// No description provided for @activitiesDurationMinutesField.
+  ///
+  /// In fr, this message translates to:
+  /// **'Minutes'**
+  String get activitiesDurationMinutesField;
+
+  /// No description provided for @activitiesDurationDefault.
+  ///
+  /// In fr, this message translates to:
+  /// **'Par défaut ({duration})'**
+  String activitiesDurationDefault(String duration);
+
+  /// No description provided for @activitiesDurationInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée invalide'**
+  String get activitiesDurationInvalid;
+
+  /// No description provided for @activitiesTimeRange.
+  ///
+  /// In fr, this message translates to:
+  /// **'{start} – {end}'**
+  String activitiesTimeRange(String start, String end);
+
+  /// No description provided for @activitiesEndDayOffset.
+  ///
+  /// In fr, this message translates to:
+  /// **'+{days}'**
+  String activitiesEndDayOffset(int days);
+
+  /// No description provided for @walletCreateActivity.
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer une activité'**
+  String get walletCreateActivity;
+
+  /// No description provided for @walletLinkActivity.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lier à une activité'**
+  String get walletLinkActivity;
+
+  /// No description provided for @walletUnlinkActivity.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer le lien'**
+  String get walletUnlinkActivity;
+
+  /// No description provided for @walletLinkActivityPickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir une activité'**
+  String get walletLinkActivityPickerTitle;
+
+  /// No description provided for @walletNoActivityToLink.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité'**
+  String get walletNoActivityToLink;
+
+  /// No description provided for @walletActivityLinked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document lié à l’activité'**
+  String get walletActivityLinked;
+
+  /// No description provided for @walletActivityUnlinked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lien retiré'**
+  String get walletActivityUnlinked;
 }
 
 class _AppLocalizationsDelegate

@@ -423,14 +423,17 @@ class TripActivityDaySeparatorRail extends StatelessWidget {
   }
 }
 
-/// Timeline row for the agenda: time gutter, a node in the category hue on a
-/// vertical rail, then the card.
+/// Timeline row for the agenda: time gutter (start at the top, optional end
+/// at the bottom), a node in the category hue on a vertical rail, then the
+/// card.
 class TripAgendaTimelineRow extends StatelessWidget {
   const TripAgendaTimelineRow({
     super.key,
     required this.timeLabel,
     required this.color,
     required this.child,
+    this.endTimeLabel,
+    this.endDayOffset = 0,
     this.isFirst = false,
     this.isLast = false,
   });
@@ -438,29 +441,79 @@ class TripAgendaTimelineRow extends StatelessWidget {
   final String timeLabel;
   final Color color;
   final Widget child;
+
+  /// End time, shown lighter under the start time.
+  final String? endTimeLabel;
+
+  /// Days between start and end (e.g. 1 for a night), shown as "+1".
+  final int endDayOffset;
   final bool isFirst;
   final bool isLast;
 
+  static const _timeStyle = TextStyle(
+    fontSize: 12.5,
+    fontWeight: FontWeight.w800,
+    color: AppTokens.deep,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  /// Lines the end marker up with the end time label.
+  static const double _endMarkerBottom = tripActivitiesCardGap + 13;
+
   @override
   Widget build(BuildContext context) {
+    final endTimeLabel = this.endTimeLabel;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            width: 42,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 14),
-              child: Text(
-                timeLabel,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                  color: AppTokens.deep,
-                  fontFeatures: [FontFeature.tabularFigures()],
+            width: 44,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Text(
+                    timeLabel,
+                    textAlign: TextAlign.right,
+                    style: _timeStyle,
+                  ),
                 ),
-              ),
+                if (endTimeLabel != null) ...[
+                  const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: tripActivitiesCardGap + 10,
+                    ),
+                    child: Text.rich(
+                      TextSpan(
+                        text: endTimeLabel,
+                        children: [
+                          if (endDayOffset > 0)
+                            TextSpan(
+                              text: AppLocalizations.of(context)!
+                                  .activitiesEndDayOffset(endDayOffset),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                        ],
+                      ),
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      style: _timeStyle.copyWith(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           SizedBox(
@@ -470,10 +523,27 @@ class TripAgendaTimelineRow extends StatelessWidget {
               children: [
                 Positioned(
                   top: isFirst ? 18 : 0,
-                  bottom: isLast ? null : 0,
-                  height: isLast ? 18 : null,
+                  bottom: !isLast
+                      ? 0
+                      : endTimeLabel != null
+                          ? _endMarkerBottom + 4
+                          : null,
+                  height: isLast && endTimeLabel == null ? 18 : null,
                   child: Container(width: 2, color: AppTokens.divider),
                 ),
+                if (endTimeLabel != null)
+                  Positioned(
+                    bottom: _endMarkerBottom,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppTokens.scaffoldBackground,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: color, width: 2),
+                      ),
+                    ),
+                  ),
                 Positioned(
                   top: 13,
                   child: Container(

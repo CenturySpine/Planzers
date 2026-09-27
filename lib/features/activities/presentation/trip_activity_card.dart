@@ -9,6 +9,7 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -185,10 +186,16 @@ class TripActivityCard extends StatelessWidget {
     final hasImage = imageUrl.isNotEmpty;
     final hasLink = activity.linkUrl.trim().isNotEmpty;
 
-    final timeLabel = activity.plannedAt == null || !showTime
+    final end = showTime ? tripActivityEndTime(context, activity) : null;
+    final timeLabel = activity.plannedAt == null || end == null
         ? null
-        : DateFormat.Hm(Localizations.localeOf(context).toString())
-            .format(activity.plannedAt!.toLocal());
+        : l10n.activitiesTimeRange(
+            DateFormat.Hm(Localizations.localeOf(context).toString())
+                .format(activity.plannedAt!.toLocal()),
+            end.dayOffset > 0
+                ? '${end.time}${l10n.activitiesEndDayOffset(end.dayOffset)}'
+                : end.time,
+          );
 
     final card = TripPlanningListCardShell(
       categoryColor: categoryColor,

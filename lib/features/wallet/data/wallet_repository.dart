@@ -297,6 +297,19 @@ class WalletRepository {
     });
   }
 
+  /// [activityId] null removes the link.
+  Future<void> setDocumentActivity({
+    required String tripId,
+    required String documentId,
+    required String? activityId,
+  }) async {
+    final uid = _requireUid();
+    await _documentsRef(tripId, uid).doc(documentId).update({
+      'activityId': activityId ?? FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Removes the record first (the document disappears for the user even if
   /// the file cleanup fails), then the stored file, best effort.
   Future<void> deleteDocument({

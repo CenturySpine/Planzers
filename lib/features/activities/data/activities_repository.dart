@@ -47,7 +47,8 @@ class ActivitiesRepository {
         .map((snap) => snap.docs.map(TripActivity.fromDoc).toList());
   }
 
-  Future<void> addActivity({
+  /// Returns the id of the created activity.
+  Future<String> addActivity({
     required String tripId,
     required String label,
     required TripActivityCategory category,
@@ -55,6 +56,7 @@ class ActivitiesRepository {
     required String address,
     required String freeComments,
     DateTime? plannedAt,
+    int? durationMinutes,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -83,7 +85,7 @@ class ActivitiesRepository {
     if (!canSuggest) {
       throw StateError('Droits insuffisants pour suggerer une activite');
     }
-    if (plannedAt != null) {
+    if (plannedAt != null || durationMinutes != null) {
       final canPlan = canPlanActivityForTrip(
         trip: trip,
         userId: user.uid,
@@ -92,17 +94,65 @@ class ActivitiesRepository {
         throw StateError('Droits insuffisants pour planifier une activite');
       }
     }
+    _checkDuration(durationMinutes);
 
-    await _activitiesCol(cleanTripId).add({
+    final docRef = await _activitiesCol(cleanTripId).add({
       'label': cleanLabel,
       'category': category.firestoreValue,
       'linkUrl': linkUrl.trim(),
       'address': address.trim(),
       'freeComments': freeComments.trim(),
       if (plannedAt != null) 'plannedAt': Timestamp.fromDate(plannedAt),
+      if (durationMinutes != null) 'durationMinutes': durationMinutes,
       'done': false,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+    return docRef.id;
+  }
+
+  void _checkDuration(int? durationMinutes) {
+    if (durationMinutes == null) return;
+    if (durationMinutes <= 0 ||
+        durationMinutes > tripActivityMaxDurationMinutes) {
+      throw StateError('Duree invalide');
+    }
+  }
+
+  /// [durationMinutes] null restores the category default.
+  Future<void> setActivityDuration({
+    required String tripId,
+    required String activityId,
+    int? durationMinutes,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+    _checkDuration(durationMinutes);
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canPlan = canPlanActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canPlan) {
+      throw StateError('Droits insuffisants pour planifier une activite');
+    }
+
+    await _activitiesCol(cleanTripId).doc(cleanActivityId).update({
+      'durationMinutes': durationMinutes ?? FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 

@@ -1,13 +1,20 @@
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/network/connectivity_provider.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_activity_link.dart';
 import 'package:planerz/features/wallet/presentation/wallet_barcode_view.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -21,22 +28,121 @@ final _walletFileUrlProvider =
 
 /// Full-screen view of one document. Follows the live document so an edit
 /// made from the menu shows immediately; closes itself once deleted.
-class WalletDocumentViewerPage extends ConsumerWidget {
+///
+/// An activity can be created from the document while it stays visible
+/// (sheet over it on phones, side panel on wide screens); the document then
+/// links to that activity, shown in a bottom bar.
+class WalletDocumentViewerPage extends ConsumerStatefulWidget {
   const WalletDocumentViewerPage({
     super.key,
     required this.tripId,
     required this.documentId,
+    this.openedFromActivityId,
   });
 
   final String tripId;
   final String documentId;
 
+  /// Set when opened from that activity's page: opening the linked activity
+  /// then just goes back to it.
+  final String? openedFromActivityId;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WalletDocumentViewerPage> createState() =>
+      _WalletDocumentViewerPageState();
+}
+
+enum _ActivityAction { create, link }
+
+class _WalletDocumentViewerPageState
+    extends ConsumerState<WalletDocumentViewerPage> {
+  static const double _wideLayoutMinWidth = 840;
+  static const double _sidePanelWidth = 400;
+  static const List<double> _sheetSizes = [0.2, 0.55, 0.95];
+
+  final _sheetController = DraggableScrollableController();
+  bool _creatingActivity = false;
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  void _dragSheet(double deltaY, double availableHeight) {
+    if (!_sheetController.isAttached || availableHeight <= 0) return;
+    _sheetController.jumpTo(
+      (_sheetController.size - deltaY / availableHeight)
+          .clamp(_sheetSizes.first, _sheetSizes.last),
+    );
+  }
+
+  void _snapSheet() {
+    if (!_sheetController.isAttached) return;
+    final size = _sheetController.size;
+    final nearest = _sheetSizes.reduce(
+      (a, b) => (a - size).abs() <= (b - size).abs() ? a : b,
+    );
+    _sheetController.animateTo(
+      nearest,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
+  String get _tripId => widget.tripId;
+
+  void _openActivity(TripActivity activity) {
+    if (activity.id == widget.openedFromActivityId) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    context.push('/trips/$_tripId/activities/${activity.id}');
+  }
+
+  Future<void> _linkExisting(
+    WalletDocument document,
+    List<TripActivity> activities,
+  ) async {
+    final activityId = await pickActivityForWalletDocument(
+      context,
+      activities: activities,
+    );
+    if (activityId == null || !mounted) return;
+    await linkWalletDocumentToActivity(
+      context: context,
+      tripId: _tripId,
+      documentId: document.id,
+      activityId: activityId,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final documents =
-        ref.watch(myWalletDocumentsStreamProvider(tripId)).asData?.value;
+        ref.watch(myWalletDocumentsStreamProvider(_tripId)).asData?.value;
     final document =
-        documents?.where((doc) => doc.id == documentId).firstOrNull;
+        documents?.where((doc) => doc.id == widget.documentId).firstOrNull;
+    final activities =
+        ref.watch(tripActivitiesStreamProvider(_tripId)).asData?.value;
+    final trip = ref.watch(tripStreamProvider(_tripId)).asData?.value;
+    final canCreateActivity = trip != null &&
+        canSuggestActivityForTrip(
+          trip: trip,
+          userId: FirebaseAuth.instance.currentUser?.uid.trim(),
+        );
+    final linkedActivityId = document?.activityId;
+    // A link to an activity deleted since is treated as no link.
+    final linkedActivity = linkedActivityId == null
+        ? null
+        : activities?.where((a) => a.id == linkedActivityId).firstOrNull;
+    final canLink = activities != null && activities.isNotEmpty;
+    final showActivityMenu = document != null &&
+        activities != null &&
+        linkedActivity == null &&
+        !_creatingActivity &&
+        (canCreateActivity || canLink);
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -45,9 +151,45 @@ class WalletDocumentViewerPage extends ConsumerWidget {
         appBar: AppBar(
           title: Text(document?.name ?? ''),
           actions: [
+            if (showActivityMenu)
+              PopupMenuButton<_ActivityAction>(
+                tooltip: l10n.walletCreateActivity,
+                icon: const Icon(PhosphorIconsRegular.calendarPlus),
+                onSelected: (action) => switch (action) {
+                  _ActivityAction.create =>
+                    setState(() => _creatingActivity = true),
+                  _ActivityAction.link => _linkExisting(document, activities),
+                },
+                itemBuilder: (context) => [
+                  if (canCreateActivity)
+                    PopupMenuItem(
+                      value: _ActivityAction.create,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(PhosphorIconsRegular.plus),
+                        title: Text(l10n.walletCreateActivity),
+                      ),
+                    ),
+                  if (canLink)
+                    PopupMenuItem(
+                      value: _ActivityAction.link,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(PhosphorIconsRegular.link),
+                        title: Text(l10n.walletLinkActivity),
+                      ),
+                    ),
+                ],
+              ),
+            if (_creatingActivity)
+              IconButton(
+                tooltip: l10n.commonClose,
+                icon: const Icon(PhosphorIconsRegular.x),
+                onPressed: () => setState(() => _creatingActivity = false),
+              ),
             if (document != null)
               WalletDocumentActionsButton(
-                tripId: tripId,
+                tripId: _tripId,
                 document: document,
                 onDeleted: () => Navigator.of(context).maybePop(),
               ),
@@ -55,7 +197,88 @@ class WalletDocumentViewerPage extends ConsumerWidget {
         ),
         body: document == null
             ? const Center(child: CircularProgressIndicator())
-            : _WalletDocumentContent(tripId: tripId, document: document),
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final content =
+                      _WalletDocumentContent(tripId: _tripId, document: document);
+                  if (_creatingActivity) {
+                    void onDone() => setState(() => _creatingActivity = false);
+                    if (constraints.maxWidth >= _wideLayoutMinWidth) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: content),
+                          const VerticalDivider(width: 1),
+                          SizedBox(
+                            width: _sidePanelWidth,
+                            child: Material(
+                              color: AppTokens.surface,
+                              child: WalletCreateActivityPanel(
+                                tripId: _tripId,
+                                document: document,
+                                onDone: onDone,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    // Not modal: the visible part of the document can still
+                    // be scrolled and zoomed while filling the form.
+                    return Stack(
+                      children: [
+                        Positioned.fill(child: content),
+                        DraggableScrollableSheet(
+                          controller: _sheetController,
+                          initialChildSize: _sheetSizes[1],
+                          minChildSize: _sheetSizes.first,
+                          maxChildSize: _sheetSizes.last,
+                          snap: true,
+                          snapSizes: _sheetSizes,
+                          builder: (context, scrollController) => Material(
+                            color: AppTokens.surface,
+                            elevation: 8,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(AppTokens.radiusLg),
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: WalletCreateActivityPanel(
+                              tripId: _tripId,
+                              document: document,
+                              onDone: onDone,
+                              scrollController: scrollController,
+                              onHandleDrag: (deltaY) => _dragSheet(
+                                deltaY,
+                                constraints.maxHeight,
+                              ),
+                              onHandleDragEnd: _snapSheet,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: content),
+                      if (linkedActivity != null)
+                        WalletLinkedActivityBar(
+                          activity: linkedActivity,
+                          onOpen: () => _openActivity(linkedActivity),
+                          onUnlink: () => linkWalletDocumentToActivity(
+                            context: context,
+                            tripId: _tripId,
+                            documentId: document.id,
+                            activityId: null,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
       ),
     );
   }

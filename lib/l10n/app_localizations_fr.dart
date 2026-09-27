@@ -3868,6 +3868,74 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get tripPackingPushEmpty =>
       'Marque au moins un article « Groupe » avant de pousser ta liste.';
+
+  @override
+  String get activitiesDuration => 'Durée';
+
+  @override
+  String activitiesDurationValue(String duration) {
+    return 'Durée : $duration';
+  }
+
+  @override
+  String activitiesDurationHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String activitiesDurationHoursMinutes(int hours, String minutes) {
+    return '$hours h $minutes';
+  }
+
+  @override
+  String activitiesDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get activitiesDurationHoursField => 'Heures';
+
+  @override
+  String get activitiesDurationMinutesField => 'Minutes';
+
+  @override
+  String activitiesDurationDefault(String duration) {
+    return 'Par défaut ($duration)';
+  }
+
+  @override
+  String get activitiesDurationInvalid => 'Durée invalide';
+
+  @override
+  String activitiesTimeRange(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String activitiesEndDayOffset(int days) {
+    return '+$days';
+  }
+
+  @override
+  String get walletCreateActivity => 'Créer une activité';
+
+  @override
+  String get walletLinkActivity => 'Lier à une activité';
+
+  @override
+  String get walletUnlinkActivity => 'Retirer le lien';
+
+  @override
+  String get walletLinkActivityPickerTitle => 'Choisir une activité';
+
+  @override
+  String get walletNoActivityToLink => 'Aucune activité';
+
+  @override
+  String get walletActivityLinked => 'Document lié à l’activité';
+
+  @override
+  String get walletActivityUnlinked => 'Lien retiré';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7662,4 +7730,72 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get tripPackingPushEmpty =>
       'Marque au moins un article « Groupe » avant de pousser ta liste.';
+
+  @override
+  String get activitiesDuration => 'Durée';
+
+  @override
+  String activitiesDurationValue(String duration) {
+    return 'Durée : $duration';
+  }
+
+  @override
+  String activitiesDurationHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String activitiesDurationHoursMinutes(int hours, String minutes) {
+    return '$hours h $minutes';
+  }
+
+  @override
+  String activitiesDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get activitiesDurationHoursField => 'Heures';
+
+  @override
+  String get activitiesDurationMinutesField => 'Minutes';
+
+  @override
+  String activitiesDurationDefault(String duration) {
+    return 'Par défaut ($duration)';
+  }
+
+  @override
+  String get activitiesDurationInvalid => 'Durée invalide';
+
+  @override
+  String activitiesTimeRange(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String activitiesEndDayOffset(int days) {
+    return '+$days';
+  }
+
+  @override
+  String get walletCreateActivity => 'Créer une activité';
+
+  @override
+  String get walletLinkActivity => 'Lier à une activité';
+
+  @override
+  String get walletUnlinkActivity => 'Retirer le lien';
+
+  @override
+  String get walletLinkActivityPickerTitle => 'Choisir une activité';
+
+  @override
+  String get walletNoActivityToLink => 'Aucune activité';
+
+  @override
+  String get walletActivityLinked => 'Document lié à l’activité';
+
+  @override
+  String get walletActivityUnlinked => 'Lien retiré';
 }

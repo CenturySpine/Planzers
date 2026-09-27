@@ -1531,5 +1531,30 @@
       }
     }
   },
-  "tripPackingPushEmpty": "Marque au moins un article « Groupe » avant de pousser ta liste."
+  "tripPackingPushEmpty": "Marque au moins un article « Groupe » avant de pousser ta liste.",
+  "activitiesDuration": "Durée",
+  "activitiesDurationValue": "Durée : {duration}",
+  "@activitiesDurationValue": {"placeholders":{"duration":{"type":"String"}}},
+  "activitiesDurationHours": "{hours} h",
+  "@activitiesDurationHours": {"placeholders":{"hours":{"type":"int"}}},
+  "activitiesDurationHoursMinutes": "{hours} h {minutes}",
+  "@activitiesDurationHoursMinutes": {"placeholders":{"hours":{"type":"int"},"minutes":{"type":"String"}}},
+  "activitiesDurationMinutes": "{minutes} min",
+  "@activitiesDurationMinutes": {"placeholders":{"minutes":{"type":"int"}}},
+  "activitiesDurationHoursField": "Heures",
+  "activitiesDurationMinutesField": "Minutes",
+  "activitiesDurationDefault": "Par défaut ({duration})",
+  "@activitiesDurationDefault": {"placeholders":{"duration":{"type":"String"}}},
+  "activitiesDurationInvalid": "Durée invalide",
+  "activitiesTimeRange": "{start} – {end}",
+  "@activitiesTimeRange": {"placeholders":{"start":{"type":"String"},"end":{"type":"String"}}},
+  "activitiesEndDayOffset": "+{days}",
+  "@activitiesEndDayOffset": {"placeholders":{"days":{"type":"int"}}},
+  "walletCreateActivity": "Créer une activité",
+  "walletLinkActivity": "Lier à une activité",
+  "walletUnlinkActivity": "Retirer le lien",
+  "walletLinkActivityPickerTitle": "Choisir une activité",
+  "walletNoActivityToLink": "Aucune activité",
+  "walletActivityLinked": "Document lié à l’activité",
+  "walletActivityUnlinked": "Lien retiré"
 }

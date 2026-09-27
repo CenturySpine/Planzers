@@ -94,6 +94,7 @@ class WalletDocument {
     this.eventDate,
     this.file,
     this.barcode,
+    this.activityId,
     this.createdAt,
   });
 
@@ -104,6 +105,10 @@ class WalletDocument {
   final DateTime? eventDate;
   final WalletDocumentFile? file;
   final WalletBarcode? barcode;
+
+  /// Planning activity this document belongs to (only its owner sees the
+  /// link). May point at an activity deleted since.
+  final String? activityId;
   final DateTime? createdAt;
 
   factory WalletDocument.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -116,6 +121,10 @@ class WalletDocument {
       eventDate: (data['eventDate'] as Timestamp?)?.toDate(),
       file: WalletDocumentFile.fromMap(data['file']),
       barcode: WalletBarcode.fromMap(data['barcode']),
+      activityId: switch ((data['activityId'] as String?)?.trim()) {
+        final String id when id.isNotEmpty => id,
+        _ => null,
+      },
       // Pending server timestamps read as null until the write is confirmed.
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );

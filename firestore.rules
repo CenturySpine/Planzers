@@ -785,16 +785,27 @@ service cloud.firestore {
       }
 
       match /activities/{activityId} {
+        /// Optional custom duration (minutes, at most a week); absent means
+        /// the category default. Part of the schedule, like `plannedAt`.
+        function isValidActivityDuration(data) {
+          return !data.keys().hasAny(['durationMinutes'])
+            || (data.durationMinutes is int
+              && data.durationMinutes > 0
+              && data.durationMinutes <= 7 * 24 * 60);
+        }
+
         allow read: if isTripMember(tripId);
-        allow create: if canSuggestActivity(tripId);
+        allow create: if canSuggestActivity(tripId)
+          && isValidActivityDuration(request.resource.data);
         allow update: if (
           canPlanActivity(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['plannedAt', 'updatedAt'])
+            .hasOnly(['plannedAt', 'durationMinutes', 'updatedAt'])
+          && isValidActivityDuration(request.resource.data)
         ) || (
           canEditActivity(tripId)
           && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['plannedAt', 'votes'])
+            .hasAny(['plannedAt', 'durationMinutes', 'votes'])
         ) || (
           isTripMember(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
@@ -1090,7 +1101,8 @@ service cloud.firestore {
         /// Unlike the toggle doc above, the shape is checked: `file` points
         /// at a Storage object, and must stay inside the owner's wallet
         /// folder for this trip. A document's content (kind, file, barcode)
-        /// never changes after creation; only its name, category and date.
+        /// never changes after creation; only its name, category, date and
+        /// linked planning activity (`activityId`, a private shortcut).
         match /walletDocuments/{documentId} {
           function ownsWallet() {
             return isTripMember(tripId) && uid == request.auth.uid;
@@ -1120,7 +1132,7 @@ service cloud.firestore {
           }
 
           function isValidWalletDocument(data) {
-            return data.keys().hasOnly(['name', 'category', 'kind', 'eventDate', 'file', 'barcode', 'createdAt', 'updatedAt'])
+            return data.keys().hasOnly(['name', 'category', 'kind', 'eventDate', 'file', 'barcode', 'activityId', 'createdAt', 'updatedAt'])
               && data.name is string
               && data.name.size() > 0
               && data.name.size() <= 80
@@ -1129,7 +1141,11 @@ service cloud.firestore {
                 (data.kind == 'file' && !data.keys().hasAny(['barcode']) && isValidWalletFile(data.get('file', null)))
                 || (data.kind == 'barcode' && !data.keys().hasAny(['file']) && isValidWalletBarcode(data.get('barcode', null)))
               )
-              && (!data.keys().hasAny(['eventDate']) || data.eventDate is timestamp);
+              && (!data.keys().hasAny(['eventDate']) || data.eventDate is timestamp)
+              && (!data.keys().hasAny(['activityId'])
+                || (data.activityId is string
+                  && data.activityId.size() > 0
+                  && data.activityId.size() <= 128));
           }
 
           allow read, delete: if ownsWallet();
