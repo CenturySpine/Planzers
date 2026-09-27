@@ -11,12 +11,24 @@ import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/display_name_setup_dialog.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
+const Duration _ensureUserDocumentTimeout = Duration(seconds: 6);
+
 final authStateProvider = StreamProvider<User?>((ref) {
   final usersRepository = ref.watch(usersRepositoryProvider);
   final accountRepository = ref.watch(accountRepositoryProvider);
   return FirebaseAuth.instance.authStateChanges().asyncMap((user) async {
     if (user != null) {
-      await usersRepository.ensureUserDocument(user);
+      // The profile sync is a server transaction: offline it can only fail
+      // after retries, which used to leave the app on an error screen. Wait a
+      // bounded time, then let the session start from the cached profile; the
+      // sync runs again at the next app start.
+      try {
+        await usersRepository
+            .ensureUserDocument(user)
+            .timeout(_ensureUserDocumentTimeout);
+      } catch (error) {
+        debugPrint('ensureUserDocument deferred: $error');
+      }
       unawaited(accountRepository.syncMyGoogleProfilePhotoToStorage());
       unawaited(syncFcmTokenAfterSignIn(user));
       unawaited(resyncMyUnreadCountersAfterSignIn());
@@ -44,6 +56,12 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           .watchMyUserDocument()
           .first;
       if (!mounted) return;
+      // Offline with no cached profile: the name is unknown, not missing.
+      // Asking for it here would sign the user out if they dismiss the dialog.
+      if (!snapshot.exists && snapshot.metadata.isFromCache) {
+        context.go('/trips');
+        return;
+      }
       final name =
           (snapshot.data()?['account'] as Map<String, dynamic>?)?['name']
               as String?;

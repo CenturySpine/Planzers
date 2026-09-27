@@ -24,8 +24,8 @@ todos:
     content: "Lot 6 — Détection d'un code dans une capture d'écran importée : on ne garde que le code, pas l'image"
     status: pending
   - id: offline-app-shell
-    content: "Lot 7 — Démarrage de l'app hors-ligne (service worker app shell, gates de démarrage tolérantes au hors-ligne)"
-    status: pending
+    content: "Lot 7 — Démarrage de l'app hors-ligne (service worker app shell, cache Firestore web, démarrage tolérant au hors-ligne, purge à la déconnexion)"
+    status: completed
   - id: offline-documents
     content: "Lot 8 — Stockage local transparent : Télécharger / Supprimer du téléphone, ouverture locale-puis-en-ligne, codes-barres automatiquement hors-ligne, purge à la déconnexion"
     status: pending
@@ -134,10 +134,11 @@ Safari : on l'accepte mais on le traite comme « fichier à ouvrir » ailleurs.
   navigateur décide. Risque **accepté** par le product owner. Conséquence
   technique : l'état « téléchargé » est **toujours vérifié contre le stockage
   réel**, jamais supposé.
-- **La liste doit aussi être disponible hors-ligne.** Firestore web n'a pas de
-  cache disque dans ce projet : chaque copie locale embarque sa fiche (nom,
-  catégorie, date, type). Hors-ligne, la page affiche les documents
-  disponibles localement.
+- **Les données doivent aussi être disponibles hors-ligne.** Décision
+  (option A) : **cache disque Firestore activé sur le web** pour toute l'app.
+  Hors-ligne, l'utilisateur suit son parcours habituel (voyages → voyage →
+  Mes documents) avec les dernières données connues ; seuls les **fichiers**
+  sont stockés à part par le wallet.
 - **PDF hors-ligne** : ouvrir un blob dans un nouvel onglet est peu fiable en
   PWA iOS. → **Lecteur PDF embarqué** dans l'app, avec ses ressources
   empaquetées (pas de chargement CDN à l'exécution). Choix au spike.
@@ -158,7 +159,8 @@ Safari : on l'accepte mais on le traite comme « fichier à ouvrir » ailleurs.
 | D10 | Purge navigateur Safari | Risque accepté ; état « téléchargé » vérifié en temps réel. |
 | D11 | Copie locale | Menu « Supprimer du téléphone » + purge automatique à la déconnexion, à la suppression du document et à la sortie du voyage. |
 | D12 | « Voir en ligne » | **Pas d'option explicite** : bascule automatique vers la version en ligne si la copie locale manque ou est corrompue (les fichiers ne sont jamais remplacés, la copie locale est identique). |
-| D13 | Codes-barres | **Toujours disponibles hors-ligne automatiquement**, sans action « Télécharger ». |
+| D13 | Codes-barres | **Toujours disponibles hors-ligne automatiquement**, sans action « Télécharger » (leur contenu est dans Firestore, donc dans le cache). |
+| D14 | Données hors-ligne | **Option A** : cache disque Firestore activé sur le web pour toute l'app ; parcours de navigation inchangé hors-ligne. |
 
 ## 4. Modèle de données
 
@@ -206,21 +208,14 @@ et `documentId`.
 ### Stockage local (appareil)
 
 Aucune donnée Firestore ne trace l'état « téléchargé » : c'est un état propre
-à l'appareil. Stockage local (IndexedDB sur web, dossier privé de l'app via
-`path_provider` en natif), clé = `uid/tripId/documentId` :
+à l'appareil. Les métadonnées et les codes-barres viennent du cache Firestore
+(option A) ; seul le **contenu des fichiers** est stocké par le wallet
+(IndexedDB sur web, dossier privé de l'app via `path_provider` en natif),
+clé = `uid/tripId/documentId` :
 
 ```
-{
-  uid, tripId, documentId,
-  name, category, kind, eventDate,      // fiche pour l'affichage hors-ligne
-  file?: { contentType, sizeBytes, bytes },
-  barcode?: { format, payload },
-  savedAt,
-}
+{ uid, tripId, documentId, contentType, sizeBytes, bytes, savedAt }
 ```
-
-La fiche locale est **rafraîchie** à chaque synchronisation en ligne
-(renommage, changement de catégorie).
 
 ### Règles Firestore (`firestore.rules`, dans `match /travelerModules/{uid}`)
 
@@ -289,31 +284,29 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
 
 ### 5.3 Repository / providers
 - `walletRepositoryProvider`, `walletLocalStoreProvider`.
-- `myWalletDocumentsProvider(tripId)` : **fusion** du stream Firestore et du
-  stockage local. En ligne : liste Firestore, enrichie d'un indicateur
-  « disponible hors-ligne » vérifié dans le stockage local. Hors-ligne (ou
-  Firestore en erreur) : fiches locales uniquement.
+- `myWalletDocumentsProvider(tripId)` : stream Firestore (servi par le cache
+  hors-ligne), enrichi d'un indicateur « disponible hors-ligne » vérifié dans
+  le stockage local.
 - `addFileDocument(...)` : id Firestore généré, upload Storage (`putData`,
   progression), puis écriture Firestore ; suppression du fichier si
   l'écriture échoue.
-- `addBarcodeDocument(...)` : écriture Firestore **et** copie locale
-  immédiate (D13).
-- `updateDocumentMetadata(...)` : Firestore + mise à jour de la fiche locale.
+- `addBarcodeDocument(...)` : écriture Firestore (disponible hors-ligne via
+  le cache, D13).
+- `updateDocumentMetadata(...)` : Firestore.
 - `deleteDocument(...)` : Firestore, Storage (best effort), copie locale.
 - `downloadForOffline(document)` / `removeFromDevice(document)`.
 - `openDocument(document)` : copie locale si présente et lisible, sinon
   téléchargement en ligne ; en cas de copie locale corrompue, suppression de
   celle-ci et bascule en ligne (D12).
-- Synchronisation au retour en ligne : codes-barres manquants recopiés
-  localement, fiches locales rafraîchies, copies locales de documents
-  supprimés ailleurs retirées.
+- Synchronisation au retour en ligne : copies locales de documents supprimés
+  ailleurs retirées.
 
 ### 5.4 UI
 - **Liste** (`TripWalletPage`) : cartes existantes (icône de catégorie, nom,
   date/type). Petit indicateur « disponible hors-ligne » sur les documents
   concernés. État vide. Bouton `+` → « Importer un fichier » / « Scanner un
-  code ». Hors-ligne : bouton `+` masqué, seuls les documents locaux
-  apparaissent.
+  code ». Hors-ligne : bouton `+` masqué ; un fichier non téléchargé reste
+  listé mais son ouverture affiche « document indisponible hors-ligne ».
 - **Menu d'actions** (bouton `⋮` sur chaque carte) :
   - fichier non téléchargé : **Télécharger**, Modifier, Supprimer ;
   - fichier téléchargé : **Supprimer du téléphone**, Modifier, Supprimer ;
@@ -340,8 +333,8 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
 - Aucun texte d'aide ou d'astuce au-delà des libellés nécessaires.
 
 ### 5.5 Purges locales
-- **Déconnexion** : purge complète du stockage local wallet (tous voyages)
-  avant la redirection vers l'écran de connexion.
+- **Déconnexion** : purge complète du stockage local wallet (tous voyages),
+  en plus de la purge du cache Firestore déjà en place (Lot 7).
 - **Suppression d'un document** : copie locale supprimée.
 - **Sortie du voyage / voyage supprimé** : copies locales du voyage supprimées
   (immédiatement si l'action est faite sur l'appareil ; sinon à la prochaine
@@ -349,19 +342,36 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
 - **Changement d'utilisateur sur le même navigateur** : les clés locales
   étant préfixées par `uid`, on ne lit jamais les documents d'un autre compte.
 
-## 6. Démarrage hors-ligne (Lot 7)
+## 6. Démarrage hors-ligne (Lot 7 — livré)
 
-- Service worker « app shell » mettant en cache les ressources Flutter web
-  (`main.dart.js`, `canvaskit`, polices, assets, lecteur PDF et décodeur
-  embarqués), cohabitant avec `firebase-messaging-sw.js`.
-- Stratégie de mise à jour : nouvelle version récupérée en ligne dès que
-  possible ; le cache ne doit jamais masquer une mise à jour obligatoire
-  détectée par l'`UpdateGate` (à revoir avec `preview_update_detection.md`).
-- Gates de démarrage (mise à jour, maintenance, authentification, routeur) :
-  hors-ligne, elles laissent passer avec le dernier état connu au lieu de
-  bloquer. Firebase Auth conserve la session localement.
-- Portée : seule la page « Mes documents » est garantie hors-ligne ; les
-  autres pages peuvent afficher un état « hors connexion ».
+- **`web/sw.js`** : service worker « app shell » à la racine, cohabitant avec
+  `firebase-messaging-sw.js` (scope distinct).
+  - Fichiers de l'app (même origine, noms non versionnés) : **réseau
+    d'abord**, cache si hors-ligne ou réponse > 6 s. Un utilisateur en ligne
+    reçoit toujours la dernière version déployée.
+  - Firebase JS SDK, polices Google, cdnjs (URLs versionnées) : **cache
+    d'abord**.
+  - APIs Firebase (Firestore, Auth, Storage, Functions) : jamais interceptées.
+  - La page transmet au worker les fichiers chargés avant sa prise de
+    contrôle : une seule visite en ligne suffit.
+- **`web/flutter_bootstrap.js`** personnalisé : n'enregistre plus le service
+  worker Flutter (déprécié, il se désinstallait et aurait évincé `sw.js`).
+- **Build** : `--no-web-resources-cdn` (moteur CanvasKit et polices de secours
+  servis par l'app plutôt que par gstatic, donc mis en cache et mis à jour
+  avec elle). En-tête `Cache-Control: no-cache` sur `/sw.js` (`vercel.json`).
+- **Cache Firestore web** activé (IndexedDB, multi-onglets) au démarrage.
+- **Démarrage** : la synchronisation du profil au login attend au plus 6 s
+  puis laisse passer (avant : écran d'erreur hors-ligne). Hors-ligne sans
+  profil en cache, on ne redemande pas le nom.
+- **Déconnexion (web)** : cache Firestore effacé puis page rechargée.
+- Vérifié en navigateur headless : prise de contrôle du worker, mise en cache
+  (app, moteur, polices), redémarrage hors-ligne depuis le cache. **À valider
+  sur téléphone** (Firebase SDK non joignable depuis l'environnement de
+  l'agent) : iPhone Safari, PWA installée, Chrome Android, en mode avion.
+- Limites connues : les images servies par Firebase Storage (bannières,
+  avatars) et les actions serveur (callables, envois) ne fonctionnent pas
+  hors-ligne ; les écritures Firestore simples sont mises en file et
+  envoyées au retour du réseau.
 
 ## 7. Cloud Functions (région `europe-west9`)
 

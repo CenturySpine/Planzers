@@ -3,5 +3,11 @@
   "installCommand": "export FLUTTER_ALLOW_ROOT=true && git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter_sdk && ./flutter_sdk/bin/flutter precache --web",
   "buildCommand": "bash ./scripts/vercel-build.sh",
   "outputDirectory": "build/web",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
 }

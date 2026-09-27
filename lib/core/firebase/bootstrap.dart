@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:planerz/core/firebase/firebase_emulator_wiring.dart';
 import 'package:planerz/core/firebase/firebase_options_selector.dart';
 import 'package:planerz/core/firebase/firebase_target.dart';
+import 'package:planerz/core/firebase/firestore_offline_cache.dart';
 import 'package:planerz/core/notifications/cupidon_match_popup_binder.dart';
 import 'package:planerz/core/notifications/global_unread_badge_binder.dart';
 import 'package:planerz/core/push/fcm_notification_link_binder.dart';
@@ -51,11 +52,13 @@ class _FirebaseBootstrapState extends State<FirebaseBootstrap> {
       final app = await Firebase.initializeApp(
         options: options,
       );
+      configureFirestoreOfflineCache();
       await FirebaseEmulatorWiring.applyIfEnabled(widget.target);
       return app;
     } on FirebaseException catch (error) {
       if (error.code == 'duplicate-app') {
         final app = Firebase.app();
+        configureFirestoreOfflineCache();
         await FirebaseEmulatorWiring.applyIfEnabled(widget.target);
         return app;
       }

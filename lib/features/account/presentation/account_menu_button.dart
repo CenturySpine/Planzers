@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
+import 'package:planerz/core/firebase/firestore_offline_cache.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
@@ -30,6 +31,7 @@ class AccountMenuButton extends ConsumerWidget {
     if (context.mounted) {
       context.go('/sign-in');
     }
+    await clearFirestoreOfflineCacheAndReload();
   }
 
   Widget _buildAvatar(String photoUrl, String displayLabel) {

@@ -46,6 +46,24 @@
         navigator.serviceWorker.register('firebase-messaging-sw.js', {
           scope: '/firebase-cloud-messaging-push-scope',
         });
+        // Offline support: keeps the app files so it can start without network.
+        navigator.serviceWorker.register('sw.js').then(function () {
+          return navigator.serviceWorker.ready;
+        }).then(function (registration) {
+          // Hand over files loaded before the worker took control of the page,
+          // so the very first visit is enough to work offline afterwards.
+          function precacheLoadedResources() {
+            if (!registration.active) return;
+            var urls = performance.getEntriesByType('resource').map(function (entry) {
+              return entry.name;
+            });
+            registration.active.postMessage({ type: 'precache', urls: urls });
+          }
+          window.addEventListener('flutter-first-frame', precacheLoadedResources);
+          setTimeout(precacheLoadedResources, 15000);
+        }).catch(function (error) {
+          console.warn('Offline service worker registration failed:', error);
+        });
       });
     }
   </script>
