@@ -297,15 +297,28 @@ class WalletRepository {
     });
   }
 
-  /// [activityId] null removes the link.
-  Future<void> setDocumentActivity({
+  /// Adds ([linked] true) or removes the link between [document] and an
+  /// activity. The whole list is rewritten, which also drops the former
+  /// single-link field.
+  Future<void> setDocumentActivityLink({
     required String tripId,
-    required String documentId,
-    required String? activityId,
+    required WalletDocument document,
+    required String activityId,
+    required bool linked,
   }) async {
     final uid = _requireUid();
-    await _documentsRef(tripId, uid).doc(documentId).update({
-      'activityId': activityId ?? FieldValue.delete(),
+    final ids = {...document.activityIds};
+    if (linked) {
+      ids.add(activityId);
+    } else {
+      ids.remove(activityId);
+    }
+    if (ids.length > walletMaxActivityLinks) {
+      throw StateError('Trop d’activités liées à ce document');
+    }
+    await _documentsRef(tripId, uid).doc(document.id).update({
+      'activityIds': ids.isEmpty ? FieldValue.delete() : ids.toList(),
+      'activityId': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

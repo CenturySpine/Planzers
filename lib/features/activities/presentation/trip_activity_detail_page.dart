@@ -21,6 +21,7 @@ import 'package:planerz/features/trips/presentation/link_preview_from_firestore.
 import 'package:planerz/features/trips/presentation/open_address_in_google_maps.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_activity_link.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_viewer_page.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -887,7 +888,8 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
 }
 
 /// The current traveler's own documents linked to this activity (personal
-/// wallet, so each traveler sees only theirs). Hidden when there are none.
+/// wallet, so each traveler sees only theirs), with linking and unlinking.
+/// Hidden when the traveler has no document.
 class _LinkedWalletDocumentsCard extends ConsumerWidget {
   const _LinkedWalletDocumentsCard({
     required this.tripId,
@@ -896,6 +898,24 @@ class _LinkedWalletDocumentsCard extends ConsumerWidget {
 
   final String tripId;
   final String activityId;
+
+  Future<void> _linkDocument(
+    BuildContext context,
+    List<WalletDocument> candidates,
+  ) async {
+    final documentId = await pickWalletDocumentForActivity(
+      context,
+      documents: candidates,
+    );
+    if (documentId == null || !context.mounted) return;
+    await linkWalletDocumentToActivity(
+      context: context,
+      tripId: tripId,
+      document: candidates.firstWhere((d) => d.id == documentId),
+      activityId: activityId,
+      linked: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -906,14 +926,18 @@ class _LinkedWalletDocumentsCard extends ConsumerWidget {
             .walletEnabled ??
         false;
     if (!walletEnabled) return const SizedBox.shrink();
-    final documents = (ref
-                .watch(myWalletDocumentsStreamProvider(tripId))
-                .asData
-                ?.value ??
-            const <WalletDocument>[])
-        .where((document) => document.activityId == activityId)
+    final allDocuments =
+        ref.watch(myWalletDocumentsStreamProvider(tripId)).asData?.value ??
+            const <WalletDocument>[];
+    if (allDocuments.isEmpty) return const SizedBox.shrink();
+    final documents = allDocuments
+        .where((document) => document.activityIds.contains(activityId))
         .toList(growable: false);
-    if (documents.isEmpty) return const SizedBox.shrink();
+    final candidates = allDocuments
+        .where((document) =>
+            !document.activityIds.contains(activityId) &&
+            document.activityIds.length < walletMaxActivityLinks)
+        .toList(growable: false);
     final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -924,10 +948,22 @@ class _LinkedWalletDocumentsCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Text(
-                  l10n.tripWalletPageTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
+                padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.tripWalletPageTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    if (candidates.isNotEmpty)
+                      IconButton(
+                        tooltip: l10n.walletLinkDocument,
+                        icon: const Icon(PhosphorIconsRegular.link),
+                        onPressed: () => _linkDocument(context, candidates),
+                      ),
+                  ],
                 ),
               ),
               for (final document in documents)
@@ -935,7 +971,17 @@ class _LinkedWalletDocumentsCard extends ConsumerWidget {
                   leading: Icon(document.category.icon),
                   title: Text(document.name),
                   subtitle: Text(walletDocumentSubtitle(context, document)),
-                  trailing: const Icon(PhosphorIconsRegular.caretRight),
+                  trailing: IconButton(
+                    tooltip: l10n.walletUnlinkActivity,
+                    icon: const Icon(PhosphorIconsRegular.linkBreak),
+                    onPressed: () => linkWalletDocumentToActivity(
+                      context: context,
+                      tripId: tripId,
+                      document: document,
+                      activityId: activityId,
+                      linked: false,
+                    ),
+                  ),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => WalletDocumentViewerPage(

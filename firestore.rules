@@ -1102,7 +1102,8 @@ service cloud.firestore {
         /// at a Storage object, and must stay inside the owner's wallet
         /// folder for this trip. A document's content (kind, file, barcode)
         /// never changes after creation; only its name, category, date and
-        /// linked planning activity (`activityId`, a private shortcut).
+        /// linked planning activities (`activityIds`, private shortcuts;
+        /// `activityId` is the former single link, only ever removed).
         match /walletDocuments/{documentId} {
           function ownsWallet() {
             return isTripMember(tripId) && uid == request.auth.uid;
@@ -1132,7 +1133,7 @@ service cloud.firestore {
           }
 
           function isValidWalletDocument(data) {
-            return data.keys().hasOnly(['name', 'category', 'kind', 'eventDate', 'file', 'barcode', 'activityId', 'createdAt', 'updatedAt'])
+            return data.keys().hasOnly(['name', 'category', 'kind', 'eventDate', 'file', 'barcode', 'activityId', 'activityIds', 'createdAt', 'updatedAt'])
               && data.name is string
               && data.name.size() > 0
               && data.name.size() <= 80
@@ -1145,7 +1146,10 @@ service cloud.firestore {
               && (!data.keys().hasAny(['activityId'])
                 || (data.activityId is string
                   && data.activityId.size() > 0
-                  && data.activityId.size() <= 128));
+                  && data.activityId.size() <= 128))
+              && (!data.keys().hasAny(['activityIds'])
+                || (data.activityIds is list
+                  && data.activityIds.size() <= 50));
           }
 
           allow read, delete: if ownsWallet();

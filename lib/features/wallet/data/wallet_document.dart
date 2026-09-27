@@ -18,6 +18,9 @@ const int walletMaxFileSizeBytes = 15 * 1024 * 1024;
 const int walletMaxDocumentsPerTrip = 50;
 const int walletMaxNameLength = 80;
 
+/// Must match `firestore.rules`.
+const int walletMaxActivityLinks = 50;
+
 enum WalletDocumentKind {
   file,
   barcode;
@@ -94,7 +97,7 @@ class WalletDocument {
     this.eventDate,
     this.file,
     this.barcode,
-    this.activityId,
+    this.activityIds = const [],
     this.createdAt,
   });
 
@@ -106,9 +109,9 @@ class WalletDocument {
   final WalletDocumentFile? file;
   final WalletBarcode? barcode;
 
-  /// Planning activity this document belongs to (only its owner sees the
-  /// link). May point at an activity deleted since.
-  final String? activityId;
+  /// Planning activities this document belongs to (only its owner sees the
+  /// links). May include activities deleted since.
+  final List<String> activityIds;
   final DateTime? createdAt;
 
   factory WalletDocument.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -121,14 +124,25 @@ class WalletDocument {
       eventDate: (data['eventDate'] as Timestamp?)?.toDate(),
       file: WalletDocumentFile.fromMap(data['file']),
       barcode: WalletBarcode.fromMap(data['barcode']),
-      activityId: switch ((data['activityId'] as String?)?.trim()) {
-        final String id when id.isNotEmpty => id,
-        _ => null,
-      },
+      activityIds: walletActivityIdsFromFirestore(data),
       // Pending server timestamps read as null until the write is confirmed.
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
+}
+
+/// Linked activity ids of a stored document. Also reads the former single
+/// link (`activityId`), replaced by the list on the next link change.
+List<String> walletActivityIdsFromFirestore(Map<String, dynamic> data) {
+  final ids = <String>{};
+  final raw = data['activityIds'];
+  if (raw is List) {
+    ids.addAll(raw.whereType<String>().map((id) => id.trim()));
+  }
+  final legacy = data['activityId'];
+  if (legacy is String) ids.add(legacy.trim());
+  ids.remove('');
+  return ids.toList(growable: false);
 }
 
 /// Chronological order: dated documents first (by date), then undated ones

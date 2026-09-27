@@ -112,8 +112,9 @@ class _WalletDocumentViewerPageState
     await linkWalletDocumentToActivity(
       context: context,
       tripId: _tripId,
-      documentId: document.id,
+      document: document,
       activityId: activityId,
+      linked: true,
     );
   }
 
@@ -132,17 +133,21 @@ class _WalletDocumentViewerPageState
           trip: trip,
           userId: FirebaseAuth.instance.currentUser?.uid.trim(),
         );
-    final linkedActivityId = document?.activityId;
-    // A link to an activity deleted since is treated as no link.
-    final linkedActivity = linkedActivityId == null
-        ? null
-        : activities?.where((a) => a.id == linkedActivityId).firstOrNull;
-    final canLink = activities != null && activities.isNotEmpty;
+    final linkedIds = document?.activityIds.toSet() ?? const <String>{};
+    // Links to activities deleted since are ignored.
+    final linkedActivities = (activities ?? const <TripActivity>[])
+        .where((a) => linkedIds.contains(a.id))
+        .toList(growable: false);
+    final linkableActivities = (activities ?? const <TripActivity>[])
+        .where((a) => !linkedIds.contains(a.id))
+        .toList(growable: false);
+    final underLinkLimit = linkedIds.length < walletMaxActivityLinks;
+    final canCreateLinked = canCreateActivity && underLinkLimit;
+    final canLink = linkableActivities.isNotEmpty && underLinkLimit;
     final showActivityMenu = document != null &&
         activities != null &&
-        linkedActivity == null &&
         !_creatingActivity &&
-        (canCreateActivity || canLink);
+        (canCreateLinked || canLink);
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -158,10 +163,11 @@ class _WalletDocumentViewerPageState
                 onSelected: (action) => switch (action) {
                   _ActivityAction.create =>
                     setState(() => _creatingActivity = true),
-                  _ActivityAction.link => _linkExisting(document, activities),
+                  _ActivityAction.link =>
+                    _linkExisting(document, linkableActivities),
                 },
                 itemBuilder: (context) => [
-                  if (canCreateActivity)
+                  if (canCreateLinked)
                     PopupMenuItem(
                       value: _ActivityAction.create,
                       child: ListTile(
@@ -264,15 +270,16 @@ class _WalletDocumentViewerPageState
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(child: content),
-                      if (linkedActivity != null)
-                        WalletLinkedActivityBar(
-                          activity: linkedActivity,
-                          onOpen: () => _openActivity(linkedActivity),
-                          onUnlink: () => linkWalletDocumentToActivity(
+                      if (linkedActivities.isNotEmpty)
+                        WalletLinkedActivitiesBar(
+                          activities: linkedActivities,
+                          onOpen: _openActivity,
+                          onUnlink: (activity) => linkWalletDocumentToActivity(
                             context: context,
                             tripId: _tripId,
-                            documentId: document.id,
-                            activityId: null,
+                            document: document,
+                            activityId: activity.id,
+                            linked: false,
                           ),
                         ),
                     ],

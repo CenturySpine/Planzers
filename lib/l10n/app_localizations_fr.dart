@@ -3936,6 +3936,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletActivityUnlinked => 'Lien retiré';
+
+  @override
+  String get walletLinkDocument => 'Lier un document';
+
+  @override
+  String get walletLinkDocumentPickerTitle => 'Choisir un document';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7798,4 +7804,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletActivityUnlinked => 'Lien retiré';
+
+  @override
+  String get walletLinkDocument => 'Lier un document';
+
+  @override
+  String get walletLinkDocumentPickerTitle => 'Choisir un document';
 }

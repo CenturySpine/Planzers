@@ -1594,5 +1594,7 @@
   "walletLinkActivityPickerTitle": "Choose an activity",
   "walletNoActivityToLink": "No activity",
   "walletActivityLinked": "Document linked to the activity",
-  "walletActivityUnlinked": "Link removed"
+  "walletActivityUnlinked": "Link removed",
+  "walletLinkDocument": "Link a document",
+  "walletLinkDocumentPickerTitle": "Choose a document"
 }

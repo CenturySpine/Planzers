@@ -6968,6 +6968,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Lien retiré'**
   String get walletActivityUnlinked;
+
+  /// No description provided for @walletLinkDocument.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lier un document'**
+  String get walletLinkDocument;
+
+  /// No description provided for @walletLinkDocumentPickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un document'**
+  String get walletLinkDocumentPickerTitle;
 }
 
 class _AppLocalizationsDelegate

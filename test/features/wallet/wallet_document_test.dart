@@ -62,4 +62,22 @@ void main() {
     // Unknown formats still show the content, as a QR code.
     expect(walletBarcodeSymbology('unknown').name, 'QR-Code');
   });
+
+  test('linked activities merge the list with the former single link', () {
+    expect(walletActivityIdsFromFirestore(const {}), isEmpty);
+    expect(
+      walletActivityIdsFromFirestore(const {
+        'activityIds': ['a', 'b', ''],
+        'activityId': 'c',
+      }),
+      unorderedEquals(['a', 'b', 'c']),
+    );
+    expect(
+      walletActivityIdsFromFirestore(const {
+        'activityIds': ['a'],
+        'activityId': 'a',
+      }),
+      ['a'],
+    );
+  });
 }

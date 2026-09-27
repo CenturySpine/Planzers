@@ -3900,6 +3900,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletActivityUnlinked => 'Link removed';
+
+  @override
+  String get walletLinkDocument => 'Link a document';
+
+  @override
+  String get walletLinkDocumentPickerTitle => 'Choose a document';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -7727,4 +7733,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletActivityUnlinked => 'Link removed';
+
+  @override
+  String get walletLinkDocument => 'Link a document';
+
+  @override
+  String get walletLinkDocumentPickerTitle => 'Choose a document';
 }

@@ -11,6 +11,7 @@ import 'package:planerz/features/activities/presentation/trip_activity_list_help
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_document_category.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// Planning categories offered when creating an activity from a document:
@@ -47,27 +48,28 @@ import 'package:planerz/l10n/app_localizations.dart';
   }
 }
 
+/// Adds ([linked] true) or removes a document–activity link, with feedback.
 Future<void> linkWalletDocumentToActivity({
   required BuildContext context,
   required String tripId,
-  required String documentId,
-  required String? activityId,
+  required WalletDocument document,
+  required String activityId,
+  required bool linked,
 }) async {
   final l10n = AppLocalizations.of(context)!;
   final messenger = ScaffoldMessenger.of(context);
   final container = ProviderScope.containerOf(context, listen: false);
   try {
-    await container.read(walletRepositoryProvider).setDocumentActivity(
+    await container.read(walletRepositoryProvider).setDocumentActivityLink(
           tripId: tripId,
-          documentId: documentId,
+          document: document,
           activityId: activityId,
+          linked: linked,
         );
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          activityId == null
-              ? l10n.walletActivityUnlinked
-              : l10n.walletActivityLinked,
+          linked ? l10n.walletActivityLinked : l10n.walletActivityUnlinked,
         ),
       ),
     );
@@ -106,7 +108,59 @@ Future<String?> pickActivityForWalletDocument(
   required List<TripActivity> activities,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  final sorted = _sortedForPicker(activities);
+  return _showPickerSheet(
+    context,
+    title: l10n.walletLinkActivityPickerTitle,
+    emptyLabel: l10n.walletNoActivityToLink,
+    tiles: [
+      for (final activity in _sortedForPicker(activities))
+        (
+          id: activity.id,
+          leading: _ActivityCategoryAvatar(activity: activity),
+          title: activity.label.trim().isEmpty
+              ? l10n.activitiesUntitled
+              : activity.label.trim(),
+          subtitle: _plannedLabel(context, activity),
+        ),
+    ],
+  );
+}
+
+/// Returns the chosen document id, or null when dismissed.
+Future<String?> pickWalletDocumentForActivity(
+  BuildContext context, {
+  required List<WalletDocument> documents,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  return _showPickerSheet(
+    context,
+    title: l10n.walletLinkDocumentPickerTitle,
+    emptyLabel: l10n.walletEmpty,
+    tiles: [
+      for (final document in documents)
+        (
+          id: document.id,
+          leading: Icon(document.category.icon),
+          title: document.name,
+          subtitle: walletDocumentSubtitle(context, document),
+        ),
+    ],
+  );
+}
+
+typedef _PickerTile = ({
+  String id,
+  Widget leading,
+  String title,
+  String? subtitle,
+});
+
+Future<String?> _showPickerSheet(
+  BuildContext context, {
+  required String title,
+  required String emptyLabel,
+  required List<_PickerTile> tiles,
+}) {
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -123,28 +177,24 @@ Future<String?> pickActivityForWalletDocument(
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
             child: Text(
-              l10n.walletLinkActivityPickerTitle,
+              title,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          if (sorted.isEmpty)
+          if (tiles.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(l10n.walletNoActivityToLink),
+              child: Text(emptyLabel),
             ),
-          for (final activity in sorted)
+          for (final tile in tiles)
             ListTile(
-              leading: _ActivityCategoryAvatar(activity: activity),
-              title: Text(
-                activity.label.trim().isEmpty
-                    ? l10n.activitiesUntitled
-                    : activity.label.trim(),
-              ),
-              subtitle: switch (_plannedLabel(context, activity)) {
+              leading: tile.leading,
+              title: Text(tile.title),
+              subtitle: switch (tile.subtitle) {
                 final String label => Text(label),
                 null => null,
               },
-              onTap: () => Navigator.of(sheetContext).pop(activity.id),
+              onTap: () => Navigator.of(sheetContext).pop(tile.id),
             ),
         ],
       ),
@@ -176,24 +226,26 @@ class _ActivityCategoryAvatar extends StatelessWidget {
   }
 }
 
-/// Bottom bar of the document viewer showing the linked activity: tap to
-/// open it, or remove the link.
-class WalletLinkedActivityBar extends StatelessWidget {
-  const WalletLinkedActivityBar({
+/// Bottom area of the document viewer listing the linked activities: tap
+/// one to open it, or remove its link. Scrolls past a few entries so the
+/// document keeps most of the screen.
+class WalletLinkedActivitiesBar extends StatelessWidget {
+  const WalletLinkedActivitiesBar({
     super.key,
-    required this.activity,
+    required this.activities,
     required this.onOpen,
     required this.onUnlink,
   });
 
-  final TripActivity activity;
-  final VoidCallback onOpen;
-  final VoidCallback onUnlink;
+  final List<TripActivity> activities;
+  final ValueChanged<TripActivity> onOpen;
+  final ValueChanged<TripActivity> onUnlink;
+
+  static const double _maxHeight = 3.5 * 64;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final plannedLabel = _plannedLabel(context, activity);
     return Material(
       color: AppTokens.surface,
       child: SafeArea(
@@ -202,21 +254,34 @@ class WalletLinkedActivityBar extends StatelessWidget {
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppTokens.divider)),
           ),
-          child: ListTile(
-            leading: _ActivityCategoryAvatar(activity: activity),
-            title: Text(
-              activity.label.trim().isEmpty
-                  ? l10n.activitiesUntitled
-                  : activity.label.trim(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: plannedLabel == null ? null : Text(plannedLabel),
-            onTap: onOpen,
-            trailing: IconButton(
-              tooltip: l10n.walletUnlinkActivity,
-              icon: const Icon(PhosphorIconsRegular.linkBreak),
-              onPressed: onUnlink,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: _maxHeight),
+            child: ListView(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              children: [
+                for (final activity in _sortedForPicker(activities))
+                  ListTile(
+                    leading: _ActivityCategoryAvatar(activity: activity),
+                    title: Text(
+                      activity.label.trim().isEmpty
+                          ? l10n.activitiesUntitled
+                          : activity.label.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: switch (_plannedLabel(context, activity)) {
+                      final String label => Text(label),
+                      null => null,
+                    },
+                    onTap: () => onOpen(activity),
+                    trailing: IconButton(
+                      tooltip: l10n.walletUnlinkActivity,
+                      icon: const Icon(PhosphorIconsRegular.linkBreak),
+                      onPressed: () => onUnlink(activity),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -303,10 +368,11 @@ class WalletCreateActivityPanel extends StatelessWidget {
         final container = ProviderScope.containerOf(context, listen: false);
         onDone();
         try {
-          await container.read(walletRepositoryProvider).setDocumentActivity(
+          await container.read(walletRepositoryProvider).setDocumentActivityLink(
                 tripId: tripId,
-                documentId: document.id,
+                document: document,
                 activityId: activityId,
+                linked: true,
               );
           messenger.showSnackBar(SnackBar(content: Text(l10n.activitiesAdded)));
         } catch (error) {
