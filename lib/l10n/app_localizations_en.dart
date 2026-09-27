@@ -3078,6 +3078,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripWalletAddDocument => 'Add a document';
 
   @override
+  String get walletCategoryPlane => 'Plane';
+
+  @override
+  String get walletCategoryTrain => 'Train';
+
+  @override
+  String get walletCategoryBus => 'Bus / coach';
+
+  @override
+  String get walletCategoryBoat => 'Boat';
+
+  @override
+  String get walletCategoryLodging => 'Accommodation';
+
+  @override
+  String get walletCategoryVehicleRental => 'Vehicle rental';
+
+  @override
+  String get walletCategoryActivity => 'Activity / ticket';
+
+  @override
+  String get walletCategoryIdentity => 'Identity';
+
+  @override
+  String get walletCategoryInsurance => 'Insurance / health';
+
+  @override
+  String get walletCategoryOther => 'Other';
+
+  @override
+  String get walletEmpty => 'No documents';
+
+  @override
+  String get walletFormCreateTitle => 'New document';
+
+  @override
+  String get walletFormEditTitle => 'Edit document';
+
+  @override
+  String get walletFormCategoryLabel => 'Category';
+
+  @override
+  String get walletFormClearDate => 'Remove the date';
+
+  @override
+  String get walletFileUnsupported =>
+      'Unsupported file type (PDF or image only)';
+
+  @override
+  String get walletFileTooLarge => 'File too large (15 MB max)';
+
+  @override
+  String walletLimitReached(int count) {
+    return 'Limit of $count documents reached';
+  }
+
+  @override
+  String get walletDocumentAdded => 'Document added';
+
+  @override
+  String get walletDocumentUpdated => 'Document updated';
+
+  @override
+  String get walletDeleteTitle => 'Delete this document?';
+
+  @override
+  String get walletDeleteBody => 'The document and its file will be deleted.';
+
+  @override
+  String get walletDocumentDeleted => 'Document deleted';
+
+  @override
+  String get walletOpenFailed => 'Could not open the document';
+
+  @override
+  String get walletOpenFile => 'Open the file';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -3115,9 +3193,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
-
-  @override
-  String get tripOverviewTileComingSoon => '[Coming soon]';
 
   @override
   String get tripCarpoolDriverLabel => 'Driver';
@@ -3669,7 +3744,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPackingPushBody =>
-      'Only items flagged as "Group" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+      'Only items flagged as \"Group\" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
 
   @override
   String get tripPackingPushConfirm => 'Push';
@@ -3681,7 +3756,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripPackingPushEmpty =>
-      'Flag at least one item as "Group" before pushing your list.';
+      'Flag at least one item as \"Group\" before pushing your list.';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -6687,6 +6762,84 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get tripWalletAddDocument => 'Add a document';
 
   @override
+  String get walletCategoryPlane => 'Plane';
+
+  @override
+  String get walletCategoryTrain => 'Train';
+
+  @override
+  String get walletCategoryBus => 'Bus / coach';
+
+  @override
+  String get walletCategoryBoat => 'Boat';
+
+  @override
+  String get walletCategoryLodging => 'Accommodation';
+
+  @override
+  String get walletCategoryVehicleRental => 'Vehicle rental';
+
+  @override
+  String get walletCategoryActivity => 'Activity / ticket';
+
+  @override
+  String get walletCategoryIdentity => 'Identity';
+
+  @override
+  String get walletCategoryInsurance => 'Insurance / health';
+
+  @override
+  String get walletCategoryOther => 'Other';
+
+  @override
+  String get walletEmpty => 'No documents';
+
+  @override
+  String get walletFormCreateTitle => 'New document';
+
+  @override
+  String get walletFormEditTitle => 'Edit document';
+
+  @override
+  String get walletFormCategoryLabel => 'Category';
+
+  @override
+  String get walletFormClearDate => 'Remove the date';
+
+  @override
+  String get walletFileUnsupported =>
+      'Unsupported file type (PDF or image only)';
+
+  @override
+  String get walletFileTooLarge => 'File too large (15 MB max)';
+
+  @override
+  String walletLimitReached(int count) {
+    return 'Limit of $count documents reached';
+  }
+
+  @override
+  String get walletDocumentAdded => 'Document added';
+
+  @override
+  String get walletDocumentUpdated => 'Document updated';
+
+  @override
+  String get walletDeleteTitle => 'Delete this document?';
+
+  @override
+  String get walletDeleteBody => 'The document and its file will be deleted.';
+
+  @override
+  String get walletDocumentDeleted => 'Document deleted';
+
+  @override
+  String get walletOpenFailed => 'Could not open the document';
+
+  @override
+  String get walletOpenFile => 'Open the file';
+
+  @override
   String get tripOverviewBannerEmpty => 'No photo';
 
   @override
@@ -6724,9 +6877,6 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count more)';
   }
-
-  @override
-  String get tripOverviewTileComingSoon => '[Coming soon]';
 
   @override
   String get tripCarpoolDriverLabel => 'Driver';
@@ -7278,7 +7428,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPackingPushBody =>
-      'Only items flagged as "Group" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
+      'Only items flagged as \"Group\" will be copied to every traveler. Items you already pushed are updated; items each traveler added are left untouched.';
 
   @override
   String get tripPackingPushConfirm => 'Push';
@@ -7290,5 +7440,5 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get tripPackingPushEmpty =>
-      'Flag at least one item as "Group" before pushing your list.';
+      'Flag at least one item as \"Group\" before pushing your list.';
 }

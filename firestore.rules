@@ -1085,6 +1085,61 @@ service cloud.firestore {
         allow read: if isTripMember(tripId) && uid == request.auth.uid;
         allow create, update: if isTripMember(tripId) && uid == request.auth.uid;
         allow delete: if false;
+
+        /// Personal documents of the "Mes documents" module (owner only).
+        /// Unlike the toggle doc above, the shape is checked: `file` points
+        /// at a Storage object, and must stay inside the owner's wallet
+        /// folder for this trip. A document's content (kind, file, barcode)
+        /// never changes after creation; only its name, category and date.
+        match /walletDocuments/{documentId} {
+          function ownsWallet() {
+            return isTripMember(tripId) && uid == request.auth.uid;
+          }
+
+          function isValidWalletFile(file) {
+            return file is map
+              && file.keys().hasOnly(['storagePath', 'contentType', 'sizeBytes', 'originalFileName'])
+              && file.storagePath is string
+              && file.storagePath.matches('users/' + uid + '/wallet/' + tripId + '/[A-Za-z0-9._-]+')
+              && file.contentType in ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+              && file.sizeBytes is int
+              && file.sizeBytes > 0
+              && file.sizeBytes <= 15 * 1024 * 1024
+              && file.originalFileName is string
+              && file.originalFileName.size() <= 255;
+          }
+
+          function isValidWalletBarcode(barcode) {
+            return barcode is map
+              && barcode.keys().hasOnly(['format', 'payload'])
+              && barcode.format is string
+              && barcode.format.size() <= 32
+              && barcode.payload is string
+              && barcode.payload.size() > 0
+              && barcode.payload.size() <= 4096;
+          }
+
+          function isValidWalletDocument(data) {
+            return data.keys().hasOnly(['name', 'category', 'kind', 'eventDate', 'file', 'barcode', 'createdAt', 'updatedAt'])
+              && data.name is string
+              && data.name.size() > 0
+              && data.name.size() <= 80
+              && data.category in ['plane', 'train', 'bus', 'boat', 'lodging', 'vehicleRental', 'activity', 'identity', 'insurance', 'other']
+              && (
+                (data.kind == 'file' && !data.keys().hasAny(['barcode']) && isValidWalletFile(data.get('file', null)))
+                || (data.kind == 'barcode' && !data.keys().hasAny(['file']) && isValidWalletBarcode(data.get('barcode', null)))
+              )
+              && (!data.keys().hasAny(['eventDate']) || data.eventDate is timestamp);
+          }
+
+          allow read, delete: if ownsWallet();
+          allow create: if ownsWallet() && isValidWalletDocument(request.resource.data);
+          allow update: if ownsWallet()
+            && isValidWalletDocument(request.resource.data)
+            && request.resource.data.kind == resource.data.kind
+            && request.resource.data.get('file', null) == resource.data.get('file', null)
+            && request.resource.data.get('barcode', null) == resource.data.get('barcode', null);
+        }
       }
 
       /// Personal "À emporter" checklist, keyed by the participant SLOT id

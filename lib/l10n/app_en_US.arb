@@ -1172,6 +1172,38 @@
   "ridgegearLoadingWeight": "Loading...",
   "tripWalletPageTitle": "My documents",
   "tripWalletAddDocument": "Add a document",
+  "walletCategoryPlane": "Plane",
+  "walletCategoryTrain": "Train",
+  "walletCategoryBus": "Bus / coach",
+  "walletCategoryBoat": "Boat",
+  "walletCategoryLodging": "Accommodation",
+  "walletCategoryVehicleRental": "Vehicle rental",
+  "walletCategoryActivity": "Activity / ticket",
+  "walletCategoryIdentity": "Identity",
+  "walletCategoryInsurance": "Insurance / health",
+  "walletCategoryOther": "Other",
+  "walletEmpty": "No documents",
+  "walletFormCreateTitle": "New document",
+  "walletFormEditTitle": "Edit document",
+  "walletFormCategoryLabel": "Category",
+  "walletFormClearDate": "Remove the date",
+  "walletFileUnsupported": "Unsupported file type (PDF or image only)",
+  "walletFileTooLarge": "File too large (15 MB max)",
+  "walletLimitReached": "Limit of {count} documents reached",
+  "@walletLimitReached": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletDocumentAdded": "Document added",
+  "walletDocumentUpdated": "Document updated",
+  "walletDeleteTitle": "Delete this document?",
+  "walletDeleteBody": "The document and its file will be deleted.",
+  "walletDocumentDeleted": "Document deleted",
+  "walletOpenFailed": "Could not open the document",
+  "walletOpenFile": "Open the file",
   "tripOverviewBannerEmpty": "No photo",
   "tripOverviewBannerAddPhoto": "Add a cover photo",
   "tripAnnouncementsPageTitle": "Organizers announcements",
@@ -1191,7 +1223,6 @@
       }
     }
   },
-  "tripOverviewTileComingSoon": "[Coming soon]",
   "tripCarpoolDriverLabel": "Driver",
   "tripCarpoolShoppingFlag": "Shopping",
   "tripOverviewCarpoolPassengerSummary": "You're leaving with {driverName} at {departureTime} from {meetingPointAddress}",

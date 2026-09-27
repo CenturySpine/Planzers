@@ -80,8 +80,27 @@ service firebase.storage {
 
     // Profile assets are stored under:
     // users/{uid}/profile_<timestamp>.<ext>
-    match /users/{uid}/{allPaths=**} {
+    // Single path segment on purpose: a recursive match here would also
+    // grant unrestricted writes inside users/{uid}/wallet/ below.
+    match /users/{uid}/{fileName} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Personal trip documents ("Mes documents"), owner only:
+    // users/{uid}/wallet/{tripId}/<documentId>.<ext>
+    // Kept out of trips/{tripId}/ on purpose: the catch-all rule there lets
+    // every trip member read everything under it.
+    match /users/{uid}/wallet/{tripId}/{fileName} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      // resource == null: a stored file is never replaced (see update).
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && resource == null
+        && isTripMember(tripId)
+        && request.resource.size <= 15 * 1024 * 1024
+        && request.resource.contentType.matches('application/pdf|image/(jpeg|png|webp|heic|heif)')
+        && fileName.matches('[A-Za-z0-9._-]+');
+      allow update: if false;
     }
 
     // Self-managed preview release metadata + APK (see RELEASE.md / preview publishing).

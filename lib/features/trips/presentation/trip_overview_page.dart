@@ -39,6 +39,7 @@ import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/features/wallet/data/wallet_repository.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -651,6 +652,14 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     final myTravelerModules =
         ref.watch(myTravelerModulesStreamProvider(_trip.id)).asData?.value ??
             const TravelerModules();
+    final myWalletDocumentCount = myTravelerModules.walletEnabled
+        ? ref
+                .watch(myWalletDocumentsStreamProvider(_trip.id))
+                .asData
+                ?.value
+                .length ??
+            0
+        : 0;
     final myPackingConfig =
         ref.watch(myPackingListConfigStreamProvider(_trip.id)).asData?.value;
     final myPackingItems =
@@ -1069,11 +1078,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                             TripOverviewModuleCard(
                               label: l10n.tripOverviewTileWallet,
                               icon: PhosphorIconsRegular.folderStar,
-                              count: 3,
+                              count: myWalletDocumentCount,
                               tileColor: AppTokens.surfaceMuted,
                               inkColor: AppTokens.text700,
-                              statusText:
-                                  l10n.tripOverviewWalletDocumentCount(3),
+                              statusText: l10n.tripOverviewWalletDocumentCount(
+                                myWalletDocumentCount,
+                              ),
                               onTap: () =>
                                   context.push('/trips/${_trip.id}/wallet'),
                             ),

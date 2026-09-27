@@ -7,16 +7,16 @@ todos:
     status: pending
   - id: data-rules
     content: "Lot 1 — Modèle Firestore walletDocuments + règles Firestore + règles Storage (owner-only) + repository/providers"
-    status: pending
+    status: completed
   - id: list-real-data
     content: "Lot 2 — Liste réelle sur TripWalletPage + compteur réel sur la tuile de l'aperçu + état vide"
-    status: pending
+    status: completed
   - id: add-file
     content: "Lot 3 — Écran d'ajout d'un fichier (nom, catégorie, fichier) avec upload et progression"
-    status: pending
+    status: completed
   - id: viewer-edit-delete
     content: "Lot 4 — Consultation (image plein écran, PDF via lecteur embarqué), menu d'actions, renommage/recatégorisation, suppression"
-    status: pending
+    status: completed
   - id: barcode-scan
     content: "Lot 5 — Scan caméra d'un QR code / code-barres, stockage du contenu, affichage plein écran régénéré"
     status: pending
@@ -372,6 +372,23 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
   avatars) et les actions serveur (callables, envois) ne fonctionnent pas
   hors-ligne ; les écritures Firestore simples sont mises en file et
   envoyées au retour du réseau.
+
+## 6 bis. Lots 1 à 4 — état livré
+
+- Données, règles Firestore et Storage, dépôt, liste réelle, compteur de la
+  tuile, ajout de fichier (PDF, JPEG, PNG, WebP, HEIC ; 15 Mo ; 50 par
+  voyage), consultation, menu d'actions (Modifier, Supprimer), édition du
+  nom / de la catégorie / de la date.
+- Consultation : images affichées dans l'app (zoom). **PDF ouverts dans un
+  nouvel onglet** en attendant le lecteur embarqué du Lot 8 (le lien est
+  préparé avant le tap pour ne pas être bloqué comme pop-up par Safari).
+- Règles testées dans les émulateurs Firebase (19 cas Firestore, 9 cas
+  Storage). Limite de l'émulateur Storage : il ne lit pas Firestore dans les
+  règles, la condition « membre du voyage » est donc à valider sur la
+  preview.
+- La règle Storage `users/{uid}/**` est réduite à un seul segment
+  (`users/{uid}/{fileName}`, photos de profil) pour ne pas court-circuiter
+  les contrôles du wallet.
 
 ## 7. Cloud Functions (région `europe-west9`)
 

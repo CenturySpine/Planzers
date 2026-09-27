@@ -5568,6 +5568,156 @@ abstract class AppLocalizations {
   /// **'Ajouter un document'**
   String get tripWalletAddDocument;
 
+  /// No description provided for @walletCategoryPlane.
+  ///
+  /// In fr, this message translates to:
+  /// **'Avion'**
+  String get walletCategoryPlane;
+
+  /// No description provided for @walletCategoryTrain.
+  ///
+  /// In fr, this message translates to:
+  /// **'Train'**
+  String get walletCategoryTrain;
+
+  /// No description provided for @walletCategoryBus.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bus / car'**
+  String get walletCategoryBus;
+
+  /// No description provided for @walletCategoryBoat.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bateau'**
+  String get walletCategoryBoat;
+
+  /// No description provided for @walletCategoryLodging.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get walletCategoryLodging;
+
+  /// No description provided for @walletCategoryVehicleRental.
+  ///
+  /// In fr, this message translates to:
+  /// **'Location de véhicule'**
+  String get walletCategoryVehicleRental;
+
+  /// No description provided for @walletCategoryActivity.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activité / billet'**
+  String get walletCategoryActivity;
+
+  /// No description provided for @walletCategoryIdentity.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identité'**
+  String get walletCategoryIdentity;
+
+  /// No description provided for @walletCategoryInsurance.
+  ///
+  /// In fr, this message translates to:
+  /// **'Assurance / santé'**
+  String get walletCategoryInsurance;
+
+  /// No description provided for @walletCategoryOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get walletCategoryOther;
+
+  /// No description provided for @walletEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun document'**
+  String get walletEmpty;
+
+  /// No description provided for @walletFormCreateTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau document'**
+  String get walletFormCreateTitle;
+
+  /// No description provided for @walletFormEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le document'**
+  String get walletFormEditTitle;
+
+  /// No description provided for @walletFormCategoryLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Catégorie'**
+  String get walletFormCategoryLabel;
+
+  /// No description provided for @walletFormClearDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer la date'**
+  String get walletFormClearDate;
+
+  /// No description provided for @walletFileUnsupported.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de fichier non pris en charge (PDF ou image uniquement)'**
+  String get walletFileUnsupported;
+
+  /// No description provided for @walletFileTooLarge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fichier trop volumineux (15 Mo maximum)'**
+  String get walletFileTooLarge;
+
+  /// No description provided for @walletLimitReached.
+  ///
+  /// In fr, this message translates to:
+  /// **'Limite de {count} documents atteinte'**
+  String walletLimitReached(int count);
+
+  /// No description provided for @walletDocumentAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document ajouté'**
+  String get walletDocumentAdded;
+
+  /// No description provided for @walletDocumentUpdated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document modifié'**
+  String get walletDocumentUpdated;
+
+  /// No description provided for @walletDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce document ?'**
+  String get walletDeleteTitle;
+
+  /// No description provided for @walletDeleteBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le document et son fichier seront supprimés.'**
+  String get walletDeleteBody;
+
+  /// No description provided for @walletDocumentDeleted.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document supprimé'**
+  String get walletDocumentDeleted;
+
+  /// No description provided for @walletOpenFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'ouvrir le document'**
+  String get walletOpenFailed;
+
+  /// No description provided for @walletOpenFile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir le fichier'**
+  String get walletOpenFile;
+
   /// No description provided for @tripOverviewBannerEmpty.
   ///
   /// In fr, this message translates to:
@@ -5639,12 +5789,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'({count} de plus)'**
   String tripOverviewTileGamesAndMore(int count);
-
-  /// No description provided for @tripOverviewTileComingSoon.
-  ///
-  /// In fr, this message translates to:
-  /// **'[À venir]'**
-  String get tripOverviewTileComingSoon;
 
   /// No description provided for @tripCarpoolDriverLabel.
   ///

@@ -3105,6 +3105,84 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tripWalletAddDocument => 'Ajouter un document';
 
   @override
+  String get walletCategoryPlane => 'Avion';
+
+  @override
+  String get walletCategoryTrain => 'Train';
+
+  @override
+  String get walletCategoryBus => 'Bus / car';
+
+  @override
+  String get walletCategoryBoat => 'Bateau';
+
+  @override
+  String get walletCategoryLodging => 'Hébergement';
+
+  @override
+  String get walletCategoryVehicleRental => 'Location de véhicule';
+
+  @override
+  String get walletCategoryActivity => 'Activité / billet';
+
+  @override
+  String get walletCategoryIdentity => 'Identité';
+
+  @override
+  String get walletCategoryInsurance => 'Assurance / santé';
+
+  @override
+  String get walletCategoryOther => 'Autre';
+
+  @override
+  String get walletEmpty => 'Aucun document';
+
+  @override
+  String get walletFormCreateTitle => 'Nouveau document';
+
+  @override
+  String get walletFormEditTitle => 'Modifier le document';
+
+  @override
+  String get walletFormCategoryLabel => 'Catégorie';
+
+  @override
+  String get walletFormClearDate => 'Retirer la date';
+
+  @override
+  String get walletFileUnsupported =>
+      'Type de fichier non pris en charge (PDF ou image uniquement)';
+
+  @override
+  String get walletFileTooLarge => 'Fichier trop volumineux (15 Mo maximum)';
+
+  @override
+  String walletLimitReached(int count) {
+    return 'Limite de $count documents atteinte';
+  }
+
+  @override
+  String get walletDocumentAdded => 'Document ajouté';
+
+  @override
+  String get walletDocumentUpdated => 'Document modifié';
+
+  @override
+  String get walletDeleteTitle => 'Supprimer ce document ?';
+
+  @override
+  String get walletDeleteBody => 'Le document et son fichier seront supprimés.';
+
+  @override
+  String get walletDocumentDeleted => 'Document supprimé';
+
+  @override
+  String get walletOpenFailed => 'Impossible d\'ouvrir le document';
+
+  @override
+  String get walletOpenFile => 'Ouvrir le fichier';
+
+  @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
 
   @override
@@ -3143,9 +3221,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count de plus)';
   }
-
-  @override
-  String get tripOverviewTileComingSoon => '[À venir]';
 
   @override
   String get tripCarpoolDriverLabel => 'Conducteur';
@@ -6748,6 +6823,84 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get tripWalletAddDocument => 'Ajouter un document';
 
   @override
+  String get walletCategoryPlane => 'Avion';
+
+  @override
+  String get walletCategoryTrain => 'Train';
+
+  @override
+  String get walletCategoryBus => 'Bus / car';
+
+  @override
+  String get walletCategoryBoat => 'Bateau';
+
+  @override
+  String get walletCategoryLodging => 'Hébergement';
+
+  @override
+  String get walletCategoryVehicleRental => 'Location de véhicule';
+
+  @override
+  String get walletCategoryActivity => 'Activité / billet';
+
+  @override
+  String get walletCategoryIdentity => 'Identité';
+
+  @override
+  String get walletCategoryInsurance => 'Assurance / santé';
+
+  @override
+  String get walletCategoryOther => 'Autre';
+
+  @override
+  String get walletEmpty => 'Aucun document';
+
+  @override
+  String get walletFormCreateTitle => 'Nouveau document';
+
+  @override
+  String get walletFormEditTitle => 'Modifier le document';
+
+  @override
+  String get walletFormCategoryLabel => 'Catégorie';
+
+  @override
+  String get walletFormClearDate => 'Retirer la date';
+
+  @override
+  String get walletFileUnsupported =>
+      'Type de fichier non pris en charge (PDF ou image uniquement)';
+
+  @override
+  String get walletFileTooLarge => 'Fichier trop volumineux (15 Mo maximum)';
+
+  @override
+  String walletLimitReached(int count) {
+    return 'Limite de $count documents atteinte';
+  }
+
+  @override
+  String get walletDocumentAdded => 'Document ajouté';
+
+  @override
+  String get walletDocumentUpdated => 'Document modifié';
+
+  @override
+  String get walletDeleteTitle => 'Supprimer ce document ?';
+
+  @override
+  String get walletDeleteBody => 'Le document et son fichier seront supprimés.';
+
+  @override
+  String get walletDocumentDeleted => 'Document supprimé';
+
+  @override
+  String get walletOpenFailed => 'Impossible d\'ouvrir le document';
+
+  @override
+  String get walletOpenFile => 'Ouvrir le fichier';
+
+  @override
   String get tripOverviewBannerEmpty => 'Aucune photo';
 
   @override
@@ -6786,9 +6939,6 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String tripOverviewTileGamesAndMore(int count) {
     return '($count de plus)';
   }
-
-  @override
-  String get tripOverviewTileComingSoon => '[À venir]';
 
   @override
   String get tripCarpoolDriverLabel => 'Conducteur';
