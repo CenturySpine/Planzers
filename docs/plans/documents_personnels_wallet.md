@@ -31,7 +31,7 @@ todos:
     status: completed
   - id: cleanup-functions
     content: "Lot 9 — Nettoyage Storage à la sortie / suppression du voyage (Cloud Functions)"
-    status: pending
+    status: completed
   - id: l10n-tests-analyze
     content: "Transverse — Clés l10n (4 ARB), suppression des clés maquette obsolètes, tests, flutter analyze"
     status: pending
@@ -444,6 +444,18 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
   documents wallet Firestore + Storage du participant.
 - **Suppression de compte** : vérifier la purge du préfixe `users/{uid}/`.
 - Tests unitaires Jest à côté des tests existants.
+
+### Lot 9 — état livré
+
+- Module `functions/wallet_cleanup.js` (+ tests `node --test`).
+- `leaveTrip`, `removeTripRegisteredMember`, `removeTripParticipant` (si la
+  place était rattachée à un compte) : suppression des fiches et des
+  fichiers du wallet du voyageur pour ce voyage, en « best effort » (une
+  erreur de nettoyage est journalisée et ne bloque jamais le départ).
+- `deleteTripCascade` : suppression des fichiers wallet de tous les membres
+  (les fiches partent avec la suppression récursive du voyage).
+- Suppression de compte : aucune fonction n'existe aujourd'hui dans le
+  projet ; à traiter le jour où ce parcours sera créé.
 
 ## 8. Découpage en lots
 

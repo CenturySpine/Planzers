@@ -13,6 +13,7 @@ const cheerio = require('cheerio');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
+const { deleteMemberWalletData, deleteTripWalletFiles } = require('./wallet_cleanup');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const {
   buildNotificationQueueDocId,
@@ -2719,6 +2720,15 @@ exports.removeTripParticipant = onCall(
       await batch.commit();
     }
 
+    if (claimedUserId) {
+      await deleteMemberWalletData({
+        db,
+        bucket: admin.storage().bucket(),
+        tripId,
+        uid: claimedUserId,
+      });
+    }
+
     return { ok: true };
   }
 );
@@ -2821,6 +2831,14 @@ exports.leaveTrip = onCall(
       batch.delete(participantDoc.ref);
     }
     await batch.commit();
+
+    // Personal documents are useless once the traveler has left.
+    await deleteMemberWalletData({
+      db,
+      bucket: admin.storage().bucket(),
+      tripId,
+      uid,
+    });
 
     return { ok: true };
   }
@@ -3464,6 +3482,13 @@ exports.removeTripRegisteredMember = onCall(
     }
     await batch.commit();
 
+    await deleteMemberWalletData({
+      db,
+      bucket: admin.storage().bucket(),
+      tripId,
+      uid: memberId,
+    });
+
     return { ok: true };
   }
 );
@@ -3598,8 +3623,13 @@ exports.deleteTripCascade = onCall(
     }
 
     // Remove Storage assets first so no orphan blobs remain if recursive
-    // deletion succeeds.
+    // deletion succeeds. Personal documents live outside trips/{tripId}/.
     await deleteTripStorageObjects(tripId);
+    await deleteTripWalletFiles({
+      bucket: admin.storage().bucket(),
+      tripId,
+      memberUserIds: tripData.memberUserIds,
+    });
 
     // Deletes the trip document and all nested subcollections recursively.
     await db.recursiveDelete(tripRef);
