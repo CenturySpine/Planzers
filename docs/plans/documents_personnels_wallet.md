@@ -28,7 +28,7 @@ todos:
     status: completed
   - id: offline-documents
     content: "Lot 8 — Stockage local transparent : Télécharger / Supprimer du téléphone, ouverture locale-puis-en-ligne, codes-barres automatiquement hors-ligne, purge à la déconnexion"
-    status: pending
+    status: completed
   - id: cleanup-functions
     content: "Lot 9 — Nettoyage Storage à la sortie / suppression du voyage (Cloud Functions)"
     status: pending
@@ -409,6 +409,32 @@ L'ancien `trips/presentation/trip_wallet_page.dart` est supprimé ; la route
   l'identique : à tester avec de vrais billets ; en cas d'échec, garder
   l'image pour ce type de billet.
 - Détection dans les PDF : reportée au Lot 8 (rendu des pages).
+
+## 6 quater. Lot 8 — état livré
+
+- Menu ⋮ : « Télécharger » / « Supprimer du téléphone » (option A :
+  téléchargement explicite uniquement). Copies dans IndexedDB
+  (`web/planerz_wallet_store.js`) ou dans le dossier privé de l'app en natif ;
+  `navigator.storage.persist()` demandé au premier téléchargement.
+- Consultation : copie du téléphone d'abord, sinon version en ligne ; hors
+  connexion sans copie, message « Document indisponible hors connexion » (pas
+  de tentative réseau, Storage réessaierait pendant des minutes).
+- PDF affichés dans l'app (`pdfrx`) ; ses fichiers moteur sont chargés une
+  fois en ligne lors d'un téléchargement de PDF pour rester en cache.
+- Détection de code dans les PDF à l'import (2 premières pages).
+- Cartouche d'information en tête de liste (demande produit), icône nuage
+  sur les documents disponibles hors connexion, `+` et « Supprimer » masqués
+  hors connexion.
+- Pré-chargement : la liste des voyages écoute les modules perso, documents
+  et listes à emporter des voyages en cours et à venir.
+- Effacements : déconnexion (tout), suppression d'un document, sortie ou
+  suppression du voyage depuis cet appareil, documents supprimés ailleurs
+  (à la prochaine synchronisation en ligne de la liste).
+- Limite : un voyage supprimé ou quitté depuis un **autre** appareil laisse
+  ses copies locales jusqu'à la prochaine déconnexion.
+- Vérifié dans Chromium : stockage IndexedDB (écriture 3 Mo, lecture,
+  effacements), moteur PDF servi hors ligne, lecteur PDF et détection de QR
+  dans un PDF après rechargement hors ligne.
 
 ## 7. Cloud Functions (région `europe-west9`)
 

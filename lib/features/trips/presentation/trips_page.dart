@@ -20,6 +20,7 @@ import 'package:planerz/features/trips/presentation/join_trip_by_code_dialog.dar
 import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/l10n/app_localizations.dart';
+import 'package:planerz/features/trips/presentation/offline_personal_data_prefetcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TripsPage extends ConsumerStatefulWidget {
@@ -74,6 +75,7 @@ class _TripsPageState extends ConsumerState<TripsPage>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const _TripsBrandHeader(),
+                const OfflinePersonalDataPrefetcher(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
                   child: Text(

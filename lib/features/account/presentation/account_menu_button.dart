@@ -10,6 +10,7 @@ import 'package:planerz/core/firebase/firestore_offline_cache.dart';
 import 'package:planerz/core/notifications/notification_center_repository.dart';
 import 'package:planerz/core/push/fcm_token_sync.dart';
 import 'package:planerz/features/account/data/account_repository.dart';
+import 'package:planerz/features/wallet/data/wallet_local_store.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -31,6 +32,8 @@ class AccountMenuButton extends ConsumerWidget {
     if (context.mounted) {
       context.go('/sign-in');
     }
+    // Shared devices: nothing personal stays behind after signing out.
+    await clearWalletLocalStore();
     await clearFirestoreOfflineCacheAndReload();
   }
 

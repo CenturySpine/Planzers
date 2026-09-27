@@ -63,6 +63,8 @@ abstract final class PhosphorIconsRegular {
   static const IconData circle = IconData(0xe18a, fontFamily: 'PhosphorRegular');
   static const IconData clipboardText = IconData(0xe198, fontFamily: 'PhosphorRegular');
   static const IconData clock = IconData(0xe19a, fontFamily: 'PhosphorRegular');
+  static const IconData cloudCheck = IconData(0xe1b0, fontFamily: 'PhosphorRegular');
+  static const IconData cloudSlash = IconData(0xe1b6, fontFamily: 'PhosphorRegular');
   static const IconData coffee = IconData(0xe1c2, fontFamily: 'PhosphorRegular');
   static const IconData compass = IconData(0xe1c8, fontFamily: 'PhosphorRegular');
   static const IconData confetti = IconData(0xe81a, fontFamily: 'PhosphorRegular');
@@ -70,11 +72,13 @@ abstract final class PhosphorIconsRegular {
   static const IconData copy = IconData(0xe1ca, fontFamily: 'PhosphorRegular');
   static const IconData crosshair = IconData(0xe1d6, fontFamily: 'PhosphorRegular');
   static const IconData deviceMobile = IconData(0xe1e0, fontFamily: 'PhosphorRegular');
+  static const IconData deviceMobileSlash = IconData(0xee46, fontFamily: 'PhosphorRegular');
   static const IconData diceFive = IconData(0xe1ee, fontFamily: 'PhosphorRegular');
   static const IconData dotsSix = IconData(0xe794, fontFamily: 'PhosphorRegular');
   static const IconData dotsSixVertical = IconData(0xeae2, fontFamily: 'PhosphorRegular');
   static const IconData dotsThreeCircle = IconData(0xe200, fontFamily: 'PhosphorRegular');
   static const IconData dotsThreeVertical = IconData(0xe208, fontFamily: 'PhosphorRegular');
+  static const IconData downloadSimple = IconData(0xe20c, fontFamily: 'PhosphorRegular');
   static const IconData envelopeSimple = IconData(0xe218, fontFamily: 'PhosphorRegular');
   static const IconData export = IconData(0xeaf0, fontFamily: 'PhosphorRegular');
   static const IconData eye = IconData(0xe220, fontFamily: 'PhosphorRegular');

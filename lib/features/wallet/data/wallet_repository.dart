@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,7 @@ import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_document_category.dart';
+import 'package:planerz/features/wallet/data/wallet_local_store.dart';
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -33,6 +35,35 @@ final myWalletDocumentsStreamProvider = StreamProvider.autoDispose
     .family<List<WalletDocument>, String>((ref, tripId) {
   return ref.watch(walletRepositoryProvider).watchMyDocuments(tripId);
 });
+
+/// Ids of the current traveler's documents of a trip that have a copy on
+/// this device. Always read from the device storage (the browser may have
+/// evicted copies), never assumed; refreshed after each download/removal.
+final myWalletOfflineDocumentIdsProvider =
+    FutureProvider.autoDispose.family<Set<String>, String>((ref, tripId) {
+  return ref.watch(walletRepositoryProvider).offlineDocumentIds(tripId);
+});
+
+/// Documents whose download is in progress (list shows a spinner).
+final walletDownloadingIdsProvider =
+    NotifierProvider<WalletDownloadingIds, Set<String>>(WalletDownloadingIds.new);
+
+class WalletDownloadingIds extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const {};
+
+  void add(String id) => state = {...state, id};
+
+  void remove(String id) => state = {...state}..remove(id);
+}
+
+/// Files the in-app PDF viewer loads on first use; fetched once online when a
+/// PDF is downloaded so the offline worker keeps them.
+const List<String> _pdfViewerEngineFiles = [
+  'assets/packages/pdfrx/assets/pdfium_worker.js',
+  'assets/packages/pdfrx/assets/pdfium.wasm',
+  'assets/packages/pdfrx/assets/pdfium_client.js',
+];
 
 class WalletRepository {
   WalletRepository({
@@ -73,8 +104,93 @@ class WalletRepository {
     return _documentsRef(tripId, uid).snapshots().map((snap) {
       final documents = snap.docs.map(WalletDocument.fromDoc).toList()
         ..sort(compareWalletDocuments);
+      // Only an up-to-date list proves a document is gone (e.g. deleted from
+      // another device): drop its offline copy then.
+      if (!snap.metadata.isFromCache && !snap.metadata.hasPendingWrites) {
+        unawaited(
+          _removeOrphanCopies(uid, tripId, documents.map((d) => d.id).toSet()),
+        );
+      }
       return documents;
     });
+  }
+
+  Future<void> _removeOrphanCopies(
+    String uid,
+    String tripId,
+    Set<String> documentIds,
+  ) async {
+    try {
+      final prefix = walletLocalTripPrefix(uid, tripId);
+      for (final key in await walletLocalStore.keysWithPrefix(prefix)) {
+        if (!documentIds.contains(key.substring(prefix.length))) {
+          await walletLocalStore.remove(key);
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<Set<String>> offlineDocumentIds(String tripId) async {
+    final uid = auth.currentUser?.uid.trim() ?? '';
+    if (uid.isEmpty) return const {};
+    final prefix = walletLocalTripPrefix(uid, tripId.trim());
+    final keys = await walletLocalStore.keysWithPrefix(prefix);
+    return keys.map((key) => key.substring(prefix.length)).toSet();
+  }
+
+  /// Keeps a copy of the file on this device, in the app's own storage.
+  Future<void> downloadForOffline({
+    required String tripId,
+    required WalletDocument document,
+  }) async {
+    final uid = _requireUid();
+    final file = document.file;
+    if (file == null) return;
+    final bytes = await storage
+        .ref(file.storagePath)
+        .getData(walletMaxFileSizeBytes + 1);
+    if (bytes == null) throw StateError('Fichier introuvable');
+    await walletLocalStore.save(
+      walletLocalKey(uid, tripId.trim(), document.id),
+      bytes,
+    );
+    await walletLocalStore.requestPersistence();
+    if (file.isPdf) await walletLocalStore.warmUp(_pdfViewerEngineFiles);
+  }
+
+  Future<void> removeFromDevice({
+    required String tripId,
+    required String documentId,
+  }) async {
+    final uid = _requireUid();
+    await walletLocalStore.remove(walletLocalKey(uid, tripId.trim(), documentId));
+  }
+
+  /// The file content: the on-device copy when there is one, otherwise the
+  /// online version (not kept). Throws [WalletUnavailableOfflineException]
+  /// when neither can be reached.
+  Future<Uint8List> readFileBytes({
+    required String tripId,
+    required String documentId,
+    required String storagePath,
+    required bool allowNetwork,
+  }) async {
+    final uid = _requireUid();
+    final local = await walletLocalStore.read(
+      walletLocalKey(uid, tripId.trim(), documentId),
+    );
+    if (local != null && local.isNotEmpty) return local;
+    // Known offline: fail now rather than letting Storage retry for minutes.
+    if (!allowNetwork) throw const WalletUnavailableOfflineException();
+    try {
+      final bytes = await storage
+          .ref(storagePath)
+          .getData(walletMaxFileSizeBytes + 1);
+      if (bytes == null) throw const WalletUnavailableOfflineException();
+      return bytes;
+    } on FirebaseException {
+      throw const WalletUnavailableOfflineException();
+    }
   }
 
   /// Uploads the file, then records the document. If recording fails, the
@@ -189,6 +305,9 @@ class WalletRepository {
   }) async {
     final uid = _requireUid();
     await _documentsRef(tripId, uid).doc(document.id).delete();
+    try {
+      await walletLocalStore.remove(walletLocalKey(uid, tripId.trim(), document.id));
+    } catch (_) {}
     final storagePath = document.file?.storagePath;
     if (storagePath == null || storagePath.isEmpty) return;
     try {
@@ -213,4 +332,8 @@ class WalletUnsupportedFileException implements Exception {
 
 class WalletFileTooLargeException implements Exception {
   const WalletFileTooLargeException();
+}
+
+class WalletUnavailableOfflineException implements Exception {
+  const WalletUnavailableOfflineException();
 }

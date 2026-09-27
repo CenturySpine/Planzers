@@ -5718,6 +5718,54 @@ abstract class AppLocalizations {
   /// **'Ouvrir le fichier'**
   String get walletOpenFile;
 
+  /// No description provided for @walletDownload.
+  ///
+  /// In fr, this message translates to:
+  /// **'Télécharger'**
+  String get walletDownload;
+
+  /// No description provided for @walletRemoveFromDevice.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer du téléphone'**
+  String get walletRemoveFromDevice;
+
+  /// No description provided for @walletDownloadedForOffline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document disponible hors connexion'**
+  String get walletDownloadedForOffline;
+
+  /// No description provided for @walletRemovedFromDevice.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document retiré du téléphone'**
+  String get walletRemovedFromDevice;
+
+  /// No description provided for @walletAvailableOffline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Disponible hors connexion'**
+  String get walletAvailableOffline;
+
+  /// No description provided for @walletUnavailableOffline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Document indisponible hors connexion'**
+  String get walletUnavailableOffline;
+
+  /// No description provided for @walletOfflineHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Télécharge tes documents depuis leur menu ⋮ pour les consulter hors connexion.'**
+  String get walletOfflineHint;
+
+  /// No description provided for @walletCodeDetectedKeepFile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Garder le fichier'**
+  String get walletCodeDetectedKeepFile;
+
   /// No description provided for @walletAddImportFile.
   ///
   /// In fr, this message translates to:
@@ -5739,14 +5787,8 @@ abstract class AppLocalizations {
   /// No description provided for @walletCodeDetectedBody.
   ///
   /// In fr, this message translates to:
-  /// **'Enregistrer uniquement le code, sans l\'image ?'**
+  /// **'Enregistrer uniquement le code, sans le fichier ?'**
   String get walletCodeDetectedBody;
-
-  /// No description provided for @walletCodeDetectedKeepImage.
-  ///
-  /// In fr, this message translates to:
-  /// **'Garder l\'image'**
-  String get walletCodeDetectedKeepImage;
 
   /// No description provided for @walletCodeDetectedSaveCode.
   ///

@@ -18,6 +18,7 @@ import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permissions.dart';
+import 'package:planerz/features/wallet/data/wallet_local_store.dart';
 
 final tripsRepositoryProvider = Provider<TripsRepository>((ref) {
   final target = ref.watch(firebaseTargetProvider);
@@ -402,6 +403,12 @@ class TripsRepository {
     );
     final callable = regionFunctions.httpsCallable('deleteTripCascade');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
+    final uid = auth.currentUser?.uid ?? '';
+    if (uid.isNotEmpty) {
+      try {
+        await walletLocalStore.removePrefix(walletLocalTripPrefix(uid, cleanTripId));
+      } catch (_) {}
+    }
   }
 
   Future<void> updateTrip({
@@ -954,6 +961,13 @@ class TripsRepository {
     );
     final callable = regionFunctions.httpsCallable('leaveTrip');
     await callable.call(<String, dynamic>{'tripId': cleanTripId});
+    // The traveler's offline document copies for this trip are now useless.
+    final uid = auth.currentUser?.uid ?? '';
+    if (uid.isNotEmpty) {
+      try {
+        await walletLocalStore.removePrefix(walletLocalTripPrefix(uid, cleanTripId));
+      } catch (_) {}
+    }
   }
 
   Future<void> upsertTripBannerImage({

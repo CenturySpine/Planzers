@@ -3183,6 +3183,31 @@ class AppLocalizationsFr extends AppLocalizations {
   String get walletOpenFile => 'Ouvrir le fichier';
 
   @override
+  String get walletDownload => 'Télécharger';
+
+  @override
+  String get walletRemoveFromDevice => 'Supprimer du téléphone';
+
+  @override
+  String get walletDownloadedForOffline => 'Document disponible hors connexion';
+
+  @override
+  String get walletRemovedFromDevice => 'Document retiré du téléphone';
+
+  @override
+  String get walletAvailableOffline => 'Disponible hors connexion';
+
+  @override
+  String get walletUnavailableOffline => 'Document indisponible hors connexion';
+
+  @override
+  String get walletOfflineHint =>
+      'Télécharge tes documents depuis leur menu ⋮ pour les consulter hors connexion.';
+
+  @override
+  String get walletCodeDetectedKeepFile => 'Garder le fichier';
+
+  @override
   String get walletAddImportFile => 'Importer un fichier';
 
   @override
@@ -3193,10 +3218,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletCodeDetectedBody =>
-      'Enregistrer uniquement le code, sans l\'image ?';
-
-  @override
-  String get walletCodeDetectedKeepImage => 'Garder l\'image';
+      'Enregistrer uniquement le code, sans le fichier ?';
 
   @override
   String get walletCodeDetectedSaveCode => 'Enregistrer le code';
@@ -6929,6 +6951,31 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get walletOpenFile => 'Ouvrir le fichier';
 
   @override
+  String get walletDownload => 'Télécharger';
+
+  @override
+  String get walletRemoveFromDevice => 'Supprimer du téléphone';
+
+  @override
+  String get walletDownloadedForOffline => 'Document disponible hors connexion';
+
+  @override
+  String get walletRemovedFromDevice => 'Document retiré du téléphone';
+
+  @override
+  String get walletAvailableOffline => 'Disponible hors connexion';
+
+  @override
+  String get walletUnavailableOffline => 'Document indisponible hors connexion';
+
+  @override
+  String get walletOfflineHint =>
+      'Télécharge tes documents depuis leur menu ⋮ pour les consulter hors connexion.';
+
+  @override
+  String get walletCodeDetectedKeepFile => 'Garder le fichier';
+
+  @override
   String get walletAddImportFile => 'Importer un fichier';
 
   @override
@@ -6939,10 +6986,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletCodeDetectedBody =>
-      'Enregistrer uniquement le code, sans l\'image ?';
-
-  @override
-  String get walletCodeDetectedKeepImage => 'Garder l\'image';
+      'Enregistrer uniquement le code, sans le fichier ?';
 
   @override
   String get walletCodeDetectedSaveCode => 'Enregistrer le code';

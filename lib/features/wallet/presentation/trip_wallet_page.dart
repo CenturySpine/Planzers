@@ -6,7 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/core/network/connectivity_provider.dart';
+import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
 import 'package:planerz/features/wallet/data/wallet_barcode_decoder.dart';
+import 'package:planerz/features/wallet/data/wallet_pdf_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
 import 'package:planerz/features/wallet/presentation/wallet_barcode_scan_page.dart';
@@ -78,11 +81,11 @@ class TripWalletPage extends ConsumerWidget {
       messenger.showSnackBar(SnackBar(content: Text(l10n.walletFileTooLarge)));
       return;
     }
-    // A screenshot or photo of a ticket: offer to keep only its code, which
-    // is lighter and redrawn sharp for the inspector's reader.
+    // A screenshot, photo or PDF of a ticket: offer to keep only its code,
+    // which is lighter and redrawn sharp for the inspector's reader.
     final contentType =
         walletContentTypeByExtension[walletFileExtension(picked.name)]!;
-    if (contentType.startsWith('image/') && context.mounted) {
+    if (context.mounted) {
       final barcode = await _detectBarcode(context, bytes, contentType, picked.path);
       if (barcode != null && context.mounted) {
         final saveCode = await _askSaveCodeOnly(context);
@@ -125,6 +128,9 @@ class TripWalletPage extends ConsumerWidget {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
     try {
+      if (contentType == 'application/pdf') {
+        return await decodeWalletBarcodeFromPdf(bytes);
+      }
       return await decodeWalletBarcodeFromImage(
         bytes: bytes,
         contentType: contentType,
@@ -146,7 +152,7 @@ class TripWalletPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.walletCodeDetectedKeepImage),
+            child: Text(l10n.walletCodeDetectedKeepFile),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -162,6 +168,8 @@ class TripWalletPage extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final documentsAsync = ref.watch(myWalletDocumentsStreamProvider(tripId));
     final documentCount = documentsAsync.asData?.value.length ?? 0;
+    // Adding needs the network (upload, server write): hidden offline.
+    final offline = ref.watch(isOfflineProvider);
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -170,7 +178,7 @@ class TripWalletPage extends ConsumerWidget {
         appBar: AppBar(
           title: Text(l10n.tripWalletPageTitle),
           actions: [
-            if (documentsAsync.hasValue)
+            if (documentsAsync.hasValue && !offline)
               PopupMenuButton<_AddAction>(
                 icon: const Icon(PhosphorIconsRegular.plus),
                 tooltip: l10n.tripWalletAddDocument,
@@ -211,14 +219,19 @@ class TripWalletPage extends ConsumerWidget {
             if (documents.isEmpty) {
               return Center(child: Text(l10n.walletEmpty));
             }
-            return ListView.separated(
+            final hasFiles = documents.any((document) => document.file != null);
+            return ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              itemCount: documents.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _WalletDocumentCard(
-                tripId: tripId,
-                document: documents[index],
-              ),
+              children: [
+                if (hasFiles) ...[
+                  TripParticipantsPrimaryCallout(message: l10n.walletOfflineHint),
+                  const SizedBox(height: 16),
+                ],
+                for (final (index, document) in documents.indexed) ...[
+                  if (index > 0) const SizedBox(height: 12),
+                  _WalletDocumentCard(tripId: tripId, document: document),
+                ],
+              ],
             );
           },
         ),
@@ -229,14 +242,24 @@ class TripWalletPage extends ConsumerWidget {
 
 enum _AddAction { importFile, scanCode }
 
-class _WalletDocumentCard extends StatelessWidget {
+class _WalletDocumentCard extends ConsumerWidget {
   const _WalletDocumentCard({required this.tripId, required this.document});
 
   final String tripId;
   final WalletDocument document;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDownloading =
+        ref.watch(walletDownloadingIdsProvider).contains(document.id);
+    final isOnDevice = document.file != null &&
+        (ref
+                .watch(myWalletOfflineDocumentIdsProvider(tripId))
+                .asData
+                ?.value
+                .contains(document.id) ??
+            false);
     return Card(
       child: ListTile(
         leading: CircleAvatar(
@@ -248,9 +271,22 @@ class _WalletDocumentCard extends StatelessWidget {
         ),
         title: Text(document.name),
         subtitle: Text(walletDocumentSubtitle(context, document)),
-        trailing: WalletDocumentActionsButton(
-          tripId: tripId,
-          document: document,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDownloading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (isOnDevice)
+              Tooltip(
+                message: l10n.walletAvailableOffline,
+                child: const Icon(PhosphorIconsRegular.cloudCheck, size: 20),
+              ),
+            WalletDocumentActionsButton(tripId: tripId, document: document),
+          ],
         ),
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(

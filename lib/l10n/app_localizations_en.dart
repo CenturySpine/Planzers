@@ -3156,6 +3156,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletOpenFile => 'Open the file';
 
   @override
+  String get walletDownload => 'Download';
+
+  @override
+  String get walletRemoveFromDevice => 'Remove from phone';
+
+  @override
+  String get walletDownloadedForOffline => 'Document available offline';
+
+  @override
+  String get walletRemovedFromDevice => 'Document removed from phone';
+
+  @override
+  String get walletAvailableOffline => 'Available offline';
+
+  @override
+  String get walletUnavailableOffline => 'Document unavailable offline';
+
+  @override
+  String get walletOfflineHint =>
+      'Download your documents from their ⋮ menu to view them offline.';
+
+  @override
+  String get walletCodeDetectedKeepFile => 'Keep the file';
+
+  @override
   String get walletAddImportFile => 'Import a file';
 
   @override
@@ -3165,10 +3190,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletCodeDetectedTitle => 'Code detected';
 
   @override
-  String get walletCodeDetectedBody => 'Save only the code, without the image?';
-
-  @override
-  String get walletCodeDetectedKeepImage => 'Keep the image';
+  String get walletCodeDetectedBody => 'Save only the code, without the file?';
 
   @override
   String get walletCodeDetectedSaveCode => 'Save the code';
@@ -6867,6 +6889,31 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get walletOpenFile => 'Open the file';
 
   @override
+  String get walletDownload => 'Download';
+
+  @override
+  String get walletRemoveFromDevice => 'Remove from phone';
+
+  @override
+  String get walletDownloadedForOffline => 'Document available offline';
+
+  @override
+  String get walletRemovedFromDevice => 'Document removed from phone';
+
+  @override
+  String get walletAvailableOffline => 'Available offline';
+
+  @override
+  String get walletUnavailableOffline => 'Document unavailable offline';
+
+  @override
+  String get walletOfflineHint =>
+      'Download your documents from their ⋮ menu to view them offline.';
+
+  @override
+  String get walletCodeDetectedKeepFile => 'Keep the file';
+
+  @override
   String get walletAddImportFile => 'Import a file';
 
   @override
@@ -6876,10 +6923,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get walletCodeDetectedTitle => 'Code detected';
 
   @override
-  String get walletCodeDetectedBody => 'Save only the code, without the image?';
-
-  @override
-  String get walletCodeDetectedKeepImage => 'Keep the image';
+  String get walletCodeDetectedBody => 'Save only the code, without the file?';
 
   @override
   String get walletCodeDetectedSaveCode => 'Save the code';
