@@ -49,11 +49,13 @@ async function deleteStoragePrefix(bucket, prefix) {
  * Removes a traveler's wallet documents (records and files) for one trip.
  * Best effort: logs and swallows errors so the calling flow (leaving a trip,
  * removing a member) never fails because of this cleanup.
+ * @returns {Promise<boolean>} false when part of the cleanup failed
  * @param {{ db: object, bucket: object, tripId: string, uid: string, logger?: object }} args
  */
 async function deleteMemberWalletData({ db, bucket, tripId, uid, logger = console }) {
   const prefix = walletStoragePrefix(uid, tripId);
-  if (!prefix) return;
+  if (!prefix) return true;
+  let ok = true;
   try {
     await db.recursiveDelete(
       db
@@ -64,13 +66,16 @@ async function deleteMemberWalletData({ db, bucket, tripId, uid, logger = consol
         .collection('walletDocuments')
     );
   } catch (e) {
+    ok = false;
     logger.error('wallet cleanup: records not deleted', { tripId, uid, error: String(e) });
   }
   try {
     await deleteStoragePrefix(bucket, prefix);
   } catch (e) {
+    ok = false;
     logger.error('wallet cleanup: files not deleted', { tripId, uid, error: String(e) });
   }
+  return ok;
 }
 
 /**

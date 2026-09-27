@@ -7,7 +7,9 @@ import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/network/connectivity_provider.dart';
-import 'package:planerz/features/trips/presentation/trip_participants_ui.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/wallet/data/wallet_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_pdf_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
@@ -170,6 +172,12 @@ class TripWalletPage extends ConsumerWidget {
     final documentCount = documentsAsync.asData?.value.length ?? 0;
     // Adding needs the network (upload, server write): hidden offline.
     final offline = ref.watch(isOfflineProvider);
+    final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
+    // Ended trip: documents are deleted by the daily job 60 days after the
+    // trip's last day; nothing more is added once that day is reached.
+    final deletionDaysLeft =
+        trip == null ? null : daysUntilTripDocumentsDeletion(trip, DateTime.now());
+    final deletionDue = deletionDaysLeft == 0;
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -178,7 +186,7 @@ class TripWalletPage extends ConsumerWidget {
         appBar: AppBar(
           title: Text(l10n.tripWalletPageTitle),
           actions: [
-            if (documentsAsync.hasValue && !offline)
+            if (documentsAsync.hasValue && !offline && !deletionDue)
               PopupMenuButton<_AddAction>(
                 icon: const Icon(PhosphorIconsRegular.plus),
                 tooltip: l10n.tripWalletAddDocument,
@@ -223,8 +231,19 @@ class TripWalletPage extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               children: [
+                if (deletionDaysLeft != null) ...[
+                  PzCallout(
+                    tone: PzCalloutTone.warning,
+                    icon: PhosphorIconsRegular.trash,
+                    message: l10n.walletAutoDeletionNotice(deletionDaysLeft),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (hasFiles) ...[
-                  TripParticipantsPrimaryCallout(message: l10n.walletOfflineHint),
+                  PzCallout(
+                    tone: PzCalloutTone.info,
+                    message: l10n.walletOfflineHint,
+                  ),
                   const SizedBox(height: 16),
                 ],
                 for (final (index, document) in documents.indexed) ...[

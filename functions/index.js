@@ -14,6 +14,7 @@ const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
 const { deleteMemberWalletData, deleteTripWalletFiles } = require('./wallet_cleanup');
+const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const {
   buildNotificationQueueDocId,
@@ -3633,6 +3634,7 @@ exports.deleteTripCascade = onCall(
 
     // Deletes the trip document and all nested subcollections recursively.
     await db.recursiveDelete(tripRef);
+    await db.collection('tripLifecycle').doc(tripId).delete();
 
     return { ok: true, tripId, deleted: true };
   }
@@ -4953,6 +4955,34 @@ const CLEANUP_ORPHAN_ADMIN_DISMISSES_SOURCE =
  * job to the function region, so deploy fails if we inherit europe-west9 here.
  * Cron still runs at 03:00 Europe/Paris via timeZone.
  */
+/**
+ * Daily trip lifecycle (see trip_lifecycle.js): archives ended trips for all
+ * their members 30 days after the last day, and deletes every traveler's
+ * personal documents 60 days after it.
+ *
+ * Region override, as for cleanupOrphanAdminAnnouncementDismisses below:
+ * Cloud Scheduler has no europe-west9.
+ */
+exports.runDailyTripLifecycle = onSchedule(
+  {
+    region: 'europe-west1',
+    schedule: '30 3 * * *',
+    timeZone: 'Europe/Paris',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    const summary = await runTripLifecycle({
+      db: admin.firestore(),
+      bucket: admin.storage().bucket(),
+      FieldValue,
+      Timestamp,
+      deleteMemberWalletData,
+    });
+    console.log('runDailyTripLifecycle done', summary);
+  }
+);
+
 exports.cleanupOrphanAdminAnnouncementDismisses = onSchedule(
   {
     region: 'europe-west1',

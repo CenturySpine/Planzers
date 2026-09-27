@@ -1204,6 +1204,22 @@
   "walletDocumentDeleted": "Document deleted",
   "walletOpenFailed": "Could not open the document",
   "walletOpenFile": "Open the file",
+  "tripAutoArchiveNotice": "{count, plural, =1{This trip will be archived automatically in 1 day.} other{This trip will be archived automatically in {count} days.}}",
+  "@tripAutoArchiveNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletAutoDeletionNotice": "{count, plural, =0{The trip is over: your documents are about to be deleted automatically.} =1{The trip is over: your documents will be deleted automatically in 1 day.} other{The trip is over: your documents will be deleted automatically in {count} days.}}",
+  "@walletAutoDeletionNotice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "walletDownload": "Download",
   "walletRemoveFromDevice": "Remove from phone",
   "walletDownloadedForOffline": "Document available offline",

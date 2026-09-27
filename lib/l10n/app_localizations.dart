@@ -5718,6 +5718,18 @@ abstract class AppLocalizations {
   /// **'Ouvrir le fichier'**
   String get walletOpenFile;
 
+  /// No description provided for @tripAutoArchiveNotice.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Ce voyage sera archivé automatiquement dans 1 jour.} other{Ce voyage sera archivé automatiquement dans {count} jours.}}'**
+  String tripAutoArchiveNotice(int count);
+
+  /// No description provided for @walletAutoDeletionNotice.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Le voyage est terminé : tes documents vont être supprimés automatiquement.} =1{Le voyage est terminé : tes documents seront supprimés automatiquement dans 1 jour.} other{Le voyage est terminé : tes documents seront supprimés automatiquement dans {count} jours.}}'**
+  String walletAutoDeletionNotice(int count);
+
   /// No description provided for @walletDownload.
   ///
   /// In fr, this message translates to:

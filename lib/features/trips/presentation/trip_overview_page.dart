@@ -40,6 +40,8 @@ import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/trips/data/trip_lifecycle.dart';
+import 'package:planerz/core/presentation/pz_components.dart';
 
 class TripOverviewPage extends ConsumerStatefulWidget {
   const TripOverviewPage({super.key});
@@ -761,6 +763,12 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canDeleteTrip: canDeleteTrip,
             isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
+          // Past trips not archived yet (by this member): tell when the
+          // daily job will archive them.
+          final autoArchiveDaysLeft =
+              isTripMember && !ref.watch(isTripArchivedForMeProvider(_trip.id))
+                  ? daysUntilTripAutoArchive(_trip, DateTime.now())
+                  : null;
 
           return StreamBuilder<Map<String, Map<String, dynamic>>>(
             stream: usersStream,
@@ -910,6 +918,17 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                         addPhotoLabel: l10n.tripOverviewBannerAddPhoto,
                       ),
                     ),
+                    if (autoArchiveDaysLeft != null && autoArchiveDaysLeft > 0)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: PzCallout(
+                          tone: PzCalloutTone.info,
+                          icon: PhosphorIconsRegular.archive,
+                          message: l10n.tripAutoArchiveNotice(
+                            autoArchiveDaysLeft,
+                          ),
+                        ),
+                      ),
                     if (linkUrlForUi.isNotEmpty) ...[
                       TripOverviewSectionHeader(
                         label: l10n.tripOverviewSectionAccommodation,

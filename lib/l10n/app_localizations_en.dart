@@ -3156,6 +3156,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletOpenFile => 'Open the file';
 
   @override
+  String tripAutoArchiveNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'This trip will be archived automatically in $count days.',
+      one: 'This trip will be archived automatically in 1 day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletAutoDeletionNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The trip is over: your documents will be deleted automatically in $count days.',
+      one:
+          'The trip is over: your documents will be deleted automatically in 1 day.',
+      zero:
+          'The trip is over: your documents are about to be deleted automatically.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get walletDownload => 'Download';
 
   @override
@@ -6887,6 +6913,32 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletOpenFile => 'Open the file';
+
+  @override
+  String tripAutoArchiveNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'This trip will be archived automatically in $count days.',
+      one: 'This trip will be archived automatically in 1 day.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletAutoDeletionNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The trip is over: your documents will be deleted automatically in $count days.',
+      one:
+          'The trip is over: your documents will be deleted automatically in 1 day.',
+      zero:
+          'The trip is over: your documents are about to be deleted automatically.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get walletDownload => 'Download';

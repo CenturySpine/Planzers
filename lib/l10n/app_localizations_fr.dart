@@ -3183,6 +3183,32 @@ class AppLocalizationsFr extends AppLocalizations {
   String get walletOpenFile => 'Ouvrir le fichier';
 
   @override
+  String tripAutoArchiveNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ce voyage sera archivé automatiquement dans $count jours.',
+      one: 'Ce voyage sera archivé automatiquement dans 1 jour.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletAutoDeletionNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Le voyage est terminé : tes documents seront supprimés automatiquement dans $count jours.',
+      one:
+          'Le voyage est terminé : tes documents seront supprimés automatiquement dans 1 jour.',
+      zero:
+          'Le voyage est terminé : tes documents vont être supprimés automatiquement.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get walletDownload => 'Télécharger';
 
   @override
@@ -6949,6 +6975,32 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletOpenFile => 'Ouvrir le fichier';
+
+  @override
+  String tripAutoArchiveNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ce voyage sera archivé automatiquement dans $count jours.',
+      one: 'Ce voyage sera archivé automatiquement dans 1 jour.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletAutoDeletionNotice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Le voyage est terminé : tes documents seront supprimés automatiquement dans $count jours.',
+      one:
+          'Le voyage est terminé : tes documents seront supprimés automatiquement dans 1 jour.',
+      zero:
+          'Le voyage est terminé : tes documents vont être supprimés automatiquement.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get walletDownload => 'Télécharger';
