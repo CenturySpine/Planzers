@@ -533,12 +533,15 @@ const importTripActivitiesFromDocuments = onCall(
 
     const activitiesCol = db.collection('trips').doc(tripId).collection('activities');
     const walletCol = walletDocumentsRef(db, tripId, uid);
+    // Shared by the activities of this import so members get one grouped
+    // notification instead of one per activity.
+    const importId = activitiesCol.doc().id;
     const newIdsByDocument = new Map();
     const activityIds = [];
     const batch = db.batch();
     for (const item of imported) {
       const ref = activitiesCol.doc();
-      batch.set(ref, item.doc);
+      batch.set(ref, { ...item.doc, importId });
       activityIds.push(ref.id);
       for (const documentId of item.sourceDocumentIds) {
         const ids = newIdsByDocument.get(documentId) || [];

@@ -1595,7 +1595,25 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
     let actorLabel = await resolveTripMemberLabel(trip, actorId);
     if (!actorLabel) actorLabel = "Quelqu'un";
 
-    const docId = buildNotificationQueueDocId('trip_activity', { tripId, activityId });
+    // Activities imported together (document import) share one notification:
+    // every trigger of the batch targets the same queue doc, created once.
+    const importId = normalizeString(activity.importId);
+    let docId = buildNotificationQueueDocId('trip_activity', { tripId, activityId });
+    let body = `${actorLabel} a proposé : ${label}`;
+    if (importId) {
+      docId = buildNotificationQueueDocId('trip_activity_import', { tripId, importId });
+      const countSnap = await db
+        .collection('trips')
+        .doc(tripId)
+        .collection('activities')
+        .where('importId', '==', importId)
+        .count()
+        .get();
+      const count = countSnap.data().count;
+      if (count > 1) {
+        body = `${actorLabel} a ajouté ${count} activités au planning`;
+      }
+    }
     await enqueueTripNotification(db, {
       docId,
       payload: {
@@ -1605,7 +1623,7 @@ exports.notifyTripActivityRecipients = onDocumentCreated(
         actorId,
         targetPath: `/trips/${tripId}/activities`,
         title: `Activités · ${tripTitle}`,
-        body: `${actorLabel} a proposé : ${label}`,
+        body,
         candidateRecipients,
         skipPresenceCheck: false,
         androidChannelId: ANDROID_CHANNEL_IDS.activities,
