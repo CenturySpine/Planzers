@@ -3983,6 +3983,9 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get walletActivityImportInstructions => 'Consignes (facultatif)';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7892,4 +7895,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
     );
     return '$_temp0';
   }
+
+  @override
+  String get walletActivityImportInstructions => 'Consignes (facultatif)';
 }

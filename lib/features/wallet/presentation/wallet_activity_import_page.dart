@@ -30,9 +30,16 @@ class WalletActivityImportPage extends ConsumerStatefulWidget {
 class _WalletActivityImportPageState
     extends ConsumerState<WalletActivityImportPage> {
   final Set<String> _selectedDocumentIds = {};
+  final TextEditingController _instructionsController = TextEditingController();
   List<WalletActivityProposal>? _proposals;
   final Set<int> _keptIndexes = {};
   bool _busy = false;
+
+  @override
+  void dispose() {
+    _instructionsController.dispose();
+    super.dispose();
+  }
 
   Future<void> _analyze() async {
     final l10n = AppLocalizations.of(context)!;
@@ -46,6 +53,7 @@ class _WalletActivityImportPageState
             tripId: widget.tripId,
             documentIds: _selectedDocumentIds.toList(),
             languageCode: languageCode,
+            instructions: _instructionsController.text,
           );
       if (!mounted) return;
       setState(() {
@@ -208,6 +216,21 @@ class _WalletActivityImportPageState
                   }
                 }),
               ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: TextField(
+                controller: _instructionsController,
+                minLines: 3,
+                maxLines: 8,
+                maxLength: walletActivityImportMaxInstructionsLength,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: l10n.walletActivityImportInstructions,
+                  alignLabelWithHint: true,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ),
           ],
         );
       },

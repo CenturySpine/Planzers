@@ -1618,5 +1618,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "walletActivityImportInstructions": "Consignes (facultatif)"
 }

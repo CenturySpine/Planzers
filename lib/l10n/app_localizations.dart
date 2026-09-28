@@ -7028,6 +7028,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
   String walletActivityImportDone(int count);
+
+  /// No description provided for @walletActivityImportInstructions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Consignes (facultatif)'**
+  String get walletActivityImportInstructions;
 }
 
 class _AppLocalizationsDelegate

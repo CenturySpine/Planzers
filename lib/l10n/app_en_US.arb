@@ -1580,5 +1580,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "walletActivityImportInstructions": "Instructions (optional)"
 }
