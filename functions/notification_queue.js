@@ -35,6 +35,13 @@ function buildNotificationQueueDocId(type, parts) {
       }
       return `trip_activity__${tripId}__${activityId}`;
     }
+    case 'trip_activity_import': {
+      const importId = normalizeString(parts?.importId);
+      if (!tripId || !importId) {
+        throw new Error('trip_activity_import requires tripId and importId');
+      }
+      return `trip_activity_import__${tripId}__${importId}`;
+    }
     case 'trip_announcement': {
       const announcementId = normalizeString(parts?.announcementId);
       if (!tripId || !announcementId) {

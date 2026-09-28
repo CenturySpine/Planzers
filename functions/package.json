@@ -6,7 +6,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "node --test orphan_admin_dismiss_cleanup.test.js expense_settlement.test.js expense_settlement_recalc.test.js activity_driving_route.test.js trip_participant_permission_keys.test.js notification_queue.test.js public_api.test.js external_providers.test.js wallet_cleanup.test.js trip_lifecycle.test.js"
+    "test": "node --test orphan_admin_dismiss_cleanup.test.js expense_settlement.test.js expense_settlement_recalc.test.js activity_driving_route.test.js trip_participant_permission_keys.test.js notification_queue.test.js public_api.test.js external_providers.test.js wallet_cleanup.test.js trip_lifecycle.test.js ai_document_activity_import.test.js"
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^5.6.0",

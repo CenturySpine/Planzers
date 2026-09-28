@@ -1596,5 +1596,27 @@
   "walletActivityLinked": "Document lié à l’activité",
   "walletActivityUnlinked": "Lien retiré",
   "walletLinkDocument": "Lier un document",
-  "walletLinkDocumentPickerTitle": "Choisir un document"
+  "walletLinkDocumentPickerTitle": "Choisir un document",
+  "walletGenerateActivities": "Générer les activités",
+  "walletActivityImportDocumentsTitle": "Documents à analyser",
+  "walletActivityImportAnalyze": "Analyser",
+  "walletActivityImportAnalyzing": "Analyse des documents…",
+  "walletActivityImportNoResult": "Aucune activité trouvée dans ces documents",
+  "walletActivityImportNoDate": "Sans date",
+  "walletActivityImportAdd": "{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}",
+  "@walletActivityImportAdd": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletActivityImportDone": "{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}",
+  "@walletActivityImportDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

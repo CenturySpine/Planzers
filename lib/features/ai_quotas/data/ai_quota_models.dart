@@ -4,7 +4,8 @@
 /// subcollections and must match the keys in functions/utils/aiQuotaGate.js.
 enum AiFeature {
   recipeIngredients('recipeIngredients'),
-  shoppingConsolidation('shoppingConsolidation');
+  shoppingConsolidation('shoppingConsolidation'),
+  documentActivityImport('documentActivityImport');
 
   const AiFeature(this.firestoreKey);
   final String firestoreKey;

@@ -26,4 +26,9 @@ const aiQuotaConfigs = <AiFeature, AiQuotaConfig>{
     perTripPerDay: 3,
     perTripLifetime: 10,
   ),
+  AiFeature.documentActivityImport: AiQuotaConfig(
+    perUserPerDay: 5,
+    perTripPerDay: 10,
+    perTripLifetime: 30,
+  ),
 };

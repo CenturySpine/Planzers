@@ -26,6 +26,17 @@ test('buildNotificationQueueDocId for trip_activity', () => {
   );
 });
 
+test('buildNotificationQueueDocId for trip_activity_import', () => {
+  assert.equal(
+    buildNotificationQueueDocId('trip_activity_import', {
+      tripId: 'trip-1',
+      importId: 'imp-1',
+    }),
+    'trip_activity_import__trip-1__imp-1'
+  );
+  assert.throws(() => buildNotificationQueueDocId('trip_activity_import', { tripId: 'trip-1' }));
+});
+
 test('buildNotificationQueueDocId for trip_announcement', () => {
   assert.equal(
     buildNotificationQueueDocId('trip_announcement', {
