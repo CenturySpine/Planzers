@@ -6,6 +6,10 @@ import 'package:planerz/features/activities/data/trip_activity.dart';
 /// Documents sent in one analysis (must match the Cloud Function).
 const int walletActivityImportMaxDocuments = 5;
 
+/// Free-text instructions sent with the documents (must match the Cloud
+/// Function).
+const int walletActivityImportMaxInstructionsLength = 1000;
+
 final walletActivityImportRepositoryProvider =
     Provider<WalletActivityImportRepository>(
   (ref) => WalletActivityImportRepository(
@@ -82,6 +86,7 @@ class WalletActivityImportRepository {
     required String tripId,
     required List<String> documentIds,
     required String languageCode,
+    String instructions = '',
   }) async {
     final result = await functions
         .httpsCallable(
@@ -92,6 +97,7 @@ class WalletActivityImportRepository {
       'tripId': tripId.trim(),
       'documentIds': documentIds,
       'lang': languageCode == 'en' ? 'en' : 'fr',
+      if (instructions.trim().isNotEmpty) 'instructions': instructions.trim(),
     });
     final raw = (result.data['activities'] as List?) ?? const [];
     return raw

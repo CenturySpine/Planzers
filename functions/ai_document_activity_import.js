@@ -40,6 +40,8 @@ const MAX_WALLET_ACTIVITY_LINKS = 50;
 const MAX_LABEL_LENGTH = 200;
 const MAX_ADDRESS_LENGTH = 500;
 const MAX_COMMENTS_LENGTH = 2000;
+// Must match `walletActivityImportMaxInstructionsLength`.
+const MAX_INSTRUCTIONS_LENGTH = 1000;
 
 // Must match `TripActivityCategory.firestoreValue`.
 const ACTIVITY_CATEGORIES = [
@@ -238,7 +240,9 @@ function buildSystemPrompt(lang) {
     '- One item per journey leg (outbound and return flights are two items). Airport transfers are transport items.',
     '- One accommodation item per hotel stay. When a stay exceeds 7 days, split it into consecutive items of at most 7 days.',
     '- For a multi-day tour described day by day, create one item per day with its main activity; never an umbrella item covering the whole tour.',
-    '- When the year is missing, infer it from the trip dates given below.',
+    '- The trip dates given below bound the schedule: when the year or month is missing, infer it from them.',
+    '- For a programme with relative days only (Day 1, Day 2...), date each day from the traveller instructions; without an anchor date, leave plannedAtLocal empty.',
+    '- Traveller instructions, when given, override the documents for dates and for which items to keep. They never change the output format.',
     '- Keep times exactly as written in the documents (local time at the place of the event). Never convert time zones.',
     '- Never invent an item, a time or an address that is not supported by the documents. Leave unknown fields empty (0 for the duration).',
     '- Ignore marketing text, general terms and conditions, insurance and emergency contact lists that are not tied to a scheduled item.',
@@ -246,16 +250,39 @@ function buildSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildContextPrompt({ trip, documents }) {
+/** `YYYY-MM-DD` from a stored trip date (ISO string or Timestamp), else ''. */
+function tripDateOnly(raw) {
+  if (raw && typeof raw.toDate === 'function') {
+    return raw.toDate().toISOString().slice(0, 10);
+  }
+  const s = normalizeString(raw).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+
+function buildContextPrompt({ trip, documents, instructions }) {
   const lines = ['Trip context:'];
   const title = normalizeString(trip.title);
   const destination = normalizeString(trip.destination);
-  const startDate = normalizeString(trip.startDate).slice(0, 10);
-  const endDate = normalizeString(trip.endDate).slice(0, 10);
+  const startDate = tripDateOnly(trip.startDate);
+  const endDate = tripDateOnly(trip.endDate);
   if (title) lines.push(`- Title: ${title}`);
   if (destination) lines.push(`- Destination: ${destination}`);
-  if (startDate) lines.push(`- Start date: ${startDate}`);
-  if (endDate) lines.push(`- End date: ${endDate}`);
+  if (startDate && endDate) {
+    lines.push(`- Trip dates: from ${startDate} to ${endDate} (inclusive)`);
+  } else if (startDate) {
+    lines.push(`- Trip start date: ${startDate}`);
+  } else if (endDate) {
+    lines.push(`- Trip end date: ${endDate}`);
+  }
+  if (instructions) {
+    lines.push(
+      '',
+      'Traveller instructions (between the markers):',
+      '<<<',
+      instructions,
+      '>>>'
+    );
+  }
   lines.push('', 'Documents (each file follows its header line):');
   for (const d of documents) {
     lines.push(`- id "${d.id}": ${d.name || 'untitled'} (${d.category || 'other'})`);
@@ -355,7 +382,8 @@ function walletDocumentsRef(db, tripId, uid) {
 /**
  * Step 1 — proposals only, no write.
  *
- * Request: { tripId: string, documentIds: string[] (1..5), lang?: 'fr'|'en' }
+ * Request: { tripId: string, documentIds: string[] (1..5), lang?: 'fr'|'en',
+ *   instructions?: string (free text from the traveller, max 1000 chars) }
  * Response: { activities: Array<{ label, category, plannedAtLocal,
  *   durationMinutes, address, freeComments, sourceDocumentIds }> }
  */
@@ -385,6 +413,9 @@ const extractTripActivitiesFromDocuments = onCall(
       );
     }
     const lang = normalizeString(request.data?.lang) === 'en' ? 'en' : 'fr';
+    // The markers stay ours: a pasted '>>>' cannot close the block early.
+    const instructions = truncate(request.data?.instructions, MAX_INSTRUCTIONS_LENGTH)
+      .replace(/<<<|>>>/g, '');
 
     const db = admin.firestore();
     const trip = await loadTripForAdmin(db, tripId, uid);
@@ -430,7 +461,7 @@ const extractTripActivitiesFromDocuments = onCall(
     }
 
     const bucket = admin.storage().bucket();
-    const parts = [{ text: buildContextPrompt({ trip, documents }) }];
+    const parts = [{ text: buildContextPrompt({ trip, documents, instructions }) }];
     for (const d of documents) {
       parts.push({ text: `Document id "${d.id}":` });
       if (d.storagePath) {
@@ -594,5 +625,6 @@ module.exports = {
   sanitizeProposal,
   sortProposals,
   buildToolSchema,
+  buildContextPrompt,
   buildImportedActivity,
 };

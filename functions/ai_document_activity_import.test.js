@@ -12,6 +12,7 @@ const {
   sanitizeProposal,
   sortProposals,
   buildToolSchema,
+  buildContextPrompt,
   buildImportedActivity,
 } = require('./ai_document_activity_import');
 
@@ -115,6 +116,31 @@ describe('buildToolSchema', () => {
     const item = buildToolSchema().properties.activities.items;
     assert.deepEqual(item.properties.category.enum, ACTIVITY_CATEGORIES);
     assert.ok(item.required.includes('plannedAtLocal'));
+  });
+});
+
+describe('buildContextPrompt', () => {
+  const documents = [{ id: 'doc1', name: 'Programme', category: 'activity' }];
+
+  it('states the trip dates and the traveller instructions', () => {
+    const prompt = buildContextPrompt({
+      trip: { title: 'Sicile', startDate: '2026-10-10T00:00:00.000', endDate: '2026-10-24T00:00:00.000' },
+      documents,
+      instructions: 'Le jour 1 du programme est le 17/10/2026',
+    });
+    assert.match(prompt, /Trip dates: from 2026-10-10 to 2026-10-24/);
+    assert.match(prompt, /<<<\nLe jour 1 du programme est le 17\/10\/2026\n>>>/);
+    assert.match(prompt, /id "doc1"/);
+  });
+
+  it('reads Timestamp dates and omits empty instructions', () => {
+    const prompt = buildContextPrompt({
+      trip: { startDate: { toDate: () => new Date('2026-10-10T00:00:00Z') } },
+      documents,
+      instructions: '',
+    });
+    assert.match(prompt, /Trip start date: 2026-10-10/);
+    assert.doesNotMatch(prompt, /Traveller instructions/);
   });
 });
 
