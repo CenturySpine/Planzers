@@ -280,6 +280,8 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
           for (final activity in items) {
             final plannedAt = activity.plannedAt;
             if (plannedAt == null) continue;
+            // Restaurant suggestions are not shown in the agenda.
+            if (activity.category == TripActivityCategory.restaurant) continue;
             dayGroups
                 .putIfAbsent(tripActivityDateOnly(plannedAt), () => {})
                 .add(activity.category.filterGroup);

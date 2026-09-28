@@ -310,6 +310,7 @@ Set<DateTime> tripActivitiesPlannedDaysSetMixed({
   return <DateTime>{
     ...activities
         .where((activity) => activity.plannedAt != null)
+        .where((activity) => activity.category != TripActivityCategory.restaurant)
         .map((activity) => tripActivityDateOnly(activity.plannedAt!)),
     ...meals.map((meal) => meal.mealDateAsDateTime),
   };
