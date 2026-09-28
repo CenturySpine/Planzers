@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   ACTIVITY_CATEGORIES,
   MAX_DURATION_MINUTES,
+  MAX_PROPOSAL_DURATION_MINUTES,
   isTripAdminOrOwner,
   sanitizeIdList,
   sanitizeLocalDateTime,
@@ -12,6 +13,7 @@ const {
   sanitizeProposal,
   sortProposals,
   buildToolSchema,
+  buildSystemPrompt,
   buildContextPrompt,
   buildImportedActivity,
 } = require('./ai_document_activity_import');
@@ -98,6 +100,36 @@ describe('sanitizeProposal', () => {
     assert.equal(sanitizeProposal({ label: '   ' }, []), null);
     assert.equal(sanitizeProposal(null, []), null);
   });
+
+  it('drops meals', () => {
+    assert.equal(sanitizeProposal({ label: 'Déjeuner', category: 'restaurant' }, []), null);
+  });
+
+  it('drops items longer than a day (whole tours, multi-night stays)', () => {
+    assert.equal(
+      sanitizeProposal({ label: 'Circuit', durationMinutes: 168 * 60 }, []),
+      null
+    );
+    assert.equal(
+      sanitizeProposal({ label: 'Nuit', durationMinutes: MAX_PROPOSAL_DURATION_MINUTES }, [])
+        .durationMinutes,
+      MAX_PROPOSAL_DURATION_MINUTES
+    );
+  });
+});
+
+describe('buildSystemPrompt', () => {
+  it('asks for one item per night and per activity, never a whole tour', () => {
+    const prompt = buildSystemPrompt('fr');
+    assert.match(prompt, /ONE item per night/);
+    assert.match(prompt, /720 minutes/);
+    assert.match(prompt, /each distinct activity of a day is its own item/);
+    assert.match(prompt, /Never an item for a whole tour/);
+    assert.match(prompt, /every move the text describes is its own transport item/);
+    assert.match(prompt, /follow exactly the order of the text/);
+    assert.match(prompt, /Never an item for a meal/);
+    assert.match(prompt, /French/);
+  });
 });
 
 describe('sortProposals', () => {
@@ -112,9 +144,12 @@ describe('sortProposals', () => {
 });
 
 describe('buildToolSchema', () => {
-  it('exposes every activity category', () => {
+  it('exposes every activity category except restaurant', () => {
     const item = buildToolSchema().properties.activities.items;
-    assert.deepEqual(item.properties.category.enum, ACTIVITY_CATEGORIES);
+    assert.deepEqual(
+      item.properties.category.enum,
+      ACTIVITY_CATEGORIES.filter((c) => c !== 'restaurant')
+    );
     assert.ok(item.required.includes('plannedAtLocal'));
   });
 });
@@ -141,6 +176,16 @@ describe('buildContextPrompt', () => {
     });
     assert.match(prompt, /Trip start date: 2026-10-10/);
     assert.doesNotMatch(prompt, /Traveller instructions/);
+  });
+
+  it('reads a Timestamp saved at local midnight east of UTC as that day', () => {
+    const prompt = buildContextPrompt({
+      // Midnight on 10 October in Paris (UTC+2).
+      trip: { startDate: { toDate: () => new Date('2026-10-09T22:00:00Z') } },
+      documents,
+      instructions: '',
+    });
+    assert.match(prompt, /Trip start date: 2026-10-10/);
   });
 });
 

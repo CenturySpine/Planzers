@@ -35,6 +35,9 @@ const MAX_TOTAL_FILE_BYTES = 14 * 1024 * 1024;
 const MAX_ACTIVITIES_PER_IMPORT = 50;
 // Must match `tripActivityMaxDurationMinutes` and `firestore.rules`.
 const MAX_DURATION_MINUTES = 7 * 24 * 60;
+// Extracted items are journeys, nights or activities of a day: anything longer
+// is a whole-tour or multi-night item the prompt forbids.
+const MAX_PROPOSAL_DURATION_MINUTES = 24 * 60;
 // Must match `walletMaxActivityLinks` and `firestore.rules`.
 const MAX_WALLET_ACTIVITY_LINKS = 50;
 const MAX_LABEL_LENGTH = 200;
@@ -67,7 +70,11 @@ const ACTIVITY_CATEGORIES = [
   'meeting',
 ];
 
-const SAFE_SEGMENT = /^[A-Za-z0-9_-]+$/;
+// Restaurant activities are meal suggestions, hidden from the planning:
+// meals of a programme go in the comments instead.
+const PROPOSAL_CATEGORIES = ACTIVITY_CATEGORIES.filter((c) => c !== 'restaurant');
+
+const SAFE_SEGMENT =/^[A-Za-z0-9_-]+$/;
 const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
 function normalizeString(v) {
@@ -131,7 +138,8 @@ function sanitizeCategory(raw) {
 }
 
 /**
- * Cleans one model proposal. Returns null when unusable (no label).
+ * Cleans one model proposal. Returns null when unusable (no label), longer
+ * than a day or a meal.
  * @param {object} raw
  * @param {string[]} allowedDocumentIds
  */
@@ -139,6 +147,8 @@ function sanitizeProposal(raw, allowedDocumentIds) {
   if (!raw || typeof raw !== 'object') return null;
   const label = truncate(raw.label, MAX_LABEL_LENGTH);
   if (!label) return null;
+  if (Number(raw.durationMinutes) > MAX_PROPOSAL_DURATION_MINUTES) return null;
+  if (normalizeString(raw.category) === 'restaurant') return null;
   const sourceDocumentIds = sanitizeIdList(raw.sourceDocumentIds, MAX_DOCUMENTS_PER_EXTRACTION)
     .filter((id) => allowedDocumentIds.includes(id));
   return {
@@ -174,7 +184,8 @@ function buildToolSchema() {
     properties: {
       activities: {
         type: 'array',
-        description: 'Scheduled items found in the documents, deduplicated across documents.',
+        description:
+          'Scheduled items found in the documents, deduplicated across documents: one per journey leg, one per night, one per activity of each programme day.',
         items: {
           type: 'object',
           required: [
@@ -190,23 +201,23 @@ function buildToolSchema() {
             label: {
               type: 'string',
               description:
-                'Short title in the output language, e.g. "Vol Paris → Rome (AF1234)" or "Nuit à l\'hôtel du Port".',
+                'Short title in the output language, e.g. "Vol Paris → Rome (AF1234)", "Nuit à l\'hôtel du Port" or "Visite libre de Noto". Never the name of a whole tour.',
             },
             category: {
               type: 'string',
-              enum: ACTIVITY_CATEGORIES,
+              enum: PROPOSAL_CATEGORIES,
               description:
-                'transport for any journey (flight, train, bus, boat, transfer, car rental pick-up); accommodation for a stay; meeting for a meeting point or briefing; otherwise the closest leisure category.',
+                'transport for any journey (flight, train, bus, boat, transfer, car rental pick-up); accommodation for a night; meeting for a meeting point or briefing; otherwise the closest leisure category. Meals are never items.',
             },
             plannedAtLocal: {
               type: 'string',
               description:
-                'Start as local wall-clock time at the place of the event, format YYYY-MM-DDTHH:mm, no time zone. Accommodation: check-in (15:00 when unknown). Empty string when the day itself is unknown.',
+                'Start as local wall-clock time at the place of the event, format YYYY-MM-DDTHH:mm, no time zone. Night: 20:00 on that evening unless a check-in time is stated. Programme activity without a time: right after the end of the previous item of that day, in the order of the text. Empty string when the day itself is unknown.',
             },
             durationMinutes: {
               type: 'integer',
               description:
-                'Duration in minutes (flight: departure to arrival; accommodation: check-in to check-out, 11:00 when unknown). 0 when unknown. At most 10080.',
+                'Duration in minutes (flight: departure to arrival; night: 720, i.e. until 08:00 the next morning, unless check-in/check-out times are stated). 0 when unknown. At most 1440.',
             },
             address: {
               type: 'string',
@@ -233,27 +244,52 @@ function buildToolSchema() {
 function buildSystemPrompt(lang) {
   const outputLanguage = lang === 'en' ? 'English' : 'French (with proper accents)';
   return [
-    'You extract the schedule of a trip from travel documents (tickets, booking confirmations, vouchers, tour programmes, letters from a travel agency).',
-    'Return every dated or datable item a traveller would put in a trip calendar: journeys, stays, meeting points, guided activities.',
-    'Rules:',
-    '- Deduplicate: the same flight, stay or meeting mentioned in several documents is ONE item; merge the details and list every source document id.',
-    '- One item per journey leg (outbound and return flights are two items). Airport transfers are transport items.',
-    '- One accommodation item per hotel stay. When a stay exceeds 7 days, split it into consecutive items of at most 7 days.',
-    '- For a multi-day tour described day by day, create one item per day with its main activity; never an umbrella item covering the whole tour.',
+    'You extract the schedule of a trip from travel documents (tickets, booking confirmations, vouchers, invoices, tour programmes, letters from a travel agency).',
+    'Return every dated or datable item a traveller would put in a trip calendar: journeys, nights, meeting points, and every activity of each day.',
+    '',
+    'Allowed item types:',
+    '1. Journey: one item per leg (outbound and return flights are two items; an airport transfer or a minibus transfer between two places is its own item). Category transport. Duration from departure to arrival.',
+    '2. Night: ONE item per night, whether the accommodation is the same as the previous night or not ("3 nuits à l\'hôtel X" gives three items, one per night). Category accommodation. Start: 20:00 on the evening of that night. Duration: until 08:00 the next morning, i.e. 720 minutes. Use the check-in / check-out times instead only when the documents state them for that accommodation. Never 24 hours.',
+    '3. Meeting: a meeting point, welcome meeting or briefing with a guide or representative. Category meeting.',
+    '4. Programme activity: in a tour or circuit programme described day by day (JOUR 1, JOUR 2..., Day 1, Day 2... or dated days), each distinct activity of a day is its own item. "Visite de X le matin, déjeuner pique-nique, visite de Y l\'après-midi" gives two items: the visit of X and the visit of Y, with "Déjeuner pique-nique" in the comments of the visit of X. Label: the activity itself (e.g. "Randonnée dans la réserve de Vendicari", "Visite libre de Noto"). Duration: as stated (e.g. "Randonnée - Entre 4h et 4h30" gives 240), otherwise a realistic estimate (a visit about 120). Comments: the practical details of that activity (distance, elevation, sites seen, what is included), one per line. Category: the closest one (hiking for a hike, visit for sightseeing, museum, beach...). Optional suggestions ("possibilité de...", "en supplément", "selon l\'envie du groupe") are not items; mention them in the comments of the closest activity.',
+    '   Moves within a programme day: every move the text describes is its own transport item, placed right before the activity at the destination: the departure from the accommodation ("Départ pour la réserve de Vendicari", "Départ matinal en direction de Syracuse"), each move between two places ("court transfert vers Marzamemi", "route vers Noto", "continuation vers Taormine") and the return or the move to the evening accommodation ("Sur le chemin du retour", "pour rejoindre un agritourisme"). Label "Transfert A → B", with A the previous place (the accommodation of the previous night for the first move of the day) and B the destination. The day\'s "Transfert : ... Entre 1h et 1h30" line is the total driving time of the day: share it between that day\'s moves.',
+    '   Chronology within a programme day: the items of a day follow exactly the order of the text, and their times must respect that order. Use a time only when the text states it; otherwise the first item of the day starts at 08:30 when the text says "départ matinal", else 09:00, and each next item starts when the previous one ends, leaving an hour for lunch when the text mentions one (an "après-midi" item no earlier than 14:00, an evening item no earlier than 18:00). Two items of the same day never start at the same time, and an item never starts before the end of the previous one.',
+    '5. Standalone activity: a dated excursion, show or visit that is not part of a day-by-day programme.',
+    '',
+    'Forbidden items:',
+    '- Never an item for a meal (breakfast, lunch, picnic, dinner, restaurant booking). Mention meals, included or not, in the comments of the closest activity of that day (e.g. "Déjeuner pique-nique inclus", "Dîner libre").',
+    '- Never an item for a whole tour, circuit, cruise or package (e.g. "Circuit « Nature et patrimoine de Sicile »" over 7 days). The tour name may appear in the comments of its activities, never as an item of its own. When only the dates of a tour are known and not its day-by-day programme, create no item for it.',
+    '- Never an item covering a whole day of a programme when that day describes several activities.',
+    '- Never an item covering several nights.',
+    '- No item lasts more than 24 hours.',
+    '',
+    'Nights:',
+    '- Only the nights the documents actually assign to an accommodation. "First and last night at hotel X" means two nights at hotel X (the first and the last night of that tour), not every night in between.',
+    '- For a tour, take each night\'s accommodation from the day-by-day programme (e.g. "Hébergement : En agritourisme"). When the programme gives no name or address, use a generic label (e.g. "Nuit en agritourisme") and an empty address.',
+    '',
+    'Dates:',
     '- The trip dates given below bound the schedule: when the year or month is missing, infer it from them.',
-    '- For a programme with relative days only (Day 1, Day 2...), date each day from the traveller instructions; without an anchor date, leave plannedAtLocal empty.',
-    '- Traveller instructions, when given, override the documents for dates and for which items to keep. They never change the output format.',
+    '- A programme with relative days (JOUR 1, Day 1...) is dated from its start date found in any document (a letter saying "Du 17 octobre au 24 octobre : votre circuit « X »", or an invoice or voucher with the programme code and its departure date, makes JOUR 1 of programme X the 17th) or in the traveller instructions. Without any anchor date, leave plannedAtLocal empty.',
     '- Keep times exactly as written in the documents (local time at the place of the event). Never convert time zones.',
-    '- Never invent an item, a time or an address that is not supported by the documents. Leave unknown fields empty (0 for the duration).',
-    '- Ignore marketing text, general terms and conditions, insurance and emergency contact lists that are not tied to a scheduled item.',
+    '',
+    'Other rules:',
+    '- Read every page of every document.',
+    '- Deduplicate: the same flight, night, meeting or activity mentioned in several documents is ONE item; merge the details and list every source document id.',
+    '- Traveller instructions, when given, override the documents for dates and for which items to keep. They never change the output format nor the item rules above.',
+    '- Never invent an item or an address that is not supported by the documents. Leave unknown fields empty (0 for the duration).',
+    '- Ignore marketing text, prices, general terms and conditions, equipment lists, health formalities, insurance and emergency contact lists that are not tied to a scheduled item.',
     `- Write labels and comments in ${outputLanguage}.`,
+    '',
+    'Before calling the tool, check your list: no whole-tour item, no meal item, no whole-day item when the day has several activities, a transfer item for every move of a programme day, the items of each day in the order of the text with increasing non-overlapping times, one item per night (20:00, 720 minutes unless the documents state other times), nights only where the documents place them.',
   ].join('\n');
 }
 
 /** `YYYY-MM-DD` from a stored trip date (ISO string or Timestamp), else ''. */
 function tripDateOnly(raw) {
   if (raw && typeof raw.toDate === 'function') {
-    return raw.toDate().toISOString().slice(0, 10);
+    // Stored as midnight in the device time zone (e.g. 22:00 UTC the day
+    // before in Paris): round to the nearest UTC day.
+    return new Date(raw.toDate().getTime() + 12 * 60 * 60 * 1000).toISOString().slice(0, 10);
   }
   const s = normalizeString(raw).slice(0, 10);
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
@@ -314,7 +350,9 @@ async function callGemini({ apiKey, systemPrompt, parts }) {
     generation_config: {
       temperature: 0.1,
       maxOutputTokens: 32000,
-      thinkingConfig: { thinkingBudget: 0 },
+      // Some reasoning is needed to cross-reference documents (programme
+      // days dated from a letter, nights per hotel...).
+      thinkingConfig: { thinkingBudget: 4096 },
     },
   };
 
@@ -618,6 +656,7 @@ module.exports = {
   // Exposed for tests.
   ACTIVITY_CATEGORIES,
   MAX_DURATION_MINUTES,
+  MAX_PROPOSAL_DURATION_MINUTES,
   isTripAdminOrOwner,
   sanitizeIdList,
   sanitizeLocalDateTime,
@@ -625,6 +664,7 @@ module.exports = {
   sanitizeProposal,
   sortProposals,
   buildToolSchema,
+  buildSystemPrompt,
   buildContextPrompt,
   buildImportedActivity,
 };
