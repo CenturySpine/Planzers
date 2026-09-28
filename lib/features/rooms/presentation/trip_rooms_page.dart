@@ -6,6 +6,7 @@ import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:planerz/features/rooms/data/rooms_repository.dart';
 import 'package:planerz/features/rooms/data/trip_room.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/presentation/name_list_search.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
@@ -47,7 +48,7 @@ class TripRoomsPage extends ConsumerWidget {
   }
 }
 
-class _TripRoomsBody extends StatelessWidget {
+class _TripRoomsBody extends StatefulWidget {
   const _TripRoomsBody({
     required this.tripId,
     required this.memberLabels,
@@ -59,8 +60,32 @@ class _TripRoomsBody extends StatelessWidget {
   final List<TripRoom> rooms;
 
   @override
+  State<_TripRoomsBody> createState() => _TripRoomsBodyState();
+}
+
+class _TripRoomsBodyState extends State<_TripRoomsBody> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Matches the room name or the name of any of its occupants.
+  bool _matchesQuery(TripRoom room) {
+    if (displayNameMatchesNameSearch(room.name, _query)) return true;
+    return room.assignedMemberIds.any((id) {
+      final label = widget.memberLabels[id];
+      return label != null && displayNameMatchesNameSearch(label, _query);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final rooms = widget.rooms;
     if (rooms.isEmpty) {
       return PzEmptyState(
         icon: ActivityFilterGroup.nuits.filterIcon,
@@ -70,6 +95,8 @@ class _TripRoomsBody extends StatelessWidget {
     final capacity = rooms.fold<int>(0, (sum, r) => sum + r.capacity);
     final assigned =
         rooms.fold<int>(0, (sum, r) => sum + r.assignedMemberIds.length);
+    final visibleRooms = rooms.where(_matchesQuery).toList()
+      ..sort((a, b) => _compareRoomNames(a.name, b.name));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
@@ -79,17 +106,33 @@ class _TripRoomsBody extends StatelessWidget {
           count: rooms.length,
           trailing: _OccupancyPill(assigned: assigned, capacity: capacity),
         ),
-        for (final room in rooms)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: NameListSearchTextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
+        if (visibleRooms.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              l10n.nameSearchEmpty,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        for (final room in visibleRooms)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RoomCard(
               room: room,
-              memberLabels: memberLabels,
+              memberLabels: widget.memberLabels,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => _TripRoomDetailPage(
-                      tripId: tripId,
+                      tripId: widget.tripId,
                       roomId: room.id,
                     ),
                   ),
@@ -100,6 +143,30 @@ class _TripRoomsBody extends StatelessWidget {
       ],
     );
   }
+}
+
+final _digitsOrText = RegExp(r'\d+|\D+');
+
+/// Case-insensitive alphabetical order, with numbers compared by value so
+/// that "Chambre 2" comes before "Chambre 10".
+int _compareRoomNames(String a, String b) {
+  final chunksA = _digitsOrText
+      .allMatches(a.trim().toLowerCase())
+      .map((m) => m[0]!)
+      .toList();
+  final chunksB = _digitsOrText
+      .allMatches(b.trim().toLowerCase())
+      .map((m) => m[0]!)
+      .toList();
+  for (var i = 0; i < chunksA.length && i < chunksB.length; i++) {
+    final numA = int.tryParse(chunksA[i]);
+    final numB = int.tryParse(chunksB[i]);
+    final result = numA != null && numB != null
+        ? numA.compareTo(numB)
+        : chunksA[i].compareTo(chunksB[i]);
+    if (result != 0) return result;
+  }
+  return chunksA.length.compareTo(chunksB.length);
 }
 
 class _OccupancyPill extends StatelessWidget {
@@ -565,6 +632,16 @@ class _TripRoomDetailPageState extends ConsumerState<_TripRoomDetailPage> {
                                     : l10n.roomsBedKindRegular,
                               ),
                             ),
+                            subtitle: _beds[i].assignedMemberIds.isEmpty
+                                ? null
+                                : Text(
+                                    _beds[i]
+                                        .assignedMemberIds
+                                        .map((id) =>
+                                            memberLabels[id] ??
+                                            l10n.tripParticipantsTraveler)
+                                        .join(', '),
+                                  ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
