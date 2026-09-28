@@ -17,6 +17,12 @@ const QUOTA_CONFIGS = {
     perTripLifetime: 10,
     usesGrounding: false,
   },
+  documentActivityImport: {
+    perUserPerDay: 5,
+    perTripPerDay: 10,
+    perTripLifetime: 30,
+    usesGrounding: false,
+  },
 };
 
 const CIRCUIT_BREAKER_THRESHOLD = 50;

@@ -6980,6 +6980,54 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Choisir un document'**
   String get walletLinkDocumentPickerTitle;
+
+  /// No description provided for @walletGenerateActivities.
+  ///
+  /// In fr, this message translates to:
+  /// **'Générer les activités'**
+  String get walletGenerateActivities;
+
+  /// No description provided for @walletActivityImportDocumentsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Documents à analyser'**
+  String get walletActivityImportDocumentsTitle;
+
+  /// No description provided for @walletActivityImportAnalyze.
+  ///
+  /// In fr, this message translates to:
+  /// **'Analyser'**
+  String get walletActivityImportAnalyze;
+
+  /// No description provided for @walletActivityImportAnalyzing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Analyse des documents…'**
+  String get walletActivityImportAnalyzing;
+
+  /// No description provided for @walletActivityImportNoResult.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité trouvée dans ces documents'**
+  String get walletActivityImportNoResult;
+
+  /// No description provided for @walletActivityImportNoDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans date'**
+  String get walletActivityImportNoDate;
+
+  /// No description provided for @walletActivityImportAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}'**
+  String walletActivityImportAdd(int count);
+
+  /// No description provided for @walletActivityImportDone.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
+  String walletActivityImportDone(int count);
 }
 
 class _AppLocalizationsDelegate

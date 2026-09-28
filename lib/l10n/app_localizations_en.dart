@@ -3906,6 +3906,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choose a document';
+
+  @override
+  String get walletGenerateActivities => 'Generate activities';
+
+  @override
+  String get walletActivityImportDocumentsTitle => 'Documents to analyze';
+
+  @override
+  String get walletActivityImportAnalyze => 'Analyze';
+
+  @override
+  String get walletActivityImportAnalyzing => 'Analyzing documents…';
+
+  @override
+  String get walletActivityImportNoResult =>
+      'No activity found in these documents';
+
+  @override
+  String get walletActivityImportNoDate => 'No date';
+
+  @override
+  String walletActivityImportAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletActivityImportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -7739,4 +7780,45 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choose a document';
+
+  @override
+  String get walletGenerateActivities => 'Generate activities';
+
+  @override
+  String get walletActivityImportDocumentsTitle => 'Documents to analyze';
+
+  @override
+  String get walletActivityImportAnalyze => 'Analyze';
+
+  @override
+  String get walletActivityImportAnalyzing => 'Analyzing documents…';
+
+  @override
+  String get walletActivityImportNoResult =>
+      'No activity found in these documents';
+
+  @override
+  String get walletActivityImportNoDate => 'No date';
+
+  @override
+  String walletActivityImportAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletActivityImportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
 }

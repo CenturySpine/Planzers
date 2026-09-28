@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
@@ -8,12 +9,14 @@ import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/network/connectivity_provider.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
+import 'package:planerz/features/auth/auth_gate.dart';
 import 'package:planerz/features/trips/data/trip_lifecycle.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/features/wallet/data/wallet_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_pdf_barcode_decoder.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
+import 'package:planerz/features/wallet/presentation/wallet_activity_import_page.dart';
 import 'package:planerz/features/wallet/presentation/wallet_barcode_scan_page.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_form_page.dart';
 import 'package:planerz/features/wallet/presentation/wallet_document_ui.dart';
@@ -178,6 +181,13 @@ class TripWalletPage extends ConsumerWidget {
     final deletionDaysLeft =
         trip == null ? null : daysUntilTripDocumentsDeletion(trip, DateTime.now());
     final deletionDue = deletionDaysLeft == 0;
+    // AI reading of the documents fills the shared planning: trip admins
+    // only, online, and once there is something to read.
+    final myUid = ref.watch(authStateProvider).asData?.value?.uid ??
+        FirebaseAuth.instance.currentUser?.uid;
+    final canGenerateActivities = !offline &&
+        documentCount > 0 &&
+        (trip?.isTripAdmin(myUid) ?? false);
 
     return Theme(
       data: AppTokens.overlayOn(Theme.of(context)),
@@ -186,6 +196,16 @@ class TripWalletPage extends ConsumerWidget {
         appBar: AppBar(
           title: Text(l10n.tripWalletPageTitle),
           actions: [
+            if (canGenerateActivities)
+              IconButton(
+                icon: const Icon(PhosphorIconsRegular.sparkle),
+                tooltip: l10n.walletGenerateActivities,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => WalletActivityImportPage(tripId: tripId),
+                  ),
+                ),
+              ),
             if (documentsAsync.hasValue && !offline && !deletionDue)
               PopupMenuButton<_AddAction>(
                 icon: const Icon(PhosphorIconsRegular.plus),

@@ -5161,6 +5161,15 @@ exports.recomputeActivityDrivingRoutesOnTripAddressChange =
   recomputeActivityDrivingRoutesOnTripAddressChange;
 exports.refreshActivityDrivingRoute = refreshActivityDrivingRoute;
 
+// --- AI import of planning activities from travel documents ---
+const {
+  extractTripActivitiesFromDocuments,
+  importTripActivitiesFromDocuments,
+} = require('./ai_document_activity_import');
+
+exports.extractTripActivitiesFromDocuments = extractTripActivitiesFromDocuments;
+exports.importTripActivitiesFromDocuments = importTripActivitiesFromDocuments;
+
 // --- Public API / OAuth (Ridgegear and future third-party clients) ---
 const {
   getOAuthClientPublicInfo,

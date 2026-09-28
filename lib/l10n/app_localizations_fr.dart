@@ -3942,6 +3942,47 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choisir un document';
+
+  @override
+  String get walletGenerateActivities => 'Générer les activités';
+
+  @override
+  String get walletActivityImportDocumentsTitle => 'Documents à analyser';
+
+  @override
+  String get walletActivityImportAnalyze => 'Analyser';
+
+  @override
+  String get walletActivityImportAnalyzing => 'Analyse des documents…';
+
+  @override
+  String get walletActivityImportNoResult =>
+      'Aucune activité trouvée dans ces documents';
+
+  @override
+  String get walletActivityImportNoDate => 'Sans date';
+
+  @override
+  String walletActivityImportAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletActivityImportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7810,4 +7851,45 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletLinkDocumentPickerTitle => 'Choisir un document';
+
+  @override
+  String get walletGenerateActivities => 'Générer les activités';
+
+  @override
+  String get walletActivityImportDocumentsTitle => 'Documents à analyser';
+
+  @override
+  String get walletActivityImportAnalyze => 'Analyser';
+
+  @override
+  String get walletActivityImportAnalyzing => 'Analyse des documents…';
+
+  @override
+  String get walletActivityImportNoResult =>
+      'Aucune activité trouvée dans ces documents';
+
+  @override
+  String get walletActivityImportNoDate => 'Sans date';
+
+  @override
+  String walletActivityImportAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String walletActivityImportDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
 }
