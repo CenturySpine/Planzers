@@ -1131,7 +1131,7 @@
   "chatQuotedImage": "Photo",
   "chatImageTooLarge": "Image trop volumineuse (10 Mo max.)",
   "chatCropImageTitle": "Recadrer la photo",
-  "appCopyright": "© 2026 Bruno Chappe",
+  "appCopyright": "© 2026 Planerz",
   "tripsMemberCount": "{count} membre(s)",
   "@tripsMemberCount": {"placeholders": {"count": {}}},
   "commonNotProvided": "Non renseignée",
