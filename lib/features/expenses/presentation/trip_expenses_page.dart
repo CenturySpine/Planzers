@@ -59,6 +59,20 @@ List<String> participantScopeUnitIdsForGroup(
   return [...ungrouped, ...scopeGroups]..sort();
 }
 
+String? resolveActiveExpenseGroupId({
+  required List<TripExpenseGroup> visibleGroups,
+  required String? preferredGroupId,
+}) {
+  final preferred = preferredGroupId?.trim();
+  if (preferred != null &&
+      preferred.isNotEmpty &&
+      visibleGroups.any((group) => group.id == preferred)) {
+    return preferred;
+  }
+  if (visibleGroups.isEmpty) return null;
+  return visibleGroups.first.id;
+}
+
 
 class TripExpensesPage extends ConsumerStatefulWidget {
   const TripExpensesPage({super.key});
@@ -115,12 +129,10 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
         : groupsForFab
             .where((group) => group.isVisibleTo(currentUserMemberId))
             .toList();
-    final resolvedActiveGroupId = () {
-      final preferred = _activeGroupId?.trim();
-      if (preferred != null && preferred.isNotEmpty) return preferred;
-      if (visibleGroupsForFab.length == 1) return visibleGroupsForFab.single.id;
-      return null;
-    }();
+    final resolvedActiveGroupId = resolveActiveExpenseGroupId(
+      visibleGroups: visibleGroupsForFab,
+      preferredGroupId: _activeGroupId,
+    );
     final activeGroupLocked = resolvedActiveGroupId != null
         ? (ref
                     .watch(
@@ -192,7 +204,7 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
                 trip.id,
                 participants,
                 unitLabels,
-                _activeGroupId,
+                resolvedActiveGroupId,
               ),
               child: const Icon(PhosphorIconsRegular.plus, size: 28),
             )
@@ -258,6 +270,21 @@ class _TripExpensesPageState extends ConsumerState<TripExpensesPage> {
       }
     }
     final group = chosenGroup ?? visible.first;
+    final groupLocked =
+        (await ref.read(expenseGroupStateStreamProvider((
+      tripId: tripId,
+      groupId: group.id,
+    )).future))
+            .expensesLocked;
+    if (!context.mounted) return;
+    if (groupLocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.expensesLockedSnackBar),
+        ),
+      );
+      return;
+    }
     if (!context.mounted) return;
     final participantGroupsList =
         ref.read(tripParticipantGroupsStreamProvider(tripId)).asData?.value ?? [];
@@ -348,10 +375,10 @@ class _TripExpensesBody extends StatelessWidget {
       );
     }
 
-    final activeId = activeGroupId != null &&
-            visibleGroups.any((g) => g.id == activeGroupId)
-        ? activeGroupId!
-        : visibleGroups.first.id;
+    final activeId = resolveActiveExpenseGroupId(
+      visibleGroups: visibleGroups,
+      preferredGroupId: activeGroupId,
+    )!;
     final activeGroup =
         visibleGroups.firstWhere((g) => g.id == activeId);
     final canCreatePost = canCreateExpensePostForTrip(
