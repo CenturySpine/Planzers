@@ -72,8 +72,15 @@ class _TripActivityDictationButtonState
   }
 
   Future<bool> _initialize() async {
-    final available =
-        await _speech.initialize(onStatus: _onStatus, onError: _onError);
+    final available = await _speech.initialize(
+      onStatus: _onStatus,
+      onError: _onError,
+      // Chrome on Android sends each partial result as a new phrase holding
+      // the whole text so far: joining them repeats the words.
+      options: kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? [SpeechToText.webDoNotAggregate]
+          : null,
+    );
     // The plugin is shared and keeps the listeners of its first
     // initialisation: point them at this button.
     _speech.statusListener = _onStatus;
