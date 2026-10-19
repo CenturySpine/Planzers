@@ -8,6 +8,7 @@ import 'package:planerz/features/administration/presentation/admin_announcements
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
+import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
 import 'package:planerz/features/administration/domain/app_usage_stats.dart';
 
 final _administrationRepositoryProvider =
@@ -156,6 +157,16 @@ class _StatsBody extends StatelessWidget {
             ),
             trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminExternalProvidersPage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(PhosphorIconsRegular.trash),
+            title: const Text('Activités des voyages'),
+            subtitle: const Text('Supprimer toutes les activités d\'un voyage.'),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
+            onTap: () => context.push(AdminTripActivitiesPage.routePath),
           ),
         ),
         const SizedBox(height: 12),

@@ -5193,6 +5193,15 @@ const { extractTripActivityFromText } = require('./ai_text_activity_create');
 
 exports.extractTripActivityFromText = extractTripActivityFromText;
 
+// --- Administration: delete the activities of a trip ---
+const {
+  adminListTripActivityCounts,
+  adminDeleteTripActivities,
+} = require('./admin_trip_activities');
+
+exports.adminListTripActivityCounts = adminListTripActivityCounts;
+exports.adminDeleteTripActivities = adminDeleteTripActivities;
+
 // --- Public API / OAuth (Ridgegear and future third-party clients) ---
 const {
   getOAuthClientPublicInfo,
