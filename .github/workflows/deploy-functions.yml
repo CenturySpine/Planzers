@@ -1,0 +1,139 @@
+# Manual deploy of Firebase Cloud Functions, without a local machine.
+#
+# The target project follows the branch the workflow runs on (see RELEASE.md):
+#   develop -> planerz-preview, main -> planerz.
+# Authenticates with a service account key stored as a repository secret:
+#   GCP_SA_KEY_PREVIEW (planerz-preview) and GCP_SA_KEY_PROD (planerz).
+# After the deploy, checks that each callable/HTTP function can be invoked by
+# the apps (Cloud Run `allUsers` invoker), as the project guidelines require.
+name: Deploy Cloud Functions
+
+on:
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: "Functions to deploy, comma-separated (e.g. extractTripActivityFromText,extractTripActivitiesFromDocuments), or 'all'"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-functions-${{ github.ref_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  FUNCTIONS_REGION: europe-west9
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Resolve target
+        id: target
+        env:
+          FUNCTIONS_INPUT: ${{ inputs.functions }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $project = switch ($env:REF_NAME) {
+            'develop' { 'planerz-preview' }
+            'main' { 'planerz' }
+            default { '' }
+          }
+          if (-not $project) {
+            Write-Error "Deploys run from develop (preview) or main (prod) only, not '$env:REF_NAME'."
+            exit 1
+          }
+          $raw = $env:FUNCTIONS_INPUT.Trim()
+          if ($raw -eq 'all') {
+            $only = 'functions'
+            $names = @()
+          } else {
+            $names = @($raw -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+            $invalid = @($names | Where-Object { $_ -notmatch '^[A-Za-z][A-Za-z0-9_]*$' })
+            if ($names.Count -eq 0 -or $invalid.Count -gt 0) {
+              Write-Error "Invalid function list: '$raw'."
+              exit 1
+            }
+            $only = ($names | ForEach-Object { "functions:$_" }) -join ','
+          }
+          "project=$project" >> $env:GITHUB_OUTPUT
+          "only=$only" >> $env:GITHUB_OUTPUT
+          "names=$($names -join ',')" >> $env:GITHUB_OUTPUT
+          Write-Host "Deploying $only to $project"
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install functions dependencies
+        working-directory: functions
+        run: npm ci --no-audit --no-fund
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ github.ref_name == 'main' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_PREVIEW }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy
+        env:
+          PROJECT: ${{ steps.target.outputs.project }}
+          ONLY: ${{ steps.target.outputs.only }}
+        run: |
+          npx --yes firebase-tools@14 deploy --only $env:ONLY --project $env:PROJECT --non-interactive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Check Cloud Run invoker IAM
+        env:
+          PROJECT: ${{ steps.target.outputs.project }}
+          NAMES: ${{ steps.target.outputs.names }}
+        run: |
+          $region = $env:FUNCTIONS_REGION
+          $deployed = gcloud functions list --regions=$region --project=$env:PROJECT --format=json | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $byName = @{}
+          foreach ($fn in @($deployed | Where-Object { $_.environment -eq 'GEN_2' })) {
+            $byName[($fn.name -split '/')[-1]] = $fn
+          }
+          $targets = if ($env:NAMES) { @($env:NAMES -split ',') } else { @($byName.Keys | Sort-Object) }
+
+          $rows = @()
+          foreach ($name in $targets) {
+            $fn = $byName[$name]
+            if (-not $fn) {
+              $rows += "| $name | not found in $region |"
+              continue
+            }
+            if ($fn.eventTrigger) {
+              $rows += "| $name | event trigger, no public invoker needed |"
+              continue
+            }
+            $service = $name.ToLowerInvariant()
+            $policy = gcloud run services get-iam-policy $service --region=$region --project=$env:PROJECT --format=json | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $public = @($policy.bindings | Where-Object { $_.role -eq 'roles/run.invoker' -and $_.members -contains 'allUsers' })
+            if ($public.Count -gt 0) {
+              $rows += "| $name | allUsers invoker OK |"
+            } else {
+              gcloud run services add-iam-policy-binding $service --region=$region --project=$env:PROJECT --member=allUsers --role=roles/run.invoker --format=none
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $rows += "| $name | allUsers invoker ADDED |"
+            }
+          }
+
+          $summary = (@("### Invoker IAM ($env:PROJECT)", '', '| Function | Status |', '|---|---|') + $rows) -join "`n"
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          Write-Host $summary
