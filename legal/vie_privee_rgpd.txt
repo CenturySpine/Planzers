@@ -1,5 +1,5 @@
 VIE PRIVÉE / RGPD
-Dernière mise à jour : 25/04/2026
+Dernière mise à jour : 19/10/2026
 
 1) Responsable du traitement
 - Bruno Chappe
@@ -43,15 +43,40 @@ région d'hébergement statique unique).
 Sous-traitants techniques :
 - Vercel (hébergement web)
 - Google Firebase : Authentication, Firestore, Storage, Functions, FCM
+- Google (API Gemini) : fonctionnalités d'intelligence artificielle (voir
+  section 5)
 
-5) Durée de conservation
+5) Fonctionnalités d'intelligence artificielle
+Certaines fonctionnalités facultatives s'appuient sur l'API Gemini de Google.
+Des données ne lui sont envoyées que lorsque l'utilisateur déclenche l'une de
+ces fonctionnalités :
+- Création d'une activité à partir d'une description libre : le texte saisi,
+  la date et l'heure de l'appareil, le titre, la destination et les dates du
+  voyage
+- Génération d'activités à partir de documents : les documents choisis dans
+  « Mes documents » (fichiers et contenu des codes scannés), les consignes
+  saisies, le titre, la destination et les dates du voyage
+- Consolidation de la liste de courses : les libellés et quantités des
+  articles et des ingrédients des repas
+- Génération de recettes : le nom de la recette et le nombre de personnes
+
+Base légale : exécution du service, à la demande de l'utilisateur.
+Les réponses de l'IA sont des propositions : rien n'est enregistré dans le
+voyage sans validation de l'utilisateur.
+Selon les conditions de Google applicables aux services payants de l'API
+Gemini, ces données ne sont pas utilisées pour améliorer les produits de
+Google ; elles peuvent être conservées par Google pendant une durée limitée
+pour détecter les abus et répondre à ses obligations légales. Ce traitement
+peut avoir lieu en dehors de l'Union européenne.
+
+6) Durée de conservation
 - Données de compte et contenus : conservation tant que le compte est actif
 - Suppression/anonymisation après demande validée : sous 30 jours
 - Sauvegardes techniques : purge sous 90 jours maximum
 - Données de sécurité/anti-abus : conservation limitée et proportionnée
   (12 mois maximum)
 
-6) Exercice des droits
+7) Exercice des droits
 Conformément au RGPD, vous pouvez demander l'accès, la rectification,
 l'effacement ou la limitation de vos données.
 
@@ -59,11 +84,11 @@ Pour demander la suppression d'un compte :
 - Écrire à century.spine@gmail.com
 - Indiquer l'adresse e-mail du compte à supprimer
 
-7) Cookies et traceurs
+8) Cookies et traceurs
 L'application n'utilise pas de cookies publicitaires ni de mesure d'audience
 marketing tierce. Seuls les traceurs techniques strictement nécessaires au
 fonctionnement (session, authentification, sécurité) peuvent être utilisés.
 
-8) Droit applicable
+9) Droit applicable
 La présente politique est régie par le droit européen applicable à la
 protection des données personnelles.

@@ -1,5 +1,5 @@
 PRIVACY / GDPR
-Last update: 25/04/2026
+Last update: 19/10/2026
 
 1) Data controller
 - Bruno Chappe
@@ -40,15 +40,36 @@ static hosting region).
 Technical subprocessors:
 - Vercel (web hosting)
 - Google Firebase: Authentication, Firestore, Storage, Functions, FCM
+- Google (Gemini API): artificial intelligence features (see section 5)
 
-5) Retention period
+5) Artificial intelligence features
+Some optional features rely on Google's Gemini API. Data is sent to it only
+when the user triggers one of these features:
+- Creating an activity from a free-text description: the text entered, the
+  device date and time, and the trip title, destination and dates
+- Generating activities from documents: the documents selected in "My
+  documents" (files and scanned code content), the instructions entered, and
+  the trip title, destination and dates
+- Shopping list consolidation: the labels and quantities of the items and of
+  the meal ingredients
+- Recipe generation: the recipe name and the number of servings
+
+Legal basis: service execution, at the user's request.
+AI responses are suggestions: nothing is saved to the trip without the user's
+confirmation.
+Under Google's terms for the paid services of the Gemini API, this data is not
+used to improve Google's products; Google may retain it for a limited period
+to detect abuse and meet its legal obligations. This processing may take place
+outside the European Union.
+
+6) Retention period
 - Account and content data: retained while the account is active
 - Deletion/anonymization after validated request: within 30 days
 - Technical backups: purged within 90 days maximum
 - Security/anti-abuse data: limited and proportionate retention
   (12 months maximum)
 
-6) Exercising rights
+7) Exercising rights
 Under GDPR, you can request access, correction, deletion, or restriction of
 your data.
 
@@ -56,10 +77,10 @@ To request account deletion:
 - Write to century.spine@gmail.com
 - Indicate the account email address to delete
 
-7) Cookies and trackers
+8) Cookies and trackers
 The application does not use advertising cookies or third-party marketing
 audience measurement. Only strictly necessary technical trackers for operation
 (session, authentication, security) may be used.
 
-8) Applicable law
+9) Applicable law
 This policy is governed by European law applicable to personal data protection.
