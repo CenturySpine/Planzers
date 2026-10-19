@@ -7058,6 +7058,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Aucune activité reconnue dans ce texte'**
   String get activitiesAiTextNoResult;
+
+  /// No description provided for @activitiesAiTextDictation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dicter'**
+  String get activitiesAiTextDictation;
+
+  /// No description provided for @activitiesAiTextDictationStop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Arrêter la dictée'**
+  String get activitiesAiTextDictationStop;
+
+  /// No description provided for @activitiesAiTextDictationUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dictée impossible : vérifie l\'accès au micro'**
+  String get activitiesAiTextDictationUnavailable;
 }
 
 class _AppLocalizationsDelegate

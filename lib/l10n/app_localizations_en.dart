@@ -3963,6 +3963,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextDictation => 'Dictate';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Stop dictation';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictation unavailable: check microphone access';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -7853,4 +7863,14 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextDictation => 'Dictate';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Stop dictation';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictation unavailable: check microphone access';
 }

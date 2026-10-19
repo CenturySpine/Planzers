@@ -4000,6 +4000,16 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get activitiesAiTextNoResult =>
       'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextDictation => 'Dicter';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Arrêter la dictée';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictée impossible : vérifie l\'accès au micro';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7926,4 +7936,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get activitiesAiTextNoResult =>
       'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextDictation => 'Dicter';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Arrêter la dictée';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictée impossible : vérifie l\'accès au micro';
 }

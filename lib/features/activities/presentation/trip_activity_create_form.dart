@@ -7,6 +7,7 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/activity_text_ai_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_dictation_button.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
@@ -70,6 +71,7 @@ class _TripActivityCreateFormState
   late TripActivityCategory _category;
   bool _saving = false;
   bool _aiFilling = false;
+  bool _dictating = false;
   DateTime? _plannedAt;
 
   /// Custom duration; null follows the category default.
@@ -271,6 +273,8 @@ class _TripActivityCreateFormState
             TextField(
               controller: _aiTextController,
               enabled: !_saving && !_aiFilling,
+              // Dictation writes the text meanwhile.
+              readOnly: _dictating,
               minLines: 2,
               maxLines: 5,
               maxLength: tripActivityTextMaxLength,
@@ -281,26 +285,37 @@ class _TripActivityCreateFormState
                 alignLabelWithHint: true,
               ),
             ),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: ListenableBuilder(
-                listenable: _aiTextController,
-                builder: (context, _) => FilledButton.tonalIcon(
-                  onPressed: _saving ||
-                          _aiFilling ||
-                          _aiTextController.text.trim().isEmpty
-                      ? null
-                      : () => _fillFromText(canPlanActivity: canPlanActivity),
-                  icon: _aiFilling
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(PhosphorIconsRegular.sparkle),
-                  label: Text(l10n.activitiesAiTextFill),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TripActivityDictationButton(
+                  controller: _aiTextController,
+                  maxLength: tripActivityTextMaxLength,
+                  enabled: !_saving && !_aiFilling,
+                  onListeningChanged: (listening) =>
+                      setState(() => _dictating = listening),
                 ),
-              ),
+                const SizedBox(width: 8),
+                ListenableBuilder(
+                  listenable: _aiTextController,
+                  builder: (context, _) => FilledButton.tonalIcon(
+                    onPressed: _saving ||
+                            _aiFilling ||
+                            _dictating ||
+                            _aiTextController.text.trim().isEmpty
+                        ? null
+                        : () => _fillFromText(canPlanActivity: canPlanActivity),
+                    icon: _aiFilling
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(PhosphorIconsRegular.sparkle),
+                    label: Text(l10n.activitiesAiTextFill),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
           ],

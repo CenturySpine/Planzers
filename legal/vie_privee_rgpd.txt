@@ -69,6 +69,11 @@ Google ; elles peuvent être conservées par Google pendant une durée limitée
 pour détecter les abus et répondre à ses obligations légales. Ce traitement
 peut avoir lieu en dehors de l'Union européenne.
 
+Dictée vocale : lorsque l'utilisateur dicte une description, sa voix est
+convertie en texte par le service de reconnaissance vocale de son navigateur
+ou de son appareil (par exemple Google ou Apple), selon les conditions de ce
+fournisseur. L'application ne reçoit et n'enregistre que le texte obtenu.
+
 6) Durée de conservation
 - Données de compte et contenus : conservation tant que le compte est actif
 - Suppression/anonymisation après demande validée : sous 30 jours

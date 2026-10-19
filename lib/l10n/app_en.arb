@@ -1623,5 +1623,8 @@
   "walletActivityImportInstructions": "Instructions (optional)",
   "activitiesAiTextLabel": "Describe your activity",
   "activitiesAiTextFill": "Fill in",
-  "activitiesAiTextNoResult": "No activity recognized in this text"
+  "activitiesAiTextNoResult": "No activity recognized in this text",
+  "activitiesAiTextDictation": "Dictate",
+  "activitiesAiTextDictationStop": "Stop dictation",
+  "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access"
 }
