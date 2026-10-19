@@ -1581,5 +1581,8 @@
       }
     }
   },
-  "walletActivityImportInstructions": "Consignes (facultatif)"
+  "walletActivityImportInstructions": "Consignes (facultatif)",
+  "activitiesAiTextLabel": "Décris ton activité",
+  "activitiesAiTextFill": "Remplir",
+  "activitiesAiTextNoResult": "Aucune activité reconnue dans ce texte"
 }

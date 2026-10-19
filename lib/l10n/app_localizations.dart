@@ -7034,6 +7034,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Consignes (facultatif)'**
   String get walletActivityImportInstructions;
+
+  /// No description provided for @activitiesAiTextLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Décris ton activité'**
+  String get activitiesAiTextLabel;
+
+  /// No description provided for @activitiesAiTextFill.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remplir'**
+  String get activitiesAiTextFill;
+
+  /// No description provided for @activitiesAiTextNoResult.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité reconnue dans ce texte'**
+  String get activitiesAiTextNoResult;
 }
 
 class _AppLocalizationsDelegate

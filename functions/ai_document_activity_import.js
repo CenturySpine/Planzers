@@ -24,6 +24,19 @@ const admin = require('firebase-admin');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { withAiQuota } = require('./utils/aiQuotaGate');
+const {
+  ACTIVITY_CATEGORIES,
+  MAX_DURATION_MINUTES,
+  MAX_LABEL_LENGTH,
+  MAX_ADDRESS_LENGTH,
+  MAX_COMMENTS_LENGTH,
+  normalizeString,
+  truncate,
+  sanitizeLocalDateTime,
+  sanitizeDurationMinutes,
+  tripDateOnly,
+  callGeminiTool,
+} = require('./utils/aiActivityCommon');
 
 const AI_FEATURE_KEY = 'documentActivityImport';
 const AI_MODEL = 'gemini-2.5-flash';
@@ -33,58 +46,19 @@ const MAX_DOCUMENTS_PER_EXTRACTION = 5;
 // Gemini rejects inline requests above 20 MB (base64 grows the payload ~4/3).
 const MAX_TOTAL_FILE_BYTES = 14 * 1024 * 1024;
 const MAX_ACTIVITIES_PER_IMPORT = 50;
-// Must match `tripActivityMaxDurationMinutes` and `firestore.rules`.
-const MAX_DURATION_MINUTES = 7 * 24 * 60;
 // Extracted items are journeys, nights or activities of a day: anything longer
 // is a whole-tour or multi-night item the prompt forbids.
 const MAX_PROPOSAL_DURATION_MINUTES = 24 * 60;
 // Must match `walletMaxActivityLinks` and `firestore.rules`.
 const MAX_WALLET_ACTIVITY_LINKS = 50;
-const MAX_LABEL_LENGTH = 200;
-const MAX_ADDRESS_LENGTH = 500;
-const MAX_COMMENTS_LENGTH = 2000;
 // Must match `walletActivityImportMaxInstructionsLength`.
 const MAX_INSTRUCTIONS_LENGTH = 1000;
-
-// Must match `TripActivityCategory.firestoreValue`.
-const ACTIVITY_CATEGORIES = [
-  'sport',
-  'hiking',
-  'shopping',
-  'visit',
-  'restaurant',
-  'cafe',
-  'museum',
-  'show',
-  'nightlife',
-  'karaoke',
-  'games',
-  'beach',
-  'park',
-  'transport',
-  'accommodation',
-  'wellness',
-  'cooking',
-  'workshop',
-  'market',
-  'meeting',
-];
 
 // Restaurant activities are meal suggestions, hidden from the planning:
 // meals of a programme go in the comments instead.
 const PROPOSAL_CATEGORIES = ACTIVITY_CATEGORIES.filter((c) => c !== 'restaurant');
 
 const SAFE_SEGMENT =/^[A-Za-z0-9_-]+$/;
-const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
-
-function normalizeString(v) {
-  return (typeof v === 'string' ? v : '').trim();
-}
-
-function truncate(value, maxLength) {
-  const s = normalizeString(value);
-  return s.length > maxLength ? s.slice(0, maxLength).trim() : s;
-}
 
 /** Creator (`ownerId`) or listed co-admin (`adminMemberIds`). */
 function isTripAdminOrOwner(tripData, uid) {
@@ -105,31 +79,6 @@ function sanitizeIdList(raw, maxCount) {
     if (ids.length >= maxCount) break;
   }
   return ids;
-}
-
-/** `YYYY-MM-DDTHH:mm` for a real calendar date/time, otherwise ''. */
-function sanitizeLocalDateTime(raw) {
-  const s = normalizeString(raw);
-  const match = s.match(LOCAL_DATE_TIME);
-  if (!match) return '';
-  const [year, month, day, hour, minute] = match.slice(1).map(Number);
-  const probe = new Date(Date.UTC(year, month - 1, day, hour, minute));
-  const valid =
-    probe.getUTCFullYear() === year &&
-    probe.getUTCMonth() === month - 1 &&
-    probe.getUTCDate() === day &&
-    probe.getUTCHours() === hour &&
-    probe.getUTCMinutes() === minute;
-  return valid ? s : '';
-}
-
-/** Whole minutes in (0, 7 days], otherwise null (category default applies). */
-function sanitizeDurationMinutes(raw) {
-  const n = typeof raw === 'number' ? raw : Number(raw);
-  if (!Number.isFinite(n)) return null;
-  const minutes = Math.round(n);
-  if (minutes <= 0) return null;
-  return Math.min(minutes, MAX_DURATION_MINUTES);
 }
 
 function sanitizeCategory(raw) {
@@ -284,17 +233,6 @@ function buildSystemPrompt(lang) {
   ].join('\n');
 }
 
-/** `YYYY-MM-DD` from a stored trip date (ISO string or Timestamp), else ''. */
-function tripDateOnly(raw) {
-  if (raw && typeof raw.toDate === 'function') {
-    // Stored as midnight in the device time zone (e.g. 22:00 UTC the day
-    // before in Paris): round to the nearest UTC day.
-    return new Date(raw.toDate().getTime() + 12 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  }
-  const s = normalizeString(raw).slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
-}
-
 function buildContextPrompt({ trip, documents, instructions }) {
   const lines = ['Trip context:'];
   const title = normalizeString(trip.title);
@@ -327,70 +265,27 @@ function buildContextPrompt({ trip, documents, instructions }) {
   return lines.join('\n');
 }
 
-async function callGemini({ apiKey, systemPrompt, parts }) {
-  const endpoint =
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(AI_MODEL)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: 'user', parts }],
-    tools: [
-      {
-        function_declarations: [
-          {
-            name: AI_TOOL_NAME,
-            description: 'Records the trip calendar items extracted from the documents.',
-            parameters: buildToolSchema(),
-          },
-        ],
-      },
-    ],
-    tool_config: {
-      function_calling_config: { mode: 'ANY', allowed_function_names: [AI_TOOL_NAME] },
+function callGemini({ apiKey, systemPrompt, parts }) {
+  return callGeminiTool({
+    apiKey,
+    model: AI_MODEL,
+    logTag: AI_FEATURE_KEY,
+    systemPrompt,
+    parts,
+    tool: {
+      name: AI_TOOL_NAME,
+      description: 'Records the trip calendar items extracted from the documents.',
+      parameters: buildToolSchema(),
     },
-    generation_config: {
+    generationConfig: {
       temperature: 0.1,
       maxOutputTokens: 32000,
       // Some reasoning is needed to cross-reference documents (programme
       // days dated from a letter, nights per hotel...).
       thinkingConfig: { thinkingBudget: 4096 },
     },
-  };
-
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    truncatedMessage: 'Réponse IA tronquée (documents trop longs)',
   });
-  const text = await response.text();
-  if (!response.ok) {
-    console.error('documentActivityImport: Gemini error', {
-      status: response.status,
-      body: text.slice(0, 500),
-    });
-    throw new HttpsError('unavailable', `Service IA indisponible (Gemini ${response.status})`);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch (_) {
-    throw new HttpsError('internal', 'Réponse IA non JSON');
-  }
-  const candidate = parsed?.candidates?.[0];
-  if (candidate?.finishReason === 'MAX_TOKENS') {
-    throw new HttpsError('internal', 'Réponse IA tronquée (documents trop longs)');
-  }
-  const candidateParts = candidate?.content?.parts;
-  const funcPart = Array.isArray(candidateParts)
-    ? candidateParts.find((p) => p && p.functionCall && p.functionCall.args)
-    : null;
-  if (!funcPart) {
-    console.error('documentActivityImport: no functionCall', {
-      finishReason: candidate?.finishReason,
-    });
-    throw new HttpsError('internal', 'Réponse IA invalide (functionCall absent)');
-  }
-  return funcPart.functionCall.args;
 }
 
 async function loadTripForAdmin(db, tripId, uid) {

@@ -1581,5 +1581,8 @@
       }
     }
   },
-  "walletActivityImportInstructions": "Instructions (optional)"
+  "walletActivityImportInstructions": "Instructions (optional)",
+  "activitiesAiTextLabel": "Describe your activity",
+  "activitiesAiTextFill": "Fill in",
+  "activitiesAiTextNoResult": "No activity recognized in this text"
 }

@@ -31,4 +31,9 @@ const aiQuotaConfigs = <AiFeature, AiQuotaConfig>{
     perTripPerDay: 10,
     perTripLifetime: 30,
   ),
+  AiFeature.textActivityCreate: AiQuotaConfig(
+    perUserPerDay: 10,
+    perTripPerDay: 20,
+    perTripLifetime: 100,
+  ),
 };

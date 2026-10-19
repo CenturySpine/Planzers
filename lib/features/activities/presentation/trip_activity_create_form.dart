@@ -1,12 +1,16 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/activity_text_ai_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -22,6 +26,7 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
     this.initialCategory,
     this.initialLabel = '',
     this.initialPlannedDay,
+    this.enableAiTextFill = false,
     this.scrollController,
     this.header,
     this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -41,6 +46,9 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
 
   /// Day the date picker opens on (e.g. the date of a travel document).
   final DateTime? initialPlannedDay;
+
+  /// Shows the free-text field the AI turns into the form values.
+  final bool enableAiTextFill;
   final ScrollController? scrollController;
 
   /// Scrolls with the fields (e.g. a sheet's drag handle and title).
@@ -59,8 +67,10 @@ class _TripActivityCreateFormState
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
   late final TextEditingController _commentsController;
+  final TextEditingController _aiTextController = TextEditingController();
   late TripActivityCategory _category;
   bool _saving = false;
+  bool _aiFilling = false;
   DateTime? _plannedAt;
 
   /// Custom duration; null follows the category default.
@@ -84,6 +94,7 @@ class _TripActivityCreateFormState
     _linkController.dispose();
     _addressController.dispose();
     _commentsController.dispose();
+    _aiTextController.dispose();
     super.dispose();
   }
 
@@ -136,6 +147,77 @@ class _TripActivityCreateFormState
     );
   }
 
+  /// Fills the form with the activity the AI reads in the free text; the user
+  /// still reviews and saves it.
+  Future<void> _fillFromText({required bool canPlanActivity}) async {
+    final text = _aiTextController.text.trim();
+    if (text.isEmpty || _aiFilling) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final categories = widget.allowedCategories ?? TripActivityCategory.values;
+    FocusScope.of(context).unfocus();
+    setState(() => _aiFilling = true);
+    try {
+      final proposal =
+          await ref.read(activityTextAiRepositoryProvider).interpret(
+                tripId: widget.tripId,
+                text: text,
+                languageCode: languageCode,
+                categories: categories,
+              );
+      if (!mounted) return;
+      if (proposal == null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.activitiesAiTextNoResult)),
+        );
+        return;
+      }
+      setState(() {
+        if (categories.contains(proposal.category)) {
+          _category = proposal.category;
+        }
+        _labelController.text = proposal.label;
+        if (proposal.address.isNotEmpty) {
+          _addressController.text = proposal.address;
+        }
+        if (proposal.freeComments.isNotEmpty) {
+          _commentsController.text = proposal.freeComments;
+        }
+        if (canPlanActivity) {
+          if (proposal.plannedAt != null) _plannedAt = proposal.plannedAt;
+          if (proposal.durationMinutes != null) {
+            _durationMinutes = proposal.durationMinutes;
+          }
+        }
+      });
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(_aiErrorMessage(l10n, error))),
+      );
+    } finally {
+      if (mounted) setState(() => _aiFilling = false);
+    }
+  }
+
+  String _aiErrorMessage(AppLocalizations l10n, Object error) {
+    if (error is FirebaseFunctionsException &&
+        error.code == 'resource-exhausted') {
+      final config = aiQuotaConfigs[AiFeature.textActivityCreate]!;
+      return switch (error.message) {
+        'quota-trip' => l10n.aiQuotaTripExceeded(config.perTripPerDay),
+        'quota-trip-lifetime' =>
+          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
+        'circuit-breaker' => l10n.aiQuotaCircuitBreakerTripped,
+        _ => l10n.aiQuotaUserExceeded(config.perUserPerDay),
+      };
+    }
+    if (error is FirebaseFunctionsException) {
+      return l10n.commonErrorWithDetails(error.message ?? error.code);
+    }
+    return l10n.commonErrorWithDetails(error.toString());
+  }
+
   Future<void> _submit({required bool canPlanActivity}) async {
     if (_saving) return;
     final form = _formKey.currentState;
@@ -183,6 +265,15 @@ class _TripActivityCreateFormState
           : false,
       orElse: () => false,
     );
+    final canSuggestActivity = tripAsync.maybeWhen(
+      data: (trip) => trip != null
+          ? canSuggestActivityForTrip(
+              trip: trip,
+              userId: myUid,
+            )
+          : false,
+      orElse: () => false,
+    );
 
     return Form(
       key: _formKey,
@@ -191,6 +282,43 @@ class _TripActivityCreateFormState
         padding: widget.padding,
         children: [
           if (widget.header != null) widget.header!,
+          if (widget.enableAiTextFill && canSuggestActivity) ...[
+            TextField(
+              controller: _aiTextController,
+              enabled: !_saving && !_aiFilling,
+              minLines: 2,
+              maxLines: 5,
+              maxLength: tripActivityTextMaxLength,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: l10n.activitiesAiTextLabel,
+                border: const OutlineInputBorder(),
+                alignLabelWithHint: true,
+              ),
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ListenableBuilder(
+                listenable: _aiTextController,
+                builder: (context, _) => FilledButton.tonalIcon(
+                  onPressed: _saving ||
+                          _aiFilling ||
+                          _aiTextController.text.trim().isEmpty
+                      ? null
+                      : () => _fillFromText(canPlanActivity: canPlanActivity),
+                  icon: _aiFilling
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(PhosphorIconsRegular.sparkle),
+                  label: Text(l10n.activitiesAiTextFill),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Text(
             l10n.activitiesCategory,
             style: Theme.of(context).textTheme.labelLarge,

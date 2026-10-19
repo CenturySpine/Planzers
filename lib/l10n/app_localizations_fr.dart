@@ -3986,6 +3986,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
+
+  @override
+  String get activitiesAiTextLabel => 'Décris ton activité';
+
+  @override
+  String get activitiesAiTextFill => 'Remplir';
+
+  @override
+  String get activitiesAiTextNoResult =>
+      'Aucune activité reconnue dans ce texte';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -7898,4 +7908,14 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
+
+  @override
+  String get activitiesAiTextLabel => 'Décris ton activité';
+
+  @override
+  String get activitiesAiTextFill => 'Remplir';
+
+  @override
+  String get activitiesAiTextNoResult =>
+      'Aucune activité reconnue dans ce texte';
 }

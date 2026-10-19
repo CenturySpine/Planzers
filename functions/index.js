@@ -5188,6 +5188,11 @@ const {
 exports.extractTripActivitiesFromDocuments = extractTripActivitiesFromDocuments;
 exports.importTripActivitiesFromDocuments = importTripActivitiesFromDocuments;
 
+// --- AI interpretation of a free-text activity description ---
+const { extractTripActivityFromText } = require('./ai_text_activity_create');
+
+exports.extractTripActivityFromText = extractTripActivityFromText;
+
 // --- Public API / OAuth (Ridgegear and future third-party clients) ---
 const {
   getOAuthClientPublicInfo,

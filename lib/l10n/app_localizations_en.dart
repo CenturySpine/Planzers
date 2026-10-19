@@ -3950,6 +3950,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletActivityImportInstructions => 'Instructions (optional)';
+
+  @override
+  String get activitiesAiTextLabel => 'Describe your activity';
+
+  @override
+  String get activitiesAiTextFill => 'Fill in';
+
+  @override
+  String get activitiesAiTextNoResult => 'No activity recognized in this text';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -7827,4 +7836,13 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletActivityImportInstructions => 'Instructions (optional)';
+
+  @override
+  String get activitiesAiTextLabel => 'Describe your activity';
+
+  @override
+  String get activitiesAiTextFill => 'Fill in';
+
+  @override
+  String get activitiesAiTextNoResult => 'No activity recognized in this text';
 }

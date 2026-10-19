@@ -5,7 +5,8 @@
 enum AiFeature {
   recipeIngredients('recipeIngredients'),
   shoppingConsolidation('shoppingConsolidation'),
-  documentActivityImport('documentActivityImport');
+  documentActivityImport('documentActivityImport'),
+  textActivityCreate('textActivityCreate');
 
   const AiFeature(this.firestoreKey);
   final String firestoreKey;

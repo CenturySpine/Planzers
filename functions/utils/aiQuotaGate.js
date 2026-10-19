@@ -23,6 +23,12 @@ const QUOTA_CONFIGS = {
     perTripLifetime: 30,
     usesGrounding: false,
   },
+  textActivityCreate: {
+    perUserPerDay: 10,
+    perTripPerDay: 20,
+    perTripLifetime: 100,
+    usesGrounding: false,
+  },
 };
 
 const CIRCUIT_BREAKER_THRESHOLD = 50;
