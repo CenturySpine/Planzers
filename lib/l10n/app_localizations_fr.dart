@@ -1152,6 +1152,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.';
 
   @override
+  String get aiServiceUnavailable =>
+      'Le service IA est momentanément indisponible. Réessayez plus tard.';
+
+  @override
   String aiQuotaRemaining(
       int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
     return 'Quotas restants : $userRemaining/$userLimit (vous) — $tripRemaining/$tripLimit (ce voyage)';
@@ -5078,6 +5082,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
+
+  @override
+  String get aiServiceUnavailable =>
+      'Le service IA est momentanément indisponible. Réessayez plus tard.';
 
   @override
   String get tripParticipantsTitle => 'Participants';

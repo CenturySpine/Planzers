@@ -1,4 +1,3 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +8,8 @@ import 'package:planerz/features/activities/data/activity_text_ai_repository.dar
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
-import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
+import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -193,29 +192,15 @@ class _TripActivityCreateFormState
       });
     } catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text(_aiErrorMessage(l10n, error))),
+        SnackBar(
+          content: Text(
+            aiErrorMessage(l10n, error, AiFeature.textActivityCreate),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _aiFilling = false);
     }
-  }
-
-  String _aiErrorMessage(AppLocalizations l10n, Object error) {
-    if (error is FirebaseFunctionsException &&
-        error.code == 'resource-exhausted') {
-      final config = aiQuotaConfigs[AiFeature.textActivityCreate]!;
-      return switch (error.message) {
-        'quota-trip' => l10n.aiQuotaTripExceeded(config.perTripPerDay),
-        'quota-trip-lifetime' =>
-          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
-        'circuit-breaker' => l10n.aiQuotaCircuitBreakerTripped,
-        _ => l10n.aiQuotaUserExceeded(config.perUserPerDay),
-      };
-    }
-    if (error is FirebaseFunctionsException) {
-      return l10n.commonErrorWithDetails(error.message ?? error.code);
-    }
-    return l10n.commonErrorWithDetails(error.toString());
   }
 
   Future<void> _submit({required bool canPlanActivity}) async {

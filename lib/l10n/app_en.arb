@@ -461,6 +461,7 @@
     "placeholders": {"limit": {"type": "int"}}
   },
   "aiQuotaCircuitBreakerTripped": "The AI service is paused for today (global quota reached). It will be available again tomorrow.",
+  "aiServiceUnavailable": "The AI service is temporarily unavailable. Try again later.",
   "aiQuotaRemaining": "Remaining quota: {userRemaining}/{userLimit} (you) — {tripRemaining}/{tripLimit} (this trip)",
   "@aiQuotaRemaining": {
     "placeholders": {

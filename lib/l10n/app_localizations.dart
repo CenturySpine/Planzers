@@ -2128,6 +2128,12 @@ abstract class AppLocalizations {
   /// **'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.'**
   String get aiQuotaCircuitBreakerTripped;
 
+  /// No description provided for @aiServiceUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service IA est momentanément indisponible. Réessayez plus tard.'**
+  String get aiServiceUnavailable;
+
   /// No description provided for @aiQuotaRemaining.
   ///
   /// In fr, this message translates to:

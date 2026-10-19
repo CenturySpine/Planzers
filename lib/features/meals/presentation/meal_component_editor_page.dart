@@ -12,6 +12,7 @@ import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
 import 'package:planerz/features/ai_quotas/domain/ai_quota_gate.dart';
+import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/presentation/ingredient_line_editor.dart';
@@ -294,7 +295,8 @@ class _MealComponentEditorPageState
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
-            content: Text(AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()))),
+          content: Text(aiErrorMessage(l10n, e, AiFeature.recipeIngredients)),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);

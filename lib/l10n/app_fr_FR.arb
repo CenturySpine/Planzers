@@ -1584,5 +1584,6 @@
   "walletActivityImportInstructions": "Consignes (facultatif)",
   "activitiesAiTextLabel": "Décris ton activité",
   "activitiesAiTextFill": "Remplir",
-  "activitiesAiTextNoResult": "Aucune activité reconnue dans ce texte"
+  "activitiesAiTextNoResult": "Aucune activité reconnue dans ce texte",
+  "aiServiceUnavailable": "Le service IA est momentanément indisponible. Réessayez plus tard."
 }

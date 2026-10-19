@@ -1137,6 +1137,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The AI service is paused for today (global quota reached). It will be available again tomorrow.';
 
   @override
+  String get aiServiceUnavailable =>
+      'The AI service is temporarily unavailable. Try again later.';
+
+  @override
   String aiQuotaRemaining(
       int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
     return 'Remaining quota: $userRemaining/$userLimit (you) — $tripRemaining/$tripLimit (this trip)';
@@ -5027,6 +5031,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
+  String get aiServiceUnavailable =>
+      'The AI service is temporarily unavailable. Try again later.';
 
   @override
   String get tripParticipantsTitle => 'Participants';
