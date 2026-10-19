@@ -22,6 +22,7 @@ import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
 import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_dictate_page.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -622,6 +623,11 @@ class _ActivitiesExpandableFab extends StatelessWidget {
                   l10n.activitiesFilterTrajets,
                   () => _openActivityCreate(
                       context, [TripActivityCategory.transport]),
+                ),
+                TripActivitiesDictateMenuTile(
+                  onTap: () => Navigator.of(sheetContext).pop(
+                    () => context.push('/trips/$tripId/activities/dictate'),
+                  ),
                 ),
               ],
             ),

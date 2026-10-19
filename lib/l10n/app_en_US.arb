@@ -1582,9 +1582,28 @@
     }
   },
   "walletActivityImportInstructions": "Instructions (optional)",
-  "activitiesAiTextLabel": "Describe your activity",
-  "activitiesAiTextFill": "Fill in",
+  "activitiesAiTextLabel": "Tell what you did",
   "activitiesAiTextNoResult": "No activity recognized in this text",
+  "activitiesAiTextMenu": "Dictate activities",
+  "activitiesAiTextAnalyze": "Analyze",
+  "activitiesAiTextAdd": "{count, plural, =1{Add 1 activity} other{Add {count} activities}}",
+  "@activitiesAiTextAdd": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activitiesAiTextAdded": "{count, plural, =1{1 activity added to the planning} other{{count} activities added to the planning}}",
+  "@activitiesAiTextAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activitiesAiTextEditTitle": "Edit activity",
+  "activitiesAiTextNoDate": "No date",
   "activitiesAiTextDictation": "Dictate",
   "activitiesAiTextDictationStop": "Stop dictation",
   "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access",

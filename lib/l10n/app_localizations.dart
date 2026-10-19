@@ -7044,20 +7044,50 @@ abstract class AppLocalizations {
   /// No description provided for @activitiesAiTextLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Décris ton activité'**
+  /// **'Raconte ce que vous avez fait'**
   String get activitiesAiTextLabel;
-
-  /// No description provided for @activitiesAiTextFill.
-  ///
-  /// In fr, this message translates to:
-  /// **'Remplir'**
-  String get activitiesAiTextFill;
 
   /// No description provided for @activitiesAiTextNoResult.
   ///
   /// In fr, this message translates to:
   /// **'Aucune activité reconnue dans ce texte'**
   String get activitiesAiTextNoResult;
+
+  /// No description provided for @activitiesAiTextMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dicter des activités'**
+  String get activitiesAiTextMenu;
+
+  /// No description provided for @activitiesAiTextAnalyze.
+  ///
+  /// In fr, this message translates to:
+  /// **'Analyser'**
+  String get activitiesAiTextAnalyze;
+
+  /// No description provided for @activitiesAiTextAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}'**
+  String activitiesAiTextAdd(int count);
+
+  /// No description provided for @activitiesAiTextAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
+  String activitiesAiTextAdded(int count);
+
+  /// No description provided for @activitiesAiTextEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier l\'activité'**
+  String get activitiesAiTextEditTitle;
+
+  /// No description provided for @activitiesAiTextNoDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans date'**
+  String get activitiesAiTextNoDate;
 
   /// No description provided for @activitiesAiTextDictation.
   ///

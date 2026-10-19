@@ -5188,10 +5188,10 @@ const {
 exports.extractTripActivitiesFromDocuments = extractTripActivitiesFromDocuments;
 exports.importTripActivitiesFromDocuments = importTripActivitiesFromDocuments;
 
-// --- AI interpretation of a free-text activity description ---
-const { extractTripActivityFromText } = require('./ai_text_activity_create');
+// --- AI interpretation of a free-text account of the activities done ---
+const { extractTripActivitiesFromText } = require('./ai_text_activity_create');
 
-exports.extractTripActivityFromText = extractTripActivityFromText;
+exports.extractTripActivitiesFromText = extractTripActivitiesFromText;
 
 // --- Administration: delete the activities of a trip ---
 const {

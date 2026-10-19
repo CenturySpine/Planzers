@@ -5,7 +5,6 @@ const assert = require('node:assert/strict');
 const {
   PROPOSAL_CATEGORIES,
   canSuggestActivity,
-  sanitizeAllowedCategories,
   tripCalendar,
   sanitizeTextProposal,
   buildTextToolSchema,
@@ -41,22 +40,6 @@ describe('canSuggestActivity', () => {
   });
 });
 
-describe('sanitizeAllowedCategories', () => {
-  it('keeps the known categories offered by the form', () => {
-    assert.deepEqual(sanitizeAllowedCategories(['transport', 'unknown']), ['transport']);
-  });
-
-  it('never offers restaurant', () => {
-    assert.deepEqual(sanitizeAllowedCategories(['restaurant', 'beach']), ['beach']);
-    assert.equal(PROPOSAL_CATEGORIES.includes('restaurant'), false);
-  });
-
-  it('falls back to every category', () => {
-    assert.deepEqual(sanitizeAllowedCategories(undefined), PROPOSAL_CATEGORIES);
-    assert.deepEqual(sanitizeAllowedCategories(['restaurant']), PROPOSAL_CATEGORIES);
-  });
-});
-
 describe('tripCalendar', () => {
   it('lists each trip day with its weekday', () => {
     assert.deepEqual(tripCalendar('2026-07-10', '2026-07-12'), [
@@ -75,52 +58,53 @@ describe('tripCalendar', () => {
 });
 
 describe('sanitizeTextProposal', () => {
-  const allowed = ['beach', 'sport'];
-
-  it('cleans the model proposal', () => {
+  it('cleans a model proposal', () => {
     assert.deepEqual(
-      sanitizeTextProposal(
-        {
-          label: '  Kayak à Cala Gonone ',
-          category: 'sport',
-          plannedAtLocal: '2026-07-11T14:00',
-          durationMinutes: 180,
-          address: ' Plage de Cala Gonone ',
-          freeComments: '',
-        },
-        allowed
-      ),
+      sanitizeTextProposal({
+        label: '  Randonnée dans les gorges ',
+        category: 'hiking',
+        plannedAtLocal: '2026-07-11T09:00',
+        durationMinutes: 240,
+        address: ' Gorropu ',
+        freeComments: 'Déjeuner au port',
+      }),
       {
-        label: 'Kayak à Cala Gonone',
-        category: 'sport',
-        plannedAtLocal: '2026-07-11T14:00',
-        durationMinutes: 180,
-        address: 'Plage de Cala Gonone',
-        freeComments: '',
+        label: 'Randonnée dans les gorges',
+        category: 'hiking',
+        plannedAtLocal: '2026-07-11T09:00',
+        durationMinutes: 240,
+        address: 'Gorropu',
+        freeComments: 'Déjeuner au port',
       }
     );
   });
 
-  it('falls back to the first allowed category and drops invalid values', () => {
-    const result = sanitizeTextProposal(
-      { label: 'Kayak', category: 'museum', plannedAtLocal: 'samedi', durationMinutes: 0 },
-      allowed
-    );
-    assert.equal(result.category, 'beach');
+  it('falls back to visit and drops invalid values', () => {
+    const result = sanitizeTextProposal({
+      label: 'Balade',
+      category: 'unknown',
+      plannedAtLocal: 'samedi',
+      durationMinutes: 0,
+    });
+    assert.equal(result.category, 'visit');
     assert.equal(result.plannedAtLocal, '');
     assert.equal(result.durationMinutes, null);
   });
 
-  it('returns null when no activity was recognised', () => {
-    assert.equal(sanitizeTextProposal({ label: '  ' }, allowed), null);
-    assert.equal(sanitizeTextProposal(null, allowed), null);
+  it('drops meals, items longer than a day and unlabelled ones', () => {
+    assert.equal(sanitizeTextProposal({ label: 'Dîner', category: 'restaurant' }), null);
+    assert.equal(sanitizeTextProposal({ label: 'Circuit', durationMinutes: 3000 }), null);
+    assert.equal(sanitizeTextProposal({ label: '  ' }), null);
+    assert.equal(sanitizeTextProposal(null), null);
   });
 });
 
 describe('buildTextToolSchema', () => {
-  it('restricts the category to the allowed ones', () => {
-    const schema = buildTextToolSchema(['transport']);
-    assert.deepEqual(schema.properties.activity.properties.category.enum, ['transport']);
+  it('never offers restaurant', () => {
+    const schema = buildTextToolSchema();
+    const category = schema.properties.activities.items.properties.category;
+    assert.deepEqual(category.enum, PROPOSAL_CATEGORIES);
+    assert.equal(category.enum.includes('restaurant'), false);
   });
 });
 
@@ -135,16 +119,16 @@ describe('buildTextContextPrompt', () => {
   it('gives the current date, the trip calendar and the text', () => {
     const prompt = buildTextContextPrompt({
       trip: { title: 'Sardaigne', startDate: '2026-07-10', endDate: '2026-07-12' },
-      text: 'Kayak samedi de 14h à 17h',
-      nowLocal: '2026-06-01T09:30',
+      text: 'Ce matin rando, puis plage',
+      nowLocal: '2026-07-11T21:30',
     });
-    assert.match(prompt, /Current local date and time: 2026-06-01T09:30 \(Monday\)/);
+    assert.match(prompt, /Current local date and time: 2026-07-11T21:30 \(Saturday\)/);
     assert.match(prompt, /Trip calendar: 2026-07-10 \(Friday\), 2026-07-11 \(Saturday\)/);
-    assert.match(prompt, /<<<\nKayak samedi de 14h à 17h\n>>>/);
+    assert.match(prompt, /<<<\nCe matin rando, puis plage\n>>>/);
   });
 
   it('omits the current date when unknown', () => {
-    const prompt = buildTextContextPrompt({ trip: {}, text: 'Kayak', nowLocal: '' });
+    const prompt = buildTextContextPrompt({ trip: {}, text: 'Rando', nowLocal: '' });
     assert.doesNotMatch(prompt, /Current local date/);
   });
 });

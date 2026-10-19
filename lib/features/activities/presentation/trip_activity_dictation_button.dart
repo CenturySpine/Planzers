@@ -117,7 +117,7 @@ class _TripActivityDictationButtonState
           listenMode: ListenMode.dictation,
           partialResults: true,
           cancelOnError: true,
-          listenFor: const Duration(minutes: 1),
+          listenFor: const Duration(minutes: 3),
           pauseFor: const Duration(seconds: 5),
         ),
       );

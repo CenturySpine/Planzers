@@ -26,7 +26,6 @@ class TripActivityCreatePage extends StatelessWidget {
       body: TripActivityCreateForm(
         tripId: tripId,
         allowedCategories: allowedCategories,
-        enableAiTextFill: true,
         onCreated: (_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.activitiesAdded)),

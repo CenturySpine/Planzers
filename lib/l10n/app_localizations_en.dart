@@ -3956,13 +3956,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletActivityImportInstructions => 'Instructions (optional)';
 
   @override
-  String get activitiesAiTextLabel => 'Describe your activity';
-
-  @override
-  String get activitiesAiTextFill => 'Fill in';
+  String get activitiesAiTextLabel => 'Tell what you did';
 
   @override
   String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextMenu => 'Dictate activities';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyze';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Edit activity';
+
+  @override
+  String get activitiesAiTextNoDate => 'No date';
 
   @override
   String get activitiesAiTextDictation => 'Dictate';
@@ -7856,13 +7887,44 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get walletActivityImportInstructions => 'Instructions (optional)';
 
   @override
-  String get activitiesAiTextLabel => 'Describe your activity';
-
-  @override
-  String get activitiesAiTextFill => 'Fill in';
+  String get activitiesAiTextLabel => 'Tell what you did';
 
   @override
   String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextMenu => 'Dictate activities';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyze';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Edit activity';
+
+  @override
+  String get activitiesAiTextNoDate => 'No date';
 
   @override
   String get activitiesAiTextDictation => 'Dictate';

@@ -50,9 +50,9 @@ Sous-traitants techniques :
 Certaines fonctionnalités facultatives s'appuient sur l'API Gemini de Google.
 Des données ne lui sont envoyées que lorsque l'utilisateur déclenche l'une de
 ces fonctionnalités :
-- Création d'une activité à partir d'une description libre : le texte saisi,
-  la date et l'heure de l'appareil, le titre, la destination et les dates du
-  voyage
+- Création d'activités à partir d'un récit libre (saisi ou dicté) : le
+  texte, la date et l'heure de l'appareil, le titre, la destination et les
+  dates du voyage
 - Génération d'activités à partir de documents : les documents choisis dans
   « Mes documents » (fichiers et contenu des codes scannés), les consignes
   saisies, le titre, la destination et les dates du voyage
@@ -69,7 +69,7 @@ Google ; elles peuvent être conservées par Google pendant une durée limitée
 pour détecter les abus et répondre à ses obligations légales. Ce traitement
 peut avoir lieu en dehors de l'Union européenne.
 
-Dictée vocale : lorsque l'utilisateur dicte une description, sa voix est
+Dictée vocale : lorsque l'utilisateur dicte un texte, sa voix est
 convertie en texte par le service de reconnaissance vocale de son navigateur
 ou de son appareil (par exemple Google ou Apple), selon les conditions de ce
 fournisseur. L'application ne reçoit et n'enregistre que le texte obtenu.

@@ -3992,14 +3992,45 @@ class AppLocalizationsFr extends AppLocalizations {
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
 
   @override
-  String get activitiesAiTextLabel => 'Décris ton activité';
-
-  @override
-  String get activitiesAiTextFill => 'Remplir';
+  String get activitiesAiTextLabel => 'Raconte ce que vous avez fait';
 
   @override
   String get activitiesAiTextNoResult =>
       'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextMenu => 'Dicter des activités';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyser';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Modifier l\'activité';
+
+  @override
+  String get activitiesAiTextNoDate => 'Sans date';
 
   @override
   String get activitiesAiTextDictation => 'Dicter';
@@ -7928,14 +7959,45 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
 
   @override
-  String get activitiesAiTextLabel => 'Décris ton activité';
-
-  @override
-  String get activitiesAiTextFill => 'Remplir';
+  String get activitiesAiTextLabel => 'Raconte ce que vous avez fait';
 
   @override
   String get activitiesAiTextNoResult =>
       'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextMenu => 'Dicter des activités';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyser';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Modifier l\'activité';
+
+  @override
+  String get activitiesAiTextNoDate => 'Sans date';
 
   @override
   String get activitiesAiTextDictation => 'Dicter';
