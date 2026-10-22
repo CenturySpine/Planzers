@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,9 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_planned_picker.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -59,6 +62,7 @@ class _TripActivityCreateFormState
   late final TextEditingController _labelController;
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
+  late final TextEditingController _departureController;
   late final TextEditingController _commentsController;
   late TripActivityCategory _category;
   bool _saving = false;
@@ -66,6 +70,11 @@ class _TripActivityCreateFormState
 
   /// Custom duration; null follows the category default.
   int? _durationMinutes;
+
+  /// The place's point; for a transport, the arrival's.
+  GeoPoint? _location;
+  GeoPoint? _departureLocation;
+  TripTransportMode? _transportMode;
 
   @override
   void initState() {
@@ -76,6 +85,7 @@ class _TripActivityCreateFormState
     _labelController = TextEditingController(text: widget.initialLabel);
     _linkController = TextEditingController();
     _addressController = TextEditingController();
+    _departureController = TextEditingController();
     _commentsController = TextEditingController();
   }
 
@@ -84,6 +94,7 @@ class _TripActivityCreateFormState
     _labelController.dispose();
     _linkController.dispose();
     _addressController.dispose();
+    _departureController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -118,6 +129,10 @@ class _TripActivityCreateFormState
             freeComments: _commentsController.text,
             plannedAt: canPlanActivity ? _plannedAt : null,
             durationMinutes: canPlanActivity ? _durationMinutes : null,
+            location: _location,
+            departureAddress: _departureController.text,
+            departureLocation: _departureLocation,
+            transportMode: _transportMode,
           );
       if (!mounted) return;
       widget.onCreated(activityId);
@@ -149,6 +164,11 @@ class _TripActivityCreateFormState
           : false,
       orElse: () => false,
     );
+    final fallbackCenter = tripActivitiesFallbackCenter(
+      ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
+          const <TripActivity>[],
+    );
+    final isTransport = _category == TripActivityCategory.transport;
 
     return Form(
       key: _formKey,
@@ -208,17 +228,44 @@ class _TripActivityCreateFormState
             validator: _validateOptionalUrl,
           ),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: _addressController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
+          if (isTransport) ...[
+            Text(
+              l10n.activitiesTransportMode,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            TripTransportModeChips(
+              value: _transportMode,
+              onChanged: _saving
+                  ? null
+                  : (mode) => setState(() => _transportMode = mode),
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              controller: _departureController,
+              location: _departureLocation,
+              onLocationChanged: (point) =>
+                  setState(() => _departureLocation = point),
+              labelText: l10n.activitiesTransportDeparture,
+              fallbackCenter: _location ?? fallbackCenter,
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              controller: _addressController,
+              location: _location,
+              onLocationChanged: (point) => setState(() => _location = point),
+              labelText: l10n.activitiesTransportArrival,
+              fallbackCenter: _departureLocation ?? fallbackCenter,
+            ),
+          ] else
+            TripActivityPlaceField(
+              controller: _addressController,
+              location: _location,
+              onLocationChanged: (point) => setState(() => _location = point),
               labelText: l10n.activitiesAddress,
               hintText: l10n.activitiesAddressHint,
-              border: const OutlineInputBorder(),
+              fallbackCenter: fallbackCenter,
             ),
-            minLines: 1,
-            maxLines: 3,
-          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _commentsController,

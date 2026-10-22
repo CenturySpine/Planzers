@@ -58,6 +58,10 @@ class ActivitiesRepository {
     required String freeComments,
     DateTime? plannedAt,
     int? durationMinutes,
+    GeoPoint? location,
+    String departureAddress = '',
+    GeoPoint? departureLocation,
+    TripTransportMode? transportMode,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -105,6 +109,14 @@ class ActivitiesRepository {
       'freeComments': freeComments.trim(),
       if (plannedAt != null) 'plannedAt': Timestamp.fromDate(plannedAt),
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
+      if (location != null) 'location': location,
+      ..._transportFields(
+        category: category,
+        departureAddress: departureAddress,
+        departureLocation: departureLocation,
+        transportMode: transportMode,
+        deleteMissing: false,
+      ),
       'done': false,
       'createdBy': user.uid,
       'createdAt': FieldValue.serverTimestamp(),
@@ -167,6 +179,36 @@ class ActivitiesRepository {
       });
     }
     await batch.commit();
+  }
+
+  /// Departure and mode, kept for a transport only. With [deleteMissing]
+  /// (update), the fields a transport lacks or another category never has
+  /// are removed.
+  Map<String, dynamic> _transportFields({
+    required TripActivityCategory category,
+    required String departureAddress,
+    required GeoPoint? departureLocation,
+    required TripTransportMode? transportMode,
+    required bool deleteMissing,
+  }) {
+    final isTransport = category == TripActivityCategory.transport;
+    final cleanDeparture = isTransport ? departureAddress.trim() : '';
+    final departurePoint = isTransport ? departureLocation : null;
+    final mode = isTransport ? transportMode : null;
+    return {
+      if (cleanDeparture.isNotEmpty)
+        'departureAddress': cleanDeparture
+      else if (deleteMissing)
+        'departureAddress': FieldValue.delete(),
+      if (departurePoint != null)
+        'departureLocation': departurePoint
+      else if (deleteMissing)
+        'departureLocation': FieldValue.delete(),
+      if (mode != null)
+        'transportMode': mode.firestoreValue
+      else if (deleteMissing)
+        'transportMode': FieldValue.delete(),
+    };
   }
 
   void _checkDuration(int? durationMinutes) {
@@ -307,6 +349,10 @@ class ActivitiesRepository {
     required String linkUrl,
     required String address,
     required String freeComments,
+    required GeoPoint? location,
+    required String departureAddress,
+    required GeoPoint? departureLocation,
+    required TripTransportMode? transportMode,
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -353,6 +399,14 @@ class ActivitiesRepository {
       'linkUrl': linkUrl.trim(),
       'address': newAddress,
       'freeComments': freeComments.trim(),
+      'location': location ?? FieldValue.delete(),
+      ..._transportFields(
+        category: category,
+        departureAddress: departureAddress,
+        departureLocation: departureLocation,
+        transportMode: transportMode,
+        deleteMissing: true,
+      ),
       'itinerary': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -361,6 +415,49 @@ class ActivitiesRepository {
     }
 
     await docRef.update(update);
+  }
+
+  /// Places an activity on the map from its page. [address] is written only
+  /// when given (the activity had none).
+  Future<void> setActivityLocation({
+    required String tripId,
+    required String activityId,
+    required GeoPoint location,
+    String? address,
+  }) async {
+    final user = auth.currentUser;
+    if (user == null) {
+      throw StateError('Utilisateur non connecte');
+    }
+
+    final cleanTripId = tripId.trim();
+    final cleanActivityId = activityId.trim();
+    if (cleanTripId.isEmpty || cleanActivityId.isEmpty) {
+      throw StateError('Activite invalide');
+    }
+
+    final tripSnap = await firestore.collection('trips').doc(cleanTripId).get();
+    if (!tripSnap.exists || tripSnap.data() == null) {
+      throw StateError('Voyage introuvable');
+    }
+    final trip = Trip.fromMap(tripSnap.id, tripSnap.data()!);
+    final canEdit = canEditActivityForTrip(
+      trip: trip,
+      userId: user.uid,
+    );
+    if (!canEdit) {
+      throw StateError('Droits insuffisants pour modifier une activite');
+    }
+
+    final cleanAddress = address?.trim() ?? '';
+    await _activitiesCol(cleanTripId).doc(cleanActivityId).update({
+      'location': location,
+      if (cleanAddress.isNotEmpty) ...{
+        'address': cleanAddress,
+        'tripDrivingRoute': FieldValue.delete(),
+      },
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> voteForActivity({

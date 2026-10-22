@@ -1884,6 +1884,66 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesComments => 'Commentaires';
 
   @override
+  String get activitiesPlacePickOnMap => 'Choisir sur la carte';
+
+  @override
+  String get activitiesPlaceLocate => 'Localiser sur la carte';
+
+  @override
+  String get activitiesPlacePickerTitle => 'Choisir un lieu';
+
+  @override
+  String get activitiesPlaceSearchHint => 'Rechercher un lieu';
+
+  @override
+  String get activitiesPlaceNoResult => 'Aucun lieu trouvé';
+
+  @override
+  String get activitiesPlaceMyLocation => 'Ma position';
+
+  @override
+  String get activitiesPlaceMyLocationUnavailable => 'Position indisponible';
+
+  @override
+  String get activitiesPlaceRemoveLocation => 'Retirer la position';
+
+  @override
+  String get activitiesTransportMode => 'Mode de transport';
+
+  @override
+  String get activitiesTransportDeparture => 'Départ';
+
+  @override
+  String get activitiesTransportArrival => 'Arrivée';
+
+  @override
+  String get activityTransportModeWalk => 'À pied';
+
+  @override
+  String get activityTransportModeBike => 'Vélo';
+
+  @override
+  String get activityTransportModeCar => 'Voiture';
+
+  @override
+  String get activityTransportModeBus => 'Bus';
+
+  @override
+  String get activityTransportModeTrain => 'Train';
+
+  @override
+  String get activityTransportModePlane => 'Avion';
+
+  @override
+  String get activityTransportModeBoat => 'Bateau';
+
+  @override
+  String get activityTransportModeOther => 'Autre';
+
+  @override
+  String get mapAttributionOsm => 'contributeurs OpenStreetMap';
+
+  @override
   String get linkInvalidExample => 'Lien invalide (ex: https://...)';
 
   @override
@@ -5849,6 +5909,66 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activitiesComments => 'Commentaires';
+
+  @override
+  String get activitiesPlacePickOnMap => 'Choisir sur la carte';
+
+  @override
+  String get activitiesPlaceLocate => 'Localiser sur la carte';
+
+  @override
+  String get activitiesPlacePickerTitle => 'Choisir un lieu';
+
+  @override
+  String get activitiesPlaceSearchHint => 'Rechercher un lieu';
+
+  @override
+  String get activitiesPlaceNoResult => 'Aucun lieu trouvé';
+
+  @override
+  String get activitiesPlaceMyLocation => 'Ma position';
+
+  @override
+  String get activitiesPlaceMyLocationUnavailable => 'Position indisponible';
+
+  @override
+  String get activitiesPlaceRemoveLocation => 'Retirer la position';
+
+  @override
+  String get activitiesTransportMode => 'Mode de transport';
+
+  @override
+  String get activitiesTransportDeparture => 'Départ';
+
+  @override
+  String get activitiesTransportArrival => 'Arrivée';
+
+  @override
+  String get activityTransportModeWalk => 'À pied';
+
+  @override
+  String get activityTransportModeBike => 'Vélo';
+
+  @override
+  String get activityTransportModeCar => 'Voiture';
+
+  @override
+  String get activityTransportModeBus => 'Bus';
+
+  @override
+  String get activityTransportModeTrain => 'Train';
+
+  @override
+  String get activityTransportModePlane => 'Avion';
+
+  @override
+  String get activityTransportModeBoat => 'Bateau';
+
+  @override
+  String get activityTransportModeOther => 'Autre';
+
+  @override
+  String get mapAttributionOsm => 'contributeurs OpenStreetMap';
 
   @override
   String get linkInvalidExample => 'Lien invalide (ex: https://...)';

@@ -53,6 +53,8 @@ dependencies:
   pdfrx: ^2.6.5
   connectivity_plus: ^7.3.1
   speech_to_text: ^7.5.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
