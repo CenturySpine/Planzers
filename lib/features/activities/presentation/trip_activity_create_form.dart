@@ -7,6 +7,7 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_planned_picker.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -99,41 +100,6 @@ class _TripActivityCreateFormState
       return l10n.activitiesLinkMustStartHttp;
     }
     return null;
-  }
-
-  Future<DateTime?> _pickPlannedDateTime() async {
-    final now = DateTime.now();
-    final localPlannedAt = _plannedAt?.toLocal();
-    final initialDate =
-        DateUtils.dateOnly(localPlannedAt ?? widget.initialPlannedDay ?? now);
-    final minSelectableDate = DateTime(now.year - 5);
-    final maxSelectableDate = DateTime(now.year + 5);
-    final pickedDate = await showDatePicker(
-      context: context,
-      locale: Localizations.localeOf(context),
-      initialDate: initialDate,
-      firstDate: initialDate.isBefore(minSelectableDate)
-          ? initialDate
-          : minSelectableDate,
-      lastDate: initialDate.isAfter(maxSelectableDate)
-          ? initialDate
-          : maxSelectableDate,
-      helpText: AppLocalizations.of(context)!.activitiesPlannedDateHelp,
-    );
-    if (pickedDate == null || !mounted) return null;
-    final initialTime = TimeOfDay.fromDateTime(localPlannedAt ?? now);
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-    );
-    if (pickedTime == null) return null;
-    return DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
   }
 
   Future<void> _submit({required bool canPlanActivity}) async {
@@ -285,7 +251,11 @@ class _TripActivityCreateFormState
                           ? null
                           : () async {
                               final pickedDateTime =
-                                  await _pickPlannedDateTime();
+                                  await pickTripActivityDateTime(
+                                context,
+                                current: _plannedAt,
+                                fallbackDay: widget.initialPlannedDay,
+                              );
                               if (pickedDateTime == null || !mounted) return;
                               setState(() => _plannedAt = pickedDateTime);
                             },

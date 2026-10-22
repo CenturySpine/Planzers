@@ -1137,6 +1137,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The AI service is paused for today (global quota reached). It will be available again tomorrow.';
 
   @override
+  String get aiServiceUnavailable =>
+      'The AI service is temporarily unavailable. Try again later.';
+
+  @override
   String aiQuotaRemaining(
       int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
     return 'Remaining quota: $userRemaining/$userLimit (you) — $tripRemaining/$tripLimit (this trip)';
@@ -3950,6 +3954,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletActivityImportInstructions => 'Instructions (optional)';
+
+  @override
+  String get activitiesAiTextLabel => 'Tell what you did';
+
+  @override
+  String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextMenu => 'Dictate activities';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyze';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Edit activity';
+
+  @override
+  String get activitiesAiTextNoDate => 'No date';
+
+  @override
+  String get activitiesAiTextDictation => 'Dictate';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Stop dictation';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictation unavailable: check microphone access';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -5018,6 +5072,10 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Remove recipe steps';
+
+  @override
+  String get aiServiceUnavailable =>
+      'The AI service is temporarily unavailable. Try again later.';
 
   @override
   String get tripParticipantsTitle => 'Participants';
@@ -7827,4 +7885,54 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get walletActivityImportInstructions => 'Instructions (optional)';
+
+  @override
+  String get activitiesAiTextLabel => 'Tell what you did';
+
+  @override
+  String get activitiesAiTextNoResult => 'No activity recognized in this text';
+
+  @override
+  String get activitiesAiTextMenu => 'Dictate activities';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyze';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count activities',
+      one: 'Add 1 activity',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activities added to the planning',
+      one: '1 activity added to the planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Edit activity';
+
+  @override
+  String get activitiesAiTextNoDate => 'No date';
+
+  @override
+  String get activitiesAiTextDictation => 'Dictate';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Stop dictation';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictation unavailable: check microphone access';
 }

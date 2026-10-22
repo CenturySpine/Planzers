@@ -461,6 +461,7 @@
     "placeholders": {"limit": {"type": "int"}}
   },
   "aiQuotaCircuitBreakerTripped": "Le service IA est en pause pour aujourd'hui (quotas globaux atteints). Il sera de nouveau disponible demain.",
+  "aiServiceUnavailable": "Le service IA est momentanément indisponible. Réessayez plus tard.",
   "aiQuotaRemaining": "Quotas restants : {userRemaining}/{userLimit} (vous) — {tripRemaining}/{tripLimit} (ce voyage)",
   "@aiQuotaRemaining": {
     "placeholders": {
@@ -1619,5 +1620,30 @@
       }
     }
   },
-  "walletActivityImportInstructions": "Consignes (facultatif)"
+  "walletActivityImportInstructions": "Consignes (facultatif)",
+  "activitiesAiTextLabel": "Raconte ce que vous avez fait",
+  "activitiesAiTextNoResult": "Aucune activité reconnue dans ce texte",
+  "activitiesAiTextMenu": "Dicter des activités",
+  "activitiesAiTextAnalyze": "Analyser",
+  "activitiesAiTextAdd": "{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}",
+  "@activitiesAiTextAdd": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activitiesAiTextAdded": "{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}",
+  "@activitiesAiTextAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "activitiesAiTextEditTitle": "Modifier l'activité",
+  "activitiesAiTextNoDate": "Sans date",
+  "activitiesAiTextDictation": "Dicter",
+  "activitiesAiTextDictationStop": "Arrêter la dictée",
+  "activitiesAiTextDictationUnavailable": "Dictée impossible : vérifie l'accès au micro"
 }

@@ -2128,6 +2128,12 @@ abstract class AppLocalizations {
   /// **'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.'**
   String get aiQuotaCircuitBreakerTripped;
 
+  /// No description provided for @aiServiceUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service IA est momentanément indisponible. Réessayez plus tard.'**
+  String get aiServiceUnavailable;
+
   /// No description provided for @aiQuotaRemaining.
   ///
   /// In fr, this message translates to:
@@ -7034,6 +7040,72 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Consignes (facultatif)'**
   String get walletActivityImportInstructions;
+
+  /// No description provided for @activitiesAiTextLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Raconte ce que vous avez fait'**
+  String get activitiesAiTextLabel;
+
+  /// No description provided for @activitiesAiTextNoResult.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité reconnue dans ce texte'**
+  String get activitiesAiTextNoResult;
+
+  /// No description provided for @activitiesAiTextMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dicter des activités'**
+  String get activitiesAiTextMenu;
+
+  /// No description provided for @activitiesAiTextAnalyze.
+  ///
+  /// In fr, this message translates to:
+  /// **'Analyser'**
+  String get activitiesAiTextAnalyze;
+
+  /// No description provided for @activitiesAiTextAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Ajouter 1 activité} other{Ajouter {count} activités}}'**
+  String activitiesAiTextAdd(int count);
+
+  /// No description provided for @activitiesAiTextAdded.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 activité ajoutée au planning} other{{count} activités ajoutées au planning}}'**
+  String activitiesAiTextAdded(int count);
+
+  /// No description provided for @activitiesAiTextEditTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier l\'activité'**
+  String get activitiesAiTextEditTitle;
+
+  /// No description provided for @activitiesAiTextNoDate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans date'**
+  String get activitiesAiTextNoDate;
+
+  /// No description provided for @activitiesAiTextDictation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dicter'**
+  String get activitiesAiTextDictation;
+
+  /// No description provided for @activitiesAiTextDictationStop.
+  ///
+  /// In fr, this message translates to:
+  /// **'Arrêter la dictée'**
+  String get activitiesAiTextDictationStop;
+
+  /// No description provided for @activitiesAiTextDictationUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dictée impossible : vérifie l\'accès au micro'**
+  String get activitiesAiTextDictationUnavailable;
 }
 
 class _AppLocalizationsDelegate

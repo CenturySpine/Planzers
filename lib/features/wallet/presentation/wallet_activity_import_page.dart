@@ -1,4 +1,3 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -6,8 +5,8 @@ import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
-import 'package:planerz/features/ai_quotas/data/ai_quota_config.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
+import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
 import 'package:planerz/features/wallet/data/wallet_activity_import_repository.dart';
 import 'package:planerz/features/wallet/data/wallet_document.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
@@ -99,23 +98,8 @@ class _WalletActivityImportPageState
     }
   }
 
-  String _errorMessage(AppLocalizations l10n, Object error) {
-    if (error is FirebaseFunctionsException &&
-        error.code == 'resource-exhausted') {
-      final config = aiQuotaConfigs[AiFeature.documentActivityImport]!;
-      return switch (error.message) {
-        'quota-trip' => l10n.aiQuotaTripExceeded(config.perTripPerDay),
-        'quota-trip-lifetime' =>
-          l10n.aiQuotaTripLifetimeExceeded(config.perTripLifetime),
-        'circuit-breaker' => l10n.aiQuotaCircuitBreakerTripped,
-        _ => l10n.aiQuotaUserExceeded(config.perUserPerDay),
-      };
-    }
-    if (error is FirebaseFunctionsException) {
-      return l10n.commonErrorWithDetails(error.message ?? error.code);
-    }
-    return l10n.commonErrorWithDetails(error.toString());
-  }
+  String _errorMessage(AppLocalizations l10n, Object error) =>
+      aiErrorMessage(l10n, error, AiFeature.documentActivityImport);
 
   @override
   Widget build(BuildContext context) {

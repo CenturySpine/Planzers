@@ -8,6 +8,7 @@ import 'package:planerz/features/administration/presentation/admin_announcements
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
+import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
 import 'package:planerz/features/help_support/presentation/help_support_page.dart';
@@ -17,6 +18,7 @@ import 'package:planerz/features/trips/presentation/invite_join_page.dart';
 import 'package:planerz/features/oauth/presentation/oauth_authorize_page.dart';
 import 'package:planerz/features/oauth/presentation/external_connection_callback_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_page.dart';
+import 'package:planerz/features/activities/presentation/trip_activities_dictate_page.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
@@ -193,6 +195,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminExternalProvidersPage.routePath,
       builder: (context, state) => const AdminExternalProvidersPage(),
+    ),
+    GoRoute(
+      path: AdminTripActivitiesPage.routePath,
+      builder: (context, state) => const AdminTripActivitiesPage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,
@@ -376,6 +382,12 @@ final GoRouter appRouter = GoRouter(
               allowedCategories: allowedCategories,
             );
           },
+        ),
+        GoRoute(
+          path: 'activities/dictate',
+          builder: (context, state) => TripActivitiesDictatePage(
+            tripId: state.pathParameters['tripId']!,
+          ),
         ),
         GoRoute(
           path: 'activities/:activityId',

@@ -52,6 +52,7 @@ dependencies:
   barcode_widget: ^2.0.4
   pdfrx: ^2.6.5
   connectivity_plus: ^7.3.1
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

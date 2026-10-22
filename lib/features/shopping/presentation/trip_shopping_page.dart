@@ -6,7 +6,9 @@ import 'package:planerz/core/presentation/pz_components.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planerz/core/presentation/ai_billed_support_banner.dart';
+import 'package:planerz/features/ai_quotas/data/ai_quota_models.dart';
 import 'package:planerz/features/ai_quotas/data/ai_quotas_repository.dart';
+import 'package:planerz/features/ai_quotas/presentation/ai_error_message.dart';
 import 'package:planerz/features/auth/data/users_repository.dart'
     show
         stableUsersIdsKey,
@@ -226,7 +228,11 @@ class _ShoppingListState extends ConsumerState<_ShoppingList>
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(e.toString()))),
+        SnackBar(
+          content: Text(
+            aiErrorMessage(l10n, e, AiFeature.shoppingConsolidation),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isConsolidating = false);

@@ -1152,6 +1152,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le service IA est en pause pour aujourd\'hui (quotas globaux atteints). Il sera de nouveau disponible demain.';
 
   @override
+  String get aiServiceUnavailable =>
+      'Le service IA est momentanément indisponible. Réessayez plus tard.';
+
+  @override
   String aiQuotaRemaining(
       int userRemaining, int userLimit, int tripRemaining, int tripLimit) {
     return 'Quotas restants : $userRemaining/$userLimit (vous) — $tripRemaining/$tripLimit (ce voyage)';
@@ -3986,6 +3990,57 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
+
+  @override
+  String get activitiesAiTextLabel => 'Raconte ce que vous avez fait';
+
+  @override
+  String get activitiesAiTextNoResult =>
+      'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextMenu => 'Dicter des activités';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyser';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Modifier l\'activité';
+
+  @override
+  String get activitiesAiTextNoDate => 'Sans date';
+
+  @override
+  String get activitiesAiTextDictation => 'Dicter';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Arrêter la dictée';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictée impossible : vérifie l\'accès au micro';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -5068,6 +5123,10 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mealRecipeStepsRemoveTooltip => 'Retirer les étapes de la recette';
+
+  @override
+  String get aiServiceUnavailable =>
+      'Le service IA est momentanément indisponible. Réessayez plus tard.';
 
   @override
   String get tripParticipantsTitle => 'Participants';
@@ -7898,4 +7957,55 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get walletActivityImportInstructions => 'Consignes (facultatif)';
+
+  @override
+  String get activitiesAiTextLabel => 'Raconte ce que vous avez fait';
+
+  @override
+  String get activitiesAiTextNoResult =>
+      'Aucune activité reconnue dans ce texte';
+
+  @override
+  String get activitiesAiTextMenu => 'Dicter des activités';
+
+  @override
+  String get activitiesAiTextAnalyze => 'Analyser';
+
+  @override
+  String activitiesAiTextAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count activités',
+      one: 'Ajouter 1 activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String activitiesAiTextAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count activités ajoutées au planning',
+      one: '1 activité ajoutée au planning',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get activitiesAiTextEditTitle => 'Modifier l\'activité';
+
+  @override
+  String get activitiesAiTextNoDate => 'Sans date';
+
+  @override
+  String get activitiesAiTextDictation => 'Dicter';
+
+  @override
+  String get activitiesAiTextDictationStop => 'Arrêter la dictée';
+
+  @override
+  String get activitiesAiTextDictationUnavailable =>
+      'Dictée impossible : vérifie l\'accès au micro';
 }
