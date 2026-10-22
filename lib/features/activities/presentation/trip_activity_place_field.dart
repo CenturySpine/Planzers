@@ -32,6 +32,7 @@ List<LatLng> tripActivityMapPoints(TripActivity activity) => [
 class TripActivityPlaceField extends StatelessWidget {
   const TripActivityPlaceField({
     super.key,
+    required this.tripId,
     required this.controller,
     required this.location,
     required this.onLocationChanged,
@@ -41,6 +42,8 @@ class TripActivityPlaceField extends StatelessWidget {
     this.textInputAction = TextInputAction.next,
   });
 
+  /// The trip whose places the picker offers first.
+  final String tripId;
   final TextEditingController controller;
   final GeoPoint? location;
   final ValueChanged<GeoPoint?> onLocationChanged;
@@ -54,6 +57,7 @@ class TripActivityPlaceField extends StatelessWidget {
   Future<void> _pick(BuildContext context) async {
     final picked = await TripPlacePickerPage.open(
       context,
+      tripId: tripId,
       initialPoint: location?.toLatLng(),
       initialCenter: fallbackCenter?.toLatLng(),
       initialAddress: controller.text,

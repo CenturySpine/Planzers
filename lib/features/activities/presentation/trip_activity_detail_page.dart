@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
@@ -59,6 +60,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
+  bool _duplicating = false;
   TripActivity? _lastSyncedActivity;
 
   @override
@@ -172,6 +174,41 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     setState(() => _editing = false);
   }
 
+  /// Creates a copy and shows it in place of this page, ready for a new
+  /// date.
+  Future<void> _duplicate(
+    TripActivity activity, {
+    required bool keepSchedule,
+  }) async {
+    if (_duplicating) return;
+    setState(() => _duplicating = true);
+    try {
+      final copyId = await ref.read(activitiesRepositoryProvider).duplicateActivity(
+            tripId: widget.tripId,
+            activity: activity,
+            keepSchedule: keepSchedule,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.activitiesDuplicated),
+        ),
+      );
+      context.pushReplacement('/trips/${widget.tripId}/activities/$copyId');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _duplicating = false);
+    }
+  }
+
   Future<void> _confirmAndDelete(TripActivity activity) async {
     if (_deleting) return;
     final label =
@@ -280,6 +317,17 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
               : false,
           orElse: () => false,
         );
+        final canDuplicate = tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null &&
+              canSuggestActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
+        final canPlan = tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null && canPlanActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
         final fallbackCenter = tripActivitiesFallbackCenter(
           ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
               const <TripActivity>[],
@@ -313,6 +361,20 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             ),
             actions: [
               if (!_editing) ...[
+                if (canDuplicate)
+                  IconButton(
+                    tooltip: l10n.activitiesDuplicate,
+                    onPressed: _deleting || _duplicating
+                        ? null
+                        : () => _duplicate(activity, keepSchedule: canPlan),
+                    icon: _duplicating
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(PhosphorIconsRegular.copy),
+                  ),
                 if (canEdit)
                   IconButton(
                     tooltip: l10n.commonEdit,
@@ -358,6 +420,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
           ),
           body: _editing
               ? _EditBody(
+                  tripId: widget.tripId,
                   formKey: _formKey,
                   labelController: _labelController,
                   linkController: _linkController,
@@ -422,6 +485,7 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
     if (_locating) return;
     final picked = await TripPlacePickerPage.open(
       context,
+      tripId: widget.tripId,
       initialCenter: widget.fallbackCenter?.toLatLng(),
       initialAddress: widget.activity.address,
     );
@@ -1167,6 +1231,7 @@ class _TransportCard extends StatelessWidget {
 
 class _EditBody extends StatefulWidget {
   const _EditBody({
+    required this.tripId,
     required this.formKey,
     required this.labelController,
     required this.linkController,
@@ -1186,6 +1251,7 @@ class _EditBody extends StatefulWidget {
     required this.validateOptionalUrl,
   });
 
+  final String tripId;
   final GlobalKey<FormState> formKey;
   final TextEditingController labelController;
   final TextEditingController linkController;
@@ -1313,6 +1379,7 @@ class _EditBodyState extends State<_EditBody> {
             ),
             const SizedBox(height: 12),
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: widget.departureController,
               location: widget.departureLocation,
               onLocationChanged: widget.onDepartureLocationChanged,
@@ -1322,6 +1389,7 @@ class _EditBodyState extends State<_EditBody> {
             ),
             const SizedBox(height: 12),
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: widget.addressController,
               location: widget.location,
               onLocationChanged: widget.onLocationChanged,
@@ -1330,6 +1398,7 @@ class _EditBodyState extends State<_EditBody> {
             ),
           ] else
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: widget.addressController,
               location: widget.location,
               onLocationChanged: widget.onLocationChanged,

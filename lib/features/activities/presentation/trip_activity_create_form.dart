@@ -249,6 +249,7 @@ class _TripActivityCreateFormState
             ),
             const SizedBox(height: 12),
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: _departureController,
               location: _departureLocation,
               onLocationChanged: (point) =>
@@ -258,6 +259,7 @@ class _TripActivityCreateFormState
             ),
             const SizedBox(height: 12),
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: _addressController,
               location: _location,
               onLocationChanged: (point) => setState(() => _location = point),
@@ -266,6 +268,7 @@ class _TripActivityCreateFormState
             ),
           ] else
             TripActivityPlaceField(
+              tripId: widget.tripId,
               controller: _addressController,
               location: _location,
               onLocationChanged: (point) => setState(() => _location = point),

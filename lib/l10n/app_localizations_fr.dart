@@ -1884,6 +1884,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get activitiesComments => 'Commentaires';
 
   @override
+  String get activitiesDuplicate => 'Dupliquer';
+
+  @override
+  String get activitiesDuplicated => 'Activité dupliquée';
+
+  @override
+  String get activitiesPlaceRecent => 'Lieux récents';
+
+  @override
   String get activitiesPlacePickOnMap => 'Choisir sur la carte';
 
   @override
@@ -5921,6 +5930,15 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activitiesComments => 'Commentaires';
+
+  @override
+  String get activitiesDuplicate => 'Dupliquer';
+
+  @override
+  String get activitiesDuplicated => 'Activité dupliquée';
+
+  @override
+  String get activitiesPlaceRecent => 'Lieux récents';
 
   @override
   String get activitiesPlacePickOnMap => 'Choisir sur la carte';
