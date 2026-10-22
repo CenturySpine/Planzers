@@ -72,6 +72,12 @@ Workflow manuel **Deploy Cloud Functions** (`.github/workflows/deploy-functions.
 - Secrets du dépôt requis : `GCP_SA_KEY_PREVIEW` et `GCP_SA_KEY_PROD` (clé JSON d'un compte de service par projet).
 - Le fichier du workflow doit être présent sur `main` pour que *Run workflow* soit proposé.
 
+Workflow **Deploy Firebase rules** (`.github/workflows/deploy-rules.yml`) : règles Firestore, index Firestore et règles Storage.
+
+- Preview : automatique à chaque push sur `develop` qui modifie `firestore.rules`, `firestore.indexes.json`, `storage.rules` ou le workflow lui-même.
+- Prod : manuel depuis `main` (onglet *Actions* → *Run workflow*), après la release.
+- Mêmes secrets que le déploiement des fonctions ; le compte de service doit avoir les rôles *Firebase Rules Admin* (`roles/firebaserules.admin`) et *Cloud Datastore Index Admin* (`roles/datastore.indexAdmin`).
+
 ---
 
 ## 4. Build APK / AAB Android *(release prod)*
