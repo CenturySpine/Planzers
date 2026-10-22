@@ -1864,6 +1864,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesComments => 'Comments';
 
   @override
+  String get activitiesDuplicate => 'Duplicate';
+
+  @override
+  String get activitiesDuplicated => 'Activity duplicated';
+
+  @override
+  String get activitiesPlaceRecent => 'Recent places';
+
+  @override
   String get activitiesPlacePickOnMap => 'Pick on the map';
 
   @override
@@ -5865,6 +5874,15 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activitiesComments => 'Comments';
+
+  @override
+  String get activitiesDuplicate => 'Duplicate';
+
+  @override
+  String get activitiesDuplicated => 'Activity duplicated';
+
+  @override
+  String get activitiesPlaceRecent => 'Recent places';
 
   @override
   String get activitiesPlacePickOnMap => 'Pick on the map';

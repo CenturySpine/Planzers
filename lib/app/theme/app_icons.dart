@@ -64,6 +64,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData circle = IconData(0xe18a, fontFamily: 'PhosphorRegular');
   static const IconData clipboardText = IconData(0xe198, fontFamily: 'PhosphorRegular');
   static const IconData clock = IconData(0xe19a, fontFamily: 'PhosphorRegular');
+  static const IconData clockCounterClockwise = IconData(0xe1a0, fontFamily: 'PhosphorRegular');
   static const IconData cloudCheck = IconData(0xe1b0, fontFamily: 'PhosphorRegular');
   static const IconData cloudSlash = IconData(0xe1b6, fontFamily: 'PhosphorRegular');
   static const IconData coffee = IconData(0xe1c2, fontFamily: 'PhosphorRegular');

@@ -3408,6 +3408,24 @@ abstract class AppLocalizations {
   /// **'Commentaires'**
   String get activitiesComments;
 
+  /// No description provided for @activitiesDuplicate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dupliquer'**
+  String get activitiesDuplicate;
+
+  /// No description provided for @activitiesDuplicated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activité dupliquée'**
+  String get activitiesDuplicated;
+
+  /// No description provided for @activitiesPlaceRecent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieux récents'**
+  String get activitiesPlaceRecent;
+
   /// No description provided for @activitiesPlacePickOnMap.
   ///
   /// In fr, this message translates to:

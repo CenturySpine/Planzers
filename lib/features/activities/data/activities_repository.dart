@@ -124,6 +124,30 @@ class ActivitiesRepository {
     return docRef.id;
   }
 
+  /// Copies [activity] as a new one created by the current user, not done
+  /// and without votes. Its date and duration are kept with [keepSchedule]
+  /// (members allowed to plan). Returns the id of the copy.
+  Future<String> duplicateActivity({
+    required String tripId,
+    required TripActivity activity,
+    required bool keepSchedule,
+  }) {
+    return addActivity(
+      tripId: tripId,
+      label: activity.label,
+      category: activity.category,
+      linkUrl: activity.linkUrl,
+      address: activity.address,
+      freeComments: activity.freeComments,
+      plannedAt: keepSchedule ? activity.plannedAt : null,
+      durationMinutes: keepSchedule ? activity.durationMinutes : null,
+      location: activity.location,
+      departureAddress: activity.departureAddress,
+      departureLocation: activity.departureLocation,
+      transportMode: activity.transportMode,
+    );
+  }
+
   /// Adds activities already done (read from an account of the trip) in one
   /// write. They share an import id so members get one grouped notification.
   /// Date and duration are kept only for members allowed to plan.

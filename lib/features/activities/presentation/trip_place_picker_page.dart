@@ -11,18 +11,26 @@ import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/core/geocoding/pasted_coordinates.dart';
 import 'package:planerz/core/geocoding/place_geocoding_client.dart';
 import 'package:planerz/core/presentation/osm_map.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_recent_places.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Full-screen place picker: search a place by name, or tap the map to drop
-/// a pin (its address is then looked up). Pops the [GeocodedPlace] chosen,
-/// whose address is empty when none was found for the point.
+/// Full-screen place picker: pick a place already used in the trip, search
+/// a place by name, or tap the map to drop a pin (its address is then looked
+/// up). Pops the [GeocodedPlace] chosen, whose address is empty when none was
+/// found for the point.
 class TripPlacePickerPage extends ConsumerStatefulWidget {
   const TripPlacePickerPage({
     super.key,
+    required this.tripId,
     this.initialPoint,
     this.initialCenter,
     this.initialAddress = '',
   });
+
+  /// The trip whose places are offered first.
+  final String tripId;
 
   /// The point already set, if any.
   final LatLng? initialPoint;
@@ -36,6 +44,7 @@ class TripPlacePickerPage extends ConsumerStatefulWidget {
 
   static Future<GeocodedPlace?> open(
     BuildContext context, {
+    required String tripId,
     LatLng? initialPoint,
     LatLng? initialCenter,
     String initialAddress = '',
@@ -44,6 +53,7 @@ class TripPlacePickerPage extends ConsumerStatefulWidget {
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => TripPlacePickerPage(
+          tripId: tripId,
           initialPoint: initialPoint,
           initialCenter: initialCenter,
           initialAddress: initialAddress,
@@ -78,6 +88,10 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
   /// offered instead of search results.
   ({double lat, double lng})? _pastedPoint;
 
+  /// The trip's places are listed while the search field is empty: on open
+  /// when no point is set yet, and again when the field gets the focus.
+  bool _showRecents = false;
+
   LatLng? _point;
   String _address = '';
   bool _resolvingAddress = false;
@@ -87,6 +101,8 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
   void initState() {
     super.initState();
     _point = widget.initialPoint;
+    _showRecents = _point == null;
+    _searchFocus.addListener(_onSearchFocusChanged);
     final initialAddress = widget.initialAddress.trim();
     if (_point != null) {
       _address = initialAddress;
@@ -97,10 +113,17 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
     }
   }
 
+  void _onSearchFocusChanged() {
+    if (_searchFocus.hasFocus && !_showRecents) {
+      setState(() => _showRecents = true);
+    }
+  }
+
   @override
   void dispose() {
     _searchDebounce?.cancel();
     _searchController.dispose();
+    _searchFocus.removeListener(_onSearchFocusChanged);
     _searchFocus.dispose();
     _mapController.dispose();
     super.dispose();
@@ -174,6 +197,24 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
       _resolvingAddress = false;
       _results = const [];
       _searched = false;
+      _showRecents = false;
+    });
+    _moveTo(point, 16);
+  }
+
+  void _selectRecent(TripRecentPlace place) {
+    final point = LatLng(place.lat, place.lng);
+    _searchFocus.unfocus();
+    _reverseSeq++;
+    _searchSeq++;
+    setState(() {
+      _point = point;
+      _address = place.address.isNotEmpty ? place.address : place.name;
+      _resolvingAddress = false;
+      _results = const [];
+      _searching = false;
+      _searched = false;
+      _showRecents = false;
     });
     _moveTo(point, 16);
   }
@@ -198,6 +239,7 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
       _results = const [];
       _pastedPoint = null;
       _searched = false;
+      _showRecents = false;
     });
     final place = await ref.read(placeGeocodingClientProvider).reverse(
           lat: point.latitude,
@@ -262,10 +304,21 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
     final l10n = AppLocalizations.of(context)!;
     final scheme = Theme.of(context).colorScheme;
     final point = _point;
+    final query = _searchController.text.trim();
+    final tripPlaces = tripRecentPlaces(
+      ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
+          const <TripActivity>[],
+    );
+    // The trip's places first: the latest ones while nothing is typed, then
+    // those matching the text.
+    final recents = query.isEmpty
+        ? (_showRecents ? tripPlaces.take(8).toList() : const <TripRecentPlace>[])
+        : tripPlaces.where((place) => place.matches(query)).take(5).toList();
     final showNoResult = _searched &&
         !_searching &&
         _results.isEmpty &&
-        _searchController.text.trim().length >= 3;
+        recents.isEmpty &&
+        query.length >= 3;
 
     return Scaffold(
       appBar: AppBar(
@@ -351,14 +404,42 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
                       ),
                       onTap: () => _selectPastedPoint(_pastedPoint!),
                     ),
-                  ] else if (_results.isNotEmpty) ...[
+                  ] else if (recents.isNotEmpty || _results.isNotEmpty) ...[
                     const Divider(height: 1),
                     ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 280),
+                      constraints: const BoxConstraints(maxHeight: 320),
                       child: ListView(
                         shrinkWrap: true,
                         padding: EdgeInsets.zero,
                         children: [
+                          if (query.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+                              child: Text(
+                                l10n.activitiesPlaceRecent,
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                            ),
+                          for (final place in recents)
+                            ListTile(
+                              dense: true,
+                              leading: const Icon(
+                                PhosphorIconsRegular.clockCounterClockwise,
+                              ),
+                              title: Text(
+                                place.name.isNotEmpty
+                                    ? place.name
+                                    : place.address.isNotEmpty
+                                        ? place.address
+                                        : formatCoordinates(place.lat, place.lng),
+                              ),
+                              subtitle:
+                                  place.name.isNotEmpty && place.address.isNotEmpty
+                                      ? Text(place.address)
+                                      : null,
+                              onTap: () => _selectRecent(place),
+                            ),
                           for (final place in _results)
                             ListTile(
                               dense: true,
