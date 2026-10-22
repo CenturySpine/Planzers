@@ -2936,7 +2936,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatCropImageTitle => 'Crop photo';
 
   @override
-  String get appCopyright => '© 2026 Bruno Chappe';
+  String get appCopyright => '© 2026 Planerz';
 
   @override
   String tripsMemberCount(Object count) {
@@ -6927,7 +6927,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   String get chatCropImageTitle => 'Crop photo';
 
   @override
-  String get appCopyright => '© 2026 Bruno Chappe';
+  String get appCopyright => '© 2026 Planerz';
 
   @override
   String tripsMemberCount(Object count) {

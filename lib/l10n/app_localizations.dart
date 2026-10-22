@@ -5319,7 +5319,7 @@ abstract class AppLocalizations {
   /// No description provided for @appCopyright.
   ///
   /// In fr, this message translates to:
-  /// **'© 2026 Bruno Chappe'**
+  /// **'© 2026 Planerz'**
   String get appCopyright;
 
   /// No description provided for @tripsMemberCount.
