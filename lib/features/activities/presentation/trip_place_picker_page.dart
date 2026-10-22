@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:planerz/app/theme/app_icons.dart';
 import 'package:planerz/app/theme/app_tokens.dart';
+import 'package:planerz/core/geocoding/pasted_coordinates.dart';
 import 'package:planerz/core/geocoding/place_geocoding_client.dart';
 import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -73,6 +74,10 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
   bool _searched = false;
   List<GeocodedPlace> _results = const [];
 
+  /// GPS point read from the text typed (coordinates or a map link),
+  /// offered instead of search results.
+  ({double lat, double lng})? _pastedPoint;
+
   LatLng? _point;
   String _address = '';
   bool _resolvingAddress = false;
@@ -105,16 +110,21 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    if (value.trim().length < 3) {
+    final pasted = parsePastedCoordinates(value);
+    if (pasted != null || value.trim().length < 3) {
       _searchSeq++;
       setState(() {
+        _pastedPoint = pasted;
         _results = const [];
         _searching = false;
         _searched = false;
       });
       return;
     }
-    setState(() => _searched = false);
+    setState(() {
+      _pastedPoint = null;
+      _searched = false;
+    });
     _searchDebounce = Timer(
       const Duration(milliseconds: 400),
       () => _search(value),
@@ -123,6 +133,17 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
 
   Future<void> _search(String query) async {
     if (query.trim().length < 3) return;
+    final pasted = parsePastedCoordinates(query);
+    if (pasted != null) {
+      _searchSeq++;
+      setState(() {
+        _pastedPoint = pasted;
+        _results = const [];
+        _searching = false;
+        _searched = false;
+      });
+      return;
+    }
     final seq = ++_searchSeq;
     setState(() => _searching = true);
     // Favour places near what the map shows once zoomed on a region.
@@ -157,6 +178,12 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
     _moveTo(point, 16);
   }
 
+  void _selectPastedPoint(({double lat, double lng}) pasted) {
+    final point = LatLng(pasted.lat, pasted.lng);
+    _moveTo(point, 16);
+    _dropPin(point);
+  }
+
   void _moveTo(LatLng point, double zoom) {
     if (_mapReady) _mapController.move(point, zoom);
   }
@@ -169,6 +196,7 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
       _address = '';
       _resolvingAddress = true;
       _results = const [];
+      _pastedPoint = null;
       _searched = false;
     });
     final place = await ref.read(placeGeocodingClientProvider).reverse(
@@ -313,7 +341,17 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
-                  if (_results.isNotEmpty) ...[
+                  if (_pastedPoint != null) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(PhosphorIconsRegular.crosshair),
+                      title: Text(
+                        formatCoordinates(_pastedPoint!.lat, _pastedPoint!.lng),
+                      ),
+                      onTap: () => _selectPastedPoint(_pastedPoint!),
+                    ),
+                  ] else if (_results.isNotEmpty) ...[
                     const Divider(height: 1),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 280),
@@ -384,8 +422,10 @@ class _TripPlacePickerPageState extends ConsumerState<TripPlacePickerPage> {
                                   : Text(
                                       _address.isNotEmpty
                                           ? _address
-                                          : '${point.latitude.toStringAsFixed(5)}, '
-                                              '${point.longitude.toStringAsFixed(5)}',
+                                          : formatCoordinates(
+                                              point.latitude,
+                                              point.longitude,
+                                            ),
                                     ),
                             ),
                           ],
