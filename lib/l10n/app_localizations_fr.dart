@@ -1944,6 +1944,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get mapAttributionOsm => 'contributeurs OpenStreetMap';
 
   @override
+  String get activitiesJourneyMapTitle => 'Carte du voyage';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Tout le voyage';
+
+  @override
+  String get activitiesJourneyEmpty => 'Aucune activité localisée';
+
+  @override
+  String get activitiesJourneyAddHere => 'Ajouter une activité ici';
+
+  @override
   String get linkInvalidExample => 'Lien invalide (ex: https://...)';
 
   @override
@@ -5969,6 +5981,18 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get mapAttributionOsm => 'contributeurs OpenStreetMap';
+
+  @override
+  String get activitiesJourneyMapTitle => 'Carte du voyage';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Tout le voyage';
+
+  @override
+  String get activitiesJourneyEmpty => 'Aucune activité localisée';
+
+  @override
+  String get activitiesJourneyAddHere => 'Ajouter une activité ici';
 
   @override
   String get linkInvalidExample => 'Lien invalide (ex: https://...)';

@@ -314,16 +314,29 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                     l10n.activitiesTabSuggestions,
                   ],
                 ),
-                TripActivitiesFilterChips(
-                  activeFilters: _activeFilters,
-                  filterLabels: filterLabels,
-                  onToggle: (group) => setState(() {
-                    if (_activeFilters.contains(group)) {
-                      _activeFilters.remove(group);
-                    } else {
-                      _activeFilters.add(group);
-                    }
-                  }),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TripActivitiesFilterChips(
+                        activeFilters: _activeFilters,
+                        filterLabels: filterLabels,
+                        onToggle: (group) => setState(() {
+                          if (_activeFilters.contains(group)) {
+                            _activeFilters.remove(group);
+                          } else {
+                            _activeFilters.add(group);
+                          }
+                        }),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n.activitiesJourneyMapTitle,
+                      onPressed: () =>
+                          context.push('/trips/${trip.id}/activities/map'),
+                      icon: const Icon(PhosphorIconsRegular.mapTrifold),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                 ),
                 Expanded(
                   child: TabBarView(

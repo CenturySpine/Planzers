@@ -26,6 +26,8 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
     this.initialCategory,
     this.initialLabel = '',
     this.initialPlannedDay,
+    this.initialLocation,
+    this.initialAddress = '',
     this.scrollController,
     this.header,
     this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -45,6 +47,10 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
 
   /// Day the date picker opens on (e.g. the date of a travel document).
   final DateTime? initialPlannedDay;
+
+  /// Place already chosen (e.g. on the trip map), with its address.
+  final GeoPoint? initialLocation;
+  final String initialAddress;
   final ScrollController? scrollController;
 
   /// Scrolls with the fields (e.g. a sheet's drag handle and title).
@@ -84,9 +90,10 @@ class _TripActivityCreateFormState
         TripActivityCategory.visit;
     _labelController = TextEditingController(text: widget.initialLabel);
     _linkController = TextEditingController();
-    _addressController = TextEditingController();
+    _addressController = TextEditingController(text: widget.initialAddress);
     _departureController = TextEditingController();
     _commentsController = TextEditingController();
+    _location = widget.initialLocation;
   }
 
   @override

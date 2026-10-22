@@ -1924,6 +1924,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapAttributionOsm => 'OpenStreetMap contributors';
 
   @override
+  String get activitiesJourneyMapTitle => 'Trip map';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Whole trip';
+
+  @override
+  String get activitiesJourneyEmpty => 'No located activity';
+
+  @override
+  String get activitiesJourneyAddHere => 'Add an activity here';
+
+  @override
   String get linkInvalidExample => 'Invalid link (example: https://...)';
 
   @override
@@ -5913,6 +5925,18 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mapAttributionOsm => 'OpenStreetMap contributors';
+
+  @override
+  String get activitiesJourneyMapTitle => 'Trip map';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Whole trip';
+
+  @override
+  String get activitiesJourneyEmpty => 'No located activity';
+
+  @override
+  String get activitiesJourneyAddHere => 'Add an activity here';
 
   @override
   String get linkInvalidExample => 'Invalid link (example: https://...)';
