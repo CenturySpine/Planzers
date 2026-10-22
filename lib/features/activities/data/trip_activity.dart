@@ -20,6 +20,10 @@ class TripActivity {
     this.linkPreview = const {},
     this.tripDrivingRoute,
     this.votes = const [],
+    this.location,
+    this.departureAddress = '',
+    this.departureLocation,
+    this.transportMode,
   });
 
   final String id;
@@ -28,7 +32,19 @@ class TripActivity {
   final String linkUrl;
 
   /// Place address for driving directions from the trip base address (optional).
+  /// For a transport, where it arrives.
   final String address;
+
+  /// GPS point of the place, picked on a map or found by search (optional).
+  /// For a transport, the arrival point.
+  final GeoPoint? location;
+
+  /// Transport only: where it leaves from.
+  final String departureAddress;
+  final GeoPoint? departureLocation;
+
+  /// Transport only; null when not chosen.
+  final TripTransportMode? transportMode;
   final String freeComments;
   final String createdBy;
   final DateTime createdAt;
@@ -88,10 +104,15 @@ class TripActivity {
       _ => null,
     };
 
+    final category = TripActivityCategory.fromFirestore(data['category']);
+    final isTransport = category == TripActivityCategory.transport;
+    final location = data['location'];
+    final departureLocation = data['departureLocation'];
+
     return TripActivity(
       id: doc.id,
       label: (data['label'] as String?) ?? '',
-      category: TripActivityCategory.fromFirestore(data['category']),
+      category: category,
       linkUrl: (data['linkUrl'] as String?) ?? '',
       address: (data['address'] as String?) ?? '',
       freeComments: (data['freeComments'] as String?) ?? '',
@@ -105,6 +126,15 @@ class TripActivity {
       tripDrivingRoute:
           ActivityTripDrivingRoute.fromFirestore(data['tripDrivingRoute']),
       votes: _votesFromFirestore(data['votes']),
+      location: location is GeoPoint ? location : null,
+      departureAddress:
+          isTransport ? (data['departureAddress'] as String?) ?? '' : '',
+      departureLocation: isTransport && departureLocation is GeoPoint
+          ? departureLocation
+          : null,
+      transportMode: isTransport
+          ? TripTransportMode.fromFirestore(data['transportMode'])
+          : null,
     );
   }
 
@@ -122,6 +152,38 @@ class TripActivity {
 
 /// Upper bound for a custom duration (must match `firestore.rules`).
 const int tripActivityMaxDurationMinutes = 7 * 24 * 60;
+
+/// How a transport activity travels (values must match `firestore.rules`).
+enum TripTransportMode {
+  walk,
+  bike,
+  car,
+  bus,
+  train,
+  plane,
+  boat,
+  other;
+
+  static TripTransportMode? fromFirestore(dynamic raw) {
+    final s = (raw is String ? raw : '').trim();
+    for (final e in TripTransportMode.values) {
+      if (e.firestoreValue == s) return e;
+    }
+    return null;
+  }
+
+  /// Stored in Firestore.
+  String get firestoreValue => switch (this) {
+        TripTransportMode.walk => 'walk',
+        TripTransportMode.bike => 'bike',
+        TripTransportMode.car => 'car',
+        TripTransportMode.bus => 'bus',
+        TripTransportMode.train => 'train',
+        TripTransportMode.plane => 'plane',
+        TripTransportMode.boat => 'boat',
+        TripTransportMode.other => 'other',
+      };
+}
 
 enum TripActivityCategory {
   sport,
