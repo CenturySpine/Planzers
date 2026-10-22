@@ -82,13 +82,13 @@ self.addEventListener('fetch', (event) => {
       return;
     }
     // Single-page app: every route is served by the same index.html.
-    event.respondWith(networkFirst(request, APP_SHELL_URL));
+    event.respondWith(networkFirst(event, APP_SHELL_URL));
     return;
   }
 
   if (!isCacheable(url)) return;
   if (url.origin === self.location.origin) {
-    event.respondWith(networkFirst(request, cacheKeyFor(url)));
+    event.respondWith(networkFirst(event, cacheKeyFor(url)));
   } else {
     event.respondWith(cacheFirst(request));
   }
@@ -123,20 +123,29 @@ async function storeIfMissing(cache, href) {
   }
 }
 
-async function networkFirst(request, cacheKey) {
+async function networkFirst(event, cacheKey) {
+  const network = fetch(event.request);
+  // The copy is stored in the background: answering only once the whole
+  // file was downloaded made slow networks (several MB of compiled Dart on
+  // mobile data) hit the timeout and start the previous version.
+  event.waitUntil(
+    network
+      .then(async (response) => {
+        if (!response.ok) return;
+        const copy = response.clone();
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(cacheKey, copy);
+      })
+      .catch(() => {}),
+  );
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(cacheKey);
-  const network = fetch(request).then(async (response) => {
-    if (response.ok) await cache.put(cacheKey, response.clone());
-    return response;
-  });
   if (!cached) return network;
   try {
     return await withTimeout(network, NETWORK_TIMEOUT_MS);
   } catch (_) {
-    // Offline or too slow: the network request keeps running in the
-    // background and refreshes the cache if it eventually succeeds.
-    network.catch(() => {});
+    // Offline, or no answer in time: the request keeps running and
+    // refreshes the cache if it eventually succeeds.
     return cached;
   }
 }
