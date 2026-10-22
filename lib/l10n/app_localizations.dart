@@ -3528,6 +3528,30 @@ abstract class AppLocalizations {
   /// **'contributeurs OpenStreetMap'**
   String get mapAttributionOsm;
 
+  /// No description provided for @activitiesJourneyMapTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte du voyage'**
+  String get activitiesJourneyMapTitle;
+
+  /// No description provided for @activitiesJourneyAllTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout le voyage'**
+  String get activitiesJourneyAllTrip;
+
+  /// No description provided for @activitiesJourneyEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité localisée'**
+  String get activitiesJourneyEmpty;
+
+  /// No description provided for @activitiesJourneyAddHere.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une activité ici'**
+  String get activitiesJourneyAddHere;
+
   /// No description provided for @linkInvalidExample.
   ///
   /// In fr, this message translates to:

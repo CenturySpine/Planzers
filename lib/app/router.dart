@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/account/presentation/account_page.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
@@ -22,6 +23,7 @@ import 'package:planerz/features/activities/presentation/trip_activities_dictate
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
+import 'package:planerz/features/activities/presentation/trip_journey_map_page.dart';
 import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart';
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
@@ -377,15 +379,29 @@ final GoRouter appRouter = GoRouter(
                     .where((s) => s.isNotEmpty)
                     .map(TripActivityCategory.fromFirestore)
                     .toList(growable: false);
+            // A place picked on the trip map.
+            final lat = double.tryParse(state.uri.queryParameters['lat'] ?? '');
+            final lng = double.tryParse(state.uri.queryParameters['lng'] ?? '');
             return TripActivityCreatePage(
               tripId: state.pathParameters['tripId']!,
               allowedCategories: allowedCategories,
+              initialLocation:
+                  lat != null && lng != null ? GeoPoint(lat, lng) : null,
+              initialAddress: state.uri.queryParameters['address'] ?? '',
+              initialPlannedDay:
+                  DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
             );
           },
         ),
         GoRoute(
           path: 'activities/dictate',
           builder: (context, state) => TripActivitiesDictatePage(
+            tripId: state.pathParameters['tripId']!,
+          ),
+        ),
+        GoRoute(
+          path: 'activities/map',
+          builder: (context, state) => TripJourneyMapPage(
             tripId: state.pathParameters['tripId']!,
           ),
         ),
