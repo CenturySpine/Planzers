@@ -794,9 +794,21 @@ service cloud.firestore {
               && data.durationMinutes <= 7 * 24 * 60);
         }
 
+        /// Optional GPS points (the place, or a transport's arrival and
+        /// departure) and transport mode.
+        function isValidActivityPlaces(data) {
+          return (!data.keys().hasAny(['location']) || data.location is latlng)
+            && (!data.keys().hasAny(['departureLocation'])
+              || data.departureLocation is latlng)
+            && (!data.keys().hasAny(['transportMode'])
+              || data.transportMode in
+                ['walk', 'bike', 'car', 'bus', 'train', 'plane', 'boat', 'other']);
+        }
+
         allow read: if isTripMember(tripId);
         allow create: if canSuggestActivity(tripId)
-          && isValidActivityDuration(request.resource.data);
+          && isValidActivityDuration(request.resource.data)
+          && isValidActivityPlaces(request.resource.data);
         allow update: if (
           canPlanActivity(tripId)
           && request.resource.data.diff(resource.data).affectedKeys()
@@ -804,6 +816,7 @@ service cloud.firestore {
           && isValidActivityDuration(request.resource.data)
         ) || (
           canEditActivity(tripId)
+          && isValidActivityPlaces(request.resource.data)
           && !request.resource.data.diff(resource.data).affectedKeys()
             .hasAny(['plannedAt', 'durationMinutes', 'votes'])
         ) || (

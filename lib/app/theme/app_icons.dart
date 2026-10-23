@@ -64,6 +64,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData circle = IconData(0xe18a, fontFamily: 'PhosphorRegular');
   static const IconData clipboardText = IconData(0xe198, fontFamily: 'PhosphorRegular');
   static const IconData clock = IconData(0xe19a, fontFamily: 'PhosphorRegular');
+  static const IconData clockCounterClockwise = IconData(0xe1a0, fontFamily: 'PhosphorRegular');
   static const IconData cloudCheck = IconData(0xe1b0, fontFamily: 'PhosphorRegular');
   static const IconData cloudSlash = IconData(0xe1b6, fontFamily: 'PhosphorRegular');
   static const IconData coffee = IconData(0xe1c2, fontFamily: 'PhosphorRegular');
@@ -141,10 +142,12 @@ abstract final class PhosphorIconsRegular {
   static const IconData notepad = IconData(0xe63e, fontFamily: 'PhosphorRegular');
   static const IconData palette = IconData(0xe6c8, fontFamily: 'PhosphorRegular');
   static const IconData paperclip = IconData(0xe39a, fontFamily: 'PhosphorRegular');
+  static const IconData path = IconData(0xe39c, fontFamily: 'PhosphorRegular');
   static const IconData pawPrint = IconData(0xe648, fontFamily: 'PhosphorRegular');
   static const IconData pencilSimple = IconData(0xe3b4, fontFamily: 'PhosphorRegular');
   static const IconData personSimpleHike = IconData(0xed54, fontFamily: 'PhosphorRegular');
   static const IconData personSimpleSki = IconData(0xe71c, fontFamily: 'PhosphorRegular');
+  static const IconData personSimpleWalk = IconData(0xe73a, fontFamily: 'PhosphorRegular');
   static const IconData phone = IconData(0xe3b8, fontFamily: 'PhosphorRegular');
   static const IconData piggyBank = IconData(0xea04, fontFamily: 'PhosphorRegular');
   static const IconData plus = IconData(0xe3d4, fontFamily: 'PhosphorRegular');
@@ -216,6 +219,7 @@ abstract final class PhosphorIconsFill {
   static const IconData hamburger = IconData(0xe790, fontFamily: 'PhosphorFill');
   static const IconData heart = IconData(0xe2a8, fontFamily: 'PhosphorFill');
   static const IconData lock = IconData(0xe2fa, fontFamily: 'PhosphorFill');
+  static const IconData mapPin = IconData(0xe316, fontFamily: 'PhosphorFill');
   static const IconData megaphone = IconData(0xe324, fontFamily: 'PhosphorFill');
   static const IconData navigationArrow = IconData(0xeade, fontFamily: 'PhosphorFill');
   static const IconData paperPlaneRight = IconData(0xe396, fontFamily: 'PhosphorFill');

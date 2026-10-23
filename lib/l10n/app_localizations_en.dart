@@ -1864,6 +1864,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitiesComments => 'Comments';
 
   @override
+  String get activitiesDuplicate => 'Duplicate';
+
+  @override
+  String get activitiesDuplicated => 'Activity duplicated';
+
+  @override
+  String get activitiesPlaceRecent => 'Recent places';
+
+  @override
+  String get activitiesPlacePickOnMap => 'Pick on the map';
+
+  @override
+  String get activitiesPlaceLocate => 'Locate on the map';
+
+  @override
+  String get activitiesPlacePickerTitle => 'Choose a place';
+
+  @override
+  String get activitiesPlaceSearchHint => 'Search for a place';
+
+  @override
+  String get activitiesPlaceNoResult => 'No place found';
+
+  @override
+  String get activitiesPlaceMyLocation => 'My location';
+
+  @override
+  String get activitiesPlaceMyLocationUnavailable => 'Location unavailable';
+
+  @override
+  String get activitiesPlaceRemoveLocation => 'Remove the location';
+
+  @override
+  String get activitiesTransportMode => 'Transport mode';
+
+  @override
+  String get activitiesTransportDeparture => 'Departure';
+
+  @override
+  String get activitiesTransportArrival => 'Arrival';
+
+  @override
+  String get activityTransportModeWalk => 'On foot';
+
+  @override
+  String get activityTransportModeBike => 'Bike';
+
+  @override
+  String get activityTransportModeCar => 'Car';
+
+  @override
+  String get activityTransportModeBus => 'Bus';
+
+  @override
+  String get activityTransportModeTrain => 'Train';
+
+  @override
+  String get activityTransportModePlane => 'Plane';
+
+  @override
+  String get activityTransportModeBoat => 'Boat';
+
+  @override
+  String get activityTransportModeOther => 'Other';
+
+  @override
+  String get mapAttributionOsm => 'OpenStreetMap contributors';
+
+  @override
+  String get activitiesMissingTransport => 'Transport to fill in';
+
+  @override
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance) {
+    return '$from → $to · ≈ $distance';
+  }
+
+  @override
+  String activitiesMissingTransportLabel(Object from, Object to) {
+    return '$from → $to';
+  }
+
+  @override
+  String get activitiesJourneyMapTitle => 'Trip map';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Whole trip';
+
+  @override
+  String get activitiesJourneyEmpty => 'No located activity';
+
+  @override
+  String get activitiesJourneyAddHere => 'Add an activity here';
+
+  @override
   String get linkInvalidExample => 'Invalid link (example: https://...)';
 
   @override
@@ -5793,6 +5888,101 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activitiesComments => 'Comments';
+
+  @override
+  String get activitiesDuplicate => 'Duplicate';
+
+  @override
+  String get activitiesDuplicated => 'Activity duplicated';
+
+  @override
+  String get activitiesPlaceRecent => 'Recent places';
+
+  @override
+  String get activitiesPlacePickOnMap => 'Pick on the map';
+
+  @override
+  String get activitiesPlaceLocate => 'Locate on the map';
+
+  @override
+  String get activitiesPlacePickerTitle => 'Choose a place';
+
+  @override
+  String get activitiesPlaceSearchHint => 'Search for a place';
+
+  @override
+  String get activitiesPlaceNoResult => 'No place found';
+
+  @override
+  String get activitiesPlaceMyLocation => 'My location';
+
+  @override
+  String get activitiesPlaceMyLocationUnavailable => 'Location unavailable';
+
+  @override
+  String get activitiesPlaceRemoveLocation => 'Remove the location';
+
+  @override
+  String get activitiesTransportMode => 'Transport mode';
+
+  @override
+  String get activitiesTransportDeparture => 'Departure';
+
+  @override
+  String get activitiesTransportArrival => 'Arrival';
+
+  @override
+  String get activityTransportModeWalk => 'On foot';
+
+  @override
+  String get activityTransportModeBike => 'Bike';
+
+  @override
+  String get activityTransportModeCar => 'Car';
+
+  @override
+  String get activityTransportModeBus => 'Bus';
+
+  @override
+  String get activityTransportModeTrain => 'Train';
+
+  @override
+  String get activityTransportModePlane => 'Plane';
+
+  @override
+  String get activityTransportModeBoat => 'Boat';
+
+  @override
+  String get activityTransportModeOther => 'Other';
+
+  @override
+  String get mapAttributionOsm => 'OpenStreetMap contributors';
+
+  @override
+  String get activitiesMissingTransport => 'Transport to fill in';
+
+  @override
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance) {
+    return '$from → $to · ≈ $distance';
+  }
+
+  @override
+  String activitiesMissingTransportLabel(Object from, Object to) {
+    return '$from → $to';
+  }
+
+  @override
+  String get activitiesJourneyMapTitle => 'Trip map';
+
+  @override
+  String get activitiesJourneyAllTrip => 'Whole trip';
+
+  @override
+  String get activitiesJourneyEmpty => 'No located activity';
+
+  @override
+  String get activitiesJourneyAddHere => 'Add an activity here';
 
   @override
   String get linkInvalidExample => 'Invalid link (example: https://...)';

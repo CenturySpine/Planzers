@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,9 @@ import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_planned_picker.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -23,6 +26,8 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
     this.initialCategory,
     this.initialLabel = '',
     this.initialPlannedDay,
+    this.initialLocation,
+    this.initialAddress = '',
     this.scrollController,
     this.header,
     this.padding = const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -34,6 +39,8 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
   final ValueChanged<String> onCreated;
 
   /// When set, restricts the category picker to these categories and pre-selects the first one.
+  /// Otherwise every category but transport is offered: transports come from
+  /// the planning's suggestions (or a travel document).
   final List<TripActivityCategory>? allowedCategories;
 
   /// Pre-selected category (defaults to the first allowed one).
@@ -42,6 +49,10 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
 
   /// Day the date picker opens on (e.g. the date of a travel document).
   final DateTime? initialPlannedDay;
+
+  /// Place already chosen (e.g. on the trip map), with its address.
+  final GeoPoint? initialLocation;
+  final String initialAddress;
   final ScrollController? scrollController;
 
   /// Scrolls with the fields (e.g. a sheet's drag handle and title).
@@ -59,6 +70,7 @@ class _TripActivityCreateFormState
   late final TextEditingController _labelController;
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
+  late final TextEditingController _departureController;
   late final TextEditingController _commentsController;
   late TripActivityCategory _category;
   bool _saving = false;
@@ -66,6 +78,11 @@ class _TripActivityCreateFormState
 
   /// Custom duration; null follows the category default.
   int? _durationMinutes;
+
+  /// The place's point; for a transport, the arrival's.
+  GeoPoint? _location;
+  GeoPoint? _departureLocation;
+  TripTransportMode? _transportMode;
 
   @override
   void initState() {
@@ -75,8 +92,10 @@ class _TripActivityCreateFormState
         TripActivityCategory.visit;
     _labelController = TextEditingController(text: widget.initialLabel);
     _linkController = TextEditingController();
-    _addressController = TextEditingController();
+    _addressController = TextEditingController(text: widget.initialAddress);
+    _departureController = TextEditingController();
     _commentsController = TextEditingController();
+    _location = widget.initialLocation;
   }
 
   @override
@@ -84,6 +103,7 @@ class _TripActivityCreateFormState
     _labelController.dispose();
     _linkController.dispose();
     _addressController.dispose();
+    _departureController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -118,6 +138,10 @@ class _TripActivityCreateFormState
             freeComments: _commentsController.text,
             plannedAt: canPlanActivity ? _plannedAt : null,
             durationMinutes: canPlanActivity ? _durationMinutes : null,
+            location: _location,
+            departureAddress: _departureController.text,
+            departureLocation: _departureLocation,
+            transportMode: _transportMode,
           );
       if (!mounted) return;
       widget.onCreated(activityId);
@@ -140,15 +164,23 @@ class _TripActivityCreateFormState
     final l10n = AppLocalizations.of(context)!;
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
-    final canPlanActivity = tripAsync.maybeWhen(
-      data: (trip) => trip != null
-          ? canPlanActivityForTrip(
-              trip: trip,
-              userId: myUid,
-            )
-          : false,
-      orElse: () => false,
+    // A restaurant is never dated: the meal that uses it carries the time,
+    // as on the activity page.
+    final canPlanActivity = _category != TripActivityCategory.restaurant &&
+        tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canPlanActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
+    final fallbackCenter = tripActivitiesFallbackCenter(
+      ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
+          const <TripActivity>[],
     );
+    final isTransport = _category == TripActivityCategory.transport;
 
     return Form(
       key: _formKey,
@@ -166,8 +198,10 @@ class _TripActivityCreateFormState
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final category
-                  in widget.allowedCategories ?? TripActivityCategory.values)
+              for (final category in widget.allowedCategories ??
+                  TripActivityCategory.values.where(
+                    (c) => c != TripActivityCategory.transport,
+                  ))
                 FilterChip(
                   avatar: Icon(category.categoryIcon, size: 18),
                   label: Text(category.label(l10n)),
@@ -208,17 +242,47 @@ class _TripActivityCreateFormState
             validator: _validateOptionalUrl,
           ),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: _addressController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
+          if (isTransport) ...[
+            Text(
+              l10n.activitiesTransportMode,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            TripTransportModeChips(
+              value: _transportMode,
+              onChanged: _saving
+                  ? null
+                  : (mode) => setState(() => _transportMode = mode),
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: _departureController,
+              location: _departureLocation,
+              onLocationChanged: (point) =>
+                  setState(() => _departureLocation = point),
+              labelText: l10n.activitiesTransportDeparture,
+              fallbackCenter: _location ?? fallbackCenter,
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: _addressController,
+              location: _location,
+              onLocationChanged: (point) => setState(() => _location = point),
+              labelText: l10n.activitiesTransportArrival,
+              fallbackCenter: _departureLocation ?? fallbackCenter,
+            ),
+          ] else
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: _addressController,
+              location: _location,
+              onLocationChanged: (point) => setState(() => _location = point),
               labelText: l10n.activitiesAddress,
               hintText: l10n.activitiesAddressHint,
-              border: const OutlineInputBorder(),
+              fallbackCenter: fallbackCenter,
             ),
-            minLines: 1,
-            maxLines: 3,
-          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _commentsController,

@@ -13,7 +13,7 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Suggestions (`plannedAt == null`) for one or more activity categories, with search and vote.
+/// Suggestions (`plannedAt == null`, restaurants whatever their date) for one or more activity categories, with search and vote.
 ///
 /// When [onActivitySelected] is provided the panel enters **selection mode**:
 /// a checkbox appears on each row, selecting one hides all others, and the

@@ -1,5 +1,5 @@
 PRIVACY / GDPR
-Last update: 19/10/2026
+Last update: 23/10/2026
 
 1) Data controller
 - Bruno Chappe
@@ -15,6 +15,8 @@ Other functional service data:
 - Free nickname entered by the user
 - Collaborative content (trips, participants, messages, expenses, activities,
   shopping, meals, practical information)
+- Places of activities and transports (address and GPS position chosen by the
+  user)
 - Shared attachments and photos
 - Technical data required for operation and security
 
@@ -41,6 +43,8 @@ Technical subprocessors:
 - Vercel (web hosting)
 - Google Firebase: Authentication, Firestore, Storage, Functions, FCM
 - Google (Gemini API): artificial intelligence features (see section 5)
+- komoot (Photon service): place search (see section 6)
+- OpenStreetMap Foundation: map backgrounds (see section 6)
 
 5) Artificial intelligence features
 Some optional features rely on Google's Gemini API. Data is sent to it only
@@ -67,14 +71,31 @@ into text by the speech recognition service of their browser or device (for
 example Google or Apple), under that provider's terms. The application only
 receives and stores the resulting text.
 
-6) Retention period
+6) Maps and place search
+Maps and place search rely on public services built on OpenStreetMap:
+- Map backgrounds: when a map is shown, the browser or device downloads the
+  images of the area displayed from the OpenStreetMap Foundation's servers,
+  which receive the IP address and the area viewed
+- Place search (Photon service, run by komoot): the text typed in the search,
+  or the position of a point placed on the map, is sent with the IP address
+  to find the matching place or address
+
+Legal basis: service execution, at the user's request.
+The place chosen (address and GPS position) is stored with the activity and
+visible to the trip participants.
+"My location": the device position is read only at the user's request and
+with their permission, to place a point on the map; it is stored only if the
+user confirms that point.
+These services may be run outside the European Union.
+
+7) Retention period
 - Account and content data: retained while the account is active
 - Deletion/anonymization after validated request: within 30 days
 - Technical backups: purged within 90 days maximum
 - Security/anti-abuse data: limited and proportionate retention
   (12 months maximum)
 
-7) Exercising rights
+8) Exercising rights
 Under GDPR, you can request access, correction, deletion, or restriction of
 your data.
 
@@ -82,10 +103,10 @@ To request account deletion:
 - Write to century.spine@gmail.com
 - Indicate the account email address to delete
 
-8) Cookies and trackers
+9) Cookies and trackers
 The application does not use advertising cookies or third-party marketing
 audience measurement. Only strictly necessary technical trackers for operation
 (session, authentication, security) may be used.
 
-9) Applicable law
+10) Applicable law
 This policy is governed by European law applicable to personal data protection.

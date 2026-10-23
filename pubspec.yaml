@@ -1,7 +1,7 @@
 name: planerz
 description: Application de gestion de voyage entre amis.
 publish_to: "none"
-version: 0.4.4+26
+version: 0.5.0+27
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -53,6 +53,8 @@ dependencies:
   pdfrx: ^2.6.5
   connectivity_plus: ^7.3.1
   speech_to_text: ^7.5.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

@@ -8,9 +8,9 @@ import 'package:planerz/app/theme/app_tokens.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activities_ui.dart';
-import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/trips/presentation/link_preview_from_firestore.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -200,7 +200,7 @@ class TripActivityCard extends StatelessWidget {
     final card = TripPlanningListCardShell(
       categoryColor: categoryColor,
       categoryLightBg: categoryLightBg,
-      leadingIcon: activity.category.categoryIcon,
+      leadingIcon: activity.displayIcon,
       subtitle: l10n.activitiesProposedBy(
         creatorLabelForActivity(
           activity,

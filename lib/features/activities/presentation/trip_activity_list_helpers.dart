@@ -139,6 +139,8 @@ bool tripActivityMatchesQuery(
 }
 
 /// Suggestions: unplanned activities, optionally filtered by [categoryFilter].
+/// Restaurants always stay here, even with a date: meals stand for them in
+/// the agenda, so a dated one would otherwise show nowhere.
 List<TripActivitiesListEntry> buildTripActivitiesSuggestionEntries(
   List<TripActivity> items, {
   required String query,
@@ -146,7 +148,11 @@ List<TripActivitiesListEntry> buildTripActivitiesSuggestionEntries(
   List<TripActivityCategory>? categoryFilter,
 }) {
   final suggestions = items
-      .where((a) => a.plannedAt == null)
+      .where(
+        (a) =>
+            a.plannedAt == null ||
+            a.category == TripActivityCategory.restaurant,
+      )
       .where(
         (a) =>
             categoryFilter == null || categoryFilter.isEmpty || categoryFilter.contains(a.category),

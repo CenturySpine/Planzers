@@ -3408,6 +3408,187 @@ abstract class AppLocalizations {
   /// **'Commentaires'**
   String get activitiesComments;
 
+  /// No description provided for @activitiesDuplicate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dupliquer'**
+  String get activitiesDuplicate;
+
+  /// No description provided for @activitiesDuplicated.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activité dupliquée'**
+  String get activitiesDuplicated;
+
+  /// No description provided for @activitiesPlaceRecent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lieux récents'**
+  String get activitiesPlaceRecent;
+
+  /// No description provided for @activitiesPlacePickOnMap.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir sur la carte'**
+  String get activitiesPlacePickOnMap;
+
+  /// No description provided for @activitiesPlaceLocate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Localiser sur la carte'**
+  String get activitiesPlaceLocate;
+
+  /// No description provided for @activitiesPlacePickerTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un lieu'**
+  String get activitiesPlacePickerTitle;
+
+  /// No description provided for @activitiesPlaceSearchHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher un lieu'**
+  String get activitiesPlaceSearchHint;
+
+  /// No description provided for @activitiesPlaceNoResult.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun lieu trouvé'**
+  String get activitiesPlaceNoResult;
+
+  /// No description provided for @activitiesPlaceMyLocation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ma position'**
+  String get activitiesPlaceMyLocation;
+
+  /// No description provided for @activitiesPlaceMyLocationUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Position indisponible'**
+  String get activitiesPlaceMyLocationUnavailable;
+
+  /// No description provided for @activitiesPlaceRemoveLocation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer la position'**
+  String get activitiesPlaceRemoveLocation;
+
+  /// No description provided for @activitiesTransportMode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de transport'**
+  String get activitiesTransportMode;
+
+  /// No description provided for @activitiesTransportDeparture.
+  ///
+  /// In fr, this message translates to:
+  /// **'Départ'**
+  String get activitiesTransportDeparture;
+
+  /// No description provided for @activitiesTransportArrival.
+  ///
+  /// In fr, this message translates to:
+  /// **'Arrivée'**
+  String get activitiesTransportArrival;
+
+  /// No description provided for @activityTransportModeWalk.
+  ///
+  /// In fr, this message translates to:
+  /// **'À pied'**
+  String get activityTransportModeWalk;
+
+  /// No description provided for @activityTransportModeBike.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vélo'**
+  String get activityTransportModeBike;
+
+  /// No description provided for @activityTransportModeCar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voiture'**
+  String get activityTransportModeCar;
+
+  /// No description provided for @activityTransportModeBus.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bus'**
+  String get activityTransportModeBus;
+
+  /// No description provided for @activityTransportModeTrain.
+  ///
+  /// In fr, this message translates to:
+  /// **'Train'**
+  String get activityTransportModeTrain;
+
+  /// No description provided for @activityTransportModePlane.
+  ///
+  /// In fr, this message translates to:
+  /// **'Avion'**
+  String get activityTransportModePlane;
+
+  /// No description provided for @activityTransportModeBoat.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bateau'**
+  String get activityTransportModeBoat;
+
+  /// No description provided for @activityTransportModeOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get activityTransportModeOther;
+
+  /// No description provided for @mapAttributionOsm.
+  ///
+  /// In fr, this message translates to:
+  /// **'contributeurs OpenStreetMap'**
+  String get mapAttributionOsm;
+
+  /// No description provided for @activitiesMissingTransport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajet à renseigner'**
+  String get activitiesMissingTransport;
+
+  /// No description provided for @activitiesMissingTransportRoute.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} → {to} · ≈ {distance}'**
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance);
+
+  /// No description provided for @activitiesMissingTransportLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} → {to}'**
+  String activitiesMissingTransportLabel(Object from, Object to);
+
+  /// No description provided for @activitiesJourneyMapTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte du voyage'**
+  String get activitiesJourneyMapTitle;
+
+  /// No description provided for @activitiesJourneyAllTrip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout le voyage'**
+  String get activitiesJourneyAllTrip;
+
+  /// No description provided for @activitiesJourneyEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune activité localisée'**
+  String get activitiesJourneyEmpty;
+
+  /// No description provided for @activitiesJourneyAddHere.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une activité ici'**
+  String get activitiesJourneyAddHere;
+
   /// No description provided for @linkInvalidExample.
   ///
   /// In fr, this message translates to:

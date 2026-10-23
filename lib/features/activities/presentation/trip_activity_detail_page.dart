@@ -5,12 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
+import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
+import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/trips/data/traveler_modules_repository.dart';
@@ -46,11 +51,16 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   late final TextEditingController _labelController;
   late final TextEditingController _linkController;
   late final TextEditingController _addressController;
+  late final TextEditingController _departureController;
   late final TextEditingController _commentsController;
   TripActivityCategory _category = TripActivityCategory.visit;
+  GeoPoint? _location;
+  GeoPoint? _departureLocation;
+  TripTransportMode? _transportMode;
   bool _editing = false;
   bool _saving = false;
   bool _deleting = false;
+  bool _duplicating = false;
   TripActivity? _lastSyncedActivity;
 
   @override
@@ -59,6 +69,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _labelController = TextEditingController();
     _linkController = TextEditingController();
     _addressController = TextEditingController();
+    _departureController = TextEditingController();
     _commentsController = TextEditingController();
   }
 
@@ -67,6 +78,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
     _labelController.dispose();
     _linkController.dispose();
     _addressController.dispose();
+    _departureController.dispose();
     _commentsController.dispose();
     super.dispose();
   }
@@ -78,26 +90,29 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
         prev.address == next.address &&
         prev.freeComments == next.freeComments &&
         prev.category == next.category &&
-        prev.done == next.done;
+        prev.done == next.done &&
+        prev.location == next.location &&
+        prev.departureAddress == next.departureAddress &&
+        prev.departureLocation == next.departureLocation &&
+        prev.transportMode == next.transportMode;
   }
 
   void _syncControllersWhenIdle(TripActivity activity) {
     if (_editing || _saving) return;
     if (_sameEditableFields(_lastSyncedActivity, activity)) return;
-    _lastSyncedActivity = activity;
-    _labelController.text = activity.label;
-    _linkController.text = activity.linkUrl;
-    _addressController.text = activity.address;
-    _commentsController.text = activity.freeComments;
-    _category = activity.category;
+    _applyActivity(activity);
   }
 
   void _applyActivity(TripActivity activity) {
     _labelController.text = activity.label;
     _linkController.text = activity.linkUrl;
     _addressController.text = activity.address;
+    _departureController.text = activity.departureAddress;
     _commentsController.text = activity.freeComments;
     _category = activity.category;
+    _location = activity.location;
+    _departureLocation = activity.departureLocation;
+    _transportMode = activity.transportMode;
     _lastSyncedActivity = activity;
   }
 
@@ -130,6 +145,10 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             linkUrl: _linkController.text,
             address: _addressController.text,
             freeComments: _commentsController.text,
+            location: _location,
+            departureAddress: _departureController.text,
+            departureLocation: _departureLocation,
+            transportMode: _transportMode,
           );
       if (!mounted) return;
       setState(() => _editing = false);
@@ -153,6 +172,41 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   void _cancelEdit(TripActivity activity) {
     _applyActivity(activity);
     setState(() => _editing = false);
+  }
+
+  /// Creates a copy and shows it in place of this page, ready for a new
+  /// date.
+  Future<void> _duplicate(
+    TripActivity activity, {
+    required bool keepSchedule,
+  }) async {
+    if (_duplicating) return;
+    setState(() => _duplicating = true);
+    try {
+      final copyId = await ref.read(activitiesRepositoryProvider).duplicateActivity(
+            tripId: widget.tripId,
+            activity: activity,
+            keepSchedule: keepSchedule,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.activitiesDuplicated),
+        ),
+      );
+      context.pushReplacement('/trips/${widget.tripId}/activities/$copyId');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _duplicating = false);
+    }
   }
 
   Future<void> _confirmAndDelete(TripActivity activity) async {
@@ -263,6 +317,21 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
               : false,
           orElse: () => false,
         );
+        final canDuplicate = tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null &&
+              canSuggestActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
+        final canPlan = tripAsync.maybeWhen(
+          data: (trip) =>
+              trip != null && canPlanActivityForTrip(trip: trip, userId: myUid),
+          orElse: () => false,
+        );
+        final fallbackCenter = tripActivitiesFallbackCenter(
+          ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
+              const <TripActivity>[],
+        );
 
         return Scaffold(
           appBar: AppBar(
@@ -274,7 +343,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: Icon(
-                        activity.category.categoryIcon,
+                        activity.displayIcon,
                         size: 20,
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
@@ -292,6 +361,20 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
             ),
             actions: [
               if (!_editing) ...[
+                if (canDuplicate)
+                  IconButton(
+                    tooltip: l10n.activitiesDuplicate,
+                    onPressed: _deleting || _duplicating
+                        ? null
+                        : () => _duplicate(activity, keepSchedule: canPlan),
+                    icon: _duplicating
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(PhosphorIconsRegular.copy),
+                  ),
                 if (canEdit)
                   IconButton(
                     tooltip: l10n.commonEdit,
@@ -337,15 +420,28 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
           ),
           body: _editing
               ? _EditBody(
+                  tripId: widget.tripId,
                   formKey: _formKey,
                   labelController: _labelController,
                   linkController: _linkController,
                   addressController: _addressController,
+                  departureController: _departureController,
                   commentsController: _commentsController,
                   category: _category,
                   onCategoryChanged: _saving
                       ? null
                       : (c) => setState(() => _category = c),
+                  location: _location,
+                  onLocationChanged: (point) =>
+                      setState(() => _location = point),
+                  departureLocation: _departureLocation,
+                  onDepartureLocationChanged: (point) =>
+                      setState(() => _departureLocation = point),
+                  transportMode: _transportMode,
+                  onTransportModeChanged: _saving
+                      ? null
+                      : (mode) => setState(() => _transportMode = mode),
+                  fallbackCenter: fallbackCenter,
                   activity: activity,
                   validateOptionalUrl: _validateOptionalUrl,
                 )
@@ -353,6 +449,7 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                   tripId: widget.tripId,
                   activity: activity,
                   canEditActivity: canEdit,
+                  fallbackCenter: fallbackCenter,
                 ),
         );
       },
@@ -365,17 +462,59 @@ class _ReadBody extends ConsumerStatefulWidget {
     required this.tripId,
     required this.activity,
     required this.canEditActivity,
+    required this.fallbackCenter,
   });
 
   final String tripId;
   final TripActivity activity;
   final bool canEditActivity;
 
+  /// Where the place picker opens (another place of the trip).
+  final GeoPoint? fallbackCenter;
+
   @override
   ConsumerState<_ReadBody> createState() => _ReadBodyState();
 }
 
 class _ReadBodyState extends ConsumerState<_ReadBody> {
+  bool _locating = false;
+
+  /// Places the activity on the map; its address is filled only when it had
+  /// none.
+  Future<void> _locate(BuildContext context) async {
+    if (_locating) return;
+    final picked = await TripPlacePickerPage.open(
+      context,
+      tripId: widget.tripId,
+      initialCenter: widget.fallbackCenter?.toLatLng(),
+      initialAddress: widget.activity.address,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _locating = true);
+    try {
+      await ref.read(activitiesRepositoryProvider).setActivityLocation(
+            tripId: widget.tripId,
+            activityId: widget.activity.id,
+            location: GeoPoint(picked.lat, picked.lng),
+            address: widget.activity.address.trim().isEmpty
+                ? picked.address
+                : null,
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.commonErrorWithDetails(e.toString()),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
   bool _refreshingRoute = false;
   bool _refreshingCurrentLocationRoute = false;
   ActivityTripDrivingRoute? _currentLocationRoute;
@@ -574,6 +713,9 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
     );
     final tripMemberPublicLabels =
         ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
+    final isTransport =
+        widget.activity.category == TripActivityCategory.transport;
+    final mapPoints = tripActivityMapPoints(widget.activity);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -584,6 +726,39 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
             preview: widget.activity.linkPreview,
           ),
           const SizedBox(height: 16),
+        ],
+        if (isTransport &&
+            (widget.activity.transportMode != null ||
+                widget.activity.departureAddress.trim().isNotEmpty)) ...[
+          _TransportCard(activity: widget.activity),
+          const SizedBox(height: 12),
+        ],
+        if (mapPoints.isNotEmpty) ...[
+          TripActivityMapPreview(
+            points: mapPoints,
+            height: 180,
+            onTap: () => openAddressInGoogleMaps(
+              context,
+              '${mapPoints.last.latitude},${mapPoints.last.longitude}',
+            ),
+          ),
+          const SizedBox(height: 12),
+        ] else if (widget.canEditActivity && !isTransport) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _locating ? null : () => _locate(context),
+              icon: _locating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(PhosphorIconsRegular.mapPin),
+              label: Text(AppLocalizations.of(context)!.activitiesPlaceLocate),
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
         if (widget.activity.address.trim().isNotEmpty) ...[
           Card(
@@ -1000,26 +1175,100 @@ class _LinkedWalletDocumentsCard extends ConsumerWidget {
   }
 }
 
+/// A transport's mode, departure and arrival.
+class _TransportCard extends StatelessWidget {
+  const _TransportCard({required this.activity});
+
+  final TripActivity activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final mode = activity.transportMode;
+    final departure = activity.departureAddress.trim();
+    final arrival = activity.address.trim();
+
+    Widget place(String label, String address) => Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: theme.textTheme.labelLarge),
+              const SizedBox(height: 4),
+              Text(address, style: theme.textTheme.bodyLarge),
+            ],
+          ),
+        );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (mode != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    Icon(mode.icon, color: theme.colorScheme.tertiary),
+                    const SizedBox(width: 8),
+                    Text(mode.label(l10n), style: theme.textTheme.titleMedium),
+                  ],
+                ),
+              ),
+            if (departure.isNotEmpty)
+              place(l10n.activitiesTransportDeparture, departure),
+            if (arrival.isNotEmpty)
+              place(l10n.activitiesTransportArrival, arrival),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _EditBody extends StatefulWidget {
   const _EditBody({
+    required this.tripId,
     required this.formKey,
     required this.labelController,
     required this.linkController,
     required this.addressController,
+    required this.departureController,
     required this.commentsController,
     required this.category,
     required this.onCategoryChanged,
+    required this.location,
+    required this.onLocationChanged,
+    required this.departureLocation,
+    required this.onDepartureLocationChanged,
+    required this.transportMode,
+    required this.onTransportModeChanged,
+    required this.fallbackCenter,
     required this.activity,
     required this.validateOptionalUrl,
   });
 
+  final String tripId;
   final GlobalKey<FormState> formKey;
   final TextEditingController labelController;
   final TextEditingController linkController;
   final TextEditingController addressController;
+  final TextEditingController departureController;
   final TextEditingController commentsController;
   final TripActivityCategory category;
   final void Function(TripActivityCategory)? onCategoryChanged;
+
+  /// The place's point; for a transport, the arrival's.
+  final GeoPoint? location;
+  final ValueChanged<GeoPoint?> onLocationChanged;
+  final GeoPoint? departureLocation;
+  final ValueChanged<GeoPoint?> onDepartureLocationChanged;
+  final TripTransportMode? transportMode;
+  final ValueChanged<TripTransportMode?>? onTransportModeChanged;
+  final GeoPoint? fallbackCenter;
   final TripActivity activity;
   final String? Function(String?) validateOptionalUrl;
 
@@ -1063,7 +1312,13 @@ class _EditBodyState extends State<_EditBody> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final c in TripActivityCategory.values)
+              // An activity becomes a transport only through the planning's
+              // suggestions; one already a transport keeps its chip.
+              for (final c in TripActivityCategory.values.where(
+                (c) =>
+                    c != TripActivityCategory.transport ||
+                    widget.activity.category == TripActivityCategory.transport,
+              ))
                 FilterChip(
                   avatar: Icon(c.categoryIcon, size: 18),
                   label: Text(c.label(AppLocalizations.of(context)!)),
@@ -1118,17 +1373,45 @@ class _EditBodyState extends State<_EditBody> {
             ),
           ],
           const SizedBox(height: 12),
-          TextFormField(
-            controller: widget.addressController,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
+          if (widget.category == TripActivityCategory.transport) ...[
+            Text(
+              AppLocalizations.of(context)!.activitiesTransportMode,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            TripTransportModeChips(
+              value: widget.transportMode,
+              onChanged: widget.onTransportModeChanged,
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: widget.departureController,
+              location: widget.departureLocation,
+              onLocationChanged: widget.onDepartureLocationChanged,
+              labelText:
+                  AppLocalizations.of(context)!.activitiesTransportDeparture,
+              fallbackCenter: widget.location ?? widget.fallbackCenter,
+            ),
+            const SizedBox(height: 12),
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: widget.addressController,
+              location: widget.location,
+              onLocationChanged: widget.onLocationChanged,
+              labelText: AppLocalizations.of(context)!.activitiesTransportArrival,
+              fallbackCenter: widget.departureLocation ?? widget.fallbackCenter,
+            ),
+          ] else
+            TripActivityPlaceField(
+              tripId: widget.tripId,
+              controller: widget.addressController,
+              location: widget.location,
+              onLocationChanged: widget.onLocationChanged,
               labelText: AppLocalizations.of(context)!.activitiesAddress,
               hintText: AppLocalizations.of(context)!.activitiesAddressHint,
-              border: OutlineInputBorder(),
+              fallbackCenter: widget.fallbackCenter,
             ),
-            minLines: 1,
-            maxLines: 3,
-          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: widget.commentsController,
