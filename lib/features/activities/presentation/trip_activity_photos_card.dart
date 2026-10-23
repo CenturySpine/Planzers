@@ -481,7 +481,11 @@ class _ActivityPhotoViewerPageState
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        // The app bar theme draws ink icons and a light bottom border, both
+        // meant for light backgrounds.
         iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
+        shape: const Border(),
         elevation: 0,
         actions: [
           if (current != null)
