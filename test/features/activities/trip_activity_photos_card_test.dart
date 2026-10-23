@@ -104,6 +104,73 @@ void main() {
     });
   });
 
+  group('resolveActivityFavorites', () {
+    ActivityPhoto photo(String owner, String id, String activityId,
+            {bool favorite = false}) =>
+        ActivityPhoto(
+          id: id,
+          ownerId: owner,
+          activityId: activityId,
+          url: 'u',
+          thumbUrl: 't',
+          favorite: favorite,
+        );
+    ActivityFavoriteRef ref(String activityId, String owner, String id) =>
+        ActivityFavoriteRef(
+            activityId: activityId, ownerId: owner, photoId: id);
+
+    final mine = [
+      photo('me', 'm1', 'a1', favorite: true),
+      photo('me', 'm2', 'a2', favorite: true),
+      photo('me', 'm3', 'a3'),
+    ];
+    final others = [photo('bob', 'b1', 'a1'), photo('bob', 'b3', 'a3')];
+
+    test('a chosen favorite wins, even another member photo', () {
+      final favorites = resolveActivityFavorites(
+        favorites: {'a1': ref('a1', 'bob', 'b1')},
+        visiblePhotos: [...mine, ...others],
+        myPhotos: mine,
+      );
+      expect(favorites['a1']!.key, 'bob/b1');
+    });
+
+    test('activities never chosen again keep the former mark', () {
+      final favorites = resolveActivityFavorites(
+        favorites: const {},
+        visiblePhotos: [...mine, ...others],
+        myPhotos: mine,
+      );
+      expect(favorites['a2']!.key, 'me/m2');
+      expect(favorites.containsKey('a3'), isFalse);
+    });
+
+    test('a favorite whose photo is gone or private shows none', () {
+      final favorites = resolveActivityFavorites(
+        favorites: {'a3': ref('a3', 'bob', 'deleted')},
+        visiblePhotos: [...mine, ...others],
+        myPhotos: mine,
+      );
+      expect(favorites.containsKey('a3'), isFalse);
+    });
+
+    test('a favorite pointing at a photo of another activity is ignored', () {
+      final favorites = resolveActivityFavorites(
+        favorites: {'a2': ref('a2', 'bob', 'b1')},
+        visiblePhotos: [...mine, ...others],
+        myPhotos: mine,
+      );
+      expect(favorites.containsKey('a2'), isFalse);
+    });
+  });
+
+  test('PhotoReport.idFor gives one report per reporter and photo', () {
+    expect(
+      PhotoReport.idFor(reporterId: 'me', photoOwnerId: 'bob', photoId: 'b1'),
+      'me_bob_b1',
+    );
+  });
+
   test('compareActivityPhotos puts pending photos last', () {
     final pending = _photo('b', 'a');
     final older = ActivityPhoto(

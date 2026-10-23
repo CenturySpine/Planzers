@@ -88,6 +88,7 @@ test('deleteMemberWalletData removes documents and photos of that trip only', as
   assert.deepEqual(db.deleted, [
     'trips/t1/travelerModules/u1/walletDocuments',
     'trips/t1/travelerModules/u1/activityPhotos',
+    'trips/t1/travelerModules/u1/activityFavorites',
   ]);
   assert.deepEqual(
     [...bucket.remaining].sort(),
@@ -108,7 +109,8 @@ test('deleteMemberWalletData never throws', async () => {
   await deleteMemberWalletData({
     db, bucket, tripId: 't1', uid: 'u1', logger: { error: (m) => logged.push(m) },
   });
-  assert.equal(logged.length, 4);
+  // Records of the three collections, files of the two with Storage.
+  assert.equal(logged.length, 5);
 });
 
 test('deleteTripWalletFiles removes every member files for the trip only', async () => {

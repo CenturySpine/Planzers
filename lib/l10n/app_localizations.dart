@@ -7291,7 +7291,7 @@ abstract class AppLocalizations {
   /// No description provided for @activityPhotosTitle.
   ///
   /// In fr, this message translates to:
-  /// **'Mes photos'**
+  /// **'Photos'**
   String get activityPhotosTitle;
 
   /// No description provided for @activityPhotosAdd.
@@ -7347,6 +7347,102 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Retirer des favorites'**
   String get activityPhotosFavoriteRemove;
+
+  /// No description provided for @activityPhotosMakePrivate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rendre privée'**
+  String get activityPhotosMakePrivate;
+
+  /// No description provided for @activityPhotosShare.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partager avec le groupe'**
+  String get activityPhotosShare;
+
+  /// No description provided for @activityPhotosReport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Signaler'**
+  String get activityPhotosReport;
+
+  /// No description provided for @activityPhotosReportTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pourquoi signaler cette photo ?'**
+  String get activityPhotosReportTitle;
+
+  /// No description provided for @activityPhotosReportInappropriate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Contenu inapproprié'**
+  String get activityPhotosReportInappropriate;
+
+  /// No description provided for @activityPhotosReportNotConsenting.
+  ///
+  /// In fr, this message translates to:
+  /// **'Je suis sur la photo et je ne le souhaite pas'**
+  String get activityPhotosReportNotConsenting;
+
+  /// No description provided for @activityPhotosReportOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get activityPhotosReportOther;
+
+  /// No description provided for @activityPhotosReported.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo signalée'**
+  String get activityPhotosReported;
+
+  /// No description provided for @tripPhotoReportsTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photos signalées'**
+  String get tripPhotoReportsTitle;
+
+  /// No description provided for @tripPhotoReportsCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucun signalement à traiter} =1{1 signalement à traiter} other{{count} signalements à traiter}}'**
+  String tripPhotoReportsCount(int count);
+
+  /// No description provided for @tripPhotoReportsEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune photo signalée'**
+  String get tripPhotoReportsEmpty;
+
+  /// No description provided for @tripPhotoReportsBy.
+  ///
+  /// In fr, this message translates to:
+  /// **'Signalée par {name}'**
+  String tripPhotoReportsBy(String name);
+
+  /// No description provided for @tripPhotoReportsAuthor.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo de {name}'**
+  String tripPhotoReportsAuthor(String name);
+
+  /// No description provided for @tripPhotoReportsGone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo supprimée ou devenue privée'**
+  String get tripPhotoReportsGone;
+
+  /// No description provided for @tripPhotoReportsDismiss.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ignorer'**
+  String get tripPhotoReportsDismiss;
+
+  /// No description provided for @tripPhotoReportsDeletePhoto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la photo'**
+  String get tripPhotoReportsDeletePhoto;
 }
 
 class _AppLocalizationsDelegate

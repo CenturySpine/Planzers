@@ -1640,7 +1640,7 @@
   "activitiesAiTextDictationStop": "Stop dictation",
   "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access",
   "aiServiceUnavailable": "The AI service is temporarily unavailable. Try again later.",
-  "activityPhotosTitle": "My photos",
+  "activityPhotosTitle": "Photos",
   "activityPhotosAdd": "Add photos",
   "activityPhotosDayCount": "{count}/{max} for the day",
   "@activityPhotosDayCount": {
@@ -1666,5 +1666,42 @@
   "activityPhotosCaption": "Caption",
   "activityPhotosCaptionEdit": "Edit caption",
   "activityPhotosFavoriteAdd": "Set as favorite",
-  "activityPhotosFavoriteRemove": "Remove from favorites"
+  "activityPhotosFavoriteRemove": "Remove from favorites",
+  "activityPhotosMakePrivate": "Make private",
+  "activityPhotosShare": "Share with the group",
+  "activityPhotosReport": "Report",
+  "activityPhotosReportTitle": "Why report this photo?",
+  "activityPhotosReportInappropriate": "Inappropriate content",
+  "activityPhotosReportNotConsenting": "I'm in this photo and don't want to be",
+  "activityPhotosReportOther": "Other",
+  "activityPhotosReported": "Photo reported",
+  "tripPhotoReportsTitle": "Reported photos",
+  "tripPhotoReportsCount": "{count, plural, =0{No report to handle} =1{1 report to handle} other{{count} reports to handle}}",
+  "@tripPhotoReportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripPhotoReportsEmpty": "No reported photos",
+  "tripPhotoReportsBy": "Reported by {name}",
+  "@tripPhotoReportsBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tripPhotoReportsAuthor": "Photo by {name}",
+  "@tripPhotoReportsAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tripPhotoReportsGone": "Photo deleted or made private",
+  "tripPhotoReportsDismiss": "Dismiss",
+  "tripPhotoReportsDeletePhoto": "Delete photo"
 }

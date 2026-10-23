@@ -7,7 +7,8 @@
  *   users/{uid}/wallet/{tripId}/;
  * - activity photos: records under
  *   trips/{tripId}/travelerModules/{uid}/activityPhotos, files under
- *   users/{uid}/activityPhotos/{tripId}/.
+ *   users/{uid}/activityPhotos/{tripId}/, and the traveler's favorite photo
+ *   choices under trips/{tripId}/travelerModules/{uid}/activityFavorites.
  *
  * The files live outside trips/{tripId}/ (owner-only Storage paths), so the
  * trip-wide Storage cleanup does not reach them.
@@ -65,7 +66,7 @@ async function deleteStoragePrefix(bucket, prefix) {
 
 /**
  * Removes a traveler's personal data (documents and activity photos, records
- * and files) for one trip.
+ * and files, and favorite photo choices) for one trip.
  * Best effort: logs and swallows errors so the calling flow (leaving a trip,
  * removing a member) never fails because of this cleanup.
  * @returns {Promise<boolean>} false when part of the cleanup failed
@@ -84,6 +85,7 @@ async function deleteMemberWalletData({ db, bucket, tripId, uid, logger = consol
   for (const [collection, prefix] of [
     ['walletDocuments', walletPrefix],
     ['activityPhotos', photosPrefix],
+    ['activityFavorites', null],
   ]) {
     try {
       await db.recursiveDelete(moduleRef.collection(collection));
@@ -93,6 +95,7 @@ async function deleteMemberWalletData({ db, bucket, tripId, uid, logger = consol
         tripId, uid, collection, error: String(e),
       });
     }
+    if (!prefix) continue;
     try {
       await deleteStoragePrefix(bucket, prefix);
     } catch (e) {
