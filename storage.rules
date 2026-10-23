@@ -103,6 +103,23 @@ service firebase.storage {
       allow update: if false;
     }
 
+    // Personal photos attached to activities, owner only (same retention as
+    // the personal documents above):
+    // users/{uid}/activityPhotos/{tripId}/<photoId>.jpg and <photoId>_thumb.jpg
+    // Removed server-side when their record is deleted (author, trip admin,
+    // activity deletion, cleanups).
+    match /users/{uid}/activityPhotos/{tripId}/{fileName} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && resource == null
+        && isTripMember(tripId)
+        && request.resource.size <= 3 * 1024 * 1024
+        && request.resource.contentType == 'image/jpeg'
+        && fileName.matches('[A-Za-z0-9]+(_thumb)?[.]jpg');
+      allow update: if false;
+    }
+
     // Self-managed preview release metadata + APK (see RELEASE.md / preview publishing).
     match /versions/{allPaths=**} {
       allow read: if true;

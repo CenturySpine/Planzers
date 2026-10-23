@@ -7287,6 +7287,42 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Dictée impossible : vérifie l\'accès au micro'**
   String get activitiesAiTextDictationUnavailable;
+
+  /// No description provided for @activityPhotosTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes photos'**
+  String get activityPhotosTitle;
+
+  /// No description provided for @activityPhotosAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter des photos'**
+  String get activityPhotosAdd;
+
+  /// No description provided for @activityPhotosDayCount.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count}/{max} pour la journée'**
+  String activityPhotosDayCount(int count, int max);
+
+  /// No description provided for @activityPhotosDayLimit.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} photos maximum par jour'**
+  String activityPhotosDayLimit(int max);
+
+  /// No description provided for @activityPhotosAddFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'ajouter la photo'**
+  String get activityPhotosAddFailed;
+
+  /// No description provided for @activityPhotosDeleteTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cette photo ?'**
+  String get activityPhotosDeleteTitle;
 }
 
 class _AppLocalizationsDelegate

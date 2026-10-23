@@ -1,0 +1,386 @@
+import 'package:cross_cache/cross_cache.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:planerz/app/theme/app_icons.dart';
+import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/activity_photo.dart';
+import 'package:planerz/features/activities/data/activity_photos_repository.dart';
+import 'package:planerz/features/activities/data/trip_activity.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/l10n/app_localizations.dart';
+
+/// How many of [photos] belong to activities planned on the same (local) day
+/// as [day]. Each activity's current date is used, so the photos of a moved
+/// activity count on its new day.
+int activityPhotosCountOnDay({
+  required Iterable<ActivityPhoto> photos,
+  required Map<String, TripActivity> activitiesById,
+  required DateTime day,
+}) {
+  final target = tripActivityDateOnly(day);
+  return photos.where((photo) {
+    final plannedAt = activitiesById[photo.activityId]?.plannedAt;
+    return plannedAt != null &&
+        tripActivitiesSameDay(tripActivityDateOnly(plannedAt), target);
+  }).length;
+}
+
+/// The current traveler's own photos of an activity, with adding (planned
+/// activities only, within the daily limit) and deletion. Hidden for an
+/// unplanned activity without photos.
+class TripActivityPhotosCard extends ConsumerStatefulWidget {
+  const TripActivityPhotosCard({
+    super.key,
+    required this.tripId,
+    required this.activity,
+  });
+
+  final String tripId;
+  final TripActivity activity;
+
+  @override
+  ConsumerState<TripActivityPhotosCard> createState() =>
+      _TripActivityPhotosCardState();
+}
+
+class _TripActivityPhotosCardState
+    extends ConsumerState<TripActivityPhotosCard> {
+  static const double _thumbExtent = 72;
+
+  final _crossCache = CrossCache();
+
+  /// Photos of the current batch still to upload; null when idle.
+  int? _pendingUploads;
+
+  Future<List<XFile>> _pick(int remaining) async {
+    final picker = ImagePicker();
+    final maxSide = activityPhotoMaxSide.toDouble();
+    // The multi-picker needs a limit of at least 2.
+    if (remaining >= 2) {
+      return picker.pickMultiImage(
+        maxWidth: maxSide,
+        maxHeight: maxSide,
+        imageQuality: 80,
+        limit: remaining,
+      );
+    }
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: maxSide,
+      maxHeight: maxSide,
+      imageQuality: 80,
+    );
+    return [if (file != null) file];
+  }
+
+  Future<void> _addPhotos(int remaining) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final List<XFile> picked;
+    try {
+      picked = await _pick(remaining);
+    } catch (error) {
+      debugPrint('activity photo pick failed: $error');
+      messenger.showSnackBar(SnackBar(content: Text(l10n.activityPhotosAddFailed)));
+      return;
+    }
+    if (picked.isEmpty || !mounted) return;
+    // Some platforms ignore the picker limit.
+    if (picked.length > remaining) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.activityPhotosDayLimit(activityPhotosMaxPerDay)),
+        ),
+      );
+    }
+    final files = picked.take(remaining).toList(growable: false);
+    final repository = ref.read(activityPhotosRepositoryProvider);
+    setState(() => _pendingUploads = files.length);
+    var failed = false;
+    for (final file in files) {
+      try {
+        await repository.addPhoto(
+          tripId: widget.tripId,
+          activityId: widget.activity.id,
+          bytes: await file.readAsBytes(),
+        );
+      } catch (error) {
+        debugPrint('activity photo upload failed: $error');
+        failed = true;
+      }
+      if (mounted) {
+        setState(() => _pendingUploads = (_pendingUploads ?? 1) - 1);
+      }
+    }
+    if (mounted) setState(() => _pendingUploads = null);
+    if (failed) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.activityPhotosAddFailed)));
+    }
+  }
+
+  void _open(ActivityPhoto photo) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _ActivityPhotoViewerPage(
+          tripId: widget.tripId,
+          photo: photo,
+          crossCache: _crossCache,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final cs = Theme.of(context).colorScheme;
+    final myPhotos =
+        ref.watch(myActivityPhotosStreamProvider(widget.tripId)).asData?.value ??
+            const <ActivityPhoto>[];
+    final photos = myPhotos
+        .where((photo) => photo.activityId == widget.activity.id)
+        .toList(growable: false);
+    final plannedAt = widget.activity.plannedAt;
+    if (plannedAt == null && photos.isEmpty) return const SizedBox.shrink();
+
+    final activities =
+        ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
+            const <TripActivity>[];
+    final activitiesById = {
+      for (final activity in activities) activity.id: activity,
+      widget.activity.id: widget.activity,
+    };
+    final dayCount = plannedAt == null
+        ? 0
+        : activityPhotosCountOnDay(
+            photos: myPhotos,
+            activitiesById: activitiesById,
+            day: plannedAt,
+          );
+    final remaining = activityPhotosMaxPerDay - dayCount;
+    final pendingUploads = _pendingUploads;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.activityPhotosTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    if (plannedAt != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          l10n.activityPhotosDayCount(
+                            dayCount,
+                            activityPhotosMaxPerDay,
+                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                        ),
+                      ),
+                    if (plannedAt != null &&
+                        remaining > 0 &&
+                        pendingUploads == null)
+                      IconButton(
+                        tooltip: l10n.activityPhotosAdd,
+                        icon: const Icon(PhosphorIconsRegular.plus),
+                        onPressed: () => _addPhotos(remaining),
+                      )
+                    else
+                      // Keeps the header height when the button is hidden.
+                      const SizedBox(height: 48),
+                  ],
+                ),
+              ),
+              if (photos.isNotEmpty || pendingUploads != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final photo in photos)
+                        _PhotoThumb(
+                          photo: photo,
+                          crossCache: _crossCache,
+                          extent: _thumbExtent,
+                          onTap: () => _open(photo),
+                        ),
+                      for (var i = 0; i < (pendingUploads ?? 0); i++)
+                        SizedBox.square(
+                          dimension: _thumbExtent,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Center(
+                              child: SizedBox.square(
+                                dimension: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({
+    required this.photo,
+    required this.crossCache,
+    required this.extent,
+    required this.onTap,
+  });
+
+  final ActivityPhoto photo;
+  final CrossCache crossCache;
+  final double extent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: ColoredBox(
+          color: cs.surfaceContainerHighest,
+          child: SizedBox.square(
+            dimension: extent,
+            child: Image(
+              image: CachedNetworkImage(photo.thumbUrl, crossCache),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Icon(
+                PhosphorIconsRegular.imageBroken,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen view of one photo, with pinch-to-zoom and deletion.
+class _ActivityPhotoViewerPage extends ConsumerWidget {
+  const _ActivityPhotoViewerPage({
+    required this.tripId,
+    required this.photo,
+    required this.crossCache,
+  });
+
+  final String tripId;
+  final ActivityPhoto photo;
+  final CrossCache crossCache;
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.activityPhotosDeleteTitle),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref
+          .read(activityPhotosRepositoryProvider)
+          .deletePhoto(tripId: tripId, photo: photo);
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
+      );
+      return;
+    }
+    for (final url in [photo.url, photo.thumbUrl]) {
+      try {
+        await crossCache.delete(url);
+      } catch (_) {}
+    }
+    navigator.pop();
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: l10n.commonDelete,
+            icon: const Icon(PhosphorIconsRegular.trash),
+            onPressed: () => _delete(context, ref),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: InteractiveViewer(
+          minScale: 0.8,
+          maxScale: 4,
+          child: Center(
+            child: Image(
+              image: CachedNetworkImage(photo.url, crossCache),
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.white70),
+                );
+              },
+              errorBuilder: (_, __, ___) => const Icon(
+                PhosphorIconsRegular.imageBroken,
+                color: Colors.white54,
+                size: 48,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
