@@ -1,5 +1,5 @@
 VIE PRIVÉE / RGPD
-Dernière mise à jour : 19/10/2026
+Dernière mise à jour : 23/10/2026
 
 1) Responsable du traitement
 - Bruno Chappe
@@ -16,6 +16,8 @@ Autres données fonctionnelles du service :
 - Pseudo libre renseigné par l'utilisateur
 - Contenus collaboratifs (voyages, participants, messages, dépenses, activités,
   courses, repas, informations pratiques)
+- Lieux des activités et des trajets (adresse et position GPS choisies par
+  l'utilisateur)
 - Pièces jointes et photos partagées
 - Données techniques nécessaires au fonctionnement et à la sécurité
 
@@ -45,6 +47,8 @@ Sous-traitants techniques :
 - Google Firebase : Authentication, Firestore, Storage, Functions, FCM
 - Google (API Gemini) : fonctionnalités d'intelligence artificielle (voir
   section 5)
+- komoot (service Photon) : recherche de lieux (voir section 6)
+- Fondation OpenStreetMap : fonds de carte (voir section 6)
 
 5) Fonctionnalités d'intelligence artificielle
 Certaines fonctionnalités facultatives s'appuient sur l'API Gemini de Google.
@@ -74,14 +78,32 @@ convertie en texte par le service de reconnaissance vocale de son navigateur
 ou de son appareil (par exemple Google ou Apple), selon les conditions de ce
 fournisseur. L'application ne reçoit et n'enregistre que le texte obtenu.
 
-6) Durée de conservation
+6) Cartes et recherche de lieux
+Les cartes et la recherche de lieux s'appuient sur des services publics issus
+d'OpenStreetMap :
+- Fonds de carte : à l'affichage d'une carte, le navigateur ou l'appareil
+  télécharge les images de la zone affichée auprès des serveurs de la
+  fondation OpenStreetMap, qui reçoivent l'adresse IP et la zone consultée
+- Recherche de lieux (service Photon, opéré par komoot) : le texte saisi dans
+  la recherche, ou la position d'un point placé sur la carte, est envoyé avec
+  l'adresse IP pour trouver le lieu ou l'adresse correspondants
+
+Base légale : exécution du service, à la demande de l'utilisateur.
+Le lieu choisi (adresse et position GPS) est enregistré avec l'activité et
+visible par les participants du voyage.
+« Ma position » : la position de l'appareil n'est lue qu'à la demande de
+l'utilisateur et avec son autorisation, pour placer un point sur la carte ;
+elle n'est enregistrée que si l'utilisateur valide ce point.
+Ces services peuvent être opérés en dehors de l'Union européenne.
+
+7) Durée de conservation
 - Données de compte et contenus : conservation tant que le compte est actif
 - Suppression/anonymisation après demande validée : sous 30 jours
 - Sauvegardes techniques : purge sous 90 jours maximum
 - Données de sécurité/anti-abus : conservation limitée et proportionnée
   (12 mois maximum)
 
-7) Exercice des droits
+8) Exercice des droits
 Conformément au RGPD, vous pouvez demander l'accès, la rectification,
 l'effacement ou la limitation de vos données.
 
@@ -89,11 +111,11 @@ Pour demander la suppression d'un compte :
 - Écrire à century.spine@gmail.com
 - Indiquer l'adresse e-mail du compte à supprimer
 
-8) Cookies et traceurs
+9) Cookies et traceurs
 L'application n'utilise pas de cookies publicitaires ni de mesure d'audience
 marketing tierce. Seuls les traceurs techniques strictement nécessaires au
 fonctionnement (session, authentification, sécurité) peuvent être utilisés.
 
-9) Droit applicable
+10) Droit applicable
 La présente politique est régie par le droit européen applicable à la
 protection des données personnelles.
