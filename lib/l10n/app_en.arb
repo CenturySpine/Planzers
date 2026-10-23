@@ -1700,5 +1700,9 @@
     }
   },
   "activityPhotosAddFailed": "Could not add the photo",
-  "activityPhotosDeleteTitle": "Delete this photo?"
+  "activityPhotosDeleteTitle": "Delete this photo?",
+  "activityPhotosCaption": "Caption",
+  "activityPhotosCaptionEdit": "Edit caption",
+  "activityPhotosFavoriteAdd": "Set as favorite",
+  "activityPhotosFavoriteRemove": "Remove from favorites"
 }

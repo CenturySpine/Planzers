@@ -7323,6 +7323,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Supprimer cette photo ?'**
   String get activityPhotosDeleteTitle;
+
+  /// No description provided for @activityPhotosCaption.
+  ///
+  /// In fr, this message translates to:
+  /// **'Légende'**
+  String get activityPhotosCaption;
+
+  /// No description provided for @activityPhotosCaptionEdit.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la légende'**
+  String get activityPhotosCaptionEdit;
+
+  /// No description provided for @activityPhotosFavoriteAdd.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mettre en favorite'**
+  String get activityPhotosFavoriteAdd;
+
+  /// No description provided for @activityPhotosFavoriteRemove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer des favorites'**
+  String get activityPhotosFavoriteRemove;
 }
 
 class _AppLocalizationsDelegate

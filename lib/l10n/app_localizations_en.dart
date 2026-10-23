@@ -4121,6 +4121,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityPhotosDeleteTitle => 'Delete this photo?';
+
+  @override
+  String get activityPhotosCaption => 'Caption';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Edit caption';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Set as favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Remove from favorites';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -8169,4 +8181,16 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activityPhotosDeleteTitle => 'Delete this photo?';
+
+  @override
+  String get activityPhotosCaption => 'Caption';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Edit caption';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Set as favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Remove from favorites';
 }

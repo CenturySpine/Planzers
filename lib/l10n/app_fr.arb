@@ -1700,5 +1700,9 @@
     }
   },
   "activityPhotosAddFailed": "Impossible d'ajouter la photo",
-  "activityPhotosDeleteTitle": "Supprimer cette photo ?"
+  "activityPhotosDeleteTitle": "Supprimer cette photo ?",
+  "activityPhotosCaption": "Légende",
+  "activityPhotosCaptionEdit": "Modifier la légende",
+  "activityPhotosFavoriteAdd": "Mettre en favorite",
+  "activityPhotosFavoriteRemove": "Retirer des favorites"
 }

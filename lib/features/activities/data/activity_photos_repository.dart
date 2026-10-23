@@ -125,6 +125,46 @@ class ActivityPhotosRepository {
     }
   }
 
+  /// Sets the photo's caption (its length is capped by the caption field);
+  /// an empty one removes it.
+  Future<void> updateCaption({
+    required String tripId,
+    required ActivityPhoto photo,
+    required String caption,
+  }) async {
+    final uid = _requireUid();
+    final clean = caption.trim();
+    await _photosRef(tripId.trim(), uid).doc(photo.id).update({
+      'caption': clean.isEmpty ? FieldValue.delete() : clean,
+    });
+  }
+
+  /// Makes [photo] the favorite of its activity ([favorite] true), which
+  /// unmarks the activity's other favorite, or unmarks it.
+  Future<void> setFavorite({
+    required String tripId,
+    required ActivityPhoto photo,
+    required bool favorite,
+    required Iterable<ActivityPhoto> activityPhotos,
+  }) async {
+    final uid = _requireUid();
+    final photosRef = _photosRef(tripId.trim(), uid);
+    final batch = firestore.batch();
+    batch.update(photosRef.doc(photo.id), {
+      'favorite': favorite ? true : FieldValue.delete(),
+    });
+    if (favorite) {
+      for (final other in activityPhotos) {
+        if (other.id != photo.id &&
+            other.activityId == photo.activityId &&
+            other.favorite) {
+          batch.update(photosRef.doc(other.id), {'favorite': FieldValue.delete()});
+        }
+      }
+    }
+    await batch.commit();
+  }
+
   /// Removes the record first (the photo disappears even if the file cleanup
   /// fails; the server removes the files too), then the files, best effort.
   Future<void> deletePhoto({
