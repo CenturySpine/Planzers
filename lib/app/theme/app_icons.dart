@@ -142,6 +142,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData notepad = IconData(0xe63e, fontFamily: 'PhosphorRegular');
   static const IconData palette = IconData(0xe6c8, fontFamily: 'PhosphorRegular');
   static const IconData paperclip = IconData(0xe39a, fontFamily: 'PhosphorRegular');
+  static const IconData path = IconData(0xe39c, fontFamily: 'PhosphorRegular');
   static const IconData pawPrint = IconData(0xe648, fontFamily: 'PhosphorRegular');
   static const IconData pencilSimple = IconData(0xe3b4, fontFamily: 'PhosphorRegular');
   static const IconData personSimpleHike = IconData(0xed54, fontFamily: 'PhosphorRegular');

@@ -13,6 +13,8 @@ import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_journey.dart';
+import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
+import 'package:planerz/features/activities/presentation/trip_missing_transport_sheet.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -29,12 +31,11 @@ class TripJourneyMapPage extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
-    final canSuggest = ref.watch(tripStreamProvider(tripId)).maybeWhen(
-          data: (trip) =>
-              trip != null &&
-              canSuggestActivityForTrip(trip: trip, userId: myUid),
-          orElse: () => false,
-        );
+    final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
+    final canSuggest =
+        trip != null && canSuggestActivityForTrip(trip: trip, userId: myUid);
+    final canPlan =
+        trip != null && canPlanActivityForTrip(trip: trip, userId: myUid);
     final activities = activitiesAsync.asData?.value;
 
     return Scaffold(
@@ -55,6 +56,7 @@ class TripJourneyMapPage extends ConsumerWidget {
                   tripId: tripId,
                   activities: activities,
                   canSuggestActivity: canSuggest,
+                  canPlanActivity: canPlan,
                 ),
     );
   }
@@ -62,18 +64,22 @@ class TripJourneyMapPage extends ConsumerWidget {
 
 /// Planned activities numbered in time order, transports and plain links
 /// between places, with a day selector. A long press (or a right click)
-/// proposes to add an activity there when [canSuggestActivity].
+/// proposes to add an activity there when [canSuggestActivity]. Links long
+/// enough to call for a transport are dashed, with a button to add it when
+/// the member can also plan.
 class TripJourneyMapView extends ConsumerStatefulWidget {
   const TripJourneyMapView({
     super.key,
     required this.tripId,
     required this.activities,
     required this.canSuggestActivity,
+    required this.canPlanActivity,
   });
 
   final String tripId;
   final List<TripActivity> activities;
   final bool canSuggestActivity;
+  final bool canPlanActivity;
 
   @override
   ConsumerState<TripJourneyMapView> createState() => _TripJourneyMapViewState();
@@ -159,6 +165,11 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final numbers = {
       for (final stop in journey.stops) stop.activity.id: stop.number,
     };
+    final missingByLink = {
+      for (final missing in tripMissingTransports(journey))
+        _linkKey(missing.from, missing.to): missing,
+    };
+    final canAddTransport = canSuggest && widget.canPlanActivity;
     final selected = [
       for (final id in _selectedIds)
         ...activities.where((activity) => activity.id == id),
@@ -211,11 +222,20 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                     polylines: [
                       for (final leg in journey.legs)
                         if (leg.transport == null)
-                          Polyline(
-                            points: [leg.from, leg.to],
-                            color: linkColor,
-                            strokeWidth: 2,
-                          ),
+                          _missingFor(leg, missingByLink) == null
+                              ? Polyline(
+                                  points: [leg.from, leg.to],
+                                  color: linkColor,
+                                  strokeWidth: 2,
+                                )
+                              : Polyline(
+                                  points: [leg.from, leg.to],
+                                  color: linkColor,
+                                  strokeWidth: 3,
+                                  pattern: StrokePattern.dashed(
+                                    segments: const [8, 6],
+                                  ),
+                                ),
                       for (final leg in journey.legs)
                         if (leg.transport != null)
                           Polyline(
@@ -248,6 +268,34 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                               onTap: () => _select([leg.transport!.id]),
                               child: Icon(
                                 leg.transport!.displayIcon,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      if (canAddTransport)
+                        for (final missing in missingByLink.values)
+                          Marker(
+                            point: LatLng(
+                              (missing.fromPoint.latitude +
+                                      missing.toPoint.latitude) /
+                                  2,
+                              (missing.fromPoint.longitude +
+                                      missing.toPoint.longitude) /
+                                  2,
+                            ),
+                            width: 28,
+                            height: 28,
+                            child: _JourneyMarker(
+                              color: linkColor,
+                              selected: false,
+                              onTap: () => showTripMissingTransportSheet(
+                                context,
+                                tripId: widget.tripId,
+                                missing: missing,
+                              ),
+                              child: const Icon(
+                                PhosphorIconsRegular.plus,
                                 size: 16,
                                 color: Colors.white,
                               ),
@@ -310,6 +358,19 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
         ),
       ],
     );
+  }
+
+  static String _linkKey(TripActivity from, TripActivity to) =>
+      '${from.id}>${to.id}';
+
+  static TripMissingTransport? _missingFor(
+    TripJourneyLeg leg,
+    Map<String, TripMissingTransport> missingByLink,
+  ) {
+    final from = leg.fromActivity;
+    final to = leg.toActivity;
+    if (from == null || to == null) return null;
+    return missingByLink[_linkKey(from, to)];
   }
 
   Marker _placeMarker(TripJourneyPlace place) {

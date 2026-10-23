@@ -3546,6 +3546,25 @@ abstract class AppLocalizations {
   /// **'contributeurs OpenStreetMap'**
   String get mapAttributionOsm;
 
+  /// No description provided for @activitiesMissingTransport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajet à renseigner'**
+  String get activitiesMissingTransport;
+
+  /// No description provided for @activitiesMissingTransportRoute.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} → {to} · ≈ {distance}'**
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance);
+
+  /// No description provided for @activitiesMissingTransportLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'{from} → {to}'**
+  String activitiesMissingTransportLabel(Object from, Object to);
+
   /// No description provided for @activitiesJourneyMapTitle.
   ///
   /// In fr, this message translates to:
