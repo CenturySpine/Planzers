@@ -4138,7 +4138,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Dictée impossible : vérifie l\'accès au micro';
 
   @override
-  String get activityPhotosTitle => 'Mes photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Ajouter des photos';
@@ -4170,6 +4170,31 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get activityPhotosFavoriteRemove => 'Retirer des favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Rendre privée';
+
+  @override
+  String get activityPhotosShare => 'Partager avec le groupe';
+
+  @override
+  String get activityPhotosReport => 'Signaler';
+
+  @override
+  String get activityPhotosReportTitle => 'Pourquoi signaler cette photo ?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Contenu inapproprié';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'Je suis sur la photo et je ne le souhaite pas';
+
+  @override
+  String get activityPhotosReportOther => 'Autre';
+
+  @override
+  String get activityPhotosReported => 'Photo signalée';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -8234,7 +8259,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Dictée impossible : vérifie l\'accès au micro';
 
   @override
-  String get activityPhotosTitle => 'Mes photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Ajouter des photos';
@@ -8266,4 +8291,29 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activityPhotosFavoriteRemove => 'Retirer des favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Rendre privée';
+
+  @override
+  String get activityPhotosShare => 'Partager avec le groupe';
+
+  @override
+  String get activityPhotosReport => 'Signaler';
+
+  @override
+  String get activityPhotosReportTitle => 'Pourquoi signaler cette photo ?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Contenu inapproprié';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'Je suis sur la photo et je ne le souhaite pas';
+
+  @override
+  String get activityPhotosReportOther => 'Autre';
+
+  @override
+  String get activityPhotosReported => 'Photo signalée';
 }

@@ -4101,7 +4101,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Dictation unavailable: check microphone access';
 
   @override
-  String get activityPhotosTitle => 'My photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Add photos';
@@ -4133,6 +4133,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityPhotosFavoriteRemove => 'Remove from favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Make private';
+
+  @override
+  String get activityPhotosShare => 'Share with the group';
+
+  @override
+  String get activityPhotosReport => 'Report';
+
+  @override
+  String get activityPhotosReportTitle => 'Why report this photo?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Inappropriate content';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'I\'m in this photo and don\'t want to be';
+
+  @override
+  String get activityPhotosReportOther => 'Other';
+
+  @override
+  String get activityPhotosReported => 'Photo reported';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -8161,7 +8186,7 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
       'Dictation unavailable: check microphone access';
 
   @override
-  String get activityPhotosTitle => 'My photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Add photos';
@@ -8193,4 +8218,29 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activityPhotosFavoriteRemove => 'Remove from favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Make private';
+
+  @override
+  String get activityPhotosShare => 'Share with the group';
+
+  @override
+  String get activityPhotosReport => 'Report';
+
+  @override
+  String get activityPhotosReportTitle => 'Why report this photo?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Inappropriate content';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'I\'m in this photo and don\'t want to be';
+
+  @override
+  String get activityPhotosReportOther => 'Other';
+
+  @override
+  String get activityPhotosReported => 'Photo reported';
 }

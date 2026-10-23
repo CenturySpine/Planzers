@@ -1678,7 +1678,7 @@
   "activitiesAiTextDictation": "Dicter",
   "activitiesAiTextDictationStop": "Arrêter la dictée",
   "activitiesAiTextDictationUnavailable": "Dictée impossible : vérifie l'accès au micro",
-  "activityPhotosTitle": "Mes photos",
+  "activityPhotosTitle": "Photos",
   "activityPhotosAdd": "Ajouter des photos",
   "activityPhotosDayCount": "{count}/{max} pour la journée",
   "@activityPhotosDayCount": {
@@ -1704,5 +1704,13 @@
   "activityPhotosCaption": "Légende",
   "activityPhotosCaptionEdit": "Modifier la légende",
   "activityPhotosFavoriteAdd": "Mettre en favorite",
-  "activityPhotosFavoriteRemove": "Retirer des favorites"
+  "activityPhotosFavoriteRemove": "Retirer des favorites",
+  "activityPhotosMakePrivate": "Rendre privée",
+  "activityPhotosShare": "Partager avec le groupe",
+  "activityPhotosReport": "Signaler",
+  "activityPhotosReportTitle": "Pourquoi signaler cette photo ?",
+  "activityPhotosReportInappropriate": "Contenu inapproprié",
+  "activityPhotosReportNotConsenting": "Je suis sur la photo et je ne le souhaite pas",
+  "activityPhotosReportOther": "Autre",
+  "activityPhotosReported": "Photo signalée"
 }

@@ -616,6 +616,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Photo reports of every trip, for the administration section.
+    match /{path=**}/photoReports/{reportId} {
+      allow read: if isApplicationOwner();
+    }
+
     match /trips/{tripId} {
       // Query: member trips (arrayContains) or all trips for application owners.
       allow list: if signedIn()
@@ -1174,10 +1179,11 @@ service cloud.firestore {
             && request.resource.data.get('barcode', null) == resource.data.get('barcode', null);
         }
 
-        /// Personal photos attached to planned activities (owner only for
-        /// now). Only the caption and the favorite mark (one per activity,
-        /// kept by the app) can change, by the author; trip admins may
-        /// delete any of them. The files are removed server-side when a
+        /// Photos attached to planned activities. Shared ones are read by
+        /// every trip member, private ones (no `shared` flag) by their author
+        /// only. Only the caption, the former favorite mark and the sharing
+        /// can change, by the author; trip admins and the application owner
+        /// may delete any of them. The files are removed server-side when a
         /// record is deleted. The limit per day is applied by the app.
         match /activityPhotos/{photoId} {
           /// Optional. The app caps it at 500 characters as people count
@@ -1193,11 +1199,12 @@ service cloud.firestore {
           /// The fields the author can change after creation.
           function isValidActivityPhotoEditable(data) {
             return isValidActivityPhotoCaption(data)
-              && (!data.keys().hasAny(['favorite']) || data.favorite == true);
+              && (!data.keys().hasAny(['favorite']) || data.favorite == true)
+              && (!data.keys().hasAny(['shared']) || data.shared == true);
           }
 
           function isValidActivityPhoto(data) {
-            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'caption', 'favorite', 'createdAt'])
+            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'caption', 'favorite', 'shared', 'createdAt'])
               && isValidActivityPhotoEditable(data)
               && data.activityId is string
               && data.activityId.size() > 0
@@ -1213,17 +1220,68 @@ service cloud.firestore {
               && data.createdAt == request.time;
           }
 
-          allow read: if isTripMember(tripId) && uid == request.auth.uid;
+          allow read: if isTripMember(tripId)
+            && (uid == request.auth.uid || resource.data.shared == true);
           allow create: if isTripMember(tripId)
             && uid == request.auth.uid
             && isValidActivityPhoto(request.resource.data);
           allow update: if isTripMember(tripId)
             && uid == request.auth.uid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption', 'favorite'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption', 'favorite', 'shared'])
             && isValidActivityPhotoEditable(request.resource.data);
           allow delete: if isTripMember(tripId)
-            && (uid == request.auth.uid || tripCallerRoleRank(tripId) >= 2);
+            && (uid == request.auth.uid
+              || tripCallerRoleRank(tripId) >= 2
+              || isApplicationOwner());
         }
+
+        /// The traveler's favorite photo of each activity, theirs or another
+        /// member's (owner only). A favorite whose photo is gone is ignored.
+        match /activityFavorites/{activityId} {
+          allow read, delete: if isTripMember(tripId) && uid == request.auth.uid;
+          allow create, update: if isTripMember(tripId)
+            && uid == request.auth.uid
+            && request.resource.data.keys().hasOnly(['ownerId', 'photoId', 'updatedAt'])
+            && request.resource.data.ownerId is string
+            && request.resource.data.ownerId.size() > 0
+            && request.resource.data.ownerId.size() <= 128
+            && request.resource.data.photoId is string
+            && request.resource.data.photoId.size() > 0
+            && request.resource.data.photoId.size() <= 128
+            && request.resource.data.updatedAt == request.time;
+        }
+      }
+
+      /// Reports of shared activity photos: one per reporter and photo,
+      /// handled by the application owner only (trip admins never see them).
+      /// A reporter reads their own reports, to keep those photos hidden for
+      /// them. Handled reports are kept with their outcome, once, as the
+      /// history of the photo and of its reporter.
+      match /photoReports/{reportId} {
+        function isValidPhotoReport(data) {
+          return data.keys().hasOnly(['photoOwnerId', 'photoId', 'activityId', 'reporterId', 'reason', 'createdAt'])
+            && data.reporterId == request.auth.uid
+            && data.photoOwnerId is string
+            && data.photoOwnerId != request.auth.uid
+            && data.photoId is string
+            && reportId == request.auth.uid + '_' + data.photoOwnerId + '_' + data.photoId
+            && data.activityId is string
+            && data.activityId.size() <= 128
+            && data.reason in ['inappropriate', 'notConsenting', 'other']
+            && data.createdAt == request.time
+            && get(/databases/$(database)/documents/trips/$(tripId)/travelerModules/$(data.photoOwnerId)/activityPhotos/$(data.photoId))
+                .data.get('shared', false) == true;
+        }
+
+        allow read: if isApplicationOwner()
+          || (isTripMember(tripId) && resource.data.reporterId == request.auth.uid);
+        allow create: if isTripMember(tripId) && isValidPhotoReport(request.resource.data);
+        allow update: if isApplicationOwner()
+          && !resource.data.keys().hasAny(['resolution'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resolution', 'resolvedAt'])
+          && request.resource.data.resolution in ['dismissed', 'photoRemoved']
+          && request.resource.data.resolvedAt == request.time;
+        allow delete: if isApplicationOwner();
       }
 
       /// Personal "À emporter" checklist, keyed by the participant SLOT id

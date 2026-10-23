@@ -8,6 +8,7 @@ import 'package:planerz/features/administration/presentation/admin_announcements
 import 'package:planerz/features/administration/presentation/admin_maintenance_page.dart';
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
+import 'package:planerz/features/administration/presentation/admin_photo_reports_page.dart';
 import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
 import 'package:planerz/features/administration/domain/app_usage_stats.dart';
 
@@ -167,6 +168,18 @@ class _StatsBody extends StatelessWidget {
             subtitle: const Text('Supprimer toutes les activités d\'un voyage.'),
             trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminTripActivitiesPage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(PhosphorIconsRegular.flag),
+            title: const Text('Photos signalées'),
+            subtitle: const Text(
+              'Traiter les photos signalées par les participants des voyages.',
+            ),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
+            onTap: () => context.push(AdminPhotoReportsPage.routePath),
           ),
         ),
         const SizedBox(height: 12),

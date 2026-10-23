@@ -1678,7 +1678,7 @@
   "activitiesAiTextDictation": "Dictate",
   "activitiesAiTextDictationStop": "Stop dictation",
   "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access",
-  "activityPhotosTitle": "My photos",
+  "activityPhotosTitle": "Photos",
   "activityPhotosAdd": "Add photos",
   "activityPhotosDayCount": "{count}/{max} for the day",
   "@activityPhotosDayCount": {
@@ -1704,5 +1704,13 @@
   "activityPhotosCaption": "Caption",
   "activityPhotosCaptionEdit": "Edit caption",
   "activityPhotosFavoriteAdd": "Set as favorite",
-  "activityPhotosFavoriteRemove": "Remove from favorites"
+  "activityPhotosFavoriteRemove": "Remove from favorites",
+  "activityPhotosMakePrivate": "Make private",
+  "activityPhotosShare": "Share with the group",
+  "activityPhotosReport": "Report",
+  "activityPhotosReportTitle": "Why report this photo?",
+  "activityPhotosReportInappropriate": "Inappropriate content",
+  "activityPhotosReportNotConsenting": "I'm in this photo and don't want to be",
+  "activityPhotosReportOther": "Other",
+  "activityPhotosReported": "Photo reported"
 }

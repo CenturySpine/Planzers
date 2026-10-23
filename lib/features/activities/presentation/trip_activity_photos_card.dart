@@ -10,6 +10,8 @@ import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/activity_photos_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
+import 'package:planerz/features/trips/data/trip_members_repository.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
 /// How many of [photos] belong to activities planned on the same (local) day
@@ -28,9 +30,9 @@ int activityPhotosCountOnDay({
   }).length;
 }
 
-/// The current traveler's own photos of an activity, with adding (planned
-/// activities only, within the daily limit) and deletion. Hidden for an
-/// unplanned activity without photos.
+/// The photos of an activity: the current traveler's own, then those the
+/// other members shared (outlined). Adding is for planned activities only,
+/// within the daily limit. Hidden for an unplanned activity without photos.
 class TripActivityPhotosCard extends ConsumerStatefulWidget {
   const TripActivityPhotosCard({
     super.key,
@@ -142,14 +144,20 @@ class _TripActivityPhotosCardState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final cs = Theme.of(context).colorScheme;
+    final myUid = ref.watch(activityPhotosRepositoryProvider).currentUid;
     final myPhotos = ref
             .watch(myActivityPhotosStreamProvider(widget.tripId))
             .asData
             ?.value ??
         const <ActivityPhoto>[];
-    final photos = myPhotos
+    final photos = ref
+        .watch(visibleActivityPhotosProvider(widget.tripId))
         .where((photo) => photo.activityId == widget.activity.id)
         .toList(growable: false);
+    final favoriteKey = ref
+        .watch(
+            activityFavoritePhotosProvider(widget.tripId))[widget.activity.id]
+        ?.key;
     final plannedAt = widget.activity.plannedAt;
     if (plannedAt == null && photos.isEmpty) return const SizedBox.shrink();
 
@@ -160,6 +168,7 @@ class _TripActivityPhotosCardState
       for (final activity in activities) activity.id: activity,
       widget.activity.id: widget.activity,
     };
+    // Only the traveler's own photos count, private ones included.
     final dayCount = plannedAt == null
         ? 0
         : activityPhotosCountOnDay(
@@ -228,6 +237,8 @@ class _TripActivityPhotosCardState
                           photo: photo,
                           crossCache: _crossCache,
                           extent: _thumbExtent,
+                          isOthers: photo.ownerId != myUid,
+                          isFavorite: photo.key == favoriteKey,
                           onTap: () => _open(photos, index),
                         ),
                       for (var i = 0; i < (pendingUploads ?? 0); i++)
@@ -258,62 +269,75 @@ class _TripActivityPhotosCardState
   }
 }
 
+/// A photo of the grid: another member's is outlined, a private one shows a
+/// lock and the traveler's favorite a star.
 class _PhotoThumb extends StatelessWidget {
   const _PhotoThumb({
     required this.photo,
     required this.crossCache,
     required this.extent,
+    required this.isOthers,
+    required this.isFavorite,
     required this.onTap,
   });
 
   final ActivityPhoto photo;
   final CrossCache crossCache;
   final double extent;
+  final bool isOthers;
+  final bool isFavorite;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(8);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: ColoredBox(
-          color: cs.surfaceContainerHighest,
-          child: SizedBox.square(
-            dimension: extent,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image(
-                  image: CachedNetworkImage(photo.thumbUrl, crossCache),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Icon(
-                    PhosphorIconsRegular.imageBroken,
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                if (photo.favorite)
-                  const Positioned(
-                    top: 4,
-                    right: 4,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(3),
-                        child: Icon(
-                          PhosphorIconsFill.star,
-                          size: 14,
-                          color: AppTokens.accent,
-                        ),
-                      ),
+      borderRadius: radius,
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          border: isOthers ? Border.all(color: cs.tertiary, width: 3) : null,
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: ColoredBox(
+            color: cs.surfaceContainerHighest,
+            child: SizedBox.square(
+              dimension: extent,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image(
+                    image: CachedNetworkImage(photo.thumbUrl, crossCache),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Icon(
+                      PhosphorIconsRegular.imageBroken,
+                      color: cs.onSurfaceVariant,
                     ),
                   ),
-              ],
+                  if (!isOthers && !photo.shared)
+                    const Positioned(
+                      top: 4,
+                      left: 4,
+                      child: _ThumbBadge(
+                        icon: PhosphorIconsRegular.lock,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (isFavorite)
+                    const Positioned(
+                      top: 4,
+                      right: 4,
+                      child: _ThumbBadge(
+                        icon: PhosphorIconsFill.star,
+                        color: AppTokens.accent,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -322,9 +346,65 @@ class _PhotoThumb extends StatelessWidget {
   }
 }
 
+class _ThumbBadge extends StatelessWidget {
+  const _ThumbBadge({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colors.black54,
+        shape: BoxShape.circle,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Icon(icon, size: 14, color: color),
+      ),
+    );
+  }
+}
+
+String photoReportReasonLabel(
+  AppLocalizations l10n,
+  PhotoReportReason reason,
+) {
+  return switch (reason) {
+    PhotoReportReason.inappropriate => l10n.activityPhotosReportInappropriate,
+    PhotoReportReason.notConsenting => l10n.activityPhotosReportNotConsenting,
+    PhotoReportReason.other => l10n.activityPhotosReportOther,
+  };
+}
+
+/// Asks to confirm deleting a photo.
+Future<bool> confirmActivityPhotoDeletion(BuildContext context) async {
+  final l10n = AppLocalizations.of(context)!;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.activityPhotosDeleteTitle),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(l10n.commonDelete),
+        ),
+      ],
+    ),
+  );
+  return confirmed == true;
+}
+
 /// Full-screen view of an activity's photos: swipe between them, pinch to
-/// zoom (swiping pauses while zoomed in); caption, favorite mark and
-/// deletion of the one shown.
+/// zoom (swiping pauses while zoomed in). On the traveler's own photo:
+/// favorite, sharing, caption and deletion; on another member's: its author
+/// and caption, favorite and report, plus deletion for trip admins. Reports
+/// are handled by the application owner only.
 class _ActivityPhotoViewerPage extends ConsumerStatefulWidget {
   const _ActivityPhotoViewerPage({
     required this.tripId,
@@ -376,72 +456,149 @@ class _ActivityPhotoViewerPageState
     if (zoomed != _zoomed) setState(() => _zoomed = zoomed);
   }
 
-  Future<void> _delete(ActivityPhoto photo, {required bool isLast}) async {
+  ActivityPhotosRepository get _repository =>
+      ref.read(activityPhotosRepositoryProvider);
+
+  void _showError(ScaffoldMessengerState messenger, Object error) {
     final l10n = AppLocalizations.of(context)!;
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.activityPhotosDeleteTitle),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.commonDelete),
-          ),
-        ],
-      ),
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
     );
-    if (confirmed != true) return;
-    try {
-      await ref
-          .read(activityPhotosRepositoryProvider)
-          .deletePhoto(tripId: widget.tripId, photo: photo);
-    } catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
-      );
+  }
+
+  /// After the photo shown left the list: close when it was the last one,
+  /// otherwise the next photo takes its place, unzoomed.
+  void _afterRemoval(NavigatorState navigator, {required bool isLast}) {
+    if (isLast) {
+      navigator.pop();
       return;
     }
+    _transformation.value = Matrix4.identity();
+  }
+
+  Future<void> _forgetCachedFiles(ActivityPhoto photo) async {
     for (final url in [photo.url, photo.thumbUrl]) {
       try {
         await widget.crossCache.delete(url);
       } catch (_) {}
     }
-    if (isLast) {
-      navigator.pop();
-      return;
-    }
-    // The next photo takes its place, unzoomed.
-    _transformation.value = Matrix4.identity();
   }
 
-  Future<void> _toggleFavorite(
-    ActivityPhoto photo,
-    List<ActivityPhoto> activityPhotos,
-  ) async {
+  Future<void> _delete(ActivityPhoto photo, {required bool isLast}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    if (!await confirmActivityPhotoDeletion(context)) return;
+    try {
+      await _repository.deletePhoto(tripId: widget.tripId, photo: photo);
+    } catch (error) {
+      _showError(messenger, error);
+      return;
+    }
+    await _forgetCachedFiles(photo);
+    _afterRemoval(navigator, isLast: isLast);
+  }
+
+  /// A trip admin deleting another member's photo; its reports stay for the
+  /// application owner.
+  Future<void> _deleteAsModerator(
+    ActivityPhoto photo, {
+    required bool isLast,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    if (!await confirmActivityPhotoDeletion(context)) return;
+    try {
+      await _repository.deletePhotoAsModerator(
+        tripId: widget.tripId,
+        ownerId: photo.ownerId,
+        photoId: photo.id,
+        pendingReportIds: const [],
+      );
+    } catch (error) {
+      _showError(messenger, error);
+      return;
+    }
+    await _forgetCachedFiles(photo);
+    _afterRemoval(navigator, isLast: isLast);
+  }
+
+  Future<void> _report(ActivityPhoto photo, {required bool isLast}) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final reason = await showModalBottomSheet<PhotoReportReason>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l10n.activityPhotosReportTitle,
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+            ),
+            for (final reason in PhotoReportReason.values)
+              ListTile(
+                title: Text(photoReportReasonLabel(l10n, reason)),
+                onTap: () => Navigator.of(ctx).pop(reason),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (reason == null) return;
     try {
-      await ref.read(activityPhotosRepositoryProvider).setFavorite(
-            tripId: widget.tripId,
-            photo: photo,
-            favorite: !photo.favorite,
-            activityPhotos: activityPhotos,
-          );
-    } catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
+      await _repository.reportPhoto(
+        tripId: widget.tripId,
+        photo: photo,
+        reason: reason,
       );
+    } catch (error) {
+      _showError(messenger, error);
+      return;
+    }
+    messenger
+        .showSnackBar(SnackBar(content: Text(l10n.activityPhotosReported)));
+    // The photo is now hidden for the reporter.
+    _afterRemoval(navigator, isLast: isLast);
+  }
+
+  Future<void> _toggleFavorite(ActivityPhoto photo, bool isFavorite) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repository.setActivityFavorite(
+        tripId: widget.tripId,
+        activityId: widget.activityId,
+        photo: isFavorite ? null : photo,
+        myPhotos: ref
+                .read(myActivityPhotosStreamProvider(widget.tripId))
+                .asData
+                ?.value ??
+            const <ActivityPhoto>[],
+      );
+    } catch (error) {
+      _showError(messenger, error);
+    }
+  }
+
+  Future<void> _toggleShared(ActivityPhoto photo) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repository.setShared(
+        tripId: widget.tripId,
+        photo: photo,
+        shared: !photo.shared,
+      );
+    } catch (error) {
+      _showError(messenger, error);
     }
   }
 
   Future<void> _editCaption(ActivityPhoto photo) async {
-    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final caption = await showDialog<String>(
       context: context,
@@ -449,32 +606,49 @@ class _ActivityPhotoViewerPageState
     );
     if (caption == null || caption.trim() == photo.caption) return;
     try {
-      await ref.read(activityPhotosRepositoryProvider).updateCaption(
-            tripId: widget.tripId,
-            photo: photo,
-            caption: caption,
-          );
-    } catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
+      await _repository.updateCaption(
+        tripId: widget.tripId,
+        photo: photo,
+        caption: caption,
       );
+    } catch (error) {
+      _showError(messenger, error);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final livePhotos =
-        ref.watch(myActivityPhotosStreamProvider(widget.tripId)).asData?.value;
-    final photos = livePhotos == null
-        ? widget.initialPhotos
-        : livePhotos
+    final myUid = ref.watch(activityPhotosRepositoryProvider).currentUid;
+    final loaded =
+        ref.watch(myActivityPhotosStreamProvider(widget.tripId)).hasValue;
+    final photos = loaded
+        ? ref
+            .watch(visibleActivityPhotosProvider(widget.tripId))
             .where((photo) => photo.activityId == widget.activityId)
-            .toList(growable: false);
-    // After a deletion the pager keeps its position, now showing the next
+            .toList(growable: false)
+        : widget.initialPhotos;
+    final favoriteKey = ref
+        .watch(activityFavoritePhotosProvider(widget.tripId))[widget.activityId]
+        ?.key;
+    final isAdmin = ref
+            .watch(tripStreamProvider(widget.tripId))
+            .asData
+            ?.value
+            ?.isTripAdmin(myUid) ??
+        false;
+    final labels = ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
+    // After a removal the pager keeps its position, now showing the next
     // photo (or the previous one when the last was removed).
     final current =
         photos.isEmpty ? null : photos[_index.clamp(0, photos.length - 1)];
+    final isMine = current != null && current.ownerId == myUid;
+    final isFavorite = current != null && current.key == favoriteKey;
+    final isLast = photos.length == 1;
+    final authorName = current == null || isMine
+        ? null
+        : labels[current.ownerId] ?? l10n.roleParticipant;
+    final caption = current?.caption ?? '';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -490,43 +664,81 @@ class _ActivityPhotoViewerPageState
         actions: [
           if (current != null)
             IconButton(
-              tooltip: current.favorite
+              tooltip: isFavorite
                   ? l10n.activityPhotosFavoriteRemove
                   : l10n.activityPhotosFavoriteAdd,
-              icon: current.favorite
+              icon: isFavorite
                   ? const Icon(PhosphorIconsFill.star, color: AppTokens.accent)
                   : const Icon(PhosphorIconsRegular.star),
-              onPressed: () => _toggleFavorite(current, photos),
+              onPressed: () => _toggleFavorite(current, isFavorite),
             ),
-          if (current != null)
+          if (current != null && isMine) ...[
+            IconButton(
+              tooltip: current.shared
+                  ? l10n.activityPhotosMakePrivate
+                  : l10n.activityPhotosShare,
+              icon: Icon(
+                current.shared
+                    ? PhosphorIconsRegular.lockOpen
+                    : PhosphorIconsRegular.lock,
+              ),
+              onPressed: () => _toggleShared(current),
+            ),
             IconButton(
               tooltip: l10n.activityPhotosCaptionEdit,
               icon: const Icon(PhosphorIconsRegular.pencilSimple),
               onPressed: () => _editCaption(current),
             ),
-          if (current != null)
             IconButton(
               tooltip: l10n.commonDelete,
               icon: const Icon(PhosphorIconsRegular.trash),
-              onPressed: () => _delete(current, isLast: photos.length == 1),
+              onPressed: () => _delete(current, isLast: isLast),
             ),
+          ],
+          if (current != null && !isMine) ...[
+            IconButton(
+              tooltip: l10n.activityPhotosReport,
+              icon: const Icon(PhosphorIconsRegular.flag),
+              onPressed: () => _report(current, isLast: isLast),
+            ),
+            if (isAdmin)
+              IconButton(
+                tooltip: l10n.commonDelete,
+                icon: const Icon(PhosphorIconsRegular.trash),
+                onPressed: () => _deleteAsModerator(current, isLast: isLast),
+              ),
+          ],
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(child: _buildPager(photos)),
-            if (current != null && current.caption.isNotEmpty)
+            if (authorName != null || caption.isNotEmpty)
               ConstrainedBox(
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.sizeOf(context).height * 0.25,
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Text(
-                    current.caption,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                  child: Column(
+                    children: [
+                      if (authorName != null)
+                        Text(
+                          authorName,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      if (caption.isNotEmpty)
+                        Text(
+                          caption,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -552,7 +764,7 @@ class _ActivityPhotoViewerPageState
         itemBuilder: (context, index) {
           final isShown = index == _index;
           return InteractiveViewer(
-            key: ValueKey(photos[index].id),
+            key: ValueKey(photos[index].key),
             transformationController: isShown ? _transformation : null,
             panEnabled: isShown && _zoomed,
             minScale: 0.8,
