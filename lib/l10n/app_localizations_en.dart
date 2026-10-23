@@ -4099,6 +4099,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get activitiesAiTextDictationUnavailable =>
       'Dictation unavailable: check microphone access';
+
+  @override
+  String get activityPhotosTitle => 'My photos';
+
+  @override
+  String get activityPhotosAdd => 'Add photos';
+
+  @override
+  String activityPhotosDayCount(int count, int max) {
+    return '$count/$max for the day';
+  }
+
+  @override
+  String activityPhotosDayLimit(int max) {
+    return '$max photos per day maximum';
+  }
+
+  @override
+  String get activityPhotosAddFailed => 'Could not add the photo';
+
+  @override
+  String get activityPhotosDeleteTitle => 'Delete this photo?';
+
+  @override
+  String get activityPhotosCaption => 'Caption';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Edit caption';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Set as favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Remove from favorites';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -8125,4 +8159,38 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
   @override
   String get activitiesAiTextDictationUnavailable =>
       'Dictation unavailable: check microphone access';
+
+  @override
+  String get activityPhotosTitle => 'My photos';
+
+  @override
+  String get activityPhotosAdd => 'Add photos';
+
+  @override
+  String activityPhotosDayCount(int count, int max) {
+    return '$count/$max for the day';
+  }
+
+  @override
+  String activityPhotosDayLimit(int max) {
+    return '$max photos per day maximum';
+  }
+
+  @override
+  String get activityPhotosAddFailed => 'Could not add the photo';
+
+  @override
+  String get activityPhotosDeleteTitle => 'Delete this photo?';
+
+  @override
+  String get activityPhotosCaption => 'Caption';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Edit caption';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Set as favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Remove from favorites';
 }

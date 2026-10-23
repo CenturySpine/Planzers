@@ -13,7 +13,12 @@ const cheerio = require('cheerio');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { insertApplicationLog } = require('./application_logs');
 const { collectOrphanDismissDocs } = require('./orphan_admin_dismiss_cleanup');
-const { deleteMemberWalletData, deleteTripWalletFiles } = require('./wallet_cleanup');
+const {
+  deleteMemberWalletData,
+  deleteTripWalletFiles,
+  deleteActivityPhotoFiles,
+  deleteActivityPhotoRecords,
+} = require('./wallet_cleanup');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
 const {
@@ -5150,6 +5155,33 @@ exports.onTripParticipantDeleted = onDocumentDeleted(
       participantCount: typeof current === 'number' && current > 1
         ? FieldValue.increment(-1)
         : FieldValue.delete(),
+    });
+  }
+);
+
+// Photos follow their activity: deleting it removes every traveler's photos
+// of it (their files go with the trigger below).
+exports.deleteActivityPhotosOnActivityDeleted = onDocumentDeleted(
+  'trips/{tripId}/activities/{activityId}',
+  async (event) => {
+    await deleteActivityPhotoRecords({
+      db: admin.firestore(),
+      tripId: event.params.tripId,
+      activityId: event.params.activityId,
+    });
+  }
+);
+
+// Whoever deletes a photo record (its author, a trip admin, a cleanup), its
+// files are removed too.
+exports.deleteActivityPhotoFilesOnDeleted = onDocumentDeleted(
+  'trips/{tripId}/travelerModules/{uid}/activityPhotos/{photoId}',
+  async (event) => {
+    await deleteActivityPhotoFiles({
+      bucket: admin.storage().bucket(),
+      tripId: event.params.tripId,
+      uid: event.params.uid,
+      photoId: event.params.photoId,
     });
   }
 );

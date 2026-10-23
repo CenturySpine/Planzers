@@ -1677,5 +1677,32 @@
   "activitiesAiTextNoDate": "Sans date",
   "activitiesAiTextDictation": "Dicter",
   "activitiesAiTextDictationStop": "Arrêter la dictée",
-  "activitiesAiTextDictationUnavailable": "Dictée impossible : vérifie l'accès au micro"
+  "activitiesAiTextDictationUnavailable": "Dictée impossible : vérifie l'accès au micro",
+  "activityPhotosTitle": "Mes photos",
+  "activityPhotosAdd": "Ajouter des photos",
+  "activityPhotosDayCount": "{count}/{max} pour la journée",
+  "@activityPhotosDayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "activityPhotosDayLimit": "{max} photos maximum par jour",
+  "@activityPhotosDayLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "activityPhotosAddFailed": "Impossible d'ajouter la photo",
+  "activityPhotosDeleteTitle": "Supprimer cette photo ?",
+  "activityPhotosCaption": "Légende",
+  "activityPhotosCaptionEdit": "Modifier la légende",
+  "activityPhotosFavoriteAdd": "Mettre en favorite",
+  "activityPhotosFavoriteRemove": "Retirer des favorites"
 }
