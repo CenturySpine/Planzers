@@ -1,4 +1,5 @@
 import 'package:cross_cache/cross_cache.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -119,13 +120,15 @@ class _TripActivityPhotosCardState
     }
   }
 
-  void _open(ActivityPhoto photo) {
+  void _open(List<ActivityPhoto> photos, int index) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
         builder: (_) => _ActivityPhotoViewerPage(
           tripId: widget.tripId,
-          photo: photo,
+          activityId: widget.activity.id,
+          initialPhotos: photos,
+          initialIndex: index,
           crossCache: _crossCache,
         ),
       ),
@@ -215,12 +218,12 @@ class _TripActivityPhotosCardState
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (final photo in photos)
+                      for (final (index, photo) in photos.indexed)
                         _PhotoThumb(
                           photo: photo,
                           crossCache: _crossCache,
                           extent: _thumbExtent,
-                          onTap: () => _open(photo),
+                          onTap: () => _open(photos, index),
                         ),
                       for (var i = 0; i < (pendingUploads ?? 0); i++)
                         SizedBox.square(
@@ -289,19 +292,60 @@ class _PhotoThumb extends StatelessWidget {
   }
 }
 
-/// Full-screen view of one photo, with pinch-to-zoom and deletion.
-class _ActivityPhotoViewerPage extends ConsumerWidget {
+/// Full-screen view of an activity's photos: swipe between them, pinch to
+/// zoom (swiping pauses while zoomed in) and delete the one shown.
+class _ActivityPhotoViewerPage extends ConsumerStatefulWidget {
   const _ActivityPhotoViewerPage({
     required this.tripId,
-    required this.photo,
+    required this.activityId,
+    required this.initialPhotos,
+    required this.initialIndex,
     required this.crossCache,
   });
 
   final String tripId;
-  final ActivityPhoto photo;
+  final String activityId;
+
+  /// Shown until the live list is available.
+  final List<ActivityPhoto> initialPhotos;
+  final int initialIndex;
   final CrossCache crossCache;
 
-  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_ActivityPhotoViewerPage> createState() =>
+      _ActivityPhotoViewerPageState();
+}
+
+class _ActivityPhotoViewerPageState
+    extends ConsumerState<_ActivityPhotoViewerPage> {
+  late final PageController _pageController;
+
+  /// Zoom of the photo shown; the others always start unzoomed.
+  final _transformation = TransformationController();
+  late int _index;
+  bool _zoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+    _transformation.addListener(_onTransformationChanged);
+  }
+
+  @override
+  void dispose() {
+    _transformation.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onTransformationChanged() {
+    final zoomed = _transformation.value.getMaxScaleOnAxis() > 1.01;
+    if (zoomed != _zoomed) setState(() => _zoomed = zoomed);
+  }
+
+  Future<void> _delete(ActivityPhoto photo, {required bool isLast}) async {
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -325,7 +369,7 @@ class _ActivityPhotoViewerPage extends ConsumerWidget {
     try {
       await ref
           .read(activityPhotosRepositoryProvider)
-          .deletePhoto(tripId: tripId, photo: photo);
+          .deletePhoto(tripId: widget.tripId, photo: photo);
     } catch (error) {
       messenger.showSnackBar(
         SnackBar(content: Text(l10n.commonErrorWithDetails(error.toString()))),
@@ -334,15 +378,32 @@ class _ActivityPhotoViewerPage extends ConsumerWidget {
     }
     for (final url in [photo.url, photo.thumbUrl]) {
       try {
-        await crossCache.delete(url);
+        await widget.crossCache.delete(url);
       } catch (_) {}
     }
-    navigator.pop();
+    if (isLast) {
+      navigator.pop();
+      return;
+    }
+    // The next photo takes its place, unzoomed.
+    _transformation.value = Matrix4.identity();
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final livePhotos =
+        ref.watch(myActivityPhotosStreamProvider(widget.tripId)).asData?.value;
+    final photos = livePhotos == null
+        ? widget.initialPhotos
+        : livePhotos
+            .where((photo) => photo.activityId == widget.activityId)
+            .toList(growable: false);
+    // After a deletion the pager keeps its position, now showing the next
+    // photo (or the previous one when the last was removed).
+    final current =
+        photos.isEmpty ? null : photos[_index.clamp(0, photos.length - 1)];
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -351,33 +412,57 @@ class _ActivityPhotoViewerPage extends ConsumerWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
-          IconButton(
-            tooltip: l10n.commonDelete,
-            icon: const Icon(PhosphorIconsRegular.trash),
-            onPressed: () => _delete(context, ref),
-          ),
+          if (current != null)
+            IconButton(
+              tooltip: l10n.commonDelete,
+              icon: const Icon(PhosphorIconsRegular.trash),
+              onPressed: () => _delete(current, isLast: photos.length == 1),
+            ),
         ],
       ),
       body: SafeArea(
-        child: InteractiveViewer(
-          minScale: 0.8,
-          maxScale: 4,
-          child: Center(
-            child: Image(
-              image: CachedNetworkImage(photo.url, crossCache),
-              fit: BoxFit.contain,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white70),
-                );
-              },
-              errorBuilder: (_, __, ___) => const Icon(
-                PhosphorIconsRegular.imageBroken,
-                color: Colors.white54,
-                size: 48,
-              ),
-            ),
+        // Also lets a mouse drag the photos on the web.
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context)
+              .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
+          child: PageView.builder(
+            controller: _pageController,
+            physics: _zoomed ? const NeverScrollableScrollPhysics() : null,
+            itemCount: photos.length,
+            onPageChanged: (index) {
+              _transformation.value = Matrix4.identity();
+              setState(() => _index = index);
+            },
+            itemBuilder: (context, index) {
+              final isShown = index == _index;
+              return InteractiveViewer(
+                key: ValueKey(photos[index].id),
+                transformationController: isShown ? _transformation : null,
+                panEnabled: isShown && _zoomed,
+                minScale: 0.8,
+                maxScale: 4,
+                child: Center(
+                  child: Image(
+                    image: CachedNetworkImage(
+                      photos[index].url,
+                      widget.crossCache,
+                    ),
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.white70),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => const Icon(
+                      PhosphorIconsRegular.imageBroken,
+                      color: Colors.white54,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
