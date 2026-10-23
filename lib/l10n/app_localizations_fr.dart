@@ -4158,6 +4158,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get activityPhotosDeleteTitle => 'Supprimer cette photo ?';
+
+  @override
+  String get activityPhotosCaption => 'Légende';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Modifier la légende';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Mettre en favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Retirer des favorites';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -8242,4 +8254,16 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activityPhotosDeleteTitle => 'Supprimer cette photo ?';
+
+  @override
+  String get activityPhotosCaption => 'Légende';
+
+  @override
+  String get activityPhotosCaptionEdit => 'Modifier la légende';
+
+  @override
+  String get activityPhotosFavoriteAdd => 'Mettre en favorite';
+
+  @override
+  String get activityPhotosFavoriteRemove => 'Retirer des favorites';
 }

@@ -1,3 +1,4 @@
+import 'package:cross_cache/cross_cache.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -11,6 +12,8 @@ import 'package:planerz/core/geocoding/pasted_coordinates.dart';
 import 'package:planerz/core/geocoding/place_geocoding_client.dart';
 import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/activity_photo.dart';
+import 'package:planerz/features/activities/data/activity_photos_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_journey.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
@@ -86,6 +89,10 @@ class TripJourneyMapView extends ConsumerStatefulWidget {
 }
 
 class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
+  static const double _photoMarkerSize = 44;
+
+  final _crossCache = CrossCache();
+
   /// Null shows the whole trip.
   DateTime? _day;
 
@@ -165,6 +172,11 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final numbers = {
       for (final stop in journey.stops) stop.activity.id: stop.number,
     };
+    // The current traveler's own favorites (photos are private).
+    final favoritePhotos = activityFavoritePhotos(
+      ref.watch(myActivityPhotosStreamProvider(widget.tripId)).asData?.value ??
+          const <ActivityPhoto>[],
+    );
     final missingByLink = {
       for (final missing in tripMissingTransports(journey))
         _linkKey(missing.from, missing.to): missing,
@@ -301,7 +313,8 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                               ),
                             ),
                           ),
-                      for (final place in journey.places) _placeMarker(place),
+                      for (final place in journey.places)
+                        _placeMarker(place, favoritePhotos),
                       if (pending != null)
                         osmPinMarker(
                           pending,
@@ -373,9 +386,30 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     return missingByLink[_linkKey(from, to)];
   }
 
-  Marker _placeMarker(TripJourneyPlace place) {
+  /// The favorite photo of the first stop having one, its numbers in a
+  /// badge; otherwise the numbers alone.
+  Marker _placeMarker(
+    TripJourneyPlace place,
+    Map<String, ActivityPhoto> favoritePhotos,
+  ) {
     final label = place.numbersLabel;
     final ids = [for (final stop in place.stops) stop.activity.id];
+    final favorite = ids.map((id) => favoritePhotos[id]).nonNulls.firstOrNull;
+    if (favorite != null) {
+      return Marker(
+        point: place.point,
+        width: _photoMarkerSize,
+        height: _photoMarkerSize,
+        child: _JourneyPhotoMarker(
+          thumbUrl: favorite.thumbUrl,
+          crossCache: _crossCache,
+          label: label,
+          color: place.stops.first.activity.category.filterGroup.filterColor,
+          selected: ids.any(_selectedIds.contains),
+          onTap: () => _select(ids),
+        ),
+      );
+    }
     return Marker(
       point: place.point,
       width: label.length <= 1 ? 30 : 18 + 8.0 * label.length,
@@ -477,6 +511,91 @@ class _JourneyMarker extends StatelessWidget {
           ],
         ),
         child: Center(child: child),
+      ),
+    );
+  }
+}
+
+/// Marker of a place showing the traveler's favorite photo, its stop numbers
+/// in a corner badge.
+class _JourneyPhotoMarker extends StatelessWidget {
+  const _JourneyPhotoMarker({
+    required this.thumbUrl,
+    required this.crossCache,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String thumbUrl;
+  final CrossCache crossCache;
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const numbersStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+    );
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : color,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 3,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(3),
+                child: ClipOval(
+                  child: ColoredBox(
+                    color: color,
+                    child: Image(
+                      image: CachedNetworkImage(thumbUrl, crossCache),
+                      fit: BoxFit.cover,
+                      // The photo cannot load: the numbers alone, as usual.
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(label, maxLines: 1, style: numbersStyle),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -6,
+            bottom: -4,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: Colors.white, width: 1.5),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                child: Text(label, maxLines: 1, style: numbersStyle),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -10,6 +10,10 @@ const int activityPhotoThumbMaxSide = 400;
 /// Must match `storage.rules`.
 const int activityPhotoMaxFileSizeBytes = 3 * 1024 * 1024;
 
+/// In characters as people count them (an emoji is one), enforced by the
+/// caption field; `firestore.rules` leaves room for emoji.
+const int activityPhotoMaxCaptionLength = 500;
+
 /// Storage location of a photo (always JPEG, never replaced).
 String activityPhotoStoragePath(String uid, String tripId, String photoId) =>
     'users/$uid/activityPhotos/$tripId/$photoId.jpg';
@@ -31,6 +35,8 @@ class ActivityPhoto {
     required this.activityId,
     required this.url,
     required this.thumbUrl,
+    this.caption = '',
+    this.favorite = false,
     this.createdAt,
   });
 
@@ -38,6 +44,12 @@ class ActivityPhoto {
   final String activityId;
   final String url;
   final String thumbUrl;
+
+  /// Empty when the author wrote none.
+  final String caption;
+
+  /// At most one per activity: the photo shown on the trip map.
+  final bool favorite;
 
   /// Null while the server timestamp is pending.
   final DateTime? createdAt;
@@ -50,6 +62,8 @@ class ActivityPhoto {
       activityId: (data['activityId'] as String?) ?? '',
       url: (data['url'] as String?) ?? '',
       thumbUrl: (data['thumbUrl'] as String?) ?? '',
+      caption: (data['caption'] as String?) ?? '',
+      favorite: data['favorite'] == true,
       createdAt: createdAtRaw is Timestamp ? createdAtRaw.toDate() : null,
     );
   }
@@ -63,4 +77,18 @@ int compareActivityPhotos(ActivityPhoto a, ActivityPhoto b) {
   if (aAt == null) return 1;
   if (bAt == null) return -1;
   return aAt.compareTo(bAt);
+}
+
+/// The favorite photo of each activity, by activity id. Should two be marked
+/// (e.g. set from two devices at once), the first in display order wins.
+Map<String, ActivityPhoto> activityFavoritePhotos(
+  Iterable<ActivityPhoto> photos,
+) {
+  final sorted = photos.where((photo) => photo.favorite).toList()
+    ..sort(compareActivityPhotos);
+  final favorites = <String, ActivityPhoto>{};
+  for (final photo in sorted) {
+    favorites.putIfAbsent(photo.activityId, () => photo);
+  }
+  return favorites;
 }

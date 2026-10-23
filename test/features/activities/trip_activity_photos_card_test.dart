@@ -71,6 +71,39 @@ void main() {
     });
   });
 
+  group('activityFavoritePhotos', () {
+    ActivityPhoto photo(String id, String activityId,
+            {bool favorite = false, DateTime? createdAt}) =>
+        ActivityPhoto(
+          id: id,
+          activityId: activityId,
+          url: 'u',
+          thumbUrl: 't',
+          favorite: favorite,
+          createdAt: createdAt,
+        );
+
+    test('maps each activity to its favorite photo only', () {
+      final favorites = activityFavoritePhotos([
+        photo('p1', 'a1'),
+        photo('p2', 'a1', favorite: true),
+        photo('p3', 'a2'),
+        photo('p4', 'a3', favorite: true),
+      ]);
+      expect(favorites.keys, unorderedEquals(['a1', 'a3']));
+      expect(favorites['a1']!.id, 'p2');
+      expect(favorites['a3']!.id, 'p4');
+    });
+
+    test('keeps the first in display order when two are marked', () {
+      final favorites = activityFavoritePhotos([
+        photo('late', 'a1', favorite: true, createdAt: DateTime(2025, 2, 1)),
+        photo('early', 'a1', favorite: true, createdAt: DateTime(2025, 1, 1)),
+      ]);
+      expect(favorites['a1']!.id, 'early');
+    });
+  });
+
   test('compareActivityPhotos puts pending photos last', () {
     final pending = _photo('b', 'a');
     final older = ActivityPhoto(

@@ -172,6 +172,7 @@ abstract final class PhosphorIconsRegular {
   static const IconData sparkle = IconData(0xe6a2, fontFamily: 'PhosphorRegular');
   static const IconData squaresFour = IconData(0xe464, fontFamily: 'PhosphorRegular');
   static const IconData stackMinus = IconData(0xedf4, fontFamily: 'PhosphorRegular');
+  static const IconData star = IconData(0xe46a, fontFamily: 'PhosphorRegular');
   static const IconData storefront = IconData(0xe470, fontFamily: 'PhosphorRegular');
   static const IconData suitcaseRolling = IconData(0xe9b0, fontFamily: 'PhosphorRegular');
   static const IconData sun = IconData(0xe472, fontFamily: 'PhosphorRegular');

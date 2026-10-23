@@ -1175,12 +1175,30 @@ service cloud.firestore {
         }
 
         /// Personal photos attached to planned activities (owner only for
-        /// now). Never updated; trip admins may delete any of them. The
-        /// files are removed server-side when a record is deleted. The
-        /// limit per day is applied by the app.
+        /// now). Only the caption and the favorite mark (one per activity,
+        /// kept by the app) can change, by the author; trip admins may
+        /// delete any of them. The files are removed server-side when a
+        /// record is deleted. The limit per day is applied by the app.
         match /activityPhotos/{photoId} {
+          /// Optional. The app caps it at 500 characters as people count
+          /// them; size() counts UTF-16 units, an emoji taking up to 4, so
+          /// the bound here leaves room for emoji-heavy captions.
+          function isValidActivityPhotoCaption(data) {
+            return !data.keys().hasAny(['caption'])
+              || (data.caption is string
+                && data.caption.size() > 0
+                && data.caption.size() <= 2000);
+          }
+
+          /// The fields the author can change after creation.
+          function isValidActivityPhotoEditable(data) {
+            return isValidActivityPhotoCaption(data)
+              && (!data.keys().hasAny(['favorite']) || data.favorite == true);
+          }
+
           function isValidActivityPhoto(data) {
-            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'createdAt'])
+            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'caption', 'favorite', 'createdAt'])
+              && isValidActivityPhotoEditable(data)
               && data.activityId is string
               && data.activityId.size() > 0
               && data.activityId.size() <= 128
@@ -1199,7 +1217,10 @@ service cloud.firestore {
           allow create: if isTripMember(tripId)
             && uid == request.auth.uid
             && isValidActivityPhoto(request.resource.data);
-          allow update: if false;
+          allow update: if isTripMember(tripId)
+            && uid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption', 'favorite'])
+            && isValidActivityPhotoEditable(request.resource.data);
           allow delete: if isTripMember(tripId)
             && (uid == request.auth.uid || tripCallerRoleRank(tripId) >= 2);
         }
