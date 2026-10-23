@@ -13,6 +13,7 @@ import 'package:planerz/features/activities/data/activity_trip_driving_route.dar
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
+import 'package:planerz/features/activities/presentation/trip_activity_photos_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
@@ -1048,6 +1049,10 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
         _LinkedWalletDocumentsCard(
           tripId: widget.tripId,
           activityId: widget.activity.id,
+        ),
+        TripActivityPhotosCard(
+          tripId: widget.tripId,
+          activity: widget.activity,
         ),
         _VotersSection(
           tripId: widget.tripId,

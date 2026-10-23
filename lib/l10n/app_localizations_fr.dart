@@ -4136,6 +4136,28 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get activitiesAiTextDictationUnavailable =>
       'Dictée impossible : vérifie l\'accès au micro';
+
+  @override
+  String get activityPhotosTitle => 'Mes photos';
+
+  @override
+  String get activityPhotosAdd => 'Ajouter des photos';
+
+  @override
+  String activityPhotosDayCount(int count, int max) {
+    return '$count/$max pour la journée';
+  }
+
+  @override
+  String activityPhotosDayLimit(int max) {
+    return '$max photos maximum par jour';
+  }
+
+  @override
+  String get activityPhotosAddFailed => 'Impossible d\'ajouter la photo';
+
+  @override
+  String get activityPhotosDeleteTitle => 'Supprimer cette photo ?';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -8198,4 +8220,26 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   @override
   String get activitiesAiTextDictationUnavailable =>
       'Dictée impossible : vérifie l\'accès au micro';
+
+  @override
+  String get activityPhotosTitle => 'Mes photos';
+
+  @override
+  String get activityPhotosAdd => 'Ajouter des photos';
+
+  @override
+  String activityPhotosDayCount(int count, int max) {
+    return '$count/$max pour la journée';
+  }
+
+  @override
+  String activityPhotosDayLimit(int max) {
+    return '$max photos maximum par jour';
+  }
+
+  @override
+  String get activityPhotosAddFailed => 'Impossible d\'ajouter la photo';
+
+  @override
+  String get activityPhotosDeleteTitle => 'Supprimer cette photo ?';
 }

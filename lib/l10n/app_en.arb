@@ -1677,5 +1677,28 @@
   "activitiesAiTextNoDate": "No date",
   "activitiesAiTextDictation": "Dictate",
   "activitiesAiTextDictationStop": "Stop dictation",
-  "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access"
+  "activitiesAiTextDictationUnavailable": "Dictation unavailable: check microphone access",
+  "activityPhotosTitle": "My photos",
+  "activityPhotosAdd": "Add photos",
+  "activityPhotosDayCount": "{count}/{max} for the day",
+  "@activityPhotosDayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "activityPhotosDayLimit": "{max} photos per day maximum",
+  "@activityPhotosDayLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "activityPhotosAddFailed": "Could not add the photo",
+  "activityPhotosDeleteTitle": "Delete this photo?"
 }

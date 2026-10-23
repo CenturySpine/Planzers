@@ -1173,6 +1173,36 @@ service cloud.firestore {
             && request.resource.data.get('file', null) == resource.data.get('file', null)
             && request.resource.data.get('barcode', null) == resource.data.get('barcode', null);
         }
+
+        /// Personal photos attached to planned activities (owner only for
+        /// now). Never updated; trip admins may delete any of them. The
+        /// files are removed server-side when a record is deleted. The
+        /// limit per day is applied by the app.
+        match /activityPhotos/{photoId} {
+          function isValidActivityPhoto(data) {
+            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'createdAt'])
+              && data.activityId is string
+              && data.activityId.size() > 0
+              && data.activityId.size() <= 128
+              && get(/databases/$(database)/documents/trips/$(tripId)/activities/$(data.activityId))
+                  .data.get('plannedAt', null) != null
+              && data.url is string
+              && data.url.size() > 0
+              && data.url.size() <= 2048
+              && data.thumbUrl is string
+              && data.thumbUrl.size() > 0
+              && data.thumbUrl.size() <= 2048
+              && data.createdAt == request.time;
+          }
+
+          allow read: if isTripMember(tripId) && uid == request.auth.uid;
+          allow create: if isTripMember(tripId)
+            && uid == request.auth.uid
+            && isValidActivityPhoto(request.resource.data);
+          allow update: if false;
+          allow delete: if isTripMember(tripId)
+            && (uid == request.auth.uid || tripCallerRoleRank(tripId) >= 2);
+        }
       }
 
       /// Personal "À emporter" checklist, keyed by the participant SLOT id
