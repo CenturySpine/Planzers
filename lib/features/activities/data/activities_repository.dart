@@ -126,12 +126,15 @@ class ActivitiesRepository {
 
   /// Copies [activity] as a new one created by the current user, not done
   /// and without votes. Its date and duration are kept with [keepSchedule]
-  /// (members allowed to plan). Returns the id of the copy.
+  /// (members allowed to plan), never for a restaurant (meals carry the
+  /// time). Returns the id of the copy.
   Future<String> duplicateActivity({
     required String tripId,
     required TripActivity activity,
     required bool keepSchedule,
   }) {
+    final schedule =
+        keepSchedule && activity.category != TripActivityCategory.restaurant;
     return addActivity(
       tripId: tripId,
       label: activity.label,
@@ -139,8 +142,8 @@ class ActivitiesRepository {
       linkUrl: activity.linkUrl,
       address: activity.address,
       freeComments: activity.freeComments,
-      plannedAt: keepSchedule ? activity.plannedAt : null,
-      durationMinutes: keepSchedule ? activity.durationMinutes : null,
+      plannedAt: schedule ? activity.plannedAt : null,
+      durationMinutes: schedule ? activity.durationMinutes : null,
       location: activity.location,
       departureAddress: activity.departureAddress,
       departureLocation: activity.departureLocation,

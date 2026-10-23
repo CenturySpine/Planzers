@@ -51,6 +51,27 @@ void main() {
       expect(entries[1].activity?.id, 'a');
     });
 
+    test('keeps restaurants even with a date', () {
+      final datedRestaurant = _activity(
+        id: 'r',
+        label: 'Trattoria',
+        category: TripActivityCategory.restaurant,
+        plannedAt: DateTime.utc(2025, 3, 1, 20),
+      );
+      final plannedVisit = _activity(
+        id: 'v',
+        label: 'Visit',
+        plannedAt: DateTime.utc(2025, 3, 1, 10),
+      );
+      final entries = buildTripActivitiesSuggestionEntries(
+        [datedRestaurant, plannedVisit],
+        query: '',
+        creatorLabelFor: (_) => 'Alice',
+        categoryFilter: const [TripActivityCategory.restaurant],
+      );
+      expect(entries.single.activity?.id, 'r');
+    });
+
     test('filters by category when categoryFilter is set', () {
       final hotel = _activity(
         id: 'h',
