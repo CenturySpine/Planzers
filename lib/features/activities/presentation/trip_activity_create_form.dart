@@ -39,6 +39,8 @@ class TripActivityCreateForm extends ConsumerStatefulWidget {
   final ValueChanged<String> onCreated;
 
   /// When set, restricts the category picker to these categories and pre-selects the first one.
+  /// Otherwise every category but transport is offered: transports come from
+  /// the planning's suggestions (or a travel document).
   final List<TripActivityCategory>? allowedCategories;
 
   /// Pre-selected category (defaults to the first allowed one).
@@ -193,8 +195,10 @@ class _TripActivityCreateFormState
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final category
-                  in widget.allowedCategories ?? TripActivityCategory.values)
+              for (final category in widget.allowedCategories ??
+                  TripActivityCategory.values.where(
+                    (c) => c != TripActivityCategory.transport,
+                  ))
                 FilterChip(
                   avatar: Icon(category.categoryIcon, size: 18),
                   label: Text(category.label(l10n)),

@@ -328,8 +328,15 @@ class _ProposalEditorSheet extends StatefulWidget {
 }
 
 class _ProposalEditorSheetState extends State<_ProposalEditorSheet> {
-  static final _categories = TripActivityCategory.values
-      .where((c) => c != TripActivityCategory.restaurant)
+  /// Transport is offered only when the account read one: otherwise
+  /// transports come from the planning's suggestions.
+  late final _categories = TripActivityCategory.values
+      .where(
+        (c) =>
+            c != TripActivityCategory.restaurant &&
+            (c != TripActivityCategory.transport ||
+                widget.proposal.category == TripActivityCategory.transport),
+      )
       .toList(growable: false);
 
   final _formKey = GlobalKey<FormState>();
