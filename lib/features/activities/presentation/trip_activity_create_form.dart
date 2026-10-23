@@ -164,15 +164,18 @@ class _TripActivityCreateFormState
     final l10n = AppLocalizations.of(context)!;
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
     final tripAsync = ref.watch(tripStreamProvider(widget.tripId));
-    final canPlanActivity = tripAsync.maybeWhen(
-      data: (trip) => trip != null
-          ? canPlanActivityForTrip(
-              trip: trip,
-              userId: myUid,
-            )
-          : false,
-      orElse: () => false,
-    );
+    // A restaurant is never dated: the meal that uses it carries the time,
+    // as on the activity page.
+    final canPlanActivity = _category != TripActivityCategory.restaurant &&
+        tripAsync.maybeWhen(
+          data: (trip) => trip != null
+              ? canPlanActivityForTrip(
+                  trip: trip,
+                  userId: myUid,
+                )
+              : false,
+          orElse: () => false,
+        );
     final fallbackCenter = tripActivitiesFallbackCenter(
       ref.watch(tripActivitiesStreamProvider(widget.tripId)).asData?.value ??
           const <TripActivity>[],
