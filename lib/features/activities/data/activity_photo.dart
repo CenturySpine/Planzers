@@ -171,9 +171,31 @@ enum PhotoReportReason {
       values.firstWhere((reason) => reason.name == raw, orElse: () => other);
 }
 
+/// How a report was handled by the application owner; none while pending.
+enum PhotoReportResolution {
+  /// Judged unfounded; the photo stays.
+  dismissed,
+
+  /// The photo was deleted, by the application owner or before (by its
+  /// author or a trip admin).
+  photoRemoved;
+
+  static PhotoReportResolution? fromFirestore(Map<String, dynamic> data) {
+    final raw = data['resolution'];
+    for (final value in values) {
+      if (value.name == raw) return value;
+    }
+    // Reports dismissed before resolutions existed.
+    return data['dismissed'] == true ? dismissed : null;
+  }
+}
+
+/// A photo needs a decision from this many pending reports.
+const int photoReportThreshold = 3;
+
 /// A member's report of a shared photo (`trips/{tripId}/photoReports/{id}`),
-/// listed for the trip admins and the application owner. The photo stays
-/// hidden for its reporter, even once the report is dismissed.
+/// seen by the application owner only and kept once handled, as the history
+/// of the photo and of its reporter. The photo stays hidden for its reporter.
 class PhotoReport {
   const PhotoReport({
     required this.id,
@@ -183,7 +205,7 @@ class PhotoReport {
     required this.activityId,
     required this.reporterId,
     required this.reason,
-    this.dismissed = false,
+    this.resolution,
     this.createdAt,
   });
 
@@ -194,8 +216,10 @@ class PhotoReport {
   final String activityId;
   final String reporterId;
   final PhotoReportReason reason;
-  final bool dismissed;
+  final PhotoReportResolution? resolution;
   final DateTime? createdAt;
+
+  bool get isPending => resolution == null;
 
   String get photoKey => '$photoOwnerId/$photoId';
 
@@ -218,8 +242,112 @@ class PhotoReport {
       activityId: (data['activityId'] as String?) ?? '',
       reporterId: (data['reporterId'] as String?) ?? '',
       reason: PhotoReportReason.fromFirestore(data['reason']),
-      dismissed: data['dismissed'] == true,
+      resolution: PhotoReportResolution.fromFirestore(data),
       createdAt: createdAtRaw is Timestamp ? createdAtRaw.toDate() : null,
     );
   }
+}
+
+/// The reports of one photo.
+class PhotoReportGroup {
+  const PhotoReportGroup(this.reports);
+
+  /// Newest first; all about the same photo of the same trip.
+  final List<PhotoReport> reports;
+
+  PhotoReport get _first => reports.first;
+  String get tripId => _first.tripId;
+  String get photoOwnerId => _first.photoOwnerId;
+  String get photoId => _first.photoId;
+  String get activityId => _first.activityId;
+
+  List<PhotoReport> get pending =>
+      reports.where((report) => report.isPending).toList(growable: false);
+
+  bool get thresholdReached => pending.length >= photoReportThreshold;
+
+  DateTime? get latestAt => _first.createdAt;
+}
+
+/// [reports] grouped by photo: photos with pending reports first, the most
+/// reported on top, then the handled ones, newest first.
+List<PhotoReportGroup> groupPhotoReports(Iterable<PhotoReport> reports) {
+  final byPhoto = <String, List<PhotoReport>>{};
+  for (final report in reports) {
+    byPhoto
+        .putIfAbsent('${report.tripId}/${report.photoKey}', () => [])
+        .add(report);
+  }
+  final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+  final groups = [
+    for (final list in byPhoto.values)
+      PhotoReportGroup(
+        list
+          ..sort(
+              (a, b) => (b.createdAt ?? epoch).compareTo(a.createdAt ?? epoch)),
+      ),
+  ];
+  groups.sort((a, b) {
+    final byPending = b.pending.length.compareTo(a.pending.length);
+    if (byPending != 0) return byPending;
+    return (b.latestAt ?? epoch).compareTo(a.latestAt ?? epoch);
+  });
+  return groups;
+}
+
+/// What a member's reports became, to tell a real concern from someone who
+/// reports everything.
+class PhotoReporterStats {
+  const PhotoReporterStats({
+    required this.reporterId,
+    required this.total,
+    required this.pending,
+    required this.dismissed,
+    required this.photoRemoved,
+    required this.distinctAuthors,
+    required this.latestTripId,
+  });
+
+  final String reporterId;
+  final int total;
+  final int pending;
+  final int dismissed;
+  final int photoRemoved;
+
+  /// How many different members' photos they reported.
+  final int distinctAuthors;
+
+  /// Trip of their latest report, to show their name.
+  final String latestTripId;
+}
+
+/// One entry per reporter, the most active first.
+List<PhotoReporterStats> photoReporterStats(Iterable<PhotoReport> reports) {
+  final byReporter = <String, List<PhotoReport>>{};
+  for (final report in reports) {
+    byReporter.putIfAbsent(report.reporterId, () => []).add(report);
+  }
+  final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+  final stats = [
+    for (final entry in byReporter.entries)
+      PhotoReporterStats(
+        reporterId: entry.key,
+        total: entry.value.length,
+        pending: entry.value.where((r) => r.isPending).length,
+        dismissed: entry.value
+            .where((r) => r.resolution == PhotoReportResolution.dismissed)
+            .length,
+        photoRemoved: entry.value
+            .where((r) => r.resolution == PhotoReportResolution.photoRemoved)
+            .length,
+        distinctAuthors: entry.value.map((r) => r.photoOwnerId).toSet().length,
+        latestTripId: (entry.value.toList()
+              ..sort((a, b) =>
+                  (b.createdAt ?? epoch).compareTo(a.createdAt ?? epoch)))
+            .first
+            .tripId,
+      ),
+  ];
+  stats.sort((a, b) => b.total.compareTo(a.total));
+  return stats;
 }

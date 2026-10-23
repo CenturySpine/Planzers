@@ -1712,34 +1712,5 @@
   "activityPhotosReportInappropriate": "Contenu inapproprié",
   "activityPhotosReportNotConsenting": "Je suis sur la photo et je ne le souhaite pas",
   "activityPhotosReportOther": "Autre",
-  "activityPhotosReported": "Photo signalée",
-  "tripPhotoReportsTitle": "Photos signalées",
-  "tripPhotoReportsCount": "{count, plural, =0{Aucun signalement à traiter} =1{1 signalement à traiter} other{{count} signalements à traiter}}",
-  "@tripPhotoReportsCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "tripPhotoReportsEmpty": "Aucune photo signalée",
-  "tripPhotoReportsBy": "Signalée par {name}",
-  "@tripPhotoReportsBy": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "tripPhotoReportsAuthor": "Photo de {name}",
-  "@tripPhotoReportsAuthor": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "tripPhotoReportsGone": "Photo supprimée ou devenue privée",
-  "tripPhotoReportsDismiss": "Ignorer",
-  "tripPhotoReportsDeletePhoto": "Supprimer la photo"
+  "activityPhotosReported": "Photo signalée"
 }

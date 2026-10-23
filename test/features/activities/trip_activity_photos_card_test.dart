@@ -171,6 +171,76 @@ void main() {
     );
   });
 
+  group('photo reports', () {
+    PhotoReport report(String reporter, String owner, String photo,
+            {PhotoReportResolution? resolution, int day = 1}) =>
+        PhotoReport(
+          id: '${reporter}_${owner}_$photo',
+          tripId: 't1',
+          photoOwnerId: owner,
+          photoId: photo,
+          activityId: 'a1',
+          reporterId: reporter,
+          reason: PhotoReportReason.other,
+          resolution: resolution,
+          createdAt: DateTime(2026, 10, day),
+        );
+
+    test('groups by photo, most pending reports first', () {
+      final groups = groupPhotoReports([
+        report('r1', 'bob', 'p1', day: 1),
+        report('r2', 'bob', 'p1', day: 2),
+        report('r3', 'bob', 'p1', day: 3),
+        report('r1', 'ann', 'p2', day: 5),
+        report('r2', 'ann', 'p3',
+            day: 6, resolution: PhotoReportResolution.dismissed),
+      ]);
+      expect(groups.map((g) => g.photoId), ['p1', 'p2', 'p3']);
+      expect(groups.first.reports.map((r) => r.reporterId), ['r3', 'r2', 'r1']);
+      expect(groups.first.thresholdReached, isTrue);
+      expect(groups[1].thresholdReached, isFalse);
+      expect(groups[2].pending, isEmpty);
+    });
+
+    test('handled reports do not count towards the threshold', () {
+      final group = groupPhotoReports([
+        report('r1', 'bob', 'p1'),
+        report('r2', 'bob', 'p1'),
+        report('r3', 'bob', 'p1', resolution: PhotoReportResolution.dismissed),
+      ]).single;
+      expect(group.pending, hasLength(2));
+      expect(group.thresholdReached, isFalse);
+    });
+
+    test('reporter stats tell outcomes and targeted authors', () {
+      final stats = photoReporterStats([
+        report('r1', 'bob', 'p1', resolution: PhotoReportResolution.dismissed),
+        report('r1', 'bob', 'p2', resolution: PhotoReportResolution.dismissed),
+        report('r1', 'bob', 'p3'),
+        report('r2', 'ann', 'p4',
+            resolution: PhotoReportResolution.photoRemoved),
+      ]);
+      expect(stats.first.reporterId, 'r1');
+      expect(stats.first.total, 3);
+      expect(stats.first.pending, 1);
+      expect(stats.first.dismissed, 2);
+      expect(stats.first.distinctAuthors, 1);
+      expect(stats.last.photoRemoved, 1);
+    });
+
+    test('reports dismissed before outcomes existed read as dismissed', () {
+      expect(
+        PhotoReportResolution.fromFirestore({'dismissed': true}),
+        PhotoReportResolution.dismissed,
+      );
+      expect(
+        PhotoReportResolution.fromFirestore({'resolution': 'photoRemoved'}),
+        PhotoReportResolution.photoRemoved,
+      );
+      expect(PhotoReportResolution.fromFirestore({}), isNull);
+    });
+  });
+
   test('compareActivityPhotos puts pending photos last', () {
     final pending = _photo('b', 'a');
     final older = ActivityPhoto(
