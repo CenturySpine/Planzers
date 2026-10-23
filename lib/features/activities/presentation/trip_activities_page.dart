@@ -683,12 +683,8 @@ class _ActivitiesExpandableFab extends StatelessWidget {
                   () => _openActivityCreate(
                       context, [TripActivityCategory.accommodation]),
                 ),
-                option(
-                  ActivityFilterGroup.trajets,
-                  l10n.activitiesFilterTrajets,
-                  () => _openActivityCreate(
-                      context, [TripActivityCategory.transport]),
-                ),
+                // Transports are not added here: the planning offers them
+                // between places, with times fitting the activities around.
                 TripActivitiesDictateMenuTile(
                   onTap: () => Navigator.of(sheetContext).pop(
                     () => context.push('/trips/$tripId/activities/dictate'),

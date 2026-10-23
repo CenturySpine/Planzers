@@ -1312,7 +1312,13 @@ class _EditBodyState extends State<_EditBody> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final c in TripActivityCategory.values)
+              // An activity becomes a transport only through the planning's
+              // suggestions; one already a transport keeps its chip.
+              for (final c in TripActivityCategory.values.where(
+                (c) =>
+                    c != TripActivityCategory.transport ||
+                    widget.activity.category == TripActivityCategory.transport,
+              ))
                 FilterChip(
                   avatar: Icon(c.categoryIcon, size: 18),
                   label: Text(c.label(AppLocalizations.of(context)!)),
