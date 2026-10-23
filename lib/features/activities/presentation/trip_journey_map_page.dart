@@ -172,11 +172,9 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final numbers = {
       for (final stop in journey.stops) stop.activity.id: stop.number,
     };
-    // The current traveler's own favorites (photos are private).
-    final favoritePhotos = activityFavoritePhotos(
-      ref.watch(myActivityPhotosStreamProvider(widget.tripId)).asData?.value ??
-          const <ActivityPhoto>[],
-    );
+    // The current traveler's favorites, their own photos or shared ones.
+    final favoritePhotos =
+        ref.watch(activityFavoritePhotosProvider(widget.tripId));
     final missingByLink = {
       for (final missing in tripMissingTransports(journey))
         _linkKey(missing.from, missing.to): missing,
@@ -516,8 +514,8 @@ class _JourneyMarker extends StatelessWidget {
   }
 }
 
-/// Marker of a place showing the traveler's favorite photo, its stop numbers
-/// in a corner badge.
+/// Marker of a place showing the traveler's favorite photo (theirs or a
+/// shared one), its stop numbers in a corner badge.
 class _JourneyPhotoMarker extends StatelessWidget {
   const _JourneyPhotoMarker({
     required this.thumbUrl,

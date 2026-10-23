@@ -9,6 +9,7 @@ import 'package:planerz/core/firebase/firebase_target.dart';
 import 'package:planerz/core/firebase/firebase_target_provider.dart';
 import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/activity_photo_encoding.dart';
+import 'package:planerz/features/trips/data/trips_repository.dart';
 
 final activityPhotosRepositoryProvider =
     Provider<ActivityPhotosRepository>((ref) {
@@ -35,6 +36,91 @@ final myActivityPhotosStreamProvider = StreamProvider.autoDispose
   return ref.watch(activityPhotosRepositoryProvider).watchMyPhotos(tripId);
 });
 
+/// Another member's shared photos for a trip.
+final sharedActivityPhotosOfMemberStreamProvider = StreamProvider.autoDispose
+    .family<List<ActivityPhoto>, ({String tripId, String memberId})>(
+        (ref, args) {
+  return ref
+      .watch(activityPhotosRepositoryProvider)
+      .watchSharedPhotos(args.tripId, args.memberId);
+});
+
+/// The current traveler's favorite photo choices, by activity id.
+final myActivityFavoritesStreamProvider = StreamProvider.autoDispose
+    .family<Map<String, ActivityFavoriteRef>, String>((ref, tripId) {
+  return ref.watch(activityPhotosRepositoryProvider).watchMyFavorites(tripId);
+});
+
+/// Keys of the photos the current traveler reported, hidden for them.
+final myReportedPhotoKeysStreamProvider =
+    StreamProvider.autoDispose.family<Set<String>, String>((ref, tripId) {
+  return ref
+      .watch(activityPhotosRepositoryProvider)
+      .watchMyReportedPhotoKeys(tripId);
+});
+
+/// The reports of a trip, for its admins.
+final tripPhotoReportsStreamProvider =
+    StreamProvider.autoDispose.family<List<PhotoReport>, String>((ref, tripId) {
+  return ref.watch(activityPhotosRepositoryProvider).watchTripReports(tripId);
+});
+
+/// The reports of every trip, for the application owner.
+final allPhotoReportsStreamProvider =
+    StreamProvider.autoDispose<List<PhotoReport>>((ref) {
+  return ref.watch(activityPhotosRepositoryProvider).watchAllReports();
+});
+
+/// One photo, wherever it is stored; null once deleted. Reading a photo
+/// made private fails, which callers show as gone too.
+final activityPhotoStreamProvider = StreamProvider.autoDispose
+    .family<ActivityPhoto?, ({String tripId, String ownerId, String photoId})>(
+  (ref, args) => ref
+      .watch(activityPhotosRepositoryProvider)
+      .watchPhoto(args.tripId, args.ownerId, args.photoId),
+);
+
+/// The photos the current traveler sees on a trip: their own first, then
+/// the other members' shared ones, minus those they reported.
+final visibleActivityPhotosProvider =
+    Provider.autoDispose.family<List<ActivityPhoto>, String>((ref, tripId) {
+  final myUid = ref.watch(activityPhotosRepositoryProvider).currentUid;
+  final mine =
+      ref.watch(myActivityPhotosStreamProvider(tripId)).asData?.value ??
+          const <ActivityPhoto>[];
+  final memberIds =
+      ref.watch(tripStreamProvider(tripId)).asData?.value?.memberUserIds ??
+          const <String>[];
+  final hidden =
+      ref.watch(myReportedPhotoKeysStreamProvider(tripId)).asData?.value ??
+          const <String>{};
+  final others = <ActivityPhoto>[
+    for (final memberId in memberIds)
+      if (memberId != myUid)
+        ...?ref
+            .watch(sharedActivityPhotosOfMemberStreamProvider(
+              (tripId: tripId, memberId: memberId),
+            ))
+            .asData
+            ?.value,
+  ].where((photo) => !hidden.contains(photo.key)).toList()
+    ..sort(compareActivityPhotos);
+  return [...mine, ...others];
+});
+
+/// The current traveler's favorite photo of each activity, by activity id.
+final activityFavoritePhotosProvider = Provider.autoDispose
+    .family<Map<String, ActivityPhoto>, String>((ref, tripId) {
+  return resolveActivityFavorites(
+    favorites:
+        ref.watch(myActivityFavoritesStreamProvider(tripId)).asData?.value ??
+            const <String, ActivityFavoriteRef>{},
+    visiblePhotos: ref.watch(visibleActivityPhotosProvider(tripId)),
+    myPhotos: ref.watch(myActivityPhotosStreamProvider(tripId)).asData?.value ??
+        const <ActivityPhoto>[],
+  );
+});
+
 class ActivityPhotosRepository {
   ActivityPhotosRepository({
     required this.firestore,
@@ -48,13 +134,15 @@ class ActivityPhotosRepository {
 
   static final RegExp _safeSegment = RegExp(r'^[A-Za-z0-9_-]+$');
 
+  String get currentUid => auth.currentUser?.uid.trim() ?? '';
+
   String _requireUid() {
-    final uid = auth.currentUser?.uid.trim() ?? '';
+    final uid = currentUid;
     if (uid.isEmpty) throw StateError('Utilisateur non connecté');
     return uid;
   }
 
-  CollectionReference<Map<String, dynamic>> _photosRef(
+  DocumentReference<Map<String, dynamic>> _moduleRef(
     String tripId,
     String uid,
   ) {
@@ -62,8 +150,94 @@ class ActivityPhotosRepository {
         .collection('trips')
         .doc(tripId.trim())
         .collection('travelerModules')
-        .doc(uid)
-        .collection('activityPhotos');
+        .doc(uid);
+  }
+
+  CollectionReference<Map<String, dynamic>> _photosRef(
+    String tripId,
+    String uid,
+  ) {
+    return _moduleRef(tripId, uid).collection('activityPhotos');
+  }
+
+  CollectionReference<Map<String, dynamic>> _reportsRef(String tripId) {
+    return firestore
+        .collection('trips')
+        .doc(tripId.trim())
+        .collection('photoReports');
+  }
+
+  Stream<List<ActivityPhoto>> watchSharedPhotos(
+    String tripId,
+    String memberId,
+  ) {
+    if (tripId.trim().isEmpty || memberId.trim().isEmpty) {
+      return Stream.value(const <ActivityPhoto>[]);
+    }
+    return _photosRef(tripId, memberId.trim())
+        .where('shared', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs.map(ActivityPhoto.fromDoc).toList());
+  }
+
+  Stream<ActivityPhoto?> watchPhoto(
+    String tripId,
+    String ownerId,
+    String photoId,
+  ) {
+    return _photosRef(tripId, ownerId)
+        .doc(photoId)
+        .snapshots()
+        .map((doc) => doc.exists ? ActivityPhoto.fromDoc(doc) : null);
+  }
+
+  Stream<Map<String, ActivityFavoriteRef>> watchMyFavorites(String tripId) {
+    final uid = currentUid;
+    if (uid.isEmpty || tripId.trim().isEmpty) {
+      return Stream.value(const <String, ActivityFavoriteRef>{});
+    }
+    return _moduleRef(tripId, uid)
+        .collection('activityFavorites')
+        .snapshots()
+        .map((snap) => {
+              for (final doc in snap.docs)
+                doc.id: ActivityFavoriteRef.fromDoc(doc),
+            });
+  }
+
+  Stream<Set<String>> watchMyReportedPhotoKeys(String tripId) {
+    final uid = currentUid;
+    if (uid.isEmpty || tripId.trim().isEmpty) {
+      return Stream.value(const <String>{});
+    }
+    return _reportsRef(tripId)
+        .where('reporterId', isEqualTo: uid)
+        .snapshots()
+        .map((snap) =>
+            {for (final doc in snap.docs) PhotoReport.fromDoc(doc).photoKey});
+  }
+
+  Stream<List<PhotoReport>> watchTripReports(String tripId) {
+    if (tripId.trim().isEmpty) return Stream.value(const <PhotoReport>[]);
+    return _reportsRef(tripId).snapshots().map(_sortedReports);
+  }
+
+  Stream<List<PhotoReport>> watchAllReports() {
+    return firestore
+        .collectionGroup('photoReports')
+        .snapshots()
+        .map(_sortedReports);
+  }
+
+  /// Newest first.
+  static List<PhotoReport> _sortedReports(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    final reports = snap.docs.map(PhotoReport.fromDoc).toList();
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    reports
+        .sort((a, b) => (b.createdAt ?? epoch).compareTo(a.createdAt ?? epoch));
+    return reports;
   }
 
   Stream<List<ActivityPhoto>> watchMyPhotos(String tripId) {
@@ -98,8 +272,8 @@ class ActivityPhotosRepository {
     final docRef = _photosRef(cleanTripId, uid).doc();
     final photoRef =
         storage.ref(activityPhotoStoragePath(uid, cleanTripId, docRef.id));
-    final thumbRef = storage
-        .ref(activityPhotoThumbStoragePath(uid, cleanTripId, docRef.id));
+    final thumbRef =
+        storage.ref(activityPhotoThumbStoragePath(uid, cleanTripId, docRef.id));
     // Files are never replaced, so they can stay cached on the device.
     final metadata = SettableMetadata(
       contentType: 'image/jpeg',
@@ -113,6 +287,7 @@ class ActivityPhotosRepository {
         'activityId': cleanActivityId,
         'url': await photoRef.getDownloadURL(),
         'thumbUrl': await thumbRef.getDownloadURL(),
+        'shared': true,
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (_) {
@@ -139,28 +314,97 @@ class ActivityPhotosRepository {
     });
   }
 
-  /// Makes [photo] the favorite of its activity ([favorite] true), which
-  /// unmarks the activity's other favorite, or unmarks it.
-  Future<void> setFavorite({
+  /// Shares the photo with the other trip members, or makes it private.
+  Future<void> setShared({
     required String tripId,
     required ActivityPhoto photo,
-    required bool favorite,
-    required Iterable<ActivityPhoto> activityPhotos,
+    required bool shared,
   }) async {
     final uid = _requireUid();
-    final photosRef = _photosRef(tripId.trim(), uid);
-    final batch = firestore.batch();
-    batch.update(photosRef.doc(photo.id), {
-      'favorite': favorite ? true : FieldValue.delete(),
+    await _photosRef(tripId.trim(), uid).doc(photo.id).update({
+      'shared': shared ? true : FieldValue.delete(),
     });
-    if (favorite) {
-      for (final other in activityPhotos) {
-        if (other.id != photo.id &&
-            other.activityId == photo.activityId &&
-            other.favorite) {
-          batch.update(photosRef.doc(other.id), {'favorite': FieldValue.delete()});
-        }
+  }
+
+  /// Makes [photo] (the traveler's or another member's) their favorite of
+  /// [activityId], or clears it when [photo] is null. Also drops the former
+  /// favorite mark from their own photos of the activity.
+  Future<void> setActivityFavorite({
+    required String tripId,
+    required String activityId,
+    required ActivityPhoto? photo,
+    required Iterable<ActivityPhoto> myPhotos,
+  }) async {
+    final uid = _requireUid();
+    final cleanTripId = tripId.trim();
+    final batch = firestore.batch();
+    final favoriteRef = _moduleRef(cleanTripId, uid)
+        .collection('activityFavorites')
+        .doc(activityId);
+    if (photo == null) {
+      batch.delete(favoriteRef);
+    } else {
+      batch.set(favoriteRef, {
+        'ownerId': photo.ownerId,
+        'photoId': photo.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    for (final mine in myPhotos) {
+      if (mine.activityId == activityId && mine.favorite) {
+        batch.update(
+          _photosRef(cleanTripId, uid).doc(mine.id),
+          {'favorite': FieldValue.delete()},
+        );
       }
+    }
+    await batch.commit();
+  }
+
+  /// Reports another member's shared photo; it stays hidden for the
+  /// reporter.
+  Future<void> reportPhoto({
+    required String tripId,
+    required ActivityPhoto photo,
+    required PhotoReportReason reason,
+  }) async {
+    final uid = _requireUid();
+    final id = PhotoReport.idFor(
+      reporterId: uid,
+      photoOwnerId: photo.ownerId,
+      photoId: photo.id,
+    );
+    await _reportsRef(tripId).doc(id).set({
+      'photoOwnerId': photo.ownerId,
+      'photoId': photo.id,
+      'activityId': photo.activityId,
+      'reporterId': uid,
+      'reason': reason.name,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Takes a report off the moderation lists; the photo stays hidden for
+  /// its reporter.
+  Future<void> dismissReport({
+    required String tripId,
+    required String reportId,
+  }) {
+    return _reportsRef(tripId).doc(reportId).update({'dismissed': true});
+  }
+
+  /// Deletes another member's photo (trip admin or application owner),
+  /// with the reports about it; its files are removed server-side.
+  Future<void> deletePhotoAsModerator({
+    required String tripId,
+    required String ownerId,
+    required String photoId,
+    required Iterable<String> reportIds,
+  }) async {
+    final batch = firestore.batch();
+    batch.delete(_photosRef(tripId, ownerId).doc(photoId));
+    for (final reportId in reportIds) {
+      batch.delete(_reportsRef(tripId).doc(reportId));
     }
     await batch.commit();
   }

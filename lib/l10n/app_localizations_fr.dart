@@ -4138,7 +4138,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Dictée impossible : vérifie l\'accès au micro';
 
   @override
-  String get activityPhotosTitle => 'Mes photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Ajouter des photos';
@@ -4170,6 +4170,68 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get activityPhotosFavoriteRemove => 'Retirer des favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Rendre privée';
+
+  @override
+  String get activityPhotosShare => 'Partager avec le groupe';
+
+  @override
+  String get activityPhotosReport => 'Signaler';
+
+  @override
+  String get activityPhotosReportTitle => 'Pourquoi signaler cette photo ?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Contenu inapproprié';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'Je suis sur la photo et je ne le souhaite pas';
+
+  @override
+  String get activityPhotosReportOther => 'Autre';
+
+  @override
+  String get activityPhotosReported => 'Photo signalée';
+
+  @override
+  String get tripPhotoReportsTitle => 'Photos signalées';
+
+  @override
+  String tripPhotoReportsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count signalements à traiter',
+      one: '1 signalement à traiter',
+      zero: 'Aucun signalement à traiter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripPhotoReportsEmpty => 'Aucune photo signalée';
+
+  @override
+  String tripPhotoReportsBy(String name) {
+    return 'Signalée par $name';
+  }
+
+  @override
+  String tripPhotoReportsAuthor(String name) {
+    return 'Photo de $name';
+  }
+
+  @override
+  String get tripPhotoReportsGone => 'Photo supprimée ou devenue privée';
+
+  @override
+  String get tripPhotoReportsDismiss => 'Ignorer';
+
+  @override
+  String get tripPhotoReportsDeletePhoto => 'Supprimer la photo';
 }
 
 /// The translations for French, as used in France (`fr_FR`).
@@ -8234,7 +8296,7 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
       'Dictée impossible : vérifie l\'accès au micro';
 
   @override
-  String get activityPhotosTitle => 'Mes photos';
+  String get activityPhotosTitle => 'Photos';
 
   @override
   String get activityPhotosAdd => 'Ajouter des photos';
@@ -8266,4 +8328,66 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get activityPhotosFavoriteRemove => 'Retirer des favorites';
+
+  @override
+  String get activityPhotosMakePrivate => 'Rendre privée';
+
+  @override
+  String get activityPhotosShare => 'Partager avec le groupe';
+
+  @override
+  String get activityPhotosReport => 'Signaler';
+
+  @override
+  String get activityPhotosReportTitle => 'Pourquoi signaler cette photo ?';
+
+  @override
+  String get activityPhotosReportInappropriate => 'Contenu inapproprié';
+
+  @override
+  String get activityPhotosReportNotConsenting =>
+      'Je suis sur la photo et je ne le souhaite pas';
+
+  @override
+  String get activityPhotosReportOther => 'Autre';
+
+  @override
+  String get activityPhotosReported => 'Photo signalée';
+
+  @override
+  String get tripPhotoReportsTitle => 'Photos signalées';
+
+  @override
+  String tripPhotoReportsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count signalements à traiter',
+      one: '1 signalement à traiter',
+      zero: 'Aucun signalement à traiter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripPhotoReportsEmpty => 'Aucune photo signalée';
+
+  @override
+  String tripPhotoReportsBy(String name) {
+    return 'Signalée par $name';
+  }
+
+  @override
+  String tripPhotoReportsAuthor(String name) {
+    return 'Photo de $name';
+  }
+
+  @override
+  String get tripPhotoReportsGone => 'Photo supprimée ou devenue privée';
+
+  @override
+  String get tripPhotoReportsDismiss => 'Ignorer';
+
+  @override
+  String get tripPhotoReportsDeletePhoto => 'Supprimer la photo';
 }
