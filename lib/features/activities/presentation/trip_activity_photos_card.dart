@@ -403,7 +403,8 @@ Future<bool> confirmActivityPhotoDeletion(BuildContext context) async {
 /// Full-screen view of an activity's photos: swipe between them, pinch to
 /// zoom (swiping pauses while zoomed in). On the traveler's own photo:
 /// favorite, sharing, caption and deletion; on another member's: its author
-/// and caption, favorite and report, plus deletion for trip admins.
+/// and caption, favorite and report, plus deletion for trip admins. Reports
+/// are handled by the application owner only.
 class _ActivityPhotoViewerPage extends ConsumerStatefulWidget {
   const _ActivityPhotoViewerPage({
     required this.tripId,
@@ -497,10 +498,11 @@ class _ActivityPhotoViewerPageState
     _afterRemoval(navigator, isLast: isLast);
   }
 
+  /// A trip admin deleting another member's photo; its reports stay for the
+  /// application owner.
   Future<void> _deleteAsModerator(
     ActivityPhoto photo, {
     required bool isLast,
-    required List<PhotoReport> reports,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -510,10 +512,7 @@ class _ActivityPhotoViewerPageState
         tripId: widget.tripId,
         ownerId: photo.ownerId,
         photoId: photo.id,
-        reportIds: [
-          for (final report in reports)
-            if (report.photoKey == photo.key) report.id,
-        ],
+        pendingReportIds: const [],
       );
     } catch (error) {
       _showError(messenger, error);
@@ -638,13 +637,6 @@ class _ActivityPhotoViewerPageState
             ?.value
             ?.isTripAdmin(myUid) ??
         false;
-    final reports = isAdmin
-        ? ref
-                .watch(tripPhotoReportsStreamProvider(widget.tripId))
-                .asData
-                ?.value ??
-            const <PhotoReport>[]
-        : const <PhotoReport>[];
     final labels = ref.watch(tripMemberResolvedLabelsProvider(widget.tripId));
     // After a removal the pager keeps its position, now showing the next
     // photo (or the previous one when the last was removed).
@@ -713,11 +705,7 @@ class _ActivityPhotoViewerPageState
               IconButton(
                 tooltip: l10n.commonDelete,
                 icon: const Icon(PhosphorIconsRegular.trash),
-                onPressed: () => _deleteAsModerator(
-                  current,
-                  isLast: isLast,
-                  reports: reports,
-                ),
+                onPressed: () => _deleteAsModerator(current, isLast: isLast),
               ),
           ],
         ],

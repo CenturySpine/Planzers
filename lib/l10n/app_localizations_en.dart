@@ -4158,43 +4158,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityPhotosReported => 'Photo reported';
-
-  @override
-  String get tripPhotoReportsTitle => 'Reported photos';
-
-  @override
-  String tripPhotoReportsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count reports to handle',
-      one: '1 report to handle',
-      zero: 'No report to handle',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get tripPhotoReportsEmpty => 'No reported photos';
-
-  @override
-  String tripPhotoReportsBy(String name) {
-    return 'Reported by $name';
-  }
-
-  @override
-  String tripPhotoReportsAuthor(String name) {
-    return 'Photo by $name';
-  }
-
-  @override
-  String get tripPhotoReportsGone => 'Photo deleted or made private';
-
-  @override
-  String get tripPhotoReportsDismiss => 'Dismiss';
-
-  @override
-  String get tripPhotoReportsDeletePhoto => 'Delete photo';
 }
 
 /// The translations for English, as used in the United States (`en_US`).
@@ -8280,41 +8243,4 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get activityPhotosReported => 'Photo reported';
-
-  @override
-  String get tripPhotoReportsTitle => 'Reported photos';
-
-  @override
-  String tripPhotoReportsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count reports to handle',
-      one: '1 report to handle',
-      zero: 'No report to handle',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get tripPhotoReportsEmpty => 'No reported photos';
-
-  @override
-  String tripPhotoReportsBy(String name) {
-    return 'Reported by $name';
-  }
-
-  @override
-  String tripPhotoReportsAuthor(String name) {
-    return 'Photo by $name';
-  }
-
-  @override
-  String get tripPhotoReportsGone => 'Photo deleted or made private';
-
-  @override
-  String get tripPhotoReportsDismiss => 'Dismiss';
-
-  @override
-  String get tripPhotoReportsDeletePhoto => 'Delete photo';
 }

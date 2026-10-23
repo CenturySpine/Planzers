@@ -59,12 +59,6 @@ final myReportedPhotoKeysStreamProvider =
       .watchMyReportedPhotoKeys(tripId);
 });
 
-/// The reports of a trip, for its admins.
-final tripPhotoReportsStreamProvider =
-    StreamProvider.autoDispose.family<List<PhotoReport>, String>((ref, tripId) {
-  return ref.watch(activityPhotosRepositoryProvider).watchTripReports(tripId);
-});
-
 /// The reports of every trip, for the application owner.
 final allPhotoReportsStreamProvider =
     StreamProvider.autoDispose<List<PhotoReport>>((ref) {
@@ -215,11 +209,6 @@ class ActivityPhotosRepository {
         .snapshots()
         .map((snap) =>
             {for (final doc in snap.docs) PhotoReport.fromDoc(doc).photoKey});
-  }
-
-  Stream<List<PhotoReport>> watchTripReports(String tripId) {
-    if (tripId.trim().isEmpty) return Stream.value(const <PhotoReport>[]);
-    return _reportsRef(tripId).snapshots().map(_sortedReports);
   }
 
   Stream<List<PhotoReport>> watchAllReports() {
@@ -384,27 +373,40 @@ class ActivityPhotosRepository {
     });
   }
 
-  /// Takes a report off the moderation lists; the photo stays hidden for
-  /// its reporter.
-  Future<void> dismissReport({
+  /// Records how the application owner handled reports (they are kept as
+  /// history); the photo stays hidden for each reporter.
+  Future<void> resolveReports({
     required String tripId,
-    required String reportId,
-  }) {
-    return _reportsRef(tripId).doc(reportId).update({'dismissed': true});
+    required Iterable<String> reportIds,
+    required PhotoReportResolution resolution,
+  }) async {
+    final batch = firestore.batch();
+    for (final reportId in reportIds) {
+      batch.update(_reportsRef(tripId).doc(reportId), {
+        'resolution': resolution.name,
+        'resolvedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
   }
 
-  /// Deletes another member's photo (trip admin or application owner),
-  /// with the reports about it; its files are removed server-side.
+  /// Deletes another member's photo (trip admin or application owner); its
+  /// files are removed server-side. The application owner passes the
+  /// photo's pending reports, recorded as handled by this deletion; trip
+  /// admins cannot see reports and pass none.
   Future<void> deletePhotoAsModerator({
     required String tripId,
     required String ownerId,
     required String photoId,
-    required Iterable<String> reportIds,
+    required Iterable<String> pendingReportIds,
   }) async {
     final batch = firestore.batch();
     batch.delete(_photosRef(tripId, ownerId).doc(photoId));
-    for (final reportId in reportIds) {
-      batch.delete(_reportsRef(tripId).doc(reportId));
+    for (final reportId in pendingReportIds) {
+      batch.update(_reportsRef(tripId).doc(reportId), {
+        'resolution': PhotoReportResolution.photoRemoved.name,
+        'resolvedAt': FieldValue.serverTimestamp(),
+      });
     }
     await batch.commit();
   }

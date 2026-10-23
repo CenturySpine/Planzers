@@ -1253,13 +1253,11 @@ service cloud.firestore {
       }
 
       /// Reports of shared activity photos: one per reporter and photo,
-      /// listed for the trip admins and the application owner. Dismissing
-      /// keeps the report, so the photo stays hidden for its reporter.
+      /// handled by the application owner only (trip admins never see them).
+      /// A reporter reads their own reports, to keep those photos hidden for
+      /// them. Handled reports are kept with their outcome, once, as the
+      /// history of the photo and of its reporter.
       match /photoReports/{reportId} {
-        function canModeratePhotos() {
-          return tripCallerRoleRank(tripId) >= 2 || isApplicationOwner();
-        }
-
         function isValidPhotoReport(data) {
           return data.keys().hasOnly(['photoOwnerId', 'photoId', 'activityId', 'reporterId', 'reason', 'createdAt'])
             && data.reporterId == request.auth.uid
@@ -1275,14 +1273,15 @@ service cloud.firestore {
                 .data.get('shared', false) == true;
         }
 
-        allow read: if isTripMember(tripId)
-          && (resource.data.reporterId == request.auth.uid || canModeratePhotos());
+        allow read: if isApplicationOwner()
+          || (isTripMember(tripId) && resource.data.reporterId == request.auth.uid);
         allow create: if isTripMember(tripId) && isValidPhotoReport(request.resource.data);
-        allow update: if isTripMember(tripId)
-          && canModeratePhotos()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['dismissed'])
-          && request.resource.data.dismissed == true;
-        allow delete: if isTripMember(tripId) && canModeratePhotos();
+        allow update: if isApplicationOwner()
+          && !resource.data.keys().hasAny(['resolution'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resolution', 'resolvedAt'])
+          && request.resource.data.resolution in ['dismissed', 'photoRemoved']
+          && request.resource.data.resolvedAt == request.time;
+        allow delete: if isApplicationOwner();
       }
 
       /// Personal "À emporter" checklist, keyed by the participant SLOT id

@@ -25,7 +25,6 @@ import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_create_page.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_detail_page.dart';
 import 'package:planerz/features/activities/presentation/trip_journey_map_page.dart';
-import 'package:planerz/features/activities/presentation/trip_photo_reports_page.dart';
 import 'package:planerz/features/expenses/presentation/trip_expenses_page.dart';
 import 'package:planerz/features/messaging/presentation/trip_messaging_page.dart';
 import 'package:planerz/features/messaging/data/trip_message_thread_scope.dart';
@@ -241,12 +240,6 @@ final GoRouter appRouter = GoRouter(
             tripId: state.pathParameters['tripId']!,
           ),
           routes: <RouteBase>[
-            GoRoute(
-              path: 'photo-reports',
-              builder: (context, state) => TripPhotoReportsPage(
-                tripId: state.pathParameters['tripId']!,
-              ),
-            ),
             GoRoute(
               path: 'permissions',
               builder: (context, state) => TripSettingsPermissionsPage(

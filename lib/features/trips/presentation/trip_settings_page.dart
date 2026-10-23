@@ -3,8 +3,6 @@ import 'package:planerz/app/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:planerz/features/activities/data/activity_photos_repository.dart';
-import 'package:planerz/features/activities/presentation/trip_photo_reports_page.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
@@ -125,21 +123,6 @@ class TripSettingsPage extends ConsumerWidget {
                 onTap: () =>
                     context.push('/trips/$tripId/settings/permissions'),
               ),
-              if (trip.isTripAdmin(myUid)) ...[
-                const SizedBox(height: 12),
-                _SettingsSectionCard(
-                  title: l10n.tripPhotoReportsTitle,
-                  icon: PhosphorIconsRegular.flag,
-                  description: l10n.tripPhotoReportsCount(
-                    pendingPhotoReportsCount(
-                      ref.watch(tripPhotoReportsStreamProvider(tripId)).asData?.value ??
-                          const [],
-                    ),
-                  ),
-                  onTap: () =>
-                      context.push('/trips/$tripId/settings/photo-reports'),
-                ),
-              ],
             ],
           ),
         );
