@@ -1933,6 +1933,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapAttributionOsm => 'OpenStreetMap contributors';
 
   @override
+  String get activitiesMissingTransport => 'Transport to fill in';
+
+  @override
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance) {
+    return '$from → $to · ≈ $distance';
+  }
+
+  @override
+  String activitiesMissingTransportLabel(Object from, Object to) {
+    return '$from → $to';
+  }
+
+  @override
   String get activitiesJourneyMapTitle => 'Trip map';
 
   @override
@@ -5943,6 +5957,20 @@ class AppLocalizationsEnUs extends AppLocalizationsEn {
 
   @override
   String get mapAttributionOsm => 'OpenStreetMap contributors';
+
+  @override
+  String get activitiesMissingTransport => 'Transport to fill in';
+
+  @override
+  String activitiesMissingTransportRoute(
+      Object from, Object to, Object distance) {
+    return '$from → $to · ≈ $distance';
+  }
+
+  @override
+  String activitiesMissingTransportLabel(Object from, Object to) {
+    return '$from → $to';
+  }
 
   @override
   String get activitiesJourneyMapTitle => 'Trip map';

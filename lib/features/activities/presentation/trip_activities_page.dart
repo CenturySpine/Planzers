@@ -18,6 +18,9 @@ import 'package:planerz/features/activities/presentation/trip_activity_creators_
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_searchable_tab_list.dart';
+import 'package:planerz/features/activities/presentation/trip_journey.dart';
+import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
+import 'package:planerz/features/activities/presentation/trip_missing_transport_sheet.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/meals/presentation/trip_meal_card.dart';
@@ -164,6 +167,12 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       trip: trip,
       userId: myUid,
     );
+    // A missing transport is added already planned.
+    final canAddMissingTransport = canSuggestActivity &&
+        canPlanActivityForTrip(
+          trip: trip,
+          userId: myUid,
+        );
     final memberLabels = ref.watch(tripMemberResolvedLabelsProvider(trip.id));
     _syncPresenceIfNeeded(trip.id);
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(trip.id));
@@ -201,6 +210,17 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
       body = Builder(builder: (context) {
           final items = activities;
           _markActivitiesAsReadIfNeeded(tripId: trip.id, items: items);
+          // Shown with the transports, before the activity they lead to.
+          final showMissingTransports = canAddMissingTransport &&
+              (_activeFilters.isEmpty ||
+                  _activeFilters.contains(ActivityFilterGroup.trajets));
+          final missingTransportsByArrival = showMissingTransports
+              ? {
+                  for (final missing
+                      in tripMissingTransports(buildTripJourney(items)))
+                    missing.to.id: missing,
+                }
+              : const <String, TripMissingTransport>{};
           final creatorIds = items
               .map((activity) => activity.createdBy.trim())
               .where((id) => id.isNotEmpty)
@@ -366,6 +386,7 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                         onSelectDay: (day) => setState(
                           () => _agendaSelectedDay = day,
                         ),
+                        missingTransportsByArrival: missingTransportsByArrival,
                       ),
                       TripActivitiesSearchableTabList(
                         searchController: _plannedSearchController,
@@ -431,6 +452,7 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     required this.onMoveBackward,
     required this.onMoveForward,
     required this.onSelectDay,
+    required this.missingTransportsByArrival,
   });
 
   final DateTime centerDay;
@@ -448,6 +470,9 @@ class _ActivitiesAgendaTab extends StatelessWidget {
   final VoidCallback onMoveForward;
   final ValueChanged<DateTime> onSelectDay;
 
+  /// Transports to fill in, by the id of the activity they lead to.
+  final Map<String, TripMissingTransport> missingTransportsByArrival;
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context);
@@ -461,6 +486,17 @@ class _ActivitiesAgendaTab extends StatelessWidget {
     final visibleEntries = agendaEntries
         .where((e) => e.activity != null || e.meal != null)
         .toList(growable: false);
+    // A transport to fill in comes right before the activity it leads to.
+    final rows = <({
+      TripActivitiesListEntry? entry,
+      TripMissingTransport? missing,
+    })>[
+      for (final entry in visibleEntries) ...[
+        if (missingTransportsByArrival[entry.activity?.id] case final missing?)
+          (entry: null, missing: missing),
+        (entry: entry, missing: null),
+      ],
+    ];
 
     return Column(
       children: [
@@ -496,13 +532,29 @@ class _ActivitiesAgendaTab extends StatelessWidget {
                     ),
                   ),
                 ),
-              for (var index = 0; index < visibleEntries.length; index++)
-                _buildTimelineRow(
-                  context,
-                  visibleEntries[index],
-                  isFirst: index == 0,
-                  isLast: index == visibleEntries.length - 1,
-                ),
+              for (var index = 0; index < rows.length; index++)
+                if (rows[index].missing case final missing?)
+                  TripAgendaTimelineRow(
+                    timeLabel: '',
+                    color: ActivityFilterGroup.trajets.filterColor,
+                    isFirst: index == 0,
+                    isLast: index == rows.length - 1,
+                    child: TripMissingTransportCard(
+                      missing: missing,
+                      onTap: () => showTripMissingTransportSheet(
+                        context,
+                        tripId: tripId,
+                        missing: missing,
+                      ),
+                    ),
+                  )
+                else
+                  _buildTimelineRow(
+                    context,
+                    rows[index].entry!,
+                    isFirst: index == 0,
+                    isLast: index == rows.length - 1,
+                  ),
             ],
           ),
         ),

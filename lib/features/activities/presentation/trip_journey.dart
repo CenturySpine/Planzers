@@ -25,6 +25,8 @@ class TripJourneyLeg {
     required this.from,
     required this.to,
     this.transport,
+    this.fromActivity,
+    this.toActivity,
   });
 
   final LatLng from;
@@ -32,6 +34,11 @@ class TripJourneyLeg {
 
   /// Null for a plain link.
   final TripActivity? transport;
+
+  /// Plain link only: the activity left (a place, or a transport's
+  /// arrival) and the one reached (a place, or a transport's departure).
+  final TripActivity? fromActivity;
+  final TripActivity? toActivity;
 }
 
 /// Stops sharing a place (e.g. the same hotel several nights), shown as one
@@ -116,6 +123,7 @@ TripJourney buildTripJourney(
   final stops = <TripJourneyStop>[];
   final legs = <TripJourneyLeg>[];
   LatLng? last;
+  TripActivity? lastActivity;
 
   for (var i = 0; i < ordered.length; i++) {
     final activity = ordered[i];
@@ -124,19 +132,38 @@ TripJourney buildTripJourney(
       final to = activity.location?.toLatLng() ?? _nextPlace(ordered, i + 1);
       if (from != null && to != null) {
         if (last != null && last != from) {
-          legs.add(TripJourneyLeg(from: last, to: from));
+          legs.add(
+            TripJourneyLeg(
+              from: last,
+              to: from,
+              fromActivity: lastActivity,
+              toActivity: activity,
+            ),
+          );
         }
         legs.add(TripJourneyLeg(from: from, to: to, transport: activity));
       }
-      last = to ?? from ?? last;
+      // Without an arrival nor a place after it, nothing follows anyway.
+      if (to != null) {
+        last = to;
+        lastActivity = activity;
+      }
       continue;
     }
 
     final point = activity.location?.toLatLng();
     if (point == null) continue;
     if (last != null && last != point) {
-      legs.add(TripJourneyLeg(from: last, to: point));
+      legs.add(
+        TripJourneyLeg(
+          from: last,
+          to: point,
+          fromActivity: lastActivity,
+          toActivity: activity,
+        ),
+      );
     }
+    lastActivity = activity;
     stops.add(
       TripJourneyStop(
         number: stops.length + 1,
