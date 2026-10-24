@@ -216,8 +216,12 @@ class _TripActivitiesPageState extends ConsumerState<TripActivitiesPage> {
                   _activeFilters.contains(ActivityFilterGroup.trajets));
           final missingTransportsByArrival = showMissingTransports
               ? {
-                  for (final missing
-                      in tripMissingTransports(buildTripJourney(items)))
+                  for (final missing in tripMissingTransports(
+                    buildTripJourney(
+                      items,
+                      mealStops: tripJourneyMealStops(meals, items),
+                    ),
+                  ))
                     missing.to.id: missing,
                 }
               : const <String, TripMissingTransport>{};
@@ -492,7 +496,9 @@ class _ActivitiesAgendaTab extends StatelessWidget {
       TripMissingTransport? missing,
     })>[
       for (final entry in visibleEntries) ...[
-        if (missingTransportsByArrival[entry.activity?.id] case final missing?)
+        if (missingTransportsByArrival[entry.activity?.id ??
+                tripJourneyMealStopId(entry.meal!.id)]
+            case final missing?)
           (entry: null, missing: missing),
         (entry: entry, missing: null),
       ],

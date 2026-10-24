@@ -19,6 +19,8 @@ import 'package:planerz/features/activities/presentation/trip_journey.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport.dart';
 import 'package:planerz/features/activities/presentation/trip_missing_transport_sheet.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
+import 'package:planerz/features/meals/data/meals_repository.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
 import 'package:planerz/features/trips/data/trips_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
@@ -33,6 +35,7 @@ class TripJourneyMapPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final activitiesAsync = ref.watch(tripActivitiesStreamProvider(tripId));
+    final mealsAsync = ref.watch(tripMealsStreamProvider(tripId));
     final myUid = FirebaseAuth.instance.currentUser?.uid.trim();
     final trip = ref.watch(tripStreamProvider(tripId)).asData?.value;
     final canSuggest =
@@ -40,24 +43,27 @@ class TripJourneyMapPage extends ConsumerWidget {
     final canPlan =
         trip != null && canPlanActivityForTrip(trip: trip, userId: myUid);
     final activities = activitiesAsync.asData?.value;
+    final meals = mealsAsync.asData?.value;
+    final error = activitiesAsync.error ?? mealsAsync.error;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.activitiesJourneyMapTitle)),
-      body: activitiesAsync.hasError
+      body: error != null
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  l10n.commonErrorWithDetails(activitiesAsync.error.toString()),
+                  l10n.commonErrorWithDetails(error.toString()),
                   textAlign: TextAlign.center,
                 ),
               ),
             )
-          : activities == null
+          : activities == null || meals == null
               ? const Center(child: CircularProgressIndicator())
               : TripJourneyMapView(
                   tripId: tripId,
                   activities: activities,
+                  meals: meals,
                   canSuggestActivity: canSuggest,
                   canPlanActivity: canPlan,
                 ),
@@ -65,22 +71,24 @@ class TripJourneyMapPage extends ConsumerWidget {
   }
 }
 
-/// Planned activities numbered in time order, transports and plain links
-/// between places, with a day selector. A long press (or a right click)
-/// proposes to add an activity there when [canSuggestActivity]. Links long
-/// enough to call for a transport are dashed, with a button to add it when
-/// the member can also plan.
+/// Planned activities (and meals at a located restaurant) numbered in time
+/// order, transports and plain links between places, with a day selector.
+/// A long press (or a right click) proposes to add an activity there when
+/// [canSuggestActivity]. Links long enough to call for a transport are
+/// dashed, with a button to add it when the member can also plan.
 class TripJourneyMapView extends ConsumerStatefulWidget {
   const TripJourneyMapView({
     super.key,
     required this.tripId,
     required this.activities,
+    required this.meals,
     required this.canSuggestActivity,
     required this.canPlanActivity,
   });
 
   final String tripId;
   final List<TripActivity> activities;
+  final List<TripMeal> meals;
   final bool canSuggestActivity;
   final bool canPlanActivity;
 
@@ -165,9 +173,23 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final l10n = AppLocalizations.of(context)!;
     final activities = widget.activities;
     final canSuggest = widget.canSuggestActivity;
-    final days = tripJourneyDays(activities);
+    final mealStops = tripJourneyMealStops(widget.meals, activities);
+    final mealIdsByStopId = {
+      for (final stop in mealStops) stop.activity.id: stop.meal.id,
+    };
+    // A meal's stop shows the photos of its restaurant.
+    final photoActivityIds = {
+      for (final stop in mealStops)
+        stop.activity.id: stop.meal.restaurantActivityId.trim(),
+    };
+    final shownActivities = [
+      ...activities,
+      for (final stop in mealStops) stop.activity,
+    ];
+    final days = tripJourneyDays(activities, mealStops: mealStops);
     final day = days.contains(_day) ? _day : null;
-    final journey = buildTripJourney(activities, day: day);
+    final journey =
+        buildTripJourney(activities, mealStops: mealStops, day: day);
     final points = journey.points;
     final numbers = {
       for (final stop in journey.stops) stop.activity.id: stop.number,
@@ -182,7 +204,7 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final canAddTransport = canSuggest && widget.canPlanActivity;
     final selected = [
       for (final id in _selectedIds)
-        ...activities.where((activity) => activity.id == id),
+        ...shownActivities.where((activity) => activity.id == id),
     ];
     final pending = _pending;
     final linkColor = Theme.of(context).colorScheme.outline;
@@ -312,7 +334,7 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                             ),
                           ),
                       for (final place in journey.places)
-                        _placeMarker(place, favoritePhotos),
+                        _placeMarker(place, favoritePhotos, photoActivityIds),
                       if (pending != null)
                         osmPinMarker(
                           pending,
@@ -350,7 +372,12 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                           activities: selected,
                           numbers: numbers,
                           onOpen: (activity) => context.push(
-                            '/trips/${widget.tripId}/activities/${activity.id}',
+                            switch (mealIdsByStopId[activity.id]) {
+                              final mealId? =>
+                                '/trips/${widget.tripId}/meals/$mealId',
+                              null =>
+                                '/trips/${widget.tripId}/activities/${activity.id}',
+                            },
                           ),
                         )
                       : _PendingPlaceCard(
@@ -385,14 +412,19 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
   }
 
   /// The favorite photo of the first stop having one, its numbers in a
-  /// badge; otherwise the numbers alone.
+  /// badge; otherwise the numbers alone. [photoActivityIds] gives the
+  /// activity whose photos a stop shows, when not its own.
   Marker _placeMarker(
     TripJourneyPlace place,
     Map<String, ActivityPhoto> favoritePhotos,
+    Map<String, String> photoActivityIds,
   ) {
     final label = place.numbersLabel;
     final ids = [for (final stop in place.stops) stop.activity.id];
-    final favorite = ids.map((id) => favoritePhotos[id]).nonNulls.firstOrNull;
+    final favorite = ids
+        .map((id) => favoritePhotos[photoActivityIds[id] ?? id])
+        .nonNulls
+        .firstOrNull;
     if (favorite != null) {
       return Marker(
         point: place.point,

@@ -3,6 +3,7 @@ import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_list_helpers.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
 
 /// A located planned activity of the journey, numbered in time order.
 class TripJourneyStop {
@@ -84,27 +85,91 @@ class TripJourney {
       ];
 }
 
+/// A meal at the restaurant standing in the journey as a planned stop: its
+/// restaurant, at the meal's time.
+class TripJourneyMealStop {
+  const TripJourneyMealStop({required this.meal, required this.activity});
+
+  final TripMeal meal;
+
+  /// The meal's restaurant at the meal's time, under
+  /// [tripJourneyMealStopId].
+  final TripActivity activity;
+}
+
+/// Id of a meal's stop in the journey, never the id of an activity.
+String tripJourneyMealStopId(String mealId) => 'meal:$mealId';
+
+/// The [meals] at the restaurant whose restaurant, among [activities], has a
+/// place.
+List<TripJourneyMealStop> tripJourneyMealStops(
+  Iterable<TripMeal> meals,
+  Iterable<TripActivity> activities,
+) {
+  final activitiesById = {for (final a in activities) a.id: a};
+  return [
+    for (final meal in meals)
+      if (meal.mealMode == MealMode.restaurant)
+        if (activitiesById[meal.restaurantActivityId.trim()]
+            case final restaurant? when restaurant.location != null)
+          TripJourneyMealStop(
+            meal: meal,
+            activity: TripActivity(
+              id: tripJourneyMealStopId(meal.id),
+              label: restaurant.label,
+              category: TripActivityCategory.restaurant,
+              linkUrl: restaurant.linkUrl,
+              address: restaurant.address,
+              freeComments: '',
+              createdBy: restaurant.createdBy,
+              createdAt: meal.createdAt,
+              plannedAt: DateTime(
+                meal.mealDateAsDateTime.year,
+                meal.mealDateAsDateTime.month,
+                meal.mealDateAsDateTime.day,
+                0,
+                tripMealPlannedMinutesSinceMidnight(meal),
+              ),
+              durationMinutes: restaurant.durationMinutes,
+              linkPreview: restaurant.linkPreview,
+              location: restaurant.location,
+            ),
+          ),
+  ];
+}
+
 /// Planned activities of the trip map, in time order, on [day] only when
-/// given. Restaurants are left out, as in the agenda (meals stand for them).
+/// given. Restaurants are left out, as in the agenda: the [mealStops]
+/// going there stand for them.
 List<TripActivity> tripJourneyActivities(
   Iterable<TripActivity> activities, {
+  Iterable<TripJourneyMealStop> mealStops = const [],
   DateTime? day,
 }) {
-  return activities
+  return [
+    ...activities.where(
+      (activity) =>
+          activity.plannedAt != null &&
+          activity.category != TripActivityCategory.restaurant,
+    ),
+    for (final stop in mealStops) stop.activity,
+  ]
       .where(
         (activity) =>
-            activity.plannedAt != null &&
-            activity.category != TripActivityCategory.restaurant &&
-            (day == null || tripActivityDateOnly(activity.plannedAt!) == day),
+            day == null || tripActivityDateOnly(activity.plannedAt!) == day,
       )
       .toList()
     ..sort((a, b) => a.plannedAt!.compareTo(b.plannedAt!));
 }
 
 /// The days with something to show on the map, in order.
-List<DateTime> tripJourneyDays(Iterable<TripActivity> activities) {
+List<DateTime> tripJourneyDays(
+  Iterable<TripActivity> activities, {
+  Iterable<TripJourneyMealStop> mealStops = const [],
+}) {
   return {
-    for (final activity in tripJourneyActivities(activities))
+    for (final activity
+        in tripJourneyActivities(activities, mealStops: mealStops))
       if (tripActivityMapPoints(activity).isNotEmpty)
         tripActivityDateOnly(activity.plannedAt!),
   }.toList()
@@ -117,9 +182,11 @@ List<DateTime> tripJourneyDays(Iterable<TripActivity> activities) {
 /// one.
 TripJourney buildTripJourney(
   Iterable<TripActivity> activities, {
+  Iterable<TripJourneyMealStop> mealStops = const [],
   DateTime? day,
 }) {
-  final ordered = tripJourneyActivities(activities, day: day);
+  final ordered =
+      tripJourneyActivities(activities, mealStops: mealStops, day: day);
   final stops = <TripJourneyStop>[];
   final legs = <TripJourneyLeg>[];
   LatLng? last;
