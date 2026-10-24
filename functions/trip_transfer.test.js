@@ -13,6 +13,7 @@ const {
   remapAccountIds,
   participantForImport,
   tripDataForTransfer,
+  photoSubjectForTransfer,
   isValidDocId,
   isOwnTransferPath,
   generateInviteToken,
@@ -138,6 +139,22 @@ describe('tripDataForTransfer', () => {
       permissions: { tripGeneral: {} },
     });
     assert.deepEqual(out, { title: 'Ski', permissions: { tripGeneral: {} } });
+  });
+});
+
+describe('photoSubjectForTransfer', () => {
+  const subjects = { activityIds: new Set(['a1']), mealIds: new Set(['m1']) };
+
+  it('keeps the activity or the meal a photo belongs to', () => {
+    assert.deepEqual(photoSubjectForTransfer({ activityId: 'a1' }, subjects), { activityId: 'a1' });
+    assert.deepEqual(photoSubjectForTransfer({ mealId: 'm1' }, subjects), { mealId: 'm1' });
+  });
+
+  it('drops a photo whose activity or meal is not transferred', () => {
+    assert.equal(photoSubjectForTransfer({ activityId: 'a2' }, subjects), null);
+    assert.equal(photoSubjectForTransfer({ mealId: 'm2' }, subjects), null);
+    assert.equal(photoSubjectForTransfer({ mealId: 'a1' }, subjects), null);
+    assert.equal(photoSubjectForTransfer({}, subjects), null);
   });
 });
 

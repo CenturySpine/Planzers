@@ -9,11 +9,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:planerz/core/presentation/osm_map.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/activities/data/activity_photo.dart';
 import 'package:planerz/features/activities/data/activity_trip_driving_route.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_category_presentation.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_duration.dart';
-import 'package:planerz/features/activities/presentation/trip_activity_photos_card.dart';
+import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
 import 'package:planerz/features/activities/presentation/trip_activity_place_field.dart';
 import 'package:planerz/features/activities/presentation/trip_place_picker_page.dart';
 import 'package:planerz/features/activities/presentation/trip_transport_mode_presentation.dart';
@@ -1059,9 +1060,10 @@ class _ReadBodyState extends ConsumerState<_ReadBody> {
           tripId: widget.tripId,
           activityId: widget.activity.id,
         ),
-        TripActivityPhotosCard(
+        TripPhotosCard(
           tripId: widget.tripId,
-          activity: widget.activity,
+          subject: PhotoSubject.activity(widget.activity.id),
+          day: widget.activity.plannedAt,
         ),
         _VotersSection(
           tripId: widget.tripId,

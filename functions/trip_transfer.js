@@ -390,6 +390,20 @@ function tripDataForTransfer(data) {
   return out;
 }
 
+/**
+ * What a transferred photo is attached to, when it is part of the trip: its
+ * activity or its meal.
+ * @returns {{ activityId: string } | { mealId: string } | null}
+ * @param {object} raw photo record or exported photo
+ * @param {{ activityIds: Set<string>, mealIds: Set<string> }} subjects
+ */
+function photoSubjectForTransfer(raw, { activityIds, mealIds }) {
+  const mealId = normalizeString(raw?.mealId);
+  if (mealId) return mealIds.has(mealId) ? { mealId } : null;
+  const activityId = normalizeString(raw?.activityId);
+  return activityIds.has(activityId) ? { activityId } : null;
+}
+
 /** Firestore constraints on a document id (no path traversal). */
 function isValidDocId(id) {
   return typeof id === 'string'
@@ -543,10 +557,10 @@ async function exportCollection(collectionRef, nested, accounts) {
 }
 
 /**
- * Activity photos with their files: every photo of the exporter, shared or
- * not, and the photos the other travelers shared with the group.
+ * Activity and meal photos with their files: every photo of the exporter,
+ * shared or not, and the photos the other travelers shared with the group.
  */
-async function exportActivityPhotos({ db, bucket, tripId, activityIds, exporterUid, log }) {
+async function exportActivityPhotos({ db, bucket, tripId, activityIds, mealIds, exporterUid, log }) {
   const moduleRefs = await db
     .collection('trips')
     .doc(tripId)
@@ -565,10 +579,15 @@ async function exportActivityPhotos({ db, bucket, tripId, activityIds, exporterU
     const snap = await query.get();
     for (const doc of snap.docs) {
       const data = doc.data() || {};
-      const activityId = normalizeString(data.activityId);
-      if (!SAFE_SEGMENT.test(doc.id) || !activityIds.has(activityId)) {
+      const subject = photoSubjectForTransfer(data, { activityIds, mealIds });
+      if (!SAFE_SEGMENT.test(doc.id) || !subject) {
         skipped++;
-        log.warn('Photo ignorée (activité absente)', { photoId: doc.id, activityId, own });
+        log.warn('Photo ignorée (activité ou repas absent)', {
+          photoId: doc.id,
+          activityId: normalizeString(data.activityId),
+          mealId: normalizeString(data.mealId),
+          own,
+        });
         continue;
       }
       const folder = `users/${ownerUid}/activityPhotos/${tripId}/`;
@@ -584,7 +603,7 @@ async function exportActivityPhotos({ db, bucket, tripId, activityIds, exporterU
         }
         photos.push({
           id: doc.id,
-          activityId,
+          ...subject,
           caption: normalizeString(data.caption),
           shared: data.shared === true,
           createdAt: toTransferValue(data.createdAt ?? null),
@@ -599,7 +618,7 @@ async function exportActivityPhotos({ db, bucket, tripId, activityIds, exporterU
       }
     }
   }
-  log.info('Photos d\'activités', {
+  log.info('Photos d\'activités et de repas', {
     exported: photos.length,
     exporterPhotos: ownCount,
     sharedByOthers: photos.length - ownCount,
@@ -729,6 +748,7 @@ async function buildTripTransferPayload({ db, bucket, tripId, tripData, exporter
     bucket,
     tripId,
     activityIds: new Set(Object.keys(collections.activities)),
+    mealIds: new Set(Object.keys(collections.meals)),
     exporterUid,
     log,
   });
@@ -1005,11 +1025,13 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
   }
   log.info('Documents du voyage à écrire', counts);
 
-  const activityIds = new Set(
+  const idsOf = (collection) => new Set(
     writes
-      .filter(({ ref }) => ref.parent.id === 'activities' && ref.parent.parent.id === tripRef.id)
+      .filter(({ ref }) => ref.parent.id === collection && ref.parent.parent.id === tripRef.id)
       .map(({ ref }) => ref.id)
   );
+  const activityIds = idsOf('activities');
+  const mealIds = idsOf('meals');
   let slotId = writes.find(
     ({ ref, data }) => ref.parent.id === 'participants' && data.userId === importerUid
   )?.ref.id ?? null;
@@ -1070,9 +1092,13 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
     const photoIds = new Set();
     for (const raw of photos) {
       const photoId = normalizeString(raw?.id);
-      const activityId = normalizeString(raw?.activityId);
-      if (!SAFE_SEGMENT.test(photoId) || !activityIds.has(activityId)) {
-        log.warn('Photo ignorée', { photoId, activityId });
+      const subject = photoSubjectForTransfer(raw, { activityIds, mealIds });
+      if (!SAFE_SEGMENT.test(photoId) || !subject) {
+        log.warn('Photo ignorée', {
+          photoId,
+          activityId: normalizeString(raw?.activityId),
+          mealId: normalizeString(raw?.mealId),
+        });
         continue;
       }
       const photo = decodeTransferFile(raw.photo, ['image/jpeg'], ACTIVITY_PHOTO_MAX_BYTES);
@@ -1086,7 +1112,7 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
       writes.push({
         ref: photosRef.doc(photoId),
         data: {
-          activityId,
+          ...subject,
           url,
           thumbUrl,
           ...(caption ? { caption } : {}),
@@ -1097,7 +1123,7 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
       });
       photoIds.add(photoId);
     }
-    log.info('Photos d\'activités déposées', {
+    log.info('Photos d\'activités et de repas déposées', {
       count: photoIds.size,
       private: photos.filter((p) => photoIds.has(normalizeString(p?.id)) && p.shared !== true).length,
     });
@@ -1209,6 +1235,7 @@ module.exports = {
   remapAccountIds,
   participantForImport,
   tripDataForTransfer,
+  photoSubjectForTransfer,
   isValidDocId,
   isOwnTransferPath,
   generateInviteToken,

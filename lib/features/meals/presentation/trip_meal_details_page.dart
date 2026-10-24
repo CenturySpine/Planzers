@@ -12,6 +12,8 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planerz/features/activities/data/activity_photo.dart';
+import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
@@ -2462,6 +2464,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                             ],
                           ),
                         ),
+                      ),
+                    ],
+                    if (!widget.isCreate) ...[
+                      const SizedBox(height: 12),
+                      TripPhotosCard(
+                        tripId: widget.tripId,
+                        subject: PhotoSubject.meal(widget.mealId!),
+                        day: _mealDate,
                       ),
                     ],
                   ],

@@ -177,11 +177,6 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     final mealIdsByStopId = {
       for (final stop in mealStops) stop.activity.id: stop.meal.id,
     };
-    // A meal's stop shows the photos of its restaurant.
-    final photoActivityIds = {
-      for (final stop in mealStops)
-        stop.activity.id: stop.meal.restaurantActivityId.trim(),
-    };
     final shownActivities = [
       ...activities,
       for (final stop in mealStops) stop.activity,
@@ -197,6 +192,16 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
     // The current traveler's favorites, their own photos or shared ones.
     final favoritePhotos =
         ref.watch(activityFavoritePhotosProvider(widget.tripId));
+    // A meal's stop shows the meal's favorite, or else its restaurant's.
+    final mealStopsById = {
+      for (final stop in mealStops) stop.activity.id: stop,
+    };
+    ActivityPhoto? favoriteOf(String stopId) {
+      final mealStop = mealStopsById[stopId];
+      if (mealStop == null) return favoritePhotos[stopId];
+      return favoritePhotos[mealStop.meal.id] ??
+          favoritePhotos[mealStop.meal.restaurantActivityId.trim()];
+    }
     final missingByLink = {
       for (final missing in tripMissingTransports(journey))
         _linkKey(missing.from, missing.to): missing,
@@ -334,7 +339,7 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
                             ),
                           ),
                       for (final place in journey.places)
-                        _placeMarker(place, favoritePhotos, photoActivityIds),
+                        _placeMarker(place, favoriteOf),
                       if (pending != null)
                         osmPinMarker(
                           pending,
@@ -412,19 +417,14 @@ class _TripJourneyMapViewState extends ConsumerState<TripJourneyMapView> {
   }
 
   /// The favorite photo of the first stop having one, its numbers in a
-  /// badge; otherwise the numbers alone. [photoActivityIds] gives the
-  /// activity whose photos a stop shows, when not its own.
+  /// badge; otherwise the numbers alone.
   Marker _placeMarker(
     TripJourneyPlace place,
-    Map<String, ActivityPhoto> favoritePhotos,
-    Map<String, String> photoActivityIds,
+    ActivityPhoto? Function(String stopId) favoriteOf,
   ) {
     final label = place.numbersLabel;
     final ids = [for (final stop in place.stops) stop.activity.id];
-    final favorite = ids
-        .map((id) => favoritePhotos[photoActivityIds[id] ?? id])
-        .nonNulls
-        .firstOrNull;
+    final favorite = ids.map(favoriteOf).nonNulls.firstOrNull;
     if (favorite != null) {
       return Marker(
         point: place.point,
