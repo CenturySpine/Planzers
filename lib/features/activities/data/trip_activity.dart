@@ -71,6 +71,16 @@ class TripActivity {
 
   DateTime? get plannedEndAt => plannedAt?.add(effectiveDuration);
 
+  /// The name shown: for a restaurant, the one found from its link (e.g. its
+  /// Google Maps name) when there is one; otherwise the label.
+  String get displayLabel {
+    if (category == TripActivityCategory.restaurant) {
+      final linkTitle = ((linkPreview['title'] as String?) ?? '').trim();
+      if (linkTitle.isNotEmpty) return linkTitle;
+    }
+    return label.trim();
+  }
+
   static Map<String, dynamic> _previewFromFirestore(dynamic raw) {
     if (raw is! Map) return const {};
     return Map<String, dynamic>.from(raw);

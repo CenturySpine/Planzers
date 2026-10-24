@@ -214,9 +214,9 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
   Future<void> _confirmAndDelete(TripActivity activity) async {
     if (_deleting) return;
     final label =
-        activity.label.trim().isEmpty
+        activity.displayLabel.isEmpty
             ? AppLocalizations.of(context)!.activitiesUntitled
-            : activity.label.trim();
+            : activity.displayLabel;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -361,9 +361,9 @@ class _TripActivityDetailPageState extends ConsumerState<TripActivityDetailPage>
                     ),
                   ),
                   TextSpan(
-                    text: activity.label.trim().isEmpty
+                    text: activity.displayLabel.isEmpty
                         ? l10n.activitiesUntitled
-                        : activity.label.trim(),
+                        : activity.displayLabel,
                   ),
                 ],
               ),

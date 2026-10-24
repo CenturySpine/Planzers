@@ -97,7 +97,7 @@ List<TripActivity> _sortedForPicker(List<TripActivity> activities) {
     if (aAt != null && bAt != null) return aAt.compareTo(bAt);
     if (aAt != null) return -1;
     if (bAt != null) return 1;
-    return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+    return a.displayLabel.toLowerCase().compareTo(b.displayLabel.toLowerCase());
   });
   return sorted;
 }
@@ -117,9 +117,9 @@ Future<String?> pickActivityForWalletDocument(
         (
           id: activity.id,
           leading: _ActivityCategoryAvatar(activity: activity),
-          title: activity.label.trim().isEmpty
+          title: activity.displayLabel.isEmpty
               ? l10n.activitiesUntitled
-              : activity.label.trim(),
+              : activity.displayLabel,
           subtitle: _plannedLabel(context, activity),
         ),
     ],
@@ -264,9 +264,9 @@ class WalletLinkedActivitiesBar extends StatelessWidget {
                   ListTile(
                     leading: _ActivityCategoryAvatar(activity: activity),
                     title: Text(
-                      activity.label.trim().isEmpty
+                      activity.displayLabel.isEmpty
                           ? l10n.activitiesUntitled
-                          : activity.label.trim(),
+                          : activity.displayLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

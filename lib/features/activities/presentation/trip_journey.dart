@@ -116,7 +116,7 @@ List<TripJourneyMealStop> tripJourneyMealStops(
             meal: meal,
             activity: TripActivity(
               id: tripJourneyMealStopId(meal.id),
-              label: restaurant.label,
+              label: restaurant.displayLabel,
               category: TripActivityCategory.restaurant,
               linkUrl: restaurant.linkUrl,
               address: restaurant.address,

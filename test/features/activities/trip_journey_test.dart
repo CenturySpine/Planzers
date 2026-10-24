@@ -226,4 +226,36 @@ void main() {
       [DateTime(2026, 5, 1), DateTime(2026, 5, 2)],
     );
   });
+
+  test('a restaurant shows the name found from its link', () {
+    TripActivity restaurant(Map<String, dynamic> preview) => TripActivity(
+          id: 'r',
+          label: "dej' spaghetti & co",
+          category: TripActivityCategory.restaurant,
+          linkUrl: 'https://maps.app.goo.gl/x',
+          address: '',
+          freeComments: '',
+          createdBy: 'u1',
+          createdAt: DateTime(2026, 1, 1),
+          linkPreview: preview,
+          location: _catania,
+        );
+
+    expect(restaurant({'title': ' Spaghetti & Co. '}).displayLabel,
+        'Spaghetti & Co.');
+    expect(restaurant(const {}).displayLabel, "dej' spaghetti & co");
+    expect(
+      tripJourneyMealStops(
+        [
+          _meal('lunch',
+              dateKey: '2026-05-01', time: '12:30', restaurantId: 'r'),
+        ],
+        [
+          restaurant({'title': 'Spaghetti & Co.'})
+        ],
+      ).single.activity.label,
+      'Spaghetti & Co.',
+    );
+    expect(_activity('cave').displayLabel, 'cave');
+  });
 }
