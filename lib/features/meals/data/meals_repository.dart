@@ -155,6 +155,8 @@ class MealsRepository {
     MealMode mealMode = MealMode.cooked,
     List<MealPotluckItem> potluckItems = const [],
     bool componentsUserOrdered = false,
+    String restaurantActivityId = '',
+    String restaurantName = '',
   }) async {
     final user = auth.currentUser;
     if (user == null) {
@@ -184,8 +186,8 @@ class MealsRepository {
           : chefParticipantId!.trim(),
       'components': components.map((c) => c.toMap()).toList(growable: false),
       'mealMode': mealMode.firestoreValue,
-      'restaurantActivityId': '',
-      'restaurantName': '',
+      'restaurantActivityId': restaurantActivityId.trim(),
+      'restaurantName': restaurantName.trim(),
       'potluckItems': potluckItems
           .map((item) => item.toMap())
           .where((item) => (item['label'] as String).isNotEmpty)

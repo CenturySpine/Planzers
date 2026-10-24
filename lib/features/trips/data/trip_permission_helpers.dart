@@ -279,7 +279,7 @@ bool canAddMealContributionForTrip({
   );
 }
 
-bool canSuggestMealRestaurantForTrip({
+bool canChooseMealRestaurantForTrip({
   required Trip trip,
   required String? userId,
 }) {
@@ -289,7 +289,7 @@ bool canSuggestMealRestaurantForTrip({
   final role = resolveTripPermissionRole(trip: trip, userId: uid);
   return isTripRoleAllowed(
     currentRole: role,
-    minRole: trip.mealsPermissions.suggestRestaurantMinRole,
+    minRole: trip.mealsPermissions.chooseRestaurantMinRole,
   );
 }
 
