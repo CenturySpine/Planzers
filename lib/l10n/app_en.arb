@@ -223,6 +223,29 @@
       "error": {}
     }
   },
+  "tripsExported": "Trip exported",
+  "tripsExportError": "Export error: {error}",
+  "@tripsExportError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsImportTripTooltip": "Import a trip",
+  "tripsImported": "Trip imported",
+  "tripsImportError": "Import error: {error}",
+  "@tripsImportError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsImportVersionMismatch": "File exported from version {fileVersion}, which differs from this app's version ({appVersion}).",
+  "@tripsImportVersionMismatch": {
+    "placeholders": {
+      "fileVersion": {},
+      "appVersion": {}
+    }
+  },
+  "tripsImportInvalidFile": "This file is not a trip export.",
   "tripsArchiveDialogTitle": "Archive this trip?",
   "tripsArchiveDialogBody": "It will be hidden from the trip list. You can unarchive it at any time.\n\nTrip: {tripTitle}",
   "@tripsArchiveDialogBody": {
@@ -654,6 +677,7 @@
     "placeholders": {"error": {}}
   },
   "tripOverviewCopyTripId": "Copy trip ID",
+  "tripOverviewExportTrip": "Export trip",
   "tripOverviewArchiveTrip": "Archive",
   "tripOverviewUnarchiveTrip": "Unarchive",
   "tripOverviewTripIdCopied": "Trip ID copied to clipboard",

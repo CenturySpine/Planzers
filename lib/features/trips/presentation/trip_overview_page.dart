@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -39,6 +40,7 @@ import 'package:planerz/features/trips/presentation/trip_create_page.dart';
 import 'package:planerz/features/trips/presentation/trip_date_format.dart';
 import 'package:planerz/features/trips/presentation/trip_overview_ui.dart';
 import 'package:planerz/features/trips/presentation/trip_scope.dart';
+import 'package:planerz/features/trips/presentation/trip_transfer_actions.dart';
 import 'package:planerz/features/wallet/data/wallet_repository.dart';
 import 'package:planerz/features/trips/data/trip_lifecycle.dart';
 import 'package:planerz/core/presentation/pz_components.dart';
@@ -557,6 +559,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
     required bool canEditGeneralInfo,
     required bool canManageTripSettings,
     required bool canDeleteTrip,
+    required bool canExportTrip,
     required bool isArchivedForMe,
   }) {
     final rows = <TripOverviewSettingsRowData>[];
@@ -593,6 +596,15 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
           icon: PhosphorIconsRegular.copy,
           label: l10n.tripOverviewCopyTripId,
           onTap: _copyTripId,
+        ),
+      );
+    }
+    if (canExportTrip) {
+      rows.add(
+        TripOverviewSettingsRowData(
+          icon: PhosphorIconsRegular.export,
+          label: l10n.tripOverviewExportTrip,
+          onTap: () => exportTripToFile(context, ref, _trip),
         ),
       );
     }
@@ -761,6 +773,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
+            // Trip transfer serves development for now: application owners only.
+            canExportTrip:
+                ref.watch(isApplicationOwnerProvider).asData?.value ?? false,
             isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
           // Past trips not archived yet (by this member): tell when the

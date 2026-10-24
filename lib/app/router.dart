@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:planerz/features/account/presentation/account_page.dart';
 import 'package:planerz/features/auth/auth_gate.dart';
@@ -10,6 +11,7 @@ import 'package:planerz/features/administration/presentation/admin_maintenance_p
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
 import 'package:planerz/features/administration/presentation/admin_photo_reports_page.dart';
+import 'package:planerz/features/administration/presentation/admin_trip_transfer_logs_page.dart';
 import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
@@ -56,6 +58,13 @@ import 'package:planerz/features/account/presentation/connected_external_provide
 import 'package:planerz/features/cupidon/presentation/cupidon_space_page.dart';
 import 'package:planerz/features/carpool/presentation/trip_carpool_page.dart';
 import 'package:planerz/features/wallet/presentation/trip_wallet_page.dart';
+
+/// Trip tab pages are rebuilt for each trip: their route is the same for
+/// every trip, so a page would otherwise keep the state of the trip shown
+/// before (e.g. its invite code) when going straight from one trip to another
+/// (notification, link).
+ValueKey<String> _tripPageKey(GoRouterState state) =>
+    ValueKey<String>('trip-${state.pathParameters['tripId']}');
 
 final GoRouter appRouter = GoRouter(
   routes: <RouteBase>[
@@ -206,6 +215,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminPhotoReportsPage.routePath,
       builder: (context, state) => const AdminPhotoReportsPage(),
+    ),
+    GoRoute(
+      path: AdminTripTransferLogsPage.routePath,
+      builder: (context, state) => const AdminTripTransferLogsPage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,
@@ -430,7 +443,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'overview',
-                  builder: (context, state) => const TripOverviewPage(),
+                  builder: (context, state) =>
+                      TripOverviewPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -438,12 +452,14 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'messages',
-                  builder: (context, state) => const TripMessagingPage(),
+                  builder: (context, state) =>
+                      TripMessagingPage(key: _tripPageKey(state)),
                   routes: <RouteBase>[
                     GoRoute(
                       path: 'admin',
-                      builder: (context, state) => const TripThreadMessagingPage(
-                        scope: TripMessageThreadScope.admin(),
+                      builder: (context, state) => TripThreadMessagingPage(
+                        key: _tripPageKey(state),
+                        scope: const TripMessageThreadScope.admin(),
                       ),
                     ),
                     GoRoute(
@@ -454,6 +470,7 @@ final GoRouter appRouter = GoRouter(
                         final objectId =
                             state.pathParameters['objectId']?.trim() ?? '';
                         return TripThreadMessagingPage(
+                          key: _tripPageKey(state),
                           scope: TripMessageThreadScope.object(
                             objectType: objectType,
                             objectId: objectId,
@@ -469,7 +486,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'expenses',
-                  builder: (context, state) => const TripExpensesPage(),
+                  builder: (context, state) =>
+                      TripExpensesPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -477,7 +495,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'rooms',
-                  builder: (context, state) => const TripRoomsPage(),
+                  builder: (context, state) =>
+                      TripRoomsPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -485,7 +504,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'carpool',
-                  builder: (context, state) => const TripCarpoolPage(),
+                  builder: (context, state) =>
+                      TripCarpoolPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -493,7 +513,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'meals',
-                  builder: (context, state) => const TripMealsPage(),
+                  builder: (context, state) =>
+                      TripMealsPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -501,7 +522,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'activities',
-                  builder: (context, state) => const TripActivitiesPage(),
+                  builder: (context, state) =>
+                      TripActivitiesPage(key: _tripPageKey(state)),
                 ),
               ],
             ),
@@ -509,7 +531,8 @@ final GoRouter appRouter = GoRouter(
               routes: <RouteBase>[
                 GoRoute(
                   path: 'shopping',
-                  builder: (context, state) => const TripShoppingPage(),
+                  builder: (context, state) =>
+                      TripShoppingPage(key: _tripPageKey(state)),
                 ),
               ],
             ),

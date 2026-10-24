@@ -223,6 +223,29 @@
       "error": {}
     }
   },
+  "tripsExported": "Voyage exporté",
+  "tripsExportError": "Erreur export : {error}",
+  "@tripsExportError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsImportTripTooltip": "Importer un voyage",
+  "tripsImported": "Voyage importé",
+  "tripsImportError": "Erreur import : {error}",
+  "@tripsImportError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "tripsImportVersionMismatch": "Fichier exporté depuis la version {fileVersion}, différente de celle de l'application ({appVersion}).",
+  "@tripsImportVersionMismatch": {
+    "placeholders": {
+      "fileVersion": {},
+      "appVersion": {}
+    }
+  },
+  "tripsImportInvalidFile": "Ce fichier n'est pas un export de voyage.",
   "tripsArchiveDialogTitle": "Archiver ce voyage ?",
   "tripsArchiveDialogBody": "Il sera masqué de la liste des voyages. Vous pourrez le désarchiver à tout moment.\n\nVoyage : {tripTitle}",
   "@tripsArchiveDialogBody": {
@@ -615,6 +638,7 @@
     "placeholders": {"error": {}}
   },
   "tripOverviewCopyTripId": "Copier l'identifiant du voyage",
+  "tripOverviewExportTrip": "Exporter le voyage",
   "tripOverviewArchiveTrip": "Archiver",
   "tripOverviewUnarchiveTrip": "Désarchiver",
   "tripOverviewTripIdCopied": "Identifiant du voyage copié dans le presse-papiers",

@@ -580,6 +580,34 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get tripsExported => 'Voyage exporté';
+
+  @override
+  String tripsExportError(Object error) {
+    return 'Erreur export : $error';
+  }
+
+  @override
+  String get tripsImportTripTooltip => 'Importer un voyage';
+
+  @override
+  String get tripsImported => 'Voyage importé';
+
+  @override
+  String tripsImportError(Object error) {
+    return 'Erreur import : $error';
+  }
+
+  @override
+  String tripsImportVersionMismatch(Object fileVersion, Object appVersion) {
+    return 'Fichier exporté depuis la version $fileVersion, différente de celle de l\'application ($appVersion).';
+  }
+
+  @override
+  String get tripsImportInvalidFile =>
+      'Ce fichier n\'est pas un export de voyage.';
+
+  @override
   String get tripsArchiveDialogTitle => 'Archiver ce voyage ?';
 
   @override
@@ -1523,6 +1551,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewExportTrip => 'Exporter le voyage';
 
   @override
   String get tripOverviewArchiveTrip => 'Archiver';
@@ -4773,6 +4804,34 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
   }
 
   @override
+  String get tripsExported => 'Voyage exporté';
+
+  @override
+  String tripsExportError(Object error) {
+    return 'Erreur export : $error';
+  }
+
+  @override
+  String get tripsImportTripTooltip => 'Importer un voyage';
+
+  @override
+  String get tripsImported => 'Voyage importé';
+
+  @override
+  String tripsImportError(Object error) {
+    return 'Erreur import : $error';
+  }
+
+  @override
+  String tripsImportVersionMismatch(Object fileVersion, Object appVersion) {
+    return 'Fichier exporté depuis la version $fileVersion, différente de celle de l\'application ($appVersion).';
+  }
+
+  @override
+  String get tripsImportInvalidFile =>
+      'Ce fichier n\'est pas un export de voyage.';
+
+  @override
   String get tripsArchiveDialogTitle => 'Archiver ce voyage ?';
 
   @override
@@ -5644,6 +5703,9 @@ class AppLocalizationsFrFr extends AppLocalizationsFr {
 
   @override
   String get tripOverviewCopyTripId => 'Copier l\'identifiant du voyage';
+
+  @override
+  String get tripOverviewExportTrip => 'Exporter le voyage';
 
   @override
   String get tripOverviewArchiveTrip => 'Archiver';
