@@ -617,10 +617,11 @@ service cloud.firestore {
     }
 
     // Journals of the trip exports / imports (administration section),
-    // written by the exportTrip / importTrip functions only.
+    // written by the exportTrip / importTrip functions only; application
+    // owners clear them once no longer needed.
     match /tripTransferLogs/{logId} {
-      allow read: if isApplicationOwner();
-      allow write: if false;
+      allow read, delete: if isApplicationOwner();
+      allow create, update: if false;
     }
 
     // Photo reports of every trip, for the administration section.

@@ -3,15 +3,52 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final tripTransferLogsRepositoryProvider =
+    Provider<TripTransferLogsRepository>((ref) {
+  return TripTransferLogsRepository(firestore: FirebaseFirestore.instance);
+});
+
 final tripTransferLogsProvider =
     StreamProvider.autoDispose<List<TripTransferLog>>((ref) {
-  return FirebaseFirestore.instance
-      .collection('tripTransferLogs')
-      .orderBy('startedAt', descending: true)
-      .limit(50)
-      .snapshots()
-      .map((snap) => snap.docs.map(TripTransferLog.fromDoc).toList());
+  return ref.watch(tripTransferLogsRepositoryProvider).watchLatest();
 });
+
+/// Journals of the trip exports / imports (`tripTransferLogs`), written by
+/// the Cloud Functions; the application owner reads and clears them.
+class TripTransferLogsRepository {
+  TripTransferLogsRepository({required this.firestore});
+
+  final FirebaseFirestore firestore;
+
+  /// Firestore batch limit.
+  static const int _batchSize = 500;
+
+  CollectionReference<Map<String, dynamic>> get _logs =>
+      firestore.collection('tripTransferLogs');
+
+  Stream<List<TripTransferLog>> watchLatest() {
+    return _logs
+        .orderBy('startedAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((snap) => snap.docs.map(TripTransferLog.fromDoc).toList());
+  }
+
+  Future<void> delete(String logId) => _logs.doc(logId).delete();
+
+  /// Deletes every journal, not only the ones listed.
+  Future<void> deleteAll() async {
+    while (true) {
+      final snap = await _logs.limit(_batchSize).get();
+      if (snap.docs.isEmpty) return;
+      final batch = firestore.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    }
+  }
+}
 
 /// Journal of one trip export or import, written by the `exportTrip` /
 /// `importTrip` Cloud Functions (`tripTransferLogs/{id}`).
