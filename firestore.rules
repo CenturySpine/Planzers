@@ -1187,12 +1187,13 @@ service cloud.firestore {
             && request.resource.data.get('barcode', null) == resource.data.get('barcode', null);
         }
 
-        /// Photos attached to planned activities. Shared ones are read by
-        /// every trip member, private ones (no `shared` flag) by their author
-        /// only. Only the caption, the former favorite mark and the sharing
-        /// can change, by the author; trip admins and the application owner
-        /// may delete any of them. The files are removed server-side when a
-        /// record is deleted. The limit per day is applied by the app.
+        /// Photos attached to planned activities or to meals. Shared ones
+        /// are read by every trip member, private ones (no `shared` flag) by
+        /// their author only. Only the caption, the former favorite mark and
+        /// the sharing can change, by the author; trip admins and the
+        /// application owner may delete any of them. The files are removed
+        /// server-side when a record is deleted. The limit per day is applied
+        /// by the app.
         match /activityPhotos/{photoId} {
           /// Optional. The app caps it at 500 characters as people count
           /// them; size() counts UTF-16 units, an emoji taking up to 4, so
@@ -1211,14 +1212,28 @@ service cloud.firestore {
               && (!data.keys().hasAny(['shared']) || data.shared == true);
           }
 
-          function isValidActivityPhoto(data) {
-            return data.keys().hasOnly(['activityId', 'url', 'thumbUrl', 'caption', 'favorite', 'shared', 'createdAt'])
-              && isValidActivityPhotoEditable(data)
+          /// Either a planned activity or an existing meal.
+          function isValidActivityPhotoSubject(data) {
+            return (
+              !data.keys().hasAny(['mealId'])
               && data.activityId is string
               && data.activityId.size() > 0
               && data.activityId.size() <= 128
               && get(/databases/$(database)/documents/trips/$(tripId)/activities/$(data.activityId))
                   .data.get('plannedAt', null) != null
+            ) || (
+              !data.keys().hasAny(['activityId'])
+              && data.mealId is string
+              && data.mealId.size() > 0
+              && data.mealId.size() <= 128
+              && exists(/databases/$(database)/documents/trips/$(tripId)/meals/$(data.mealId))
+            );
+          }
+
+          function isValidActivityPhoto(data) {
+            return data.keys().hasOnly(['activityId', 'mealId', 'url', 'thumbUrl', 'caption', 'favorite', 'shared', 'createdAt'])
+              && isValidActivityPhotoEditable(data)
+              && isValidActivityPhotoSubject(data)
               && data.url is string
               && data.url.size() > 0
               && data.url.size() <= 2048
@@ -1243,9 +1258,10 @@ service cloud.firestore {
               || isApplicationOwner());
         }
 
-        /// The traveler's favorite photo of each activity, theirs or another
-        /// member's (owner only). A favorite whose photo is gone is ignored.
-        match /activityFavorites/{activityId} {
+        /// The traveler's favorite photo of each activity or meal (keyed by
+        /// its id), theirs or another member's (owner only). A favorite whose
+        /// photo is gone is ignored.
+        match /activityFavorites/{subjectId} {
           allow read, delete: if isTripMember(tripId) && uid == request.auth.uid;
           allow create, update: if isTripMember(tripId)
             && uid == request.auth.uid
@@ -1260,7 +1276,8 @@ service cloud.firestore {
         }
       }
 
-      /// Reports of shared activity photos: one per reporter and photo,
+      /// Reports of shared activity or meal photos (a meal's has an empty
+      /// `activityId`): one per reporter and photo,
       /// handled by the application owner only (trip admins never see them).
       /// A reporter reads their own reports, to keep those photos hidden for
       /// them. Handled reports are kept with their outcome, once, as the

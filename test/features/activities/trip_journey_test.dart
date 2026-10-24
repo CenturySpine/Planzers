@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/features/activities/presentation/trip_journey.dart';
+import 'package:planerz/features/meals/data/trip_meal.dart';
+import 'package:planerz/features/trips/data/trip_day_part.dart';
 
 TripActivity _activity(
   String id, {
@@ -23,6 +25,26 @@ TripActivity _activity(
     plannedAt: plannedAt,
     location: location,
     departureLocation: departureLocation,
+  );
+}
+
+TripMeal _meal(
+  String id, {
+  required String dateKey,
+  required String time,
+  MealMode mode = MealMode.restaurant,
+  String restaurantId = '',
+}) {
+  return TripMeal(
+    id: id,
+    mealDateKey: dateKey,
+    mealDayPart: TripDayPart.midday,
+    mealTimeHHMM: time,
+    participantIds: const [],
+    createdBy: 'u1',
+    createdAt: DateTime(2026, 1, 1),
+    mealMode: mode,
+    restaurantActivityId: restaurantId,
   );
 }
 
@@ -154,5 +176,54 @@ void main() {
     expect(day2.stops.map((s) => (s.number, s.activity.id)), [(1, 'd2')]);
     expect(day2.legs, isEmpty);
     expect(buildTripJourney(const []).isEmpty, isTrue);
+  });
+
+  test('meals at a located restaurant are stops at the meal time', () {
+    final activities = [
+      _activity('hotel', plannedAt: DateTime(2026, 5, 1, 9), location: _hotel),
+      _activity('cave', plannedAt: DateTime(2026, 5, 1, 15), location: _cave),
+      _activity(
+        'trattoria',
+        category: TripActivityCategory.restaurant,
+        location: _catania,
+      ),
+      _activity('unlocated', category: TripActivityCategory.restaurant),
+    ];
+    final mealStops = tripJourneyMealStops([
+      _meal('lunch',
+          dateKey: '2026-05-01', time: '12:30', restaurantId: 'trattoria'),
+      _meal('dinner',
+          dateKey: '2026-05-02', time: '20:00', restaurantId: 'unlocated'),
+      _meal('cooked',
+          dateKey: '2026-05-02',
+          time: '19:30',
+          mode: MealMode.cooked,
+          restaurantId: 'trattoria'),
+      _meal('deleted',
+          dateKey: '2026-05-03', time: '12:30', restaurantId: 'gone'),
+    ], activities);
+
+    expect(mealStops.map((s) => s.meal.id), ['lunch']);
+    final lunch = mealStops.single.activity;
+    expect(lunch.id, tripJourneyMealStopId('lunch'));
+    expect(lunch.label, 'trattoria');
+    expect(lunch.plannedAt, DateTime(2026, 5, 1, 12, 30));
+
+    final journey = buildTripJourney(activities, mealStops: mealStops);
+    expect(
+      journey.stops.map((s) => (s.number, s.activity.id)),
+      [(1, 'hotel'), (2, 'meal:lunch'), (3, 'cave')],
+    );
+    expect(
+      journey.legs.map((l) => (l.from, l.to)),
+      [(_p(_hotel), _p(_catania)), (_p(_catania), _p(_cave))],
+    );
+    expect(
+      tripJourneyDays(
+        [_activity('d2', plannedAt: DateTime(2026, 5, 2, 9), location: _cave)],
+        mealStops: mealStops,
+      ),
+      [DateTime(2026, 5, 1), DateTime(2026, 5, 2)],
+    );
   });
 }

@@ -12,12 +12,13 @@ import 'package:planerz/features/trips/data/trip_members_repository.dart';
 import 'package:planerz/features/auth/presentation/profile_badge.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_item.dart';
 import 'package:planerz/features/ingredients/data/ingredient_catalog_repository.dart';
+import 'package:planerz/features/activities/data/activity_photo.dart';
+import 'package:planerz/features/activities/presentation/trip_photos_card.dart';
 import 'package:planerz/features/meals/data/meal_component_risks.dart';
 import 'package:planerz/features/meals/data/meals_repository.dart';
 import 'package:planerz/features/meals/data/trip_meal.dart';
-import 'package:planerz/features/activities/data/trip_activity.dart';
-import 'package:planerz/features/activities/presentation/trip_category_suggestions_panel.dart';
 import 'package:planerz/features/meals/presentation/meal_component_editor_page.dart';
+import 'package:planerz/features/meals/presentation/meal_restaurant_section.dart';
 import 'package:planerz/features/trips/data/trip_day_part.dart';
 import 'package:planerz/features/trips/data/trip_member_stay.dart';
 import 'package:planerz/features/trips/data/trip_permission_helpers.dart';
@@ -64,6 +65,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
   bool _componentsUserOrdered = false;
   _MealDetailsView _activeMealView = _MealDetailsView.cooked;
   List<MealPotluckItem> _potluckItems = const [];
+  String _restaurantActivityId = '';
+  String _restaurantName = '';
   final Set<MealPotluckCategory> _expandedPotluckCategories = {
     MealPotluckCategory.salty,
     MealPotluckCategory.sweet,
@@ -551,7 +554,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         _isSavingMealTime ||
         _isSavingMealMode ||
         _isSavingPotluckItems ||
-        _isSavingComponents) {
+        _isSavingComponents ||
+        _isSavingRestaurantActivity) {
       return;
     }
     _mealDate = meal.mealDateAsDateTime;
@@ -569,6 +573,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     _componentsUserOrdered = meal.componentsUserOrdered;
     _activeMealView = _mealViewFromDataMode(meal.mealMode);
     _potluckItems = meal.potluckItems.toList(growable: false);
+    _restaurantActivityId = meal.restaurantActivityId;
+    _restaurantName = meal.restaurantName;
     if (widget.isCreate) {
       _isHydrated = true;
     }
@@ -1226,18 +1232,33 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
     }
   }
 
-  Future<void> _saveRestaurantActivity(TripActivity? activity) async {
-    if (widget.isCreate || _isSavingRestaurantActivity) return;
+  /// Chooses the meal's restaurant, or removes it with an empty
+  /// [activityId]. A new meal keeps it until saved.
+  Future<void> _setRestaurant(String activityId, String restaurantName) async {
+    if (_isSavingRestaurantActivity || activityId == _restaurantActivityId) {
+      return;
+    }
+    final previousActivityId = _restaurantActivityId;
+    final previousName = _restaurantName;
+    setState(() {
+      _restaurantActivityId = activityId;
+      _restaurantName = restaurantName;
+    });
+    if (widget.isCreate) return;
     setState(() => _isSavingRestaurantActivity = true);
     try {
       await ref.read(mealsRepositoryProvider).updateMealRestaurantActivity(
             tripId: widget.tripId,
             mealId: widget.mealId!,
-            restaurantActivityId: activity?.id.trim() ?? '',
-            restaurantName: activity?.label.trim() ?? '',
+            restaurantActivityId: activityId,
+            restaurantName: restaurantName,
           );
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _restaurantActivityId = previousActivityId;
+        _restaurantName = previousName;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1304,6 +1325,7 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
       final potluckItems = mealMode == MealMode.potluck
           ? _potluckItems
           : const <MealPotluckItem>[];
+      final isRestaurant = mealMode == MealMode.restaurant;
       final chefParticipantId =
           _sanitizedChefParticipantId(_chefParticipantId, participants);
       await repo.addMeal(
@@ -1316,6 +1338,8 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
         components: _components,
         mealMode: mealMode,
         potluckItems: potluckItems,
+        restaurantActivityId: isRestaurant ? _restaurantActivityId : '',
+        restaurantName: isRestaurant ? _restaurantName : '',
       );
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -2108,46 +2132,39 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                       ),
                     ] else if (_activeMealView ==
                         _MealDetailsView.restaurant) ...[
-                      Builder(builder: (context) {
-                        final canSelectRestaurant =
-                            canSuggestMealRestaurantForTrip(
-                          trip: trip,
-                          userId: myUid,
-                        );
-                        return Card.outlined(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                            child: Column(
-                              children: [
-                                _buildMealModeSelector(
-                                  l10n: l10n,
-                                  textTheme: textTheme,
-                                  colorScheme: colorScheme,
-                                  canEditMealMode: canEditMealCore,
+                      Card.outlined(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildMealModeSelector(
+                                l10n: l10n,
+                                textTheme: textTheme,
+                                colorScheme: colorScheme,
+                                canEditMealMode: canEditMealCore,
+                              ),
+                              const SizedBox(height: 12),
+                              MealRestaurantSection(
+                                tripId: widget.tripId,
+                                restaurantActivityId: _restaurantActivityId,
+                                memberLabels: memberLabels,
+                                canChoose: canChooseMealRestaurantForTrip(
+                                  trip: trip,
+                                  userId: myUid,
                                 ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  height: 400,
-                                  child: TripCategorySuggestionsPanel(
-                                    trip: trip,
-                                    categories: const [
-                                      TripActivityCategory.restaurant,
-                                    ],
-                                    emptyMessage: l10n
-                                        .tripOverviewNoRestaurantSuggestions,
-                                    onActivitySelected: canSelectRestaurant
-                                        ? _saveRestaurantActivity
-                                        : null,
-                                    preSelectedActivityId:
-                                        meal?.restaurantActivityId,
-                                  ),
+                                canCreateRestaurant: canSuggestActivityForTrip(
+                                  trip: trip,
+                                  userId: myUid,
                                 ),
-                              ],
-                            ),
+                                busy: _isSavingRestaurantActivity,
+                                onChosen: _setRestaurant,
+                                onRemoved: () => _setRestaurant('', ''),
+                              ),
+                            ],
                           ),
-                        );
-                      }),
+                        ),
+                      ),
                     ] else ...[
                       Card.outlined(
                         child: Padding(
@@ -2447,6 +2464,14 @@ class _TripMealDetailsPageState extends ConsumerState<TripMealDetailsPage> {
                             ],
                           ),
                         ),
+                      ),
+                    ],
+                    if (!widget.isCreate) ...[
+                      const SizedBox(height: 12),
+                      TripPhotosCard(
+                        tripId: widget.tripId,
+                        subject: PhotoSubject.meal(widget.mealId!),
+                        day: _mealDate,
                       ),
                     ],
                   ],

@@ -7,6 +7,7 @@ const {
   deleteTripWalletFiles,
   deleteActivityPhotoFiles,
   deleteActivityPhotoRecords,
+  deleteMealPhotoRecords,
 } = require('./wallet_cleanup');
 
 function fakeBucket(paths) {
@@ -175,6 +176,37 @@ test('deleteActivityPhotoRecords deletes every traveler photo of the activity', 
     }),
   };
   const count = await deleteActivityPhotoRecords({ db, tripId: 't1', activityId: 'a1' });
+  assert.equal(count, 2);
+  assert.deepEqual(deleted.sort(), ['u1/p1', 'u2/p3']);
+});
+
+test('deleteMealPhotoRecords deletes every traveler photo of the meal only', async () => {
+  const photos = {
+    u1: [{ id: 'p1', mealId: 'm1' }, { id: 'p2', activityId: 'm1' }],
+    u2: [{ id: 'p3', mealId: 'm1' }, { id: 'p4', mealId: 'm2' }],
+  };
+  const deleted = [];
+  const db = {
+    collection: () => ({
+      doc: () => ({
+        collection: () => ({
+          listDocuments: async () =>
+            Object.keys(photos).map((uid) => ({
+              collection: () => ({
+                where: (field, op, value) => ({
+                  get: async () => ({
+                    docs: photos[uid]
+                      .filter((p) => p[field] === value)
+                      .map((p) => ({ ref: { delete: async () => deleted.push(`${uid}/${p.id}`) } })),
+                  }),
+                }),
+              }),
+            })),
+        }),
+      }),
+    }),
+  };
+  const count = await deleteMealPhotoRecords({ db, tripId: 't1', mealId: 'm1' });
   assert.equal(count, 2);
   assert.deepEqual(deleted.sort(), ['u1/p1', 'u2/p3']);
 });

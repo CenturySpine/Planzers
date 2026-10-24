@@ -18,6 +18,7 @@ const {
   deleteTripWalletFiles,
   deleteActivityPhotoFiles,
   deleteActivityPhotoRecords,
+  deleteMealPhotoRecords,
 } = require('./wallet_cleanup');
 const { runTripLifecycle } = require('./trip_lifecycle');
 const { withAiQuota, reserveQuota, refundQuota } = require('./utils/aiQuotaGate');
@@ -5168,6 +5169,18 @@ exports.deleteActivityPhotosOnActivityDeleted = onDocumentDeleted(
       db: admin.firestore(),
       tripId: event.params.tripId,
       activityId: event.params.activityId,
+    });
+  }
+);
+
+// Same for a meal: deleting it removes every traveler's photos of it.
+exports.deleteMealPhotosOnMealDeleted = onDocumentDeleted(
+  'trips/{tripId}/meals/{mealId}',
+  async (event) => {
+    await deleteMealPhotoRecords({
+      db: admin.firestore(),
+      tripId: event.params.tripId,
+      mealId: event.params.mealId,
     });
   }
 );

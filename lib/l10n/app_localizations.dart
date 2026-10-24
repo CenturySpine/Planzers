@@ -1765,7 +1765,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripPermissionsMealsDescription.
   ///
   /// In fr, this message translates to:
-  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, ajouter un apport et gérer une recette.'**
+  /// **'Rôles minimaux pour créer, supprimer, modifier les repas, choisir leur restaurant, ajouter un apport et gérer une recette.'**
   String get tripPermissionsMealsDescription;
 
   /// No description provided for @tripPermissionMealsCreate.
@@ -1785,6 +1785,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Éditer un repas (date, type, participants, chef, catégorie)'**
   String get tripPermissionMealsEdit;
+
+  /// No description provided for @tripPermissionMealsChooseRestaurant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir le restaurant d\'un repas'**
+  String get tripPermissionMealsChooseRestaurant;
 
   /// No description provided for @tripPermissionMealsAddContribution.
   ///
@@ -3360,12 +3366,6 @@ abstract class AppLocalizations {
   /// **'Aucune activité planifiée.'**
   String get activitiesNoPlanned;
 
-  /// No description provided for @activitiesSuggestAction.
-  ///
-  /// In fr, this message translates to:
-  /// **'Proposer'**
-  String get activitiesSuggestAction;
-
   /// No description provided for @activitiesPreviousWeek.
   ///
   /// In fr, this message translates to:
@@ -4081,6 +4081,12 @@ abstract class AppLocalizations {
   /// **'Activité supprimée'**
   String get activitiesDeleted;
 
+  /// No description provided for @activitiesRestaurantChosenForMeal.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce restaurant est choisi pour un repas et ne peut pas être supprimé.'**
+  String get activitiesRestaurantChosenForMeal;
+
   /// No description provided for @activitiesNotFound.
   ///
   /// In fr, this message translates to:
@@ -4501,17 +4507,41 @@ abstract class AppLocalizations {
   /// **'Chacun ramène un truc !'**
   String get mealModePotluckLabel;
 
-  /// No description provided for @mealRestaurantLinkLabel.
+  /// No description provided for @mealRestaurantChoose.
   ///
   /// In fr, this message translates to:
-  /// **'Lien du restaurant'**
-  String get mealRestaurantLinkLabel;
+  /// **'Choisir un restaurant'**
+  String get mealRestaurantChoose;
 
-  /// No description provided for @mealRestaurantLinkHint.
+  /// No description provided for @mealRestaurantNew.
   ///
   /// In fr, this message translates to:
-  /// **'Ajoute un lien pour afficher l\'aperçu du restaurant.'**
-  String get mealRestaurantLinkHint;
+  /// **'Nouveau restaurant'**
+  String get mealRestaurantNew;
+
+  /// No description provided for @mealRestaurantChange.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get mealRestaurantChange;
+
+  /// No description provided for @mealRestaurantRemove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer'**
+  String get mealRestaurantRemove;
+
+  /// No description provided for @mealRestaurantToChoose.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restaurant à choisir'**
+  String get mealRestaurantToChoose;
+
+  /// No description provided for @mealRestaurantPickerEmpty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun restaurant proposé.'**
+  String get mealRestaurantPickerEmpty;
 
   /// No description provided for @mealPotluckTitle.
   ///
@@ -6453,12 +6483,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Aucune suggestion d\'hébergement. Ajoute une activité \"Hébergement\" ici ou depuis le planning pour la voir apparaître.'**
   String get tripOverviewNoAccommodationSuggestions;
-
-  /// No description provided for @tripOverviewNoRestaurantSuggestions.
-  ///
-  /// In fr, this message translates to:
-  /// **'Aucune suggestion de restaurant. Ajoute une activité \"Restaurant\" ici ou depuis le planning pour la voir apparaître.'**
-  String get tripOverviewNoRestaurantSuggestions;
 
   /// No description provided for @cupidonPopupTitle.
   ///

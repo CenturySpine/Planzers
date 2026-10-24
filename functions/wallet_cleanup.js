@@ -5,7 +5,7 @@
  * - personal documents ("Mes documents"): records under
  *   trips/{tripId}/travelerModules/{uid}/walletDocuments, files under
  *   users/{uid}/wallet/{tripId}/;
- * - activity photos: records under
+ * - activity and meal photos: records under
  *   trips/{tripId}/travelerModules/{uid}/activityPhotos, files under
  *   users/{uid}/activityPhotos/{tripId}/, and the traveler's favorite photo
  *   choices under trips/{tripId}/travelerModules/{uid}/activityFavorites.
@@ -153,7 +153,25 @@ async function deleteActivityPhotoFiles({ bucket, tripId, uid, photoId }) {
  * @param {{ db: object, tripId: string, activityId: string }} args
  */
 async function deleteActivityPhotoRecords({ db, tripId, activityId }) {
-  if (!SAFE_SEGMENT.test(String(tripId || '')) || !activityId) return 0;
+  return deletePhotoRecordsOf({ db, tripId, field: 'activityId', subjectId: activityId });
+}
+
+/**
+ * Deletes every traveler's photo records attached to a meal (their files
+ * are removed by the per-photo deletion trigger).
+ * @returns {Promise<number>} number of records deleted
+ * @param {{ db: object, tripId: string, mealId: string }} args
+ */
+async function deleteMealPhotoRecords({ db, tripId, mealId }) {
+  return deletePhotoRecordsOf({ db, tripId, field: 'mealId', subjectId: mealId });
+}
+
+/**
+ * @returns {Promise<number>} number of records deleted
+ * @param {{ db: object, tripId: string, field: string, subjectId: string }} args
+ */
+async function deletePhotoRecordsOf({ db, tripId, field, subjectId }) {
+  if (!SAFE_SEGMENT.test(String(tripId || '')) || !subjectId) return 0;
   const moduleRefs = await db
     .collection('trips')
     .doc(tripId)
@@ -163,7 +181,7 @@ async function deleteActivityPhotoRecords({ db, tripId, activityId }) {
   for (const moduleRef of moduleRefs) {
     const snap = await moduleRef
       .collection('activityPhotos')
-      .where('activityId', '==', activityId)
+      .where(field, '==', subjectId)
       .get();
     for (const doc of snap.docs) {
       await doc.ref.delete();
@@ -181,4 +199,5 @@ module.exports = {
   deleteTripWalletFiles,
   deleteActivityPhotoFiles,
   deleteActivityPhotoRecords,
+  deleteMealPhotoRecords,
 };

@@ -204,6 +204,19 @@ class _TripMealsPermissionsPageState
                         ),
                       ),
                       TripPermissionItemRow(
+                        title: l10n.tripPermissionMealsChooseRestaurant,
+                        minRole: trip.mealsPermissions.chooseRestaurantMinRole,
+                        icon: PhosphorIconsRegular.storefront,
+                        busy: _savingActions.contains(
+                          TripMealsPermissionAction.chooseRestaurant,
+                        ),
+                        enabled: !_isResettingDefaults,
+                        onChanged: (role) => _updatePermission(
+                          action: TripMealsPermissionAction.chooseRestaurant,
+                          minRole: role,
+                        ),
+                      ),
+                      TripPermissionItemRow(
                         title: l10n.tripPermissionMealsAddContribution,
                         minRole: trip.mealsPermissions.addContributionMinRole,
                         icon: PhosphorIconsRegular.handHeart,
