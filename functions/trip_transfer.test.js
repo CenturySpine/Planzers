@@ -16,6 +16,7 @@ const {
   isValidDocId,
   isOwnTransferPath,
   generateInviteToken,
+  importedTripTitle,
   parseTransferFile,
   collectionWrites,
 } = require('./trip_transfer');
@@ -163,6 +164,14 @@ describe('isOwnTransferPath', () => {
 describe('generateInviteToken', () => {
   it('has the app format', () => {
     assert.match(generateInviteToken(), /^[A-Z0-9]{3}-[A-Z0-9]{3}$/);
+  });
+});
+
+describe('importedTripTitle', () => {
+  it('marks the copy once', () => {
+    assert.equal(importedTripTitle('Ski 2026'), 'Ski 2026 (export)');
+    assert.equal(importedTripTitle('Ski 2026 (export)'), 'Ski 2026 (export)');
+    assert.equal(importedTripTitle('  '), '(export)');
   });
 });
 
