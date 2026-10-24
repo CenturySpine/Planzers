@@ -293,18 +293,22 @@ class _TripsPageState extends ConsumerState<TripsPage>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    FloatingActionButton.small(
-                      heroTag: 'trips_import_fab',
-                      tooltip: l10n.tripsImportTripTooltip,
-                      backgroundColor: AppTokens.surface,
-                      foregroundColor: AppTokens.primaryDark,
-                      onPressed: () => importTripFromFile(context, ref),
-                      child: const Icon(
-                        PhosphorIconsRegular.downloadSimple,
-                        size: 20,
+                    // Trip transfer serves development for now: application
+                    // owners only.
+                    if (isApplicationOwner) ...[
+                      FloatingActionButton.small(
+                        heroTag: 'trips_import_fab',
+                        tooltip: l10n.tripsImportTripTooltip,
+                        backgroundColor: AppTokens.surface,
+                        foregroundColor: AppTokens.primaryDark,
+                        onPressed: () => importTripFromFile(context, ref),
+                        child: const Icon(
+                          PhosphorIconsRegular.downloadSimple,
+                          size: 20,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
+                    ],
                     FloatingActionButton.small(
                       heroTag: 'trips_join_fab',
                       tooltip: l10n.tripsJoinWithInviteTooltip,

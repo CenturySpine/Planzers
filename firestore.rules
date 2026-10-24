@@ -616,6 +616,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Journals of the trip exports / imports (administration section),
+    // written by the exportTrip / importTrip functions only.
+    match /tripTransferLogs/{logId} {
+      allow read: if isApplicationOwner();
+      allow write: if false;
+    }
+
     // Photo reports of every trip, for the administration section.
     match /{path=**}/photoReports/{reportId} {
       allow read: if isApplicationOwner();

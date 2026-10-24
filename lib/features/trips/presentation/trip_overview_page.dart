@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 import 'package:planerz/features/auth/data/user_display_label.dart';
 import 'package:planerz/features/activities/data/activities_repository.dart';
+import 'package:planerz/features/administration/data/maintenance_repository.dart';
 import 'package:planerz/features/activities/data/trip_activity.dart';
 import 'package:planerz/app/theme/activity_filter_colors.dart';
 import 'package:planerz/features/auth/data/users_repository.dart';
@@ -772,7 +773,9 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
             canEditGeneralInfo: canEditGeneralInfo,
             canManageTripSettings: canManageTripSettings,
             canDeleteTrip: canDeleteTrip,
-            canExportTrip: canEdit,
+            // Trip transfer serves development for now: application owners only.
+            canExportTrip:
+                ref.watch(isApplicationOwnerProvider).asData?.value ?? false,
             isArchivedForMe: ref.watch(isTripArchivedForMeProvider(_trip.id)),
           );
           // Past trips not archived yet (by this member): tell when the

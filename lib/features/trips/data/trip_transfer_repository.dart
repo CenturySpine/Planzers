@@ -47,8 +47,9 @@ class TripTransferInvalidFileException implements Exception {
 
 /// Export of a trip to a JSON file, and import of such a file as a new trip
 /// (e.g. from preview to prod), done by the `exportTrip` / `importTrip`
-/// Cloud Functions. The file goes through the user's Storage folder both
-/// ways, the embedded photos being too large for a callable payload.
+/// Cloud Functions for application owners only. The file goes through the
+/// user's Storage folder both ways, the embedded files being too large for a
+/// callable payload. Each run leaves a journal in the administration section.
 class TripTransferRepository {
   TripTransferRepository({
     required this.auth,
@@ -65,7 +66,7 @@ class TripTransferRepository {
   Future<String> _appVersion() async =>
       (await PackageInfo.fromPlatform()).version;
 
-  /// JSON file of the trip (owner only).
+  /// JSON file of the trip.
   Future<Uint8List> exportTrip({required String tripId}) async {
     final result = await functions
         .httpsCallable(

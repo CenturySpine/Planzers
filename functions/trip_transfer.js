@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * Trip transfer between environments (typically preview → prod): the trip
- * owner exports a trip as a JSON file, and anyone imports such a file from
- * the trip list as a new trip they own.
+ * Trip transfer between environments (typically preview → prod), restricted
+ * to application owners (`users/{uid}.isApplicationOwner`) while it serves
+ * development: one exports any trip as a JSON file, and imports such a file
+ * from the trip list as a new trip they own.
  *
  * Both sides must run exactly the same app version, so the file carries the
  * Firestore documents as they are stored, with no migration. Sub-document ids
@@ -17,30 +18,37 @@
  * and records they created are attributed to them; every other slot is left
  * to be claimed again with the invite code.
  *
- * Not transferred: messages, personal data of each traveler (documents,
- * private photos, packing lists, favorites, module toggles), Cupidon, read
- * states, photo reports and AI quotas. The banner and the shared activity
- * photos travel inside the file, base64-encoded; the shared photos are
- * attributed to the importer.
+ * The exporter's own private data of the trip goes along (personal documents
+ * with their files, all their activity photos, favorite photos, packing list,
+ * personal modules, archived state); other travelers' private data never
+ * does. Also left behind: messages, Cupidon, read states, photo reports and
+ * AI quotas. The banner and the activity photos shared with the group travel
+ * inside the file, base64-encoded, and are attributed to the importer.
  *
  * The file goes through Storage (users/{uid}/tripTransfers/) both ways, since
- * the embedded photos can exceed the size of a callable request or response.
+ * the embedded files can exceed the size of a callable request or response.
+ * Each run leaves a journal in tripTransferLogs/{id} (see TransferLog).
  */
 
 const crypto = require('crypto');
 const admin = require('firebase-admin');
 const { FieldValue, GeoPoint, Timestamp } = require('firebase-admin/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const logger = require('firebase-functions/logger');
 
 const TRANSFER_FORMAT = 'planerz-trip';
 const TRANSFER_FORMAT_VERSION = 1;
 const TRANSFER_FOLDER = 'tripTransfers';
+const TRANSFER_LOGS_COLLECTION = 'tripTransferLogs';
 
 /** Stands for the exporter in the file, and becomes the importer. */
 const EXPORTER_PLACEHOLDER = '$exporter';
 
 /** Transfer files left behind (download or import interrupted). */
 const STALE_TRANSFER_FILE_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Keeps a journal well under the Firestore document size limit. */
+const MAX_LOG_STEPS = 300;
 
 const BATCH_SIZE = 400;
 const SAFE_SEGMENT = /^[A-Za-z0-9_-]+$/;
@@ -57,6 +65,16 @@ const BANNER_MAX_BYTES = 20 * 1024 * 1024;
 /** Must match `storage.rules` (activity photos). */
 const ACTIVITY_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
 const ACTIVITY_PHOTO_CAPTION_MAX_LENGTH = 2000;
+/** Must match `storage.rules` (personal documents). */
+const WALLET_CONTENT_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+];
+const WALLET_FILE_MAX_BYTES = 15 * 1024 * 1024;
 
 /**
  * Trip subcollections carried over, each with its own carried-over
@@ -124,6 +142,128 @@ function normalizeString(v) {
 function normalizeAppVersion(raw) {
   const version = normalizeString(raw).replace(/^v/i, '').split('+')[0];
   return SEMVER.test(version) ? version : '';
+}
+
+async function requireApplicationOwner(uid) {
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
+  }
+  const snap = await admin.firestore().collection('users').doc(uid).get();
+  if (!snap.exists || snap.data()?.isApplicationOwner !== true) {
+    throw new HttpsError('permission-denied', 'Accès réservé aux administrateurs');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Journal
+// ---------------------------------------------------------------------------
+
+/** JSON-safe copy of [value] (Firestore refuses undefined). */
+function plain(value) {
+  if (value === undefined) return null;
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return String(value);
+  }
+}
+
+/** What to keep of an error in a journal. */
+function errorSummary(error) {
+  return {
+    code: normalizeString(error?.code) || null,
+    message: String(error?.message ?? error),
+    details: plain(error?.details ?? null),
+    stack: typeof error?.stack === 'string' ? error.stack.slice(0, 4000) : null,
+  };
+}
+
+/**
+ * Journal of one export or import, saved in tripTransferLogs/{id} for the
+ * administration section (copied from there to investigate a problem) and
+ * mirrored to Cloud Logging under the same id. Saved after each phase, so a
+ * run cut short (timeout, memory) still leaves the steps it went through.
+ */
+class TransferLog {
+  constructor(db, { kind, uid }) {
+    this.ref = db.collection(TRANSFER_LOGS_COLLECTION).doc();
+    this.id = this.ref.id;
+    this.kind = kind;
+    this.startedMs = Date.now();
+    this.fields = { kind, uid, status: 'running', startedAt: Timestamp.now() };
+    this.steps = [];
+    this.droppedSteps = 0;
+  }
+
+  add(level, message, details) {
+    const entry = { at: new Date().toISOString(), level, message };
+    if (details !== undefined) entry.details = plain(details);
+    if (this.steps.length < MAX_LOG_STEPS) {
+      this.steps.push(entry);
+    } else {
+      this.droppedSteps++;
+    }
+    const write = level === 'error' ? logger.error : level === 'warn' ? logger.warn : logger.info;
+    write(`tripTransfer ${this.kind}: ${message}`, {
+      transferLogId: this.id,
+      ...(details !== undefined ? { details: plain(details) } : {}),
+    });
+  }
+
+  info(message, details) {
+    this.add('info', message, details);
+  }
+
+  warn(message, details) {
+    this.add('warn', message, details);
+  }
+
+  error(message, details) {
+    this.add('error', message, details);
+  }
+
+  /** Summary fields shown in the list (trip ids and title, sizes…). */
+  set(fields) {
+    Object.assign(this.fields, plain(fields));
+  }
+
+  async save(extra = {}) {
+    try {
+      await this.ref.set({
+        ...this.fields,
+        ...extra,
+        durationMs: Date.now() - this.startedMs,
+        steps: this.steps,
+        droppedSteps: this.droppedSteps,
+      });
+    } catch (e) {
+      logger.error('tripTransfer: journal not saved', { transferLogId: this.id, error: String(e) });
+    }
+  }
+
+  async finish(status, extra = {}) {
+    await this.save({ status, finishedAt: Timestamp.now(), ...extra });
+  }
+
+  /**
+   * Records [error], then the error to send back: HttpsErrors keep their
+   * code and message; anything else becomes an internal error. Both carry
+   * the journal id.
+   */
+  async fail(error) {
+    this.error('Échec', errorSummary(error));
+    await this.finish('error', { error: errorSummary(error) });
+    if (error instanceof HttpsError) {
+      return new HttpsError(error.code, error.message, {
+        ...(error.details && typeof error.details === 'object' ? error.details : {}),
+        logId: this.id,
+      });
+    }
+    return new HttpsError('internal', 'Erreur inattendue, voir le journal du transfert', {
+      reason: 'internal',
+      logId: this.id,
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +363,16 @@ function remapAccountIds(value, accounts) {
   return out;
 }
 
+/** Firestore data of a stored document → file data, account ids rewritten. */
+function exportedData(data, accounts) {
+  return remapAccountIds(toTransferValue(data || {}), accounts);
+}
+
+/** File data → Firestore data, account ids rewritten. */
+function importedData(data, accounts) {
+  return fromTransferValue(remapAccountIds(data, accounts));
+}
+
 /** Participant slot as imported: Cupidon starts over (its data stays behind). */
 function participantForImport(data) {
   const out = { ...data, cupidonEnabled: false };
@@ -246,6 +396,10 @@ function isValidDocId(id) {
     && id !== '.'
     && id !== '..'
     && !/^__.*__$/.test(id);
+}
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 /** Same alphabet and shape as the app (`ABC-123`). */
@@ -289,9 +443,14 @@ async function deleteQuietly(file) {
   } catch (e) {
     const code = String(e?.code ?? '');
     if (code !== '404' && code !== 'not-found') {
-      console.warn('trip transfer: file not deleted', file.name, String(e));
+      logger.warn('tripTransfer: file not deleted', { file: file.name, error: String(e) });
     }
   }
+}
+
+async function deletePrefixQuietly(bucket, prefix) {
+  const [files] = await bucket.getFiles({ prefix, autoPaginate: true });
+  await Promise.all((files || []).map(deleteQuietly));
 }
 
 /** Best effort: removes [uid]'s transfer files older than a day. */
@@ -307,7 +466,7 @@ async function deleteStaleTransferFiles(bucket, uid, now = Date.now()) {
         .map(deleteQuietly)
     );
   } catch (e) {
-    console.warn('trip transfer: stale files cleanup failed', uid, String(e));
+    logger.warn('tripTransfer: stale files cleanup failed', { uid, error: String(e) });
   }
 }
 
@@ -346,7 +505,7 @@ async function exportCollection(collectionRef, nested, accounts) {
   const snap = await collectionRef.get();
   const out = {};
   for (const doc of snap.docs) {
-    const node = { data: remapAccountIds(toTransferValue(doc.data()), accounts) };
+    const node = { data: exportedData(doc.data(), accounts) };
     const nestedNames = Object.keys(nested);
     if (nestedNames.length > 0) {
       node.collections = {};
@@ -363,55 +522,173 @@ async function exportCollection(collectionRef, nested, accounts) {
   return out;
 }
 
-/** Every traveler's shared photos of the trip's activities, with their files. */
-async function exportSharedActivityPhotos(db, bucket, tripId, activityIds) {
+/**
+ * Activity photos with their files: every photo of the exporter, shared or
+ * not, and the photos the other travelers shared with the group.
+ */
+async function exportActivityPhotos({ db, bucket, tripId, activityIds, exporterUid, log }) {
   const moduleRefs = await db
     .collection('trips')
     .doc(tripId)
     .collection('travelerModules')
     .listDocuments();
   const photos = [];
+  let ownCount = 0;
+  let skipped = 0;
   for (const moduleRef of moduleRefs) {
     const ownerUid = moduleRef.id;
     if (!SAFE_SEGMENT.test(ownerUid)) continue;
-    const snap = await moduleRef.collection('activityPhotos').where('shared', '==', true).get();
+    const own = ownerUid === exporterUid;
+    const query = own
+      ? moduleRef.collection('activityPhotos')
+      : moduleRef.collection('activityPhotos').where('shared', '==', true);
+    const snap = await query.get();
     for (const doc of snap.docs) {
       const data = doc.data() || {};
       const activityId = normalizeString(data.activityId);
-      if (!SAFE_SEGMENT.test(doc.id) || !activityIds.has(activityId)) continue;
+      if (!SAFE_SEGMENT.test(doc.id) || !activityIds.has(activityId)) {
+        skipped++;
+        log.warn('Photo ignorée (activité absente)', { photoId: doc.id, activityId, own });
+        continue;
+      }
       const folder = `users/${ownerUid}/activityPhotos/${tripId}/`;
       try {
         const [photo, thumbnail] = await Promise.all([
           downloadAsTransferFile(bucket.file(`${folder}${doc.id}.jpg`), ['image/jpeg']),
           downloadAsTransferFile(bucket.file(`${folder}${doc.id}_thumb.jpg`), ['image/jpeg']),
         ]);
-        if (!photo || !thumbnail) continue;
+        if (!photo || !thumbnail) {
+          skipped++;
+          log.warn('Photo ignorée (format)', { photoId: doc.id, own });
+          continue;
+        }
         photos.push({
           id: doc.id,
           activityId,
           caption: normalizeString(data.caption),
+          shared: data.shared === true,
           createdAt: toTransferValue(data.createdAt ?? null),
           photo,
           thumbnail,
         });
+        if (own) ownCount++;
       } catch (e) {
         // A photo whose files are gone is left out rather than failing the export.
-        console.warn('exportTrip: activity photo skipped', tripId, ownerUid, doc.id, String(e));
+        skipped++;
+        log.warn('Photo ignorée (fichiers illisibles)', { photoId: doc.id, own, error: String(e) });
       }
     }
   }
+  log.info('Photos d\'activités', {
+    exported: photos.length,
+    exporterPhotos: ownCount,
+    sharedByOthers: photos.length - ownCount,
+    skipped,
+  });
   return photos;
 }
 
+/**
+ * The exporter's private data of the trip, or null when they have none
+ * (e.g. not a traveler of this trip).
+ */
+async function exportPersonalData({ db, bucket, tripId, exporterUid, exporterParticipantId, photoIds, log }) {
+  const accounts = { from: exporterUid, to: EXPORTER_PLACEHOLDER };
+  const tripRef = db.collection('trips').doc(tripId);
+  const moduleRef = tripRef.collection('travelerModules').doc(exporterUid);
+
+  const modulesSnap = await moduleRef.get();
+  const modules = modulesSnap.exists ? exportedData(modulesSnap.data(), accounts) : null;
+
+  const walletDocuments = {};
+  let walletSkipped = 0;
+  const walletSnap = await moduleRef.collection('walletDocuments').get();
+  for (const doc of walletSnap.docs) {
+    const data = doc.data() || {};
+    const node = { data: exportedData(data, accounts) };
+    if (data.kind === 'file') {
+      const path = normalizeString(data.file?.storagePath);
+      try {
+        node.file = path.startsWith(`users/${exporterUid}/wallet/${tripId}/`)
+          ? await downloadAsTransferFile(bucket.file(path), WALLET_CONTENT_TYPES)
+          : null;
+      } catch (e) {
+        node.file = null;
+        log.warn('Document illisible', { documentId: doc.id, error: String(e) });
+      }
+      if (!node.file) {
+        // A file document without its file would be broken: left out.
+        walletSkipped++;
+        log.warn('Document ignoré (fichier absent ou format)', { documentId: doc.id, path });
+        continue;
+      }
+      // The path holds the exporter's account id: only the file name goes,
+      // the import rebuilds the path for the importer.
+      node.data.file = { ...node.data.file, storagePath: path.split('/').pop() };
+    }
+    walletDocuments[doc.id] = node;
+  }
+
+  const activityFavorites = {};
+  const favoritesSnap = await moduleRef.collection('activityFavorites').get();
+  for (const doc of favoritesSnap.docs) {
+    const photoId = normalizeString(doc.data()?.photoId);
+    // The photo owner becomes the importer, like every imported photo.
+    if (photoIds.has(photoId)) activityFavorites[doc.id] = { photoId };
+  }
+
+  let packingList = null;
+  if (exporterParticipantId) {
+    const listRef = tripRef.collection('packingLists').doc(exporterParticipantId);
+    const [listSnap, itemsSnap] = await Promise.all([
+      listRef.get(),
+      listRef.collection('items').get(),
+    ]);
+    if (listSnap.exists || !itemsSnap.empty) {
+      packingList = {
+        data: exportedData(listSnap.exists ? listSnap.data() : {}, accounts),
+        items: Object.fromEntries(
+          itemsSnap.docs.map((doc) => [doc.id, { data: exportedData(doc.data(), accounts) }])
+        ),
+      };
+    }
+  }
+
+  const archived = (
+    await db.collection('users').doc(exporterUid).collection('archivedTrips').doc(tripId).get()
+  ).exists;
+
+  const counts = {
+    modules: modules !== null,
+    walletDocuments: Object.keys(walletDocuments).length,
+    walletFiles: Object.values(walletDocuments).filter((d) => d.file).length,
+    walletSkipped,
+    activityFavorites: Object.keys(activityFavorites).length,
+    packingItems: packingList ? Object.keys(packingList.items).length : 0,
+    archived,
+  };
+  log.info('Données privées de l\'exportateur', counts);
+  const empty = !modules && counts.walletDocuments === 0 && counts.activityFavorites === 0
+    && !packingList && !archived;
+  return empty ? null : { modules, walletDocuments, activityFavorites, packingList, archived };
+}
+
 /** The whole transfer file of a trip, for [exporterUid]. */
-async function buildTripTransferPayload({ db, bucket, tripId, tripData, exporterUid, appVersion }) {
+async function buildTripTransferPayload({ db, bucket, tripId, tripData, exporterUid, appVersion, log }) {
   const accounts = { from: exporterUid, to: EXPORTER_PLACEHOLDER };
   const tripRef = db.collection('trips').doc(tripId);
 
   const collections = {};
+  const counts = {};
   for (const [name, nested] of Object.entries(TRANSFERRED_COLLECTIONS)) {
     collections[name] = await exportCollection(tripRef.collection(name), nested, accounts);
+    counts[name] = Object.keys(collections[name]).length;
   }
+  log.info('Documents du voyage', counts);
+
+  const exporterParticipantId = Object.entries(collections.participants)
+    .find(([, node]) => node.data?.userId === EXPORTER_PLACEHOLDER)?.[0] ?? null;
+  log.info('Place de l\'exportateur', { participantId: exporterParticipantId });
 
   let banner = null;
   const bannerPath = normalizeString(tripData.bannerImagePath);
@@ -422,16 +699,33 @@ async function buildTripTransferPayload({ db, bucket, tripId, tripData, exporter
         Object.keys(BANNER_CONTENT_TYPES)
       );
     } catch (e) {
-      console.warn('exportTrip: banner skipped', tripId, String(e));
+      log.warn('Bannière illisible', { path: bannerPath, error: String(e) });
     }
   }
+  log.info('Bannière', { included: banner !== null, path: bannerPath || null });
 
-  const activityPhotos = await exportSharedActivityPhotos(
+  const activityPhotos = await exportActivityPhotos({
     db,
     bucket,
     tripId,
-    new Set(Object.keys(collections.activities))
-  );
+    activityIds: new Set(Object.keys(collections.activities)),
+    exporterUid,
+    log,
+  });
+
+  const personal = await exportPersonalData({
+    db,
+    bucket,
+    tripId,
+    exporterUid,
+    exporterParticipantId,
+    photoIds: new Set(activityPhotos.map((p) => p.id)),
+    log,
+  });
+
+  const lifecycleSnap = await db.collection('tripLifecycle').doc(tripId).get();
+  const lifecycle = lifecycleSnap.exists ? exportedData(lifecycleSnap.data(), accounts) : null;
+  log.info('Cycle de vie', { included: lifecycle !== null });
 
   return {
     format: TRANSFER_FORMAT,
@@ -439,11 +733,13 @@ async function buildTripTransferPayload({ db, bucket, tripId, tripData, exporter
     appVersion,
     exportedAt: new Date().toISOString(),
     trip: {
-      data: remapAccountIds(toTransferValue(tripDataForTransfer(tripData)), accounts),
+      data: exportedData(tripDataForTransfer(tripData), accounts),
       collections,
     },
     banner,
     activityPhotos,
+    personal,
+    lifecycle,
   };
 }
 
@@ -454,9 +750,7 @@ const exportTrip = onCall(
   },
   async (request) => {
     const uid = normalizeString(request.auth?.uid);
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
-    }
+    await requireApplicationOwner(uid);
     const tripId = normalizeString(request.data?.tripId);
     const appVersion = normalizeAppVersion(request.data?.appVersion);
     if (!SAFE_SEGMENT.test(tripId) || !appVersion) {
@@ -465,36 +759,44 @@ const exportTrip = onCall(
 
     const db = admin.firestore();
     const bucket = admin.storage().bucket();
-    const tripSnap = await db.collection('trips').doc(tripId).get();
-    if (!tripSnap.exists) {
-      throw new HttpsError('not-found', 'Voyage introuvable');
+    const log = new TransferLog(db, { kind: 'export', uid });
+    log.set({ appVersion, sourceTripId: tripId });
+    log.info('Début de l\'export', { tripId, appVersion });
+    await log.save();
+    try {
+      const tripSnap = await db.collection('trips').doc(tripId).get();
+      if (!tripSnap.exists) {
+        throw new HttpsError('not-found', 'Voyage introuvable');
+      }
+      const tripData = tripSnap.data() || {};
+      log.set({ tripTitle: normalizeString(tripData.title) });
+
+      await deleteStaleTransferFiles(bucket, uid);
+
+      const payload = await buildTripTransferPayload({
+        db,
+        bucket,
+        tripId,
+        tripData,
+        exporterUid: uid,
+        appVersion,
+        log,
+      });
+      await log.save();
+
+      const bytes = Buffer.from(JSON.stringify(payload), 'utf8');
+      const storagePath = `${transferFolder(uid)}export-${tripId}-${Date.now()}.json`;
+      await bucket.file(storagePath).save(bytes, {
+        resumable: false,
+        contentType: 'application/json',
+      });
+      log.set({ fileSizeBytes: bytes.length });
+      log.info('Fichier écrit', { storagePath, sizeBytes: bytes.length });
+      await log.finish('success');
+      return { storagePath, sizeBytes: bytes.length, logId: log.id };
+    } catch (e) {
+      throw await log.fail(e);
     }
-    const tripData = tripSnap.data() || {};
-    if (normalizeString(tripData.ownerId) !== uid) {
-      throw new HttpsError(
-        'permission-denied',
-        'Seul le propriétaire peut exporter ce voyage'
-      );
-    }
-
-    await deleteStaleTransferFiles(bucket, uid);
-
-    const payload = await buildTripTransferPayload({
-      db,
-      bucket,
-      tripId,
-      tripData,
-      exporterUid: uid,
-      appVersion,
-    });
-    const bytes = Buffer.from(JSON.stringify(payload), 'utf8');
-    const storagePath = `${transferFolder(uid)}export-${tripId}-${Date.now()}.json`;
-    await bucket.file(storagePath).save(bytes, {
-      resumable: false,
-      contentType: 'application/json',
-    });
-
-    return { storagePath, sizeBytes: bytes.length };
   }
 );
 
@@ -511,8 +813,7 @@ function parseTransferFile(text, appVersion) {
     throw invalidFile('json');
   }
   if (
-    !payload
-    || typeof payload !== 'object'
+    !isPlainObject(payload)
     || payload.format !== TRANSFER_FORMAT
     || payload.formatVersion !== TRANSFER_FORMAT_VERSION
   ) {
@@ -526,8 +827,7 @@ function parseTransferFile(text, appVersion) {
       { reason: 'version-mismatch', fileVersion: normalizeString(payload.appVersion), appVersion }
     );
   }
-  const trip = payload.trip;
-  if (!trip || typeof trip.data !== 'object' || trip.data === null) {
+  if (!isPlainObject(payload.trip) || !isPlainObject(payload.trip.data)) {
     throw invalidFile('trip');
   }
   return payload;
@@ -535,24 +835,103 @@ function parseTransferFile(text, appVersion) {
 
 /**
  * Flat list of the writes recreating the carried-over subcollections under
- * [tripRef], account ids rewritten for [importerUid].
+ * [tripRef], account ids rewritten for the importer.
  */
 function collectionWrites(tripRef, collections, allowed, accounts, writes = []) {
-  if (!collections || typeof collections !== 'object') return writes;
+  if (!isPlainObject(collections)) return writes;
   for (const [name, docs] of Object.entries(collections)) {
     if (!Object.prototype.hasOwnProperty.call(allowed, name)) continue;
-    if (!docs || typeof docs !== 'object') throw invalidFile(name);
+    if (!isPlainObject(docs)) throw invalidFile(name);
     for (const [docId, node] of Object.entries(docs)) {
-      if (!isValidDocId(docId) || !node || typeof node.data !== 'object' || node.data === null) {
+      if (!isValidDocId(docId) || !isPlainObject(node?.data)) {
         throw invalidFile(name);
       }
       const ref = tripRef.collection(name).doc(docId);
-      let data = fromTransferValue(remapAccountIds(node.data, accounts));
+      let data = importedData(node.data, accounts);
       if (name === 'participants') data = participantForImport(data);
       writes.push({ ref, data });
       collectionWrites(ref, node.collections, allowed[name], accounts, writes);
     }
   }
+  return writes;
+}
+
+/** Writes and uploads recreating the importer's private data. */
+async function personalDataWrites({ db, bucket, tripRef, personal, importerUid, slotId, photoIds, accounts, log }) {
+  const writes = [];
+  if (!isPlainObject(personal)) return writes;
+  const moduleRef = tripRef.collection('travelerModules').doc(importerUid);
+
+  if (isPlainObject(personal.modules)) {
+    writes.push({ ref: moduleRef, data: importedData(personal.modules, accounts) });
+  }
+
+  let walletFiles = 0;
+  const walletFolder = `users/${importerUid}/wallet/${tripRef.id}/`;
+  for (const [docId, node] of Object.entries(
+    isPlainObject(personal.walletDocuments) ? personal.walletDocuments : {}
+  )) {
+    if (!isValidDocId(docId) || !isPlainObject(node?.data)) throw invalidFile('walletDocuments');
+    const data = importedData(node.data, accounts);
+    if (data.kind === 'file') {
+      const { contentType, bytes } = decodeTransferFile(
+        node.file,
+        WALLET_CONTENT_TYPES,
+        WALLET_FILE_MAX_BYTES
+      );
+      const originalName = normalizeString(data.file?.storagePath).split('/').pop();
+      const fileName = SAFE_FILE_NAME.test(originalName) ? originalName : `${docId}.bin`;
+      const storagePath = `${walletFolder}${fileName}`;
+      await bucket.file(storagePath).save(bytes, { resumable: false, contentType });
+      data.file = { ...(isPlainObject(data.file) ? data.file : {}), storagePath, contentType, sizeBytes: bytes.length };
+      walletFiles++;
+    }
+    writes.push({ ref: moduleRef.collection('walletDocuments').doc(docId), data });
+  }
+
+  let favorites = 0;
+  for (const [activityId, node] of Object.entries(
+    isPlainObject(personal.activityFavorites) ? personal.activityFavorites : {}
+  )) {
+    const photoId = normalizeString(node?.photoId);
+    if (!isValidDocId(activityId) || !photoIds.has(photoId)) continue;
+    writes.push({
+      ref: moduleRef.collection('activityFavorites').doc(activityId),
+      data: { ownerId: importerUid, photoId, updatedAt: FieldValue.serverTimestamp() },
+    });
+    favorites++;
+  }
+
+  let packingItems = 0;
+  if (slotId && isPlainObject(personal.packingList)) {
+    const listRef = tripRef.collection('packingLists').doc(slotId);
+    const listData = isPlainObject(personal.packingList.data) ? personal.packingList.data : {};
+    writes.push({ ref: listRef, data: importedData(listData, accounts) });
+    for (const [itemId, node] of Object.entries(
+      isPlainObject(personal.packingList.items) ? personal.packingList.items : {}
+    )) {
+      if (!isValidDocId(itemId) || !isPlainObject(node?.data)) throw invalidFile('packingList');
+      writes.push({ ref: listRef.collection('items').doc(itemId), data: importedData(node.data, accounts) });
+      packingItems++;
+    }
+  }
+
+  if (personal.archived === true) {
+    writes.push({
+      ref: db.collection('users').doc(importerUid).collection('archivedTrips').doc(tripRef.id),
+      data: { archivedAt: FieldValue.serverTimestamp() },
+    });
+  }
+
+  log.info('Données privées de l\'importeur', {
+    modules: isPlainObject(personal.modules),
+    walletDocuments: Object.keys(personal.walletDocuments || {}).length,
+    walletFiles,
+    activityFavorites: favorites,
+    packingItems,
+    packingSlot: slotId,
+    archived: personal.archived === true,
+  });
   return writes;
 }
 
@@ -566,44 +945,57 @@ async function commitWrites(db, writes) {
   }
 }
 
-/** Removes a partially imported trip (records and files). */
-async function deleteImportedTrip(db, bucket, tripRef, importerUid) {
+/** Removes a partially imported trip (records, files, personal traces). */
+async function deleteImportedTrip({ db, bucket, tripRef, importerUid, log }) {
   try {
     await db.recursiveDelete(tripRef);
+    await db.collection('tripLifecycle').doc(tripRef.id).delete();
+    await db.collection('users').doc(importerUid).collection('archivedTrips').doc(tripRef.id).delete();
     for (const prefix of [
       `trips/${tripRef.id}/`,
       `users/${importerUid}/activityPhotos/${tripRef.id}/`,
+      `users/${importerUid}/wallet/${tripRef.id}/`,
     ]) {
-      const [files] = await bucket.getFiles({ prefix, autoPaginate: true });
-      await Promise.all((files || []).map(deleteQuietly));
+      await deletePrefixQuietly(bucket, prefix);
     }
+    log.info('Import annulé : voyage partiel supprimé', { tripId: tripRef.id });
   } catch (e) {
-    console.error('importTrip: rollback failed', tripRef.id, String(e));
+    log.error('Annulation incomplète, voyage partiel à supprimer à la main', {
+      tripId: tripRef.id,
+      error: String(e),
+    });
   }
 }
 
-async function importTripPayload({ db, bucket, payload, importerUid, importerEmail }) {
+async function importTripPayload({ db, bucket, payload, importerUid, importerEmail, log }) {
   const accounts = { from: EXPORTER_PLACEHOLDER, to: importerUid };
   const tripRef = db.collection('trips').doc();
+  log.set({ newTripId: tripRef.id });
+
   const writes = collectionWrites(
     tripRef,
     payload.trip.collections,
     TRANSFERRED_COLLECTIONS,
     accounts
   );
+  const counts = {};
+  for (const { ref } of writes) {
+    const path = ref.path.slice(tripRef.path.length + 1).replace(/\/[^/]+(\/|$)/g, '$1');
+    counts[path] = (counts[path] || 0) + 1;
+  }
+  log.info('Documents du voyage à écrire', counts);
+
   const activityIds = new Set(
     writes
       .filter(({ ref }) => ref.parent.id === 'activities' && ref.parent.parent.id === tripRef.id)
       .map(({ ref }) => ref.id)
   );
-  const hasImporterSlot = writes.some(
+  let slotId = writes.find(
     ({ ref, data }) => ref.parent.id === 'participants' && data.userId === importerUid
-  );
+  )?.ref.id ?? null;
 
   try {
-    const tripData = tripDataForTransfer(
-      fromTransferValue(remapAccountIds(payload.trip.data, accounts))
-    );
+    const tripData = tripDataForTransfer(importedData(payload.trip.data, accounts));
     if (payload.banner) {
       const { contentType, bytes } = decodeTransferFile(
         payload.banner,
@@ -614,6 +1006,7 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
       tripData.bannerImageUrl = await saveWithDownloadUrl(bucket, path, bytes, contentType);
       tripData.bannerImagePath = path;
       tripData.bannerUpdatedAt = FieldValue.serverTimestamp();
+      log.info('Bannière déposée', { path, sizeBytes: bytes.length });
     }
 
     // The trip first: participant triggers update it (participant count).
@@ -624,11 +1017,14 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
       inviteToken: generateInviteToken(),
       createdAt: FieldValue.serverTimestamp(),
     });
+    log.info('Voyage créé', { tripId: tripRef.id, title: normalizeString(tripData.title) });
 
-    if (!hasImporterSlot) {
+    if (!slotId) {
       // The exporter had no participant slot: the importer gets a new one.
+      const ref = tripRef.collection('participants').doc();
+      slotId = ref.id;
       writes.push({
-        ref: tripRef.collection('participants').doc(),
+        ref,
         data: {
           participantName: normalizeString(importerEmail).split('@')[0] || 'Moi',
           userId: importerUid,
@@ -638,6 +1034,9 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
           createdAt: FieldValue.serverTimestamp(),
         },
       });
+      log.info('Nouvelle place créée pour l\'importeur', { participantId: slotId });
+    } else {
+      log.info('Place de l\'exportateur reprise', { participantId: slotId });
     }
 
     const photos = Array.isArray(payload.activityPhotos) ? payload.activityPhotos : [];
@@ -646,10 +1045,14 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
       .doc(importerUid)
       .collection('activityPhotos');
     const photoFolder = `users/${importerUid}/activityPhotos/${tripRef.id}/`;
+    const photoIds = new Set();
     for (const raw of photos) {
       const photoId = normalizeString(raw?.id);
       const activityId = normalizeString(raw?.activityId);
-      if (!SAFE_SEGMENT.test(photoId) || !activityIds.has(activityId)) continue;
+      if (!SAFE_SEGMENT.test(photoId) || !activityIds.has(activityId)) {
+        log.warn('Photo ignorée', { photoId, activityId });
+        continue;
+      }
       const photo = decodeTransferFile(raw.photo, ['image/jpeg'], ACTIVITY_PHOTO_MAX_BYTES);
       const thumbnail = decodeTransferFile(raw.thumbnail, ['image/jpeg'], ACTIVITY_PHOTO_MAX_BYTES);
       const [url, thumbUrl] = await Promise.all([
@@ -665,15 +1068,45 @@ async function importTripPayload({ db, bucket, payload, importerUid, importerEma
           url,
           thumbUrl,
           ...(caption ? { caption } : {}),
-          shared: true,
+          // Private photos (the importer's own) have no flag, like in the app.
+          ...(raw.shared === true ? { shared: true } : {}),
           createdAt: createdAt instanceof Timestamp ? createdAt : FieldValue.serverTimestamp(),
         },
       });
+      photoIds.add(photoId);
+    }
+    log.info('Photos d\'activités déposées', {
+      count: photoIds.size,
+      private: photos.filter((p) => photoIds.has(normalizeString(p?.id)) && p.shared !== true).length,
+    });
+
+    writes.push(
+      ...(await personalDataWrites({
+        db,
+        bucket,
+        tripRef,
+        personal: payload.personal,
+        importerUid,
+        slotId,
+        photoIds,
+        accounts,
+        log,
+      }))
+    );
+
+    if (isPlainObject(payload.lifecycle)) {
+      writes.push({
+        ref: db.collection('tripLifecycle').doc(tripRef.id),
+        data: importedData(payload.lifecycle, accounts),
+      });
     }
 
+    await log.save();
     await commitWrites(db, writes);
+    log.info('Écritures validées', { documents: writes.length });
   } catch (e) {
-    await deleteImportedTrip(db, bucket, tripRef, importerUid);
+    log.error('Erreur pendant l\'import', errorSummary(e));
+    await deleteImportedTrip({ db, bucket, tripRef, importerUid, log });
     throw e;
   }
   return tripRef.id;
@@ -686,9 +1119,7 @@ const importTrip = onCall(
   },
   async (request) => {
     const uid = normalizeString(request.auth?.uid);
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Utilisateur non connecté');
-    }
+    await requireApplicationOwner(uid);
     const storagePath = normalizeString(request.data?.storagePath);
     const appVersion = normalizeAppVersion(request.data?.appVersion);
     if (!isOwnTransferPath(storagePath, uid) || !appVersion) {
@@ -697,34 +1128,59 @@ const importTrip = onCall(
 
     const db = admin.firestore();
     const bucket = admin.storage().bucket();
-    const file = bucket.file(storagePath);
-    let text;
+    const log = new TransferLog(db, { kind: 'import', uid });
+    log.set({ appVersion });
+    log.info('Début de l\'import', { storagePath, appVersion });
+    await log.save();
     try {
-      const [bytes] = await file.download();
-      text = bytes.toString('utf8');
-    } catch (e) {
-      throw new HttpsError('not-found', 'Fichier introuvable');
-    } finally {
-      await deleteQuietly(file);
-    }
-    await deleteStaleTransferFiles(bucket, uid);
+      const file = bucket.file(storagePath);
+      let text;
+      try {
+        const [bytes] = await file.download();
+        text = bytes.toString('utf8');
+      } catch (e) {
+        log.error('Fichier déposé illisible', { storagePath, error: String(e) });
+        throw new HttpsError('not-found', 'Fichier introuvable');
+      } finally {
+        await deleteQuietly(file);
+      }
+      log.set({ fileSizeBytes: Buffer.byteLength(text, 'utf8') });
+      log.info('Fichier lu', { sizeBytes: Buffer.byteLength(text, 'utf8') });
+      await deleteStaleTransferFiles(bucket, uid);
 
-    const payload = parseTransferFile(text, appVersion);
-    text = null;
-    const tripId = await importTripPayload({
-      db,
-      bucket,
-      payload,
-      importerUid: uid,
-      importerEmail: request.auth?.token?.email,
-    });
-    return { tripId };
+      const payload = parseTransferFile(text, appVersion);
+      text = null;
+      log.set({ tripTitle: normalizeString(payload.trip.data.title) });
+      log.info('Fichier valide', {
+        fileVersion: payload.appVersion,
+        exportedAt: payload.exportedAt ?? null,
+        photos: Array.isArray(payload.activityPhotos) ? payload.activityPhotos.length : 0,
+        banner: Boolean(payload.banner),
+        personal: Boolean(payload.personal),
+        lifecycle: Boolean(payload.lifecycle),
+      });
+      await log.save();
+
+      const tripId = await importTripPayload({
+        db,
+        bucket,
+        payload,
+        importerUid: uid,
+        importerEmail: request.auth?.token?.email,
+        log,
+      });
+      await log.finish('success');
+      return { tripId, logId: log.id };
+    } catch (e) {
+      throw await log.fail(e);
+    }
   }
 );
 
 module.exports = {
   EXPORTER_PLACEHOLDER,
   TRANSFERRED_COLLECTIONS,
+  TransferLog,
   normalizeAppVersion,
   toTransferValue,
   fromTransferValue,

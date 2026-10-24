@@ -10,6 +10,7 @@ import 'package:planerz/features/administration/presentation/admin_oauth_clients
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
 import 'package:planerz/features/administration/presentation/admin_photo_reports_page.dart';
 import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
+import 'package:planerz/features/administration/presentation/admin_trip_transfer_logs_page.dart';
 import 'package:planerz/features/administration/domain/app_usage_stats.dart';
 
 final _administrationRepositoryProvider =
@@ -180,6 +181,18 @@ class _StatsBody extends StatelessWidget {
             ),
             trailing: const Icon(PhosphorIconsRegular.caretRight),
             onTap: () => context.push(AdminPhotoReportsPage.routePath),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            leading: const Icon(PhosphorIconsRegular.arrowsLeftRight),
+            title: const Text('Export / import de voyages'),
+            subtitle: const Text(
+              'Journaux des exports et imports, à copier en cas de problème.',
+            ),
+            trailing: const Icon(PhosphorIconsRegular.caretRight),
+            onTap: () => context.push(AdminTripTransferLogsPage.routePath),
           ),
         ),
         const SizedBox(height: 12),

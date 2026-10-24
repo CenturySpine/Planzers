@@ -120,7 +120,7 @@ service firebase.storage {
       allow update: if false;
     }
 
-    // Trip export / import files, owner only:
+    // Trip export / import files (application owners), owner only:
     // users/{uid}/tripTransfers/<file>.json
     // Exports are written by the exportTrip function, imports uploaded here
     // for importTrip; each is deleted once used (left-overs after a day).
@@ -128,6 +128,7 @@ service firebase.storage {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn()
         && request.auth.uid == uid
+        && isApplicationOwner()
         && request.resource.contentType == 'application/json'
         && fileName.matches('[A-Za-z0-9._-]+');
       allow update: if false;

@@ -8,7 +8,7 @@ import 'package:planerz/features/trips/data/trip.dart';
 import 'package:planerz/features/trips/data/trip_transfer_repository.dart';
 import 'package:planerz/l10n/app_localizations.dart';
 
-/// Exports [trip] to a JSON file the user saves (trip owner only).
+/// Exports [trip] to a JSON file the user saves (application owners only).
 Future<void> exportTripToFile(
   BuildContext context,
   WidgetRef ref,

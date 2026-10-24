@@ -10,6 +10,7 @@ import 'package:planerz/features/administration/presentation/admin_maintenance_p
 import 'package:planerz/features/administration/presentation/admin_oauth_clients_page.dart';
 import 'package:planerz/features/administration/presentation/admin_external_providers_page.dart';
 import 'package:planerz/features/administration/presentation/admin_photo_reports_page.dart';
+import 'package:planerz/features/administration/presentation/admin_trip_transfer_logs_page.dart';
 import 'package:planerz/features/administration/presentation/admin_trip_activities_page.dart';
 import 'package:planerz/features/administration/presentation/administration_page.dart';
 import 'package:planerz/features/administration/presentation/global_announcements_page.dart';
@@ -206,6 +207,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AdminPhotoReportsPage.routePath,
       builder: (context, state) => const AdminPhotoReportsPage(),
+    ),
+    GoRoute(
+      path: AdminTripTransferLogsPage.routePath,
+      builder: (context, state) => const AdminTripTransferLogsPage(),
     ),
     GoRoute(
       path: GlobalAnnouncementsPage.routePath,
