@@ -51,7 +51,9 @@ class MealRestaurantSection extends ConsumerWidget {
       ..sort((a, b) {
         final byVotes = b.votes.length.compareTo(a.votes.length);
         if (byVotes != 0) return byVotes;
-        return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+        return a.displayLabel
+            .toLowerCase()
+            .compareTo(b.displayLabel.toLowerCase());
       });
     final pick = await _showRestaurantPicker(
       context,
@@ -62,7 +64,7 @@ class MealRestaurantSection extends ConsumerWidget {
     if (pick == null || !context.mounted) return;
     final picked = pick.activity;
     if (picked != null) {
-      onChosen(picked.id, picked.label);
+      onChosen(picked.id, picked.displayLabel);
       return;
     }
     final newId = await context.push<String>(
@@ -76,7 +78,7 @@ class MealRestaurantSection extends ConsumerWidget {
         ?.value
         .where((a) => a.id == newId)
         .firstOrNull;
-    onChosen(newId, created?.label ?? '');
+    onChosen(newId, created?.displayLabel ?? '');
   }
 
   @override
@@ -222,7 +224,7 @@ class _RestaurantPickerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final label = restaurant.label.trim();
+    final label = restaurant.displayLabel;
     final address = restaurant.address.trim();
     final imageUrl =
         ((restaurant.linkPreview['imageUrl'] as String?) ?? '').trim();

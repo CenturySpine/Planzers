@@ -231,7 +231,7 @@ class _PhotoGroupCard extends ConsumerWidget {
         .asData
         ?.value
         .where((activity) => activity.id == group.activityId)
-        .map((activity) => activity.label.trim())
+        .map((activity) => activity.displayLabel)
         .firstOrNull;
     final names = ref.watch(tripMemberResolvedLabelsProvider(group.tripId));
     String nameOf(String uid) => names[uid] ?? 'Participant inconnu';

@@ -887,7 +887,7 @@ class _TripOverviewPageState extends ConsumerState<TripOverviewPage> {
                   return b.createdAt.compareTo(a.createdAt);
                 });
               final activitiesTodayLabels = activitiesToday
-                  .map((activity) => activity.label.trim())
+                  .map((activity) => activity.displayLabel)
                   .where((label) => label.isNotEmpty)
                   .toList();
               final plannedActivitiesCount =

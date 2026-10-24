@@ -55,7 +55,7 @@ List<TripRecentPlace> tripRecentPlaces(Iterable<TripActivity> activities) {
       add('', activity.address, activity.location);
       add('', activity.departureAddress, activity.departureLocation);
     } else {
-      add(activity.label, activity.address, activity.location);
+      add(activity.displayLabel, activity.address, activity.location);
     }
   }
   return places;
